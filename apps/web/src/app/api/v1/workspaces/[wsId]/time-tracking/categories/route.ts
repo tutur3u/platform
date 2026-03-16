@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -22,13 +23,22 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -37,11 +47,13 @@ export async function GET(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch categories
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_categories')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .order('name');
 
     if (error) throw error;
@@ -62,7 +74,7 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -74,13 +86,22 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -105,7 +126,7 @@ export async function POST(
     const { data, error } = await sbAdmin
       .from('time_tracking_categories')
       .insert({
-        ws_id: wsId,
+        ws_id: normalizedWsId,
         name: name.trim(),
         description: description?.trim() || null,
         color: color || 'BLUE',

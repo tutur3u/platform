@@ -2,15 +2,32 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const routeParamsSchema = z.object({
+  sessionId: z.uuid(),
+});
+
+const routeBodySchema = z.object({
+  targetWorkspaceId: z.string().min(1),
+});
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   try {
-    const { wsId, sessionId } = await params;
-    const supabase = await createClient();
+    const { wsId: id, sessionId } = await params;
+    const parsedResult = routeParamsSchema.safeParse({ sessionId });
+    if (!parsedResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid session ID format' },
+        { status: 400 }
+      );
+    }
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -21,13 +38,22 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify source workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -36,23 +62,58 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
-    const { targetWorkspaceId } = body;
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
 
-    if (!targetWorkspaceId) {
+    const body = routeBodySchema.safeParse(payload);
+    if (!body.success) {
       return NextResponse.json(
         { error: 'Target workspace ID is required' },
         { status: 400 }
       );
     }
 
+    let targetWorkspaceId: string;
+    try {
+      targetWorkspaceId = await normalizeWorkspaceId(
+        body.data.targetWorkspaceId,
+        supabase
+      );
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid target workspace ID' },
+        { status: 400 }
+      );
+    }
+
+    if (!targetWorkspaceId) {
+      return NextResponse.json(
+        { error: 'Invalid target workspace ID' },
+        { status: 400 }
+      );
+    }
+
     // Verify access to target workspace
-    const { data: targetMemberCheck } = await supabase
+    const { data: targetMemberCheck, error: targetMemberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', targetWorkspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (targetMemberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify target workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!targetMemberCheck) {
       return NextResponse.json(
@@ -61,8 +122,10 @@ export async function POST(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify session exists and belongs to user
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await sbAdmin
       .from('time_tracking_sessions')
       .select(`
         *,
@@ -72,9 +135,17 @@ export async function POST(
       .eq('id', sessionId)
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (sessionError || !session) {
+    if (sessionError) {
+      console.error('Error fetching session for move:', sessionError);
+      return NextResponse.json(
+        { error: sessionError.message || 'Failed to fetch session' },
+        { status: 500 }
+      );
+    }
+
+    if (!session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
@@ -88,18 +159,26 @@ export async function POST(
       );
     }
 
-    const sbAdmin = await createAdminClient();
-
     // Check if category exists in target workspace
     let targetCategoryId = null;
     if (session.category_id && session.category) {
       // Try to find the same category in target workspace
-      const { data: targetCategory } = await sbAdmin
+      const { data: targetCategory, error: targetCategoryError } = await sbAdmin
         .from('time_tracking_categories')
         .select('id')
         .eq('ws_id', targetWorkspaceId)
         .eq('name', session.category.name)
-        .single();
+        .maybeSingle();
+
+      if (targetCategoryError) {
+        console.error('Error looking up target category:', targetCategoryError);
+        return NextResponse.json(
+          {
+            error: targetCategoryError.message || 'Failed to resolve category',
+          },
+          { status: 500 }
+        );
+      }
 
       if (targetCategory) {
         targetCategoryId = targetCategory.id;
@@ -111,14 +190,22 @@ export async function POST(
     let targetTaskId = null;
     if (session.task_id && session.task) {
       // Try to find the same task in target workspace
-      const { data: targetTask } = await sbAdmin
+      const { data: targetTask, error: targetTaskError } = await sbAdmin
         .from('tasks')
         .select(
           'id, list:task_lists!inner(board:workspace_boards!inner(ws_id))'
         )
         .eq('list.board.ws_id', targetWorkspaceId)
         .eq('name', session.task.name)
-        .single();
+        .maybeSingle();
+
+      if (targetTaskError) {
+        console.error('Error looking up target task:', targetTaskError);
+        return NextResponse.json(
+          { error: targetTaskError.message || 'Failed to resolve task' },
+          { status: 500 }
+        );
+      }
 
       if (targetTask) {
         targetTaskId = targetTask.id;
@@ -136,6 +223,8 @@ export async function POST(
         updated_at: new Date().toISOString(),
       })
       .eq('id', sessionId)
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
       .select(
         `
         *,
@@ -143,7 +232,7 @@ export async function POST(
         task:tasks(*)
       `
       )
-      .single();
+      .maybeSingle();
 
     if (moveError) {
       console.error('Error moving session:', moveError);
@@ -151,6 +240,10 @@ export async function POST(
         { error: 'Failed to move session' },
         { status: 500 }
       );
+    }
+
+    if (!movedSession) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
     // Get target workspace name for response

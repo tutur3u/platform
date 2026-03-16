@@ -6,14 +6,12 @@ import { checkSessionThreshold } from '../threshold';
 
 export async function handleStopAction({
   sbAdmin,
-  supabase,
   session,
   sessionId,
   normalizedWsId,
   canBypass,
 }: {
   sbAdmin: TypedSupabaseClient;
-  supabase: TypedSupabaseClient;
   session: SessionRecord;
   sessionId: string;
   normalizedWsId: string;
@@ -59,14 +57,15 @@ export async function handleStopAction({
     .maybeSingle();
 
   if (activeBreak) {
-    const { error: updateError } = await sbAdmin
+    const { data: updatedBreakRows, error: updateError } = await sbAdmin
       .from('time_tracking_breaks')
       .update({
         break_end: endTime,
       })
-      .eq('id', activeBreak.id);
+      .eq('id', activeBreak.id)
+      .select('id');
 
-    if (updateError) {
+    if (updateError || !updatedBreakRows || updatedBreakRows.length === 0) {
       console.error('Failed to close active break on stop:', updateError);
       return NextResponse.json(
         { error: 'Failed to close active break on stop' },
@@ -76,7 +75,7 @@ export async function handleStopAction({
   }
 
   if (isPaused) {
-    const { data, error } = await supabase
+    const { data: pausedSession, error: pausedSessionError } = await sbAdmin
       .from('time_tracking_sessions')
       .select(
         `
@@ -86,10 +85,21 @@ export async function handleStopAction({
           `
       )
       .eq('id', sessionId)
-      .single();
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
 
-    if (error) throw error;
-    return NextResponse.json({ session: data });
+    if (pausedSessionError) {
+      throw pausedSessionError;
+    }
+
+    if (!pausedSession) {
+      return NextResponse.json(
+        { error: 'Failed to fetch stopped session' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ session: pausedSession });
   }
 
   const startTime = new Date(session.start_time);
@@ -97,7 +107,7 @@ export async function handleStopAction({
     (new Date(endTime).getTime() - startTime.getTime()) / 1000
   );
 
-  const { data, error } = await sbAdmin
+  const { data: updatedSession, error: updateSessionError } = await sbAdmin
     .from('time_tracking_sessions')
     .update({
       end_time: endTime,
@@ -106,6 +116,7 @@ export async function handleStopAction({
       updated_at: new Date().toISOString(),
     })
     .eq('id', sessionId)
+    .eq('ws_id', normalizedWsId)
     .select(
       `
           *,
@@ -113,8 +124,18 @@ export async function handleStopAction({
           task:tasks(*)
         `
     )
-    .single();
+    .maybeSingle();
 
-  if (error) throw error;
-  return NextResponse.json({ session: data });
+  if (updateSessionError) {
+    throw updateSessionError;
+  }
+
+  if (!updatedSession) {
+    return NextResponse.json(
+      { error: 'Failed to update session when stopping' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ session: updatedSession });
 }

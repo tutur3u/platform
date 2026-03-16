@@ -1,14 +1,19 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-const _requestImageBucket = 'time_tracking_requests';
-const _signedUrlExpirySeconds = 3600;
-
 class RequestImageGallery extends StatefulWidget {
-  const RequestImageGallery({required this.imagePaths, super.key});
+  const RequestImageGallery({
+    required this.wsId,
+    required this.requestId,
+    required this.imagePaths,
+    super.key,
+  });
+
+  final String wsId;
+  final String requestId;
 
   final List<String> imagePaths;
 
@@ -22,14 +27,24 @@ class _RequestImageGalleryState extends State<RequestImageGallery> {
   @override
   void initState() {
     super.initState();
-    _signedUrlsFuture = resolveRequestImageUrls(widget.imagePaths);
+    _signedUrlsFuture = resolveRequestImageUrls(
+      wsId: widget.wsId,
+      requestId: widget.requestId,
+      imagePaths: widget.imagePaths,
+    );
   }
 
   @override
   void didUpdateWidget(covariant RequestImageGallery oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_samePaths(oldWidget.imagePaths, widget.imagePaths)) {
-      _signedUrlsFuture = resolveRequestImageUrls(widget.imagePaths);
+    if (oldWidget.wsId != widget.wsId ||
+        oldWidget.requestId != widget.requestId ||
+        !_samePaths(oldWidget.imagePaths, widget.imagePaths)) {
+      _signedUrlsFuture = resolveRequestImageUrls(
+        wsId: widget.wsId,
+        requestId: widget.requestId,
+        imagePaths: widget.imagePaths,
+      );
     }
   }
 
@@ -100,16 +115,26 @@ class ResolvedRequestImageUrls {
   final List<int> originalIndices;
 }
 
-Future<List<String>> resolveRequestImageUrls(List<String> imagePaths) async {
-  final resolved = await resolveRequestImageUrlsWithIndices(imagePaths);
+Future<List<String>> resolveRequestImageUrls({
+  required String wsId,
+  required String requestId,
+  required List<String> imagePaths,
+}) async {
+  final resolved = await resolveRequestImageUrlsWithIndices(
+    wsId: wsId,
+    requestId: requestId,
+    imagePaths: imagePaths,
+  );
   return resolved.urls;
 }
 
-Future<ResolvedRequestImageUrls> resolveRequestImageUrlsWithIndices(
-  List<String> imagePaths,
-) async {
+Future<ResolvedRequestImageUrls> resolveRequestImageUrlsWithIndices({
+  required String wsId,
+  required String requestId,
+  required List<String> imagePaths,
+}) async {
   final normalizedPaths = <({int index, String path})>[];
-  final localPaths = <String>[];
+  final requestScopedPaths = <String>[];
   for (var i = 0; i < imagePaths.length; i++) {
     final rawPath = imagePaths[i];
     final path = rawPath.trim();
@@ -123,24 +148,41 @@ Future<ResolvedRequestImageUrls> resolveRequestImageUrlsWithIndices(
       continue;
     }
 
-    localPaths.add(path);
+    if (path.startsWith('$requestId/') && !path.contains('..')) {
+      requestScopedPaths.add(path);
+    }
   }
 
   final signedUrlByPath = <String, String>{};
-  if (localPaths.isNotEmpty) {
+  if (requestScopedPaths.isNotEmpty) {
+    final api = ApiClient();
     try {
-      final signedResponses = await supabase.storage
-          .from(_requestImageBucket)
-          .createSignedUrls(localPaths, _signedUrlExpirySeconds);
-      for (final response in signedResponses) {
-        final path = response.path;
-        final signedUrl = response.signedUrl;
-        if (path.isNotEmpty && signedUrl.isNotEmpty) {
-          signedUrlByPath[path] = signedUrl;
+      final payload = await api.postJson(
+        '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/image-urls',
+        {'imagePaths': requestScopedPaths},
+      );
+
+      final urls = payload['urls'];
+      if (urls is List) {
+        for (final item in urls) {
+          if (item is! Map<String, dynamic>) {
+            continue;
+          }
+
+          final path = item['path'] as String?;
+          final signedUrl = item['signedUrl'] as String?;
+          if (path != null &&
+              path.isNotEmpty &&
+              signedUrl != null &&
+              signedUrl.isNotEmpty) {
+            signedUrlByPath[path] = signedUrl;
+          }
         }
       }
     } on Exception {
       // Ignore invalid image paths.
+    } finally {
+      api.dispose();
     }
   }
 

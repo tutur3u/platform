@@ -1,13 +1,17 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { sanitizeSearchQuery } from '@tuturuuu/utils/search-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const timezoneEnumValues = (() => {
   if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
@@ -108,15 +112,22 @@ const periodStatsSchema = z.object({
 export const GET = withSessionAuth<{ wsId: string }>(
   async (request, { user, supabase }, { wsId }) => {
     try {
-      const normalizedWsId = await normalizeWorkspaceId(wsId);
+      const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
       // Verify workspace access
-      const { data: memberCheck } = await supabase
+      const { data: memberCheck, error: memberCheckError } = await supabase
         .from('workspace_members')
         .select('id:user_id')
         .eq('ws_id', normalizedWsId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (memberCheckError) {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
 
       if (!memberCheck) {
         return NextResponse.json(
@@ -159,20 +170,57 @@ export const GET = withSessionAuth<{ wsId: string }>(
         projectContext,
       } = parsedQuery.data;
 
+      if (targetUserId) {
+        const targetUserIdValidation = z.uuid().safeParse(targetUserId);
+        if (!targetUserIdValidation.success) {
+          return NextResponse.json(
+            { error: 'Invalid target user ID format' },
+            { status: 400 }
+          );
+        }
+      }
+
       const dateFromIso = dateFrom.toISOString();
       const dateToIso = dateTo.toISOString();
 
       // Determine which user's data to fetch
-      const queryUserId = targetUserId ?? user.id;
+      let queryUserId = user.id;
 
       // If targeting another user, verify they're in the same workspace
       if (targetUserId && targetUserId !== user.id) {
-        const { data: targetUserCheck } = await supabase
-          .from('workspace_members')
-          .select('id:user_id')
-          .eq('ws_id', normalizedWsId)
-          .eq('user_id', targetUserId)
-          .single();
+        const permissions = await getPermissions({
+          wsId: normalizedWsId,
+          request,
+        });
+
+        if (!permissions) {
+          return NextResponse.json(
+            { error: 'Failed to resolve permissions' },
+            { status: 500 }
+          );
+        }
+
+        if (permissions.withoutPermission('manage_time_tracking_requests')) {
+          return NextResponse.json(
+            { error: 'Insufficient permissions to view other users data' },
+            { status: 403 }
+          );
+        }
+
+        const { data: targetUserCheck, error: targetUserCheckError } =
+          await supabase
+            .from('workspace_members')
+            .select('id:user_id')
+            .eq('ws_id', normalizedWsId)
+            .eq('user_id', targetUserId)
+            .maybeSingle();
+
+        if (targetUserCheckError) {
+          return NextResponse.json(
+            { error: 'Failed to verify target user access' },
+            { status: 500 }
+          );
+        }
 
         if (!targetUserCheck) {
           return NextResponse.json(
@@ -180,11 +228,14 @@ export const GET = withSessionAuth<{ wsId: string }>(
             { status: 404 }
           );
         }
+
+        queryUserId = targetUserId;
       }
 
       const sanitizedSearchQuery = sanitizeSearchQuery(searchQuery);
+      const sbAdmin = await createAdminClient();
 
-      const { data: stats, error } = await supabase.rpc(
+      const { data: stats, error } = await sbAdmin.rpc(
         'get_time_tracking_period_stats',
         {
           p_ws_id: normalizedWsId,
