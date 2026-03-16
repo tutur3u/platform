@@ -283,25 +283,6 @@ begin
     v_source_ws_column
   );
 
-  if v_limit_row.total_limit is not null then
-    execute format(
-      'select count(*) from public.%I src where %s',
-      v_source_view_name,
-      v_source_where_base
-    )
-    into v_count
-    using v_subject_ws_id, v_subject_user_id;
-
-    if v_count >= v_limit_row.total_limit then
-      raise exception 'ENTITY_TOTAL_LIMIT_EXCEEDED'
-        using errcode = 'P0001';
-    end if;
-  end if;
-
-  if tg_table_name = 'workspaces' then
-    return new;
-  end if;
-
   if v_limit_row.per_hour is not null then
     execute format(
       'select count(*) from public.%I src where %s and src.created_at >= $3',
@@ -311,26 +292,13 @@ begin
     into v_count
     using v_subject_ws_id, v_subject_user_id, now() - interval '1 hour';
 
-    if v_count >= v_limit_row.per_hour then
+    if v_count > v_limit_row.per_hour then
       raise exception 'ENTITY_HOURLY_LIMIT_EXCEEDED'
         using errcode = 'P0001';
     end if;
   end if;
 
-  if v_limit_row.per_day is not null then
-    execute format(
-      'select count(*) from public.%I src where %s and src.created_at >= $3',
-      v_source_view_name,
-      v_source_where_base
-    )
-    into v_count
-    using v_subject_ws_id, v_subject_user_id, now() - interval '1 day';
-
-    if v_count >= v_limit_row.per_day then
-      raise exception 'ENTITY_DAILY_LIMIT_EXCEEDED'
-        using errcode = 'P0001';
-    end if;
-  end if;
+  
 
   if v_limit_row.per_week is not null then
     execute format(
@@ -341,7 +309,7 @@ begin
     into v_count
     using v_subject_ws_id, v_subject_user_id, now() - interval '7 days';
 
-    if v_count >= v_limit_row.per_week then
+    if v_count > v_limit_row.per_week then
       raise exception 'ENTITY_WEEKLY_LIMIT_EXCEEDED'
         using errcode = 'P0001';
     end if;
@@ -356,8 +324,23 @@ begin
     into v_count
     using v_subject_ws_id, v_subject_user_id, now() - interval '30 days';
 
-    if v_count >= v_limit_row.per_month then
+    if v_count > v_limit_row.per_month then
       raise exception 'ENTITY_MONTHLY_LIMIT_EXCEEDED'
+        using errcode = 'P0001';
+    end if;
+  end if;
+
+  if v_limit_row.total_limit is not null then
+    execute format(
+      'select count(*) from public.%I src where %s',
+      v_source_view_name,
+      v_source_where_base
+    )
+    into v_count
+    using v_subject_ws_id, v_subject_user_id;
+
+    if v_count > v_limit_row.total_limit then
+      raise exception 'ENTITY_TOTAL_LIMIT_EXCEEDED'
         using errcode = 'P0001';
     end if;
   end if;
