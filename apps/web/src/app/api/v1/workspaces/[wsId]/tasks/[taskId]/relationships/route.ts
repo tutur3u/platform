@@ -79,9 +79,6 @@ export async function GET(
     }
 
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
-    const taskId = parsedParams.data.taskId;
-
     const {
       data: { user },
       error: authError,
@@ -90,6 +87,9 @@ export async function GET(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
+    const taskId = parsedParams.data.taskId;
 
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
@@ -279,9 +279,6 @@ export async function POST(
     }
 
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
-    const routeTaskId = parsedParams.data.taskId;
-
     const {
       data: { user },
       error: authError,
@@ -290,6 +287,9 @@ export async function POST(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
+    const routeTaskId = parsedParams.data.taskId;
 
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
@@ -407,6 +407,7 @@ export async function POST(
         source_task_id: input.source_task_id,
         target_task_id: input.target_task_id,
         type: input.type,
+        created_by: user.id,
       })
       .select(
         'id, source_task_id, target_task_id, type, created_at, created_by'
@@ -457,9 +458,6 @@ export async function DELETE(
     }
 
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
-    const routeTaskId = parsedParams.data.taskId;
-
     const {
       data: { user },
       error: authError,
@@ -468,6 +466,9 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
+    const routeTaskId = parsedParams.data.taskId;
 
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')

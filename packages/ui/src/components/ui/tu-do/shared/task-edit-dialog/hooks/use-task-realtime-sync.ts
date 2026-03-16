@@ -1,5 +1,5 @@
 import type { JSONContent } from '@tiptap/react';
-import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
+import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useEffect, useRef } from 'react';
@@ -8,6 +8,7 @@ import { getDescriptionContent } from '../utils';
 
 export interface UseTaskRealtimeSyncProps {
   wsId: string;
+  taskWorkspaceId?: string;
   taskId?: string;
   isCreateMode: boolean;
   isOpen: boolean;
@@ -46,6 +47,7 @@ const supabase = createClient();
  */
 export function useTaskRealtimeSync({
   wsId,
+  taskWorkspaceId,
   taskId,
   isCreateMode,
   isOpen,
@@ -110,132 +112,43 @@ export function useTaskRealtimeSync({
 
     console.log('🔄 Setting up realtime subscription for task:', taskId);
 
-    // Helper function to fetch labels for the task
-    const fetchTaskLabels = async () => {
+    const fetchTaskRelations = async () => {
       try {
-        const { data: labelLinks, error } = await supabase
-          .from('task_labels')
-          .select('label_id')
-          .eq('task_id', taskId);
+        const routeTask = await getWorkspaceTask(
+          taskWorkspaceId ?? wsId,
+          taskId
+        );
+        const relationshipProjectIds =
+          routeTask.task.project_ids ??
+          routeTask.task.projects?.map((project) => project.id) ??
+          [];
 
-        if (error) {
-          console.error('Error fetching label links:', error);
-          throw error;
-        }
+        const taskWithRelations = await getWorkspaceTask(
+          taskWorkspaceId ?? wsId,
+          taskId
+        );
 
-        if (!labelLinks || labelLinks.length === 0) {
-          console.log('No labels found for task');
-          return [];
-        }
+        const filteredProjects = (taskWithRelations.task.projects ?? []).filter(
+          (project) => relationshipProjectIds.includes(project.id)
+        );
 
-        const labelIds = labelLinks
-          .map((l: any) => l.label_id)
-          .filter((id: any) => id != null);
-
-        if (labelIds.length === 0) return [];
-
-        const { data: labels, error: labelsError } = await supabase
-          .from('workspace_task_labels')
-          .select('id, name, color, created_at')
-          .in('id', labelIds);
-
-        if (labelsError) {
-          console.error('Error fetching label details:', labelsError);
-          throw labelsError;
-        }
-
-        return labels || [];
+        return {
+          labels: taskWithRelations.task.labels ?? [],
+          assignees: taskWithRelations.task.assignees ?? [],
+          projects: filteredProjects,
+        };
       } catch (error: any) {
-        console.error('Failed to fetch task labels:', {
+        console.error('Failed to fetch task relations:', {
           error,
           message: error?.message,
           details: error?.details,
           hint: error?.hint,
         });
-        return [];
-      }
-    };
-
-    // Helper function to fetch assignees for the task
-    const fetchTaskAssignees = async () => {
-      try {
-        const { data: assigneeLinks, error } = await supabase
-          .from('task_assignees')
-          .select('user_id')
-          .eq('task_id', taskId);
-
-        if (error) {
-          console.error('Error fetching assignee links:', error);
-          throw error;
-        }
-
-        if (!assigneeLinks || assigneeLinks.length === 0) {
-          console.log('No assignees found for task');
-          return [];
-        }
-
-        const userIds = assigneeLinks
-          .map((a: any) => a.user_id)
-          .filter((id: any) => id != null);
-
-        if (userIds.length === 0) return [];
-
-        const { data: users, error: usersError } = await supabase
-          .from('users')
-          .select('id, display_name, avatar_url')
-          .in('id', userIds);
-
-        if (usersError) {
-          console.error('Error fetching user details:', usersError);
-          throw usersError;
-        }
-
-        return users || [];
-      } catch (error: any) {
-        console.error('Failed to fetch task assignees:', {
-          error,
-          message: error?.message,
-          details: error?.details,
-          hint: error?.hint,
-        });
-        return [];
-      }
-    };
-
-    // Helper function to fetch projects for the task
-    const fetchTaskProjects = async () => {
-      try {
-        const { data: projectLinks, error } = await supabase
-          .from('task_project_tasks')
-          .select('project_id')
-          .eq('task_id', taskId);
-
-        if (error) {
-          console.error('Error fetching project links:', error);
-          throw error;
-        }
-
-        if (!projectLinks || projectLinks.length === 0) {
-          console.log('No projects found for task');
-          return [];
-        }
-
-        const projectIds = projectLinks
-          .map((p: any) => p.project_id)
-          .filter((id: any) => id != null);
-
-        if (projectIds.length === 0) return [];
-
-        const projects = await listWorkspaceTaskProjects(wsId);
-        return projects.filter((project) => projectIds.includes(project.id));
-      } catch (error: any) {
-        console.error('Failed to fetch task projects:', {
-          error,
-          message: error?.message,
-          details: error?.details,
-          hint: error?.hint,
-        });
-        return [];
+        return {
+          labels: [],
+          assignees: [],
+          projects: [],
+        };
       }
     };
 
@@ -337,9 +250,9 @@ export function useTaskRealtimeSync({
         },
         async () => {
           console.log('Received realtime update for task labels');
-          const labels = await fetchTaskLabels();
-          console.log('Updating labels from realtime:', labels);
-          setSelectedLabels(labels);
+          const relations = await fetchTaskRelations();
+          console.log('Updating labels from realtime:', relations.labels);
+          setSelectedLabels(relations.labels);
         }
       )
       .on(
@@ -352,9 +265,9 @@ export function useTaskRealtimeSync({
         },
         async () => {
           console.log('Received realtime update for task assignees');
-          const assignees = await fetchTaskAssignees();
-          console.log('Updating assignees from realtime:', assignees);
-          setSelectedAssignees(assignees);
+          const relations = await fetchTaskRelations();
+          console.log('Updating assignees from realtime:', relations.assignees);
+          setSelectedAssignees(relations.assignees);
         }
       )
       .on(
@@ -367,9 +280,9 @@ export function useTaskRealtimeSync({
         },
         async () => {
           console.log('Received realtime update for task projects');
-          const projects = await fetchTaskProjects();
-          console.log('Updating projects from realtime:', projects);
-          setSelectedProjects(projects);
+          const relations = await fetchTaskRelations();
+          console.log('Updating projects from realtime:', relations.projects);
+          setSelectedProjects(relations.projects);
         }
       )
       .subscribe((status) => {
@@ -393,6 +306,7 @@ export function useTaskRealtimeSync({
     isOpen,
     taskId,
     wsId,
+    taskWorkspaceId,
     collaborationMode,
     setEndDate,
     setEstimationPoints,

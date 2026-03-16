@@ -85,6 +85,7 @@ const supabase = createClient();
 
 export interface TaskEditDialogProps {
   wsId: string;
+  taskWsId?: string;
   task?: Task;
   boardId: string;
   isOpen: boolean;
@@ -126,6 +127,7 @@ export interface TaskEditDialogProps {
 
 export function TaskEditDialog({
   wsId,
+  taskWsId,
   task,
   boardId,
   isOpen,
@@ -686,6 +688,7 @@ export function TaskEditDialog({
   // Realtime sync
   useTaskRealtimeSync({
     wsId,
+    taskWorkspaceId: taskWsId,
     taskId: task?.id,
     isCreateMode,
     isOpen,

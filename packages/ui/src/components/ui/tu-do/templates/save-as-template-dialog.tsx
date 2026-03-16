@@ -80,9 +80,14 @@ export function SaveAsTemplateDialog({
     await handleTemplateBackgroundUpload(
       files,
       board.ws_id,
-      (url, path) => {
+      (path) => {
+        const firstFile = files[0];
+        if (!firstFile) {
+          return;
+        }
+
         setBackgroundPath(path);
-        setBackgroundPreviewUrl(url);
+        setBackgroundPreviewUrl(firstFile.url);
       },
       (error) => {
         toast.error(error);

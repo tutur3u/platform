@@ -334,10 +334,12 @@ export function TaskFilter({
   const { data: availableProjects = [] } = useQuery({
     queryKey: ['workspace-projects', wsId],
     queryFn: async () => {
-      return (await listWorkspaceTaskProjects(wsId)).map((project) => ({
-        id: project.id,
-        name: project.name,
-      })) as TaskProject[];
+      return (await listWorkspaceTaskProjects(wsId))
+        .filter((project) => project.status !== 'deleted')
+        .map((project) => ({
+          id: project.id,
+          name: project.name,
+        })) as TaskProject[];
     },
     enabled: !!wsId,
   });

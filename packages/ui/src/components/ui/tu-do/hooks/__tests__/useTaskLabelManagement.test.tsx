@@ -20,6 +20,8 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   updateWorkspaceTask: vi.fn(),
+  addWorkspaceTaskLabel: vi.fn(),
+  removeWorkspaceTaskLabel: vi.fn(),
 }));
 
 // Mock fetch globally
@@ -29,6 +31,8 @@ describe('useTaskLabelManagement', () => {
   let queryClient: QueryClient;
   let mockToast: any;
   let mockUpdateWorkspaceTask: any;
+  let mockAddWorkspaceTaskLabel: any;
+  let mockRemoveWorkspaceTaskLabel: any;
 
   const mockTask: Task = {
     id: 'task-1',
@@ -71,15 +75,21 @@ describe('useTaskLabelManagement', () => {
 
     // Import mocked modules
     const { toast } = await import('@tuturuuu/ui/sonner');
-    const { updateWorkspaceTask } = await import(
-      '@tuturuuu/internal-api/tasks'
-    );
+    const {
+      updateWorkspaceTask,
+      addWorkspaceTaskLabel,
+      removeWorkspaceTaskLabel,
+    } = await import('@tuturuuu/internal-api/tasks');
 
     mockToast = toast as any;
     mockUpdateWorkspaceTask = updateWorkspaceTask as any;
+    mockAddWorkspaceTaskLabel = addWorkspaceTaskLabel as any;
+    mockRemoveWorkspaceTaskLabel = removeWorkspaceTaskLabel as any;
 
     vi.clearAllMocks();
     mockUpdateWorkspaceTask.mockResolvedValue({ task: { id: 'task-1' } });
+    mockAddWorkspaceTaskLabel.mockResolvedValue({ success: true });
+    mockRemoveWorkspaceTaskLabel.mockResolvedValue({ success: true });
 
     (global.fetch as any).mockClear();
   });
@@ -131,10 +141,10 @@ describe('useTaskLabelManagement', () => {
       expect(cachedTasks?.[0]?.labels).toHaveLength(1);
       expect(cachedTasks?.[0]?.labels?.[0]?.id).toBe('label-2');
 
-      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+      expect(mockRemoveWorkspaceTaskLabel).toHaveBeenCalledWith(
         'ws-1',
         'task-1',
-        { label_ids: ['label-2'] },
+        'label-1',
         expect.anything()
       );
     });
@@ -167,16 +177,16 @@ describe('useTaskLabelManagement', () => {
         true
       );
 
-      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+      expect(mockAddWorkspaceTaskLabel).toHaveBeenCalledWith(
         'ws-1',
         'task-1',
-        { label_ids: ['label-1', 'label-2', 'label-3'] },
+        'label-3',
         expect.anything()
       );
     });
 
     it('should rollback on error and show toast', async () => {
-      mockUpdateWorkspaceTask.mockRejectedValueOnce(
+      mockRemoveWorkspaceTaskLabel.mockRejectedValueOnce(
         new Error('Database error')
       );
 

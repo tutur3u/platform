@@ -50,16 +50,22 @@ export async function GET(req: NextRequest, { params }: Params) {
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Verify workspace access
-
-    const { data: memberCheck, error } = await supabase
+    const { data: memberCheck, error: membershipError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Failed to verify workspace membership:', membershipError);
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
-      console.log(error);
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }
@@ -89,7 +95,11 @@ export async function GET(req: NextRequest, { params }: Params) {
       .eq('id', templateId)
       .single();
 
-    if (template?.visibility === 'private' && template.ws_id !== wsId) {
+    if (
+      template &&
+      template.visibility !== 'public' &&
+      template.ws_id !== wsId
+    ) {
       return NextResponse.json({ error: 'Access Denied' }, { status: 404 });
     }
 
@@ -189,12 +199,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: membershipError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Failed to verify workspace membership:', membershipError);
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -237,6 +255,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .from('board_templates')
       .update(updateData)
       .eq('id', templateId)
+      .eq('ws_id', wsId)
       .eq('created_by', user.id) // Explicit owner check for extra safety
       .select('id, name, description, visibility, updated_at')
       .single();
@@ -305,12 +324,20 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: membershipError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Failed to verify workspace membership:', membershipError);
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -325,6 +352,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       .from('board_templates')
       .delete()
       .eq('id', templateId)
+      .eq('ws_id', wsId)
       .eq('created_by', user.id);
 
     if (deleteError) {

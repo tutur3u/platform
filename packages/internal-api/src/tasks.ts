@@ -44,6 +44,7 @@ export interface WorkspaceTaskApiTask extends Task, Record<string, unknown> {
   description_yjs_state?: number[] | null;
   board_id?: string | null;
   deleted_at?: string;
+  list_deleted?: boolean;
 }
 
 export interface WorkspaceTaskResponse {
@@ -76,6 +77,9 @@ export async function listWorkspaceTaskProjects(
   const projects = await client.json<TaskProjectApiRow[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects`,
     {
+      query: {
+        compact: true,
+      },
       cache: 'no-store',
     }
   );
@@ -93,6 +97,84 @@ export async function listWorkspaceTaskProjects(
           status: project.status ?? null,
         },
       ];
+    }
+  );
+}
+
+export async function listWorkspaceTaskProjectsByIds(
+  workspaceId: string,
+  projectIds: string[],
+  options?: InternalApiClientOptions
+) {
+  if (projectIds.length === 0) {
+    return [] as InternalApiTaskProjectSummary[];
+  }
+
+  const client = getInternalApiClient(options);
+  const projects = await client.json<TaskProjectApiRow[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects`,
+    {
+      query: {
+        compact: true,
+        ids: projectIds.join(','),
+      },
+      cache: 'no-store',
+    }
+  );
+
+  return (projects ?? []).flatMap(
+    (project): InternalApiTaskProjectSummary[] => {
+      if (!project?.id || !project?.name) {
+        return [];
+      }
+
+      return [
+        {
+          id: project.id,
+          name: project.name,
+          status: project.status ?? null,
+        },
+      ];
+    }
+  );
+}
+
+export async function addWorkspaceTaskLabel(
+  workspaceId: string,
+  taskId: string,
+  labelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/labels`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ labelId }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function removeWorkspaceTaskLabel(
+  workspaceId: string,
+  taskId: string,
+  labelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/labels`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ labelId }),
+      cache: 'no-store',
     }
   );
 }

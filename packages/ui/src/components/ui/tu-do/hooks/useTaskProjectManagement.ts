@@ -227,6 +227,13 @@ export function useTaskProjectManagement({
         }
       }
 
+      const targetCount = active
+        ? tasksToRemoveFrom.length
+        : tasksNeedingProject.length;
+      if (targetCount > 0 && successCount === 0) {
+        throw new Error('Failed to update any tasks');
+      }
+
       // Broadcast relation changes for all affected tasks
       for (const tid of active ? tasksToRemoveFrom : tasksNeedingProject) {
         broadcast?.('task:relations-changed', { taskId: tid });

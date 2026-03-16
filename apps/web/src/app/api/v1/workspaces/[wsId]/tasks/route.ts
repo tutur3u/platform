@@ -159,6 +159,7 @@ export async function GET(
           id,
           name,
           status,
+          deleted,
           board_id,
           workspace_boards!inner (
             id,
@@ -328,6 +329,7 @@ export async function GET(
           board_name: task.task_lists?.workspace_boards?.name,
           list_name: task.task_lists?.name,
           list_status: task.task_lists?.status,
+          list_deleted: task.task_lists?.deleted ?? false,
           assignees,
           labels,
           projects,

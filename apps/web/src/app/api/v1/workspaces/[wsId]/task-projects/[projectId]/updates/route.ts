@@ -205,6 +205,27 @@ export async function GET(
 
     const sbAdmin = await createAdminClient();
 
+    // Verify project belongs to this workspace
+    const { data: project, error: projectError } = await sbAdmin
+      .from('task_projects')
+      .select('id')
+      .eq('id', projectId)
+      .eq('ws_id', normalizedWsId)
+      .eq('deleted', false)
+      .maybeSingle();
+
+    if (projectError) {
+      console.error('Error verifying project access:', projectError);
+      return NextResponse.json(
+        { error: 'Failed to verify project access' },
+        { status: 500 }
+      );
+    }
+
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50', 10);

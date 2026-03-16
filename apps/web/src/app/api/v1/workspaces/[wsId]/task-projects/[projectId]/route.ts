@@ -6,7 +6,10 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -92,6 +95,14 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const permissions = await getPermissions({ wsId, request });
+    if (!permissions?.containsPermission('manage_projects')) {
+      return NextResponse.json(
+        { error: "You don't have permission to perform this operation" },
+        { status: 403 }
+      );
+    }
+
     const sbAdmin = await createAdminClient();
 
     const { data: project, error: projectError } = await sbAdmin
@@ -152,6 +163,14 @@ async function updateProject(
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const permissions = await getPermissions({ wsId, request });
+    if (!permissions?.containsPermission('manage_projects')) {
+      return NextResponse.json(
+        { error: "You don't have permission to perform this operation" },
+        { status: 403 }
+      );
     }
 
     // Parse and validate request body
@@ -362,6 +381,14 @@ export async function DELETE(
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const permissions = await getPermissions({ wsId, request });
+    if (!permissions?.containsPermission('manage_projects')) {
+      return NextResponse.json(
+        { error: "You don't have permission to perform this operation" },
+        { status: 403 }
+      );
     }
 
     const sbAdmin = await createAdminClient();

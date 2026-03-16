@@ -509,10 +509,22 @@ export function TaskDialogProvider({
               .maybeSingle()
           : { data: null };
 
-        if (boardRow?.ws_id) {
-          const workspaceProjects = await listWorkspaceTaskProjects(
-            boardRow.ws_id
-          );
+        let projectWorkspaceId = boardRow?.ws_id ?? null;
+
+        if (!projectWorkspaceId && draft.project_ids.length > 0) {
+          const { data: projectWorkspaceRow } = await supabase
+            .from('task_projects')
+            .select('ws_id')
+            .in('id', draft.project_ids)
+            .limit(1)
+            .maybeSingle();
+
+          projectWorkspaceId = projectWorkspaceRow?.ws_id ?? null;
+        }
+
+        if (projectWorkspaceId) {
+          const workspaceProjects =
+            await listWorkspaceTaskProjects(projectWorkspaceId);
           projects = workspaceProjects
             .filter((project) => draft.project_ids?.includes(project.id))
             .map((project) => ({

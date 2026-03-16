@@ -19,6 +19,8 @@ export type InternalApiClientOptions = {
   fetch?: typeof fetch;
 };
 
+type HeaderAccessor = Pick<Headers, 'get'>;
+
 export function encodePathSegment(value: string) {
   return encodeURIComponent(value);
 }
@@ -168,6 +170,33 @@ export function createInternalApiClient(
 
       return (await response.json()) as T;
     },
+  };
+}
+
+/**
+ * Creates Internal API client options that forward auth-relevant headers
+ * from an incoming request context (for example `next/headers()` in RSC).
+ */
+export function withForwardedInternalApiAuth(
+  requestHeaders: HeaderAccessor,
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  const mergedHeaders = new Headers(options.defaultHeaders);
+
+  const cookieHeader = requestHeaders.get('cookie');
+  const authorizationHeader = requestHeaders.get('authorization');
+
+  if (cookieHeader && !mergedHeaders.has('cookie')) {
+    mergedHeaders.set('cookie', cookieHeader);
+  }
+
+  if (authorizationHeader && !mergedHeaders.has('authorization')) {
+    mergedHeaders.set('authorization', authorizationHeader);
+  }
+
+  return {
+    ...options,
+    defaultHeaders: mergedHeaders,
   };
 }
 

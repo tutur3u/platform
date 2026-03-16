@@ -26,7 +26,7 @@ export const DELETE = withSessionAuth(
       .select('user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (membershipError) {
       return NextResponse.json(

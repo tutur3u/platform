@@ -1,9 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from '@tuturuuu/icons';
 import {
   getWorkspaceTemplate,
   getWorkspaceTemplateBackgroundUrl,
+  type InternalApiWorkspaceTemplate,
 } from '@tuturuuu/internal-api/templates';
 import TemplateDetailClient from '@tuturuuu/ui/tu-do/templates/templateId/client';
 import type { BoardTemplateWithContent } from '@tuturuuu/ui/tu-do/templates/types';
@@ -12,6 +14,8 @@ interface Props {
   wsId: string;
   templateId: string;
   templatesBasePath: string;
+  initialTemplate: InternalApiWorkspaceTemplate;
+  initialBackgroundUrl: string | null;
 }
 
 function mapTemplateToDetail(
@@ -70,37 +74,48 @@ export default function TaskTemplateDetailPageClient({
   wsId,
   templateId,
   templatesBasePath,
+  initialTemplate,
+  initialBackgroundUrl,
 }: Props) {
   const { data: template, error } = useQuery({
     queryKey: ['workspace-template', wsId, templateId],
     queryFn: () => getWorkspaceTemplate(wsId, templateId),
     enabled: !!wsId && !!templateId,
+    initialData: initialTemplate,
   });
 
-  const { data: backgroundUrl, error: backgroundError } = useQuery({
-    queryKey: ['workspace-template-background', wsId, templateId],
+  const { data: backgroundUrl } = useQuery({
+    queryKey: [
+      'workspace-template-background',
+      wsId,
+      templateId,
+      template?.backgroundPath ?? null,
+    ],
     queryFn: () => getWorkspaceTemplateBackgroundUrl(wsId, templateId),
     enabled: !!wsId && !!templateId && !!template?.backgroundPath,
     staleTime: 30 * 60 * 1000,
+    initialData: initialBackgroundUrl,
   });
 
   if (error) {
     throw error;
   }
 
-  if (backgroundError) {
-    throw backgroundError;
-  }
-
   if (!template) {
-    return null;
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
-    <TemplateDetailClient
-      wsId={wsId}
-      template={mapTemplateToDetail(template, backgroundUrl ?? null)}
-      templatesBasePath={templatesBasePath}
-    />
+    <div>
+      <TemplateDetailClient
+        wsId={wsId}
+        template={mapTemplateToDetail(template, backgroundUrl ?? null)}
+        templatesBasePath={templatesBasePath}
+      />
+    </div>
   );
 }

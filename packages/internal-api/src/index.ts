@@ -7,6 +7,7 @@ export {
   createInternalApiClient,
   internalApiClient,
   resolveInternalApiUrl,
+  withForwardedInternalApiAuth,
 } from './client';
 export {
   listTransactionCategories,

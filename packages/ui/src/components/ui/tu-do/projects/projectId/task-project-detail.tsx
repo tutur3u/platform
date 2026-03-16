@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sparkles, Target, TrendingUp } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
@@ -34,6 +34,7 @@ export function TaskProjectDetail({
   wsId,
 }: TaskProjectDetailProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const t = useTranslations('task_project_detail.tabs');
 
   // Animation variants
@@ -69,8 +70,17 @@ export function TaskProjectDetail({
 
   // Handle task updates - refresh server data
   const handleUpdate = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: ['task-project', wsId, project.id],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ['task-project-tasks', wsId, project.id],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ['tasks', projectBoardId],
+    });
     router.refresh();
-  }, [router]);
+  }, [project.id, projectBoardId, queryClient, router, wsId]);
 
   // Task management state
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');

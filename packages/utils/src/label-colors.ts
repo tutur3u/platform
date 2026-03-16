@@ -196,24 +196,16 @@ export function computeAccessibleLabelStyles(
       text = adjust(baseHex, 0.9);
     }
   } else {
+    border = `${baseHex}66`;
     if (lum < 0.18) {
-      text = adjust(baseHex, 1.4);
-      border = `${baseHex}4d`;
-    } else if (lum < 0.35) {
       text = adjust(baseHex, 1.2);
-      border = `${baseHex}66`;
-    } else if (lum < 0.55) {
+      border = `${baseHex}4d`;
+    } else if (lum > 0.82) {
+      text = adjust(baseHex, 0.45);
+      border = `${adjust(baseHex, 0.45)}99`;
+    } else if (lum > 0.65) {
       text = adjust(baseHex, 0.65);
       border = `${adjust(baseHex, 0.65)}99`;
-    } else if (lum < 0.75) {
-      text = adjust(baseHex, 0.5);
-      border = `${adjust(baseHex, 0.5)}99`;
-    } else if (lum < 0.85) {
-      text = adjust(baseHex, 0.4);
-      border = `${adjust(baseHex, 0.4)}99`;
-    } else {
-      text = adjust(baseHex, 0.3);
-      border = `${adjust(baseHex, 0.3)}99`;
     }
   }
 

@@ -126,7 +126,7 @@ export async function GET(
       ),
     ];
 
-    const { data: lists, error: listsError } = await supabase
+    const { data: lists, error: listsError } = await sbAdmin
       .from('task_lists')
       .select('*')
       .in('id', listIds.length > 0 ? listIds : [''])

@@ -1,5 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import {
+  addWorkspaceTaskLabel,
+  removeWorkspaceTaskLabel,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
@@ -187,20 +191,11 @@ export function useTaskLabelManagement({
 
       if (active) {
         for (const taskId of tasksToRemoveFrom) {
-          const taskState = getTaskState(taskId);
-          if (!taskState) continue;
-
-          const nextLabelIds = (taskState.labels ?? [])
-            .map((entry) => entry.id)
-            .filter((id) => id !== labelId);
-
           try {
-            await updateWorkspaceTask(
+            await removeWorkspaceTaskLabel(
               workspaceId,
               taskId,
-              {
-                label_ids: nextLabelIds,
-              },
+              labelId,
               internalApiOptions
             );
             successCount++;
@@ -210,23 +205,11 @@ export function useTaskLabelManagement({
         }
       } else {
         for (const taskId of tasksNeedingLabel) {
-          const taskState = getTaskState(taskId);
-          if (!taskState) continue;
-
-          const nextLabelIds = [
-            ...new Set([
-              ...(taskState.labels ?? []).map((entry) => entry.id),
-              labelId,
-            ]),
-          ];
-
           try {
-            await updateWorkspaceTask(
+            await addWorkspaceTaskLabel(
               workspaceId,
               taskId,
-              {
-                label_ids: nextLabelIds,
-              },
+              labelId,
               internalApiOptions
             );
             successCount++;

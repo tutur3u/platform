@@ -39,12 +39,20 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: membershipError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Failed to verify workspace membership:', membershipError);
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -62,7 +70,15 @@ export async function GET(req: NextRequest, { params }: Params) {
       .eq('ws_id', wsId)
       .single();
 
-    if (templateError || !template) {
+    if (templateError) {
+      console.error('Failed to fetch template background path:', templateError);
+      return NextResponse.json(
+        { error: 'Failed to load template' },
+        { status: 500 }
+      );
+    }
+
+    if (!template) {
       return NextResponse.json(
         { error: 'Template not found or access denied' },
         { status: 404 }

@@ -31,7 +31,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 interface EditTemplateDialogProps {
   wsId: string;
@@ -70,6 +70,26 @@ export function EditTemplateDialog({
   const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState<
     string | null
   >(templateBackgroundUrl || null);
+  const [pendingBackgroundDeletionPath, setPendingBackgroundDeletionPath] =
+    useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setEditName(templateName);
+      setEditDescription(templateDescription || '');
+      setEditVisibility(templateVisibility);
+      setBackgroundFiles([]);
+      setBackgroundPath(null);
+      setBackgroundPreviewUrl(templateBackgroundUrl || null);
+      setPendingBackgroundDeletionPath(null);
+    }
+  }, [
+    open,
+    templateBackgroundUrl,
+    templateDescription,
+    templateName,
+    templateVisibility,
+  ]);
 
   const nameId = useId();
   const descId = useId();
@@ -83,16 +103,12 @@ export function EditTemplateDialog({
 
     setIsEditing(true);
     try {
-      // Delete old background if it was changed or removed
-      if (backgroundPath !== null && templateBackgroundPath) {
-        try {
-          await deleteTemplateBackground(wsId, templateBackgroundPath);
-        } catch (error) {
-          console.error('Failed to delete old background:', error);
-          // Continue anyway - the update is more important
-        }
-      }
-
+      const requestedBackgroundPath =
+        backgroundPath !== null
+          ? backgroundPath
+          : pendingBackgroundDeletionPath
+            ? null
+            : undefined;
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/templates/${templateId}`,
         {
@@ -102,7 +118,7 @@ export function EditTemplateDialog({
             name: editName.trim(),
             description: editDescription.trim() || null,
             visibility: editVisibility,
-            backgroundPath: backgroundPath || undefined,
+            backgroundPath: requestedBackgroundPath,
           }),
         }
       );
@@ -110,6 +126,14 @@ export function EditTemplateDialog({
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to update template');
+      }
+
+      if (pendingBackgroundDeletionPath) {
+        try {
+          await deleteTemplateBackground(wsId, pendingBackgroundDeletionPath);
+        } catch (error) {
+          console.error('Failed to delete old background:', error);
+        }
       }
 
       toast.success(t('detail.update_success'));
@@ -129,8 +153,17 @@ export function EditTemplateDialog({
     await handleTemplateBackgroundUpload(
       files,
       wsId,
-      (url, path) => {
-        setBackgroundPreviewUrl(url); // Store signed URL for preview
+      (path) => {
+        const firstFile = files[0];
+        if (!firstFile) {
+          return;
+        }
+
+        if (templateBackgroundPath) {
+          setPendingBackgroundDeletionPath(templateBackgroundPath);
+        }
+
+        setBackgroundPreviewUrl(firstFile.url);
         setBackgroundPath(path); // Store storage path for API
       },
       (error) => {
@@ -140,6 +173,9 @@ export function EditTemplateDialog({
   };
 
   const handleRemoveBackground = () => {
+    if (templateBackgroundPath) {
+      setPendingBackgroundDeletionPath(templateBackgroundPath);
+    }
     setBackgroundPath(null);
     setBackgroundPreviewUrl(null);
     setBackgroundFiles([]);

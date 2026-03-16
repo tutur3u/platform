@@ -5,7 +5,8 @@ import {
   getWorkspaceTaskProject,
   getWorkspaceTaskProjectTasks,
 } from '@tuturuuu/internal-api/tasks';
-import type { Workspace } from '@tuturuuu/types';
+import type { TaskProjectWithRelations, Workspace } from '@tuturuuu/types';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { TaskProjectDetail } from '@tuturuuu/ui/tu-do/projects/projectId/task-project-detail';
 import { useTranslations } from 'next-intl';
@@ -15,6 +16,8 @@ interface Props {
   projectId: string;
   currentUserId: string;
   workspace: Workspace;
+  initialProject: TaskProjectWithRelations;
+  initialProjectData: { tasks: Task[]; lists: TaskList[] };
 }
 
 export default function TaskProjectDetailPageClient({
@@ -22,6 +25,8 @@ export default function TaskProjectDetailPageClient({
   projectId,
   currentUserId,
   workspace,
+  initialProject,
+  initialProjectData,
 }: Props) {
   const t = useTranslations('task_project_detail.common');
 
@@ -29,12 +34,14 @@ export default function TaskProjectDetailPageClient({
     queryKey: ['task-project', wsId, projectId],
     queryFn: () => getWorkspaceTaskProject(wsId, projectId),
     enabled: !!wsId && !!projectId,
+    initialData: initialProject,
   });
 
   const { data: projectData, error: tasksError } = useQuery({
     queryKey: ['task-project-tasks', wsId, projectId],
     queryFn: () => getWorkspaceTaskProjectTasks(wsId, projectId),
     enabled: !!wsId && !!projectId,
+    initialData: initialProjectData,
   });
 
   if (projectError) {

@@ -771,6 +771,12 @@ export function useTaskActions({
           if (successCount === 0) {
             throw new Error('Failed to update any tasks');
           }
+
+          if (successCount < tasksToUpdate.length) {
+            throw new Error(
+              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
+            );
+          }
         } else if (shouldBulkUpdate) {
           const supabase = createClient();
           let successCount = 0;
@@ -789,6 +795,11 @@ export function useTaskActions({
             }
           }
           if (successCount === 0) throw new Error('Failed to update any tasks');
+          if (successCount < tasksToUpdate.length) {
+            throw new Error(
+              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
+            );
+          }
         } else {
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
@@ -903,6 +914,12 @@ export function useTaskActions({
           if (successCount === 0) {
             throw new Error('Failed to update any tasks');
           }
+
+          if (successCount < tasksToUpdate.length) {
+            throw new Error(
+              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
+            );
+          }
         } else if (shouldBulkUpdate) {
           const supabase = createClient();
           console.log('🔄 Executing sequential Supabase updates:', {
@@ -933,6 +950,11 @@ export function useTaskActions({
           });
 
           if (successCount === 0) throw new Error('Failed to update any tasks');
+          if (successCount < tasksToUpdate.length) {
+            throw new Error(
+              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
+            );
+          }
         } else {
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
@@ -1055,6 +1077,12 @@ export function useTaskActions({
           if (successCount === 0) {
             throw new Error('Failed to update any tasks');
           }
+
+          if (successCount < tasksToUpdate.length) {
+            throw new Error(
+              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
+            );
+          }
         } else if (tasksToUpdate.length > 1) {
           const supabase = createClient();
           let successCount = 0;
@@ -1073,6 +1101,11 @@ export function useTaskActions({
             }
           }
           if (successCount === 0) throw new Error('Failed to update any tasks');
+          if (successCount < tasksToUpdate.length) {
+            throw new Error(
+              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
+            );
+          }
         } else {
           await updateTaskMutation.mutateAsync({
             taskId: tasksToUpdate[0]!,

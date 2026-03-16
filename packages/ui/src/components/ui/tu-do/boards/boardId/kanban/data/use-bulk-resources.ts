@@ -42,7 +42,8 @@ export function useBulkResources({
   const { data: workspaceProjects = [] } = useQuery({
     queryKey: ['task_projects', workspace.id],
     queryFn: async () => {
-      return listWorkspaceTaskProjects(workspace.id);
+      const projects = await listWorkspaceTaskProjects(workspace.id);
+      return projects.filter((project) => project.status !== 'deleted');
     },
     staleTime: 30000,
     enabled: isMultiSelectMode && selectedCount > 0,

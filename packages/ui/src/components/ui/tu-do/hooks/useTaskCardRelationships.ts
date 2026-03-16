@@ -61,7 +61,7 @@ export function useTaskCardRelationships({
 
   // Fetch relationships
   const { data: relationships, isLoading } = useQuery({
-    queryKey: ['task-relationships', taskId],
+    queryKey: ['task-relationships', taskId, wsId ?? 'unknown'],
     queryFn: async () => {
       if (!wsId || !taskId) {
         return null;

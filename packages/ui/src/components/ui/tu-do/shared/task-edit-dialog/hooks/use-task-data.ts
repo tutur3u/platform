@@ -235,7 +235,8 @@ export function useTaskData({
     queryKey: ['task-projects', realWorkspaceId],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
-      return listWorkspaceTaskProjects(realWorkspaceId);
+      const projects = await listWorkspaceTaskProjects(realWorkspaceId);
+      return projects.filter((project) => project.status !== 'deleted');
     },
     enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
     staleTime: 5 * 60 * 1000, // 5 minutes

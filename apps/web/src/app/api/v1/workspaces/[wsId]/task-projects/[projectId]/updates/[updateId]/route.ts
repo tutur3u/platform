@@ -111,6 +111,9 @@ export async function PATCH(
       .from('task_project_updates')
       .update({ content })
       .eq('id', updateId)
+      .eq('project_id', projectId)
+      .eq('creator_id', user.id)
+      .is('deleted_at', null)
       .select(
         `
         *,
@@ -126,6 +129,10 @@ export async function PATCH(
     if (updateError) {
       console.error('Error updating project update:', updateError);
       return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+    }
+
+    if (!updatedUpdate) {
+      return NextResponse.json({ error: 'Update not found' }, { status: 404 });
     }
 
     return NextResponse.json(updatedUpdate);

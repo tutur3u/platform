@@ -1,9 +1,18 @@
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
+import {
+  getWorkspaceTaskProject,
+  getWorkspaceTaskProjectTasks,
+} from '@tuturuuu/internal-api/tasks';
+import type { TaskProjectWithRelations } from '@tuturuuu/types';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import TaskProjectDetailPageClient from '@tuturuuu/ui/tu-do/projects/projectId/task-project-detail-page-client';
 import {
   getCurrentSupabaseUser,
   getCurrentUser,
 } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
@@ -34,6 +43,21 @@ export default async function TaskProjectDetailPage({ params }: Props) {
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) notFound();
 
+  const requestHeaders = await headers();
+  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
+
+  let initialProject: TaskProjectWithRelations;
+  let initialProjectData: { tasks: Task[]; lists: TaskList[] };
+  try {
+    [initialProject, initialProjectData] = await Promise.all([
+      getWorkspaceTaskProject(wsId, projectId, internalApiOptions),
+      getWorkspaceTaskProjectTasks(wsId, projectId, internalApiOptions),
+    ]);
+  } catch (error) {
+    console.error('Error fetching task project data', error);
+    notFound();
+  }
+
   const user = await getCurrentSupabaseUser();
   if (!user) redirect('/login');
 
@@ -43,6 +67,8 @@ export default async function TaskProjectDetailPage({ params }: Props) {
       projectId={projectId}
       currentUserId={user!.id}
       wsId={wsId}
+      initialProject={initialProject}
+      initialProjectData={initialProjectData}
     />
   );
 }

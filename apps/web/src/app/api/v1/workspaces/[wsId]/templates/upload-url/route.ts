@@ -35,7 +35,7 @@ export const POST = withSessionAuth(
       .select('user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (membershipError) {
       return NextResponse.json(
@@ -51,8 +51,24 @@ export const POST = withSessionAuth(
       );
     }
 
+    let body: unknown;
     try {
-      const body = await req.json();
+      body = await req.json();
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return NextResponse.json(
+          { error: 'Invalid JSON payload' },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: 'Failed to parse request body' },
+        { status: 500 }
+      );
+    }
+
+    try {
       const { filename } = UploadUrlRequestSchema.parse(body);
 
       const dotIndex = filename.lastIndexOf('.');

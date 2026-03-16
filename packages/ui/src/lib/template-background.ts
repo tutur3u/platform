@@ -9,7 +9,6 @@ const ALLOWED_IMAGE_TYPES = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export interface UploadTemplateBackgroundResult {
-  url: string;
   path: string;
 }
 
@@ -87,7 +86,6 @@ export async function uploadTemplateBackground(
   }
 
   return {
-    url: URL.createObjectURL(file),
     path,
   };
 }
@@ -129,7 +127,7 @@ export async function deleteTemplateBackground(
 export async function handleTemplateBackgroundUpload(
   files: StatedFile[],
   wsId: string,
-  onSuccess: (url: string, path: string) => void,
+  onSuccess: (path: string) => void,
   onError?: (error: string) => void
 ): Promise<void> {
   if (files.length === 0) {
@@ -151,7 +149,7 @@ export async function handleTemplateBackgroundUpload(
     file.status = 'uploaded';
     file.finalPath = result.path;
 
-    onSuccess(result.url, result.path);
+    onSuccess(result.path);
   } catch (error) {
     file.status = 'error';
     const errorMessage =

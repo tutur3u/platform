@@ -375,6 +375,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   const dialog = (
     <TaskEditDialog
       wsId={wsId}
+      taskWsId={state.taskWsId}
       task={state.task}
       boardId={state.boardId || ''}
       isOpen={state.isOpen}
