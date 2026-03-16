@@ -195,12 +195,13 @@ export async function GET(
       .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId)
       .is('deleted_at', null);
 
+    query = query.eq('task_lists.deleted', false);
+
     // IMPORTANT: If this is for time tracking, apply the same filters as the server-side helper
     if (isTimeTrackingRequest) {
       query = query
         .is('closed_at', null) // Only non-archived tasks
-        .in('task_lists.status', ['not_started', 'active']) // Only from active lists
-        .eq('task_lists.deleted', false); // Ensure list is not deleted (task_lists still uses boolean)
+        .in('task_lists.status', ['not_started', 'active']); // Only from active lists
     }
 
     // Apply filters based on query parameters
@@ -227,19 +228,7 @@ export async function GET(
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
       data?.map((task) => {
-        const assigneeIds = [
-          ...(task.assignees ?? [])
-            .map(
-              (entry: TaskAssigneeRelation) => entry.user?.id || entry.user_id
-            )
-            .filter((id): id is string => !!id)
-            .reduce((uniqueIds: Set<string>, assigneeId: string) => {
-              uniqueIds.add(assigneeId);
-              return uniqueIds;
-            }, new Set()),
-        ];
-
-        const assignees = (task.assignees ?? []).flatMap(
+        const normalizedAssignees = (task.assignees ?? []).flatMap(
           (entry: TaskAssigneeRelation) => {
             const resolvedId = entry.user?.id || entry.user_id;
             if (!resolvedId) {
@@ -257,27 +246,11 @@ export async function GET(
           }
         );
 
-        const labelIds = [
-          ...(task.labels ?? [])
-            .map((entry: TaskLabelRelation) => entry.label?.id)
-            .filter((id): id is string => !!id)
-            .reduce((uniqueIds: Set<string>, labelId: string) => {
-              uniqueIds.add(labelId);
-              return uniqueIds;
-            }, new Set()),
-        ];
+        const assigneeIds = Array.from(
+          new Set(normalizedAssignees.map((assignee) => assignee.id))
+        );
 
-        const projectIds = [
-          ...(task.projects ?? [])
-            .map((entry: TaskProjectRelation) => entry.project?.id)
-            .filter((id): id is string => !!id)
-            .reduce((uniqueIds: Set<string>, projectId: string) => {
-              uniqueIds.add(projectId);
-              return uniqueIds;
-            }, new Set()),
-        ];
-
-        const labels = (task.labels ?? []).flatMap(
+        const normalizedLabels = (task.labels ?? []).flatMap(
           (entry: TaskLabelRelation) => {
             const label = entry.label;
             if (!label?.id || !label.name || !label.color) {
@@ -289,13 +262,17 @@ export async function GET(
                 id: label.id,
                 name: label.name,
                 color: label.color,
-                created_at: label.created_at ?? '',
+                created_at: label.created_at ?? null,
               },
             ];
           }
         );
 
-        const projects = (task.projects ?? []).flatMap(
+        const labelIds = Array.from(
+          new Set(normalizedLabels.map((label) => label.id))
+        );
+
+        const normalizedProjects = (task.projects ?? []).flatMap(
           (entry: TaskProjectRelation) => {
             const project = entry.project;
             if (!project?.id || !project.name) {
@@ -311,6 +288,14 @@ export async function GET(
             ];
           }
         );
+
+        const projectIds = Array.from(
+          new Set(normalizedProjects.map((project) => project.id))
+        );
+
+        const assignees = normalizedAssignees;
+        const labels = normalizedLabels;
+        const projects = normalizedProjects;
 
         return {
           id: task.id,

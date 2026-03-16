@@ -84,7 +84,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {

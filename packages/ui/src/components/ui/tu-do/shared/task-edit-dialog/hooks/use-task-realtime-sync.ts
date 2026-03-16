@@ -118,23 +118,19 @@ export function useTaskRealtimeSync({
           taskWorkspaceId ?? wsId,
           taskId
         );
+
         const relationshipProjectIds =
           routeTask.task.project_ids ??
           routeTask.task.projects?.map((project) => project.id) ??
           [];
 
-        const taskWithRelations = await getWorkspaceTask(
-          taskWorkspaceId ?? wsId,
-          taskId
-        );
-
-        const filteredProjects = (taskWithRelations.task.projects ?? []).filter(
+        const filteredProjects = (routeTask.task.projects ?? []).filter(
           (project) => relationshipProjectIds.includes(project.id)
         );
 
         return {
-          labels: taskWithRelations.task.labels ?? [],
-          assignees: taskWithRelations.task.assignees ?? [],
+          labels: routeTask.task.labels ?? [],
+          assignees: routeTask.task.assignees ?? [],
           projects: filteredProjects,
         };
       } catch (error: any) {

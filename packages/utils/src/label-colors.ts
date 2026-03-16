@@ -203,7 +203,7 @@ export function computeAccessibleLabelStyles(
     } else if (lum > 0.82) {
       text = adjust(baseHex, 0.45);
       border = `${adjust(baseHex, 0.45)}99`;
-    } else if (lum > 0.65) {
+    } else if (lum > 0.5) {
       text = adjust(baseHex, 0.65);
       border = `${adjust(baseHex, 0.65)}99`;
     }

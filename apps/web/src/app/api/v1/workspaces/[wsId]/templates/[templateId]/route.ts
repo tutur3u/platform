@@ -258,7 +258,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       .eq('ws_id', wsId)
       .eq('created_by', user.id) // Explicit owner check for extra safety
       .select('id, name, description, visibility, updated_at')
-      .single();
+      .maybeSingle();
 
     if (updateError) {
       console.error('Failed to update template:', updateError);

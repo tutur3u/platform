@@ -3079,55 +3079,41 @@ export async function getWorkspaceTasks(
 ): Promise<RelatedTaskInfo[]> {
   const excluded = new Set(options?.excludeTaskIds ?? []);
   const targetLimit = options?.limit ?? 50;
-  const pageSize = Math.max(25, Math.min(targetLimit * 2, 200));
+  const requestLimit = Math.max(25, Math.min(targetLimit * 2, 200));
   const collected: RelatedTaskInfo[] = [];
   const seenTaskIds = new Set<string>();
-  let offset = 0;
 
-  while (collected.length < targetLimit) {
-    const { tasks } = await listWorkspaceTasks(
-      wsId,
-      {
-        q: options?.searchQuery,
-        limit: pageSize,
-        offset,
-      },
-      typeof window !== 'undefined'
-        ? { baseUrl: window.location.origin }
-        : undefined
-    );
+  const { tasks } = await listWorkspaceTasks(
+    wsId,
+    {
+      q: options?.searchQuery,
+      limit: requestLimit,
+    },
+    typeof window !== 'undefined'
+      ? { baseUrl: window.location.origin }
+      : undefined
+  );
 
-    if (!tasks || tasks.length === 0) {
+  for (const task of tasks ?? []) {
+    if (excluded.has(task.id) || seenTaskIds.has(task.id)) {
+      continue;
+    }
+
+    seenTaskIds.add(task.id);
+    collected.push({
+      id: task.id,
+      name: task.name,
+      display_number: task.display_number,
+      completed: !!task.closed_at || !!task.completed_at,
+      priority: isTaskPriority(task.priority) ? task.priority : null,
+      board_id: task.board_id ?? null,
+      board_name:
+        typeof task.board_name === 'string' ? task.board_name : undefined,
+    });
+
+    if (collected.length >= targetLimit) {
       break;
     }
-
-    for (const task of tasks) {
-      if (excluded.has(task.id) || seenTaskIds.has(task.id)) {
-        continue;
-      }
-
-      seenTaskIds.add(task.id);
-      collected.push({
-        id: task.id,
-        name: task.name,
-        display_number: task.display_number,
-        completed: !!task.closed_at || !!task.completed,
-        priority: isTaskPriority(task.priority) ? task.priority : null,
-        board_id: task.board_id ?? null,
-        board_name:
-          typeof task.board_name === 'string' ? task.board_name : undefined,
-      });
-
-      if (collected.length >= targetLimit) {
-        break;
-      }
-    }
-
-    if (tasks.length < pageSize) {
-      break;
-    }
-
-    offset += pageSize;
   }
 
   return collected;

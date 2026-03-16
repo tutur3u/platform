@@ -14,6 +14,11 @@ export {
   listWallets,
 } from './finance';
 export {
+  createWorkspaceStorageSignedUrl,
+  uploadWorkspaceStorageFile,
+} from './storage';
+export {
+  createWorkspaceTask,
   createWorkspaceTaskProject,
   createWorkspaceTaskRelationship,
   deleteWorkspaceTaskRelationship,

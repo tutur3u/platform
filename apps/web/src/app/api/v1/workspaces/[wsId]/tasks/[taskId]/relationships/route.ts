@@ -580,17 +580,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const { error: deleteError } = await sbAdmin
+    const { data: deletedRelationships, error: deleteError } = await sbAdmin
       .from('task_relationships')
       .delete()
       .eq('source_task_id', input.source_task_id)
       .eq('target_task_id', input.target_task_id)
-      .eq('type', input.type);
+      .eq('type', input.type)
+      .select('id');
 
     if (deleteError) {
       return NextResponse.json(
         { error: 'Failed to delete relationship' },
         { status: 500 }
+      );
+    }
+
+    if (!deletedRelationships || deletedRelationships.length === 0) {
+      return NextResponse.json(
+        { error: 'Relationship not found' },
+        { status: 404 }
       );
     }
 

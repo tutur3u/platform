@@ -752,14 +752,15 @@ export function useTaskActions({
           }
         );
 
+        const succeededTaskIds: string[] = [];
+
         if (workspaceId) {
-          let successCount = 0;
           for (const taskId of tasksToUpdate) {
             try {
               await updateWorkspaceTask(workspaceId, taskId, {
                 end_date: newDate,
               });
-              successCount++;
+              succeededTaskIds.push(taskId);
             } catch (error) {
               console.error(
                 `Failed to update due date for task ${taskId}:`,
@@ -767,19 +768,8 @@ export function useTaskActions({
               );
             }
           }
-
-          if (successCount === 0) {
-            throw new Error('Failed to update any tasks');
-          }
-
-          if (successCount < tasksToUpdate.length) {
-            throw new Error(
-              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
-            );
-          }
         } else if (shouldBulkUpdate) {
           const supabase = createClient();
-          let successCount = 0;
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
               .from('tasks')
@@ -791,37 +781,63 @@ export function useTaskActions({
                 error
               );
             } else {
-              successCount++;
+              succeededTaskIds.push(taskId);
             }
-          }
-          if (successCount === 0) throw new Error('Failed to update any tasks');
-          if (successCount < tasksToUpdate.length) {
-            throw new Error(
-              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
-            );
           }
         } else {
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
             updates: { end_date: newDate },
           });
+          succeededTaskIds.push(task.id);
         }
 
-        for (const tid of tasksToUpdate) {
+        if (succeededTaskIds.length === 0) {
+          throw new Error('Failed to update any tasks');
+        }
+
+        const failedTaskIds = tasksToUpdate.filter(
+          (taskId) => !succeededTaskIds.includes(taskId)
+        );
+
+        if (failedTaskIds.length > 0 && previousTasks) {
+          const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
+          queryClient.setQueryData(
+            ['tasks', boardId],
+            (current: Task[] | undefined) => {
+              if (!current) return current;
+              return current.map((task) => {
+                if (!failedTaskIds.includes(task.id)) {
+                  return task;
+                }
+
+                return previousTaskMap.get(task.id) || task;
+              });
+            }
+          );
+        }
+
+        for (const tid of succeededTaskIds) {
           broadcast?.('task:upsert', {
             task: { id: tid, end_date: newDate },
           });
         }
 
-        const taskCount = tasksToUpdate.length;
-        toast.success('Due date updated', {
-          description:
-            taskCount > 1
-              ? `${taskCount} tasks updated`
-              : newDate
-                ? 'Due date set successfully'
-                : 'Due date removed',
-        });
+        if (failedTaskIds.length > 0) {
+          toast.warning('Partial due date update', {
+            description: `${succeededTaskIds.length}/${tasksToUpdate.length} tasks updated`,
+          });
+        } else {
+          const taskCount = tasksToUpdate.length;
+          toast.success('Due date updated', {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : newDate
+                  ? 'Due date set successfully'
+                  : 'Due date removed',
+          });
+        }
       } catch (error) {
         console.error('Failed to update due date:', error);
         // Rollback on error
@@ -895,30 +911,21 @@ export function useTaskActions({
           }
         );
 
+        const succeededTaskIds: string[] = [];
+
         if (workspaceId) {
-          let successCount = 0;
           for (const taskId of tasksToUpdate) {
             try {
               await updateWorkspaceTask(workspaceId, taskId, {
                 priority: newPriority,
               });
-              successCount++;
+              succeededTaskIds.push(taskId);
             } catch (error) {
               console.error(
                 `Failed to update priority for task ${taskId}:`,
                 error
               );
             }
-          }
-
-          if (successCount === 0) {
-            throw new Error('Failed to update any tasks');
-          }
-
-          if (successCount < tasksToUpdate.length) {
-            throw new Error(
-              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
-            );
           }
         } else if (shouldBulkUpdate) {
           const supabase = createClient();
@@ -928,7 +935,6 @@ export function useTaskActions({
             priority: newPriority,
           });
 
-          let successCount = 0;
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
               .from('tasks')
@@ -940,43 +946,68 @@ export function useTaskActions({
                 error
               );
             } else {
-              successCount++;
+              succeededTaskIds.push(taskId);
             }
           }
 
           console.log('✅ Sequential update result:', {
-            successCount,
+            successCount: succeededTaskIds.length,
             totalTasks: tasksToUpdate.length,
           });
-
-          if (successCount === 0) throw new Error('Failed to update any tasks');
-          if (successCount < tasksToUpdate.length) {
-            throw new Error(
-              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
-            );
-          }
         } else {
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
             updates: { priority: newPriority },
           });
+          succeededTaskIds.push(task.id);
         }
 
-        for (const tid of tasksToUpdate) {
+        if (succeededTaskIds.length === 0) {
+          throw new Error('Failed to update any tasks');
+        }
+
+        const failedTaskIds = tasksToUpdate.filter(
+          (taskId) => !succeededTaskIds.includes(taskId)
+        );
+
+        if (failedTaskIds.length > 0 && previousTasks) {
+          const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
+          queryClient.setQueryData(
+            ['tasks', boardId],
+            (current: Task[] | undefined) => {
+              if (!current) return current;
+              return current.map((task) => {
+                if (!failedTaskIds.includes(task.id)) {
+                  return task;
+                }
+
+                return previousTaskMap.get(task.id) || task;
+              });
+            }
+          );
+        }
+
+        for (const tid of succeededTaskIds) {
           broadcast?.('task:upsert', {
             task: { id: tid, priority: newPriority },
           });
         }
 
-        const taskCount = tasksToUpdate.length;
-        toast.success('Priority updated', {
-          description:
-            taskCount > 1
-              ? `${taskCount} tasks updated`
-              : newPriority
-                ? 'Priority changed'
-                : 'Priority cleared',
-        });
+        if (failedTaskIds.length > 0) {
+          toast.warning('Partial priority update', {
+            description: `${succeededTaskIds.length}/${tasksToUpdate.length} tasks updated`,
+          });
+        } else {
+          const taskCount = tasksToUpdate.length;
+          toast.success('Priority updated', {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : newPriority
+                  ? 'Priority changed'
+                  : 'Priority cleared',
+          });
+        }
 
         // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (error) {

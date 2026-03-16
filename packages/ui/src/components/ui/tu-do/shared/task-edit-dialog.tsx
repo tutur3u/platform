@@ -2,6 +2,10 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
+import {
+  createWorkspaceTask,
+  uploadWorkspaceStorageFile,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -19,10 +23,6 @@ import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  checkStorageQuota,
-  StorageQuotaError,
-} from '../../text-editor/media-utils';
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
@@ -156,6 +156,7 @@ export function TaskEditDialog({
   onAddRelatedTask,
 }: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
+  const effectiveTaskWsId = !isCreateMode ? (taskWsId ?? wsId) : wsId;
   const pathname = usePathname();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -271,16 +272,19 @@ export function TaskEditDialog({
 
   const loadTaskDescriptionState = useCallback(async () => {
     if (!task?.id) return null;
-    const response = await fetchWorkspaceTaskDescription(wsId, task.id);
+    const response = await fetchWorkspaceTaskDescription(
+      effectiveTaskWsId,
+      task.id
+    );
     return response.description_yjs_state ?? null;
-  }, [task?.id, wsId]);
+  }, [effectiveTaskWsId, task?.id]);
 
   const saveTaskDescriptionState = useCallback(
     async (yjsState: number[]) => {
       if (!task?.id) return;
 
       await saveYjsDescriptionToDatabase({
-        wsId,
+        wsId: effectiveTaskWsId,
         taskId: task.id,
         getContent: () =>
           flushEditorPendingRef.current
@@ -292,7 +296,7 @@ export function TaskEditDialog({
         context: 'realtime-persist',
       });
     },
-    [boardId, queryClient, task?.id, wsId]
+    [boardId, effectiveTaskWsId, queryClient, task?.id]
   );
 
   // Yjs collaboration — paid tiers get immediate broadcasts; free tier coalesces rapid edits
@@ -339,7 +343,7 @@ export function TaskEditDialog({
     workspaceTasks,
     workspaceTasksLoading,
   } = useTaskData({
-    wsId,
+    wsId: effectiveTaskWsId,
     boardId,
     isOpen,
     propAvailableLists,
@@ -573,7 +577,7 @@ export function TaskEditDialog({
     taskProjects,
     workspaceTasks,
     workspaceTasksLoading,
-    wsId,
+    wsId: effectiveTaskWsId,
     currentTaskId: task?.id,
     isPersonalWorkspace,
     endDate: formState.endDate,
@@ -611,7 +615,7 @@ export function TaskEditDialog({
     saveSchedulingSettings,
     schedulingSaving,
   } = useTaskMutations({
-    wsId,
+    wsId: effectiveTaskWsId,
     taskId: task?.id,
     isCreateMode,
     boardId,
@@ -637,7 +641,7 @@ export function TaskEditDialog({
     creatingLabel,
     creatingProject,
   } = useTaskRelationships({
-    wsId,
+    wsId: effectiveTaskWsId,
     taskId: task?.id,
     isCreateMode,
     boardId,
@@ -679,7 +683,7 @@ export function TaskEditDialog({
   } = useTaskDependencies({
     taskId: task?.id,
     boardId,
-    wsId,
+    wsId: effectiveTaskWsId,
     listId: task?.list_id,
     isCreateMode,
     onUpdate,
@@ -687,7 +691,7 @@ export function TaskEditDialog({
 
   // Realtime sync
   useTaskRealtimeSync({
-    wsId,
+    wsId: effectiveTaskWsId,
     taskWorkspaceId: taskWsId,
     taskId: task?.id,
     isCreateMode,
@@ -736,7 +740,7 @@ export function TaskEditDialog({
   // Yjs sync
   useTaskYjsSync({
     taskId: task?.id,
-    wsId,
+    wsId: effectiveTaskWsId,
     boardId,
     isOpen,
     isCreateMode,
@@ -796,34 +800,28 @@ export function TaskEditDialog({
   // Image upload handler
   const handleImageUpload = useCallback(
     async (file: File): Promise<string> => {
-      if (!wsId) throw new Error('Workspace ID is required for image upload');
+      if (!effectiveTaskWsId) {
+        throw new Error('Workspace ID is required for image upload');
+      }
       try {
-        await checkStorageQuota(supabase, wsId, file.size);
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `${wsId}/task-images/${fileName}`;
-        const { data, error } = await supabase.storage
-          .from('workspaces')
-          .upload(filePath, file, { contentType: file.type, upsert: false });
-        if (error) throw new Error('Failed to upload image');
-        const { data: signedUrlData, error: signedUrlError } =
-          await supabase.storage
-            .from('workspaces')
-            .createSignedUrl(data.path, 31536000);
-        if (signedUrlError) throw new Error('Failed to generate signed URL');
-        return signedUrlData.signedUrl;
+        const uploadResult = await uploadWorkspaceStorageFile(
+          effectiveTaskWsId,
+          file,
+          { path: 'task-images' }
+        );
+        return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?path=${encodeURIComponent(uploadResult.path)}`;
       } catch (error) {
-        if (error instanceof StorageQuotaError) {
-          toast({
-            title: 'Storage Quota Exceeded',
-            description: error.message,
-            variant: 'destructive',
-          });
-        }
+        const message =
+          error instanceof Error ? error.message : 'Failed to upload image';
+        toast({
+          title: 'Upload failed',
+          description: message,
+          variant: 'destructive',
+        });
         throw error;
       }
     },
-    [wsId, toast]
+    [effectiveTaskWsId, toast]
   );
 
   const handleEstimationConfigSuccess = useCallback(async () => {
@@ -886,17 +884,14 @@ export function TaskEditDialog({
         name: string;
         listId: string;
       }) => {
-        // Note: display_number and board_id are auto-assigned by database trigger
-        // Select all fields needed for the Task type to add to cache
-        const { data: newTask, error } = await supabase
-          .from('tasks')
-          .insert({
-            name,
-            list_id: listId,
-          })
-          .select('*')
-          .single();
-        if (error || !newTask) throw error;
+        const response = await createWorkspaceTask(effectiveTaskWsId, {
+          name,
+          listId,
+        });
+        const newTask = response.task;
+        if (!newTask) {
+          throw new Error('Failed to create task');
+        }
 
         // Store full task for cache update
         createdTask = {
@@ -954,7 +949,14 @@ export function TaskEditDialog({
       title: 'Task created',
       description: `Created task "${result.taskName}" and added mention`,
     });
-  }, [editorInstance, boardId, availableLists, queryClient, toast]);
+  }, [
+    editorInstance,
+    boardId,
+    availableLists,
+    queryClient,
+    toast,
+    effectiveTaskWsId,
+  ]);
 
   // Save handler
   // Transform user for save hook (ensure id is string if present)
@@ -968,7 +970,7 @@ export function TaskEditDialog({
   }, [user?.id, user?.display_name, user?.avatar_url]);
 
   const { handleSave, handleSaveRef } = useTaskSave({
-    wsId,
+    wsId: effectiveTaskWsId,
     boardId,
     taskId: task?.id,
     saveAsDraft: isCreateMode && (!!draftId || saveAsDraft),
@@ -1026,7 +1028,7 @@ export function TaskEditDialog({
   const { handleClose, handleForceClose, handleNavigateBack, handleCloseRef } =
     useTaskDialogClose({
       taskId: task?.id,
-      wsId,
+      wsId: effectiveTaskWsId,
       boardId,
       isCreateMode,
       collaborationMode,
@@ -1184,7 +1186,7 @@ export function TaskEditDialog({
             provider.flushSave();
           } else {
             await saveYjsDescriptionToDatabase({
-              wsId,
+              wsId: effectiveTaskWsId,
               taskId: task.id,
               getContent: flushEditorPendingRef.current,
               boardId,
@@ -1209,7 +1211,7 @@ export function TaskEditDialog({
     collaborationMode,
     task?.id,
     provider,
-    wsId,
+    effectiveTaskWsId,
     boardId,
     queryClient,
   ]);
@@ -1260,7 +1262,7 @@ export function TaskEditDialog({
 
   // Task search debouncing
   useEffect(() => {
-    if (!isOpen || !wsId || !suggestionMenus.mentionState.open) {
+    if (!isOpen || !effectiveTaskWsId || !suggestionMenus.mentionState.open) {
       if (taskSearchQuery) setTaskSearchQuery('');
       return;
     }
@@ -1276,7 +1278,7 @@ export function TaskEditDialog({
     };
   }, [
     isOpen,
-    wsId,
+    effectiveTaskWsId,
     suggestionMenus.mentionState.open,
     suggestionMenus.mentionState.query,
     taskSearchQuery,
@@ -1378,7 +1380,7 @@ export function TaskEditDialog({
                 }
                 createMultiple={createMultiple}
                 hasDraft={formState.hasDraft}
-                wsId={wsId}
+                wsId={effectiveTaskWsId}
                 boardId={boardId}
                 pathname={pathname}
                 canSave={canSave && !isDescriptionOverLimit}
@@ -1426,7 +1428,7 @@ export function TaskEditDialog({
 
                 {!disabled && (
                   <TaskPropertiesSection
-                    wsId={wsId}
+                    wsId={effectiveTaskWsId}
                     taskId={task?.id}
                     priority={formState.priority}
                     startDate={formState.startDate}
@@ -1513,7 +1515,7 @@ export function TaskEditDialog({
 
                 {!disabled && !draftId && !(isCreateMode && saveAsDraft) && (
                   <TaskRelationshipsProperties
-                    wsId={wsId}
+                    wsId={effectiveTaskWsId}
                     taskId={task?.id}
                     boardId={boardId}
                     listId={task?.list_id}
@@ -1555,7 +1557,7 @@ export function TaskEditDialog({
                   collaborationMode={collaborationMode}
                   realtimeEnabled={realtimeEnabled}
                   isYjsSyncing={isYjsSyncing}
-                  wsId={wsId}
+                  wsId={effectiveTaskWsId}
                   boardId={boardId}
                   taskId={task?.id}
                   availableLists={availableLists}
@@ -1613,7 +1615,7 @@ export function TaskEditDialog({
 
                 {!isCreateMode && localCalendarEvents && (
                   <TaskInstancesSection
-                    wsId={wsId}
+                    wsId={effectiveTaskWsId}
                     taskId={task?.id}
                     scheduledEvents={localCalendarEvents}
                     onLockToggle={handleLockToggle}
@@ -1623,7 +1625,7 @@ export function TaskEditDialog({
 
                 {!disabled && !isCreateMode && task && (
                   <TaskActivitySection
-                    wsId={wsId}
+                    wsId={effectiveTaskWsId}
                     taskId={task.id}
                     boardId={boardId}
                     currentTask={{
@@ -1736,10 +1738,10 @@ export function TaskEditDialog({
         }}
       />
 
-      {boardConfig && wsId && (
+      {boardConfig && effectiveTaskWsId && (
         <BoardEstimationConfigDialog
           open={showEstimationConfigDialog}
-          wsId={wsId}
+          wsId={effectiveTaskWsId}
           boardId={boardId}
           boardName={(boardConfig as { name?: string }).name || 'Board'}
           currentEstimationType={boardConfig.estimation_type || null}
@@ -1761,7 +1763,7 @@ export function TaskEditDialog({
           onOpenChange={setShowShareDialog}
           taskId={task.id}
           taskName={formState.name}
-          wsId={wsId}
+          wsId={effectiveTaskWsId}
         />
       )}
     </>

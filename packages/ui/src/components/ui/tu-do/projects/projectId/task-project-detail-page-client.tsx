@@ -44,11 +44,11 @@ export default function TaskProjectDetailPageClient({
     initialData: initialProjectData,
   });
 
-  if (projectError) {
+  if (projectError && !project) {
     throw projectError;
   }
 
-  if (tasksError) {
+  if (tasksError && !projectData) {
     throw tasksError;
   }
 

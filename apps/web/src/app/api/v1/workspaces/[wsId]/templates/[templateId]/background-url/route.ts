@@ -3,6 +3,7 @@ import {
   createClient,
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -16,16 +17,25 @@ interface Params {
 
 export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const { wsId, templateId } = await params;
+    const { wsId: rawWsId, templateId } = await params;
 
     if (!validate(templateId)) {
       return NextResponse.json(
-        { error: 'Invalid workspace ID or template ID' },
+        { error: 'Invalid template ID' },
         { status: 400 }
       );
     }
-
     const supabase = await createClient(req);
+
+    let normalizedWsId: string;
+    try {
+      normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
+    }
 
     const {
       data: { user },
@@ -42,7 +52,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     const { data: memberCheck, error: membershipError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -67,8 +77,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       .from('board_templates')
       .select('background_path')
       .eq('id', templateId)
-      .eq('ws_id', wsId)
-      .single();
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
 
     if (templateError) {
       console.error('Failed to fetch template background path:', templateError);

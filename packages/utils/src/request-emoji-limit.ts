@@ -242,7 +242,26 @@ export async function getRequestContentViolationForRequest(
   }
 
   try {
-    return findRequestContentViolation(JSON.parse(rawBody));
+    const parsedBody = JSON.parse(rawBody);
+
+    if (
+      parsedBody &&
+      typeof parsedBody === 'object' &&
+      'description_yjs_state' in parsedBody &&
+      typeof (parsedBody as { description?: unknown }).description === 'string'
+    ) {
+      const { description, ...rest } = parsedBody as {
+        description: string;
+        [key: string]: unknown;
+      };
+
+      return findRequestContentViolation({
+        ...rest,
+        rich_text_description: description,
+      });
+    }
+
+    return findRequestContentViolation(parsedBody);
   } catch {
     // Let route handlers keep their own invalid JSON behavior.
     return null;

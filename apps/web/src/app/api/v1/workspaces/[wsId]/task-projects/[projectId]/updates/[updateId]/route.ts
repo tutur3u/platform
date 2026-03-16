@@ -74,7 +74,7 @@ export async function PATCH(
     const sbAdmin = await createAdminClient();
 
     // Verify update exists and user is the creator
-    const { data: existingUpdate } = await sbAdmin
+    const { data: existingUpdate, error: existingUpdateError } = await sbAdmin
       .from('task_project_updates')
       .select(
         `
@@ -88,7 +88,18 @@ export async function PATCH(
       .eq('project_id', projectId)
       .eq('task_projects.ws_id', wsId)
       .is('deleted_at', null)
-      .single();
+      .maybeSingle();
+
+    if (existingUpdateError) {
+      console.error(
+        'Error checking existing project update:',
+        existingUpdateError
+      );
+      return NextResponse.json(
+        { error: 'Failed to load update' },
+        { status: 500 }
+      );
+    }
 
     if (!existingUpdate) {
       return NextResponse.json({ error: 'Update not found' }, { status: 404 });
@@ -124,7 +135,7 @@ export async function PATCH(
         )
       `
       )
-      .single();
+      .maybeSingle();
 
     if (updateError) {
       console.error('Error updating project update:', updateError);
@@ -206,7 +217,7 @@ export async function DELETE(
     const sbAdmin = await createAdminClient();
 
     // Verify update exists and user is the creator
-    const { data: existingUpdate } = await sbAdmin
+    const { data: existingUpdate, error: existingUpdateError } = await sbAdmin
       .from('task_project_updates')
       .select(
         `
@@ -220,7 +231,18 @@ export async function DELETE(
       .eq('project_id', projectId)
       .eq('task_projects.ws_id', wsId)
       .is('deleted_at', null)
-      .single();
+      .maybeSingle();
+
+    if (existingUpdateError) {
+      console.error(
+        'Error checking existing project update:',
+        existingUpdateError
+      );
+      return NextResponse.json(
+        { error: 'Failed to load update' },
+        { status: 500 }
+      );
+    }
 
     if (!existingUpdate) {
       return NextResponse.json({ error: 'Update not found' }, { status: 404 });

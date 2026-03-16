@@ -65,12 +65,19 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: membershipError.message || 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -126,11 +133,30 @@ export async function GET(
       ),
     ];
 
-    const { data: lists, error: listsError } = await sbAdmin
-      .from('task_lists')
-      .select('*')
-      .in('id', listIds.length > 0 ? listIds : [''])
-      .eq('deleted', false);
+    let lists: Array<{
+      id: string;
+      name: string | null;
+      archived: boolean | null;
+      created_at: string | null;
+      board_id: string | null;
+      creator_id: string | null;
+      deleted: boolean | null;
+      position: number | null;
+      status: string | null;
+      color: string | null;
+    }> = [];
+    let listsError: { message?: string } | null = null;
+
+    if (listIds.length > 0) {
+      const listResult = await sbAdmin
+        .from('task_lists')
+        .select('*')
+        .in('id', listIds)
+        .eq('deleted', false);
+
+      lists = listResult.data ?? [];
+      listsError = listResult.error;
+    }
 
     if (listsError) {
       console.error('Error fetching task lists:', listsError);
@@ -177,10 +203,11 @@ export async function GET(
       name: list.name ?? 'Untitled list',
       archived: list.archived ?? false,
       created_at: list.created_at ?? new Date().toISOString(),
+      board_id: list.board_id ?? '',
       creator_id: list.creator_id ?? '',
       deleted: list.deleted ?? false,
       position: list.position ?? 0,
-      status: list.status ?? 'active',
+      status: (list.status as TaskList['status']) ?? 'active',
       color: (list.color as TaskList['color']) ?? 'gray',
     }));
 
@@ -226,12 +253,19 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: membershipError.message || 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

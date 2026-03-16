@@ -211,7 +211,6 @@ export async function GET(
       .select('id')
       .eq('id', projectId)
       .eq('ws_id', normalizedWsId)
-      .eq('deleted', false)
       .maybeSingle();
 
     if (projectError) {

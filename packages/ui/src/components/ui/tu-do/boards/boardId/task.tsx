@@ -213,8 +213,7 @@ function TaskCardInner({
       queryKey: ['task_projects', boardConfig?.ws_id],
       queryFn: async () => {
         if (!boardConfig?.ws_id) return [];
-        const projects = await listWorkspaceTaskProjects(boardConfig.ws_id);
-        return projects.filter((project) => project.status !== 'deleted');
+        return listWorkspaceTaskProjects(boardConfig.ws_id);
       },
       enabled: !!boardConfig?.ws_id,
       staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change

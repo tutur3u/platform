@@ -2,18 +2,20 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   {
     params,
   }: { params: Promise<{ wsId: string; projectId: string; taskId: string }> }
 ) {
   try {
-    const { wsId, projectId, taskId } = await params;
-    const supabase = await createClient();
+    const { wsId: rawWsId, projectId, taskId } = await params;
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -47,17 +49,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    const { error } = await sbAdmin
+    const { data: deletedLinks, error } = await sbAdmin
       .from('task_project_tasks')
       .delete()
       .eq('project_id', projectId)
-      .eq('task_id', taskId);
+      .eq('task_id', taskId)
+      .select('project_id,task_id');
 
     if (error) {
       console.error('Error unlinking task from project:', error);
       return NextResponse.json(
         { error: 'Failed to unlink task from project' },
         { status: 500 }
+      );
+    }
+
+    if (!deletedLinks || deletedLinks.length === 0) {
+      return NextResponse.json(
+        { error: 'Task link not found' },
+        { status: 404 }
       );
     }
 

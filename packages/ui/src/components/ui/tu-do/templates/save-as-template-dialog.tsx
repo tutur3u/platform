@@ -61,6 +61,14 @@ export function SaveAsTemplateDialog({
     string | null
   >(null);
 
+  useEffect(() => {
+    return () => {
+      if (backgroundPreviewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(backgroundPreviewUrl);
+      }
+    };
+  }, [backgroundPreviewUrl]);
+
   // Initialize template name when dialog opens
   useEffect(() => {
     if (open && board) {
@@ -72,7 +80,12 @@ export function SaveAsTemplateDialog({
       setIncludeDates(true);
       setBackgroundFiles([]);
       setBackgroundPath(null);
-      setBackgroundPreviewUrl(null);
+      setBackgroundPreviewUrl((previousPreviewUrl) => {
+        if (previousPreviewUrl?.startsWith('blob:')) {
+          URL.revokeObjectURL(previousPreviewUrl);
+        }
+        return null;
+      });
     }
   }, [open, board]);
 
@@ -86,6 +99,10 @@ export function SaveAsTemplateDialog({
           return;
         }
 
+        if (backgroundPreviewUrl?.startsWith('blob:')) {
+          URL.revokeObjectURL(backgroundPreviewUrl);
+        }
+
         setBackgroundPath(path);
         setBackgroundPreviewUrl(firstFile.url);
       },
@@ -96,6 +113,9 @@ export function SaveAsTemplateDialog({
   };
 
   const handleRemoveBackground = () => {
+    if (backgroundPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(backgroundPreviewUrl);
+    }
     setBackgroundPath(null);
     setBackgroundPreviewUrl(null);
     setBackgroundFiles([]);
@@ -161,6 +181,9 @@ export function SaveAsTemplateDialog({
   };
 
   const handleCancel = () => {
+    if (backgroundPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(backgroundPreviewUrl);
+    }
     setTemplateName('');
     setDescription('');
     onOpenChange(false);

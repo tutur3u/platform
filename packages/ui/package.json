@@ -211,6 +211,10 @@
       "types": "./src/components/ui/tu-do/utils/label-colors.ts",
       "import": "./src/components/ui/tu-do/utils/label-colors.ts"
     },
+    "./utils/label-colors": {
+      "types": "./src/utils/label-colors.ts",
+      "import": "./src/utils/label-colors.ts"
+    },
     "./finance/wallets/wallet-form-schema": {
       "types": "./src/components/ui/finance/wallets/wallet-form-schema.ts",
       "import": "./src/components/ui/finance/wallets/wallet-form-schema.ts"

@@ -72,7 +72,7 @@ export function useTaskLinking({
         queryKey: ['task-project-tasks', wsId, projectId],
       });
       void queryClient.invalidateQueries({
-        queryKey: ['tasks', `project:${projectId}`],
+        queryKey: ['tasks', wsId, `project:${projectId}`],
       });
       router.refresh();
       setShowLinkTaskDialog(false);

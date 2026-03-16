@@ -84,12 +84,19 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: membershipError.message || 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -116,9 +123,16 @@ export async function GET(
       )
       .eq('id', projectId)
       .eq('ws_id', wsId)
-      .single();
+      .maybeSingle();
 
-    if (projectError || !project) {
+    if (projectError) {
+      return NextResponse.json(
+        { error: projectError.message || 'Internal server error' },
+        { status: 500 }
+      );
+    }
+
+    if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
@@ -154,12 +168,19 @@ async function updateProject(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: membershipError.message || 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -240,12 +261,22 @@ async function updateProject(
 
     // If lead_id is being set, verify the user belongs to the workspace
     if (validatedData.lead_id !== undefined && validatedData.lead_id !== null) {
-      const { data: leadMembership } = await supabase
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .eq('user_id', validatedData.lead_id)
-        .single();
+      const { data: leadMembership, error: leadMembershipError } =
+        await supabase
+          .from('workspace_members')
+          .select('user_id')
+          .eq('ws_id', wsId)
+          .eq('user_id', validatedData.lead_id)
+          .maybeSingle();
+
+      if (leadMembershipError) {
+        return NextResponse.json(
+          {
+            error: leadMembershipError.message || 'Membership lookup failed',
+          },
+          { status: 500 }
+        );
+      }
 
       if (!leadMembership) {
         return NextResponse.json(
@@ -279,7 +310,7 @@ async function updateProject(
           )
         )
       `)
-      .single();
+      .maybeSingle();
 
     if (updateError) {
       console.error('Error updating project:', updateError);
@@ -372,12 +403,19 @@ export async function DELETE(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: membershipError.message || 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

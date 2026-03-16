@@ -171,7 +171,7 @@ export function useTaskProjectManagement({
         typeof window !== 'undefined'
           ? { baseUrl: window.location.origin }
           : undefined;
-      let successCount = 0;
+      const succeededTaskIds: string[] = [];
 
       if (active) {
         for (const taskId of tasksToRemoveFrom) {
@@ -191,7 +191,7 @@ export function useTaskProjectManagement({
               },
               internalApiOptions
             );
-            successCount++;
+            succeededTaskIds.push(taskId);
           } catch (error) {
             console.error(
               `Failed to remove project from task ${taskId}:`,
@@ -220,7 +220,7 @@ export function useTaskProjectManagement({
               },
               internalApiOptions
             );
-            successCount++;
+            succeededTaskIds.push(taskId);
           } catch (error) {
             console.error(`Failed to add project to task ${taskId}:`, error);
           }
@@ -230,19 +230,51 @@ export function useTaskProjectManagement({
       const targetCount = active
         ? tasksToRemoveFrom.length
         : tasksNeedingProject.length;
-      if (targetCount > 0 && successCount === 0) {
+      if (targetCount > 0 && succeededTaskIds.length === 0) {
         throw new Error('Failed to update any tasks');
       }
 
+      const failedTaskIds = (
+        active ? tasksToRemoveFrom : tasksNeedingProject
+      ).filter((taskId) => !succeededTaskIds.includes(taskId));
+
+      if (failedTaskIds.length > 0 && previousTasks) {
+        const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (current: Task[] | undefined) => {
+            if (!current) return current;
+            return current.map((task) => {
+              if (!failedTaskIds.includes(task.id)) {
+                return task;
+              }
+
+              return previousTaskMap.get(task.id) || task;
+            });
+          }
+        );
+      }
+
       // Broadcast relation changes for all affected tasks
-      for (const tid of active ? tasksToRemoveFrom : tasksNeedingProject) {
+      for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
 
-      toast.success(active ? 'Project removed' : 'Project added', {
-        description:
-          successCount > 1 ? `${successCount} tasks updated` : undefined,
-      });
+      if (failedTaskIds.length > 0) {
+        toast.warning(
+          active ? 'Partial project removal' : 'Partial project addition',
+          {
+            description: `${succeededTaskIds.length}/${targetCount} tasks updated`,
+          }
+        );
+      } else {
+        toast.success(active ? 'Project removed' : 'Project added', {
+          description:
+            succeededTaskIds.length > 1
+              ? `${succeededTaskIds.length} tasks updated`
+              : undefined,
+        });
+      }
 
       // Don't auto-clear selection - let user manually clear with "Clear" button
     } catch (e: any) {

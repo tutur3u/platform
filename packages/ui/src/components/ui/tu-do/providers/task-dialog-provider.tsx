@@ -1,6 +1,6 @@
 'use client';
 
-import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
+import { listWorkspaceTaskProjectsByIds } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -523,15 +523,19 @@ export function TaskDialogProvider({
         }
 
         if (projectWorkspaceId) {
-          const workspaceProjects =
-            await listWorkspaceTaskProjects(projectWorkspaceId);
-          projects = workspaceProjects
-            .filter((project) => draft.project_ids?.includes(project.id))
-            .map((project) => ({
+          try {
+            const workspaceProjects = await listWorkspaceTaskProjectsByIds(
+              projectWorkspaceId,
+              draft.project_ids
+            );
+            projects = workspaceProjects.map((project) => ({
               id: project.id,
               name: project.name,
               status: project.status,
             }));
+          } catch (error) {
+            console.error('Failed to load draft projects metadata:', error);
+          }
         }
       }
 

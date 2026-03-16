@@ -63,6 +63,20 @@ export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
 }
 
+export interface CreateWorkspaceTaskPayload {
+  name: string;
+  listId: string;
+  description?: string | null;
+  description_yjs_state?: number[] | null;
+  priority?: TaskPriority | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  estimation_points?: number | null;
+  label_ids?: string[];
+  project_ids?: string[];
+  assignee_ids?: string[];
+}
+
 interface TaskProjectApiRow {
   id?: string;
   name?: string;
@@ -223,6 +237,25 @@ export async function getWorkspaceTask(
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
     {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceTask(
+  workspaceId: string,
+  payload: CreateWorkspaceTaskPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
       cache: 'no-store',
     }
   );

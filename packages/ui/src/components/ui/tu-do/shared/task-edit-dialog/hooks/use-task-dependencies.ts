@@ -97,7 +97,7 @@ export function useTaskDependencies({
 
   // Fetch relationships from server
   const { data: relationships, isLoading } = useQuery({
-    queryKey: ['task-relationships', taskId],
+    queryKey: ['task-relationships', taskId, wsId],
     queryFn: async (): Promise<TaskRelationshipsResponse | null> => {
       if (isCreateMode || !taskId || !wsId) {
         return null;
@@ -126,11 +126,11 @@ export function useTaskDependencies({
       await Promise.all([
         taskId &&
           queryClient.invalidateQueries({
-            queryKey: ['task-relationships', taskId],
+            queryKey: ['task-relationships', taskId, wsId],
           }),
         otherTaskId &&
           queryClient.invalidateQueries({
-            queryKey: ['task-relationships', otherTaskId],
+            queryKey: ['task-relationships', otherTaskId, wsId],
           }),
       ]);
 
@@ -142,7 +142,7 @@ export function useTaskDependencies({
 
       onUpdate?.();
     },
-    [taskId, queryClient, onUpdate, broadcast]
+    [taskId, wsId, queryClient, onUpdate, broadcast]
   );
 
   // =========================================================================

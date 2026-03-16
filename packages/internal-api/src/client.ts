@@ -21,6 +21,14 @@ export type InternalApiClientOptions = {
 
 type HeaderAccessor = Pick<Headers, 'get'>;
 
+function tryParseAbsoluteUrl(value: string): URL | null {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
 export function encodePathSegment(value: string) {
   return encodeURIComponent(value);
 }
@@ -181,22 +189,87 @@ export function withForwardedInternalApiAuth(
   requestHeaders: HeaderAccessor,
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  const mergedHeaders = new Headers(options.defaultHeaders);
-
   const cookieHeader = requestHeaders.get('cookie');
   const authorizationHeader = requestHeaders.get('authorization');
 
-  if (cookieHeader && !mergedHeaders.has('cookie')) {
-    mergedHeaders.set('cookie', cookieHeader);
+  if (!cookieHeader && !authorizationHeader) {
+    return options;
   }
 
-  if (authorizationHeader && !mergedHeaders.has('authorization')) {
-    mergedHeaders.set('authorization', authorizationHeader);
+  const allowedOrigins = new Set<string>();
+
+  if (options.baseUrl) {
+    const parsed = tryParseAbsoluteUrl(normalizeBaseUrl(options.baseUrl));
+    if (parsed) {
+      allowedOrigins.add(parsed.origin);
+    }
   }
+
+  const configuredBaseUrl = tryParseAbsoluteUrl(getConfiguredBaseUrl());
+  if (configuredBaseUrl) {
+    allowedOrigins.add(configuredBaseUrl.origin);
+  }
+
+  const runtimeLocation =
+    typeof globalThis === 'object' && 'location' in globalThis
+      ? (globalThis.location as { origin?: string } | undefined)
+      : undefined;
+
+  if (runtimeLocation?.origin) {
+    allowedOrigins.add(runtimeLocation.origin);
+  }
+
+  const baseFetch = options.fetch || globalThis.fetch;
+
+  const forwardedFetch: typeof fetch = async (input, init) => {
+    const requestUrl =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+
+    const isRelativeRequest =
+      typeof requestUrl === 'string' && requestUrl.startsWith('/');
+    const parsedRequestUrl = isRelativeRequest
+      ? null
+      : tryParseAbsoluteUrl(requestUrl);
+    const shouldForwardAuth =
+      isRelativeRequest ||
+      (parsedRequestUrl ? allowedOrigins.has(parsedRequestUrl.origin) : false);
+
+    if (!shouldForwardAuth) {
+      return baseFetch(input, init);
+    }
+
+    const headers = new Headers(
+      input instanceof Request ? input.headers : undefined
+    );
+
+    if (init?.headers) {
+      const initHeaders = new Headers(init.headers);
+      initHeaders.forEach((value, key) => {
+        headers.set(key, value);
+      });
+    }
+
+    if (cookieHeader && !headers.has('cookie')) {
+      headers.set('cookie', cookieHeader);
+    }
+
+    if (authorizationHeader && !headers.has('authorization')) {
+      headers.set('authorization', authorizationHeader);
+    }
+
+    return baseFetch(input, {
+      ...init,
+      headers,
+    });
+  };
 
   return {
     ...options,
-    defaultHeaders: mergedHeaders,
+    fetch: forwardedFetch,
   };
 }
 

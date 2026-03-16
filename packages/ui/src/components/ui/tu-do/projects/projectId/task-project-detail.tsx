@@ -62,7 +62,7 @@ export function TaskProjectDetail({
 
   // Use TanStack Query for client-side task caching
   const { data: cachedTasks } = useQuery({
-    queryKey: ['tasks', projectBoardId],
+    queryKey: ['tasks', wsId, projectBoardId],
     queryFn: () => Promise.resolve(tasks),
     initialData: tasks,
     staleTime: Infinity,
@@ -77,10 +77,10 @@ export function TaskProjectDetail({
       queryKey: ['task-project-tasks', wsId, project.id],
     });
     void queryClient.invalidateQueries({
-      queryKey: ['tasks', projectBoardId],
+      queryKey: ['tasks', wsId, `project:${project.id}`],
     });
     router.refresh();
-  }, [project.id, projectBoardId, queryClient, router, wsId]);
+  }, [project.id, queryClient, router, wsId]);
 
   // Task management state
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
