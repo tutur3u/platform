@@ -10934,6 +10934,7 @@
     "price": "Price",
     "print_after_create": "Print after Creation",
     "print_after_create_tooltip": "Prints invoice after creation",
+    "products_and_items": "Products & Items",
     "products_selection_description": "Select products and specify quantities for the invoice.",
     "promotion_limit_reached": "This promotion has reached its usage limit",
     "remove": "Remove",

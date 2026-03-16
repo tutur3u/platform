@@ -22,6 +22,12 @@ import {
 import { useTranslations } from 'next-intl';
 import type React from 'react';
 
+export type AvailableMonthOption = {
+  value: string;
+  label: string;
+  isPaid: boolean;
+};
+
 interface SubscriptionAttendanceSummaryProps {
   selectedGroupIds: string[];
   selectedMonth: string;
@@ -30,6 +36,7 @@ interface SubscriptionAttendanceSummaryProps {
   navigateMonth: (direction: 'prev' | 'next') => void;
   canNavigateMonth: (direction: 'prev' | 'next') => boolean;
   onMonthChange: (month: string) => void;
+  availableMonths: AvailableMonthOption[];
   userGroups: {
     workspace_user_groups:
       | Database['public']['Tables']['workspace_user_groups']['Row']
@@ -61,8 +68,9 @@ export function SubscriptionAttendanceSummary({
   navigateMonth,
   canNavigateMonth,
   onMonthChange,
+  availableMonths,
   userGroups,
-  latestSubscriptionInvoices,
+  latestSubscriptionInvoices: _latestSubscriptionInvoices,
   isLoadingSubscriptionData,
   userAttendance,
   userAttendanceError,
@@ -71,6 +79,13 @@ export function SubscriptionAttendanceSummary({
   attendanceRate,
 }: SubscriptionAttendanceSummaryProps): React.ReactElement {
   const t = useTranslations();
+
+  // Ensure Select always receives a value present in availableMonths to avoid Radix update loops
+  const isValidMonth = availableMonths.some((m) => m.value === selectedMonth);
+  const displayMonth = isValidMonth
+    ? selectedMonth
+    : (availableMonths[0]?.value ?? selectedMonth);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -83,7 +98,7 @@ export function SubscriptionAttendanceSummary({
               </span>
             )}
           </div>
-          <CardDescription>
+          <CardDescription className="flex flex-col gap-1">
             {selectedGroupIds.length === 1
               ? t('ws-invoices.attendance_for_month', {
                   month: new Date(`${selectedMonth}-01`).toLocaleDateString(
@@ -110,6 +125,11 @@ export function SubscriptionAttendanceSummary({
                     month: 'long',
                   })}`,
                 })}
+            <span className="text-muted-foreground text-xs">
+              {isSelectedMonthPaid
+                ? t('ws-invoices.all_groups_paid_for_month')
+                : t('ws-invoices.some_groups_unpaid_for_month')}
+            </span>
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
@@ -123,105 +143,23 @@ export function SubscriptionAttendanceSummary({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Select value={selectedMonth} onValueChange={onMonthChange}>
+          <Select value={displayMonth} onValueChange={onMonthChange}>
             <SelectTrigger>
               <SelectValue placeholder={t('ws-invoices.select_month')} />
             </SelectTrigger>
             <SelectContent>
-              {(() => {
-                const selectedGroupsData = userGroups.filter((g) =>
-                  selectedGroupIds.includes(g.workspace_user_groups?.id || '')
-                );
-
-                if (selectedGroupsData.length === 0) return null;
-
-                let earliestStart: Date | null = null;
-                let latestEnd: Date | null = null;
-
-                for (const groupItem of selectedGroupsData) {
-                  const group = groupItem.workspace_user_groups;
-                  if (!group) continue;
-
-                  const startDate = group.starting_date
-                    ? new Date(group.starting_date)
-                    : null;
-                  const endDate = group.ending_date
-                    ? new Date(group.ending_date)
-                    : null;
-
-                  if (
-                    startDate &&
-                    (!earliestStart || startDate < earliestStart)
-                  ) {
-                    earliestStart = startDate;
-                  }
-                  if (endDate && (!latestEnd || endDate > latestEnd)) {
-                    latestEnd = endDate;
-                  }
-                }
-
-                if (!earliestStart) return null;
-
-                if (!latestEnd) {
-                  if (selectedMonth) {
-                    latestEnd = new Date(`${selectedMonth}-01`);
-                  } else {
-                    latestEnd = new Date();
-                    latestEnd.setDate(1);
-                  }
-                }
-
-                const months = [];
-                const currentDate = new Date(earliestStart);
-                currentDate.setDate(1);
-
-                const normalizedLatestEnd = new Date(latestEnd);
-                normalizedLatestEnd.setDate(1);
-
-                while (currentDate <= normalizedLatestEnd) {
-                  const value = currentDate.toISOString().slice(0, 7);
-                  const label = currentDate.toLocaleDateString(locale, {
-                    year: 'numeric',
-                    month: 'long',
-                  });
-                  const isPaidItem = (() => {
-                    const itemMonthStart = new Date(currentDate);
-                    itemMonthStart.setDate(1);
-
-                    // For the dropdown, we show "Paid" only if ALL selected groups have paid for this specific month
-                    return selectedGroupIds.every((groupId) => {
-                      const latestInvoice = latestSubscriptionInvoices.find(
-                        (inv) => inv.group_id === groupId
-                      );
-                      if (!latestInvoice || !latestInvoice.valid_until)
-                        return false;
-
-                      const validUntilMonthStart = new Date(
-                        latestInvoice.valid_until
-                      );
-                      validUntilMonthStart.setDate(1);
-                      return itemMonthStart < validUntilMonthStart;
-                    });
-                  })();
-
-                  months.push(
-                    <SelectItem key={value} value={value}>
-                      <span className="flex items-center gap-2">
-                        <span>{label}</span>
-                        {isPaidItem && (
-                          <span className="rounded bg-dynamic-green/10 px-1.5 py-0.5 font-medium text-[10px] text-dynamic-green">
-                            {t('ws-invoices.paid')}
-                          </span>
-                        )}
+              {availableMonths.map((m) => (
+                <SelectItem key={m.value} value={m.value}>
+                  <span className="flex items-center gap-2">
+                    <span>{m.label}</span>
+                    {m.isPaid && (
+                      <span className="rounded bg-dynamic-green/10 px-1.5 py-0.5 font-medium text-[10px] text-dynamic-green">
+                        {t('ws-invoices.paid')}
                       </span>
-                    </SelectItem>
-                  );
-
-                  currentDate.setMonth(currentDate.getMonth() + 1);
-                }
-
-                return months;
-              })()}
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 

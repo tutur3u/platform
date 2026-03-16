@@ -130,6 +130,102 @@ export const getSessionsUntilMonth = (
   }
 };
 
+/** Date range (earliest start, latest end) for selected groups. */
+export type GroupsDateRange = {
+  earliestStart: Date | null;
+  latestEnd: Date | null;
+};
+
+export const getGroupsDateRange = (
+  userGroups: UserGroup[],
+  groupIds: string[]
+): GroupsDateRange => {
+  if (groupIds.length === 0) return { earliestStart: null, latestEnd: null };
+  const selectedGroupsData = userGroups.filter((g) =>
+    groupIds.includes(g.workspace_user_groups?.id || '')
+  );
+  if (selectedGroupsData.length === 0)
+    return { earliestStart: null, latestEnd: null };
+
+  let earliestStart: Date | null = null;
+  let latestEnd: Date | null = null;
+
+  for (const selectedGroupItem of selectedGroupsData) {
+    const group = selectedGroupItem.workspace_user_groups;
+    if (!group) continue;
+
+    const startDate = group.starting_date
+      ? new Date(group.starting_date)
+      : null;
+    const endDate = group.ending_date ? new Date(group.ending_date) : null;
+
+    if (startDate && (!earliestStart || startDate < earliestStart))
+      earliestStart = startDate;
+    if (endDate && (!latestEnd || endDate > latestEnd)) latestEnd = endDate;
+  }
+
+  return { earliestStart, latestEnd };
+};
+
+export type AvailableMonthOption = {
+  value: string;
+  label: string;
+  isPaid: boolean;
+};
+
+export const getAvailableMonths = (
+  userGroups: UserGroup[],
+  groupIds: string[],
+  latestInvoices: { group_id?: string; valid_until?: string | null }[],
+  locale: string,
+  selectedMonthFallback: string | null = null
+): AvailableMonthOption[] => {
+  if (groupIds.length === 0) return [];
+  const { earliestStart, latestEnd } = getGroupsDateRange(userGroups, groupIds);
+  if (!earliestStart) return [];
+
+  const resolvedLatestEnd = latestEnd
+    ? latestEnd
+    : selectedMonthFallback
+      ? new Date(`${selectedMonthFallback}-01`)
+      : (() => {
+          const d = new Date();
+          d.setDate(1);
+          return d;
+        })();
+
+  const months: AvailableMonthOption[] = [];
+  const currentDate = new Date(earliestStart);
+  currentDate.setDate(1);
+  const normalizedLatestEnd = new Date(resolvedLatestEnd);
+  normalizedLatestEnd.setDate(1);
+
+  while (currentDate <= normalizedLatestEnd) {
+    const value = currentDate.toISOString().slice(0, 7);
+    const label = currentDate.toLocaleDateString(locale, {
+      year: 'numeric',
+      month: 'long',
+    });
+    const itemMonthStart = new Date(currentDate);
+    itemMonthStart.setDate(1);
+
+    const isPaid = groupIds.every((groupId) => {
+      const latestInvoice = latestInvoices.find(
+        (inv) => inv.group_id === groupId
+      );
+      if (!latestInvoice || !latestInvoice.valid_until) return false;
+      const validUntilMonthStart = new Date(latestInvoice.valid_until);
+      validUntilMonthStart.setDate(1);
+      return itemMonthStart < validUntilMonthStart;
+    });
+
+    months.push({ value, label, isPaid });
+    currentDate.setMonth(currentDate.getMonth() + 1);
+  }
+
+  return months;
+};
+
 export const getTotalSessionsForGroups = (
   userGroups: UserGroup[],
   groupIds: string[],
@@ -165,3 +261,40 @@ export const getTotalSessionsForGroups = (
   }
   return total;
 };
+
+/** Days before valid_until to consider "expiring soon" */
+const EXPIRING_SOON_DAYS = 14;
+
+export type GroupPaymentStatus = 'active' | 'expiringSoon' | 'expired';
+
+export function getGroupPaymentStatus(
+  group: WorkspaceUserGroup | null,
+  latestInvoice:
+    | { valid_until?: string | null; created_at?: string | null }
+    | undefined
+): GroupPaymentStatus {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (!group) return 'active';
+
+  const endDate = group.ending_date ? new Date(group.ending_date) : null;
+  if (endDate) {
+    endDate.setHours(0, 0, 0, 0);
+    if (today > endDate) return 'expired';
+  }
+
+  const validUntil = latestInvoice?.valid_until
+    ? new Date(latestInvoice.valid_until)
+    : null;
+  if (validUntil) {
+    validUntil.setHours(0, 0, 0, 0);
+    const daysUntilExpiry = Math.ceil(
+      (validUntil.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysUntilExpiry < 0) return 'expired';
+    if (daysUntilExpiry <= EXPIRING_SOON_DAYS) return 'expiringSoon';
+  }
+
+  return 'active';
+}

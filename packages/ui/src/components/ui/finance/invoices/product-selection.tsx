@@ -105,40 +105,38 @@ export function ProductSelection({
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t('invoices.products')}</CardTitle>
-          <CardDescription>
-            {t('ws-invoices.products_selection_description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Product Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="product-select">
-              {t('ws-invoices.select_product')}
-            </Label>
-            <Combobox
-              t={t}
-              options={products.map(
-                (product): ComboboxOptions => ({
-                  value: product.id,
-                  label: `${product.name || t('ws-invoices.no_name')}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
-                })
-              )}
-              selected={selectedProductId}
-              onChange={(value) => setSelectedProductId(value as string)}
-              placeholder={t('ws-invoices.search_products')}
-            />
-          </div>
-
-          {/* Stock Selection */}
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>{t('ws-invoices.products_and_items')}</CardTitle>
+        <CardDescription>
+          {t('ws-invoices.products_selection_description')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Product picker and stock */}
+        <div className="space-y-3">
+          <Label htmlFor="product-select">
+            {t('ws-invoices.select_product')}
+          </Label>
+          <Combobox
+            t={t}
+            options={products.map(
+              (product): ComboboxOptions => ({
+                value: product.id,
+                label: `${product.name || t('ws-invoices.no_name')}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
+              })
+            )}
+            selected={selectedProductId}
+            onChange={(value) => setSelectedProductId(value as string)}
+            placeholder={t('ws-invoices.search_products')}
+          />
           {selectedProduct && availableInventory.length > 0 && (
-            <div className="space-y-3">
-              <Label>{t('ws-invoices.available_stock')}</Label>
-              <div className="grid gap-3">
-                {availableInventory.map((inventory, _index) => (
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">
+                {t('ws-invoices.available_stock')}
+              </Label>
+              <div className="grid gap-2">
+                {availableInventory.map((inventory) => (
                   <StockItem
                     key={`${inventory.warehouse_id}-${inventory.unit_id}`}
                     inventory={inventory}
@@ -151,27 +149,34 @@ export function ProductSelection({
               </div>
             </div>
           )}
-
           {selectedProduct && availableInventory.length === 0 && (
-            <div className="py-4 text-center text-muted-foreground">
-              <Package className="mx-auto mb-2 h-8 w-8 opacity-50" />
+            <div className="py-3 text-center text-muted-foreground text-sm">
+              <Package className="mx-auto mb-1 h-6 w-6 opacity-50" />
               <p>{t('ws-invoices.no_stock_available')}</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Selected Products */}
-      {selectedProducts.length > 0 && (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>{t('ws-invoices.invoice_items')}</CardTitle>
-            <CardDescription>
-              {t('ws-invoices.invoice_items_description')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+        {/* Selected items list */}
+        {selectedProducts.length > 0 ? (
+          <div className="border-t pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <Label className="text-muted-foreground text-xs">
+                {t('ws-invoices.invoice_items')} ({selectedProducts.length})
+              </Label>
+              <span className="font-medium text-muted-foreground text-xs">
+                {t('ws-invoices.subtotal')}:{' '}
+                {formatCurrency(
+                  selectedProducts.reduce(
+                    (total, item) =>
+                      total + item.inventory.price * item.quantity,
+                    0
+                  ),
+                  currency
+                )}
+              </span>
+            </div>
+            <div className="space-y-2">
               {selectedProducts.map((item, index) => {
                 const linkedGroups = groupLinkedProducts
                   .filter((lp) => lp.productId === item.product.id)
@@ -180,32 +185,27 @@ export function ProductSelection({
                 return (
                   <div
                     key={`${item.product.id}-${item.inventory.warehouse_id}-${item.inventory.unit_id}-${index}`}
-                    className={`flex items-center justify-between rounded-lg border p-3 ${linkedGroups.length > 0 ? 'border-dynamic-gray bg-dynamic-gray/5' : ''}`}
+                    className={`flex items-center justify-between gap-4 rounded-lg border p-2.5 ${linkedGroups.length > 0 ? 'border-primary/30 bg-primary/5' : ''}`}
                   >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{item.product.name}</p>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-muted-foreground text-xs">
                         {item.inventory.warehouse_name} •{' '}
                         {item.inventory.unit_name}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        {t('ws-invoices.available')}:{' '}
-                        {item.inventory.amount === null
-                          ? t('ws-invoices.unlimited')
-                          : item.inventory.amount}{' '}
-                        • {t('ws-invoices.price')}:{' '}
-                        {formatCurrency(item.inventory.price, currency)}
+                        {' · '}
+                        {formatCurrency(item.inventory.price, currency)}{' '}
+                        {t('ws-invoices.each')}
+                        {item.inventory.amount !== null &&
+                          ` · ${t('ws-invoices.available')}: ${item.inventory.amount}`}
                       </p>
                       {linkedGroups.length > 0 && (
-                        <div className="mt-1">
-                          <Badge
-                            variant="secondary"
-                            className="whitespace-normal text-[10px]"
-                          >
-                            {t('ws-invoices.linked_to_group')}:{' '}
-                            {linkedGroups.join(', ')}
-                          </Badge>
-                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="mt-1 whitespace-normal text-[10px]"
+                        >
+                          {t('ws-invoices.linked_to_group')}:{' '}
+                          {linkedGroups.join(', ')}
+                        </Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -257,27 +257,11 @@ export function ProductSelection({
                   </div>
                 );
               })}
-
-              <div className="border-t pt-3">
-                <div className="flex items-center justify-between font-semibold">
-                  <span>Subtotal:</span>
-                  <span>
-                    {formatCurrency(
-                      selectedProducts.reduce(
-                        (total, item) =>
-                          total + item.inventory.price * item.quantity,
-                        0
-                      ),
-                      currency
-                    )}
-                  </span>
-                </div>
-              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
