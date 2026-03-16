@@ -2,15 +2,22 @@
 
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
 import {
+  isTurnstileError,
+  resolveTurnstileToken,
+  verifyTurnstileToken,
+} from '@ncthub/turnstile/server';
+import {
   checkIfUserExists,
   generateRandomPassword,
   validateEmail,
   validateOtp,
 } from '@ncthub/utils/email';
+import { headers } from 'next/headers';
 
 export interface SendOtpInput {
   email: string;
   locale: string;
+  captchaToken?: string;
 }
 
 export interface SendOtpResult {
@@ -37,10 +44,20 @@ export async function sendOtpAction(
   input: SendOtpInput
 ): Promise<SendOtpResult> {
   try {
-    const { email, locale } = input;
+    const { email, locale, captchaToken } = input;
     const validatedEmail = await validateEmail(email);
 
     const userId = await checkIfUserExists({ email: validatedEmail });
+    const headersList = await headers();
+    const turnstile = resolveTurnstileToken({
+      token: captchaToken,
+    });
+    await verifyTurnstileToken(
+      { headers: headersList },
+      {
+        token: turnstile.captchaToken,
+      }
+    );
 
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();
@@ -61,7 +78,10 @@ export async function sendOtpAction(
       // Send OTP for existing user
       const { error } = await supabase.auth.signInWithOtp({
         email: validatedEmail,
-        options: { data: { locale, origin: 'TUTURUUU' } },
+        options: {
+          data: { locale, origin: 'TUTURUUU' },
+          captchaToken: turnstile.captchaToken,
+        },
       });
 
       if (error) {
@@ -76,6 +96,7 @@ export async function sendOtpAction(
         password: randomPassword,
         options: {
           data: { locale, origin: 'TUTURUUU' },
+          captchaToken: turnstile.captchaToken,
         },
       });
 
@@ -86,6 +107,12 @@ export async function sendOtpAction(
 
     return { success: true };
   } catch (error) {
+    if (isTurnstileError(error)) {
+      return {
+        error: 'Verification failed. Please try again.',
+      };
+    }
+
     console.error('SendOTP Server Action Error:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to send OTP',
