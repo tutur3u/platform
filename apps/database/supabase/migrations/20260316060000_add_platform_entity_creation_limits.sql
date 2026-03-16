@@ -34,38 +34,6 @@ alter table public.platform_entity_creation_limits enable row level security;
 comment on table public.platform_entity_creation_limits is
   'Manual opt-in table for entity creation limits enforced by a shared before insert trigger. The table stores per-tier thresholds while counting sources are provided by dedicated entity_limit_source__<table> views.';
 
-create or replace function public._resolve_workspace_tier(
-  p_ws_id uuid
-)
-returns public.workspace_product_tier
-language plpgsql
-stable
-security definer
-set search_path = public
-as $$
-declare
-  v_ws_id uuid;
-  v_effective_tier public.workspace_product_tier;
-begin
-  select id, ws.tier
-  into v_ws_id, v_effective_tier
-  from public.workspaces
-  left join public.workspace_subscriptions ws on ws.ws_id = public.workspaces.id and ws.status = 'active'
-  where id = p_ws_id
-  limit 1;
-
-  if v_ws_id is null then
-    return null;
-  end if;
-
-  if v_effective_tier is null then
-    return 'FREE'::public.workspace_product_tier;
-  end if;
-
-  return v_effective_tier;
-end;
-$$;
-
 create or replace function public._resolve_user_personal_workspace_id(
   p_user_id uuid
 )
@@ -186,10 +154,8 @@ begin
 end;
 $$;
 
-create or replace function public._resolve_platform_entity_limit_scope(
-  p_target_table text,
-  p_new_record jsonb,
-  p_actor_user_id uuid
+create or replace function public._resolve_table_associated_ws_id(
+  p_target_table text
 )
 returns table (
   ws_id uuid,
@@ -200,38 +166,24 @@ security definer
 set search_path = public
 as $$
 declare
-  v_scope_resolver_name text;
-  v_scope_resolver_signature regprocedure;
-  v_lookup_user_id uuid;
-  v_user_id uuid;
-  v_ws_id uuid;
+  v_source_view_name text;
+  v_source_ws_column text;
 begin
-  v_lookup_user_id := coalesce(
-    nullif(p_new_record ->> 'user_id', '')::uuid,
-    nullif(p_new_record ->> 'creator_id', '')::uuid,
-    p_actor_user_id
-  );
+  v_source_view_name := format('entity_limit_source__%s', p_target_table);
+  v_source_ws_column := 'ws_id';
 
-  v_scope_resolver_name := format('entity_limit_scope__%s', p_target_table);
-  select to_regprocedure(format('public.%I(jsonb,uuid)', v_scope_resolver_name))
-  into v_scope_resolver_signature;
-
-  if v_scope_resolver_signature is not null then
-    execute format(
-      'select s.ws_id, s.user_id from public.%I($1, $2) s limit 1',
-      v_scope_resolver_name
-    )
-    into v_ws_id, v_user_id
-    using p_new_record, p_actor_user_id;
-  else
-    v_ws_id := nullif(p_new_record ->> 'ws_id', '')::uuid;
-    v_user_id := v_lookup_user_id;
+  if p_target_table = 'workspaces' then
+    v_source_ws_column := 'personal_ws_id';
   end if;
 
-  v_user_id := coalesce(v_user_id, v_lookup_user_id);
-  v_ws_id := coalesce(v_ws_id, nullif(p_new_record ->> 'ws_id', '')::uuid);
+  execute format(
+    'select src.%I, src.user_id from public.%I src order by src.created_at desc limit 1',
+    v_source_ws_column,
+    v_source_view_name
+  )
+  into ws_id, user_id;
 
-  return query select v_ws_id, v_user_id;
+  return query select ws_id, user_id;
 end;
 $$;
 
@@ -280,11 +232,7 @@ begin
 
   select s.ws_id, s.user_id
   into v_subject_ws_id, v_subject_user_id
-  from public._resolve_platform_entity_limit_scope(
-    tg_table_name,
-    to_jsonb(new),
-    v_actor_user_id
-  ) s;
+  from public._resolve_table_associated_ws_id(tg_table_name) s;
 
   if v_subject_user_id is null then
     v_subject_user_id := v_actor_user_id;
@@ -450,7 +398,7 @@ begin
   );
 
   execute format(
-    'create trigger enforce_platform_entity_creation_limits before insert on public.%I for each row execute function public.enforce_platform_entity_creation_limits()',
+    'create trigger enforce_platform_entity_creation_limits after insert on public.%I for each row execute function public.enforce_platform_entity_creation_limits()',
     p_target_table
   );
 end;
@@ -560,7 +508,7 @@ begin
   );
 
   execute format(
-    'create trigger enforce_platform_entity_creation_limits before insert on public.%I for each row execute function public.enforce_platform_entity_creation_limits()',
+    'create trigger enforce_platform_entity_creation_limits after insert on public.%I for each row execute function public.enforce_platform_entity_creation_limits()',
     p_target_table
   );
 end;
@@ -634,10 +582,9 @@ $$;
 
 revoke all on table public.platform_entity_creation_limits from anon, authenticated;
 
-revoke all on function public._resolve_workspace_tier(uuid) from public, anon, authenticated;
 revoke all on function public._resolve_user_personal_workspace_id(uuid) from public, anon, authenticated;
 revoke all on function public._validate_platform_entity_limit_target(text) from public, anon, authenticated;
-revoke all on function public._resolve_platform_entity_limit_scope(text, jsonb, uuid) from public, anon, authenticated;
+revoke all on function public._resolve_table_associated_ws_id(text) from public, anon, authenticated;
 revoke all on function public.enforce_platform_entity_creation_limits() from public, anon, authenticated;
 revoke all on function public.add_platform_entity_creation_limit_table(text, text, uuid) from public, anon, authenticated;
 revoke all on function public.update_platform_entity_creation_limit_metadata(text, text, uuid) from public, anon, authenticated;
@@ -647,10 +594,9 @@ revoke all on function public.get_available_platform_entity_limit_tables() from 
 
 grant select, insert, update, delete on table public.platform_entity_creation_limits to service_role;
 
-grant execute on function public._resolve_workspace_tier(uuid) to service_role;
 grant execute on function public._resolve_user_personal_workspace_id(uuid) to service_role;
 grant execute on function public._validate_platform_entity_limit_target(text) to service_role;
-grant execute on function public._resolve_platform_entity_limit_scope(text, jsonb, uuid) to service_role;
+grant execute on function public._resolve_table_associated_ws_id(text) to service_role;
 grant execute on function public.enforce_platform_entity_creation_limits() to service_role;
 grant execute on function public.add_platform_entity_creation_limit_table(text, text, uuid) to service_role;
 grant execute on function public.update_platform_entity_creation_limit_metadata(text, text, uuid) to service_role;
