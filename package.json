@@ -148,6 +148,28 @@
   "workspaces": ["apps/*", "packages/*"],
   "overrides": {
     "google-auth-library": "^10.6.2",
-    "@polar-sh/sdk": "0.46.4"
+    "@polar-sh/sdk": "0.46.4",
+    "@tiptap/core": "3.20.0",
+    "@tiptap/extension-collaboration": "3.20.0",
+    "@tiptap/extension-collaboration-caret": "3.20.0",
+    "@tiptap/extension-drag-handle-react": "3.20.0",
+    "@tiptap/extension-highlight": "3.20.0",
+    "@tiptap/extension-horizontal-rule": "3.20.0",
+    "@tiptap/extension-image": "3.20.0",
+    "@tiptap/extension-link": "3.20.0",
+    "@tiptap/extension-list": "3.20.0",
+    "@tiptap/extension-placeholder": "3.20.0",
+    "@tiptap/extension-strike": "3.20.0",
+    "@tiptap/extension-subscript": "3.20.0",
+    "@tiptap/extension-superscript": "3.20.0",
+    "@tiptap/extension-table": "3.20.0",
+    "@tiptap/extension-table-cell": "3.20.0",
+    "@tiptap/extension-table-header": "3.20.0",
+    "@tiptap/extension-table-row": "3.20.0",
+    "@tiptap/extension-text-align": "3.20.0",
+    "@tiptap/extension-youtube": "3.20.0",
+    "@tiptap/pm": "3.20.0",
+    "@tiptap/react": "3.20.0",
+    "@tiptap/starter-kit": "3.20.0"
   }
 }
