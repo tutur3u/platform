@@ -91,7 +91,7 @@ export default function HeroSection() {
           {/* Buttons */}
           <div className="mb-12 flex flex-wrap gap-4">
             <Button size="lg" asChild>
-              <a 
+              <a
                 href="https://forms.office.com/r/csPz8V73ad"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -100,9 +100,7 @@ export default function HeroSection() {
               </a>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/about">
-                Learn More
-              </Link>
+              <Link href="/about">Learn More</Link>
             </Button>
           </div>
 
