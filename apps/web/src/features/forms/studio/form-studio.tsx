@@ -842,9 +842,17 @@ export function FormStudio({
                   )}
                   style={studioHeadlineFontStyle}
                 >
-                  {mode === 'create'
-                    ? t('studio.create_new_form')
-                    : values.title || t('studio.form_studio')}
+                  {mode === 'create' ? (
+                    t('studio.create_new_form')
+                  ) : values.title ? (
+                    <FormsMarkdown
+                      content={values.title}
+                      variant="inline"
+                      className="[&_p]:m-0"
+                    />
+                  ) : (
+                    t('studio.form_studio')
+                  )}
                 </h1>
                 <p
                   className={cn(

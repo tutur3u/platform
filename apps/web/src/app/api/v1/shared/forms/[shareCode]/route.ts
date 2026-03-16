@@ -11,6 +11,9 @@ import {
   hasSentResponseCopyEmail,
   maybeSendResponseCopyEmail,
 } from '@/features/forms/response-copy-email';
+
+export const dynamic = 'force-dynamic';
+
 import {
   FORM_ACCESS_MODE_VALUES,
   formSubmitSchema,
