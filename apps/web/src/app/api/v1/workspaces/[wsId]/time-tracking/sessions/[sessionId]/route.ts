@@ -70,7 +70,7 @@ export async function PATCH(
     if ('error' in authResult) {
       return authResult.error;
     }
-    const { supabase, user, normalizedWsId } = authResult;
+    const { user, normalizedWsId } = authResult;
 
     const bodyResult = patchSessionBodySchema.safeParse(await request.json());
     if (!bodyResult.success) {
@@ -123,7 +123,6 @@ export async function PATCH(
       case 'stop':
         return await handleStopAction({
           sbAdmin,
-          supabase,
           session: sessionRecord,
           sessionId,
           normalizedWsId,
@@ -207,13 +206,19 @@ export async function DELETE(
         { status: 403 }
       );
     }
-    const { error } = await sbAdmin
+    const { data: deletedRows, error } = await sbAdmin
       .from('time_tracking_sessions')
       .delete()
+      .select('id')
       .eq('id', sessionId)
-      .eq('ws_id', normalizedWsId);
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id);
 
     if (error) throw error;
+
+    if (!deletedRows || deletedRows.length === 0) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -267,12 +272,21 @@ async function authenticateAndResolveWorkspace(
     };
   }
 
-  const { data: memberCheck } = await supabase
+  const { data: memberCheck, error: memberCheckError } = await supabase
     .from('workspace_members')
     .select('id:user_id')
     .eq('ws_id', normalizedWsId)
     .eq('user_id', user.id)
     .maybeSingle();
+
+  if (memberCheckError) {
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      ),
+    };
+  }
 
   if (!memberCheck) {
     return {

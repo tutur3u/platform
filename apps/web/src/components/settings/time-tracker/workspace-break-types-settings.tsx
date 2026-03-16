@@ -2,8 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Coffee, Edit2, Plus, Trash2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Database } from '@tuturuuu/types';
+import {
+  createWorkspaceBreakType,
+  deleteWorkspaceBreakType,
+  listWorkspaceBreakTypes,
+  updateWorkspaceBreakType,
+  type WorkspaceBreakType,
+} from '@tuturuuu/internal-api/time-tracking';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,9 +50,6 @@ import {
   getBreakTypeColor,
   getIconComponent,
 } from '@/hooks/useBreakTypeStyles';
-
-type WorkspaceBreakType =
-  Database['public']['Tables']['workspace_break_types']['Row'];
 
 const COLOR_OPTIONS = [
   'RED',
@@ -106,7 +108,6 @@ export function WorkspaceBreakTypesSettings({
 }: WorkspaceBreakTypesSettingsProps) {
   const t = useTranslations('time-tracker.break_types');
   const tCommon = useTranslations('common');
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -119,15 +120,15 @@ export function WorkspaceBreakTypesSettings({
   const { data: breakTypes, isLoading } = useQuery({
     queryKey: ['workspace-break-types', wsId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspace_break_types')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('is_default', { ascending: false })
-        .order('created_at', { ascending: true });
+      const breakTypes = await listWorkspaceBreakTypes(wsId);
+      return [...breakTypes].sort((a, b) => {
+        if (a.is_default && !b.is_default) return -1;
+        if (!a.is_default && b.is_default) return 1;
 
-      if (error) throw error;
-      return data as WorkspaceBreakType[];
+        const aCreatedAt = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bCreatedAt = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return aCreatedAt - bCreatedAt;
+      });
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -135,21 +136,13 @@ export function WorkspaceBreakTypesSettings({
   // Create break type
   const createMutation = useMutation({
     mutationFn: async (newType: BreakTypeFormState) => {
-      const { data, error } = await supabase
-        .from('workspace_break_types')
-        .insert({
-          ws_id: wsId,
-          name: newType.name,
-          description: newType.description || null,
-          color: newType.color,
-          icon: newType.icon,
-          is_default: newType.is_default,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return createWorkspaceBreakType(wsId, {
+        name: newType.name,
+        description: newType.description || null,
+        color: newType.color,
+        icon: newType.icon,
+        isDefault: newType.is_default,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -169,47 +162,13 @@ export function WorkspaceBreakTypesSettings({
     mutationFn: async (updatedType: BreakTypeFormState) => {
       if (!editingId) throw new Error('No break type selected for update');
 
-      // If setting as default, use atomic RPC to prevent race conditions
-      if (updatedType.is_default) {
-        // First update the break type details
-        const { error: updateError } = await supabase
-          .from('workspace_break_types')
-          .update({
-            name: updatedType.name,
-            description: updatedType.description || null,
-            color: updatedType.color,
-            icon: updatedType.icon,
-          })
-          .eq('id', editingId);
-
-        if (updateError) throw updateError;
-
-        // Then atomically set as default
-        const { data, error } = await supabase.rpc('set_default_break_type', {
-          p_ws_id: wsId,
-          p_target_id: editingId,
-        });
-
-        if (error) throw error;
-        return data?.[0];
-      }
-
-      // If not setting as default, just update normally
-      const { data, error } = await supabase
-        .from('workspace_break_types')
-        .update({
-          name: updatedType.name,
-          description: updatedType.description || null,
-          color: updatedType.color,
-          icon: updatedType.icon,
-          is_default: updatedType.is_default,
-        })
-        .eq('id', editingId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return updateWorkspaceBreakType(wsId, editingId, {
+        name: updatedType.name,
+        description: updatedType.description || null,
+        color: updatedType.color,
+        icon: updatedType.icon,
+        isDefault: updatedType.is_default,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -231,12 +190,7 @@ export function WorkspaceBreakTypesSettings({
   // Delete break type
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('workspace_break_types')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await deleteWorkspaceBreakType(wsId, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

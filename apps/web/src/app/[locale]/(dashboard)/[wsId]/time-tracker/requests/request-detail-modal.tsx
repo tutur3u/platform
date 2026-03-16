@@ -75,6 +75,7 @@ export function RequestDetailModal({
 
   // Fetch images with React Query
   const { data: imageUrls = [], isLoading: isLoadingImages } = useRequestImages(
+    wsId,
     request.id,
     request.images,
     isOpen

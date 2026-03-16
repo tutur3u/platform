@@ -10,10 +10,13 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class EditRequestDialog extends StatefulWidget {
   const EditRequestDialog({
+    required this.wsId,
     required this.request,
     required this.onSave,
     super.key,
   });
+
+  final String wsId;
 
   final TimeTrackingRequest request;
   final Future<TimeTrackingRequest?> Function(
@@ -91,6 +94,8 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
               ),
               const shad.Gap(16),
               RequestImageEditor(
+                wsId: widget.wsId,
+                requestId: widget.request.id,
                 initialImages: widget.request.images,
                 onChanged: (result) {
                   _removedImages = result.removedExistingImages;

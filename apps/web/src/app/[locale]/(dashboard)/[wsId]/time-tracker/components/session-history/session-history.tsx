@@ -2,6 +2,7 @@
 
 import {
   useSessionHistoryQuery,
+  useWorkspaceCategories,
   useWorkspaceTimeThreshold,
 } from '@tuturuuu/hooks';
 import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
@@ -75,7 +76,6 @@ const PAGINATION_LIMIT = 5;
 export function SessionHistory({
   wsId,
   userId,
-  categories,
   workspace,
   isPersonal,
   currentUser,
@@ -83,6 +83,10 @@ export function SessionHistory({
   canBypassTimeTrackingRequestApproval,
 }: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
+  const { data: categories } = useWorkspaceCategories({
+    wsId,
+    enabled: true,
+  });
   const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
 
@@ -378,10 +382,10 @@ export function SessionHistory({
               </Button>
 
               <SessionFilters
+                wsId={wsId}
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 onClearFilters={handleClearFilters}
-                categories={categories}
                 filteredSessions={sessions}
                 showAdvancedFilters={showAdvancedFilters}
                 onToggleAdvancedFilters={() =>
@@ -480,7 +484,7 @@ export function SessionHistory({
                           sessions={sessions}
                           periodStats={periodStats}
                           startOfPeriod={startOfPeriod}
-                          categories={categories}
+                          categories={categories ?? null}
                           userTimezone={userTimezone}
                         />
                       </div>
@@ -581,7 +585,6 @@ export function SessionHistory({
         isEditing={isEditing}
         isLoadingThreshold={isLoadingThreshold}
         thresholdDays={thresholdData?.threshold}
-        categories={categories}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -617,7 +620,7 @@ export function SessionHistory({
       <MissedEntryDialog
         open={showMissedEntryDialog}
         onOpenChange={setShowMissedEntryDialog}
-        categories={categories}
+        categories={categories ?? null}
         wsId={wsId}
         workspace={workspace}
         prefillStartTime={prefillStartTime}

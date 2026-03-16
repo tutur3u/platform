@@ -37,7 +37,7 @@ export interface ChainSummary {
 export interface BaseMissedEntryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  categories: TimeTrackingCategory[] | null;
+  categories?: TimeTrackingCategory[] | null;
   wsId: string;
   workspace: Workspace;
   /** When true, skip proof/approval for entries older than threshold (users with manage permission) */

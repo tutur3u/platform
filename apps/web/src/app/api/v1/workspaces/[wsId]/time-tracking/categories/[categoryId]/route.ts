@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
@@ -10,7 +11,8 @@ export async function PATCH(
 ) {
   try {
     const { wsId, categoryId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -23,12 +25,19 @@ export async function PATCH(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -37,13 +46,22 @@ export async function PATCH(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify category belongs to workspace
-    const { data: categoryCheck } = await supabase
+    const { data: categoryCheck, error: categoryCheckError } = await sbAdmin
       .from('time_tracking_categories')
       .select('id')
       .eq('id', categoryId)
-      .eq('ws_id', wsId)
-      .single();
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
+
+    if (categoryCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify category' },
+        { status: 500 }
+      );
+    }
 
     if (!categoryCheck) {
       return NextResponse.json(
@@ -62,9 +80,6 @@ export async function PATCH(
       );
     }
 
-    // Use admin client for update
-    const sbAdmin = await createAdminClient();
-
     const { data, error } = await sbAdmin
       .from('time_tracking_categories')
       .update({
@@ -74,10 +89,18 @@ export async function PATCH(
         updated_at: new Date().toISOString(),
       })
       .eq('id', categoryId)
+      .eq('ws_id', normalizedWsId)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ category: data });
   } catch (error) {
@@ -90,12 +113,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; categoryId: string }> }
 ) {
   try {
     const { wsId, categoryId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -108,12 +132,19 @@ export async function DELETE(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -122,13 +153,22 @@ export async function DELETE(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify category belongs to workspace
-    const { data: categoryCheck } = await supabase
+    const { data: categoryCheck, error: categoryCheckError } = await sbAdmin
       .from('time_tracking_categories')
       .select('id, name')
       .eq('id', categoryId)
-      .eq('ws_id', wsId)
-      .single();
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
+
+    if (categoryCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify category' },
+        { status: 500 }
+      );
+    }
 
     if (!categoryCheck) {
       return NextResponse.json(
@@ -137,15 +177,21 @@ export async function DELETE(
       );
     }
 
-    // Use admin client for deletion
-    const sbAdmin = await createAdminClient();
-
-    const { error } = await sbAdmin
+    const { data: deletedCategories, error } = await sbAdmin
       .from('time_tracking_categories')
       .delete()
-      .eq('id', categoryId);
+      .eq('id', categoryId)
+      .eq('ws_id', normalizedWsId)
+      .select('id');
 
     if (error) throw error;
+
+    if (!deletedCategories || deletedCategories.length === 0) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ message: 'Category deleted successfully' });
   } catch (error) {

@@ -2,8 +2,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 // PATCH /api/v1/workspaces/[wsId]/time-tracking/break-types/[breakTypeId]
 // Update a custom break type (workspace admins only)
@@ -13,8 +16,8 @@ export async function PATCH(
 ) {
   try {
     const { wsId, breakTypeId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -25,13 +28,63 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify break type exists and belongs to workspace
-    const { data: existingBreakType } = await supabase
-      .from('workspace_break_types')
-      .select('id')
-      .eq('id', breakTypeId)
+    const { data: memberCheck, error: memberError } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
       .eq('ws_id', normalizedWsId)
-      .single();
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
+
+    if (!permissions) {
+      return NextResponse.json(
+        { error: 'Failed to resolve permissions' },
+        { status: 500 }
+      );
+    }
+
+    if (
+      permissions.withoutPermission('manage_workspace_settings') ||
+      permissions.withoutPermission('manage_time_tracking_requests')
+    ) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions to modify break types' },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    // Verify break type exists and belongs to workspace
+    const { data: existingBreakType, error: existingBreakTypeError } =
+      await sbAdmin
+        .from('workspace_break_types')
+        .select('*')
+        .eq('id', breakTypeId)
+        .eq('ws_id', normalizedWsId)
+        .maybeSingle();
+
+    if (existingBreakTypeError) {
+      throw existingBreakTypeError;
+    }
 
     if (!existingBreakType) {
       return NextResponse.json(
@@ -60,8 +113,6 @@ export async function PATCH(
       }
     }
 
-    const sbAdmin = await createAdminClient();
-
     // Build update object
     const updateData: {
       name?: string;
@@ -76,25 +127,87 @@ export async function PATCH(
       updateData.description = description?.trim() || null;
     if (color !== undefined) updateData.color = color;
     if (icon !== undefined) updateData.icon = icon || null;
-    if (isDefault !== undefined) updateData.is_default = isDefault;
+    if (isDefault !== undefined && isDefault !== true) {
+      updateData.is_default = isDefault;
+    }
 
-    // Update the break type
-    const { data: breakType, error } = await sbAdmin
-      .from('workspace_break_types')
-      .update(updateData)
-      .eq('id', breakTypeId)
-      .select()
-      .single();
+    let breakType = existingBreakType;
+    if (Object.keys(updateData).length > 0) {
+      const { data, error } = await sbAdmin
+        .from('workspace_break_types')
+        .update(updateData)
+        .eq('id', breakTypeId)
+        .eq('ws_id', normalizedWsId)
+        .select()
+        .maybeSingle();
 
-    if (error) {
-      // Handle unique constraint violation
-      if (error.code === '23505') {
+      if (error) {
+        if (error.code === '23505') {
+          return NextResponse.json(
+            { error: 'A break type with this name already exists' },
+            { status: 409 }
+          );
+        }
+        throw error;
+      }
+
+      if (!data) {
         return NextResponse.json(
-          { error: 'A break type with this name already exists' },
-          { status: 409 }
+          { error: 'Break type not found' },
+          { status: 404 }
         );
       }
-      throw error;
+
+      breakType = data;
+    }
+
+    if (isDefault === true) {
+      const { data: defaultRows, error: setDefaultError } = await sbAdmin.rpc(
+        'set_default_break_type',
+        {
+          p_ws_id: normalizedWsId,
+          p_target_id: breakTypeId,
+        }
+      );
+
+      if (setDefaultError) {
+        throw setDefaultError;
+      }
+
+      if (!defaultRows || defaultRows.length === 0) {
+        return NextResponse.json(
+          { error: 'Break type not found' },
+          { status: 404 }
+        );
+      }
+
+      const { data: refreshedBreakType, error: refreshedBreakTypeError } =
+        await sbAdmin
+          .from('workspace_break_types')
+          .select('*')
+          .eq('id', breakTypeId)
+          .eq('ws_id', normalizedWsId)
+          .maybeSingle();
+
+      if (refreshedBreakTypeError) {
+        throw refreshedBreakTypeError;
+      }
+
+      if (!refreshedBreakType) {
+        return NextResponse.json(
+          { error: 'Break type not found' },
+          { status: 404 }
+        );
+      }
+
+      breakType = refreshedBreakType;
+    }
+
+    if (!breakType) {
+      return NextResponse.json(
+        { error: 'Break type not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ breakType });
@@ -110,13 +223,13 @@ export async function PATCH(
 // DELETE /api/v1/workspaces/[wsId]/time-tracking/break-types/[breakTypeId]
 // Delete a custom break type (workspace admins only)
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; breakTypeId: string }> }
 ) {
   try {
     const { wsId, breakTypeId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -127,13 +240,62 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { data: memberCheck, error: memberError } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
+
+    if (!permissions) {
+      return NextResponse.json(
+        { error: 'Failed to resolve permissions' },
+        { status: 500 }
+      );
+    }
+
+    if (
+      permissions.withoutPermission('manage_workspace_settings') ||
+      permissions.withoutPermission('manage_time_tracking_requests')
+    ) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions to delete break types' },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
     // Verify break type exists and belongs to workspace
-    const { data: breakType } = await supabase
+    const { data: breakType, error: breakTypeError } = await sbAdmin
       .from('workspace_break_types')
       .select('id')
       .eq('id', breakTypeId)
       .eq('ws_id', normalizedWsId)
-      .single();
+      .maybeSingle();
+
+    if (breakTypeError) {
+      throw breakTypeError;
+    }
 
     if (!breakType) {
       return NextResponse.json(
@@ -142,17 +304,30 @@ export async function DELETE(
       );
     }
 
-    const sbAdmin = await createAdminClient();
-
     // Delete the break type
     // Note: Associated break records will have their break_type_id set to NULL (on delete set null)
     // but will retain break_type_name for historical reference
-    const { error } = await sbAdmin
+    const { data: deletedBreakType, error } = await sbAdmin
       .from('workspace_break_types')
       .delete()
-      .eq('id', breakTypeId);
+      .eq('id', breakTypeId)
+      .eq('ws_id', normalizedWsId)
+      .select()
+      .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      return NextResponse.json(
+        { error: error.message || error },
+        { status: 500 }
+      );
+    }
+
+    if (!deletedBreakType) {
+      return NextResponse.json(
+        { error: 'Break type not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

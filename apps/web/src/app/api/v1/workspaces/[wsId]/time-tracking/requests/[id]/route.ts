@@ -35,8 +35,8 @@ const updateRequestSchema = z.discriminatedUnion('action', [
 const editRequestSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional().default(''),
-  startTime: z.string().datetime(),
-  endTime: z.string().datetime(),
+  startTime: z.iso.datetime(),
+  endTime: z.iso.datetime(),
   removedImages: z.array(z.string().min(1)).optional().default([]),
   newImagePaths: z.array(z.string().min(1)).optional().default([]),
 });
@@ -94,12 +94,19 @@ export async function PATCH(
     }
 
     // Verify workspace access and admin permissions
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberErr } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberErr) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -115,7 +122,7 @@ export async function PATCH(
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
-    const { withoutPermission, containsPermission } = permissions;
+    const { withoutPermission } = permissions;
 
     const actionData = validation.data;
 
@@ -133,10 +140,6 @@ export async function PATCH(
       }
     }
 
-    const canBypass = containsPermission(
-      'bypass_time_tracking_request_approval'
-    );
-
     // Use the centralized RPC function to handle the update
     const { data, error: rpcError } = await supabase.rpc(
       'update_time_tracking_request',
@@ -144,7 +147,6 @@ export async function PATCH(
         p_request_id: id,
         p_action: actionData.action,
         p_workspace_id: normalizedWsId,
-        p_bypass_rules: canBypass,
         p_rejection_reason:
           actionData.action === 'reject'
             ? actionData.rejection_reason
