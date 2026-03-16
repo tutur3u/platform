@@ -102,21 +102,21 @@ export const FORM_VALIDATION_MODE_VALUES = [
 ] as const;
 
 export const formQuestionSettingsSchema = z.object({
-  placeholder: z.string().max(240).optional(),
-  minLabel: z.string().max(80).optional(),
-  maxLabel: z.string().max(80).optional(),
-  scaleMin: z.number().int().min(0).max(10).optional(),
-  scaleMax: z.number().int().min(1).max(10).optional(),
-  ratingMax: z.number().int().min(2).max(10).optional(),
-  optionLayout: z.enum(FORM_OPTION_LAYOUT_VALUES).optional(),
-  youtubeUrl: z.string().max(2000).optional(),
-  youtubeVideoId: z.string().max(32).optional(),
-  youtubeStartSeconds: z.number().int().min(0).max(86400).optional(),
-  validationMode: z.enum(FORM_VALIDATION_MODE_VALUES).optional(),
-  validationMin: z.number().optional(),
-  validationMax: z.number().optional(),
-  validationPattern: z.string().max(500).optional(),
-  validationMessage: z.string().max(200).optional(),
+  placeholder: z.string().max(240).nullable().optional(),
+  minLabel: z.string().max(80).nullable().optional(),
+  maxLabel: z.string().max(80).nullable().optional(),
+  scaleMin: z.number().int().min(0).max(10).nullable().optional(),
+  scaleMax: z.number().int().min(1).max(10).nullable().optional(),
+  ratingMax: z.number().int().min(2).max(10).nullable().optional(),
+  optionLayout: z.enum(FORM_OPTION_LAYOUT_VALUES).nullable().optional(),
+  youtubeUrl: z.string().max(2000).nullable().optional(),
+  youtubeVideoId: z.string().max(32).nullable().optional(),
+  youtubeStartSeconds: z.number().int().min(0).max(86400).nullable().optional(),
+  validationMode: z.enum(FORM_VALIDATION_MODE_VALUES).nullable().optional(),
+  validationMin: z.number().nullable().optional(),
+  validationMax: z.number().nullable().optional(),
+  validationPattern: z.string().max(500).nullable().optional(),
+  validationMessage: z.string().max(200).nullable().optional(),
 });
 
 export const formQuestionSchema = z.object({
@@ -147,10 +147,7 @@ export const formLogicRuleSchema = z
     operator: z.enum(FORM_LOGIC_OPERATOR_VALUES).default('equals'),
     comparisonValue: z.string().trim().default(''),
     actionType: z.enum(FORM_LOGIC_ACTION_VALUES),
-    targetSectionId: formStudioIdentifierSchema
-      .min(1, 'Select a target section for each branching rule.')
-      .nullable()
-      .optional(),
+    targetSectionId: z.string().nullable().optional(),
   })
   .superRefine((value, ctx) => {
     if (

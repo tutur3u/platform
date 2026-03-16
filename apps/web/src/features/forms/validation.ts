@@ -9,9 +9,9 @@ const DEFAULT_VALIDATION_MESSAGE = 'The current value is not accepted.';
 
 export function getValidationConstraintHint(
   settings: {
-    validationMode?: string;
-    validationMin?: number;
-    validationMax?: number;
+    validationMode?: string | null;
+    validationMin?: number | null;
+    validationMax?: number | null;
   },
   t: (key: string, values?: Record<string, string | number>) => string
 ): string | null {
@@ -57,11 +57,11 @@ export function getValidationConstraintHint(
 export function validateQuestionValue(
   value: unknown,
   settings: {
-    validationMode?: string;
-    validationMin?: number;
-    validationMax?: number;
-    validationPattern?: string;
-    validationMessage?: string;
+    validationMode?: string | null;
+    validationMin?: number | null;
+    validationMax?: number | null;
+    validationPattern?: string | null;
+    validationMessage?: string | null;
   }
 ): { valid: boolean; message?: string } {
   const mode = settings.validationMode ?? 'none';
