@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQueryState } from 'nuqs';
+import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from '../../../../hooks/use-debounce';
 import { useFinanceHref } from '../finance-route-context';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
@@ -57,28 +58,16 @@ export function StandardInvoice({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
-  const searchParams = useSearchParams();
+
   const queryClient = useQueryClient();
   const financeHref = useFinanceHref();
   const [customerSearch, setCustomerSearch] = useState('');
   const [debouncedCustomerSearch] = useDebounce(customerSearch, 300);
 
   // Read from URL params
-  const selectedUserId = searchParams.get('user_id') || '';
-
-  // Helper to update URL params
-  const updateSearchParam = useCallback(
-    (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams);
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-      router.replace(`?${params.toString()}`, { scroll: false });
-    },
-    [searchParams, router]
-  );
+  const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
+    defaultValue: '',
+  });
 
   // Data queries
   const {
@@ -353,7 +342,7 @@ export function StandardInvoice({
         setInvoiceContent('');
         setInvoiceNotes('');
         resetRounding();
-        updateSearchParam('user_id', '');
+        setSelectedUserId(null);
         setSelectedWalletId(defaultWalletId || '');
         setSelectedCategoryId('');
         setCustomerSearch('');
@@ -404,7 +393,7 @@ export function StandardInvoice({
           description={t('ws-invoices.customer_selection_description')}
           customers={users}
           selectedUserId={selectedUserId}
-          onSelect={(value) => updateSearchParam('user_id', value)}
+          onSelect={setSelectedUserId}
           selectedUser={selectedUser}
           showUserPreview
           loading={

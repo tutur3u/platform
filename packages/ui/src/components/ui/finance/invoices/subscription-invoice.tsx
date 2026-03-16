@@ -51,7 +51,7 @@ import {
 
 interface Props {
   wsId: string;
-  prefillAmount?: number; // Total attendance days to prefill product quantities
+  prefillAmount?: number | null; // Total attendance days to prefill product quantities
   createMultipleInvoices: boolean;
   printAfterCreate?: boolean;
   downloadImageAfterCreate?: boolean;

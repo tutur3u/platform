@@ -27,7 +27,7 @@ interface UseSubscriptionAutoSelectionProps {
   enabled: boolean;
   selectedGroupIds: string[];
   selectedMonth: string;
-  prefillAmount?: number;
+  prefillAmount?: number | null;
   groupProducts: UserGroupProducts[];
   products: Product[];
   userGroups: UserGroup[];
@@ -313,7 +313,7 @@ export function useSubscriptionAutoSelection({
     );
 
     const shouldUsePrefill =
-      prefillAmount !== undefined && !initialPrefillUsedRef.current;
+      prefillAmount != null && !initialPrefillUsedRef.current;
     const attendanceDays = shouldUsePrefill
       ? prefillAmount
       : getEffectiveDays(userAttendance, totalSessions, useAttendanceBased);
@@ -350,7 +350,7 @@ export function useSubscriptionAutoSelection({
       return;
     }
 
-    if (prefillAmount !== undefined && !initialPrefillUsedRef.current) {
+    if (prefillAmount != null && !initialPrefillUsedRef.current) {
       return;
     }
 

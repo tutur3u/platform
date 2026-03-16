@@ -5,12 +5,9 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Database } from '@tuturuuu/types';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { parseMonthsOwed } from '@tuturuuu/types/primitives/PendingInvoice';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -108,17 +105,29 @@ const invoiceSchema = z.object({
     .transform((v) => v ?? undefined),
 });
 
-type FinanceInvoiceRow =
-  Database['public']['Tables']['finance_invoices']['Row'];
-type FinanceInvoiceUserGroupRow = {
-  finance_invoices: Pick<
-    FinanceInvoiceRow,
-    'valid_until' | 'created_at'
-  > | null;
-};
-
 const invoicesResponseSchema = z.object({
   data: z.array(invoiceSchema),
+  count: z.number(),
+});
+
+const pendingInvoiceSchema = z.object({
+  user_id: z.string(),
+  user_name: z.string(),
+  user_avatar_url: z.string().nullable().optional(),
+  group_id: z.string().optional(),
+  group_name: z.string().optional(),
+  group_ids: z.array(z.string()).optional(),
+  group_names: z.array(z.string()).optional(),
+  months_owed: z.union([z.string(), z.array(z.string())]),
+  attendance_days: z.number(),
+  total_sessions: z.number(),
+  potential_total: z.number(),
+  href: z.string().optional(),
+  ws_id: z.string().optional(),
+});
+
+const pendingInvoicesResponseSchema = z.object({
+  data: z.array(pendingInvoiceSchema),
   count: z.number(),
 });
 
@@ -135,24 +144,6 @@ const createdPromotionSchema = z.object({
 const createdPromotionResponseSchema = z.object({
   data: createdPromotionSchema,
 });
-
-const pendingInvoiceRawSchema = z.object({
-  user_id: z.string(),
-  user_name: z.string(),
-  user_avatar_url: z.string().optional().nullable(),
-  group_id: z.string().optional(),
-  group_name: z.string().optional(),
-  group_ids: z.array(z.string()).optional(),
-  group_names: z.array(z.string()).optional(),
-  months_owed: z.union([z.string(), z.array(z.string())]),
-  attendance_days: z.number(),
-  total_sessions: z.number(),
-  potential_total: z.number(),
-  href: z.string().optional().nullable(),
-  ws_id: z.string().optional().nullable(),
-});
-
-const pendingInvoicesRawSchema = z.array(pendingInvoiceRawSchema);
 
 // ==================== INVOICES DATA FETCHING ====================
 
@@ -534,38 +525,6 @@ export const useCategories = (wsId: string) => {
   });
 };
 
-export const useUserTransactions = (wsId: string, userId: string) => {
-  return useQuery({
-    queryKey: ['user-transactions', wsId, userId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data: rawData, error } = await supabase
-        .from('wallet_transactions')
-        .select(
-          `*, workspace_wallets!inner(name, ws_id), transaction_categories(name)`
-        )
-        .eq('workspace_wallets.ws_id', wsId)
-        .eq('creator_id', userId)
-        .order('taken_at', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-
-      const data =
-        rawData?.map(
-          ({ workspace_wallets, transaction_categories, ...rest }) => ({
-            ...rest,
-            wallet: workspace_wallets?.name,
-            category: transaction_categories?.name,
-          })
-        ) || [];
-
-      return data as Transaction[];
-    },
-    enabled: !!userId,
-  });
-};
-
 export const useUserInvoices = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['user-invoices', wsId, userId],
@@ -648,87 +607,6 @@ export const useUserGroups = (wsId: string, userId: string) => {
       }));
     },
     enabled: !!wsId && !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    retry: 3,
-  });
-};
-
-export const useUserAttendance = (
-  groupId: string,
-  userId: string,
-  month: string
-) => {
-  return useQuery({
-    queryKey: ['user-attendance', groupId, userId, month],
-    queryFn: async () => {
-      const supabase = createClient();
-
-      // Parse the month to get start and end dates
-      const startOfMonth = new Date(`${month}-01`);
-      const nextMonth = new Date(startOfMonth);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-      const { data, error } = await supabase
-        .from('user_group_attendance')
-        .select('date, status')
-        .eq('group_id', groupId)
-        .eq('user_id', userId)
-        .gte('date', startOfMonth.toISOString().split('T')[0])
-        .lt('date', nextMonth.toISOString().split('T')[0])
-        .order('date', { ascending: true });
-
-      if (error) {
-        console.error('❌ User attendance fetch error:', error);
-        throw error;
-      }
-
-      return data || [];
-    },
-    enabled: !!groupId && !!userId && !!month,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    retry: 3,
-  });
-};
-
-// Get multiple groups' attendance combined (for multi-group selection)
-export const useMultiGroupUserAttendance = (
-  groupIds: string[],
-  userId: string,
-  month: string
-) => {
-  return useQuery({
-    queryKey: ['multi-group-user-attendance', groupIds, userId, month],
-    queryFn: async () => {
-      if (groupIds.length === 0) return [];
-
-      const supabase = createClient();
-
-      // Parse the month to get start and end dates
-      const startOfMonth = new Date(`${month}-01`);
-      const nextMonth = new Date(startOfMonth);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-      const { data, error } = await supabase
-        .from('user_group_attendance')
-        .select('date, status, group_id')
-        .in('group_id', groupIds)
-        .eq('user_id', userId)
-        .gte('date', startOfMonth.toISOString().split('T')[0])
-        .lt('date', nextMonth.toISOString().split('T')[0])
-        .order('date', { ascending: true });
-
-      if (error) {
-        console.error('❌ Multi-group user attendance fetch error:', error);
-        throw error;
-      }
-
-      return data || [];
-    },
-    enabled: groupIds.length > 0 && !!userId && !!month,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -998,143 +876,6 @@ export const useMultiGroupProducts = (wsId: string, groupIds: string[]) => {
       return payload.items ?? [];
     },
     enabled: !!wsId && groupIds.length > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    retry: 3,
-  });
-};
-
-// Get User's Latest Subscription Invoice
-export const useUserLatestSubscriptionInvoice = (
-  userId: string,
-  groupId: string
-) => {
-  return useQuery({
-    queryKey: ['user-latest-subscription-invoice', userId, groupId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('finance_invoice_user_groups')
-        .select('finance_invoices!inner(valid_until, created_at)')
-        .eq('user_group_id', groupId)
-        .eq('finance_invoices.customer_id', userId)
-        .order('created_at', {
-          referencedTable: 'finance_invoices',
-          ascending: false,
-        })
-        .limit(1);
-
-      if (error) {
-        console.error(
-          '❌ User latest subscription invoice fetch error:',
-          error
-        );
-        throw error;
-      }
-
-      const invoices = (data ?? [])
-        .map((row: FinanceInvoiceUserGroupRow) => row.finance_invoices)
-        .filter(
-          (
-            invoice
-          ): invoice is Pick<FinanceInvoiceRow, 'valid_until' | 'created_at'> =>
-            !!invoice
-        );
-
-      return invoices;
-    },
-    enabled: !!userId && !!groupId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    retry: 3,
-  });
-};
-
-// Get User's Latest Subscription Invoice for multiple groups
-export const useMultiGroupLatestSubscriptionInvoice = (
-  userId: string,
-  groupIds: string[]
-) => {
-  return useQuery({
-    queryKey: ['multi-group-latest-subscription-invoice', userId, groupIds],
-    queryFn: async () => {
-      if (groupIds.length === 0) return [];
-
-      const supabase = createClient();
-
-      const { data: validGroups, error: validGroupsError } = await supabase
-        .from('workspace_user_groups_users')
-        .select('group_id')
-        .eq('user_id', userId)
-        .eq('role', 'STUDENT')
-        .in('group_id', groupIds);
-
-      if (validGroupsError) {
-        console.error(
-          '❌ Multi-group latest subscription invoice valid groups error:',
-          validGroupsError
-        );
-        throw validGroupsError;
-      }
-
-      const validGroupIds = (validGroups || [])
-        .map((row) => row.group_id)
-        .filter((id): id is string => !!id);
-
-      if (validGroupIds.length === 0) return [];
-
-      const { data, error } = await supabase
-        .from('finance_invoice_user_groups')
-        .select(
-          'user_group_id, finance_invoices!inner(valid_until, created_at)'
-        )
-        .in('user_group_id', validGroupIds)
-        .eq('finance_invoices.customer_id', userId)
-        .order('created_at', {
-          referencedTable: 'finance_invoices',
-          ascending: false,
-        });
-
-      if (error) {
-        console.error(
-          '❌ Multi-group latest subscription invoice fetch error:',
-          error
-        );
-        throw error;
-      }
-
-      const sortedRows = (data ?? []).slice().sort((a, b) => {
-        const aDate = a.finance_invoices?.created_at
-          ? new Date(a.finance_invoices.created_at).getTime()
-          : 0;
-        const bDate = b.finance_invoices?.created_at
-          ? new Date(b.finance_invoices.created_at).getTime()
-          : 0;
-        return bDate - aDate;
-      });
-
-      // Deduplicate to get only the latest invoice per group
-      const latestInvoicesMap = new Map<
-        string,
-        { group_id: string; valid_until: string | null; created_at: string }
-      >();
-
-      sortedRows.forEach((row) => {
-        const groupId = row.user_group_id;
-        if (groupId && !latestInvoicesMap.has(groupId)) {
-          latestInvoicesMap.set(groupId, {
-            group_id: groupId,
-            valid_until: row.finance_invoices?.valid_until ?? null,
-            created_at: row.finance_invoices?.created_at ?? '',
-          });
-        }
-      });
-
-      return Array.from(latestInvoicesMap.values());
-    },
-    enabled: !!userId && groupIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -1415,95 +1156,37 @@ export const usePendingInvoices = (
       { page, pageSize, q, userIds, groupByUser },
     ],
     queryFn: async () => {
-      const supabase = createClient();
+      const searchParams = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        q: q || '',
+        groupByUser: String(groupByUser),
+      });
 
-      // Calculate limit and offset
-      const offset = (page - 1) * pageSize;
+      userIds.forEach((userId) => {
+        searchParams.append('userIds', userId);
+      });
 
-      // Fetch data with pagination and filters
-      let rawData: unknown = null;
-      let error: unknown = null;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices/pending?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
 
-      if (groupByUser) {
-        const response = await supabase.rpc(
-          'get_pending_invoices_grouped_by_user',
-          {
-            p_ws_id: wsId,
-            p_limit: pageSize,
-            p_offset: offset,
-            p_query: q || undefined,
-            p_user_ids: userIds.length > 0 ? userIds : undefined,
-          }
-        );
-        rawData = response.data;
-        error = response.error;
-      } else {
-        const response = await supabase.rpc('get_pending_invoices', {
-          p_ws_id: wsId,
-          p_limit: pageSize,
-          p_offset: offset,
-          p_query: q || undefined,
-          p_user_ids: userIds.length > 0 ? userIds : undefined,
-        });
-        rawData = response.data;
-        error = response.error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending invoices');
       }
 
-      if (error) {
-        console.error('❌ Pending invoices fetch error:', error);
-        throw error;
-      }
+      const json = await response.json();
+      const result = pendingInvoicesResponseSchema.safeParse(json);
 
-      const result = pendingInvoicesRawSchema.safeParse(rawData || []);
       if (!result.success) {
         throw new Error(
-          `Invalid response from get_pending_invoices RPC: ${result.error.message}`
+          `Invalid response from pending invoices API: ${result.error.message}`
         );
       }
 
-      const data = result.data;
-
-      // Fetch total count with filters
-      let countData: unknown = null;
-      let countError: unknown = null;
-
-      if (groupByUser) {
-        const response = await supabase.rpc(
-          'get_pending_invoices_grouped_by_user_count',
-          {
-            p_ws_id: wsId,
-            p_query: q || undefined,
-            p_user_ids: userIds.length > 0 ? userIds : undefined,
-          }
-        );
-        countData = response.data;
-        countError = response.error;
-      } else {
-        const response = await supabase.rpc('get_pending_invoices_count', {
-          p_ws_id: wsId,
-          p_query: q || undefined,
-          p_user_ids: userIds.length > 0 ? userIds : undefined,
-        });
-        countData = response.data;
-        countError = response.error;
-      }
-
-      if (countError) {
-        console.error('❌ Pending invoices count error:', countError);
-        throw countError;
-      }
-
-      const countResult = z.number().safeParse(countData);
-      if (!countResult.success) {
-        throw new Error(
-          `Invalid response from get_pending_invoices_count RPC: ${countResult.error.message}`
-        );
-      }
-
-      const count = countResult.data;
-
-      // Transform months_owed from CSV string to array
-      const transformedData = data.map((invoice) => ({
+      // Transform months_owed from CSV string to array if needed
+      const transformedData = result.data.data.map((invoice: any) => ({
         ...invoice,
         months_owed:
           typeof invoice.months_owed === 'string'
@@ -1513,13 +1196,13 @@ export const usePendingInvoices = (
 
       return {
         data: transformedData,
-        count: count || 0,
+        count: result.data.count || 0,
       };
     },
     enabled: !!wsId && enabled,
-    staleTime: 2 * 60 * 1000, // 2 minutes - more frequent refresh for pending data
+    staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,
     retry: 3,
   });
@@ -1534,61 +1217,22 @@ export const usePendingInvoicesCurrentMonthCount = (
   return useQuery({
     queryKey: ['pending-invoices-current-month', wsId, groupByUser],
     queryFn: async () => {
-      const supabase = createClient();
+      const searchParams = new URLSearchParams({
+        groupByUser: String(groupByUser),
+        currentMonthOnly: 'true',
+      });
 
-      // Get current month in YYYY-MM format
-      const now = new Date();
-      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices/pending?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
 
-      // Fetch all pending invoices without pagination to count current month
-      let rawData: unknown = null;
-      let error: unknown = null;
-
-      if (groupByUser) {
-        const response = await supabase.rpc(
-          'get_pending_invoices_grouped_by_user',
-          {
-            p_ws_id: wsId,
-            p_limit: 10000,
-            p_offset: 0,
-          }
-        );
-        rawData = response.data;
-        error = response.error;
-      } else {
-        const response = await supabase.rpc('get_pending_invoices', {
-          p_ws_id: wsId,
-          p_limit: 10000,
-          p_offset: 0,
-        });
-        rawData = response.data;
-        error = response.error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending invoices current month count');
       }
 
-      if (error) {
-        console.error('❌ Pending invoices current month count error:', error);
-        throw error;
-      }
-
-      const result = pendingInvoicesRawSchema.safeParse(rawData || []);
-      if (!result.success) {
-        throw new Error(
-          `Invalid response from get_pending_invoices RPC (current month count): ${result.error.message}`
-        );
-      }
-
-      const data = result.data;
-
-      // Count invoices that include the current month
-      const currentMonthCount = data.filter((invoice) => {
-        const monthsOwed =
-          typeof invoice.months_owed === 'string'
-            ? parseMonthsOwed(invoice.months_owed)
-            : invoice.months_owed || [];
-        return monthsOwed.includes(currentMonth);
-      }).length;
-
-      return currentMonthCount;
+      const count = await response.json();
+      return typeof count === 'number' ? count : 0;
     },
     enabled: !!wsId && enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes
