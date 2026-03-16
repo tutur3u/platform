@@ -353,12 +353,13 @@ export function QuestionEditor({
   };
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
+    <Collapsible open={open && !isDragging} onOpenChange={onOpenChange}>
       <div
         ref={setCombinedNodeRef}
         style={style}
         className={cn(
-          'rounded-[1.75rem] border transition-all duration-300',
+          'rounded-[1.75rem] border',
+          !isDragging && 'transition-all duration-300',
           open
             ? 'border-border/80 bg-background/95 shadow-foreground/5 shadow-md'
             : 'border-border/50 bg-muted/30 shadow-sm hover:bg-muted/50',

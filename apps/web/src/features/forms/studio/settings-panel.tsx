@@ -141,12 +141,20 @@ export function SettingsPanel({
       const text = await file.text();
       const result = importFormStudioPayload(text);
       if (!result.ok) {
-        toast.error(t('studio.import_failed', { error: result.error }));
+        toast.error(
+          t('studio.import_failed', {
+            error: result.error?.trim() || t('studio.import_error_generic'),
+          })
+        );
         return;
       }
       setImportPendingData(result.data);
     } catch {
-      toast.error(t('studio.import_failed', { error: 'Failed to read file' }));
+      toast.error(
+        t('studio.import_failed', {
+          error: t('studio.import_read_failed'),
+        })
+      );
     }
   };
 

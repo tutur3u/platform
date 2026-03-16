@@ -52,14 +52,16 @@ export function FormsImportButton({
         }
       );
 
-      const payload = (await response.json()) as {
-        id?: string;
-        error?: string;
-      };
+      let payload: { id?: string; error?: string } = {};
+      try {
+        payload = (await response.json()) as { id?: string; error?: string };
+      } catch {
+        payload = { error: t('studio.import_error_generic') };
+      }
       if (!response.ok || !payload.id) {
         toast.error(
           t('studio.import_failed', {
-            error: payload.error ?? 'Failed to create form from import',
+            error: payload.error?.trim() || t('studio.import_error_generic'),
           })
         );
         return;
@@ -69,7 +71,9 @@ export function FormsImportButton({
       router.refresh();
     } catch {
       toast.error(
-        t('studio.import_failed', { error: 'Failed to read import file' })
+        t('studio.import_failed', {
+          error: t('studio.import_read_failed'),
+        })
       );
     } finally {
       setIsImporting(false);

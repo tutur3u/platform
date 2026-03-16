@@ -81,6 +81,7 @@ export default async function FormDetailPage({
             wsId={wsId}
             workspaceSlug={resolvedParams.wsId}
             mode="edit"
+            canManageForms={!!canManageForms}
             initialForm={form}
             initialResponses={responses.records}
             initialResponsesTotal={responses.total}

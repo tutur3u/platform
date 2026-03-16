@@ -60,10 +60,13 @@ export async function POST(
     const parsed = formStudioSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? 'Invalid form payload' },
-        { status: 400 }
-      );
+      const firstIssue = parsed.error.issues[0];
+      const path =
+        (firstIssue?.path?.length ?? 0) > 0
+          ? `${firstIssue!.path!.join('.')}: `
+          : '';
+      const message = firstIssue?.message ?? 'Validation failed';
+      return NextResponse.json({ error: `${path}${message}` }, { status: 400 });
     }
 
     const id = await saveFormDefinition({

@@ -1,6 +1,6 @@
 'use client';
 
-import { Archive, Download, ExternalLink, Trash2 } from '@tuturuuu/icons';
+import { Archive, Copy, Download, ExternalLink, Trash2 } from '@tuturuuu/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +35,33 @@ export function FormCardActions({
   const router = useRouter();
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [duplicatePending, setDuplicatePending] = useState(false);
   const [isPending, setIsPending] = useState(false);
+
+  const handleDuplicate = async () => {
+    setDuplicatePending(true);
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${workspaceSlug}/forms/${formId}/copy`,
+        { method: 'POST' }
+      );
+      const payload = (await response.json()) as {
+        id?: string;
+        error?: string;
+      };
+      if (!response.ok || !payload.id) {
+        toast.error(payload.error ?? t('toast.failed_to_save_form'));
+        return;
+      }
+      toast.success(t('toast.form_duplicated'));
+      router.refresh();
+      router.push(`/${workspaceSlug}/forms/${payload.id}`);
+    } catch {
+      toast.error(t('toast.failed_to_save_form'));
+    } finally {
+      setDuplicatePending(false);
+    }
+  };
 
   const handleArchive = async () => {
     setIsPending(true);
@@ -109,6 +135,15 @@ export function FormCardActions({
         </Button>
         {canManageForms ? (
           <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={duplicatePending}
+              onClick={handleDuplicate}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {t('pages.duplicate_form')}
+            </Button>
             <Button
               type="button"
               variant="outline"

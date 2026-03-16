@@ -60,6 +60,7 @@ import FinanceNavigationSettings from './finance/finance-navigation-settings';
 import InvoiceSettings from './finance/invoice-settings';
 import InvoiceVisibilitySettings from './finance/invoice-visibility-settings';
 import TransactionDefaultsSettings from './finance/transaction-defaults-settings';
+import { FormsAutosaveSettings } from './forms/forms-autosave-settings';
 import ReferralSettings from './inventory/referral-settings';
 import { MiraMemorySettings } from './mira/mira-memory-settings';
 import { MiraPersonalitySettings } from './mira/mira-personality-settings';
@@ -330,6 +331,13 @@ export function SettingsDialog({
           icon: PanelLeft,
           description: t('settings.preferences.sidebar_description'),
           keywords: ['Sidebar', 'Navigation', 'Menu'],
+        },
+        {
+          name: 'forms',
+          label: t('settings.preferences.forms'),
+          icon: FileText,
+          description: t('settings.preferences.forms_description'),
+          keywords: ['Forms', 'Auto-save', 'Form builder'],
         },
       ],
     },
@@ -712,6 +720,12 @@ export function SettingsDialog({
         {activeTab === 'sidebar' && (
           <div className="h-full">
             <SidebarSettings />
+          </div>
+        )}
+
+        {activeTab === 'forms' && (
+          <div className="h-full">
+            <FormsAutosaveSettings />
           </div>
         )}
 

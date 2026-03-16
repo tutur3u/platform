@@ -24,7 +24,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.8.1",
+    "@formatjs/intl-localematcher": "^0.8.2",
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-table": "^8.21.3",
@@ -45,7 +45,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.20",
     "framer-motion": "^12.36.0",
-    "nanoid": "^5.1.6",
+    "nanoid": "^5.1.7",
     "negotiator": "^1.0.0",
     "next": "^16.1.6",
     "next-intl": "^4.8.3",
@@ -69,7 +69,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
-    "jsdom": "^28.1.0",
+    "jsdom": "^29.0.0",
     "postcss": "^8.5.8",
     "typescript": "^5.9.3"
   },

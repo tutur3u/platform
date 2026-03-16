@@ -16,9 +16,11 @@ import {
   BarChart3,
   Check,
   ChevronDown,
+  Copy,
   Eye,
   LayoutTemplate,
   Link,
+  MoreHorizontal,
   Plus,
   Settings2,
   Table2,
@@ -31,23 +33,25 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { useFieldArray, useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 
+import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { FORM_FONT_VARIABLES, getFormFontStyle } from '../fonts';
 import { FormRuntime } from '../form-runtime';
 import { FormsMarkdown } from '../forms-markdown';
@@ -140,6 +144,7 @@ export function FormStudio({
   wsId,
   workspaceSlug,
   mode,
+  canManageForms = true,
   initialForm,
   initialResponses,
   initialResponsesTotal,
@@ -150,6 +155,7 @@ export function FormStudio({
   wsId: string;
   workspaceSlug: string;
   mode: 'create' | 'edit';
+  canManageForms?: boolean;
   initialForm?: FormDefinition;
   initialResponses?: FormResponseRecord[];
   initialResponsesTotal?: number;
@@ -170,6 +176,18 @@ export function FormStudio({
     parseAsString.withDefault('build').withOptions({ shallow: true })
   );
   const [hasCopied, setHasCopied] = useState(false);
+  const [duplicatePending, setDuplicatePending] = useState(false);
+  const { value: autosaveEnabled } = useUserBooleanConfig(
+    'FORMS_AUTOSAVE_ENABLED',
+    true
+  );
+  const [autosaveStatus, setAutosaveStatus] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle');
+  const [autosaveScheduledAt, setAutosaveScheduledAt] = useState<number | null>(
+    null
+  );
+  const [secondsUntilAutosave, setSecondsUntilAutosave] = useState(0);
   const [activeSectionId, setActiveSectionId] = useState('');
   const [activeQuestionIdsBySection, setActiveQuestionIdsBySection] = useState<
     Record<string, string>
@@ -331,6 +349,31 @@ export function FormStudio({
     navigator.clipboard.writeText(url);
     setHasCopied(true);
     setTimeout(() => setHasCopied(false), 2000);
+  };
+
+  const handleDuplicate = async () => {
+    if (!initialForm?.id) return;
+    setDuplicatePending(true);
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${workspaceSlug}/forms/${initialForm.id}/copy`,
+        { method: 'POST' }
+      );
+      const payload = (await response.json()) as {
+        id?: string;
+        error?: string;
+      };
+      if (!response.ok || !payload.id) {
+        toast.error(payload.error ?? t('toast.failed_to_save_form'));
+        return;
+      }
+      toast.success(t('toast.form_duplicated'));
+      router.push(`/${workspaceSlug}/forms/${payload.id}`);
+    } catch {
+      toast.error(t('toast.failed_to_save_form'));
+    } finally {
+      setDuplicatePending(false);
+    }
   };
 
   const handleExport = () => {
@@ -560,33 +603,119 @@ export function FormStudio({
     return error.message ?? t('toast.fix_validation_errors');
   };
 
-  const handleSave = form.handleSubmit(
-    async (payload) => {
+  const performSave = useCallback(
+    async (payload: FormStudioInput, isAutosave: boolean) => {
       const normalizedPayload = ensureIdentifiers(payload);
-      let result: { id: string } | null = null;
+      const variables = isAutosave
+        ? { payload: normalizedPayload, isAutosave: true }
+        : normalizedPayload;
+      const result = await saveMutation.mutateAsync(variables);
 
-      try {
-        result = await saveMutation.mutateAsync(normalizedPayload);
-      } catch {
-        return;
-      }
-
-      if (mode === 'create') {
+      if (mode === 'create' && result?.id) {
         const nextPath = pathname.endsWith('/new')
           ? `${pathname.slice(0, -4)}/${result.id}`
           : `/${workspaceSlug}/forms/${result.id}`;
-        router.push(nextPath);
+        router.replace(nextPath);
         return;
       }
 
-      form.reset(normalizedPayload);
-      router.refresh();
+      if (!isAutosave) {
+        form.reset(normalizedPayload, { keepValues: true });
+      }
+      return result;
+    },
+    [form, mode, pathname, router, saveMutation, workspaceSlug]
+  );
+
+  const handleSave = form.handleSubmit(
+    async (payload) => {
+      try {
+        await performSave(payload, false);
+      } catch {
+        return;
+      }
     },
     (errors) => {
       const firstError = findFirstValidationError(errors);
       toast.error(getSaveValidationMessage(firstError));
     }
   );
+
+  const performAutosave = useDebouncedCallback(async () => {
+    if (!form.formState.isDirty || saveMutation.isPending) {
+      return;
+    }
+    setAutosaveScheduledAt(null);
+    const valid = await form.trigger();
+    if (!valid) {
+      return;
+    }
+    const payload = form.getValues();
+    setAutosaveStatus('saving');
+    try {
+      await performSave(payload, true);
+      setAutosaveStatus('saved');
+    } catch {
+      setAutosaveStatus('error');
+    }
+  }, 2000);
+
+  useEffect(() => {
+    if (!autosaveEnabled) {
+      setAutosaveScheduledAt(null);
+      performAutosave.cancel();
+      return;
+    }
+
+    const unsubscribe = form.subscribe({
+      formState: { values: true },
+      callback: () => {
+        if (!form.formState.isDirty || saveMutation.isPending) {
+          return;
+        }
+        setAutosaveStatus('idle');
+        setAutosaveScheduledAt(Date.now() + 2000);
+        performAutosave();
+      },
+    });
+
+    return () => {
+      unsubscribe();
+      performAutosave.cancel();
+      setAutosaveScheduledAt(null);
+    };
+  }, [autosaveEnabled, form, performAutosave, saveMutation.isPending]);
+
+  useEffect(() => {
+    if (!autosaveEnabled || !form.formState.isDirty) {
+      setAutosaveScheduledAt(null);
+      performAutosave.cancel();
+    }
+  }, [autosaveEnabled, form.formState.isDirty, performAutosave]);
+
+  useEffect(() => {
+    if (!autosaveScheduledAt) {
+      setSecondsUntilAutosave(0);
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(
+        0,
+        Math.ceil((autosaveScheduledAt - Date.now()) / 1000)
+      );
+      setSecondsUntilAutosave(remaining);
+      if (remaining <= 0) {
+        setAutosaveScheduledAt(null);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [autosaveScheduledAt]);
+
+  const saveButtonDisabled =
+    saveMutation.isPending ||
+    (mode === 'edit' && (!isDirty || autosaveStatus === 'saved'));
 
   const handleSectionDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) {
@@ -751,33 +880,46 @@ export function FormStudio({
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-              {mode === 'edit' && shareQuery?.shareLink?.code && (
-                <TooltipProvider>
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        onClick={handleCopyLink}
-                        className={cn(
-                          'gap-2 rounded-2xl px-4',
-                          studioToneClasses.secondaryButtonClassName
-                        )}
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              {(mode === 'edit' && canManageForms) ||
+              (mode === 'edit' && shareQuery?.shareLink?.code) ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className={cn(
+                        'h-9 w-9 shrink-0 rounded-2xl',
+                        studioToneClasses.secondaryButtonClassName
+                      )}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {mode === 'edit' && canManageForms && (
+                      <DropdownMenuItem
+                        disabled={duplicatePending}
+                        onClick={handleDuplicate}
                       >
+                        <Copy className="mr-2 h-4 w-4" />
+                        {t('studio.duplicate_form')}
+                      </DropdownMenuItem>
+                    )}
+                    {mode === 'edit' && shareQuery?.shareLink?.code && (
+                      <DropdownMenuItem onClick={handleCopyLink}>
                         {hasCopied ? (
-                          <Check className="h-4 w-4 text-dynamic-green" />
+                          <Check className="mr-2 h-4 w-4 text-dynamic-green" />
                         ) : (
-                          <Link className="h-4 w-4" />
+                          <Link className="mr-2 h-4 w-4" />
                         )}
                         {hasCopied ? tCommon('copied') : t('studio.copy_link')}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{t('studio.copy_link_tooltip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
               <Button
                 ref={primarySaveButtonRef}
                 className={cn(
@@ -785,15 +927,21 @@ export function FormStudio({
                   studioToneClasses.primaryButtonClassName
                 )}
                 onClick={handleSave}
-                disabled={
-                  saveMutation.isPending || (mode === 'edit' && !isDirty)
-                }
+                disabled={saveButtonDisabled}
               >
                 {saveMutation.isPending
                   ? t('studio.saving')
-                  : mode === 'create'
-                    ? t('studio.create_form')
-                    : t('studio.save_changes')}
+                  : autosaveStatus === 'error'
+                    ? t('studio.autosave_failed')
+                    : autosaveEnabled && isDirty && secondsUntilAutosave > 0
+                      ? t('studio.autosave_in_seconds', {
+                          seconds: secondsUntilAutosave,
+                        })
+                      : autosaveStatus === 'saved'
+                        ? t('studio.autosave_saved')
+                        : mode === 'create'
+                          ? t('studio.create_form')
+                          : t('studio.save_changes')}
               </Button>
             </div>
           </CardContent>
@@ -804,7 +952,7 @@ export function FormStudio({
             <Button
               type="button"
               onClick={handleSave}
-              disabled={saveMutation.isPending || (mode === 'edit' && !isDirty)}
+              disabled={saveButtonDisabled}
               className={cn(
                 'pointer-events-auto rounded-2xl px-5 shadow-black/15 shadow-lg',
                 studioToneClasses.primaryButtonClassName
@@ -812,9 +960,17 @@ export function FormStudio({
             >
               {saveMutation.isPending
                 ? t('studio.saving')
-                : mode === 'create'
-                  ? t('studio.create_form')
-                  : t('studio.save_changes')}
+                : autosaveStatus === 'error'
+                  ? t('studio.autosave_failed')
+                  : autosaveEnabled && isDirty && secondsUntilAutosave > 0
+                    ? t('studio.autosave_in_seconds', {
+                        seconds: secondsUntilAutosave,
+                      })
+                    : autosaveStatus === 'saved'
+                      ? t('studio.autosave_saved')
+                      : mode === 'create'
+                        ? t('studio.create_form')
+                        : t('studio.save_changes')}
             </Button>
           </div>
         ) : null}
