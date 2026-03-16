@@ -506,6 +506,7 @@ export async function POST(
         description: description?.trim() || null,
         description_yjs_state: validatedData.description_yjs_state ?? null,
         list_id: listId,
+        creator_id: user.id,
         priority: priority || null,
         start_date: start_date || null,
         end_date: end_date || null,

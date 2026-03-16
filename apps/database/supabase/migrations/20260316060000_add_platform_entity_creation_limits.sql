@@ -55,6 +55,10 @@ begin
   limit 1;
 
   if v_ws_id is null then
+    return null;
+  end if;
+
+  if v_effective_tier is null then
     return 'FREE'::public.workspace_product_tier;
   end if;
 
@@ -353,7 +357,8 @@ begin
   if v_limit_row.per_hour is not null then
     execute format(
       'select count(*) from public.%I src where %s and src.created_at >= $3',
-      v_source_view_name
+      v_source_view_name,
+      v_source_where_base
     )
     into v_count
     using v_subject_ws_id, v_subject_user_id, now() - interval '1 hour';
@@ -367,7 +372,8 @@ begin
   if v_limit_row.per_day is not null then
     execute format(
       'select count(*) from public.%I src where %s and src.created_at >= $3',
-      v_source_view_name
+      v_source_view_name,
+      v_source_where_base
     )
     into v_count
     using v_subject_ws_id, v_subject_user_id, now() - interval '1 day';
@@ -381,7 +387,8 @@ begin
   if v_limit_row.per_week is not null then
     execute format(
       'select count(*) from public.%I src where %s and src.created_at >= $3',
-      v_source_view_name
+      v_source_view_name,
+      v_source_where_base
     )
     into v_count
     using v_subject_ws_id, v_subject_user_id, now() - interval '7 days';
@@ -395,7 +402,8 @@ begin
   if v_limit_row.per_month is not null then
     execute format(
       'select count(*) from public.%I src where %s and src.created_at >= $3',
-      v_source_view_name
+      v_source_view_name,
+      v_source_where_base
     )
     into v_count
     using v_subject_ws_id, v_subject_user_id, now() - interval '30 days';
