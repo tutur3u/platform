@@ -252,8 +252,16 @@ export async function getRequestContentViolationForRequest(
       'description_yjs_state' in parsedBody &&
       typeof (parsedBody as { description?: unknown }).description === 'string'
     ) {
-      const { description, ...rest } = parsedBody as {
+      const {
+        description,
+        // Explicitly strip description_yjs_state from validation when allowed
+        // so Yjs payloads do not trigger short-field or emoji limits.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        description_yjs_state,
+        ...rest
+      } = parsedBody as {
         description: string;
+        description_yjs_state?: unknown;
         [key: string]: unknown;
       };
 

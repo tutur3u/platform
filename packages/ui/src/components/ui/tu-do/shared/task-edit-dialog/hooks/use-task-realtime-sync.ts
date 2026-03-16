@@ -117,9 +117,9 @@ export function useTaskRealtimeSync({
 
     const withLatestRelations = async <T>(
       apply: (relations: {
-        labels: any[];
-        assignees: any[];
-        projects: any[];
+        labels: WorkspaceTaskLabel[];
+        assignees: Task['assignees'];
+        projects: Task['projects'];
       }) => T
     ) => {
       relationsRequestToken += 1;
@@ -284,7 +284,7 @@ export function useTaskRealtimeSync({
               'Updating assignees from realtime:',
               relations.assignees
             );
-            setSelectedAssignees(relations.assignees);
+            setSelectedAssignees(relations.assignees ?? []);
           });
         }
       )
@@ -300,7 +300,7 @@ export function useTaskRealtimeSync({
           console.log('Received realtime update for task projects');
           await withLatestRelations((relations) => {
             console.log('Updating projects from realtime:', relations.projects);
-            setSelectedProjects(relations.projects);
+            setSelectedProjects(relations.projects ?? []);
           });
         }
       )

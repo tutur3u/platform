@@ -59,6 +59,27 @@ interface TemplateContent {
 export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { wsId: rawWsId, boardId } = await params;
+    const supabase = await createClient(req);
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Please sign in to save templates' },
+        { status: 401 }
+      );
+    }
+
+    if (!validate(boardId)) {
+      return NextResponse.json({ error: 'Invalid board ID' }, { status: 400 });
+    }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
     const body: SaveTemplateRequest = await req.json();
 
     const {
@@ -78,33 +99,24 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!validate(boardId)) {
-      return NextResponse.json({ error: 'Invalid board ID' }, { status: 400 });
-    }
-
-    const supabase = await createClient(req);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to save templates' },
-        { status: 401 }
-      );
-    }
-
     // Verify user has access to the workspace
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: membershipError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error(
+        'Error checking workspace membership when saving template:',
+        membershipError
+      );
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(

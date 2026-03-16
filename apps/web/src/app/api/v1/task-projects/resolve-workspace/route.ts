@@ -24,7 +24,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = requestSchema.safeParse(await request.json());
+    let jsonBody: unknown;
+    try {
+      jsonBody = await request.json();
+    } catch (error) {
+      console.error('Malformed JSON in resolve-workspace request:', error);
+      return NextResponse.json(
+        { error: 'Malformed JSON body' },
+        { status: 400 }
+      );
+    }
+
+    const body = requestSchema.safeParse(jsonBody);
     if (!body.success) {
       return NextResponse.json(
         { error: body.error.issues[0]?.message ?? 'Invalid request body' },
@@ -45,11 +56,13 @@ export async function POST(request: Request) {
           'Failed to verify workspace membership:',
           membershipError
         );
-        return false;
+        throw new Error('WORKSPACE_MEMBERSHIP_LOOKUP_FAILED');
       }
 
       return !!membership;
     };
+
+    const candidateWorkspaceIds = new Set<string>();
 
     if (body.data.boardId) {
       const { data: board, error: boardError } = await supabase
@@ -66,36 +79,73 @@ export async function POST(request: Request) {
         );
       }
 
-      if (board?.ws_id && (await hasWorkspaceAccess(board.ws_id))) {
-        return NextResponse.json({ workspaceId: board.ws_id });
+      if (board?.ws_id) {
+        candidateWorkspaceIds.add(board.ws_id);
       }
     }
 
     if (body.data.projectIds.length > 0) {
-      const { data: project, error: projectError } = await supabase
-        .from('task_projects')
-        .select('ws_id')
-        .in('id', body.data.projectIds)
-        .limit(1)
-        .maybeSingle();
+      const projectIds = body.data.projectIds;
+      const batchSize = 1000;
 
-      if (projectError) {
-        console.error(
-          'Failed to resolve workspace from projects:',
-          projectError
-        );
-        return NextResponse.json(
-          { error: 'Failed to resolve workspace' },
-          { status: 500 }
-        );
-      }
+      for (let i = 0; i < projectIds.length; i += batchSize) {
+        const batchIds = projectIds.slice(i, i + batchSize);
+        const { data: projects, error: projectError } = await supabase
+          .from('task_projects')
+          .select('ws_id')
+          .in('id', batchIds)
+          .maybeSingle();
 
-      if (project?.ws_id && (await hasWorkspaceAccess(project.ws_id))) {
-        return NextResponse.json({ workspaceId: project.ws_id });
+        if (projectError) {
+          console.error(
+            'Failed to resolve workspace from projects:',
+            projectError
+          );
+          return NextResponse.json(
+            { error: 'Failed to resolve workspace' },
+            { status: 500 }
+          );
+        }
+
+        if (projects?.ws_id) {
+          candidateWorkspaceIds.add(projects.ws_id);
+        }
       }
     }
 
-    return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
+    if (candidateWorkspaceIds.size === 0) {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+
+    if (candidateWorkspaceIds.size > 1) {
+      return NextResponse.json(
+        { error: 'Conflicting workspaces for supplied IDs' },
+        { status: 409 }
+      );
+    }
+
+    const [workspaceId] = Array.from(candidateWorkspaceIds);
+
+    try {
+      const hasAccess = await hasWorkspaceAccess(workspaceId!);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Workspace not found' },
+          { status: 404 }
+        );
+      }
+    } catch (error) {
+      console.error('Error during workspace membership verification:', error);
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ workspaceId });
   } catch (error) {
     console.error('Error resolving task project workspace:', error);
     return NextResponse.json(

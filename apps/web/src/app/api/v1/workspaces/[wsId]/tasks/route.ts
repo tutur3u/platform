@@ -15,16 +15,20 @@ import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const SORT_KEY_BASE_UNIT = 1000000;
 const SORT_KEY_DEFAULT = SORT_KEY_BASE_UNIT * 1000;
-let sortKeySequence = 0;
 
 function calculateEndSortKey(prevSortKey: number | null | undefined) {
-  sortKeySequence = (sortKeySequence % 999) + 1;
+  // Use a per-call unique suffix derived from high-resolution time to
+  // avoid module-level mutable state in serverless environments.
+  const uniqueSuffix =
+    typeof performance !== 'undefined'
+      ? Math.floor(performance.now() * 1000) % 1000
+      : Math.floor(Date.now() * 1000) % 1000;
 
   if (prevSortKey === null || prevSortKey === undefined) {
-    return SORT_KEY_DEFAULT + sortKeySequence;
+    return SORT_KEY_DEFAULT + uniqueSuffix;
   }
 
-  return prevSortKey + SORT_KEY_BASE_UNIT + sortKeySequence;
+  return prevSortKey + SORT_KEY_BASE_UNIT + uniqueSuffix;
 }
 
 const CreateTaskSchema = z.object({
@@ -550,10 +554,10 @@ export async function POST(
       description: description?.trim() || null,
       description_yjs_state: validatedData.description_yjs_state ?? null,
       list_id: listId,
-      priority: priority || null,
-      start_date: start_date || null,
-      end_date: end_date || null,
-      estimation_points: estimation_points || null,
+      priority: priority ?? null,
+      start_date: start_date ?? null,
+      end_date: end_date ?? null,
+      estimation_points: estimation_points ?? null,
       sort_key: newSortKey,
       created_at: new Date().toISOString(),
       deleted_at: null,

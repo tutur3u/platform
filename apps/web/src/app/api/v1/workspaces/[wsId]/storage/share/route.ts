@@ -52,12 +52,20 @@ async function hasSharedTaskAccess({
     return false;
   }
 
-  const { data: memberCheck } = await sbAdmin
+  const { data: memberCheck, error: memberError } = await sbAdmin
     .from('workspace_members')
     .select('user_id')
     .eq('ws_id', normalizedWsId)
     .eq('user_id', userId)
     .maybeSingle();
+
+  if (memberError) {
+    console.error(
+      'Error checking workspace membership for share:',
+      memberError
+    );
+    return false;
+  }
 
   if (memberCheck) {
     return true;
@@ -71,22 +79,40 @@ async function hasSharedTaskAccess({
 
   const email = userPrivateDetails?.email ?? null;
 
-  let shareQuery = sbAdmin
+  // First, check for a direct user-based share.
+  const { data: directShare, error: directShareError } = await sbAdmin
     .from('task_shares')
     .select('permission')
-    .eq('task_id', taskId);
+    .eq('task_id', taskId)
+    .eq('shared_with_user_id', userId)
+    .maybeSingle();
 
-  if (email) {
-    shareQuery = shareQuery.or(
-      `shared_with_user_id.eq.${userId},and(shared_with_email.ilike."${email}")`
-    );
-  } else {
-    shareQuery = shareQuery.eq('shared_with_user_id', userId);
+  if (directShareError) {
+    console.error('Error checking direct task share:', directShareError);
+    return false;
   }
 
-  const { data: directShare } = await shareQuery.maybeSingle();
   if (directShare) {
     return true;
+  }
+
+  // Fallback: check email-based share if we have a verified email.
+  if (email) {
+    const { data: emailShare, error: emailShareError } = await sbAdmin
+      .from('task_shares')
+      .select('permission')
+      .eq('task_id', taskId)
+      .ilike('shared_with_email', email)
+      .maybeSingle();
+
+    if (emailShareError) {
+      console.error('Error checking email-based task share:', emailShareError);
+      return false;
+    }
+
+    if (emailShare) {
+      return true;
+    }
   }
 
   const { data: publicShare } = await sbAdmin
@@ -136,6 +162,12 @@ async function resolveSignedUrl(
   if (!permissions) {
     if (!input.taskId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const taskRoot = `task-images/${input.taskId}`;
+    const taskPrefix = `${taskRoot}/`;
+    if (sanitizedPath !== taskRoot && !sanitizedPath.startsWith(taskPrefix)) {
+      return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
     }
 
     const hasAccess = await hasSharedTaskAccess({
