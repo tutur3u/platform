@@ -1,4 +1,6 @@
 import type { TaskWithScheduling } from '@tuturuuu/types';
+import {createAdminClient} from '@tuturuuu/supabase/next/server';
+import type {TypedSupabaseClient} from '@tuturuuu/supabase/next/client';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -20,7 +22,7 @@ type TaskCalendarEventRow = {
   };
 };
 
-async function getPersonalWorkspaceId(supabase: any, userId: string) {
+async function getPersonalWorkspaceId(supabase: TypedSupabaseClient, userId: string) {
   const { data, error } = await supabase
     .from('workspaces')
     .select('id, workspace_members!inner(user_id)')
@@ -30,14 +32,14 @@ async function getPersonalWorkspaceId(supabase: any, userId: string) {
     .maybeSingle();
 
   if (error || !data?.id) return null;
-  return data.id as string;
+  return data.id;
 }
 
 async function getTaskWorkspaceId(
-  supabase: any,
   taskId: string
 ): Promise<string | null> {
-  const { data } = await supabase
+  const sbAdmin = await createAdminClient();
+  const { data } = await sbAdmin
     .from('tasks')
     .select(
       `
@@ -52,16 +54,16 @@ async function getTaskWorkspaceId(
     .eq('id', taskId)
     .single();
 
-  const anyData = data as any;
+  const anyData = data;
   return anyData?.task_lists?.workspace_boards?.ws_id ?? null;
 }
 
 async function fetchUserSchedulingSettings(
-  supabase: any,
+  supabase: TypedSupabaseClient,
   taskId: string,
   userId: string
 ) {
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from('task_user_scheduling_settings')
     .select(
       `
@@ -90,6 +92,7 @@ async function fetchUserSchedulingSettings(
 export const GET = withSessionAuth<{ taskId: string }>(
   async (_req, { user, supabase }, { taskId }) => {
     try {
+      const sbAdmin = await createAdminClient();
       if (!validate(taskId)) {
         return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
       }
@@ -102,7 +105,7 @@ export const GET = withSessionAuth<{ taskId: string }>(
         );
       }
 
-      const taskWsId = await getTaskWorkspaceId(supabase, taskId);
+      const taskWsId = await getTaskWorkspaceId(taskId);
       if (!taskWsId) {
         return NextResponse.json({ error: 'Task not found' }, { status: 404 });
       }
@@ -123,7 +126,7 @@ export const GET = withSessionAuth<{ taskId: string }>(
       }
 
       // Fetch base task fields (shared, non-scheduling)
-      const { data: task, error: taskError } = await supabase
+      const { data: task, error: taskError } = await sbAdmin
         .from('tasks')
         .select(
           `
@@ -156,7 +159,7 @@ export const GET = withSessionAuth<{ taskId: string }>(
       };
 
       // Fetch scheduled events for this task in *personal workspace calendar only*
-      const { data: taskEvents } = await (supabase as any)
+      const { data: taskEvents } = await supabase
         .from('task_calendar_events')
         .select(
           `
@@ -260,7 +263,7 @@ export const POST = withSessionAuth<{ taskId: string }>(
         );
       }
 
-      const taskWsId = await getTaskWorkspaceId(supabase, taskId);
+      const taskWsId = await getTaskWorkspaceId(taskId);
       if (!taskWsId) {
         return NextResponse.json({ error: 'Task not found' }, { status: 404 });
       }
@@ -279,8 +282,10 @@ export const POST = withSessionAuth<{ taskId: string }>(
         );
       }
 
+      const sbAdmin = await createAdminClient();
+
       // Fetch base task fields (shared, non-scheduling)
-      const { data: task, error: taskError } = await supabase
+      const { data: task, error: taskError } = await sbAdmin
         .from('tasks')
         .select(
           `
