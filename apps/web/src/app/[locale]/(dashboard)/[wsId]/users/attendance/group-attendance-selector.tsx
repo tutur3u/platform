@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -52,12 +51,10 @@ export default function GroupAttendanceSelector({
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query, 300);
 
-  const supabase = createClient();
-
   // Search groups (only active when searching)
   const searchGroupsQuery = useQuery({
     queryKey: [
-      'user-groups-search',
+      'user-groups-search-attendance',
       wsId,
       workspaceUserId,
       hasManageUsers,
@@ -66,36 +63,20 @@ export default function GroupAttendanceSelector({
     queryFn: async () => {
       if (!debouncedQuery) return [];
 
-      if (hasManageUsers) {
-        const { data, error } = await supabase
-          .from('workspace_user_groups_with_guest')
-          .select('id,name, ws_id')
-          .eq('ws_id', wsId)
-          .ilike('name', `%${debouncedQuery}%`)
-          .order('name')
-          .limit(20);
-
-        if (error) throw error;
-        return data || [];
+      const searchParams = new URLSearchParams({
+        q: debouncedQuery,
+        limit: '20',
+      });
+      if (workspaceUserId && !hasManageUsers) {
+        searchParams.set('userId', workspaceUserId);
       }
 
-      if (!workspaceUserId) {
-        console.error(
-          'Cannot search groups without workspaceUserId when lacking manage_users permission'
-        );
-        return [];
-      }
-
-      const { data, error } = await supabase
-        .from('workspace_user_groups_with_guest')
-        .select('id, name, workspace_user_groups_users!inner(user_id)')
-        .eq('ws_id', wsId)
-        .eq('workspace_user_groups_users.user_id', workspaceUserId)
-        .ilike('name', `%${debouncedQuery}%`)
-        .order('name')
-        .limit(20);
-
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/users/groups?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch groups');
+      const { data } = await res.json();
       return data || [];
     },
     enabled:
@@ -107,23 +88,25 @@ export default function GroupAttendanceSelector({
 
   // Fetch selected group details (to display correct name even if not in search results)
   const selectedGroupQuery = useQuery({
-    queryKey: ['selected-group-details', selectedGroupId],
+    queryKey: ['selected-group-details-attendance', selectedGroupId],
     queryFn: async () => {
       if (!selectedGroupId) return null;
-      const { data, error } = await supabase
-        .from('workspace_user_groups_with_guest')
-        .select('name')
-        .eq('id', selectedGroupId)
-        .single();
-
-      if (error) return null;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) return null;
+      const { data } = await res.json();
       return data;
     },
     enabled: !!selectedGroupId,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const groups = searchGroupsQuery.data ?? [];
+  const groups = (searchGroupsQuery.data || []) as Array<{
+    id: string;
+    name: string | null;
+  }>;
   const selectedGroup = selectedGroupQuery.data;
 
   // Fetch group sessions when a group is selected
@@ -138,19 +121,18 @@ export default function GroupAttendanceSelector({
     ],
     queryFn: async () => {
       if (!selectedGroupId) return null;
-      const { data, error } = await supabase
-        .from('workspace_user_groups')
-        .select('sessions, starting_date, ending_date')
-        .eq('id', selectedGroupId)
-        .eq('ws_id', wsId)
-        .single();
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch group details');
+      const { data } = await res.json();
       return {
         sessions: Array.isArray(data?.sessions)
           ? (data.sessions as string[])
           : [],
-        startingDate: data?.starting_date ?? null,
-        endingDate: data?.ending_date ?? null,
+        startingDate: (data?.starting_date ?? null) as string | null,
+        endingDate: (data?.ending_date ?? null) as string | null,
       };
     },
     enabled: !!selectedGroupId,
@@ -171,35 +153,13 @@ export default function GroupAttendanceSelector({
     ],
     queryFn: async () => {
       if (!selectedGroupId) return [];
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_user_groups_users')
-        .select('workspace_users!inner(*), role')
-        .eq('group_id', selectedGroupId);
-
-      if (error) throw error;
-
-      return Promise.all(
-        (data || []).map(async (row) => {
-          const { data: isGuest } = await supabase.rpc('is_user_guest', {
-            user_uuid: row.workspace_users?.id,
-          });
-
-          return {
-            id: row.workspace_users?.id,
-            display_name: row.workspace_users?.display_name,
-            full_name: row.workspace_users?.full_name,
-            email: row.workspace_users?.email,
-            phone: row.workspace_users?.phone,
-            avatar_url: row.workspace_users?.avatar_url,
-            archived: row.workspace_users?.archived,
-            archived_until: row.workspace_users?.archived_until,
-            note: row.workspace_users?.note,
-            role: row.role,
-            isGuest: !!isGuest,
-          };
-        })
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}/members?limit=1000`,
+        { cache: 'no-store' }
       );
+      if (!res.ok) throw new Error('Failed to fetch group members');
+      const { data } = await res.json();
+      return data || [];
     },
     enabled: !!selectedGroupId,
     staleTime: 60 * 1000,

@@ -13,7 +13,6 @@ import {
   UserX,
   X,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -100,20 +99,18 @@ export default function GroupAttendanceClient({
   const { data: sessionData } = useQuery({
     queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'sessions'],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_user_groups')
-        .select('sessions, starting_date, ending_date')
-        .eq('id', groupId)
-        .eq('ws_id', wsId)
-        .single();
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch group details');
+      const { data } = await res.json();
       return {
         sessions: Array.isArray(data?.sessions)
           ? (data.sessions as string[])
           : [],
-        startingDate: data?.starting_date ?? null,
-        endingDate: data?.ending_date ?? null,
+        startingDate: (data?.starting_date ?? null) as string | null,
+        endingDate: (data?.ending_date ?? null) as string | null,
       };
     },
     initialData: {
@@ -134,35 +131,13 @@ export default function GroupAttendanceClient({
   const { data: allMembers = [] } = useQuery<Member[]>({
     queryKey: ['workspaces', wsId, 'users', 'groups', groupId, 'members'],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_user_groups_users')
-        .select('workspace_users!inner(*), role')
-        .eq('group_id', groupId);
-
-      if (error) throw error;
-
-      return Promise.all(
-        (data || []).map(async (row) => {
-          const { data: isGuest } = await supabase.rpc('is_user_guest', {
-            user_uuid: row.workspace_users?.id,
-          });
-
-          return {
-            id: row.workspace_users?.id,
-            display_name: row.workspace_users?.display_name,
-            full_name: row.workspace_users?.full_name,
-            email: row.workspace_users?.email,
-            phone: row.workspace_users?.phone,
-            avatar_url: row.workspace_users?.avatar_url,
-            archived: row.workspace_users?.archived,
-            archived_until: row.workspace_users?.archived_until,
-            note: row.workspace_users?.note,
-            role: row.role,
-            isGuest: !!isGuest,
-          };
-        })
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members?limit=1000`,
+        { cache: 'no-store' }
       );
+      if (!res.ok) throw new Error('Failed to fetch group members');
+      const { data } = await res.json();
+      return data;
     },
     initialData: initialMembers,
     staleTime: 60 * 1000,
@@ -207,22 +182,24 @@ export default function GroupAttendanceClient({
   const { data: attendance = {}, isLoading: isLoadingAttendance } = useQuery({
     queryKey: attendanceKey,
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('user_group_attendance')
-        .select('user_id, status, notes')
-        .eq('group_id', groupId)
-        .eq('date', format(currentDate, 'yyyy-MM-dd'));
-
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/attendance?date=${format(currentDate, 'yyyy-MM-dd')}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch attendance');
+      const data = (await res.json()) as Array<{
+        user_id: string;
+        status: string;
+        notes: string | null;
+      }>;
 
       const map: Record<string, AttendanceEntry> = {};
-      data?.forEach((row) => {
+      for (const row of data) {
         map[row.user_id] = {
           status: row.status as AttendanceStatus,
-          note: row.notes,
+          note: row.notes || '',
         };
-      });
+      }
       return map;
     },
     initialData:
@@ -339,37 +316,23 @@ export default function GroupAttendanceClient({
         note: string;
       }>
     ) => {
-      const supabase = createClient();
       const dateStr = format(currentDate, 'yyyy-MM-dd');
-      const toDelete = payload
-        .filter((p) => p.status === 'NONE')
-        .map((p) => p.user_id);
-      const toUpsert = payload
-        .filter((p) => p.status !== 'NONE')
-        .map((p) => ({
-          group_id: groupId,
-          date: dateStr,
-          user_id: p.user_id,
-          status: p.status,
-          notes: p.note ?? '',
-        }));
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/attendance`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            payload.map((p) => ({
+              ...p,
+              date: dateStr,
+              notes: p.note,
+            }))
+          ),
+        }
+      );
 
-      if (toDelete.length > 0) {
-        const { error: delError } = await supabase
-          .from('user_group_attendance')
-          .delete()
-          .eq('group_id', groupId)
-          .eq('date', dateStr)
-          .in('user_id', toDelete);
-        if (delError) throw delError;
-      }
-
-      if (toUpsert.length > 0) {
-        const { error: upsertError } = await supabase
-          .from('user_group_attendance')
-          .upsert(toUpsert);
-        if (upsertError) throw upsertError;
-      }
+      if (!res.ok) throw new Error('Failed to update attendance');
     },
     onSuccess: async () => {
       setPendingMap(new Map());

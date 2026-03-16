@@ -145,6 +145,11 @@ describe('label-colors', () => {
         expect(result).toBeNull();
       });
 
+      it('should return null for undefined or null', () => {
+        expect(computeAccessibleLabelStyles(undefined)).toBeNull();
+        expect(computeAccessibleLabelStyles(null)).toBeNull();
+      });
+
       it('should return null for invalid hex (wrong length)', () => {
         const result = computeAccessibleLabelStyles('#1234');
         expect(result).toBeNull();

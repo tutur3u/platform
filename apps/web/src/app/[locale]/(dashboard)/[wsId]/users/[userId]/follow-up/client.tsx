@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
@@ -64,7 +63,6 @@ export default function FollowUpClient({
   minimumAttendance?: number;
   canCheckUserAttendance?: boolean;
 }) {
-  const supabase = createClient();
   const t = useTranslations();
 
   // Group selection state based on user's groups
@@ -84,26 +82,12 @@ export default function FollowUpClient({
     queryFn: async (): Promise<
       Array<{ id: string; full_name: string | null }>
     > => {
-      const { data, error } = await supabase
-        .from('workspace_user_groups_users')
-        .select('user:workspace_users!inner(id, full_name, ws_id)')
-        .eq('group_id', groupId!)
-        .eq('role', 'TEACHER')
-        .eq('user.ws_id', wsId);
-      if (error) throw error;
-      const rows = (data ?? []) as Array<{ user: any }>;
-      const managers: Array<{ id: string; full_name: string | null }> = [];
-      for (const row of rows) {
-        const u = row?.user;
-        if (Array.isArray(u)) {
-          const first = u[0];
-          if (first)
-            managers.push({ id: first.id, full_name: first.full_name ?? null });
-        } else if (u) {
-          managers.push({ id: u.id, full_name: u.full_name ?? null });
-        }
-      }
-      return managers;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/managers`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch group managers');
+      return await res.json();
     },
   });
 
@@ -179,22 +163,33 @@ export default function FollowUpClient({
   const configsQuery = useQuery({
     queryKey: ['ws', wsId, 'report-configs'],
     queryFn: async (): Promise<WorkspaceConfig[]> => {
-      const { data, error } = await supabase
-        .from('workspace_configs')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const res = await fetch(`/api/v1/workspaces/${wsId}/settings`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) throw new Error('Failed to fetch workspace settings');
+      const data = await res.json();
+
       const base = availableConfigs.map(({ defaultValue, ...rest }) => ({
         ...rest,
         value: defaultValue,
       }));
       const merged = [...base];
-      (data ?? []).forEach((config) => {
-        const idx = merged.findIndex((c) => c.id === config.id);
-        if (idx !== -1) merged[idx] = { ...merged[idx], ...config };
-        else merged.push(config);
-      });
+
+      const settings = (data || {}) as Record<
+        string,
+        string | number | boolean
+      >;
+      for (const [id, value] of Object.entries(settings)) {
+        const idx = merged.findIndex((c) => c.id === id);
+        if (idx !== -1) merged[idx] = { ...merged[idx], value: String(value) };
+        else {
+          merged.push({
+            id,
+            value: String(value),
+            ws_id: wsId,
+          });
+        }
+      }
       return merged as WorkspaceConfig[];
     },
   });
@@ -220,33 +215,12 @@ export default function FollowUpClient({
         value: number | null;
       }>
     > => {
-      const { data, error } = await supabase
-        .from('user_indicators')
-        .select(`
-          value,
-          healthcare_vitals!inner(
-            id,
-            name,
-            unit,
-            factor,
-            group_id
-          )
-        `)
-        .eq('user_id', userId)
-        .eq('healthcare_vitals.group_id', groupId!);
-
-      if (error) {
-        throw error;
-      }
-
-      const result = (data ?? []).map((item) => ({
-        id: item.healthcare_vitals.id,
-        name: item.healthcare_vitals.name,
-        unit: item.healthcare_vitals.unit,
-        factor: item.healthcare_vitals.factor,
-        value: item.value,
-      }));
-      return result;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${userId}/vitals`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch vitals');
+      return await res.json();
     },
   });
 

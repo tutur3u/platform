@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
@@ -32,65 +31,34 @@ export function useIndicators({
 }: UseIndicatorsParams) {
   const t = useTranslations();
   const tIndicators = useTranslations('ws-user-group-indicators');
-  const supabase = createClient();
   const queryClient = useQueryClient();
-
-  // Fetch manager user IDs to filter them out of the table
-  const { data: managerUserIds = new Set<string>() } = useQuery({
-    queryKey: ['groupManagerIds', groupId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspace_user_groups_users')
-        .select('user_id')
-        .eq('group_id', groupId)
-        .eq('role', 'TEACHER');
-      if (error) throw error;
-      return new Set(
-        (data || []).map((d) => d.user_id).filter(Boolean) as string[]
-      );
-    },
-    staleTime: 5 * 60 * 1000,
-  });
 
   const [pendingValues, setPendingValues] = useState<
     Map<string, PendingIndicatorValue>
   >(new Map());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Queries
-  const { data: groupIndicators = initialGroupIndicators } = useQuery({
-    queryKey: ['groupIndicators', wsId, groupId],
-    queryFn: async (): Promise<GroupIndicator[]> => {
-      const { data, error } = await supabase
-        .from('healthcare_vitals')
-        .select('id, name, factor, unit')
-        .eq('group_id', groupId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as GroupIndicator[];
+  // Consolidated Query
+  const indicatorsQuery = useQuery({
+    queryKey: ['group-indicators-data', wsId, groupId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/indicators`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch indicators data');
+      return await res.json();
     },
-    initialData: initialGroupIndicators,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: userIndicators = initialUserIndicators } = useQuery({
-    queryKey: ['userIndicators', wsId, groupId],
-    queryFn: async (): Promise<UserIndicator[]> => {
-      const { data, error } = await supabase
-        .from('user_indicators')
-        .select(`
-          user_id,
-          indicator_id,
-          value,
-          healthcare_vitals!inner(group_id)
-        `)
-        .eq('healthcare_vitals.group_id', groupId);
-
-      if (error) throw error;
-      return (data || []) as UserIndicator[];
-    },
-    initialData: initialUserIndicators,
-  });
+  const groupIndicators =
+    indicatorsQuery.data?.groupIndicators || initialGroupIndicators;
+  const userIndicators =
+    indicatorsQuery.data?.userIndicators || initialUserIndicators;
+  const managerUserIds = new Set<string>(
+    indicatorsQuery.data?.managerUserIds || []
+  );
 
   // Mutations
   const createVitalMutation = useMutation({
@@ -103,23 +71,20 @@ export function useIndicators({
       unit: string;
       factor: number;
     }) => {
-      const { data, error } = await supabase
-        .from('healthcare_vitals')
-        .insert({
-          name,
-          unit: unit.trim() || '',
-          factor,
-          ws_id: wsId,
-          group_id: groupId,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/indicators`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, unit, factor }),
+        }
+      );
+      if (!res.ok) throw new Error('Failed to create indicator');
+      return await res.json();
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['groupIndicators', wsId, groupId],
+        queryKey: ['group-indicators-data', wsId, groupId],
       });
       toast.success(tIndicators('indicator_created_successfully'));
     },
@@ -141,15 +106,19 @@ export function useIndicators({
       factor: number;
       unit: string;
     }) => {
-      const { error } = await supabase
-        .from('healthcare_vitals')
-        .update({ name, factor, unit })
-        .eq('id', indicatorId);
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/indicators/${indicatorId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, factor, unit }),
+        }
+      );
+      if (!res.ok) throw new Error('Failed to update indicator');
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['groupIndicators', wsId, groupId],
+        queryKey: ['group-indicators-data', wsId, groupId],
       });
       toast.success(tIndicators('indicator_updated_successfully'));
     },
@@ -161,21 +130,18 @@ export function useIndicators({
 
   const deleteIndicatorMutation = useMutation({
     mutationFn: async (indicatorId: string) => {
-      const { error } = await supabase
-        .from('healthcare_vitals')
-        .update({ group_id: null })
-        .eq('id', indicatorId);
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/indicators/${indicatorId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!res.ok) throw new Error('Failed to delete indicator');
     },
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['groupIndicators', wsId, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['userIndicators', wsId, groupId],
-        }),
-      ]);
+      await queryClient.invalidateQueries({
+        queryKey: ['group-indicators-data', wsId, groupId],
+      });
       toast.success(tIndicators('indicator_removed_successfully'));
     },
     onError: (error) => {
@@ -188,7 +154,7 @@ export function useIndicators({
     mutationFn: async (values: PendingIndicatorValue[]) => {
       for (const pendingValue of values) {
         const existingIndicator = userIndicators.find(
-          (ui) =>
+          (ui: UserIndicator) =>
             ui.user_id === pendingValue.user_id &&
             ui.indicator_id === pendingValue.indicator_id
         );
@@ -214,18 +180,19 @@ export function useIndicators({
         }
       }
 
-      const { error } = await supabase.from('user_indicators').upsert(
-        values.map(({ user_id, indicator_id, value }) => ({
-          user_id,
-          indicator_id,
-          value,
-        }))
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/indicators`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values),
+        }
       );
-      if (error) throw error;
+      if (!res.ok) throw new Error('Failed to update indicator values');
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['userIndicators', wsId, groupId],
+        queryKey: ['group-indicators-data', wsId, groupId],
       });
       setPendingValues(new Map());
       toast.success(tIndicators('values_updated_successfully'));
@@ -247,7 +214,8 @@ export function useIndicators({
 
       if (numericValue === null) {
         const originalIndicator = userIndicators.find(
-          (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+          (ui: UserIndicator) =>
+            ui.user_id === userId && ui.indicator_id === indicatorId
         );
         if (
           originalIndicator?.value !== null &&
@@ -260,7 +228,8 @@ export function useIndicators({
         }
       } else {
         const existingIndicator = userIndicators.find(
-          (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+          (ui: UserIndicator) =>
+            ui.user_id === userId && ui.indicator_id === indicatorId
         );
         if (!existingIndicator || existingIndicator.value === null) {
           if (!canCreate) {
@@ -279,7 +248,8 @@ export function useIndicators({
         const newMap = new Map(prev);
         if (numericValue === null) {
           const originalIndicator = userIndicators.find(
-            (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+            (ui: UserIndicator) =>
+              ui.user_id === userId && ui.indicator_id === indicatorId
           );
           if (
             originalIndicator?.value !== null &&
@@ -321,30 +291,37 @@ export function useIndicators({
         return pendingValue === null ? '' : pendingValue?.toString() || '';
       }
       const indicator = userIndicators.find(
-        (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+        (ui: UserIndicator) =>
+          ui.user_id === userId && ui.indicator_id === indicatorId
       );
       return indicator?.value?.toString() || '';
     },
     [pendingValues, userIndicators]
   );
-
   const calculateAverage = useCallback(
     (userId: string) => {
       const userValues = groupIndicators
-        .map((indicator) => {
+        .map((indicator: GroupIndicator) => {
           const key = `${userId}|${indicator.id}`;
           if (pendingValues.has(key)) {
             return pendingValues.get(key)?.value;
           }
           const userIndicator = userIndicators.find(
-            (ui) => ui.user_id === userId && ui.indicator_id === indicator.id
+            (ui: UserIndicator) =>
+              ui.user_id === userId && ui.indicator_id === indicator.id
           );
           return userIndicator?.value;
         })
-        .filter((value) => value !== null && value !== undefined) as number[];
+        .filter(
+          (value: number | null): value is number =>
+            value !== null && value !== undefined
+        );
 
       if (userValues.length === 0) return '-';
-      const avg = userValues.reduce((s, v) => s + v, 0) / userValues.length;
+      const avg =
+        userValues.reduce((s: number, v: number) => s + v, 0) /
+        userValues.length;
+
       return avg.toPrecision(2);
     },
     [groupIndicators, pendingValues, userIndicators]
@@ -353,7 +330,8 @@ export function useIndicators({
   const canEditCell = useCallback(
     (userId: string, indicatorId: string) => {
       const existing = userIndicators.find(
-        (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
+        (ui: UserIndicator) =>
+          ui.user_id === userId && ui.indicator_id === indicatorId
       );
       if (!existing || existing.value == null) return canCreate;
       return canUpdate || canDelete;

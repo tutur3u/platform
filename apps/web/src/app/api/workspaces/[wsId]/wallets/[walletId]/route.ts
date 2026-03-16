@@ -4,4 +4,4 @@ import {
   PUT,
 } from '@tuturuuu/apis/finance/wallets/walletId/route';
 
-export { GET, PUT, DELETE };
+export { DELETE, GET, PUT };

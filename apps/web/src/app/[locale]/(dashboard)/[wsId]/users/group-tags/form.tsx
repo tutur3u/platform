@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Users } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { Button } from '@tuturuuu/ui/button';
@@ -44,7 +43,13 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
 
   const { data: queryData, isPending } = useQuery({
     queryKey: ['workspaces', wsId, 'user-groups'],
-    queryFn: () => getUserGroups(wsId),
+    queryFn: async (): Promise<{ data: UserGroup[]; count: number }> => {
+      const res = await fetch(`/api/v1/workspaces/${wsId}/users/groups`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) throw new Error('Failed to fetch groups');
+      return await res.json();
+    },
   });
 
   const userGroups = queryData?.data;
@@ -162,21 +167,4 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
       </form>
     </Form>
   );
-}
-
-async function getUserGroups(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups_with_amount')
-    .select('id, name, amount', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: UserGroup[]; count: number };
 }

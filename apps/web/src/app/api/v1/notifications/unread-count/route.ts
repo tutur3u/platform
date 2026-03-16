@@ -59,10 +59,10 @@ export async function GET(req: Request) {
     if (wsId) {
       const { data: membership, error: membershipError } = await supabase
         .from('workspace_members')
-        .select('id')
+        .select('user_id')
         .eq('ws_id', wsId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (membershipError) {
         console.error('Error checking workspace membership:', membershipError);

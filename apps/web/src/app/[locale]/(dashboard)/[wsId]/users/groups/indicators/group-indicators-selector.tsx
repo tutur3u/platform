@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -21,15 +20,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useEffect, useState } from 'react';
-import { z } from 'zod';
 import GroupIndicatorsManager from '../[groupId]/indicators/group-indicators-manager';
-
-const LinkedUserSchema = z.object({
-  id: z.string(),
-  display_name: z.string().nullable(),
-});
-
-const LinkedUsersSchema = z.array(LinkedUserSchema).optional();
 
 interface Props {
   wsId: string;
@@ -39,11 +30,6 @@ interface Props {
   canUpdateUserGroupsScores: boolean;
   canDeleteUserGroupsScores: boolean;
 }
-
-const normalizeLinkedUsers = (value: unknown) => {
-  const result = LinkedUsersSchema.safeParse(value);
-  return result.success ? result.data : undefined;
-};
 
 export default function GroupIndicatorsSelector({
   wsId,
@@ -70,8 +56,6 @@ export default function GroupIndicatorsSelector({
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query, 300);
 
-  const supabase = createClient();
-
   // Search groups (only active when searching)
   const searchGroupsQuery = useQuery({
     queryKey: [
@@ -82,42 +66,20 @@ export default function GroupIndicatorsSelector({
       debouncedQuery,
     ],
     queryFn: async () => {
-      if (hasManageUsers) {
-        let q = supabase
-          .from('workspace_user_groups_with_guest')
-          .select('id, name, ws_id')
-          .eq('ws_id', wsId);
-
-        if (debouncedQuery) {
-          q = q.ilike('name', `%${debouncedQuery}%`);
-        }
-
-        const { data, error } = await q.order('name').limit(20);
-
-        if (error) throw error;
-        return data || [];
+      const searchParams = new URLSearchParams({
+        q: debouncedQuery,
+        limit: '20',
+      });
+      if (workspaceUserId && !hasManageUsers) {
+        searchParams.set('userId', workspaceUserId);
       }
 
-      if (!workspaceUserId) {
-        console.error(
-          'Cannot search groups without workspaceUserId when lacking manage_users permission'
-        );
-        return [];
-      }
-
-      let q = supabase
-        .from('workspace_user_groups_with_guest')
-        .select('id, name, workspace_user_groups_users!inner(user_id)')
-        .eq('ws_id', wsId)
-        .eq('workspace_user_groups_users.user_id', workspaceUserId);
-
-      if (debouncedQuery) {
-        q = q.ilike('name', `%${debouncedQuery}%`);
-      }
-
-      const { data, error } = await q.order('name').limit(20);
-
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/users/groups?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch groups');
+      const { data } = await res.json();
       return data || [];
     },
     enabled: !!wsId && (hasManageUsers || !!workspaceUserId),
@@ -129,21 +91,25 @@ export default function GroupIndicatorsSelector({
     queryKey: ['selected-group-details', selectedGroupId],
     queryFn: async () => {
       if (!selectedGroupId) return null;
-      const { data, error } = await supabase
-        .from('workspace_user_groups_with_guest')
-        .select('name')
-        .eq('id', selectedGroupId)
-        .single();
-
-      if (error) return null;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) return null;
+      const { data } = await res.json();
       return data;
     },
     enabled: !!selectedGroupId,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const groups = searchGroupsQuery.data ?? [];
-  const selectedGroup = selectedGroupQuery.data;
+  const groups = (searchGroupsQuery.data || []) as Array<{
+    id: string;
+    name: string | null;
+  }>;
+  const selectedGroup = selectedGroupQuery.data as unknown as {
+    name: string | null;
+  };
 
   // Auto-select first group when groups load and none is selected
   useEffect(() => {
@@ -152,89 +118,46 @@ export default function GroupIndicatorsSelector({
     }
   }, [selectedGroupId, groups, setFilterParams]);
 
-  // Fetch group indicators
-  const { data: groupIndicators = [], isLoading: isLoadingIndicators } =
-    useQuery({
-      queryKey: ['groupIndicators', wsId, selectedGroupId],
-      queryFn: async () => {
-        if (!selectedGroupId) return [];
-
-        const { data, error } = await supabase
-          .from('healthcare_vitals')
-          .select('id, name, factor, unit')
-          .eq('group_id', selectedGroupId)
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-        return data || [];
-      },
-      enabled: !!selectedGroupId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
-
-  // Fetch user indicators
-  const { data: userIndicators = [], isLoading: isLoadingUserIndicators } =
-    useQuery({
-      queryKey: ['userIndicators', wsId, selectedGroupId],
-      queryFn: async () => {
-        if (!selectedGroupId) return [];
-
-        const { data, error } = await supabase
-          .from('user_indicators')
-          .select(
-            `
-            user_id, 
-            indicator_id, 
-            value,
-            healthcare_vitals!inner(group_id)
-          `
-          )
-          .eq('healthcare_vitals.group_id', selectedGroupId);
-
-        if (error) throw error;
-        return (data || []).map((d) => ({
-          user_id: d.user_id,
-          indicator_id: d.indicator_id,
-          value: d.value,
-        }));
-      },
-      enabled: !!selectedGroupId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
-
-  // Fetch users
-  const { data: users = [], isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['group-users', wsId, selectedGroupId],
-    queryFn: async (): Promise<WorkspaceUser[]> => {
-      if (!selectedGroupId) return [];
-
-      const { data, error } = await supabase
-        .rpc('get_workspace_users', {
-          _ws_id: wsId,
-          included_groups: [selectedGroupId],
-          excluded_groups: [],
-          search_query: '',
-        })
-        .select('*')
-        .order('full_name', { ascending: true, nullsFirst: false });
-
-      if (error) throw error;
-
-      return (data ?? []).map((row) => {
-        const record = row as Record<string, unknown>;
-
-        return {
-          ...(record as unknown as WorkspaceUser),
-          linked_users: normalizeLinkedUsers(record.linked_users),
-        };
-      });
+  // Fetch indicators and users
+  const indicatorsDataQuery = useQuery({
+    queryKey: ['group-indicators-data-selector', wsId, selectedGroupId],
+    queryFn: async () => {
+      if (!selectedGroupId) return null;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}/indicators`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch indicators');
+      return await res.json();
     },
     enabled: !!selectedGroupId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const isLoadingData =
-    isLoadingIndicators || isLoadingUserIndicators || isLoadingUsers;
+  const groupIndicators = indicatorsDataQuery.data?.groupIndicators || [];
+  const userIndicators = indicatorsDataQuery.data?.userIndicators || [];
+
+  // Fetch users
+  const usersQuery = useQuery({
+    queryKey: ['group-users-selector', wsId, selectedGroupId],
+    queryFn: async (): Promise<WorkspaceUser[]> => {
+      if (!selectedGroupId) return [];
+
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}/members?limit=1000`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const { data } = await res.json();
+      return data || [];
+    },
+    enabled: !!selectedGroupId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const users = usersQuery.data || [];
+
+  const isLoadingData = indicatorsDataQuery.isLoading || usersQuery.isLoading;
 
   return (
     <div className="space-y-6">

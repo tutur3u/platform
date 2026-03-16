@@ -9,6 +9,7 @@ import { clearDraft, saveYjsDescriptionToDatabase } from '../utils';
 
 export interface UseTaskDialogCloseProps {
   taskId?: string;
+  wsId: string;
   boardId: string;
   isCreateMode: boolean;
   collaborationMode: boolean;
@@ -28,6 +29,7 @@ export interface UseTaskDialogCloseProps {
   onClose: () => void;
   onNavigateToTask?: (taskId: string) => Promise<void>;
   flushNameUpdate: () => Promise<void>;
+  flushCollaborativePersistence?: () => void;
 
   // State setters
   setShowSyncWarning: React.Dispatch<React.SetStateAction<boolean>>;
@@ -50,6 +52,7 @@ export interface UseTaskDialogCloseReturn {
  */
 export function useTaskDialogClose({
   taskId,
+  wsId,
   boardId,
   isCreateMode,
   collaborationMode,
@@ -63,6 +66,7 @@ export function useTaskDialogClose({
   onClose,
   onNavigateToTask,
   flushNameUpdate,
+  flushCollaborativePersistence,
   setShowSyncWarning,
 }: UseTaskDialogCloseProps): UseTaskDialogCloseReturn {
   const handleCloseRef = useRef<() => void>(() => {});
@@ -83,8 +87,11 @@ export function useTaskDialogClose({
       try {
         await flushNameUpdate();
 
-        if (!isCreateMode && taskId && flushEditorPendingRef.current) {
+        if (flushCollaborativePersistence) {
+          flushCollaborativePersistence();
+        } else if (!isCreateMode && taskId && flushEditorPendingRef.current) {
           await saveYjsDescriptionToDatabase({
+            wsId,
             taskId,
             getContent: flushEditorPendingRef.current,
             boardId,
@@ -109,7 +116,9 @@ export function useTaskDialogClose({
     connected,
     onClose,
     flushNameUpdate,
+    flushCollaborativePersistence,
     taskId,
+    wsId,
     boardId,
     queryClient,
     draftStorageKey,
@@ -126,8 +135,11 @@ export function useTaskDialogClose({
       try {
         await flushNameUpdate();
 
-        if (!isCreateMode && taskId && flushEditorPendingRef.current) {
+        if (flushCollaborativePersistence) {
+          flushCollaborativePersistence();
+        } else if (!isCreateMode && taskId && flushEditorPendingRef.current) {
           await saveYjsDescriptionToDatabase({
+            wsId,
             taskId,
             getContent: flushEditorPendingRef.current,
             boardId,
@@ -149,8 +161,10 @@ export function useTaskDialogClose({
     setShowSyncWarning,
     onClose,
     flushNameUpdate,
+    flushCollaborativePersistence,
     isCreateMode,
     taskId,
+    wsId,
     boardId,
     queryClient,
     draftStorageKey,

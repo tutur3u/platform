@@ -1,20 +1,28 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { NextRequest } from 'next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   const { wsId } = await params;
-  const searchParams = req.nextUrl.searchParams;
+
+  // Check permissions
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { searchParams } = req.nextUrl;
 
   const includedGroups = searchParams.getAll('includedGroups');
   const excludedGroups = searchParams.getAll('excludedGroups');
   const userId = searchParams.get('userId') || undefined;
 
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
       'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
@@ -39,10 +47,8 @@ export async function GET(
   const { count, error } = await queryBuilder;
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-    });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return Response.json({ count });
+  return NextResponse.json({ count: count || 0 });
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -41,19 +40,11 @@ export default function SelectGroupGateway({
         return { data: [], count: 0 };
       }
 
-      const supabase = await createClient();
-      let builder = supabase
-        .from('workspace_user_groups_with_amount')
-        .select('id, name, amount', { count: 'exact' })
-        .eq('ws_id', wsId);
-
-      if (accessibleGroupIds !== null) {
-        builder = builder.in('id', accessibleGroupIds);
-      }
-
-      const { data, error, count } = await builder.order('name');
-      if (error) throw error;
-      return { data: (data || []) as UserGroup[], count: count || 0 };
+      const res = await fetch(`/api/v1/workspaces/${wsId}/users/groups`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) throw new Error('Failed to fetch groups');
+      return await res.json();
     },
     staleTime: 2 * 60 * 1000,
   });

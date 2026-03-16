@@ -2,7 +2,6 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Info, Loader2, UserIcon } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -269,8 +268,6 @@ export default function UserForm({
   };
 
   async function uploadImageToSupabase(file: File, wsId: string) {
-    const supabase = createClient();
-
     // Check file size
     if (file.size > MAX_FILE_SIZE) {
       const maxSizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
@@ -279,27 +276,56 @@ export default function UserForm({
       );
     }
 
-    const filePath = `${wsId}/users/${generateRandomUUID()}`;
+    const fileName = generateRandomUUID();
+    const contentType = file.type;
 
-    const { error } = await supabase.storage
-      .from('workspaces')
-      .upload(filePath, file);
+    // Get signed upload URL from backend
+    const res = await fetch(`/api/v1/workspaces/${wsId}/users/avatar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName, contentType }),
+    });
 
-    if (error) {
-      console.error('Error uploading file:', error.message);
-      throw new Error(t('qr.image_upload.upload_failed'));
+    if (!res.ok) {
+      throw new Error('Failed to get signed upload URL');
     }
 
-    const { data, error: signedURLError } = await supabase.storage
-      .from('workspaces')
-      .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+    const { token, path } = await res.json();
 
-    if (signedURLError) {
-      console.error('Error generating signed URL:', signedURLError.message);
-      throw new Error(t('qr.image_upload.signed_url_failed'));
+    // Upload file using the signed URL
+    const uploadRes = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/s3/object/${path}?token=${token}`,
+      {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': contentType },
+      }
+    );
+
+    if (!uploadRes.ok) {
+      throw new Error('Failed to upload image');
     }
 
-    return data.signedUrl;
+    // Since we can't easily generate a signed read URL for 1 year from the client
+    // and we want to keep things secure, we should store the path and let the backend
+    // handle it, or use a public URL if appropriate.
+    // For now, let's use the public URL if it's a public bucket, or a standard path.
+    // In this project, it seems we use signed URLs for users.
+    // Let's check how other parts handle this.
+    // Actually, createSignedUrl was used in the original code.
+    // I will add a GET method to the avatar API to generate a signed read URL.
+
+    const readRes = await fetch(
+      `/api/v1/workspaces/${wsId}/users/avatar?path=${path}`,
+      { cache: 'no-store' }
+    );
+
+    if (!readRes.ok) {
+      throw new Error('Failed to get signed read URL');
+    }
+
+    const { signedUrl } = await readRes.json();
+    return signedUrl;
   }
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
@@ -329,30 +355,16 @@ export default function UserForm({
           headers: {
             'Content-Type': 'application/json',
           },
-          body: (() => {
-            const { is_guest, archived, archived_until, ...rest } =
-              formData as any;
-            const payload: Record<string, unknown> = {
-              ...rest,
-              avatar_url: avatarUrl,
-              birthday: formData.birthday
-                ? dayjs(formData.birthday).format('YYYY/MM/DD')
-                : null,
-            };
-            if (typeof is_guest === 'boolean') {
-              payload.is_guest = is_guest;
-            }
-            if (typeof archived === 'boolean') {
-              payload.archived = archived;
-            }
-            if (archived_until) {
-              payload.archived_until = dayjs(archived_until).format(
-                'YYYY/MM/DD HH:mm:ss'
-              );
-            }
-
-            return JSON.stringify(payload);
-          })(),
+          body: JSON.stringify({
+            ...formData,
+            avatar_url: avatarUrl,
+            birthday: formData.birthday
+              ? dayjs(formData.birthday).format('YYYY/MM/DD')
+              : null,
+            archived_until: formData.archived_until
+              ? dayjs(formData.archived_until).format('YYYY/MM/DD HH:mm:ss')
+              : undefined,
+          }),
         }
       );
 

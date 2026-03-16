@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, MinusCircle, PlusCircle, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -35,14 +34,15 @@ interface GroupOption {
 }
 
 async function fetchAllGroups(wsId: string): Promise<GroupOption[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('workspace_user_groups_with_amount')
-    .select('id, name, amount')
-    .eq('ws_id', wsId)
-    .order('name');
+  const response = await fetch(`/api/v1/workspaces/${wsId}/users/groups`, {
+    cache: 'no-store',
+  });
 
-  if (error) throw error;
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspace user groups');
+  }
+
+  const { data } = await response.json();
   return (data as GroupOption[]) || [];
 }
 
@@ -50,22 +50,25 @@ async function fetchExcludedGroups(
   wsId: string,
   includedGroups: string[]
 ): Promise<GroupOption[]> {
-  const supabase = createClient();
-
   if (includedGroups.length === 0) {
     return fetchAllGroups(wsId);
   }
 
-  const { data, error } = await supabase
-    .rpc('get_possible_excluded_groups', {
-      _ws_id: wsId,
-      included_groups: includedGroups,
-    })
-    .select('id, name, amount')
-    .order('name');
+  const searchParams = new URLSearchParams();
+  includedGroups.forEach((group) => {
+    searchParams.append('includedGroups', group);
+  });
 
-  if (error) throw error;
-  return (data as GroupOption[]) || [];
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/users/groups/possible-excluded?${searchParams.toString()}`,
+    { cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch possible excluded groups');
+  }
+
+  return (await response.json()) as GroupOption[];
 }
 
 export function GroupFilter({

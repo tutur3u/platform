@@ -231,6 +231,7 @@ export async function createTask(
   supabase: TypedSupabaseClient,
   listId: string,
   task: Partial<Task> & {
+    description_yjs_state?: number[];
     label_ids?: string[];
     assignee_ids?: string[];
     project_ids?: string[];
@@ -302,6 +303,7 @@ export async function createTask(
         body: JSON.stringify({
           name: task.name.trim(),
           description: task.description || null,
+          description_yjs_state: task.description_yjs_state ?? null,
           listId,
           priority: task.priority || null,
           start_date: task.start_date || null,
@@ -350,6 +352,7 @@ export async function createTask(
   const taskData = {
     name: task.name.trim(),
     description: task.description || null,
+    description_yjs_state: task.description_yjs_state ?? null,
     list_id: listId,
     priority: task.priority || null,
     start_date: task.start_date || null,

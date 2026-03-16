@@ -127,6 +127,7 @@ export function FormsMarkdown({
       {hasRichTextHtml ? (
         <div
           className={getMarkdownClassName(variant, className)}
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
           dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         />
       ) : (

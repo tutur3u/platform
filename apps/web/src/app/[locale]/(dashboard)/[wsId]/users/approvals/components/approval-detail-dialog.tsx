@@ -205,8 +205,8 @@ export function ApprovalDetailDialog({
   const reportId = item?.kind === 'reports' && open ? item.id : null;
   const postId = item?.kind === 'posts' && open ? item.id : null;
 
-  const { data: previousReportVersion } = useLatestApprovedLog(reportId);
-  const { data: previousPostVersion } = useLatestApprovedPostLog(postId);
+  const { data: previousReportVersion } = useLatestApprovedLog(wsId, reportId);
+  const { data: previousPostVersion } = useLatestApprovedPostLog(wsId, postId);
 
   useEffect(() => {
     if (!open) {

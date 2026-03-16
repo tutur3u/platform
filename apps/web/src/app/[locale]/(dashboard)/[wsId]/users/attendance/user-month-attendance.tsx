@@ -2,7 +2,6 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   WorkspaceUser,
   WorkspaceUserAttendance,
@@ -88,18 +87,32 @@ export default function UserMonthAttendance({
         groups: defaultIncludedGroups?.slice().sort(),
       },
     ],
-    queryFn: () => getData(wsId, initialUser.id, month, defaultIncludedGroups),
+    queryFn: async (): Promise<{ attendance: WorkspaceUserAttendance[] }> => {
+      const searchParams = new URLSearchParams({
+        month,
+      });
+      if (defaultIncludedGroups) {
+        for (const g of defaultIncludedGroups)
+          searchParams.append('groupIds', g);
+      }
+
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${initialUser.id}/attendance?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch attendance');
+      return await res.json();
+    },
     placeholderData: keepPreviousData,
   });
 
   const baseData = {
     ...initialUser,
-    ...queryData?.data,
-  } as WorkspaceUser & { attendance?: WorkspaceUserAttendance[] };
+    attendance: queryData?.attendance || [],
+  };
 
   const filteredAttendance = useMemo(() => {
     const attendance = baseData.attendance;
-    if (!attendance) return attendance;
     if (!defaultIncludedGroups || defaultIncludedGroups.length === 0)
       return attendance;
 
@@ -115,17 +128,17 @@ export default function UserMonthAttendance({
     });
   }, [baseData.attendance, defaultIncludedGroups]);
 
-  const data = {
-    ...baseData,
-    attendance: filteredAttendance,
-  } as WorkspaceUser & {
-    attendance?: WorkspaceUserAttendance[];
+  const data: WorkspaceUser & {
+    attendance: WorkspaceUserAttendance[];
     role?: string;
     archived?: boolean;
     archived_until?: string | null;
     note?: string | null;
     isGuest?: boolean;
     href?: string;
+  } = {
+    ...baseData,
+    attendance: filteredAttendance,
   };
 
   const handlePrev = async () =>
@@ -505,40 +518,4 @@ export default function UserMonthAttendance({
       </div>
     </div>
   );
-}
-
-async function getData(
-  wsId: string,
-  userId: string,
-  month: string,
-  defaultIncludedGroups?: string[]
-) {
-  const supabase = await createClient();
-
-  const startDate = new Date(month);
-  const endDate = new Date(
-    new Date(startDate).setMonth(startDate.getMonth() + 1)
-  );
-
-  const queryBuilder = supabase
-    .from('workspace_users')
-    .select(
-      'attendance:user_group_attendance(date, status, groups:workspace_user_groups(id, name))'
-    )
-    .eq('ws_id', wsId)
-    .gte('attendance.date', startDate.toISOString())
-    .lt('attendance.date', endDate.toISOString())
-    .order('full_name', { ascending: true, nullsFirst: false })
-    .eq('id', userId);
-
-  if (defaultIncludedGroups && defaultIncludedGroups.length > 0) {
-    // Filter nested relation rows to the provided groups only
-    const first = defaultIncludedGroups[0] as string;
-    queryBuilder.eq('attendance.group_id', first);
-  }
-
-  const { data, error } = await queryBuilder.single();
-
-  if (error) throw error;
-  return { data } as unknown as { data: WorkspaceUser };
 }

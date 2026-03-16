@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -51,7 +50,17 @@ export function AttendanceDialog({
 
   const groupsQuery = useQuery({
     queryKey: ['workspaces', wsId, 'users', user.id, 'groups'],
-    queryFn: () => getGroupData({ wsId, userId: user.id }),
+    queryFn: async (): Promise<{
+      data: Array<{ id: string; name: string | null }>;
+      count: number;
+    }> => {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/users/groups?userId=${user.id}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch groups');
+      return await res.json();
+    },
   });
 
   const { toast } = useToast();
@@ -64,58 +73,40 @@ export function AttendanceDialog({
   const handleSubmit = async () => {
     setLoading(true);
 
-    const supabase = createClient();
     if (!selectedGroupId) {
       setLoading(false);
       return;
     }
 
-    if (status) {
-      const { error } = await supabase
-        .from('user_group_attendance')
-        .upsert({
-          user_id: user.id,
-          group_id: selectedGroupId,
-          date: format(date, 'yyyy-MM-dd'),
-          status,
-        })
-        .select();
+    const dateStr = format(date, 'yyyy-MM-dd');
 
-      if (error) {
-        console.error('Error updating attendance:', error);
-        toast({
-          title: t('ws-user-attendance.update_error'),
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: t('ws-user-attendance.update_success'),
-        });
+    const res = await fetch(
+      `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}/attendance`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([
+          {
+            user_id: user.id,
+            status: status || 'NONE',
+            date: dateStr,
+          },
+        ]),
       }
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      console.error('Error updating attendance:', errorData);
+      toast({
+        title: t('ws-user-attendance.update_error'),
+        description: errorData.message,
+        variant: 'destructive',
+      });
     } else {
-      // Remove the attendance record
-      const { error } = await supabase
-        .from('user_group_attendance')
-        .delete()
-        .match({
-          user_id: user.id,
-          group_id: selectedGroupId,
-          date: format(date, 'yyyy-MM-dd'),
-        });
-
-      if (error) {
-        console.error('Error removing attendance:', error);
-        toast({
-          title: t('ws-user-attendance.update_error'),
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: t('ws-user-attendance.update_success'),
-        });
-      }
+      toast({
+        title: t('ws-user-attendance.update_success'),
+      });
     }
 
     onAttendanceUpdated();
@@ -215,27 +206,4 @@ export function AttendanceDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-async function getGroupData({
-  wsId,
-  userId,
-}: {
-  wsId: string;
-  userId: string;
-}) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups')
-    .select('*, workspace_user_groups_users!inner(user_id)', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .eq('workspace_user_groups_users.user_id', userId);
-
-  const { data, count, error } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count };
 }

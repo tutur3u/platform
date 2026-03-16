@@ -11,7 +11,7 @@ export default async function Supabase() {
   }
 
   return data.map((chat) => (
-    <div>
+    <div key={chat.id}>
       Types
       <p>AIChat instance created with model: {chat?.model}</p>
       <p>AIChat ID: {chat?.id}</p>

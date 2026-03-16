@@ -1,6 +1,8 @@
 export const PROXY_ONLY_PUBLIC_TABLES = [
   'ai_gateway_models',
   'ai_whitelisted_domains',
+  'external_user_monthly_report_logs',
+  'external_user_monthly_reports',
   'form_questions',
   'form_response_answers',
   'form_sections',
@@ -23,14 +25,20 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'time_tracking_request_comments',
   'time_tracking_requests',
   'timezones',
+  'user_group_post_checks',
+  'user_group_post_logs',
+  'user_group_posts',
+  'user_linked_promotions',
   'workspace_calendar_sync_log',
   'workspace_calendars',
   'workspace_credit_packs',
   'workspace_debt_loans',
   'workspace_education_access_requests',
+  'workspace_promotions',
   'workspace_scheduling_metadata',
   'workspace_subscription_errors',
   'workspace_subscription_products',
+  'workspace_wallets',
 ] as const;
 
 const proxyOnlyPublicTableSet = new Set<string>(PROXY_ONLY_PUBLIC_TABLES);

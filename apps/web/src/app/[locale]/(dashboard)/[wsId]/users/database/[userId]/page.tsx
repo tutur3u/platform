@@ -1,8 +1,5 @@
 import { Users } from '@tuturuuu/icons';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -58,7 +55,14 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
     notFound();
   }
 
-  const data = await getData({ wsId, userId, hasPrivateInfo, hasPublicInfo });
+  const data = (await getData({
+    wsId,
+    userId,
+    hasPrivateInfo,
+    hasPublicInfo,
+  })) as WorkspaceUser & {
+    referrer?: { id: string; display_name: string | null };
+  };
 
   const isGuest = await isUserGuest(userId);
 
@@ -179,10 +183,10 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
               user={{
                 ...data,
                 id: data.id,
-                full_name: data.display_name || data.full_name,
+                full_name: data.display_name || data.full_name || null,
                 href: `/${wsId}/users/database/${data.id}`,
-                archived: data.archived,
-                archived_until: data.archived_until,
+                archived: data.archived ?? undefined,
+                archived_until: data.archived_until ?? null,
                 isGuest,
               }}
             />
@@ -278,7 +282,7 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
               wsId={wsId}
               userId={userId}
               canUpdateUsers={canUpdateUsers}
-              initialPromotions={coupons.map((c) => ({
+              initialPromotions={(coupons || []).map((c: any) => ({
                 id: c.id,
                 name: c.name ?? null,
                 description: c.description ?? null,
@@ -312,11 +316,11 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
 }
 
 async function isUserGuest(user_id: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   const user_uuid = user_id;
 
-  const { data, error } = await supabase.rpc('is_user_guest', {
+  const { data, error } = await sbAdmin.rpc('is_user_guest', {
     user_uuid,
   });
   if (error) throw error;
@@ -334,48 +338,111 @@ async function getData({
   hasPrivateInfo: boolean;
   hasPublicInfo: boolean;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   // Use raw SQL query via RPC to avoid complex PostgREST syntax
-  const { data: rawData, error } = (await supabase.rpc(
+  const { data: rawData, error } = await sbAdmin.rpc(
     'get_workspace_user_with_details',
     {
       p_ws_id: wsId,
       p_user_id: userId,
     }
-  )) as { data: any; error: any };
+  );
   if (error) throw error;
   if (!rawData) notFound();
 
-  const data = {
-    ...rawData,
-    linked_users: (rawData.linked_users || [])
-      .map(
-        ({
-          platform_user_id,
-          users,
-        }: {
+  interface RPCUserWithDetails {
+    id: string;
+    full_name: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+    email: string | null;
+    phone: string | null;
+    birthday: string | null;
+    gender: string | null;
+    ethnicity: string | null;
+    guardian: string | null;
+    national_id: string | null;
+    address: string | null;
+    note: string | null;
+    archived: boolean | null;
+    archived_until: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    group_count: number | null;
+    linked_users:
+      | {
           platform_user_id: string;
           users: {
             display_name: string | null;
           } | null;
-        }) =>
-          users
-            ? { id: platform_user_id, display_name: users.display_name || '' }
-            : null
+        }[]
+      | null;
+    referrer: {
+      id: string;
+      display_name: string | null;
+      full_name: string | null;
+    } | null;
+  }
+
+  const userWithDetails = rawData as unknown as RPCUserWithDetails;
+
+  const data: WorkspaceUser & {
+    referrer?: { id: string; display_name: string | null };
+    updated_at?: string | null;
+    group_count?: number;
+    linked_users: { id: string; display_name: string | null }[];
+  } = {
+    id: userWithDetails.id,
+    full_name: userWithDetails.full_name,
+    display_name: userWithDetails.display_name,
+    avatar_url: userWithDetails.avatar_url,
+    email: userWithDetails.email,
+    phone: userWithDetails.phone,
+    birthday: userWithDetails.birthday,
+    gender: userWithDetails.gender,
+    ethnicity: userWithDetails.ethnicity,
+    guardian: userWithDetails.guardian,
+    national_id: userWithDetails.national_id,
+    address: userWithDetails.address,
+    note: userWithDetails.note,
+    archived: userWithDetails.archived ?? undefined,
+    archived_until: userWithDetails.archived_until,
+    created_at: userWithDetails.created_at,
+    updated_at: userWithDetails.updated_at,
+    group_count: userWithDetails.group_count ?? undefined,
+    linked_users: (userWithDetails.linked_users || [])
+      .map(({ platform_user_id, users }) =>
+        users
+          ? {
+              id: platform_user_id,
+              display_name: users.display_name,
+            }
+          : null
       )
-      .filter((v: WorkspaceUser | null) => v),
-    referrer: rawData.referrer
+      .filter(
+        (v): v is { id: string; display_name: string | null } =>
+          v !== null && v !== undefined
+      ),
+    referrer: userWithDetails.referrer
       ? {
-          id: rawData.referrer.id,
+          id: userWithDetails.referrer.id,
           display_name:
-            rawData.referrer.display_name || rawData.referrer.full_name || '',
+            userWithDetails.referrer.display_name ||
+            userWithDetails.referrer.full_name ||
+            '',
         }
       : undefined,
   };
 
   // Sanitize data based on permissions
-  const sanitized: any = { ...data };
+  const sanitized: Partial<typeof data> & {
+    id: string;
+    group_count?: number;
+    updated_at?: string | null;
+  } = {
+    ...data,
+  };
 
   // Remove private fields if user doesn't have permission
   if (!hasPrivateInfo) {
@@ -411,9 +478,9 @@ async function getGroupData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('workspace_user_groups')
     .select('*, workspace_user_groups_users!inner(user_id, role)', {
       count: 'exact',
@@ -434,9 +501,9 @@ async function getReportData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('external_user_monthly_reports')
     .select('*, user:workspace_users!user_id!inner(ws_id)', {
       count: 'exact',
@@ -448,16 +515,9 @@ async function getReportData({
   const { data: rawData, count, error } = await queryBuilder;
   if (error) throw error;
 
-  const data = rawData.map((rowData) => {
-    const preprocessedData: {
-      user?: any;
-      [key: string]: any;
-    } = {
-      ...rowData,
-    };
-
-    delete preprocessedData.user;
-    return preprocessedData as WorkspaceUserReport;
+  const data = (rawData || []).map((rowData) => {
+    const { user: _, ...rest } = rowData;
+    return rest as WorkspaceUserReport;
   });
 
   return { data, count } as { data: WorkspaceUserReport[]; count: number };
@@ -470,20 +530,29 @@ async function getCouponData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
-    .from('workspace_promotions')
-    .select('*, user_linked_promotions!inner(user_id)', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .eq('user_linked_promotions.user_id', userId);
+  const { data, count, error } = await sbAdmin
+    .from('user_linked_promotions')
+    .select(
+      'workspace_promotions!inner(id, name, description, code, value, use_ratio)',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('user_id', userId)
+    .eq('workspace_promotions.ws_id', wsId);
 
-  const { data, count, error } = await queryBuilder;
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching coupon data:', error);
+    return { data: [], count: 0 };
+  }
 
-  return { data, count };
+  const mappedData = (data || [])
+    .map((row) => row.workspace_promotions)
+    .filter((promo): promo is NonNullable<typeof promo> => !!promo);
+
+  return { data: mappedData, count: count || 0 };
 }
 
 async function getWorkspaceSettings(wsId: string) {
@@ -511,9 +580,9 @@ async function getAvailableUsersForReferral({
   wsId: string;
   currentUserId: string;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase.rpc('get_available_referral_users', {
+  const { data, error } = await sbAdmin.rpc('get_available_referral_users', {
     p_ws_id: wsId,
     p_user_id: currentUserId,
   });
@@ -528,9 +597,9 @@ async function getReferredUsers({
   wsId: string;
   userId: string;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspace_users')
     .select('id, full_name, display_name, email, phone')
     .eq('ws_id', wsId)
@@ -550,9 +619,9 @@ async function getUserSentEmails({
   userId: string;
   pageSize: number;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error, count } = await supabase
+  const { data, error, count } = await sbAdmin
     .from('sent_emails')
     .select('*', { count: 'exact' })
     .eq('ws_id', wsId)

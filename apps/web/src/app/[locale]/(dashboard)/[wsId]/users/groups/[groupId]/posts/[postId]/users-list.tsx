@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroupPost } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import UserCard from './card';
@@ -34,7 +33,7 @@ export function UsersList({
   sentEmailUserIds,
   blacklistedEmails,
 }: Props) {
-  const supabase = createClient();
+  const groupId = post.group_id;
 
   // Fetch all user checks in a single query
   const { data: checksMap, isLoading } = useQuery<
@@ -42,20 +41,15 @@ export function UsersList({
   >({
     queryKey: ['group-post-checks', post.id, users.map((u) => u.id)],
     queryFn: async () => {
-      if (!post.id || users.length === 0) return {};
+      if (!post.id || users.length === 0 || !groupId) return {};
 
-      const userIds = users.map((u) => u.id);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks?postId=${post.id}`,
+        { cache: 'no-store' }
+      );
 
-      const { data, error } = await supabase
-        .from('user_group_post_checks')
-        .select('*')
-        .eq('post_id', post.id)
-        .in('user_id', userIds);
-
-      if (error) {
-        console.error('Error fetching checks:', error.message);
-        throw error;
-      }
+      if (!response.ok) throw new Error('Failed to fetch post checks');
+      const data = (await response.json()) as UserGroupPostCheck[];
 
       // Create a map of user_id -> check data
       const checksMap: Record<string, UserGroupPostCheck> = {};
@@ -81,7 +75,7 @@ export function UsersList({
 
       return checksMap;
     },
-    enabled: !!(post.id && users.length > 0),
+    enabled: !!(post.id && users.length > 0 && groupId),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
