@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.4';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -18407,7 +18402,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -19815,6 +19839,10 @@ export type Database = {
         Args: { p_ws_id: string };
         Returns: Database['public']['Enums']['workspace_product_tier'];
       };
+      admin_get_ai_credit_entity_detail: {
+        Args: { p_user_id?: string; p_ws_id?: string };
+        Returns: Json;
+      };
       admin_list_ai_credit_transactions: {
         Args: {
           p_end_date?: string;
@@ -20019,27 +20047,17 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      compute_ai_cost_from_gateway:
-        | {
-            Args: {
-              p_input_tokens: number;
-              p_model_id: string;
-              p_output_tokens: number;
-              p_reasoning_tokens?: number;
-            };
-            Returns: number;
-          }
-        | {
-            Args: {
-              p_image_count?: number;
-              p_input_tokens: number;
-              p_model_id: string;
-              p_output_tokens: number;
-              p_reasoning_tokens?: number;
-              p_search_count?: number;
-            };
-            Returns: number;
-          };
+      compute_ai_cost_from_gateway: {
+        Args: {
+          p_image_count?: number;
+          p_input_tokens: number;
+          p_model_id: string;
+          p_output_tokens: number;
+          p_reasoning_tokens?: number;
+          p_search_count?: number;
+        };
+        Returns: number;
+      };
       compute_ai_cost_usd: {
         Args: {
           p_input_tokens: number;

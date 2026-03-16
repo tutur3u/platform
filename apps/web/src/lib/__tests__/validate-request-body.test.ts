@@ -28,7 +28,7 @@ describe('validateRequestBody', () => {
   });
 
   it('returns 413 when body exceeds default byte limit', async () => {
-    const largeBody = JSON.stringify({ name: 'x'.repeat(300 * 1024) });
+    const largeBody = JSON.stringify({ name: 'x'.repeat(600 * 1024) });
     const request = makeRequest(largeBody);
     const result = await validateRequestBody(request, testSchema);
 

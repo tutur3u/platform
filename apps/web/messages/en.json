@@ -4309,6 +4309,7 @@
       "validation_mode_numeric": "Numeric only",
       "validation_mode_real": "Real numbers",
       "validation_mode_regex": "Regex pattern",
+      "validation_mode_url": "URL format",
       "validation_pattern": "Regex pattern",
       "value": "Value",
       "view_image_fullscreen": "View image fullscreen",

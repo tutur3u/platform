@@ -22,8 +22,8 @@ describe('safeParseBody', () => {
   });
 
   it('rejects body exceeding default byte limit', async () => {
-    // Create a body larger than 256KB
-    const largeBody = JSON.stringify({ data: 'x'.repeat(300 * 1024) });
+    // Create a body larger than 512KB (new limit)
+    const largeBody = JSON.stringify({ data: 'x'.repeat(600 * 1024) });
     const request = makeRequest(largeBody);
     const result = await safeParseBody(request);
 

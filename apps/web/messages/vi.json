@@ -4309,6 +4309,7 @@
       "validation_mode_numeric": "Chỉ số",
       "validation_mode_real": "Số thực",
       "validation_mode_regex": "Biểu thức chính quy",
+      "validation_mode_url": "Định dạng URL",
       "validation_pattern": "Biểu thức chính quy",
       "value": "Giá trị",
       "view_image_fullscreen": "Xem ảnh toàn màn hình",

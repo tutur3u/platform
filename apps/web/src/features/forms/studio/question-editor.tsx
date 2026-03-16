@@ -56,6 +56,8 @@ import { FieldLabel, QuestionTypeIcon } from '../form-icons';
 import { FormsMarkdown } from '../forms-markdown';
 import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import {
+  FORM_QUESTION_DESCRIPTION_MAX_LENGTH,
+  FORM_QUESTION_TITLE_MAX_LENGTH,
   FORM_QUESTION_TYPE_VALUES,
   FORM_VALIDATION_MODE_VALUES,
   type FormQuestionInput,
@@ -212,6 +214,9 @@ export function QuestionEditor({
     control: form.control,
     name: `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMessage`,
   });
+  const showsCharacterCount =
+    questionType === 'short_text' || questionType === 'long_text';
+
   const typography = useWatch({
     control: form.control,
     name: 'theme.typography',
@@ -545,6 +550,12 @@ export function QuestionEditor({
                     toneClasses={toneClasses}
                     compact
                   />
+                  {showsCharacterCount && (
+                    <div className="flex justify-end pr-1 text-muted-foreground text-xs">
+                      {questionTitle?.length || 0} /{' '}
+                      {FORM_QUESTION_TITLE_MAX_LENGTH}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-[1.35rem] border border-border/60 bg-muted/20 px-4 py-5 md:col-span-2">
@@ -672,6 +683,10 @@ export function QuestionEditor({
                       placeholder={t('studio.description_placeholder')}
                       toneClasses={toneClasses}
                     />
+                    <div className="flex justify-end pr-1 text-muted-foreground text-xs">
+                      {questionDescription?.length || 0} /{' '}
+                      {FORM_QUESTION_DESCRIPTION_MAX_LENGTH}
+                    </div>
                   </div>
                 </>
               ) : null}
@@ -789,7 +804,8 @@ export function QuestionEditor({
                   validationMode === 'numeric' ||
                   validationMode === 'real' ||
                   validationMode === 'regex' ||
-                  validationMode === 'email' ? (
+                  validationMode === 'email' ||
+                  validationMode === 'url' ? (
                     <div className="space-y-1.5">
                       <Label>{t('studio.validation_message')}</Label>
                       <Input

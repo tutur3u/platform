@@ -102,6 +102,15 @@ const TASK_DESCRIPTION_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const FORM_SUBMISSION_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    { window: 'minute', limit: 60, duration: '1 m' },
+    { window: 'hour', limit: 600, duration: '1 h' },
+    { window: 'day', limit: 4000, duration: '1 d' },
+  ],
+};
+
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   {
     key: 'otp-send',
@@ -117,6 +126,13 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
         req.nextUrl.pathname
       ),
     rateLimits: AUTH_RATE_LIMITS,
+  },
+  {
+    key: 'form-submission',
+    matches: (req) =>
+      req.method === 'POST' &&
+      /^\/api\/v1\/shared\/forms\/[^/]+(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: FORM_SUBMISSION_RATE_LIMITS,
   },
   {
     key: 'high-fanout',
