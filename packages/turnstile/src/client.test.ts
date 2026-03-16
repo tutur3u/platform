@@ -2,10 +2,10 @@ import { resolveTurnstileClientState } from './client';
 
 describe('resolveTurnstileClientState', () => {
   it('requires Turnstile outside development when configured', () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'site-key';
     expect(
       resolveTurnstileClientState({
         devMode: false,
-        siteKey: 'site-key',
       })
     ).toEqual({
       siteKey: 'site-key',
@@ -15,10 +15,10 @@ describe('resolveTurnstileClientState', () => {
   });
 
   it('stays required but non-renderable when the site key is missing', () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = '';
     expect(
       resolveTurnstileClientState({
         devMode: false,
-        siteKey: null,
       })
     ).toEqual({
       siteKey: undefined,
@@ -28,10 +28,10 @@ describe('resolveTurnstileClientState', () => {
   });
 
   it('disables Turnstile in development', () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'site-key';
     expect(
       resolveTurnstileClientState({
         devMode: true,
-        siteKey: 'site-key',
       })
     ).toEqual({
       siteKey: 'site-key',
