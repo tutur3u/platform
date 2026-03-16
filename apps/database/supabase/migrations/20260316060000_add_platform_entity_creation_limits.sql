@@ -34,10 +34,38 @@ alter table public.platform_entity_creation_limits enable row level security;
 comment on table public.platform_entity_creation_limits is
   'Manual opt-in table for entity creation limits enforced by a shared before insert trigger. The table stores per-tier thresholds while counting sources are provided by dedicated entity_limit_source__<table> views.';
 
-create or replace function public._resolve_user_personal_workspace_tier(
-  p_user_id uuid
+create or replace function public._resolve_workspace_tier(
+  p_ws_id uuid
 )
 returns public.workspace_product_tier
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_ws_id uuid;
+  v_effective_tier public.workspace_product_tier;
+begin
+  select id, ws.tier
+  into v_ws_id, v_effective_tier
+  from public.workspaces
+  left join public.workspace_subscriptions ws on ws.ws_id = public.workspaces.id and ws.status = 'active'
+  where id = p_ws_id
+  limit 1;
+
+  if v_ws_id is null then
+    return 'FREE'::public.workspace_product_tier;
+  end if;
+
+  return v_effective_tier;
+end;
+$$;
+
+create or replace function public._resolve_user_personal_workspace_id(
+  p_user_id uuid
+)
+returns uuid
 language plpgsql
 stable
 security definer
@@ -54,57 +82,9 @@ begin
   order by w.created_at asc
   limit 1;
 
-  if v_personal_ws_id is null then
-    return 'FREE'::public.workspace_product_tier;
-  end if;
-
-  return public._resolve_workspace_tier(v_personal_ws_id);
+  return v_personal_ws_id;
 end;
 $$;
-
-create or replace view public.entity_limit_source__workspaces as
-select
-  coalesce(personal_ws.id, w.id) as ws_id,
-  w.creator_id as user_id,
-  w.created_at
-from public.workspaces w
-left join lateral (
-  select pw.id
-  from public.workspaces pw
-  where pw.creator_id = w.creator_id
-    and pw.personal is true
-  order by pw.created_at asc nulls last
-  limit 1
-) personal_ws on true;
-
-comment on view public.entity_limit_source__workspaces is
-  'Source view for workspace creation limits: ws_id is the creator personal workspace id, user_id is creator_id.';
-
-create or replace view public.entity_limit_source__tasks as
-select
-  coalesce(wb_direct.ws_id, wb_via_list.ws_id) as ws_id,
-  t.creator_id as user_id,
-  t.created_at
-from public.tasks t
-left join public.workspace_boards wb_direct
-  on wb_direct.id = t.board_id
-left join public.task_lists tl
-  on tl.id = t.list_id
-left join public.workspace_boards wb_via_list
-  on wb_via_list.id = tl.board_id;
-
-comment on view public.entity_limit_source__tasks is
-  'Source view for task creation limits: ws_id inferred from tasks.board_id or fallback tasks.list_id -> task_lists.board_id.';
-
-create or replace view public.entity_limit_source__workspace_whiteboards as
-select
-  wb.ws_id,
-  wb.creator_id as user_id,
-  wb.created_at
-from public.workspace_whiteboards wb;
-
-comment on view public.entity_limit_source__workspace_whiteboards is
-  'Source view for whiteboard creation limits: direct ws_id and creator_id mapping.';
 
 create or replace function public._validate_platform_entity_limit_target(
   p_target_table text
@@ -150,16 +130,30 @@ begin
       using errcode = 'P0001';
   end if;
 
-  perform 1
-  from information_schema.columns c
-  where c.table_schema = 'public'
-    and c.table_name = v_source_view_name
-    and c.column_name = 'ws_id'
-    and c.data_type = 'uuid';
+  if p_target_table = 'workspaces' then
+    perform 1
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.table_name = v_source_view_name
+      and c.column_name = 'personal_ws_id'
+      and c.data_type = 'uuid';
 
-  if not found then
-    raise exception 'SOURCE_VIEW_REQUIRES_WS_ID_UUID'
-      using errcode = 'P0001';
+    if not found then
+      raise exception 'SOURCE_VIEW_REQUIRES_PERSONAL_WS_ID_UUID'
+        using errcode = 'P0001';
+    end if;
+  else
+    perform 1
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.table_name = v_source_view_name
+      and c.column_name = 'ws_id'
+      and c.data_type = 'uuid';
+
+    if not found then
+      raise exception 'SOURCE_VIEW_REQUIRES_WS_ID_UUID'
+        using errcode = 'P0001';
+    end if;
   end if;
 
   perform 1
@@ -251,6 +245,9 @@ declare
   v_subject_user_id uuid;
   v_subject_bucket text;
   v_source_view_name text;
+  v_personal_ws_id uuid;
+  v_source_ws_column text;
+  v_source_where_base text;
   v_count bigint;
   v_actor_role text;
   v_is_service_role boolean;
@@ -294,10 +291,17 @@ begin
       using errcode = 'P0001';
   end if;
 
+  if tg_table_name = 'workspaces' then
+    -- Tie workspace limits to the creator's personal workspace id when available.
+    v_personal_ws_id := public._resolve_user_personal_workspace_id(v_subject_user_id);
+
+    if v_personal_ws_id is not null then
+      v_subject_ws_id := v_personal_ws_id;
+    end if;
+  end if;
+
   if v_subject_ws_id is not null then
     v_effective_tier := public._resolve_workspace_tier(v_subject_ws_id);
-  else
-    v_effective_tier := public._resolve_user_personal_workspace_tier(v_subject_user_id);
   end if;
 
   select *
@@ -316,11 +320,22 @@ begin
   perform pg_advisory_xact_lock(hashtext(tg_table_name), hashtext(v_subject_bucket));
 
   v_source_view_name := format('entity_limit_source__%s', tg_table_name);
+  v_source_ws_column := 'ws_id';
+
+  if tg_table_name = 'workspaces' then
+    v_source_ws_column := 'personal_ws_id';
+  end if;
+
+  v_source_where_base := format(
+    '($1 is null or src.%I is not distinct from $1) and src.user_id is not distinct from $2',
+    v_source_ws_column
+  );
 
   if v_limit_row.total_limit is not null then
     execute format(
-      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2',
-      v_source_view_name
+      'select count(*) from public.%I src where %s',
+      v_source_view_name,
+      v_source_where_base
     )
     into v_count
     using v_subject_ws_id, v_subject_user_id;
@@ -337,7 +352,7 @@ begin
 
   if v_limit_row.per_hour is not null then
     execute format(
-      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2 and src.created_at >= $3',
+      'select count(*) from public.%I src where %s and src.created_at >= $3',
       v_source_view_name
     )
     into v_count
@@ -351,7 +366,7 @@ begin
 
   if v_limit_row.per_day is not null then
     execute format(
-      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2 and src.created_at >= $3',
+      'select count(*) from public.%I src where %s and src.created_at >= $3',
       v_source_view_name
     )
     into v_count
@@ -365,7 +380,7 @@ begin
 
   if v_limit_row.per_week is not null then
     execute format(
-      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2 and src.created_at >= $3',
+      'select count(*) from public.%I src where %s and src.created_at >= $3',
       v_source_view_name
     )
     into v_count
@@ -379,7 +394,7 @@ begin
 
   if v_limit_row.per_month is not null then
     execute format(
-      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2 and src.created_at >= $3',
+      'select count(*) from public.%I src where %s and src.created_at >= $3',
       v_source_view_name
     )
     into v_count
@@ -564,13 +579,23 @@ as $$
     join information_schema.views v
       on v.table_schema = 'public'
      and v.table_name = c.source_view_name
-    where exists (
-      select 1
-      from information_schema.columns col
-      where col.table_schema = 'public'
-        and col.table_name = c.source_view_name
-        and col.column_name = 'ws_id'
-        and col.data_type = 'uuid'
+    where (
+      exists (
+        select 1
+        from information_schema.columns col
+        where col.table_schema = 'public'
+          and col.table_name = c.source_view_name
+          and col.column_name = 'ws_id'
+          and col.data_type = 'uuid'
+      )
+      or exists (
+        select 1
+        from information_schema.columns col
+        where col.table_schema = 'public'
+          and col.table_name = c.source_view_name
+          and col.column_name = 'personal_ws_id'
+          and col.data_type = 'uuid'
+      )
     )
       and exists (
       select 1
@@ -601,7 +626,8 @@ $$;
 
 revoke all on table public.platform_entity_creation_limits from anon, authenticated;
 
-revoke all on function public._resolve_user_personal_workspace_tier(uuid) from public, anon, authenticated;
+revoke all on function public._resolve_workspace_tier(uuid) from public, anon, authenticated;
+revoke all on function public._resolve_user_personal_workspace_id(uuid) from public, anon, authenticated;
 revoke all on function public._validate_platform_entity_limit_target(text) from public, anon, authenticated;
 revoke all on function public._resolve_platform_entity_limit_scope(text, jsonb, uuid) from public, anon, authenticated;
 revoke all on function public.enforce_platform_entity_creation_limits() from public, anon, authenticated;
@@ -612,7 +638,9 @@ revoke all on function public.reattach_platform_entity_creation_limit_trigger(te
 revoke all on function public.get_available_platform_entity_limit_tables() from public, anon, authenticated;
 
 grant select, insert, update, delete on table public.platform_entity_creation_limits to service_role;
-grant execute on function public._resolve_user_personal_workspace_tier(uuid) to service_role;
+
+grant execute on function public._resolve_workspace_tier(uuid) to service_role;
+grant execute on function public._resolve_user_personal_workspace_id(uuid) to service_role;
 grant execute on function public._validate_platform_entity_limit_target(text) to service_role;
 grant execute on function public._resolve_platform_entity_limit_scope(text, jsonb, uuid) to service_role;
 grant execute on function public.enforce_platform_entity_creation_limits() to service_role;
