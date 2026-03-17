@@ -46,12 +46,12 @@ export function DepartmentCard({
   return (
     <Card
       className={cn(
-        'group w-full max-w-7xl overflow-hidden rounded-lg border bg-secondary transition-all duration-300 ease-in-out hover:border-foreground/30 hover:shadow-lg hover:shadow-primary/20',
+        'group w-full max-w-7xl overflow-hidden rounded-lg border bg-secondary transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20',
         className
       )}
     >
       <CardHeader className="p-6 text-center">
-        <h3 className="font-bold text-3xl text-white">{name}</h3>
+        <h3 className="font-bold text-3xl text-foreground">{name}</h3>
       </CardHeader>
       <div className="grid grid-cols-1 md:grid-cols-2">
         <div className="p-6 md:h-full">
@@ -60,14 +60,14 @@ export function DepartmentCard({
           </div>
         </div>
         <CardContent className="flex flex-1 flex-col justify-center p-6">
-          <h2 className="mb-4 font-bold text-2xl text-white">{bio}</h2>
-          <h3 className="mb-2 font-bold text-3xl text-white">
+          <h2 className="mb-4 font-bold text-2xl text-foreground">{bio}</h2>
+          <h3 className="mb-2 font-bold text-3xl text-foreground">
             {characteristics}
           </h3>
-          <div className="text-lg text-white">
+          <div className="text-foreground text-lg">
             {renderMissionPoints(mission)}
           </div>
-          <div className="mt-4 text-lg text-white">
+          <div className="mt-4 text-foreground text-lg">
             {core.map((item, index) => (
               <p key={index} className="mb-2">
                 {item}

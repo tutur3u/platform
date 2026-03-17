@@ -20,11 +20,12 @@ type CoreDepartmentName = Extract<
 >;
 
 const departmentStyles: Record<CoreDepartmentName, string> = {
-  Technology: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
+  Technology:
+    'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20 hover:bg-dynamic-blue/20',
   'Human Resources':
-    'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
+    'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20 hover:bg-dynamic-purple/20',
   Marketing:
-    'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20',
+    'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20 hover:bg-dynamic-orange/20',
 };
 
 const coreDepartments: { name: CoreDepartmentName; color: string }[] = [
