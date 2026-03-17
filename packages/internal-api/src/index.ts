@@ -1,3 +1,7 @@
+export {
+  type WorkspaceCalendarEventUpdatePayload,
+  updateWorkspaceCalendarEvent,
+} from './calendar';
 export type {
   InternalApiClientOptions,
   InternalApiFetchInit,
@@ -31,6 +35,10 @@ export {
   resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
 } from './tasks';
+export {
+  type TaskSchedulingUpdatePayload,
+  updateTaskSchedulingSettings,
+} from './tasks-scheduling';
 export {
   getWorkspaceTemplate,
   getWorkspaceTemplateBackgroundUrl,

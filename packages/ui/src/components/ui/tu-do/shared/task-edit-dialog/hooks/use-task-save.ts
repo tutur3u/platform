@@ -2,6 +2,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
+import { updateTaskSchedulingSettings } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskUpdatePayload } from '@tuturuuu/internal-api/tasks';
 import { createWorkspaceTaskRelationship } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -798,38 +799,29 @@ async function handleCreateTask({
     });
 
     // Save per-user scheduling settings for the creator (if any were provided)
-    if (resolvedUserId) {
-      const hasAnySchedulingValue =
-        totalDuration != null ||
-        calendarHours != null ||
-        autoSchedule === true ||
-        isSplittable === true ||
-        minSplitDurationMinutes != null ||
-        maxSplitDurationMinutes != null;
+    const hasAnySchedulingValue =
+      totalDuration != null ||
+      calendarHours != null ||
+      autoSchedule === true ||
+      isSplittable === true ||
+      minSplitDurationMinutes != null ||
+      maxSplitDurationMinutes != null;
 
-      if (hasAnySchedulingValue) {
-        const { error: schedulingError } = await supabase
-          .from('task_user_scheduling_settings')
-          .upsert(
-            {
-              task_id: newTask.id,
-              user_id: resolvedUserId,
-              total_duration: totalDuration,
-              is_splittable: isSplittable,
-              min_split_duration_minutes: minSplitDurationMinutes,
-              max_split_duration_minutes: maxSplitDurationMinutes,
-              calendar_hours: calendarHours,
-              auto_schedule: autoSchedule,
-            },
-            { onConflict: 'task_id,user_id' }
-          );
-
-        if (schedulingError) {
-          console.error(
-            'Failed to save personal scheduling settings:',
-            schedulingError
-          );
-        }
+    if (hasAnySchedulingValue) {
+      try {
+        await updateTaskSchedulingSettings(wsId, newTask.id, {
+          total_duration: totalDuration,
+          is_splittable: isSplittable,
+          min_split_duration_minutes: minSplitDurationMinutes,
+          max_split_duration_minutes: maxSplitDurationMinutes,
+          calendar_hours: calendarHours ?? null,
+          auto_schedule: autoSchedule,
+        });
+      } catch (schedulingError) {
+        console.error(
+          'Failed to save personal scheduling settings via API:',
+          schedulingError
+        );
       }
     }
 

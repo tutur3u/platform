@@ -4,9 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import {
   createWorkspaceTask,
+  updateWorkspaceCalendarEvent,
   uploadWorkspaceStorageFile,
 } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -80,8 +80,6 @@ export {
   getTaskDialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
 export type { PendingRelationship, PendingRelationshipType, SharedTaskContext };
-
-const supabase = createClient();
 
 export interface TaskEditDialogProps {
   wsId: string;
@@ -413,12 +411,9 @@ export function TaskEditDialog({
     async (eventId: string, currentLocked: boolean) => {
       setLockingEventId(eventId);
       try {
-        const { error } = await supabase
-          .from('workspace_calendar_events')
-          .update({ locked: !currentLocked })
-          .eq('id', eventId);
-
-        if (error) throw error;
+        await updateWorkspaceCalendarEvent(effectiveTaskWsId, eventId, {
+          locked: !currentLocked,
+        });
 
         // Update local state
         setLocalCalendarEvents((prev) =>
@@ -443,7 +438,7 @@ export function TaskEditDialog({
         setLockingEventId(null);
       }
     },
-    [toast]
+    [toast, effectiveTaskWsId]
   );
 
   useEffect(() => {
