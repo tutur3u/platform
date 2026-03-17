@@ -47,7 +47,7 @@ import {
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 interface Props {
   taskId: string;
@@ -124,6 +124,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [hasChanges, setHasChanges] = useState(false);
   const [hasRefetchedAfterWorkspace, setHasRefetchedAfterWorkspace] =
     useState(false);
+  const refetchingAfterWorkspaceRef = useRef(false);
 
   const updateTaskMutation = useUpdateTask(boardId);
 
@@ -161,18 +162,42 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   useEffect(() => {
     if (!isEditDialogOpen) {
       setHasRefetchedAfterWorkspace(false);
+      refetchingAfterWorkspaceRef.current = false;
       return;
     }
 
-    if (workspaceId && !hasRefetchedAfterWorkspace && !hasChanges) {
-      refetchTask().catch((error) => {
+    if (
+      !workspaceId ||
+      hasRefetchedAfterWorkspace ||
+      hasChanges ||
+      refetchingAfterWorkspaceRef.current
+    ) {
+      return;
+    }
+
+    refetchingAfterWorkspaceRef.current = true;
+    let isMounted = true;
+
+    refetchTask()
+      .then(() => {
+        if (isMounted) {
+          setHasRefetchedAfterWorkspace(true);
+        }
+      })
+      .catch((error) => {
         console.error(
           'Failed to refetch task after workspace resolved:',
           error
         );
+      })
+      .finally(() => {
+        refetchingAfterWorkspaceRef.current = false;
       });
-      setHasRefetchedAfterWorkspace(true);
-    }
+
+    return () => {
+      isMounted = false;
+      refetchingAfterWorkspaceRef.current = false;
+    };
   }, [
     workspaceId,
     isEditDialogOpen,

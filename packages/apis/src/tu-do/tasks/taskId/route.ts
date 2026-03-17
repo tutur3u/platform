@@ -464,6 +464,26 @@ export async function PUT(
     if (body.completed !== undefined) {
       nextCompleted = body.completed;
       shouldUpdateCompletion = true;
+
+      const completionTimestamp = body.completed
+        ? (body.completed_at ?? body.closed_at ?? new Date().toISOString())
+        : null;
+
+      if (body.completed) {
+        if (body.completed_at === undefined) {
+          nextCompletedAt = completionTimestamp;
+        }
+        if (body.closed_at === undefined) {
+          nextClosedAt = completionTimestamp;
+        }
+      } else {
+        if (body.completed_at === undefined) {
+          nextCompletedAt = null;
+        }
+        if (body.closed_at === undefined) {
+          nextClosedAt = null;
+        }
+      }
     }
 
     if (!shouldUpdateCompletion && listChanged && effectiveTargetStatus) {

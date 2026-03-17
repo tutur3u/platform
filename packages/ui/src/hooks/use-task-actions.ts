@@ -1128,6 +1128,18 @@ export function useTaskActions({
 
       // Store previous state for rollback
       const previousTasks = currentTasks;
+      const rollbackFailedTasks = (failedIds: string[]) => {
+        if (!previousTasks || failedIds.length === 0) return;
+        const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
+        queryClient.setQueryData<Task[]>(['tasks', boardId], (current) => {
+          if (!current) return current;
+          return current.map((task: Task) =>
+            failedIds.includes(task.id)
+              ? previousTaskMap.get(task.id) || task
+              : task
+          );
+        });
+      };
 
       try {
         // Optimistic update
@@ -1167,27 +1179,12 @@ export function useTaskActions({
             (taskId) => !succeededIds.includes(taskId)
           );
 
-          if (failedIds.length > 0 && previousTasks) {
-            const previousTaskMap = new Map(
-              previousTasks.map((t) => [t.id, t])
-            );
-            queryClient.setQueryData(
-              ['tasks', boardId],
-              (current: Task[] | undefined) => {
-                if (!current) return current;
-                return current.map((task) => {
-                  if (!failedIds.includes(task.id)) {
-                    return task;
-                  }
-
-                  return previousTaskMap.get(task.id) || task;
-                });
-              }
-            );
-
-            throw new Error(
-              `Partial update failed (${succeededIds.length}/${tasksToUpdate.length} tasks updated). Failed task IDs: ${failedIds.join(', ')}`
-            );
+          if (failedIds.length > 0) {
+            rollbackFailedTasks(failedIds);
+            toast.warning('Partial estimation update', {
+              description: `${succeededIds.length}/${tasksToUpdate.length} tasks updated`,
+            });
+            return;
           }
 
           for (const tid of succeededIds) {
@@ -1233,9 +1230,11 @@ export function useTaskActions({
           }
 
           if (failedIds.length > 0) {
-            throw new Error(
-              `Partial update failed (${succeededIds.length}/${tasksToUpdate.length} tasks updated). Failed task IDs: ${failedIds.join(', ')}`
-            );
+            rollbackFailedTasks(failedIds);
+            toast.warning('Partial estimation update', {
+              description: `${succeededIds.length}/${tasksToUpdate.length} tasks updated`,
+            });
+            return;
           }
 
           toast.success('Estimation updated', {

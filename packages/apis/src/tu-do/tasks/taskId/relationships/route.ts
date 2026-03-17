@@ -358,21 +358,10 @@ export async function POST(
 
     const sbAdmin = await createAdminClient();
 
-    const { data: taskRow, error: taskError } = await sbAdmin
-      .from('tasks')
-      .select(
-        `
-        id,
-        list:task_lists!inner(
-          board:workspace_boards!inner(
-            ws_id
-          )
-        )
-      `
-      )
-      .eq('id', taskId)
-      .is('deleted_at', null)
-      .maybeSingle();
+    const { data: taskRow, error: taskError } = await getWorkspaceTaskRow(
+      sbAdmin,
+      taskId
+    );
 
     if (taskError) {
       return NextResponse.json(
@@ -385,34 +374,27 @@ export async function POST(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const { data: relatedTask, error: relatedTaskError } = await sbAdmin
-      .from('tasks')
-      .select(
-        `
-        id,
-        list:task_lists!inner(
-          board:workspace_boards!inner(
-            ws_id
-          )
-        )
-      `
-      )
-      .eq('id', payload.target_task_id)
-      .is('deleted_at', null)
-      .maybeSingle();
+    const otherTaskId = isSourceTask
+      ? payload.target_task_id
+      : payload.source_task_id;
 
-    if (relatedTaskError) {
-      return NextResponse.json(
-        { error: 'Failed to load related task' },
-        { status: 500 }
-      );
-    }
+    if (otherTaskId !== taskId) {
+      const { data: otherTask, error: otherTaskError } =
+        await getWorkspaceTaskRow(sbAdmin, otherTaskId);
 
-    if (!relatedTask || relatedTask.list?.board?.ws_id !== wsId) {
-      return NextResponse.json(
-        { error: 'Related task not found' },
-        { status: 404 }
-      );
+      if (otherTaskError) {
+        return NextResponse.json(
+          { error: 'Failed to load related task' },
+          { status: 500 }
+        );
+      }
+
+      if (!otherTask || otherTask.list?.board?.ws_id !== wsId) {
+        const notFoundMessage = isSourceTask
+          ? 'Related task not found'
+          : 'Source task not found';
+        return NextResponse.json({ error: notFoundMessage }, { status: 404 });
+      }
     }
 
     const { data: relationship, error: insertError } = await sbAdmin

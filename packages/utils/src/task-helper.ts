@@ -1422,33 +1422,21 @@ export function useMoveTask(boardId: string, wsId?: string) {
       console.log('📋 Task ID:', taskId);
       console.log('🎯 New List ID:', newListId);
 
-      if (wsId) {
-        const baseUrl =
-          typeof window !== 'undefined' ? window.location.origin : undefined;
-        const result = await moveTask(wsId, taskId, newListId, {
-          baseUrl: baseUrl ?? undefined,
-        });
-
-        console.log('✅ moveTask completed successfully via workspace API');
-        console.log('📊 Result:', result);
-
-        return result;
+      if (!wsId) {
+        console.error('Workspace ID missing for moveTask');
+        throw new Error('Workspace ID is required to move tasks');
       }
 
-      console.log(
-        'ℹ️ No workspace ID provided; falling back to direct Supabase move'
-      );
-      const supabase = createClient();
-      const { task: movedTask } = await moveTaskToBoard(
-        supabase,
-        taskId,
-        newListId
-      );
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : undefined;
+      const result = await moveTask(wsId, taskId, newListId, {
+        baseUrl: baseUrl ?? undefined,
+      });
 
-      console.log('✅ moveTask completed successfully via Supabase');
-      console.log('📊 Result:', movedTask);
+      console.log('✅ moveTask completed successfully via workspace API');
+      console.log('📊 Result:', result);
 
-      return movedTask;
+      return result;
     },
     onMutate: async ({ taskId, newListId }) => {
       console.log('🎭 onMutate triggered - optimistic update');
