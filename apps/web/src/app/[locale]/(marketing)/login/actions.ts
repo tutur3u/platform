@@ -13,6 +13,7 @@ import {
   validateOtp,
 } from '@ncthub/utils/email';
 import { headers } from 'next/headers';
+import { DEV_MODE } from '@/constants/common';
 
 export interface SendOtpInput {
   email: string;
@@ -50,14 +51,18 @@ export async function sendOtpAction(
     const userId = await checkIfUserExists({ email: validatedEmail });
     const headersList = await headers();
     const turnstile = resolveTurnstileToken({
+      devMode: DEV_MODE,
       token: captchaToken,
     });
-    await verifyTurnstileToken(
-      { headers: headersList },
-      {
-        token: turnstile.captchaToken,
-      }
-    );
+
+    if (turnstile.isRequired) {
+      await verifyTurnstileToken(
+        { headers: headersList },
+        {
+          token: turnstile.captchaToken,
+        }
+      );
+    }
 
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();
@@ -80,7 +85,9 @@ export async function sendOtpAction(
         email: validatedEmail,
         options: {
           data: { locale, origin: 'TUTURUUU' },
-          captchaToken: turnstile.captchaToken,
+          captchaToken: turnstile.isRequired
+            ? turnstile.captchaToken
+            : undefined,
         },
       });
 
@@ -96,7 +103,9 @@ export async function sendOtpAction(
         password: randomPassword,
         options: {
           data: { locale, origin: 'TUTURUUU' },
-          captchaToken: turnstile.captchaToken,
+          captchaToken: turnstile.isRequired
+            ? turnstile.captchaToken
+            : undefined,
         },
       });
 
