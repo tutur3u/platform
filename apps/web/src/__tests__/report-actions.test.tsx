@@ -14,7 +14,7 @@ describe('ReportActions', () => {
   it('keeps print-after-export settings hidden until the settings trigger is opened', () => {
     render(
       <ReportActions
-        isPendingApproval={false}
+        isExportBlockedByStatus={false}
         isExporting={false}
         isPaginationReady={true}
         paginationPageCount={2}

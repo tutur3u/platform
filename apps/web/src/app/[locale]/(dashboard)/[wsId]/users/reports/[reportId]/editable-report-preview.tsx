@@ -46,6 +46,11 @@ import {
   type UserReport,
   useReportMutations,
 } from './hooks/use-report-mutations';
+import {
+  isWorkspaceBooleanEnabled,
+  shouldBlockReportExport,
+  shouldShowPendingWatermark,
+} from './report-feature-flags';
 import ScoreDisplay from './score-display';
 
 export const UserReportFormSchema = z.object({
@@ -283,8 +288,24 @@ export default function EditableReportPreview({
     isPaginationReady,
   });
 
+  const restrictReportExportToApproved = isWorkspaceBooleanEnabled(
+    getConfig('ENABLE_REPORT_EXPORT_ONLY_APPROVED')
+  );
+  const showPendingReportWatermark = isWorkspaceBooleanEnabled(
+    getConfig('ENABLE_REPORT_PENDING_WATERMARK')
+  );
+
   const isPendingApproval =
     report.report_approval_status === 'PENDING' && !canApproveReports;
+  const isExportBlockedByStatus = shouldBlockReportExport({
+    approvalStatus: report.report_approval_status,
+    canApproveReports,
+    restrictReportExportToApproved,
+  });
+  const shouldShowPendingWatermarkValue = shouldShowPendingWatermark({
+    approvalStatus: report.report_approval_status,
+    enablePendingWatermark: showPendingReportWatermark,
+  });
   const userArchiveState = getWorkspaceUserArchiveState({
     id: report.user_id || 'unknown-user',
     full_name: report.user_name,
@@ -620,7 +641,7 @@ export default function EditableReportPreview({
           )}
 
           <ReportActions
-            isPendingApproval={isPendingApproval}
+            isExportBlockedByStatus={isExportBlockedByStatus}
             isExporting={isExporting}
             isPaginationReady={isPaginationReady}
             paginationPageCount={previewPageCount}
@@ -716,7 +737,7 @@ export default function EditableReportPreview({
             </div>
           ) : null}
 
-          <div className="mx-auto w-[210mm] min-w-[210mm]">
+          <div className="relative mx-auto w-[210mm] min-w-[210mm]">
             <ReportPreview
               t={t}
               lang={locale}
@@ -753,6 +774,13 @@ export default function EditableReportPreview({
                 ) : undefined
               }
             />
+            {shouldShowPendingWatermarkValue ? (
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center print:hidden">
+                <div className="-rotate-12 rounded-2xl border border-dynamic-yellow/35 bg-dynamic-yellow/10 px-8 py-4 font-semibold text-3xl text-dynamic-yellow/70 uppercase tracking-[0.2em]">
+                  {t('ws-reports.pending_watermark')}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
