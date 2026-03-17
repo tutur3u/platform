@@ -30,6 +30,10 @@ import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
+import {
+  MAX_MONTHLY_REPORT_TEXT_LENGTH,
+  MAX_MONTHLY_REPORT_TITLE_LENGTH,
+} from '@/features/reports/report-limits';
 import { useConfigMap } from '@/hooks/use-config-map';
 import { RejectDialog } from '../../approvals/components/reject-dialog';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
@@ -54,9 +58,9 @@ import {
 import ScoreDisplay from './score-display';
 
 export const UserReportFormSchema = z.object({
-  title: z.string(),
-  content: z.string(),
-  feedback: z.string(),
+  title: z.string().max(MAX_MONTHLY_REPORT_TITLE_LENGTH),
+  content: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
+  feedback: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
 });
 
 export default function EditableReportPreview({

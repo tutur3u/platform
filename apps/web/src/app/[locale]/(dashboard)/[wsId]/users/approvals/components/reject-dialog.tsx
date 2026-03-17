@@ -12,6 +12,7 @@ import {
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
+import { MAX_APPROVAL_REJECTION_REASON_LENGTH } from '@/features/reports/report-limits';
 
 interface RejectDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ export function RejectDialog({
   isSubmitting,
 }: RejectDialogProps) {
   const t = useTranslations('approvals');
+  const commonT = useTranslations('common');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,10 +51,16 @@ export function RejectDialog({
           <Label htmlFor="rejection-reason">{t('reject_dialog.reason')}</Label>
           <Textarea
             id="rejection-reason"
+            maxLength={MAX_APPROVAL_REJECTION_REASON_LENGTH}
             value={reason}
             onChange={(event) => onReasonChange(event.target.value)}
             placeholder={t('reject_dialog.reason_placeholder')}
           />
+          <p className="text-right text-muted-foreground text-xs">
+            {reason.length.toLocaleString()}/
+            {MAX_APPROVAL_REJECTION_REASON_LENGTH.toLocaleString()}{' '}
+            {commonT('characters')}
+          </p>
         </div>
         <DialogFooter>
           <Button

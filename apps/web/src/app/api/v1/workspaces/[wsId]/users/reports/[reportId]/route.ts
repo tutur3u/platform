@@ -1,15 +1,22 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  MAX_MONTHLY_REPORT_TEXT_LENGTH,
+  MAX_MONTHLY_REPORT_TITLE_LENGTH,
+} from '@/features/reports/report-limits';
 
 const UpdateReportSchema = z.object({
-  title: z.string().optional(),
-  content: z.string().optional(),
-  feedback: z.string().optional(),
+  title: z.string().max(MAX_MONTHLY_REPORT_TITLE_LENGTH).optional(),
+  content: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH).optional(),
+  feedback: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH).optional(),
   score: z.number().nullable().optional(),
   scores: z.array(z.number()).nullable().optional(),
   report_approval_status: z
@@ -51,6 +58,29 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
+    const approvalFieldsTouched =
+      parsed.data.report_approval_status !== undefined ||
+      parsed.data.approved_at !== undefined ||
+      parsed.data.rejected_at !== undefined ||
+      parsed.data.rejection_reason !== undefined;
+
+    if (
+      approvalFieldsTouched &&
+      parsed.data.report_approval_status === undefined
+    ) {
+      return NextResponse.json(
+        {
+          message: 'Approval status is required when updating approval fields',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (approvalFieldsTouched && !containsPermission('approve_reports')) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
+    const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Verify report belongs to workspace
@@ -68,12 +98,69 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
+    const updatePayload: Record<string, unknown> = {
+      ...parsed.data,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (approvalFieldsTouched) {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
+      if (!authUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
+
+      const { data: workspaceUser, error: workspaceUserError } = await sbAdmin
+        .from('workspace_user_linked_users')
+        .select('virtual_user_id')
+        .eq('platform_user_id', authUser.id)
+        .eq('ws_id', wsId)
+        .maybeSingle();
+
+      if (workspaceUserError || !workspaceUser?.virtual_user_id) {
+        return NextResponse.json(
+          { message: 'User not found in workspace' },
+          { status: 403 }
+        );
+      }
+
+      if (
+        parsed.data.report_approval_status === 'REJECTED' &&
+        !parsed.data.rejection_reason?.trim()
+      ) {
+        return NextResponse.json(
+          { message: 'Rejection reason is required' },
+          { status: 400 }
+        );
+      }
+
+      const now = new Date().toISOString();
+
+      if (parsed.data.report_approval_status === 'APPROVED') {
+        updatePayload.approved_by = workspaceUser.virtual_user_id;
+        updatePayload.approved_at = parsed.data.approved_at ?? now;
+        updatePayload.rejected_by = null;
+        updatePayload.rejected_at = null;
+        updatePayload.rejection_reason = null;
+      } else if (parsed.data.report_approval_status === 'REJECTED') {
+        updatePayload.rejected_by = workspaceUser.virtual_user_id;
+        updatePayload.rejected_at = parsed.data.rejected_at ?? now;
+        updatePayload.approved_by = null;
+        updatePayload.approved_at = null;
+      } else if (parsed.data.report_approval_status === 'PENDING') {
+        updatePayload.approved_by = null;
+        updatePayload.approved_at = null;
+        updatePayload.rejected_by = null;
+        updatePayload.rejected_at = null;
+        updatePayload.rejection_reason = null;
+      }
+    }
+
     const { error } = await sbAdmin
       .from('external_user_monthly_reports')
-      .update({
-        ...parsed.data,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', reportId);
 
     if (error) throw error;
