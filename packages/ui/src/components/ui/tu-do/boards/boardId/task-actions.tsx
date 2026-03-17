@@ -196,7 +196,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
 
     return () => {
       isMounted = false;
-      refetchingAfterWorkspaceRef.current = false;
     };
   }, [
     workspaceId,

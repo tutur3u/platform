@@ -465,17 +465,11 @@ export async function PUT(
       nextCompleted = body.completed;
       shouldUpdateCompletion = true;
 
-      const completionTimestamp = body.completed
-        ? (body.completed_at ?? body.closed_at ?? new Date().toISOString())
-        : null;
-
+      const completionTimestamp =
+        body.completed_at ?? body.closed_at ?? new Date().toISOString();
       if (body.completed) {
-        if (body.completed_at === undefined) {
-          nextCompletedAt = completionTimestamp;
-        }
-        if (body.closed_at === undefined) {
-          nextClosedAt = completionTimestamp;
-        }
+        nextCompletedAt = body.completed_at ?? completionTimestamp;
+        nextClosedAt = body.closed_at ?? completionTimestamp;
       } else {
         if (body.completed_at === undefined) {
           nextCompletedAt = null;

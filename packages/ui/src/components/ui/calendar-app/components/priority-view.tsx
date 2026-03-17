@@ -505,13 +505,24 @@ export default function PriorityView({
           description: `Moved to ${targetList.name}`,
         });
       } else {
-        // No done list or already in done list, just set the completion fields
+        // No done list or already in done list, just update the necessary fields
         const timestamp = new Date().toISOString();
-        await updateWorkspaceTask(taskWsId, taskId, {
-          closed_at: timestamp,
-          completed_at: timestamp,
-          completed: true,
-        });
+        const updates: {
+          closed_at: string;
+          completed_at?: string | null;
+          completed?: boolean;
+        } = { closed_at: timestamp };
+
+        const shouldTreatAsDone = !targetList || targetList.status === 'done';
+        if (shouldTreatAsDone) {
+          updates.completed_at = timestamp;
+          updates.completed = true;
+        } else {
+          updates.completed_at = null;
+          updates.completed = false;
+        }
+
+        await updateWorkspaceTask(taskWsId, taskId, updates);
         toast.success('Task marked as done');
       }
 

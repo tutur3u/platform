@@ -1181,9 +1181,17 @@ export function useTaskActions({
 
           if (failedIds.length > 0) {
             rollbackFailedTasks(failedIds);
+
+            for (const tid of succeededIds) {
+              broadcast?.('task:upsert', {
+                task: { id: tid, estimation_points: points },
+              });
+            }
+
             toast.warning('Partial estimation update', {
               description: `${succeededIds.length}/${tasksToUpdate.length} tasks updated`,
             });
+
             return;
           }
 
