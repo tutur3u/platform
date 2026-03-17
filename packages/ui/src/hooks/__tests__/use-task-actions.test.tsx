@@ -118,7 +118,9 @@ describe('useTaskActions', () => {
     const { moveTask, useUpdateTask } = await import(
       '@tuturuuu/utils/task-helper'
     );
-    const { updateWorkspaceTask } = await import('@tuturuuu/internal-api/tasks');
+    const { updateWorkspaceTask } = await import(
+      '@tuturuuu/internal-api/tasks'
+    );
 
     mockMoveTask = moveTask as any;
     mockMoveTask.mockResolvedValue(undefined);

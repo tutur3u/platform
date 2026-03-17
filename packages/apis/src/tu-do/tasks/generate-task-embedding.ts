@@ -147,22 +147,20 @@ export async function generateTaskEmbedding({
       }
     }
 
-    const labels = (taskData.labels as any[])
-      ?.map((l: any) => l.label?.name)
-      .filter(Boolean);
+    const labels = taskData.labels?.map((l) => l.label?.name).filter(Boolean);
     if (labels?.length) {
       contextParts.push(`Tags: ${labels.join(', ')}`);
     }
 
-    const assignees = (taskData.assignees as any[])
-      ?.map((a: any) => a.user?.display_name)
+    const assignees = taskData.assignees
+      ?.map((a) => a.user?.display_name)
       .filter(Boolean);
     if (assignees?.length) {
       contextParts.push(`Assigned to: ${assignees.join(', ')}`);
     }
 
-    const projects = (taskData.projects as any[])
-      ?.map((p: any) => p.project?.name)
+    const projects = taskData.projects
+      ?.map((p) => p.project?.name)
       .filter(Boolean);
     if (projects?.length) {
       contextParts.push(`Projects: ${projects.join(', ')}`);
