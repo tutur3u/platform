@@ -13,6 +13,9 @@ export function shouldBlockReportExport({
   canApproveReports: boolean;
   restrictReportExportToApproved: boolean;
 }): boolean {
+  // Missing approvalStatus (null/undefined) is treated as a safe default: it does
+  // not satisfy isPendingApproval, but it is still blocked when
+  // restrictReportExportToApproved is true because approvalStatus !== 'APPROVED'.
   const isPendingApproval = approvalStatus === 'PENDING' && !canApproveReports;
 
   return (

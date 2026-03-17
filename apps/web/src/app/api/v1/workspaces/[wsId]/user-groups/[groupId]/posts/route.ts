@@ -21,6 +21,11 @@ const CreateGroupPostSchema = z.object({
   notes: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable().optional(),
 });
 
+const WorkspaceAndGroupUuidSchema = z.object({
+  groupId: z.uuid(),
+  wsId: z.uuid(),
+});
+
 interface Params {
   params: Promise<{
     groupId: string;
@@ -81,8 +86,31 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const parsedBody = CreateGroupPostSchema.safeParse(await req.json());
+  let rawBody: unknown;
+
+  try {
+    rawBody = await req.json();
+  } catch {
+    return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const parsedBody = CreateGroupPostSchema.safeParse(rawBody);
   const { groupId, wsId: id } = await params;
+
+  const pathParamsParse = WorkspaceAndGroupUuidSchema.safeParse({
+    groupId,
+    wsId: id,
+  });
+
+  if (!pathParamsParse.success) {
+    return NextResponse.json(
+      {
+        message: 'Invalid path params',
+        errors: pathParamsParse.error.issues,
+      },
+      { status: 400 }
+    );
+  }
 
   if (!parsedBody.success) {
     return NextResponse.json(
@@ -127,10 +155,17 @@ export async function POST(req: Request, { params }: Params) {
     .eq('id', groupId)
     .maybeSingle();
 
-  if (groupError || !group) {
+  if (groupError) {
     return NextResponse.json(
       { message: 'Error resolving user group workspace' },
       { status: 500 }
+    );
+  }
+
+  if (!group) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
     );
   }
 

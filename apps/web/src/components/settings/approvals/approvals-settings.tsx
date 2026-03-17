@@ -103,56 +103,35 @@ export function ApprovalsSettings({ wsId }: Props) {
 
   const updateMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const promises = [
-        fetch(`/api/v1/workspaces/${wsId}/settings/ENABLE_POST_APPROVAL`, {
+      try {
+        const res = await fetch(`/api/v1/workspaces/${wsId}/settings/configs`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            value: values.enable_post_approval.toString(),
+            ENABLE_POST_APPROVAL: values.enable_post_approval.toString(),
+            ENABLE_REPORT_APPROVAL: values.enable_report_approval.toString(),
+            ENABLE_REPORT_EXPORT_ONLY_APPROVED:
+              values.enable_report_export_only_approved.toString(),
+            ENABLE_REPORT_PENDING_WATERMARK:
+              values.enable_report_pending_watermark.toString(),
           }),
-        }),
-        fetch(`/api/v1/workspaces/${wsId}/settings/ENABLE_REPORT_APPROVAL`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            value: values.enable_report_approval.toString(),
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to update settings');
+        }
+      } finally {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['workspace-config', wsId],
           }),
-        }),
-        fetch(
-          `/api/v1/workspaces/${wsId}/settings/ENABLE_REPORT_EXPORT_ONLY_APPROVED`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              value: values.enable_report_export_only_approved.toString(),
-            }),
-          }
-        ),
-        fetch(
-          `/api/v1/workspaces/${wsId}/settings/ENABLE_REPORT_PENDING_WATERMARK`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              value: values.enable_report_pending_watermark.toString(),
-            }),
-          }
-        ),
-      ];
-
-      const results = await Promise.all(promises);
-
-      for (const res of results) {
-        if (!res.ok) throw new Error('Failed to update settings');
+          queryClient.invalidateQueries({
+            queryKey: ['workspace-configs', wsId],
+          }),
+        ]);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['workspace-config', wsId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['workspace-configs', wsId],
-      });
       toast.success(t('update_success'));
       form.reset(form.getValues());
     },
