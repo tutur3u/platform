@@ -27,6 +27,8 @@ interface Props {
 const formSchema = z.object({
   enable_post_approval: z.boolean(),
   enable_report_approval: z.boolean(),
+  enable_report_export_only_approved: z.boolean(),
+  enable_report_pending_watermark: z.boolean(),
 });
 
 export function ApprovalsSettings({ wsId }: Props) {
@@ -41,7 +43,29 @@ export function ApprovalsSettings({ wsId }: Props) {
     isLoading: isLoadingReportApproval,
   } = useWorkspaceConfig<string>(wsId, 'ENABLE_REPORT_APPROVAL', 'true');
 
-  const isLoading = isLoadingPostApproval || isLoadingReportApproval;
+  const {
+    data: enableReportExportOnlyApprovedConfig,
+    isLoading: isLoadingReportExportOnlyApproved,
+  } = useWorkspaceConfig<string>(
+    wsId,
+    'ENABLE_REPORT_EXPORT_ONLY_APPROVED',
+    'false'
+  );
+
+  const {
+    data: enableReportPendingWatermarkConfig,
+    isLoading: isLoadingReportPendingWatermark,
+  } = useWorkspaceConfig<string>(
+    wsId,
+    'ENABLE_REPORT_PENDING_WATERMARK',
+    'false'
+  );
+
+  const isLoading =
+    isLoadingPostApproval ||
+    isLoadingReportApproval ||
+    isLoadingReportExportOnlyApproved ||
+    isLoadingReportPendingWatermark;
 
   type FormValues = z.infer<typeof formSchema>;
 
@@ -50,6 +74,8 @@ export function ApprovalsSettings({ wsId }: Props) {
     defaultValues: {
       enable_post_approval: true,
       enable_report_approval: true,
+      enable_report_export_only_approved: false,
+      enable_report_pending_watermark: false,
     },
     values: useMemo(() => {
       if (isLoading) return undefined;
@@ -58,8 +84,18 @@ export function ApprovalsSettings({ wsId }: Props) {
           enablePostApprovalConfig?.trim().toLowerCase() === 'true',
         enable_report_approval:
           enableReportApprovalConfig?.trim().toLowerCase() === 'true',
+        enable_report_export_only_approved:
+          enableReportExportOnlyApprovedConfig?.trim().toLowerCase() === 'true',
+        enable_report_pending_watermark:
+          enableReportPendingWatermarkConfig?.trim().toLowerCase() === 'true',
       };
-    }, [isLoading, enablePostApprovalConfig, enableReportApprovalConfig]),
+    }, [
+      isLoading,
+      enablePostApprovalConfig,
+      enableReportApprovalConfig,
+      enableReportExportOnlyApprovedConfig,
+      enableReportPendingWatermarkConfig,
+    ]),
     resetOptions: {
       keepDirtyValues: true,
     },
@@ -67,33 +103,35 @@ export function ApprovalsSettings({ wsId }: Props) {
 
   const updateMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const promises = [
-        fetch(`/api/v1/workspaces/${wsId}/settings/ENABLE_POST_APPROVAL`, {
+      try {
+        const res = await fetch(`/api/v1/workspaces/${wsId}/settings/configs`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            value: values.enable_post_approval.toString(),
+            ENABLE_POST_APPROVAL: values.enable_post_approval.toString(),
+            ENABLE_REPORT_APPROVAL: values.enable_report_approval.toString(),
+            ENABLE_REPORT_EXPORT_ONLY_APPROVED:
+              values.enable_report_export_only_approved.toString(),
+            ENABLE_REPORT_PENDING_WATERMARK:
+              values.enable_report_pending_watermark.toString(),
           }),
-        }),
-        fetch(`/api/v1/workspaces/${wsId}/settings/ENABLE_REPORT_APPROVAL`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            value: values.enable_report_approval.toString(),
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to update settings');
+        }
+      } finally {
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['workspace-config', wsId],
           }),
-        }),
-      ];
-
-      const results = await Promise.all(promises);
-
-      for (const res of results) {
-        if (!res.ok) throw new Error('Failed to update settings');
+          queryClient.invalidateQueries({
+            queryKey: ['workspace-configs', wsId],
+          }),
+        ]);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['workspace-config', wsId],
-      });
       toast.success(t('update_success'));
       form.reset(form.getValues());
     },
@@ -147,6 +185,60 @@ export function ApprovalsSettings({ wsId }: Props) {
                   </FormLabel>
                   <FormDescription>
                     {t('enable_report_approval_description')}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="enable_report_export_only_approved"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    {t('enable_report_export_only_approved')}
+                  </FormLabel>
+                  <FormDescription>
+                    {t('enable_report_export_only_approved_description')}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="enable_report_pending_watermark"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    {t('enable_report_pending_watermark')}
+                  </FormLabel>
+                  <FormDescription>
+                    {t('enable_report_pending_watermark_description')}
                   </FormDescription>
                 </div>
                 <FormControl>
