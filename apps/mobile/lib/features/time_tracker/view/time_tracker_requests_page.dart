@@ -401,7 +401,9 @@ class _RequestsViewState extends State<_RequestsView> {
     final repository = context.read<ITimeTrackerRepository>();
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
-    final currentUserId = context.read<AuthCubit>().state.user?.id;
+    final currentUser = context.read<AuthCubit>().state.user;
+    final currentUserId = currentUser?.id;
+    final currentUserDisplayName = _extractUserDisplayName(currentUser);
 
     showAdaptiveDrawer(
       context: context,
@@ -410,6 +412,7 @@ class _RequestsViewState extends State<_RequestsView> {
         wsId: wsId,
         repository: repository,
         currentUserId: currentUserId,
+        currentUserDisplayName: currentUserDisplayName,
         isManager: _canManageRequests,
         statusChangeGracePeriodMinutes: _statusChangeGracePeriodMinutes,
         onApprove: () => cubit.approveRequest(request.id, wsId),
@@ -440,7 +443,26 @@ class _RequestsViewState extends State<_RequestsView> {
               newImageLocalPaths: newImageLocalPaths,
             ),
       ),
-    );
+      );
+  }
+
+  String? _extractUserDisplayName(dynamic user) {
+    final metadata = user?.userMetadata;
+    if (metadata is! Map<String, dynamic>) {
+      return null;
+    }
+
+    final displayName = metadata['display_name'];
+    if (displayName is String && displayName.trim().isNotEmpty) {
+      return displayName.trim();
+    }
+
+    final fullName = metadata['full_name'];
+    if (fullName is String && fullName.trim().isNotEmpty) {
+      return fullName.trim();
+    }
+
+    return null;
   }
 
   String _filterLabel(BuildContext context, _RequestStatusFilter filter) {

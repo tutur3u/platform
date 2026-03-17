@@ -26,6 +26,7 @@ class RequestDetailSheet extends StatefulWidget {
     this.isManager = false,
     this.canEdit = false,
     this.currentUserId,
+    this.currentUserDisplayName,
     this.statusChangeGracePeriodMinutes = 0,
     this.onEdit,
     super.key,
@@ -41,6 +42,7 @@ class RequestDetailSheet extends StatefulWidget {
   final bool isManager;
   final bool canEdit;
   final String? currentUserId;
+  final String? currentUserDisplayName;
   final int statusChangeGracePeriodMinutes;
   final Future<TimeTrackingRequest?> Function(
     String title,
@@ -61,23 +63,44 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
   bool _isLoadingComments = true;
   bool _isAddingComment = false;
   String? _currentUserId;
+  String? _currentUserDisplayName;
   late TimeTrackingRequest _request;
+  Timer? _gracePeriodExpiryTimer;
 
   bool _commentsExpanded = false;
   bool _activityExpanded = false;
   int _activityCount = 0;
   bool _isResubmitting = false;
+  bool _gracePeriodExpired = false;
 
   @override
   void initState() {
     super.initState();
     _request = widget.request;
     _currentUserId = widget.currentUserId;
+    _currentUserDisplayName = widget.currentUserDisplayName;
+    _scheduleGracePeriodExpiryRebuild();
     unawaited(_loadComments());
   }
 
   @override
+  void didUpdateWidget(covariant RequestDetailSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.currentUserDisplayName != widget.currentUserDisplayName) {
+      _currentUserDisplayName = widget.currentUserDisplayName;
+    }
+
+    if (oldWidget.isManager != widget.isManager ||
+        oldWidget.statusChangeGracePeriodMinutes !=
+            widget.statusChangeGracePeriodMinutes) {
+      _scheduleGracePeriodExpiryRebuild();
+    }
+  }
+
+  @override
   void dispose() {
+    _gracePeriodExpiryTimer?.cancel();
     _commentController.dispose();
     super.dispose();
   }
@@ -176,11 +199,13 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
         widget.isManager && _request.approvalStatus == ApprovalStatus.pending;
     final canRejectApprovedRequest =
         widget.isManager &&
+        !_gracePeriodExpired &&
         _request.approvalStatus == ApprovalStatus.approved &&
         _request.approvedAt != null &&
         _isWithinGracePeriod(_request.approvedAt!);
     final canApproveRejectedRequest =
         widget.isManager &&
+        !_gracePeriodExpired &&
         _request.approvalStatus == ApprovalStatus.rejected &&
         _request.rejectedAt != null &&
         _isWithinGracePeriod(_request.rejectedAt!);
@@ -387,6 +412,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         ApprovalStatus.approved,
                       );
                     });
+                    _scheduleGracePeriodExpiryRebuild();
                   },
                   onReject: (reason) async {
                     await widget.onReject(reason);
@@ -401,6 +427,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         reason: reason,
                       );
                     });
+                    _scheduleGracePeriodExpiryRebuild();
                   },
                   onRequestInfo: (reason) async {
                     await widget.onRequestInfo(reason);
@@ -415,6 +442,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         reason: reason,
                       );
                     });
+                    _scheduleGracePeriodExpiryRebuild();
                   },
                 ),
               if (showRevertActions)
@@ -431,6 +459,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         ApprovalStatus.approved,
                       );
                     });
+                    _scheduleGracePeriodExpiryRebuild();
                   },
                   onReject: (reason) async {
                     await widget.onReject(reason);
@@ -445,6 +474,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         reason: reason,
                       );
                     });
+                    _scheduleGracePeriodExpiryRebuild();
                   },
                   onRequestInfo: (_) async {},
                   showApprove: canApproveRejectedRequest,
@@ -477,6 +507,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                                         ApprovalStatus.pending,
                                       );
                                     });
+                                    _scheduleGracePeriodExpiryRebuild();
                                   } finally {
                                     if (mounted) {
                                       setState(() => _isResubmitting = false);
@@ -537,6 +568,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                   setState(() {
                     _request = updatedRequest;
                   });
+                  _scheduleGracePeriodExpiryRebuild();
                 }
                 // Note: EditRequestDialog._handleSave will pop the dialog
                 return updatedRequest;
@@ -582,22 +614,63 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
           ? (_currentUserId ?? _request.approvedBy)
           : null,
       approvedByName: status == ApprovalStatus.approved
-          ? _request.approvedByName
+          ? (_currentUserDisplayName ?? _request.approvedByName)
           : null,
       approvedAt: status == ApprovalStatus.approved ? now : null,
       rejectedBy: status == ApprovalStatus.rejected
           ? (_currentUserId ?? _request.rejectedBy)
           : null,
       rejectedByName: status == ApprovalStatus.rejected
-          ? _request.rejectedByName
+          ? (_currentUserDisplayName ?? _request.rejectedByName)
           : null,
       rejectedAt: status == ApprovalStatus.rejected ? now : null,
-      needsInfoRequestedByName: _request.needsInfoRequestedByName,
+      needsInfoRequestedByName: status == ApprovalStatus.needsInfo
+          ? (_currentUserDisplayName ?? _request.needsInfoRequestedByName)
+          : _request.needsInfoRequestedByName,
       rejectionReason: status == ApprovalStatus.rejected ? reason : null,
       needsInfoReason: status == ApprovalStatus.needsInfo ? reason : null,
       createdAt: _request.createdAt,
       updatedAt: now,
     );
+  }
+
+  void _scheduleGracePeriodExpiryRebuild() {
+    _gracePeriodExpiryTimer?.cancel();
+
+    if (_gracePeriodExpired) {
+      setState(() => _gracePeriodExpired = false);
+    }
+
+    if (!widget.isManager || widget.statusChangeGracePeriodMinutes <= 0) {
+      return;
+    }
+
+    final changedAt = switch (_request.approvalStatus) {
+      ApprovalStatus.approved => _request.approvedAt,
+      ApprovalStatus.rejected => _request.rejectedAt,
+      _ => null,
+    };
+
+    if (changedAt == null) {
+      return;
+    }
+
+    final expiresAt = changedAt.toUtc().add(
+      Duration(minutes: widget.statusChangeGracePeriodMinutes),
+    );
+    final delay = expiresAt.difference(DateTime.now().toUtc());
+    if (delay <= Duration.zero) {
+      _gracePeriodExpired = true;
+      return;
+    }
+
+    _gracePeriodExpiryTimer = Timer(delay, () {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _gracePeriodExpired = true);
+    });
   }
 
   bool _isWithinGracePeriod(DateTime changedAt) {
@@ -607,8 +680,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
     }
 
     final elapsed = DateTime.now().toUtc().difference(changedAt.toUtc());
-    final allowed =
-        Duration(minutes: graceMinutes) - const Duration(seconds: 30);
+    final allowed = Duration(minutes: graceMinutes);
     return elapsed <= allowed;
   }
 }

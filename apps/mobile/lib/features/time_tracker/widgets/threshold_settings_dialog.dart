@@ -107,7 +107,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
             shad.TextField(
               controller: _statusChangeGracePeriodController,
               keyboardType: TextInputType.number,
-              placeholder: const Text('0'),
+              hintText: '0',
               enabled: !_isSaving,
             ),
             const shad.Gap(8),
