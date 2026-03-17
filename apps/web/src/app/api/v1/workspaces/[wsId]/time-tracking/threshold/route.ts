@@ -124,12 +124,15 @@ export async function PUT(
     const { threshold, statusChangeGracePeriodMinutes } = validationResult.data;
 
     if (statusChangeGracePeriodMinutes !== undefined) {
-      const { error: updateError } = await supabase.rpc('update_time_tracking_threshold_settings', {
-        p_ws_id: normalizedWsId,
-        p_threshold: threshold ?? 0,
-        p_no_approval_needed: threshold === null,
-        p_status_change_grace_period_minutes: statusChangeGracePeriodMinutes,
-      });
+      const { error: updateError } = await supabase.rpc(
+        'update_time_tracking_threshold_settings',
+        {
+          p_ws_id: normalizedWsId,
+          p_threshold: threshold ?? 0,
+          p_no_approval_needed: threshold === null,
+          p_status_change_grace_period_minutes: statusChangeGracePeriodMinutes,
+        }
+      );
 
       if (updateError) {
         console.error('Error updating threshold settings:', updateError);
