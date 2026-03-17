@@ -37,6 +37,71 @@ describe('formStudioSchema', () => {
       expect(parsed.data.closeAt).toBe(validDate);
     }
   });
+
+  it('accepts offset-bearing ISO datetime strings for openAt and closeAt', () => {
+    const validDate = '2026-03-16T17:00:00+00:00';
+    const input = {
+      ...createDefaultFormStudioInput(),
+      openAt: validDate,
+      closeAt: validDate,
+    };
+    const parsed = formStudioSchema.safeParse(input);
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.openAt).toBe(validDate);
+      expect(parsed.data.closeAt).toBe(validDate);
+    }
+  });
+
+  it('normalizes timezone-less ISO datetimes without seconds', () => {
+    const input = {
+      ...createDefaultFormStudioInput(),
+      openAt: '2026-03-16T06:57',
+      closeAt: '2026-03-16T06:57',
+    };
+    const parsed = formStudioSchema.safeParse(input);
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.openAt).toBe(
+        new Date(2026, 2, 16, 6, 57, 0, 0).toISOString()
+      );
+      expect(parsed.data.closeAt).toBe(
+        new Date(2026, 2, 16, 6, 57, 0, 0).toISOString()
+      );
+    }
+  });
+
+  it('normalizes timezone-less ISO datetimes with seconds', () => {
+    const input = {
+      ...createDefaultFormStudioInput(),
+      openAt: '2026-03-16T06:57:14',
+      closeAt: '2026-03-16T06:57:14',
+    };
+    const parsed = formStudioSchema.safeParse(input);
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.openAt).toBe(
+        new Date(2026, 2, 16, 6, 57, 14, 0).toISOString()
+      );
+      expect(parsed.data.closeAt).toBe(
+        new Date(2026, 2, 16, 6, 57, 14, 0).toISOString()
+      );
+    }
+  });
+
+  it('rejects non-ISO datetime strings for openAt and closeAt', () => {
+    const input = {
+      ...createDefaultFormStudioInput(),
+      openAt: '2026/03/16 06:57',
+      closeAt: '2026/03/16 06:57',
+    };
+    const parsed = formStudioSchema.safeParse(input);
+
+    expect(parsed.success).toBe(false);
+  });
 });
 
 describe('formSubmitSchema', () => {

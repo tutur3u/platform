@@ -6,6 +6,7 @@ import {
   type FormExportEnvelope,
   type FormStudioInput,
   formExportEnvelopeSchema,
+  normalizeOptionalFormDateTimeValue,
 } from '../schema';
 import { getThemePreset } from '../theme';
 import type { FormDefinition } from '../types';
@@ -169,12 +170,16 @@ export function sanitizeFormStudioPayloadForSave(
     input.openAt === '' ||
     (typeof input.openAt === 'string' && !input.openAt.trim())
       ? null
-      : input.openAt;
+      : (normalizeOptionalFormDateTimeValue(
+          input.openAt
+        ) as FormStudioInput['openAt']);
   const closeAt =
     input.closeAt === '' ||
     (typeof input.closeAt === 'string' && !input.closeAt.trim())
       ? null
-      : input.closeAt;
+      : (normalizeOptionalFormDateTimeValue(
+          input.closeAt
+        ) as FormStudioInput['closeAt']);
 
   const sections = input.sections.map((section) => ({
     ...section,
@@ -315,7 +320,15 @@ export function remapFormStudioIds(input: FormStudioInput): FormStudioInput {
 export function exportFormStudioPayload(
   values: FormStudioInput
 ): FormExportEnvelope {
-  const normalized = ensureIdentifiers(values);
+  const normalized = ensureIdentifiers({
+    ...values,
+    openAt: normalizeOptionalFormDateTimeValue(
+      values.openAt
+    ) as FormStudioInput['openAt'],
+    closeAt: normalizeOptionalFormDateTimeValue(
+      values.closeAt
+    ) as FormStudioInput['closeAt'],
+  });
   return {
     formatVersion: FORM_EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
