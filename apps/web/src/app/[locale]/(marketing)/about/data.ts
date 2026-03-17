@@ -242,7 +242,6 @@ export const departments: {
   bio: string;
   characteristics: string;
   mission: string[];
-  core: string[];
 }[] = [
   {
     name: 'Technology',
@@ -255,10 +254,6 @@ export const departments: {
       'Strive for improvement',
       'Collaborative',
       'Work Hard, Play Harder',
-    ],
-    core: [
-      'Project Development: Leading the end-to-end execution of web development, mobile applications, and innovative hardware projects.',
-      'Technical Workshops: Facilitating regular, skill-building sessions designed to continuously elevate the technical proficiency of our members.',
     ],
   },
   {
@@ -276,7 +271,6 @@ export const departments: {
       'Risk Management',
       'Conflict Resolution',
     ],
-    core: [],
   },
   {
     name: 'Marketing',
@@ -293,6 +287,5 @@ export const departments: {
       'External Relations',
       'Keo 502',
     ],
-    core: [],
   },
 ];

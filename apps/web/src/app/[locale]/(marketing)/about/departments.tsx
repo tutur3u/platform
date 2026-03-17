@@ -1,6 +1,5 @@
 'use client';
 
-import { Award } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { type DepartmentName, departments } from './data';
@@ -21,11 +20,11 @@ type CoreDepartmentName = Extract<
 
 const departmentStyles: Record<CoreDepartmentName, string> = {
   Technology:
-    'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20 hover:bg-dynamic-blue/20',
+    'bg-dynamic-blue/5 text-dynamic-blue border-dynamic-blue/20 hover:bg-dynamic-blue/10',
   'Human Resources':
-    'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20 hover:bg-dynamic-purple/20',
+    'bg-dynamic-purple/5 text-dynamic-purple border-dynamic-purple/20 hover:bg-dynamic-purple/10',
   Marketing:
-    'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20 hover:bg-dynamic-orange/20',
+    'bg-dynamic-orange/5 text-dynamic-orange border-dynamic-orange/20 hover:bg-dynamic-orange/10',
 };
 
 const coreDepartments: { name: CoreDepartmentName; color: string }[] = [
@@ -51,25 +50,9 @@ export default function Departments() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          Meet Our{' '}
-          <span className="relative">
-            <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
-              Department
-            </span>
-            <motion.div
-              className="absolute -top-2 -right-2"
-              animate={{
-                rotate: [0, 10, -10, 0],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                repeatDelay: 3,
-              }}
-            >
-              <Award className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
-            </motion.div>
+          Our{' '}
+          <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
+            Departments
           </span>
           <motion.div
             className="ml-3 inline-block"
@@ -128,10 +111,9 @@ export default function Departments() {
               bio={department.bio}
               characteristics={department.characteristics}
               mission={department.mission}
-              core={department.core}
-              className={`rounded-lg border-2 ${
-                departmentStyles[department.name as CoreDepartmentName] ?? ''
-              }`}
+              className={
+                departmentStyles[department.name as CoreDepartmentName]
+              }
             />
           </motion.div>
         ))}

@@ -1,26 +1,36 @@
+import { Badge } from '@ncthub/ui/badge';
 import { Card, CardContent, CardHeader } from '@ncthub/ui/card';
 import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 
 const renderMissionPoints = (mission: string[]) => {
+  const badgeStyles = [
+    'border-dynamic-orange/80 bg-dynamic-orange/20 text-dynamic-orange',
+    'border-dynamic-green/80 bg-dynamic-green/20 text-dynamic-green',
+    'border-dynamic-purple/80 bg-dynamic-purple/20 text-dynamic-purple',
+    'border-dynamic-red/80 bg-dynamic-red/20 text-dynamic-red',
+    'border-dynamic-lime/80 bg-dynamic-lime/20 text-dynamic-lime',
+  ];
+
   return (
-    <ul className="list-disc space-y-2 pl-5">
+    <div className="flex flex-wrap gap-4">
       {mission.map((point, index) => {
-        const separatorIndex = point.indexOf(':');
+        const badgeClass = badgeStyles[index % badgeStyles.length];
 
-        if (separatorIndex !== -1) {
-          const title = point.substring(0, separatorIndex).trim();
-          const description = point.substring(separatorIndex + 1).trim();
-          return (
-            <li key={index}>
-              <span className="font-semibold">{title}:</span> {description}
-            </li>
-          );
-        }
-
-        return <li key={index}>{point}</li>;
+        return (
+          <Badge
+            key={index}
+            variant="default"
+            className={cn(
+              'rounded-full px-3 py-1 font-semibold text-sm',
+              badgeClass
+            )}
+          >
+            {point}
+          </Badge>
+        );
       })}
-    </ul>
+    </div>
   );
 };
 
@@ -30,7 +40,6 @@ interface DepartmentCardProps {
   bio: string;
   characteristics: string;
   mission: string[];
-  core: string[];
   className?: string;
 }
 
@@ -40,42 +49,57 @@ export function DepartmentCard({
   bio,
   characteristics,
   mission,
-  core,
   className,
 }: DepartmentCardProps) {
   return (
     <Card
       className={cn(
-        'group w-full max-w-7xl overflow-hidden rounded-lg border bg-secondary transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-primary/20',
+        'group max-w-7xl rounded-2xl border-2 bg-secondary/80 transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-secondary/20',
         className
       )}
     >
-      <CardHeader className="p-6 text-center">
-        <h3 className="font-bold text-3xl text-foreground">{name}</h3>
+      <CardHeader className="mt-4 mb-8 text-center">
+        <Badge
+          variant="outline"
+          className={cn(
+            'mx-auto rounded-full px-4 py-2 font-bold text-sm uppercase tracking-[0.32em]',
+            className
+          )}
+        >
+          {name}
+        </Badge>
       </CardHeader>
-      <div className="grid grid-cols-1 md:grid-cols-2">
-        <div className="p-6 md:h-full">
-          <div className="relative h-64 w-full overflow-hidden rounded-lg transition-transform duration-300 ease-in-out group-hover:scale-105 md:h-full">
-            <Image src={image} fill alt={name} className="object-cover" />
-          </div>
-        </div>
-        <CardContent className="flex flex-1 flex-col justify-center p-6">
-          <h2 className="mb-4 font-bold text-2xl text-foreground">{bio}</h2>
-          <h3 className="mb-2 font-bold text-3xl text-foreground">
-            {characteristics}
-          </h3>
-          <div className="text-foreground text-lg">
+      <CardContent className="grid gap-10 px-10 pb-10 md:grid-cols-[0.4fr_0.6fr]">
+        <div className="space-y-6">
+          <p className="text-justify font-medium text-foreground/80 text-md leading-relaxed md:text-lg">
+            {bio}
+          </p>
+          <div className="space-y-4">
+            <p className="font-semibold text-muted-foreground text-sm uppercase tracking-[0.32em]">
+              {characteristics}
+            </p>
             {renderMissionPoints(mission)}
           </div>
-          <div className="mt-4 text-foreground text-lg">
-            {core.map((item, index) => (
-              <p key={index} className="mb-2">
-                {item}
-              </p>
-            ))}
-          </div>
-        </CardContent>
-      </div>
+        </div>
+        <div className="grid grid-cols-6 gap-4">
+          {[0, 1, 2, 3, 4].map((item) => (
+            <div
+              key={item}
+              className={cn(
+                'relative aspect-square overflow-hidden rounded-xl border border-foreground/10 bg-background/60',
+                item <= 1 ? 'col-span-3' : 'col-span-2'
+              )}
+            >
+              <Image
+                src={image}
+                fill
+                alt={name}
+                className="object-cover transition duration-500 ease-out hover:scale-105"
+              />
+            </div>
+          ))}
+        </div>
+      </CardContent>
     </Card>
   );
 }
