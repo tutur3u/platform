@@ -33,10 +33,15 @@ vi.mock('@tuturuuu/utils/task-helper', () => ({
 
 describe('useTaskActions', () => {
   let queryClient: QueryClient;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockSupabase: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockMoveTask: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockUpdateWorkspaceTask: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockUpdateTaskMutation: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockToast: any;
 
   const mockTask = {
@@ -113,6 +118,7 @@ describe('useTaskActions', () => {
     };
 
     const { createClient } = await import('@tuturuuu/supabase/next/client');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (createClient as any).mockReturnValue(mockSupabase);
 
     const { moveTask, useUpdateTask } = await import(
@@ -122,9 +128,11 @@ describe('useTaskActions', () => {
       '@tuturuuu/internal-api/tasks'
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockMoveTask = moveTask as any;
     mockMoveTask.mockResolvedValue(undefined);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockUpdateWorkspaceTask = updateWorkspaceTask as any;
     mockUpdateWorkspaceTask.mockResolvedValue({ task: { id: 'task-1' } });
 
@@ -132,6 +140,8 @@ describe('useTaskActions', () => {
       mutate: vi.fn(),
       mutateAsync: vi.fn().mockResolvedValue(undefined),
     };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useUpdateTask as any).mockReturnValue(mockUpdateTaskMutation);
 
     const { toast } = await import('@tuturuuu/ui/sonner');
