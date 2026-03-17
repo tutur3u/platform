@@ -12,6 +12,10 @@ export type RequestContentViolation = {
   path: string;
 };
 
+type FindRequestContentViolationOptions = {
+  skipEmojiCheckForRichText?: boolean;
+};
+
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const EXTENDED_PICTOGRAPHIC_RE = /\p{Extended_Pictographic}/u;
 const FLAG_RE = /^(?:\p{Regional_Indicator}{2})$/u;
@@ -122,17 +126,24 @@ function getLongestRepeatedGraphemeRun(graphemes: string[]): number {
 
 function getStringContentViolation(
   value: string,
-  path: string
+  path: string,
+  options?: FindRequestContentViolationOptions
 ): RequestContentViolation | null {
-  const emojiCount = countEmojisInString(value);
-  if (emojiCount > MAX_EMOJIS_PER_FIELD) {
-    return {
-      code: 'EMOJI_LIMIT_EXCEEDED',
-      count: emojiCount,
-      limit: MAX_EMOJIS_PER_FIELD,
-      message: `Field "${path}" cannot contain more than ${MAX_EMOJIS_PER_FIELD} emojis`,
-      path,
-    };
+  const shouldSkipEmojiLimitForRichText =
+    options?.skipEmojiCheckForRichText === true &&
+    getLastFieldName(path) === 'rich_text_description';
+
+  if (!shouldSkipEmojiLimitForRichText) {
+    const emojiCount = countEmojisInString(value);
+    if (emojiCount > MAX_EMOJIS_PER_FIELD) {
+      return {
+        code: 'EMOJI_LIMIT_EXCEEDED',
+        count: emojiCount,
+        limit: MAX_EMOJIS_PER_FIELD,
+        message: `Field "${path}" cannot contain more than ${MAX_EMOJIS_PER_FIELD} emojis`,
+        path,
+      };
+    }
   }
 
   const graphemes = getGraphemeSegments(value);
@@ -165,15 +176,20 @@ function getStringContentViolation(
 
 export function findRequestContentViolation(
   value: unknown,
-  path = 'body'
+  path = 'body',
+  options?: FindRequestContentViolationOptions
 ): RequestContentViolation | null {
   if (typeof value === 'string') {
-    return getStringContentViolation(value, path);
+    return getStringContentViolation(value, path, options);
   }
 
   if (Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
-      const violation = findRequestContentViolation(item, `${path}[${index}]`);
+      const violation = findRequestContentViolation(
+        item,
+        `${path}[${index}]`,
+        options
+      );
       if (violation) {
         return violation;
       }
@@ -184,7 +200,11 @@ export function findRequestContentViolation(
 
   if (value && typeof value === 'object') {
     for (const [key, item] of Object.entries(value)) {
-      const violation = findRequestContentViolation(item, `${path}.${key}`);
+      const violation = findRequestContentViolation(
+        item,
+        `${path}.${key}`,
+        options
+      );
       if (violation) {
         return violation;
       }
@@ -265,10 +285,14 @@ export async function getRequestContentViolationForRequest(
         [key: string]: unknown;
       };
 
-      return findRequestContentViolation({
-        ...rest,
-        rich_text_description: description,
-      });
+      return findRequestContentViolation(
+        {
+          ...rest,
+          rich_text_description: description,
+        },
+        'body',
+        { skipEmojiCheckForRichText: true }
+      );
     }
 
     return findRequestContentViolation(parsedBody);

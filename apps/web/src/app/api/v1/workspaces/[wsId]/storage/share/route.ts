@@ -64,7 +64,7 @@ async function hasSharedTaskAccess({
       'Error checking workspace membership for share:',
       memberError
     );
-    return false;
+    throw new Error('WORKSPACE_MEMBERSHIP_LOOKUP_FAILED');
   }
 
   if (memberCheck) {
@@ -115,13 +115,18 @@ async function hasSharedTaskAccess({
     }
   }
 
-  const { data: publicShare } = await sbAdmin
+  const { data: publicShare, error: publicShareError } = await sbAdmin
     .from('task_share_links')
     .select('id')
     .eq('task_id', taskId)
     .eq('public_access', 'view')
     .eq('requires_invite', false)
     .maybeSingle();
+
+  if (publicShareError) {
+    console.error('Error checking public task share links:', publicShareError);
+    throw new Error('TASK_PUBLIC_SHARE_LOOKUP_FAILED');
+  }
 
   return !!publicShare;
 }
@@ -170,15 +175,24 @@ async function resolveSignedUrl(
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
     }
 
-    const hasAccess = await hasSharedTaskAccess({
-      normalizedWsId,
-      taskId: input.taskId,
-      userId: user.id,
-      sbAdmin,
-    });
+    let hasAccess = false;
+    try {
+      hasAccess = await hasSharedTaskAccess({
+        normalizedWsId,
+        taskId: input.taskId,
+        userId: user.id,
+        sbAdmin,
+      });
+    } catch (error) {
+      console.error('Failed shared task access lookup:', error);
+      return NextResponse.json(
+        { message: 'Failed to verify shared task access' },
+        { status: 500 }
+      );
+    }
 
     if (!hasAccess) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
   }
 

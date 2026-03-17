@@ -6,7 +6,7 @@ import type { Json } from '@tuturuuu/types/supabase';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { validate } from 'uuid';
+import { z } from 'zod';
 
 interface SaveTemplateRequest {
   name: string;
@@ -74,7 +74,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!validate(boardId)) {
+    const boardIdValidation = z.uuid().safeParse(boardId);
+    if (!boardIdValidation.success) {
       return NextResponse.json({ error: 'Invalid board ID' }, { status: 400 });
     }
 
@@ -175,12 +176,24 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Labels in this system are workspace-scoped (workspace_task_labels)
     let labels: Array<{ name: string; color: string }> = [];
     if (includeLabels) {
-      const { data: workspaceLabels } = await sbAdmin
-        .from('workspace_task_labels')
-        .select('name, color')
-        .eq('ws_id', wsId);
+      const { data: workspaceLabels, error: workspaceLabelsError } =
+        await sbAdmin
+          .from('workspace_task_labels')
+          .select('name, color')
+          .eq('ws_id', wsId);
 
-      labels = (workspaceLabels || []).map((label) => ({
+      if (workspaceLabelsError || !workspaceLabels) {
+        console.error(
+          'Failed to fetch workspace labels while saving template:',
+          workspaceLabelsError
+        );
+        return NextResponse.json(
+          { error: 'Failed to read workspace labels' },
+          { status: 500 }
+        );
+      }
+
+      labels = workspaceLabels.map((label) => ({
         name: label.name,
         color: label.color,
       }));

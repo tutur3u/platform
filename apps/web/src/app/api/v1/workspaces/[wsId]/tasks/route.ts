@@ -22,7 +22,7 @@ function calculateEndSortKey(prevSortKey: number | null | undefined) {
   const uniqueSuffix =
     typeof performance !== 'undefined'
       ? Math.floor(performance.now() * 1000) % 1000
-      : Math.floor(Date.now() * 1000) % 1000;
+      : Math.floor((Date.now() % 1000) + Math.random() * 1000) % 1000;
 
   if (prevSortKey === null || prevSortKey === undefined) {
     return SORT_KEY_DEFAULT + uniqueSuffix;

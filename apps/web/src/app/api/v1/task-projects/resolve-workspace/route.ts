@@ -93,8 +93,7 @@ export async function POST(request: Request) {
         const { data: projects, error: projectError } = await supabase
           .from('task_projects')
           .select('ws_id')
-          .in('id', batchIds)
-          .maybeSingle();
+          .in('id', batchIds);
 
         if (projectError) {
           console.error(
@@ -107,8 +106,14 @@ export async function POST(request: Request) {
           );
         }
 
-        if (projects?.ws_id) {
-          candidateWorkspaceIds.add(projects.ws_id);
+        if (!projects || projects.length === 0) {
+          continue;
+        }
+
+        for (const project of projects) {
+          if (project.ws_id) {
+            candidateWorkspaceIds.add(project.ws_id);
+          }
         }
       }
     }

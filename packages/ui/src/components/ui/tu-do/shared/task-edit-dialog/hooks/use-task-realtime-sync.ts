@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -72,6 +73,8 @@ export function useTaskRealtimeSync({
   setSelectedProjects,
   disabled = false,
 }: UseTaskRealtimeSyncProps): void {
+  const queryClient = useQueryClient();
+
   // Use refs to track current state values without triggering effect re-runs
   // This prevents subscription recreation on every state change
   const nameRef = useRef(name);
@@ -135,10 +138,11 @@ export function useTaskRealtimeSync({
 
     const fetchTaskRelations = async () => {
       try {
-        const routeTask = await getWorkspaceTask(
-          taskWorkspaceId ?? wsId,
-          taskId
-        );
+        const workspaceTaskId = taskWorkspaceId ?? wsId;
+        const routeTask = await queryClient.fetchQuery({
+          queryKey: ['workspaceTask', workspaceTaskId, taskId],
+          queryFn: () => getWorkspaceTask(workspaceTaskId, taskId),
+        });
 
         const relationshipProjectIds =
           routeTask.task.project_ids ??
@@ -322,6 +326,7 @@ export function useTaskRealtimeSync({
     // debounced name change, causing missed realtime events.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    queryClient,
     isCreateMode,
     isOpen,
     taskId,
