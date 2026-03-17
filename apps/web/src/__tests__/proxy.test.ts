@@ -65,4 +65,27 @@ describe('web proxy api handling', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
+
+  it('bypasses auth and locale rewriting for the offline fallback route', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest('http://localhost/~offline'));
+
+    expect(response.status).toBe(200);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('redirects localized offline fallback requests to the canonical route', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/en/~offline?retry=1')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/~offline?retry=1'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
 });
