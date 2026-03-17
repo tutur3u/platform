@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { AUTH_STATE_PATH, DEFAULT_LOCALE, TEST_USER } from './constants';
+import { AUTH_STATE_PATH, TEST_USER } from './constants';
 
 /**
  * Authenticates via the password login form and saves browser state.
