@@ -23,7 +23,8 @@ import { AUTH_STATE_PATH, DEFAULT_LOCALE, TEST_USER } from './constants';
 export async function authenticateTestUser(page: Page): Promise<void> {
   // Step 1: Navigate to login page with password tab
   // The ?passwordless=false query param ensures the password tab is shown
-  await page.goto(`/${DEFAULT_LOCALE}/login?passwordless=false`, {
+  // We use the locale-agnostic path to avoid unnecessary redirects
+  await page.goto('/login?passwordless=false', {
     waitUntil: 'domcontentloaded',
   });
 
