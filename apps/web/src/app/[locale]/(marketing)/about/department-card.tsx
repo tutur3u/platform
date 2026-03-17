@@ -3,36 +3,13 @@ import { Card, CardContent, CardHeader } from '@ncthub/ui/card';
 import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 
-const renderMissionPoints = (mission: string[]) => {
-  const badgeStyles = [
-    'border-dynamic-orange/80 bg-dynamic-orange/20 text-dynamic-orange',
-    'border-dynamic-green/80 bg-dynamic-green/20 text-dynamic-green',
-    'border-dynamic-purple/80 bg-dynamic-purple/20 text-dynamic-purple',
-    'border-dynamic-red/80 bg-dynamic-red/20 text-dynamic-red',
-    'border-dynamic-lime/80 bg-dynamic-lime/20 text-dynamic-lime',
-  ];
-
-  return (
-    <div className="flex flex-wrap gap-4">
-      {mission.map((point, index) => {
-        const badgeClass = badgeStyles[index % badgeStyles.length];
-
-        return (
-          <Badge
-            key={index}
-            variant="default"
-            className={cn(
-              'rounded-full px-3 py-1 font-semibold text-sm',
-              badgeClass
-            )}
-          >
-            {point}
-          </Badge>
-        );
-      })}
-    </div>
-  );
-};
+const badgeStyles = [
+  'border-dynamic-orange/80 bg-dynamic-orange/20 text-dynamic-orange',
+  'border-dynamic-green/80 bg-dynamic-green/20 text-dynamic-green',
+  'border-dynamic-purple/80 bg-dynamic-purple/20 text-dynamic-purple',
+  'border-dynamic-red/80 bg-dynamic-red/20 text-dynamic-red',
+  'border-dynamic-lime/80 bg-dynamic-lime/20 text-dynamic-lime',
+];
 
 interface DepartmentCardProps {
   name: string;
@@ -62,7 +39,7 @@ export function DepartmentCard({
         <Badge
           variant="outline"
           className={cn(
-            'mx-auto rounded-full px-4 py-2 font-bold text-sm uppercase tracking-[0.32em]',
+            'mx-auto rounded-full px-4 py-2 font-bold text-md uppercase tracking-[0.32em]',
             className
           )}
         >
@@ -78,7 +55,24 @@ export function DepartmentCard({
             <p className="font-semibold text-muted-foreground text-sm uppercase tracking-[0.32em]">
               {characteristics}
             </p>
-            {renderMissionPoints(mission)}
+            <div className="flex flex-wrap gap-3">
+              {mission.map((point, index) => {
+                const badgeClass = badgeStyles[index % badgeStyles.length];
+
+                return (
+                  <Badge
+                    key={index}
+                    variant="default"
+                    className={cn(
+                      'rounded-full px-3 py-1 font-semibold text-sm',
+                      badgeClass
+                    )}
+                  >
+                    {point}
+                  </Badge>
+                );
+              })}
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-6 gap-4">
