@@ -21,9 +21,8 @@ const CreateGroupPostSchema = z.object({
   notes: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable().optional(),
 });
 
-const WorkspaceAndGroupUuidSchema = z.object({
+const GroupUuidSchema = z.object({
   groupId: z.uuid(),
-  wsId: z.uuid(),
 });
 
 interface Params {
@@ -97,9 +96,8 @@ export async function POST(req: Request, { params }: Params) {
   const parsedBody = CreateGroupPostSchema.safeParse(rawBody);
   const { groupId, wsId: id } = await params;
 
-  const pathParamsParse = WorkspaceAndGroupUuidSchema.safeParse({
+  const pathParamsParse = GroupUuidSchema.safeParse({
     groupId,
-    wsId: id,
   });
 
   if (!pathParamsParse.success) {
