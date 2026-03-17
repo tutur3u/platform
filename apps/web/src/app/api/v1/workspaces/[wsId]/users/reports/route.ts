@@ -4,14 +4,15 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
+  getWorkspaceUser,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const CreateReportSchema = z.object({
-  user_id: z.string().uuid(),
-  group_id: z.string().uuid(),
+  user_id: z.uuid(),
+  group_id: z.uuid(),
   title: z.string().min(1),
   content: z.string(),
   feedback: z.string(),
@@ -27,8 +28,6 @@ interface Params {
 
 export async function POST(request: Request, { params }: Params) {
   try {
-    const { wsId: rawWsId } = await params;
-    const wsId = await normalizeWorkspaceId(rawWsId);
     const body = await request.json();
     const parsed = CreateReportSchema.safeParse(body);
 
@@ -38,6 +37,15 @@ export async function POST(request: Request, { params }: Params) {
         { status: 400 }
       );
     }
+    const { wsId: rawWsId } = await params;
+    const supabase = await createClient(request);
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    if (!authUser) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const permissions = await getPermissions({ wsId, request });
     if (!permissions) {
@@ -49,29 +57,34 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
-    const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
-    if (!authUser) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const workspaceUser = await getWorkspaceUser(wsId, authUser.id);
 
-    const { data: workspaceUser, error: workspaceUserError } = await sbAdmin
-      .from('workspace_user_linked_users')
-      .select('virtual_user_id')
-      .eq('platform_user_id', authUser.id)
-      .eq('ws_id', wsId)
-      .single();
-
-    if (workspaceUserError || !workspaceUser) {
+    if (!workspaceUser?.virtual_user_id) {
       return NextResponse.json(
         { message: 'User not found in workspace' },
         { status: 403 }
       );
     }
+
+    const { data: reportApprovalConfig, error: reportApprovalConfigError } =
+      await sbAdmin
+        .from('workspace_configs')
+        .select('value')
+        .eq('ws_id', wsId)
+        .eq('id', 'ENABLE_REPORT_APPROVAL')
+        .maybeSingle();
+
+    if (reportApprovalConfigError) {
+      return NextResponse.json(
+        { message: 'Error resolving report approval settings' },
+        { status: 500 }
+      );
+    }
+
+    const enableReportApproval =
+      (reportApprovalConfig?.value ?? 'true') === 'true';
 
     // Check for duplicate report
     const { data: existing } = await sbAdmin
@@ -101,9 +114,20 @@ export async function POST(request: Request, { params }: Params) {
         feedback: parsed.data.feedback,
         score: parsed.data.score,
         scores: parsed.data.scores,
-        creator_id: workspaceUser.virtual_user_id ?? undefined,
+        creator_id: workspaceUser.virtual_user_id,
+        updated_by: workspaceUser.virtual_user_id,
         created_at: now,
         updated_at: now,
+        ...(enableReportApproval
+          ? {}
+          : {
+              report_approval_status: 'APPROVED',
+              approved_by: workspaceUser.virtual_user_id,
+              approved_at: now,
+              rejected_by: null,
+              rejected_at: null,
+              rejection_reason: null,
+            }),
       })
       .select('id')
       .single();
