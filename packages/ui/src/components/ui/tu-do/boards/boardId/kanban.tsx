@@ -100,7 +100,7 @@ export function KanbanBoard({
   const queryClient = useQueryClient();
   const supabase = createClient();
 
-  const reorderTaskMutation = useReorderTask(boardId ?? '');
+  const reorderTaskMutation = useReorderTask(boardId ?? '', workspace.id);
   const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
@@ -41,15 +42,8 @@ export function useBulkResources({
   const { data: workspaceProjects = [] } = useQuery({
     queryKey: ['task_projects', workspace.id],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('task_projects')
-        .select('id, name, status')
-        .eq('ws_id', workspace.id)
-        .eq('deleted', false)
-        .order('name');
-      if (error) throw error;
-      return data || [];
+      const projects = await listWorkspaceTaskProjects(workspace.id);
+      return projects.filter((project) => project.status !== 'deleted');
     },
     staleTime: 30000,
     enabled: isMultiSelectMode && selectedCount > 0,

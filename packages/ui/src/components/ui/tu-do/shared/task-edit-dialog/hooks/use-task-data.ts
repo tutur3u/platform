@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
@@ -234,27 +235,8 @@ export function useTaskData({
     queryKey: ['task-projects', realWorkspaceId],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
-      const response = await fetch(
-        `/api/v1/workspaces/${realWorkspaceId}/task-projects`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        const errorMessage =
-          errorBody?.error || 'Failed to fetch task projects';
-        console.error('Error fetching task projects:', errorMessage);
-        throw new Error(errorMessage);
-      }
-
-      const projects = (await response.json()) as Array<{
-        id: string;
-        name: string;
-        status: string;
-        deleted?: boolean | null;
-      }>;
-
-      return projects.filter((project) => !project.deleted);
+      const projects = await listWorkspaceTaskProjects(realWorkspaceId);
+      return projects.filter((project) => project.status !== 'deleted');
     },
     enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
     staleTime: 5 * 60 * 1000, // 5 minutes

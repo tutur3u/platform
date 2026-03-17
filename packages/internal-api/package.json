@@ -14,6 +14,8 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./finance": "./src/finance.ts",
+    "./tasks": "./src/tasks.ts",
+    "./templates": "./src/templates.ts",
     "./time-tracking": "./src/time-tracking.ts",
     "./users": "./src/users.ts",
     "./workspaces": "./src/workspaces.ts"

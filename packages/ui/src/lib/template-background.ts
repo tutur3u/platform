@@ -1,6 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
-import { v4 as uuidv4 } from 'uuid';
 
 const ALLOWED_IMAGE_TYPES = [
   'image/png',
@@ -11,8 +9,38 @@ const ALLOWED_IMAGE_TYPES = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export interface UploadTemplateBackgroundResult {
-  url: string;
   path: string;
+}
+
+async function getTemplateBackgroundUploadUrl(
+  wsId: string,
+  filename: string
+): Promise<{ signedUrl: string; token: string; path: string }> {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/templates/upload-url`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename }),
+    }
+  );
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as {
+      error?: string;
+    };
+    throw new Error(
+      body.error ?? `Failed to generate upload URL (HTTP ${response.status})`
+    );
+  }
+
+  return (await response.json()) as {
+    signedUrl: string;
+    token: string;
+    path: string;
+  };
 }
 
 /**
@@ -25,58 +53,40 @@ export async function uploadTemplateBackground(
   file: File,
   wsId: string
 ): Promise<UploadTemplateBackgroundResult> {
-  // Validate file type
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     throw new Error(
       'Invalid file type. Only PNG, JPEG, and WebP images are allowed.'
     );
   }
 
-  // Validate file size
   if (file.size > MAX_FILE_SIZE) {
     throw new Error('File size exceeds 5MB limit.');
   }
 
-  const supabase = createClient();
+  const { signedUrl, token, path } = await getTemplateBackgroundUploadUrl(
+    wsId,
+    file.name
+  );
 
-  // Generate unique filename
-  const uniqueId = uuidv4();
-  const sanitizedName = file.name
-    .toLowerCase()
-    .replace(/[^a-z0-9.-]/g, '-')
-    .replace(/-+/g, '-');
-  const storagePath = `${wsId}/template-backgrounds/${uniqueId}-${sanitizedName}`;
+  const uploadResponse = await fetch(signedUrl, {
+    method: 'PUT',
+    cache: 'no-store',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': file.type || 'image/jpeg',
+    },
+    body: file,
+  });
 
-  // Convert File to ArrayBuffer
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = new Uint8Array(arrayBuffer);
-
-  // Upload to Supabase Storage
-  const { data, error } = await supabase.storage
-    .from('workspaces')
-    .upload(storagePath, buffer, {
-      contentType: file.type,
-      upsert: false,
-    });
-
-  if (error) {
-    console.error('Error uploading template background:', error);
-    throw new Error('Failed to upload background image');
-  }
-
-  // Generate a temporary signed URL for preview (valid for 1 hour)
-  const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-    .from('workspaces')
-    .createSignedUrl(data.path, 3600); // 1 hour expiry
-
-  if (signedUrlError) {
-    console.error('Error creating signed URL:', signedUrlError);
-    throw new Error('Failed to generate preview URL');
+  if (!uploadResponse.ok) {
+    const text = await uploadResponse.text().catch(() => '');
+    throw new Error(
+      `Failed to upload background image (${uploadResponse.status})${text ? `: ${text}` : ''}`
+    );
   }
 
   return {
-    url: signedUrlData.signedUrl, // Temporary preview URL
-    path: data.path, // Store this in DB
+    path,
   };
 }
 
@@ -84,14 +94,26 @@ export async function uploadTemplateBackground(
  * Deletes a background image from Supabase Storage
  * @param path - The storage path of the image to delete
  */
-export async function deleteTemplateBackground(path: string): Promise<void> {
-  const supabase = createClient();
+export async function deleteTemplateBackground(
+  wsId: string,
+  path: string
+): Promise<void> {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/templates/background`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path }),
+    }
+  );
 
-  const { error } = await supabase.storage.from('workspaces').remove([path]);
-
-  if (error) {
-    console.error('Error deleting template background:', error);
-    throw new Error('Failed to delete background image');
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as {
+      error?: string;
+    };
+    throw new Error(body.error ?? 'Failed to delete background image');
   }
 }
 
@@ -105,7 +127,7 @@ export async function deleteTemplateBackground(path: string): Promise<void> {
 export async function handleTemplateBackgroundUpload(
   files: StatedFile[],
   wsId: string,
-  onSuccess: (url: string, path: string) => void,
+  onSuccess: (path: string) => void,
   onError?: (error: string) => void
 ): Promise<void> {
   if (files.length === 0) {
@@ -120,16 +142,14 @@ export async function handleTemplateBackgroundUpload(
   }
 
   try {
-    // Update file status to uploading
     file.status = 'uploading';
 
     const result = await uploadTemplateBackground(file.rawFile, wsId);
 
-    // Update file status to uploaded
     file.status = 'uploaded';
     file.finalPath = result.path;
 
-    onSuccess(result.url, result.path);
+    onSuccess(result.path);
   } catch (error) {
     file.status = 'error';
     const errorMessage =

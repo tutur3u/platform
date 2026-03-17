@@ -25,6 +25,7 @@ import {
   Timer,
   Trash2,
 } from '@tuturuuu/icons';
+import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -212,16 +213,7 @@ function TaskCardInner({
       queryKey: ['task_projects', boardConfig?.ws_id],
       queryFn: async () => {
         if (!boardConfig?.ws_id) return [];
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('task_projects')
-          .select('id, name, status')
-          .eq('ws_id', boardConfig.ws_id)
-          .eq('deleted', false)
-          .order('name');
-
-        if (error) throw error;
-        return data || [];
+        return listWorkspaceTaskProjects(boardConfig.ws_id);
       },
       enabled: !!boardConfig?.ws_id,
       staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
@@ -269,6 +261,7 @@ function TaskCardInner({
   } = useTaskCardRelationships({
     taskId: task.id,
     boardId,
+    wsId: boardConfig?.ws_id,
   });
 
   // Fetch available task lists using React Query (same key as other components)
@@ -393,6 +386,7 @@ function TaskCardInner({
   } = useTaskActions({
     task,
     boardId,
+    workspaceId: boardConfig?.ws_id,
     targetCompletionList,
     targetClosedList,
     availableLists,

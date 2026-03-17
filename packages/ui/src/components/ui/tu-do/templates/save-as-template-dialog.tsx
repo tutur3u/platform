@@ -1,7 +1,6 @@
 'use client';
 
 import { Bookmark, Loader2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -15,6 +14,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { handleTemplateBackgroundUpload } from '@tuturuuu/ui/lib/template-background';
 import {
   Select,
   SelectContent,
@@ -27,7 +27,6 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { FileUploader, type StatedFile } from '../../custom/file-uploader';
 
 interface SaveAsTemplateDialogProps {
@@ -37,14 +36,6 @@ interface SaveAsTemplateDialogProps {
 }
 
 type TemplateVisibility = 'private' | 'workspace' | 'public';
-
-const ALLOWED_IMAGE_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/jpg',
-  'image/webp',
-];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export function SaveAsTemplateDialog({
   board,
@@ -70,6 +61,14 @@ export function SaveAsTemplateDialog({
     string | null
   >(null);
 
+  useEffect(() => {
+    return () => {
+      if (backgroundPreviewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(backgroundPreviewUrl);
+      }
+    };
+  }, [backgroundPreviewUrl]);
+
   // Initialize template name when dialog opens
   useEffect(() => {
     if (open && board) {
@@ -81,91 +80,42 @@ export function SaveAsTemplateDialog({
       setIncludeDates(true);
       setBackgroundFiles([]);
       setBackgroundPath(null);
-      setBackgroundPreviewUrl(null);
+      setBackgroundPreviewUrl((previousPreviewUrl) => {
+        if (previousPreviewUrl?.startsWith('blob:')) {
+          URL.revokeObjectURL(previousPreviewUrl);
+        }
+        return null;
+      });
     }
   }, [open, board]);
 
   const handleBackgroundUpload = async (files: StatedFile[]) => {
-    if (files.length === 0) {
-      return;
-    }
+    await handleTemplateBackgroundUpload(
+      files,
+      board.ws_id,
+      (path) => {
+        const firstFile = files[0];
+        if (!firstFile) {
+          return;
+        }
 
-    const file = files[0]; // Only support one background image
+        if (backgroundPreviewUrl?.startsWith('blob:')) {
+          URL.revokeObjectURL(backgroundPreviewUrl);
+        }
 
-    if (!file) {
-      toast('No file selected for upload');
-      return;
-    }
-
-    try {
-      // Update file status to uploading
-      file.status = 'uploading';
-
-      if (!ALLOWED_IMAGE_TYPES.includes(file.rawFile.type)) {
-        throw new Error(
-          'Invalid file type. Only PNG, JPEG, and WebP images are allowed.'
-        );
+        setBackgroundPath(path);
+        setBackgroundPreviewUrl(firstFile.url);
+      },
+      (error) => {
+        toast.error(error);
       }
-
-      // Validate file size
-      if (file.rawFile.size > MAX_FILE_SIZE) {
-        throw new Error('File size exceeds 5MB limit.');
-      }
-
-      const supabase = createClient();
-
-      // Generate unique filename
-      const uniqueId = uuidv4();
-      const sanitizedName = file.rawFile.name
-        .toLowerCase()
-        .replace(/[^a-z0-9.-]/g, '-')
-        .replace(/-+/g, '-');
-      const storagePath = `${board.ws_id}/template-backgrounds/${uniqueId}-${sanitizedName}`;
-
-      // Convert File to ArrayBuffer
-      const arrayBuffer = await file.rawFile.arrayBuffer();
-      const buffer = new Uint8Array(arrayBuffer);
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .upload(storagePath, buffer, {
-          contentType: file.rawFile.type,
-          upsert: false,
-        });
-
-      if (error) {
-        console.error('Error uploading template background:', error);
-        throw new Error('Failed to upload background image');
-      }
-
-      // Generate a temporary signed URL for preview (valid for 1 hour)
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
-          .from('workspaces')
-          .createSignedUrl(data.path, 3600); // 1 hour expiry
-
-      if (signedUrlError) {
-        console.error('Error creating signed URL:', signedUrlError);
-        throw new Error('Failed to generate preview URL');
-      }
-
-      // Update file status to uploaded
-      file.status = 'uploaded';
-      file.finalPath = data.path; // Store the storage path
-
-      // Store path and signed URL separately
-      setBackgroundPath(data.path); // This is what we send to the API
-      setBackgroundPreviewUrl(signedUrlData.signedUrl); // This is what we display
-    } catch (error) {
-      file.status = 'error';
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to upload image';
-      toast.error(errorMessage);
-    }
+    );
   };
 
   const handleRemoveBackground = () => {
+    if (backgroundPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(backgroundPreviewUrl);
+    }
     setBackgroundPath(null);
     setBackgroundPreviewUrl(null);
     setBackgroundFiles([]);
@@ -231,6 +181,9 @@ export function SaveAsTemplateDialog({
   };
 
   const handleCancel = () => {
+    if (backgroundPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(backgroundPreviewUrl);
+    }
     setTemplateName('');
     setDescription('');
     onOpenChange(false);

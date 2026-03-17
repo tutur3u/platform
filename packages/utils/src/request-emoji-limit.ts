@@ -14,6 +14,11 @@ export type RequestContentViolation = {
   path: string;
 };
 
+type FindRequestContentViolationOptions = {
+  skipEmojiCheckForFields?: string[];
+  skipShortTextLengthCheckForFields?: string[];
+};
+
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const EXTENDED_PICTOGRAPHIC_RE = /\p{Extended_Pictographic}/u;
 const FLAG_RE = /^(?:\p{Regional_Indicator}{2})$/u;
@@ -129,17 +134,25 @@ function getLongestRepeatedGraphemeRun(graphemes: string[]): number {
 
 function getStringContentViolation(
   value: string,
-  path: string
+  path: string,
+  options?: FindRequestContentViolationOptions
 ): RequestContentViolation | null {
-  const emojiCount = countEmojisInString(value);
-  if (emojiCount > MAX_EMOJIS_PER_FIELD) {
-    return {
-      code: 'EMOJI_LIMIT_EXCEEDED',
-      count: emojiCount,
-      limit: MAX_EMOJIS_PER_FIELD,
-      message: `Field "${path}" cannot contain more than ${MAX_EMOJIS_PER_FIELD} emojis`,
-      path,
-    };
+  const lastFieldName = getLastFieldName(path);
+  const shouldSkipEmojiLimitForField =
+    !!lastFieldName &&
+    (options?.skipEmojiCheckForFields ?? []).includes(lastFieldName);
+
+  if (!shouldSkipEmojiLimitForField) {
+    const emojiCount = countEmojisInString(value);
+    if (emojiCount > MAX_EMOJIS_PER_FIELD) {
+      return {
+        code: 'EMOJI_LIMIT_EXCEEDED',
+        count: emojiCount,
+        limit: MAX_EMOJIS_PER_FIELD,
+        message: `Field "${path}" cannot contain more than ${MAX_EMOJIS_PER_FIELD} emojis`,
+        path,
+      };
+    }
   }
 
   const graphemes = getGraphemeSegments(value);
@@ -166,6 +179,10 @@ function getStringContentViolation(
     }
   } else if (
     isShortTextFieldPath(path) &&
+    !(
+      !!lastFieldName &&
+      (options?.skipShortTextLengthCheckForFields ?? []).includes(lastFieldName)
+    ) &&
     graphemes.length > MAX_SHORT_TEXT_FIELD_GRAPHEMES
   ) {
     return {
@@ -182,15 +199,20 @@ function getStringContentViolation(
 
 export function findRequestContentViolation(
   value: unknown,
-  path = 'body'
+  path = 'body',
+  options?: FindRequestContentViolationOptions
 ): RequestContentViolation | null {
   if (typeof value === 'string') {
-    return getStringContentViolation(value, path);
+    return getStringContentViolation(value, path, options);
   }
 
   if (Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
-      const violation = findRequestContentViolation(item, `${path}[${index}]`);
+      const violation = findRequestContentViolation(
+        item,
+        `${path}[${index}]`,
+        options
+      );
       if (violation) {
         return violation;
       }
@@ -201,7 +223,11 @@ export function findRequestContentViolation(
 
   if (value && typeof value === 'object') {
     for (const [key, item] of Object.entries(value)) {
-      const violation = findRequestContentViolation(item, `${path}.${key}`);
+      const violation = findRequestContentViolation(
+        item,
+        `${path}.${key}`,
+        options
+      );
       if (violation) {
         return violation;
       }
@@ -238,7 +264,8 @@ export function isTrustedEmojiBypassRequest(
 }
 
 export async function getRequestContentViolationForRequest(
-  request: NextRequest
+  request: NextRequest,
+  options?: { allowDescriptionYjsState?: boolean }
 ): Promise<RequestContentViolation | null> {
   if (
     !shouldValidateEmojiLimit(request) ||
@@ -259,7 +286,42 @@ export async function getRequestContentViolationForRequest(
   }
 
   try {
-    return findRequestContentViolation(JSON.parse(rawBody));
+    const parsedBody = JSON.parse(rawBody);
+
+    if (
+      options?.allowDescriptionYjsState === true &&
+      parsedBody &&
+      typeof parsedBody === 'object' &&
+      'description_yjs_state' in parsedBody &&
+      typeof (parsedBody as { description?: unknown }).description === 'string'
+    ) {
+      const {
+        description,
+        // Explicitly strip description_yjs_state from validation when allowed
+        // so Yjs payloads do not trigger short-field or emoji limits.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        description_yjs_state,
+        ...rest
+      } = parsedBody as {
+        description: string;
+        description_yjs_state?: unknown;
+        [key: string]: unknown;
+      };
+
+      return findRequestContentViolation(
+        {
+          ...rest,
+          description,
+        },
+        'body',
+        {
+          skipEmojiCheckForFields: ['description'],
+          skipShortTextLengthCheckForFields: ['description'],
+        }
+      );
+    }
+
+    return findRequestContentViolation(parsedBody);
   } catch {
     // Let route handlers keep their own invalid JSON behavior.
     return null;
@@ -283,8 +345,12 @@ export function createRequestContentViolationResponse(
 }
 
 export async function validateRequestEmojiLimit(
-  request: NextRequest
+  request: NextRequest,
+  options?: { allowDescriptionYjsState?: boolean }
 ): Promise<NextResponse | null> {
-  const violation = await getRequestContentViolationForRequest(request);
+  const violation = await getRequestContentViolationForRequest(
+    request,
+    options
+  );
   return violation ? createRequestContentViolationResponse(violation) : null;
 }

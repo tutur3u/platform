@@ -631,6 +631,7 @@ export default function TemplateDetailClient({
         templateName={template.name}
         templateDescription={template.description}
         templateVisibility={template.visibility}
+        templateBackgroundPath={template.backgroundPath}
         templateBackgroundUrl={template.backgroundUrl}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
