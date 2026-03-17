@@ -238,14 +238,20 @@ export const members: {
 
 export const departments: {
   name: DepartmentName;
-  image: string;
+  images: string[];
   bio: string;
   characteristics: string;
   mission: string[];
 }[] = [
   {
     name: 'Technology',
-    image: '/departments/test1.jpg',
+    images: [
+      '/departments/technology/competitive-programming-workshop.jpg',
+      '/departments/technology/nextjs-workshop.jpg',
+      '/departments/technology/soldering-workshop.jpg',
+      '/departments/technology/soldering-workshop-2.jpg',
+      '/departments/technology/competitive-programming-workshop-2.jpg',
+    ],
     bio: 'The Technology department serves as the core technical engine of our organization, overseeing all software and hardware initiatives. We are dedicated to cultivating a rigorous and collaborative environment tailored for passionate technology enthusiasts and SSET students alike.',
     characteristics: 'Our Spirit',
     mission: [
@@ -258,7 +264,13 @@ export const departments: {
   },
   {
     name: 'Human Resources',
-    image: '/departments/TEST2.webp',
+    images: [
+      '/departments/human-resources/award-day-c-2025.jpg',
+      '/departments/human-resources/secret-santa-c-2025.jpg',
+      '/departments/human-resources/welcome-day-c-2025.jpg',
+      '/departments/human-resources/welcome-day-a-2025-2.jpg',
+      '/departments/human-resources/welcome-day-a-2025.jpg',
+    ],
     bio: 'The Human Resources department focuses on building a strong, inclusive community within the club. They organize team-building activities, provide support for members, and ensure a positive environment for everyone.',
     characteristics: 'What is HR about?',
     mission: [
@@ -274,7 +286,13 @@ export const departments: {
   },
   {
     name: 'Marketing',
-    image: '/departments/test3.jpg',
+    images: [
+      '/departments/marketing/test3.jpg',
+      '/departments/marketing/test3.jpg',
+      '/departments/marketing/test3.jpg',
+      '/departments/marketing/test3.jpg',
+      '/departments/marketing/test3.jpg',
+    ],
     bio: 'The Marketing department is responsible for promoting the club and its events to the wider community. They handle branding, communications, and outreach initiatives.',
     characteristics: 'Our Characteristics: ',
     mission: [

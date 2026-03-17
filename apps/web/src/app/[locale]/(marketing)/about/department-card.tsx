@@ -13,7 +13,7 @@ const badgeStyles = [
 
 interface DepartmentCardProps {
   name: string;
-  image: string;
+  images: string[];
   bio: string;
   characteristics: string;
   mission: string[];
@@ -22,7 +22,7 @@ interface DepartmentCardProps {
 
 export function DepartmentCard({
   name,
-  image,
+  images,
   bio,
   characteristics,
   mission,
@@ -35,7 +35,7 @@ export function DepartmentCard({
         className
       )}
     >
-      <CardHeader className="mt-4 mb-8 text-center">
+      <CardHeader className="mt-4 mb-6 text-center">
         <Badge
           variant="outline"
           className={cn(
@@ -46,7 +46,7 @@ export function DepartmentCard({
           {name}
         </Badge>
       </CardHeader>
-      <CardContent className="grid gap-10 px-10 pb-10 md:grid-cols-[0.4fr_0.6fr]">
+      <CardContent className="grid gap-10 px-10 pb-10 lg:grid-cols-[0.4fr_0.6fr]">
         <div className="space-y-6">
           <p className="text-justify font-medium text-foreground/80 text-md leading-relaxed md:text-lg">
             {bio}
@@ -76,12 +76,14 @@ export function DepartmentCard({
           </div>
         </div>
         <div className="grid grid-cols-6 gap-4">
-          {[0, 1, 2, 3, 4].map((item) => (
+          {images.map((image, index) => (
             <div
-              key={item}
+              key={index}
               className={cn(
-                'relative aspect-square overflow-hidden rounded-xl border border-foreground/10 bg-background/60',
-                item <= 1 ? 'col-span-3' : 'col-span-2'
+                'relative overflow-hidden rounded-xl border border-foreground/10 bg-background/60',
+                index <= 1
+                  ? 'col-span-3 aspect-square'
+                  : 'col-span-2 aspect-video'
               )}
             >
               <Image

@@ -107,7 +107,7 @@ export default function Departments() {
           >
             <DepartmentCard
               name={department.name}
-              image={department.image}
+              images={department.images}
               bio={department.bio}
               characteristics={department.characteristics}
               mission={department.mission}
