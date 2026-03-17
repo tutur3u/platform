@@ -20,7 +20,7 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -206,9 +206,9 @@ export default function EditableReportPreview({
     form,
   ]);
 
-  const title = form.watch('title');
-  const content = form.watch('content');
-  const feedback = form.watch('feedback');
+  const title = useWatch({ control: form.control, name: 'title' });
+  const content = useWatch({ control: form.control, name: 'content' });
+  const feedback = useWatch({ control: form.control, name: 'feedback' });
 
   const parseDynamicText = useReportDynamicText({
     userName: report.user_name,
