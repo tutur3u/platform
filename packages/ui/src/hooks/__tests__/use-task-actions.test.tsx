@@ -434,11 +434,9 @@ describe('useTaskActions', () => {
         await result.current.handleDelete();
       });
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('tasks');
-      expect(mockSupabase.update).toHaveBeenCalledWith({
-        deleted_at: expect.any(String),
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        deleted: true,
       });
-      expect(mockSupabase.eq).toHaveBeenCalledWith('id', 'task-1');
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: 'Task deleted successfully',
       });
@@ -486,9 +484,7 @@ describe('useTaskActions', () => {
         await result.current.handleDelete();
       });
 
-      // Implementation uses sequential .eq() calls per task
-      expect(mockSupabase.update).toHaveBeenCalled();
-      expect(mockSupabase.eq).toHaveBeenCalled();
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: '2 tasks deleted',
       });
@@ -837,9 +833,51 @@ describe('useTaskActions', () => {
     });
   });
 
+  describe('handleCustomDateChange', () => {
+    it('should update task end_date and close dialog', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+
+      const setIsLoading = vi.fn();
+      const setCustomDateDialogOpen = vi.fn();
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: mockTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading,
+            setMenuOpen: vi.fn(),
+            setCustomDateDialogOpen,
+          }),
+        { wrapper }
+      );
+
+      const testDate = new Date('2024-01-01T00:00:00');
+
+      await act(async () => {
+        await result.current.handleCustomDateChange(testDate);
+      });
+
+      expect(setCustomDateDialogOpen).toHaveBeenCalledWith(false);
+      expect(mockUpdateTaskMutation.mutate).toHaveBeenCalledWith(
+        { taskId: 'task-1', updates: { end_date: expect.any(String) } },
+        expect.any(Object)
+      );
+    });
+  });
+
   describe('handleToggleAssignee', () => {
     it('should add assignee to task', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+      const taskNoWorkspace = {
+        ...mockTask,
+        ws_id: undefined,
+      } as unknown as Task;
+
+      queryClient.setQueryData(['tasks', 'board-1'], [taskNoWorkspace]);
       // Configure the .insert() call to resolve to a success response
       mockSupabase.insert = vi.fn(() => Promise.resolve({ error: null }));
 
@@ -848,7 +886,7 @@ describe('useTaskActions', () => {
       const { result } = renderHook(
         () =>
           useTaskActions({
-            task: mockTask,
+            task: taskNoWorkspace,
             boardId: 'board-1',
             targetCompletionList: mockCompletionList,
             targetClosedList: mockClosedList,
@@ -877,10 +915,11 @@ describe('useTaskActions', () => {
     it('should remove assignee from task', async () => {
       const taskWithAssignee = {
         ...mockTask,
+        ws_id: undefined,
         assignees: [
           { id: 'user-1', display_name: 'User 1', email: 'user1@test.com' },
         ],
-      };
+      } as unknown as Task;
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
       mockSupabase.delete = vi.fn(() => ({
         eq: vi.fn(() => Promise.resolve({ error: null })),
@@ -914,7 +953,11 @@ describe('useTaskActions', () => {
     });
 
     it('should rollback on error when adding assignee fails', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+      const taskNoWorkspace = {
+        ...mockTask,
+        ws_id: undefined,
+      } as unknown as Task;
+      queryClient.setQueryData(['tasks', 'board-1'], [taskNoWorkspace]);
 
       // Mock insert to fail (simulating add assignee flow)
       mockSupabase.insert = vi.fn(() =>
@@ -931,7 +974,7 @@ describe('useTaskActions', () => {
       const { result } = renderHook(
         () =>
           useTaskActions({
-            task: mockTask,
+            task: taskNoWorkspace,
             boardId: 'board-1',
             targetCompletionList: mockCompletionList,
             targetClosedList: mockClosedList,
@@ -959,7 +1002,7 @@ describe('useTaskActions', () => {
         'tasks',
         'board-1',
       ]);
-      expect(cachedTasks).toEqual([mockTask]);
+      expect(cachedTasks).toEqual([taskNoWorkspace]);
       expect(cachedTasks?.[0]?.assignees).toEqual([]);
 
       // Verify loading state was managed correctly
@@ -970,10 +1013,11 @@ describe('useTaskActions', () => {
     it('should rollback on error when removing assignee fails', async () => {
       const taskWithAssignee = {
         ...mockTask,
+        ws_id: undefined,
         assignees: [
           { id: 'user-1', display_name: 'User 1', email: 'user1@test.com' },
         ],
-      };
+      } as unknown as Task;
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
 
       // Mock delete to fail (simulating remove assignee flow)
@@ -1064,6 +1108,32 @@ describe('useTaskActions', () => {
         list_id: 'list-2',
       });
       expect(setMenuOpen).toHaveBeenCalledWith(false);
+    });
+
+    it('should set loading when target list not found', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+      const setIsLoading = vi.fn();
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: mockTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading,
+            setMenuOpen: vi.fn(),
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleMoveToList('new-list');
+      });
+
+      expect(setIsLoading).toHaveBeenCalledWith(true);
     });
 
     it('should skip move if target list is same as current', async () => {
