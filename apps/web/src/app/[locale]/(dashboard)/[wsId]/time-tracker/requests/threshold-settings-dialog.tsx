@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -12,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -22,6 +24,7 @@ import { z } from 'zod';
 interface ThresholdSettingsDialogProps {
   wsId: string;
   currentThreshold?: number | null;
+  canManageWorkspaceSettings: boolean;
   onUpdate: () => void;
 }
 
@@ -33,9 +36,19 @@ const thresholdSchema = z.coerce
 export function ThresholdSettingsDialog({
   wsId,
   currentThreshold = null,
+  canManageWorkspaceSettings,
   onUpdate,
 }: ThresholdSettingsDialogProps) {
   const t = useTranslations('time-tracker.requests.settings');
+  const queryClient = useQueryClient();
+  const statusChangeGracePeriodConfigId =
+    'TIME_TRACKING_REQUEST_STATUS_CHANGE_GRACE_PERIOD_MINUTES';
+  const {
+    data: statusChangeGracePeriodValue,
+    isLoading: isGracePeriodLoading,
+  } = useWorkspaceConfig<string>(wsId, statusChangeGracePeriodConfigId);
+  const hasLoadedGracePeriod = statusChangeGracePeriodValue !== undefined;
+  const initialGracePeriodValue = statusChangeGracePeriodValue ?? '0';
   const [open, setOpen] = useState(false);
   // noApprovalNeeded is true when threshold is null (default - no restrictions)
   const [noApprovalNeeded, setNoApprovalNeeded] = useState(
@@ -45,18 +58,61 @@ export function ThresholdSettingsDialog({
     currentThreshold === null ? '1' : String(currentThreshold)
   );
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [gracePeriodInputValue, setGracePeriodInputValue] = useState('0');
+
+  const updateThresholdMutation = useMutation({
+    mutationFn: async (values: {
+      threshold: number | null;
+      statusChangeGracePeriodMinutes: number;
+    }) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/threshold`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(values),
+        }
+      );
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to update threshold');
+      }
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-time-threshold', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-config', wsId, statusChangeGracePeriodConfigId],
+        }),
+      ]);
+    },
+  });
+
+  const isLoading = updateThresholdMutation.isPending;
 
   // Always parse the input value to maintain clear typing
   const parsed = thresholdSchema.safeParse(inputValue);
+  const parsedGracePeriod = thresholdSchema.safeParse(gracePeriodInputValue);
 
   // Check if values have changed from initial state
   const hasChanged =
     noApprovalNeeded !== (currentThreshold === null) ||
-    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold);
+    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold) ||
+    (hasLoadedGracePeriod && parsedGracePeriod.success
+      ? parsedGracePeriod.data !== Number.parseInt(initialGracePeriodValue, 10)
+      : false);
 
   const isSubmitDisabled =
-    isLoading || (!noApprovalNeeded && !parsed.success) || !hasChanged;
+    isLoading ||
+    !hasLoadedGracePeriod ||
+    (!noApprovalNeeded && !parsed.success) ||
+    !parsedGracePeriod.success ||
+    !hasChanged;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,27 +122,29 @@ export function ThresholdSettingsDialog({
       return;
     }
 
-    setIsLoading(true);
+    if (!parsedGracePeriod.success) {
+      toast.error(parsedGracePeriod.error.message);
+      return;
+    }
+
+    if (!hasLoadedGracePeriod) {
+      toast.error(t('error'));
+      return;
+    }
+
+    const thresholdValue = noApprovalNeeded
+      ? null
+      : parsed.success
+        ? parsed.data
+        : null;
+
     setValidationError(null);
 
     try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracking/threshold`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            threshold: noApprovalNeeded ? null : parsed.data,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update threshold');
-      }
+      await updateThresholdMutation.mutateAsync({
+        threshold: thresholdValue,
+        statusChangeGracePeriodMinutes: parsedGracePeriod.data,
+      });
 
       toast.success(t('success'));
       setOpen(false);
@@ -94,8 +152,6 @@ export function ThresholdSettingsDialog({
     } catch (error) {
       console.error('Error updating threshold:', error);
       toast.error(error instanceof Error ? error.message : t('error'));
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -106,11 +162,18 @@ export function ThresholdSettingsDialog({
           variant="outline"
           size="sm"
           className="gap-2"
+          disabled={!canManageWorkspaceSettings}
+          title={
+            canManageWorkspaceSettings
+              ? undefined
+              : t('requiresManageWorkspaceSettings')
+          }
           onClick={() => {
             setNoApprovalNeeded(currentThreshold === null);
             setInputValue(
               currentThreshold === null ? '1' : String(currentThreshold)
             );
+            setGracePeriodInputValue(initialGracePeriodValue);
             setValidationError(null);
             setOpen(true);
           }}
@@ -186,6 +249,27 @@ export function ThresholdSettingsDialog({
                 <p className="text-muted-foreground text-sm">{t('help')}</p>
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="status-change-grace-period">
+                {t('statusChangeGracePeriodLabel')}
+              </Label>
+              <Input
+                id="status-change-grace-period"
+                type="number"
+                min={0}
+                value={gracePeriodInputValue}
+                onChange={(e) => {
+                  setGracePeriodInputValue(e.target.value);
+                  setValidationError(null);
+                }}
+                disabled={isGracePeriodLoading}
+                className="w-full"
+              />
+              <p className="text-muted-foreground text-sm">
+                {t('statusChangeGracePeriodHelp')}
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button

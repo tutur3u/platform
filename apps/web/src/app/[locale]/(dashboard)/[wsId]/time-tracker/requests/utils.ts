@@ -83,5 +83,6 @@ export const calculateDuration = (startTime: string, endTime: string) => {
 export interface RequestsViewProps {
   wsId: string;
   currentUser: WorkspaceUser | null;
+  canManageWorkspaceSettings: boolean;
   onSelectRequest: (request: ExtendedTimeTrackingRequest) => void;
 }

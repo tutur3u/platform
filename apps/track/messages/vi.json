@@ -8180,6 +8180,8 @@
         "requestNeedsInfo": "Yêu Cầu Thêm Thông Tin",
         "requestRejected": "Yêu Cầu Đã Bị Từ Chối",
         "resubmitButton": "Gửi Lại Yêu Cầu",
+        "revertToApprovedButton": "Chuyển Lại Thành Đã Duyệt",
+        "revertToRejectedButton": "Chuyển Lại Thành Đã Từ Chối",
         "saveButton": "Lưu Thay Đổi",
         "startTime": "Thời Gian Bắt Đầu",
         "timeInfo": "Thông Tin Thời Gian",
@@ -8239,6 +8241,8 @@
         "resumeThresholdLabel": "Ngưỡng xác nhận tiếp tục nghỉ (phút)",
         "save": "Lưu Thay Đổi",
         "saving": "Đang lưu...",
+        "statusChangeGracePeriodHelp": "Đặt số phút người duyệt có thể hoàn tác yêu cầu giữa Đã duyệt và Đã từ chối. Đặt 0 để tắt thao tác này.",
+        "statusChangeGracePeriodLabel": "Thời gian gia hạn hoàn tác trạng thái (phút)",
         "success": "Ngưỡng đã được cập nhật thành công",
         "title": "Cài Đặt Ngưỡng Nhập Thiếu"
       },

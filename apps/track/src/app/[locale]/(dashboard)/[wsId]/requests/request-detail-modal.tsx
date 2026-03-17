@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -55,6 +56,11 @@ export function RequestDetailModal({
   currentUser,
 }: RequestDetailModalProps) {
   const t = useTranslations('time-tracker.requests');
+  const { data: statusChangeGracePeriodConfig } = useWorkspaceConfig<string>(
+    wsId,
+    'TIME_TRACKING_REQUEST_STATUS_CHANGE_GRACE_PERIOD_MINUTES',
+    '0'
+  );
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
   );
@@ -72,6 +78,11 @@ export function RequestDetailModal({
   const canViewComments =
     (currentUser && request.user_id === currentUser.id) ||
     canManageTimeTrackingRequests;
+
+  const statusChangeGracePeriodMinutes = Math.max(
+    0,
+    Number.parseInt(statusChangeGracePeriodConfig ?? '0', 10) || 0
+  );
 
   // Fetch images with React Query
   const { data: imageUrls = [], isLoading: isLoadingImages } = useRequestImages(
@@ -262,6 +273,7 @@ export function RequestDetailModal({
                 onRequestMoreInfo={actions.handleRequestMoreInfo}
                 isResubmitting={actions.resubmitMutation.isPending}
                 onResubmit={actions.handleResubmit}
+                statusChangeGracePeriodMinutes={statusChangeGracePeriodMinutes}
               />
 
               {/* Comments Section */}
