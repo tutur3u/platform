@@ -39,11 +39,12 @@ export function ThresholdSettingsDialog({
   const t = useTranslations('time-tracker.requests.settings');
   const statusChangeGracePeriodConfigId =
     'TIME_TRACKING_REQUEST_STATUS_CHANGE_GRACE_PERIOD_MINUTES';
-  const { data: statusChangeGracePeriodValue } = useWorkspaceConfig<string>(
-    wsId,
-    statusChangeGracePeriodConfigId,
-    '0'
-  );
+  const {
+    data: statusChangeGracePeriodValue,
+    isLoading: isGracePeriodLoading,
+  } = useWorkspaceConfig<string>(wsId, statusChangeGracePeriodConfigId);
+  const hasLoadedGracePeriod = statusChangeGracePeriodValue !== undefined;
+  const initialGracePeriodValue = statusChangeGracePeriodValue ?? '0';
   const [open, setOpen] = useState(false);
   // noApprovalNeeded is true when threshold is null (default - no restrictions)
   const [noApprovalNeeded, setNoApprovalNeeded] = useState(
@@ -53,9 +54,7 @@ export function ThresholdSettingsDialog({
     currentThreshold === null ? '1' : String(currentThreshold)
   );
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [gracePeriodInputValue, setGracePeriodInputValue] = useState(
-    statusChangeGracePeriodValue ?? '0'
-  );
+  const [gracePeriodInputValue, setGracePeriodInputValue] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
 
   // Always parse the input value to maintain clear typing
@@ -66,13 +65,13 @@ export function ThresholdSettingsDialog({
   const hasChanged =
     noApprovalNeeded !== (currentThreshold === null) ||
     (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold) ||
-    (parsedGracePeriod.success
-      ? parsedGracePeriod.data !==
-        Number.parseInt(statusChangeGracePeriodValue ?? '0', 10)
+    (hasLoadedGracePeriod && parsedGracePeriod.success
+      ? parsedGracePeriod.data !== Number.parseInt(initialGracePeriodValue, 10)
       : false);
 
   const isSubmitDisabled =
     isLoading ||
+    !hasLoadedGracePeriod ||
     (!noApprovalNeeded && !parsed.success) ||
     !parsedGracePeriod.success ||
     !hasChanged;
@@ -90,6 +89,11 @@ export function ThresholdSettingsDialog({
       return;
     }
 
+    if (!hasLoadedGracePeriod) {
+      toast.error(t('error'));
+      return;
+    }
+
     setIsLoading(true);
     setValidationError(null);
 
@@ -103,6 +107,7 @@ export function ThresholdSettingsDialog({
           },
           body: JSON.stringify({
             threshold: noApprovalNeeded ? null : parsed.data,
+            statusChangeGracePeriodMinutes: parsedGracePeriod.data,
           }),
         }
       );
@@ -110,26 +115,6 @@ export function ThresholdSettingsDialog({
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to update threshold');
-      }
-
-      const gracePeriodResponse = await fetch(
-        `/api/v1/workspaces/${wsId}/settings/${statusChangeGracePeriodConfigId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            value: String(parsedGracePeriod.data),
-          }),
-        }
-      );
-
-      if (!gracePeriodResponse.ok) {
-        const error = await gracePeriodResponse.json();
-        throw new Error(
-          error.error || 'Failed to update request status change grace period'
-        );
       }
 
       toast.success(t('success'));
@@ -155,7 +140,7 @@ export function ThresholdSettingsDialog({
             setInputValue(
               currentThreshold === null ? '1' : String(currentThreshold)
             );
-            setGracePeriodInputValue(statusChangeGracePeriodValue ?? '0');
+            setGracePeriodInputValue(initialGracePeriodValue);
             setValidationError(null);
             setOpen(true);
           }}
@@ -245,6 +230,7 @@ export function ThresholdSettingsDialog({
                   setGracePeriodInputValue(e.target.value);
                   setValidationError(null);
                 }}
+                disabled={isGracePeriodLoading}
                 className="w-full"
               />
               <p className="text-muted-foreground text-sm">

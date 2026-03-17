@@ -285,6 +285,7 @@ GRANT EXECUTE ON FUNCTION public.update_time_tracking_request(uuid, text, uuid, 
 CREATE OR REPLACE FUNCTION check_time_tracking_request_update()
 RETURNS TRIGGER AS $$
 DECLARE
+    v_actor_id uuid := auth.uid();
     v_has_manage_permission BOOLEAN;
     v_content_changed BOOLEAN;
     v_status_changed BOOLEAN;
@@ -292,10 +293,14 @@ DECLARE
     v_can_reject_approved BOOLEAN := FALSE;
     v_can_approve_rejected BOOLEAN := FALSE;
 BEGIN
+    IF current_setting('time_tracking.bypass_approval_rules', true) = 'on' THEN
+        RETURN NEW;
+    END IF;
+
     -- Check if the current user has manage_time_tracking_requests permission
     v_has_manage_permission := has_workspace_permission(
         NEW.workspace_id,
-        auth.uid(),
+        v_actor_id,
         'manage_time_tracking_requests'::text
     );
 
@@ -356,75 +361,28 @@ BEGIN
     -- =========================================================================
     -- NON-OWNER APPROVER PATH: User is NOT the owner
     -- =========================================================================
-    IF NEW.user_id <> auth.uid() AND v_has_manage_permission THEN
-        -- Non-owners cannot modify content fields
-        IF v_content_changed THEN
+    IF NEW.user_id <> v_actor_id AND NOT v_has_manage_permission THEN
+        RAISE EXCEPTION 'Only approvers can update requests submitted by other users';
+    END IF;
+
+    IF v_has_manage_permission THEN
+        -- Non-owners cannot modify content fields.
+        IF NEW.user_id <> v_actor_id AND v_content_changed THEN
             RAISE EXCEPTION 'Approvers cannot modify request content fields';
         END IF;
 
-        -- Validate status transitions for approvers
-        IF NEW.approval_status = 'APPROVED' THEN
-            IF OLD.approval_status <> 'PENDING' AND NOT v_can_approve_rejected THEN
-                RAISE EXCEPTION 'Can only approve from PENDING status';
-            END IF;
-            IF NEW.approved_by <> auth.uid() OR NEW.approved_at IS NULL THEN
-                RAISE EXCEPTION 'Invalid approval data';
-            END IF;
-            IF NEW.rejected_by IS NOT NULL OR NEW.rejected_at IS NOT NULL OR NEW.rejection_reason IS NOT NULL THEN
-                RAISE EXCEPTION 'Cannot have rejection data when approving';
-            END IF;
-            IF NEW.needs_info_requested_by IS NOT NULL OR NEW.needs_info_requested_at IS NOT NULL OR NEW.needs_info_reason IS NOT NULL THEN
-                RAISE EXCEPTION 'Cannot have needs_info data when approving';
-            END IF;
-
-        ELSIF NEW.approval_status = 'REJECTED' THEN
-            IF OLD.approval_status = 'APPROVED' THEN
-                IF NOT v_can_reject_approved THEN
-                    RAISE EXCEPTION 'Can only reject approved requests within the configured grace period';
-                END IF;
-            ELSIF OLD.approval_status <> 'PENDING' THEN
-                RAISE EXCEPTION 'Can only reject from PENDING status';
-            END IF;
-            IF NEW.rejected_by <> auth.uid() OR NEW.rejected_at IS NULL OR NEW.rejection_reason IS NULL THEN
-                RAISE EXCEPTION 'Invalid rejection data';
-            END IF;
-            IF NEW.approved_by IS NOT NULL OR NEW.approved_at IS NOT NULL THEN
-                RAISE EXCEPTION 'Cannot have approval data when rejecting';
-            END IF;
-            IF NEW.needs_info_requested_by IS NOT NULL OR NEW.needs_info_requested_at IS NOT NULL OR NEW.needs_info_reason IS NOT NULL THEN
-                RAISE EXCEPTION 'Cannot have needs_info data when rejecting';
-            END IF;
-
-        ELSIF NEW.approval_status = 'NEEDS_INFO' THEN
-            IF OLD.approval_status <> 'PENDING' THEN
-                RAISE EXCEPTION 'Can only request more info from PENDING status';
-            END IF;
-            IF NEW.needs_info_requested_by <> auth.uid() OR NEW.needs_info_requested_at IS NULL OR NEW.needs_info_reason IS NULL THEN
-                RAISE EXCEPTION 'Invalid needs_info data';
-            END IF;
-            IF NEW.approved_by IS NOT NULL OR NEW.approved_at IS NOT NULL THEN
-                RAISE EXCEPTION 'Cannot have approval data when requesting info';
-            END IF;
-            IF NEW.rejected_by IS NOT NULL OR NEW.rejected_at IS NOT NULL OR NEW.rejection_reason IS NOT NULL THEN
-                RAISE EXCEPTION 'Cannot have rejection data when requesting info';
-            END IF;
-        END IF;
-    END IF;
-
-    -- =========================================================================
-    -- OWNER WITH MANAGE PERMISSION PATH
-    -- =========================================================================
-    IF NEW.user_id = auth.uid() AND v_has_manage_permission THEN
-        IF v_content_changed AND v_status_changed THEN
+        -- Owners with manage permission cannot modify content and status together.
+        IF NEW.user_id = v_actor_id AND v_content_changed AND v_status_changed THEN
             RAISE EXCEPTION 'Cannot modify content and change approval status in the same update';
         END IF;
 
+        -- Shared approval-status validation for both owner/non-owner approvers.
         IF v_status_changed THEN
             IF NEW.approval_status = 'APPROVED' THEN
                 IF OLD.approval_status <> 'PENDING' AND NOT v_can_approve_rejected THEN
                     RAISE EXCEPTION 'Can only approve from PENDING status';
                 END IF;
-                IF NEW.approved_by <> auth.uid() OR NEW.approved_at IS NULL THEN
+                IF NEW.approved_by <> v_actor_id OR NEW.approved_at IS NULL THEN
                     RAISE EXCEPTION 'Invalid approval data';
                 END IF;
                 IF NEW.rejected_by IS NOT NULL OR NEW.rejected_at IS NOT NULL OR NEW.rejection_reason IS NOT NULL THEN
@@ -442,7 +400,7 @@ BEGIN
                 ELSIF OLD.approval_status <> 'PENDING' THEN
                     RAISE EXCEPTION 'Can only reject from PENDING status';
                 END IF;
-                IF NEW.rejected_by <> auth.uid() OR NEW.rejected_at IS NULL OR NEW.rejection_reason IS NULL THEN
+                IF NEW.rejected_by <> v_actor_id OR NEW.rejected_at IS NULL OR NEW.rejection_reason IS NULL THEN
                     RAISE EXCEPTION 'Invalid rejection data';
                 END IF;
                 IF NEW.approved_by IS NOT NULL OR NEW.approved_at IS NOT NULL THEN
@@ -456,7 +414,7 @@ BEGIN
                 IF OLD.approval_status <> 'PENDING' THEN
                     RAISE EXCEPTION 'Can only request more info from PENDING status';
                 END IF;
-                IF NEW.needs_info_requested_by <> auth.uid() OR NEW.needs_info_requested_at IS NULL OR NEW.needs_info_reason IS NULL THEN
+                IF NEW.needs_info_requested_by <> v_actor_id OR NEW.needs_info_requested_at IS NULL OR NEW.needs_info_reason IS NULL THEN
                     RAISE EXCEPTION 'Invalid needs_info data';
                 END IF;
                 IF NEW.approved_by IS NOT NULL OR NEW.approved_at IS NOT NULL THEN
@@ -476,7 +434,8 @@ BEGIN
             END IF;
         END IF;
 
-        IF v_content_changed THEN
+        -- Owners with manage permission may edit content only in mutable statuses.
+        IF NEW.user_id = v_actor_id AND v_content_changed THEN
             IF OLD.approval_status NOT IN ('PENDING', 'NEEDS_INFO') THEN
                 RAISE EXCEPTION 'Can only modify content when request is PENDING or NEEDS_INFO';
             END IF;
@@ -486,7 +445,7 @@ BEGIN
     -- =========================================================================
     -- OWNER WITHOUT MANAGE PERMISSION PATH
     -- =========================================================================
-    IF NEW.user_id = auth.uid() AND NOT v_has_manage_permission THEN
+    IF NEW.user_id = v_actor_id AND NOT v_has_manage_permission THEN
         IF v_status_changed THEN
             IF NOT (OLD.approval_status = 'NEEDS_INFO' AND NEW.approval_status = 'PENDING') THEN
                 RAISE EXCEPTION 'Request owner can only resubmit from NEEDS_INFO to PENDING status';
@@ -506,3 +465,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY INVOKER;
+
+DROP TRIGGER IF EXISTS enforce_time_tracking_request_update ON public.time_tracking_requests;
+CREATE TRIGGER enforce_time_tracking_request_update
+    BEFORE UPDATE ON public.time_tracking_requests
+    FOR EACH ROW
+    EXECUTE FUNCTION check_time_tracking_request_update();

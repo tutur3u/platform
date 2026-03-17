@@ -8241,8 +8241,8 @@
         "resumeThresholdLabel": "Break resume confirmation threshold (minutes)",
         "save": "Save Changes",
         "saving": "Saving...",
-        "statusChangeGracePeriodHelp": "Set how many minutes approvers can change a request from approved back to rejected. Set to 0 to disable this action.",
-        "statusChangeGracePeriodLabel": "Approved to rejected grace period (minutes)",
+        "statusChangeGracePeriodHelp": "Set how many minutes approvers can revert a request between approved and rejected. Set to 0 to disable this action.",
+        "statusChangeGracePeriodLabel": "Status revert grace period (minutes)",
         "success": "Threshold updated successfully",
         "title": "Missed Entry Threshold Settings"
       },

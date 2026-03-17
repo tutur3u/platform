@@ -52,7 +52,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
-    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   const { withoutPermission } = permissions;
@@ -70,7 +70,7 @@ export async function PUT(req: Request, { params }: Params) {
     .upsert({
       id,
       ws_id: wsId,
-      value: value || '',
+      value: value ?? '',
       updated_at: new Date().toISOString(),
     })
     .eq('ws_id', wsId)

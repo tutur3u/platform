@@ -9,6 +9,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import type { ExtendedTimeTrackingRequest } from '../page';
 
 interface ActionButtonsProps {
@@ -63,20 +64,45 @@ export function ActionButtons({
   statusChangeGracePeriodMinutes,
 }: ActionButtonsProps) {
   const t = useTranslations('time-tracker.requests');
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const shouldTrackGraceWindow =
+      statusChangeGracePeriodMinutes > 0 &&
+      (request.approval_status === 'APPROVED' ||
+        request.approval_status === 'REJECTED');
+
+    if (!shouldTrackGraceWindow) {
+      return;
+    }
+
+    setNowMs(Date.now());
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [request.approval_status, statusChangeGracePeriodMinutes]);
+
+  const bufferMs = 30 * 1000;
+  const allowedMs = Math.max(
+    0,
+    statusChangeGracePeriodMinutes * 60 * 1000 - bufferMs
+  );
 
   const canRejectApprovedRequest =
     request.approval_status === 'APPROVED' &&
     !!request.approved_at &&
     statusChangeGracePeriodMinutes > 0 &&
-    Date.now() - new Date(request.approved_at).getTime() <=
-      statusChangeGracePeriodMinutes * 60 * 1000;
+    nowMs - new Date(request.approved_at).getTime() <= allowedMs;
 
   const canApproveRejectedRequest =
     request.approval_status === 'REJECTED' &&
     !!request.rejected_at &&
     statusChangeGracePeriodMinutes > 0 &&
-    Date.now() - new Date(request.rejected_at).getTime() <=
-      statusChangeGracePeriodMinutes * 60 * 1000;
+    nowMs - new Date(request.rejected_at).getTime() <= allowedMs;
 
   // Resubmit button for request owner when status is NEEDS_INFO
   if (
