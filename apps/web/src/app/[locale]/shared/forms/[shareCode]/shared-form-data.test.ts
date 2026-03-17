@@ -39,6 +39,21 @@ describe('shared-form-data', () => {
     });
   });
 
+  it('builds protected fallback metadata without exposing form content', () => {
+    const metadata = buildSharedFormMetadata({
+      locale: 'en',
+      shareCode: 'protected-1',
+      form: null,
+      strings,
+      status: 401,
+    });
+
+    expect(metadata.title).toBe('Shared form | Tuturuuu Forms');
+    expect(metadata.description).toBe(strings.protectedDescription);
+    expect(metadata.openGraph?.description).toBe(strings.protectedDescription);
+    expect(metadata.twitter?.description).toBe(strings.protectedDescription);
+  });
+
   it('builds form-based presentation using plain-text title and description', () => {
     const presentation = getSharedFormPresentation(
       {

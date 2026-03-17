@@ -10,7 +10,6 @@ import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
-import { FadeSettingInitializer } from '@tuturuuu/ui/tu-do/shared/fade-setting-initializer';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { ReactScan } from '@tuturuuu/utils/common/scan';
 import { cn } from '@tuturuuu/utils/format';
@@ -74,10 +73,7 @@ export default async function RootLayout({ children, params }: Props) {
           <VercelInsights />
           <Suspense>
             <NuqsAdapter>
-              <Providers>
-                <FadeSettingInitializer />
-                {children}
-              </Providers>
+              <Providers>{children}</Providers>
             </NuqsAdapter>
           </Suspense>
           <TailwindIndicator />
