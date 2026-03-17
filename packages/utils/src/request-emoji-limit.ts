@@ -13,7 +13,8 @@ export type RequestContentViolation = {
 };
 
 type FindRequestContentViolationOptions = {
-  skipEmojiCheckForRichText?: boolean;
+  skipEmojiCheckForFields?: string[];
+  skipShortTextLengthCheckForFields?: string[];
 };
 
 const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -129,11 +130,12 @@ function getStringContentViolation(
   path: string,
   options?: FindRequestContentViolationOptions
 ): RequestContentViolation | null {
-  const shouldSkipEmojiLimitForRichText =
-    options?.skipEmojiCheckForRichText === true &&
-    getLastFieldName(path) === 'rich_text_description';
+  const lastFieldName = getLastFieldName(path);
+  const shouldSkipEmojiLimitForField =
+    !!lastFieldName &&
+    (options?.skipEmojiCheckForFields ?? []).includes(lastFieldName);
 
-  if (!shouldSkipEmojiLimitForRichText) {
+  if (!shouldSkipEmojiLimitForField) {
     const emojiCount = countEmojisInString(value);
     if (emojiCount > MAX_EMOJIS_PER_FIELD) {
       return {
@@ -160,6 +162,10 @@ function getStringContentViolation(
 
   if (
     isShortTextFieldPath(path) &&
+    !(
+      !!lastFieldName &&
+      (options?.skipShortTextLengthCheckForFields ?? []).includes(lastFieldName)
+    ) &&
     graphemes.length > MAX_SHORT_TEXT_FIELD_GRAPHEMES
   ) {
     return {
@@ -288,10 +294,13 @@ export async function getRequestContentViolationForRequest(
       return findRequestContentViolation(
         {
           ...rest,
-          rich_text_description: description,
+          description,
         },
         'body',
-        { skipEmojiCheckForRichText: true }
+        {
+          skipEmojiCheckForFields: ['description'],
+          skipShortTextLengthCheckForFields: ['description'],
+        }
       );
     }
 

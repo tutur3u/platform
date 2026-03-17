@@ -139,9 +139,21 @@ export function useTaskRealtimeSync({
     const fetchTaskRelations = async () => {
       try {
         const workspaceTaskId = taskWorkspaceId ?? wsId;
+        const workspaceTaskQueryKey = [
+          'workspaceTask',
+          workspaceTaskId,
+          taskId,
+        ] as const;
+
+        await queryClient.cancelQueries({
+          queryKey: workspaceTaskQueryKey,
+          exact: true,
+        });
+
         const routeTask = await queryClient.fetchQuery({
-          queryKey: ['workspaceTask', workspaceTaskId, taskId],
+          queryKey: workspaceTaskQueryKey,
           queryFn: () => getWorkspaceTask(workspaceTaskId, taskId),
+          staleTime: 0,
         });
 
         const relationshipProjectIds =
