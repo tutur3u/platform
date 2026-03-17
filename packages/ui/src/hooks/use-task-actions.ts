@@ -5,7 +5,7 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
-import { moveTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
+import { useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { addDays } from 'date-fns';
 import { useCallback } from 'react';
 import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast-context';
@@ -52,6 +52,8 @@ export function useTaskActions({
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
   const broadcast = useBoardBroadcast();
+  const resolvedWorkspaceId =
+    workspaceId ?? (task as Task & { ws_id?: string })?.ws_id;
 
   const handleArchiveToggle = useCallback(async () => {
     if (!task || !onUpdate) return;
@@ -67,7 +69,6 @@ export function useTaskActions({
       targetCompletionList &&
       targetCompletionList.id !== task.list_id
     ) {
-      const supabase = createClient();
       try {
         // Optimistic update: move task to completion list and set closed_at
         queryClient.setQueryData(
@@ -87,10 +88,16 @@ export function useTaskActions({
         );
 
         // moveTask handles setting archived status based on target list
-        const movedTask = await moveTask(
-          supabase,
+        if (!resolvedWorkspaceId) {
+          throw new Error('Workspace ID is required');
+        }
+
+        const { task: movedTask } = await updateWorkspaceTask(
+          resolvedWorkspaceId,
           task.id,
-          targetCompletionList.id
+          {
+            list_id: targetCompletionList.id,
+          }
         );
         broadcast?.('task:upsert', {
           task: {
@@ -133,25 +140,38 @@ export function useTaskActions({
         }
       );
 
-      updateTaskMutation.mutate(
-        {
-          taskId: task.id,
-          updates: {
-            closed_at: newClosedState ? new Date().toISOString() : undefined,
-          },
-        },
-        {
-          onError: () => {
-            // Rollback on error
-            if (previousTasks) {
-              queryClient.setQueryData(['tasks', boardId], previousTasks);
-            }
-          },
-          onSettled: () => {
-            setIsLoading(false);
-          },
+      try {
+        if (!resolvedWorkspaceId) {
+          throw new Error('Workspace ID is required');
         }
-      );
+
+        const { task: updatedTask } = await updateWorkspaceTask(
+          resolvedWorkspaceId,
+          task.id,
+          {
+            closed_at: newClosedState ? new Date().toISOString() : null,
+          }
+        );
+
+        broadcast?.('task:upsert', {
+          task: {
+            id: task.id,
+            closed_at: updatedTask.closed_at,
+            completed_at: updatedTask.completed_at,
+          },
+        });
+      } catch (error) {
+        // Rollback on error
+        if (previousTasks) {
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        }
+        console.error('Failed to toggle task status:', error);
+        toast.error('Error', {
+          description: 'Failed to update task. Please try again.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   }, [
     task?.id,
@@ -160,11 +180,11 @@ export function useTaskActions({
     targetCompletionList,
     onUpdate,
     setIsLoading,
-    updateTaskMutation,
     queryClient,
     boardId,
     task,
     broadcast,
+    resolvedWorkspaceId,
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
@@ -183,7 +203,6 @@ export function useTaskActions({
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
 
-    const supabase = createClient();
     try {
       // Optimistic update: move tasks to completion list and set closed_at/completed_at
       queryClient.setQueryData(
@@ -209,12 +228,18 @@ export function useTaskActions({
 
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
+      if (!resolvedWorkspaceId) {
+        throw new Error('Workspace ID is required');
+      }
+
       for (const taskId of tasksToMove) {
         try {
-          const movedTask = await moveTask(
-            supabase,
+          const { task: movedTask } = await updateWorkspaceTask(
+            resolvedWorkspaceId,
             taskId,
-            targetCompletionList.id
+            {
+              list_id: targetCompletionList.id,
+            }
           );
           broadcast?.('task:upsert', {
             task: {
@@ -266,6 +291,7 @@ export function useTaskActions({
     boardId,
     task,
     broadcast,
+    resolvedWorkspaceId,
   ]);
 
   const handleMoveToClose = useCallback(async () => {
@@ -284,7 +310,6 @@ export function useTaskActions({
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
 
-    const supabase = createClient();
     try {
       // Optimistic update: move tasks to closed list and set closed_at
       queryClient.setQueryData(
@@ -306,12 +331,18 @@ export function useTaskActions({
 
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
+      if (!resolvedWorkspaceId) {
+        throw new Error('Workspace ID is required');
+      }
+
       for (const taskId of tasksToMove) {
         try {
-          const movedTask = await moveTask(
-            supabase,
+          const { task: movedTask } = await updateWorkspaceTask(
+            resolvedWorkspaceId,
             taskId,
-            targetClosedList.id
+            {
+              list_id: targetClosedList.id,
+            }
           );
           broadcast?.('task:upsert', {
             task: {
@@ -360,6 +391,7 @@ export function useTaskActions({
     boardId,
     task,
     broadcast,
+    resolvedWorkspaceId,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -592,8 +624,6 @@ export function useTaskActions({
 
       setIsLoading(true);
 
-      const supabase = createClient();
-
       // Check if we're in multi-select mode and have multiple tasks selected
       const shouldBulkMove =
         isMultiSelectMode &&
@@ -657,10 +687,20 @@ export function useTaskActions({
         );
 
         // Move tasks one by one to ensure triggers fire for each task
+        if (!resolvedWorkspaceId) {
+          throw new Error('Workspace ID is required');
+        }
+
         let successCount = 0;
         for (const taskId of tasksToMove) {
           try {
-            const movedTask = await moveTask(supabase, taskId, targetListId);
+            const { task: movedTask } = await updateWorkspaceTask(
+              resolvedWorkspaceId,
+              taskId,
+              {
+                list_id: targetListId,
+              }
+            );
             broadcast?.('task:upsert', {
               task: {
                 id: taskId,
@@ -709,6 +749,7 @@ export function useTaskActions({
       boardId,
       task,
       broadcast,
+      resolvedWorkspaceId,
     ]
   );
 
@@ -754,10 +795,10 @@ export function useTaskActions({
 
         const succeededTaskIds: string[] = [];
 
-        if (workspaceId) {
+        if (resolvedWorkspaceId) {
           for (const taskId of tasksToUpdate) {
             try {
-              await updateWorkspaceTask(workspaceId, taskId, {
+              await updateWorkspaceTask(resolvedWorkspaceId, taskId, {
                 end_date: newDate,
               });
               succeededTaskIds.push(taskId);
@@ -766,22 +807,6 @@ export function useTaskActions({
                 `Failed to update due date for task ${taskId}:`,
                 error
               );
-            }
-          }
-        } else if (shouldBulkUpdate) {
-          const supabase = createClient();
-          for (const taskId of tasksToUpdate) {
-            const { error } = await supabase
-              .from('tasks')
-              .update({ end_date: newDate })
-              .eq('id', taskId);
-            if (error) {
-              console.error(
-                `Failed to update due date for task ${taskId}:`,
-                error
-              );
-            } else {
-              succeededTaskIds.push(taskId);
             }
           }
         } else {
@@ -855,7 +880,7 @@ export function useTaskActions({
       task?.id,
       updateTaskMutation,
       setIsLoading,
-      workspaceId,
+      resolvedWorkspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -913,10 +938,16 @@ export function useTaskActions({
 
         const succeededTaskIds: string[] = [];
 
-        if (workspaceId) {
+        if (resolvedWorkspaceId) {
+          console.log('🔄 Executing sequential API updates:', {
+            tasksToUpdate,
+            count: tasksToUpdate.length,
+            priority: newPriority,
+          });
+
           for (const taskId of tasksToUpdate) {
             try {
-              await updateWorkspaceTask(workspaceId, taskId, {
+              await updateWorkspaceTask(resolvedWorkspaceId, taskId, {
                 priority: newPriority,
               });
               succeededTaskIds.push(taskId);
@@ -925,28 +956,6 @@ export function useTaskActions({
                 `Failed to update priority for task ${taskId}:`,
                 error
               );
-            }
-          }
-        } else if (shouldBulkUpdate) {
-          const supabase = createClient();
-          console.log('🔄 Executing sequential Supabase updates:', {
-            tasksToUpdate,
-            count: tasksToUpdate.length,
-            priority: newPriority,
-          });
-
-          for (const taskId of tasksToUpdate) {
-            const { error } = await supabase
-              .from('tasks')
-              .update({ priority: newPriority })
-              .eq('id', taskId);
-            if (error) {
-              console.error(
-                `Failed to update priority for task ${taskId}:`,
-                error
-              );
-            } else {
-              succeededTaskIds.push(taskId);
             }
           }
 
@@ -1028,7 +1037,7 @@ export function useTaskActions({
       task?.priority,
       updateTaskMutation,
       setIsLoading,
-      workspaceId,
+      resolvedWorkspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -1089,11 +1098,11 @@ export function useTaskActions({
           }
         );
 
-        if (workspaceId) {
+        if (resolvedWorkspaceId) {
           const succeededIds: string[] = [];
           for (const taskId of tasksToUpdate) {
             try {
-              await updateWorkspaceTask(workspaceId, taskId, {
+              await updateWorkspaceTask(resolvedWorkspaceId, taskId, {
                 estimation_points: points,
               });
               succeededIds.push(taskId);
@@ -1108,69 +1117,6 @@ export function useTaskActions({
           if (succeededIds.length === 0) {
             throw new Error('Failed to update any tasks');
           }
-
-          const failedIds = tasksToUpdate.filter(
-            (taskId) => !succeededIds.includes(taskId)
-          );
-
-          if (failedIds.length > 0 && previousTasks) {
-            const previousTaskMap = new Map(
-              previousTasks.map((t) => [t.id, t])
-            );
-            queryClient.setQueryData(
-              ['tasks', boardId],
-              (current: Task[] | undefined) => {
-                if (!current) return current;
-                return current.map((task) => {
-                  if (!failedIds.includes(task.id)) {
-                    return task;
-                  }
-
-                  return previousTaskMap.get(task.id) || task;
-                });
-              }
-            );
-
-            throw new Error(
-              `Partial update failed (${succeededIds.length}/${tasksToUpdate.length} tasks updated). Failed task IDs: ${failedIds.join(', ')}`
-            );
-          }
-
-          for (const tid of succeededIds) {
-            broadcast?.('task:upsert', {
-              task: { id: tid, estimation_points: points },
-            });
-          }
-
-          const taskCount = succeededIds.length;
-          toast.success('Estimation updated', {
-            description:
-              taskCount > 1
-                ? `${taskCount} tasks updated`
-                : 'Estimation points updated successfully',
-          });
-
-          return;
-        } else if (tasksToUpdate.length > 1) {
-          const supabase = createClient();
-          const succeededIds: string[] = [];
-          for (const taskId of tasksToUpdate) {
-            const { error } = await supabase
-              .from('tasks')
-              .update({ estimation_points: points })
-              .eq('id', taskId);
-            if (error) {
-              console.error(
-                `Failed to update estimation for task ${taskId}:`,
-                error
-              );
-            } else {
-              succeededIds.push(taskId);
-            }
-          }
-
-          if (succeededIds.length === 0)
-            throw new Error('Failed to update any tasks');
 
           const failedIds = tasksToUpdate.filter(
             (taskId) => !succeededIds.includes(taskId)
@@ -1248,7 +1194,7 @@ export function useTaskActions({
       task?.estimation_points,
       updateTaskMutation,
       setEstimationSaving,
-      workspaceId,
+      resolvedWorkspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,

@@ -6,10 +6,12 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
 import {
   createWorkspaceTaskRelationship,
   deleteWorkspaceTaskRelationship,
   listWorkspaceTasks,
+  updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -591,133 +593,21 @@ export async function syncTaskArchivedStatus(
 }
 
 export async function moveTask(
-  supabase: TypedSupabaseClient,
+  wsId: string,
   taskId: string,
-  newListId: string
+  newListId: string,
+  options?: InternalApiClientOptions
 ) {
-  console.log('🗄️ moveTask function called');
-  console.log('📋 Task ID:', taskId);
-  console.log('🎯 New List ID:', newListId);
-
-  // First, get the current task details including its current archived status and source list
-  console.log('🔍 Fetching current task details...');
-  const { data: currentTask, error: taskError } = await supabase
-    .from('tasks')
-    .select(`
-      id,
-      list_id,
-      closed_at,
-      task_lists!inner(status, name)
-    `)
-    .eq('id', taskId)
-    .single();
-
-  if (taskError) {
-    console.log('❌ Error fetching current task:', taskError);
-    throw taskError;
-  }
-
-  console.log('📊 Current task details:', currentTask);
-
-  // Get the target list to check its status
-  console.log('🔍 Fetching target list details...');
-  const { data: targetList, error: listError } = await supabase
-    .from('task_lists')
-    .select('status, name')
-    .eq('id', newListId)
-    .single();
-
-  if (listError) {
-    console.log('❌ Error fetching target list:', listError);
-    throw listError;
-  }
-
-  console.log('📊 Target list details:', targetList);
-
-  // Determine task completion status based on improved logic:
-  // 1. If moving TO a "done"/"closed" list: archive the task
-  // 2. If moving FROM a "done"/"closed" list to any other list: unarchive the task
-  // 3. If moving between non-done lists: preserve current archived status
-  const sourceListStatus = currentTask.task_lists.status;
-  const targetListStatus = targetList.status;
-  const currentlyArchived = !!currentTask.closed_at;
-
-  let shouldArchive: boolean;
-
-  if (targetListStatus === 'done' || targetListStatus === 'closed') {
-    // Moving TO a completion list - always archive
-    shouldArchive = true;
-    console.log('📦 Moving to completion list, will archive task');
-  } else if (sourceListStatus === 'done' || sourceListStatus === 'closed') {
-    // Moving FROM a completion list to a non-completion list - always unarchive
-    shouldArchive = false;
-    console.log('📦 Moving from completion list, will unarchive task');
-  } else {
-    // Moving between non-completion lists - preserve current status
-    shouldArchive = currentlyArchived || false;
-    console.log(
-      '📦 Moving between non-completion lists, preserving current status:',
-      currentlyArchived
-    );
-  }
-
-  console.log('📊 Source list status:', sourceListStatus);
-  console.log('📊 Target list status:', targetListStatus);
-  console.log('📊 Currently archived:', currentlyArchived);
-  console.log('📦 Will archive:', shouldArchive);
-
-  console.log('🔄 Updating task in database...');
-  const { data, error } = await supabase
-    .from('tasks')
-    .update({
+  const { task } = await updateWorkspaceTask(
+    wsId,
+    taskId,
+    {
       list_id: newListId,
-      closed_at: shouldArchive ? new Date().toISOString() : null,
-    })
-    .eq('id', taskId)
-    .select(
-      `
-        *,
-        assignees:task_assignees(
-          user:users(
-            id,
-            display_name,
-            avatar_url
-          )
-        ),
-        labels:task_labels(
-          label:workspace_task_labels(
-            id,
-            name,
-            color,
-            created_at
-          )
-        ),
-        projects:task_project_tasks(
-          project:task_projects(
-            id,
-            name,
-            status
-          )
-        )
-      `
-    )
-    .single();
+    },
+    options
+  );
 
-  if (error) {
-    console.log('❌ Error updating task:', error);
-    throw error;
-  }
-
-  console.log('✅ Task updated successfully in database');
-  console.log('📊 Updated task data:', data);
-
-  // Transform the nested assignees data
-  const transformedTask = transformTaskRecord(data);
-
-  console.log('🔄 Task data transformed');
-  console.log('📊 Final transformed task:', transformedTask);
-
-  return transformedTask as Task;
+  return task as Task;
 }
 
 export async function moveTaskToBoard(
@@ -1517,7 +1407,7 @@ export function usePermanentlyDeleteTasks(boardId: string) {
   });
 }
 
-export function useMoveTask(boardId: string) {
+export function useMoveTask(boardId: string, wsId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -1532,8 +1422,11 @@ export function useMoveTask(boardId: string) {
       console.log('📋 Task ID:', taskId);
       console.log('🎯 New List ID:', newListId);
 
-      const supabase = createClient();
-      const result = await moveTask(supabase, taskId, newListId);
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : undefined;
+      const result = await moveTask(wsId, taskId, newListId, {
+        baseUrl: baseUrl ?? undefined,
+      });
 
       console.log('✅ moveTask completed successfully');
       console.log('📊 Result:', result);

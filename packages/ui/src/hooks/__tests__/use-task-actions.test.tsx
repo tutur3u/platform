@@ -22,6 +22,10 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
   },
 }));
 
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  updateWorkspaceTask: vi.fn(() => Promise.resolve({ task: { id: 'task-1' } })),
+}));
+
 vi.mock('@tuturuuu/utils/task-helper', () => ({
   moveTask: vi.fn(),
   useUpdateTask: vi.fn(),
@@ -37,6 +41,7 @@ describe('useTaskActions', () => {
   const mockTask = {
     id: 'task-1',
     name: 'Test Task',
+    ws_id: 'ws-1',
     list_id: 'list-1',
     created_at: '2025-01-01T00:00:00Z',
     closed_at: null,

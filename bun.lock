@@ -733,9 +733,11 @@
       "name": "@tuturuuu/apis",
       "version": "0.0.10",
       "dependencies": {
+        "@ai-sdk/google": "^3.0.43",
         "@tuturuuu/payment": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
+        "ai": "^6.0.116",
         "dayjs": "^1.11.20",
         "next": "^16.1.6",
         "react": "^19.2.4",
@@ -2596,8 +2598,6 @@
 
     "@tiptap/extension-list-keymap": ["@tiptap/extension-list-keymap@3.20.2", "", { "peerDependencies": { "@tiptap/extension-list": "^3.20.2" } }, "sha512-SKU+w93E9+TdSWeoJzjFLDbO+XC/QIRQ+PJ6Jruz1BJ6VXILmyVOw3jBwmiJjLo+5h4MNV2D/IHx1P7BpEkUhQ=="],
 
-    "@tiptap/extension-node-range": ["@tiptap/extension-node-range@3.20.3", "", { "peerDependencies": { "@tiptap/core": "^3.20.3", "@tiptap/pm": "^3.20.3" } }, "sha512-aPRNrDXI3ldedZJ34f+cxARQdxzNefuARGjf+DgMBEhgn6L/TAbwihoeLm67Nxje+Nqr/1Gh9mKfWLvaiM8syw=="],
-
     "@tiptap/extension-ordered-list": ["@tiptap/extension-ordered-list@3.20.2", "", { "peerDependencies": { "@tiptap/extension-list": "^3.20.2" } }, "sha512-UmPrnvd9/cGcO2QQaESu57kXmkubxmazQmUTgRU2BiLMEWGPPvxnBbJkM/YYmYPFRCs+OTx+XO9ohCD1xqtQcQ=="],
 
     "@tiptap/extension-paragraph": ["@tiptap/extension-paragraph@3.20.2", "", { "peerDependencies": { "@tiptap/core": "^3.20.2" } }, "sha512-gTWAUmvCnv7OThFsYdyhacL4TM+sJMC/UeuW+drWaTBbo7dvejzkl4hF5B0ytmF3d/ko1GNr4ldTikYZ2xypMw=="],
@@ -3106,7 +3106,7 @@
 
     "camelcase-css": ["camelcase-css@2.0.1", "", {}, "sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA=="],
 
-    "caniuse-lite": ["caniuse-lite@1.0.30001779", "", {}, "sha512-U5og2PN7V4DMgF50YPNtnZJGWVLFjjsN3zb6uMT5VGYIewieDj1upwfuVNXf4Kor+89c3iCRJnSzMD5LmTvsfA=="],
+    "caniuse-lite": ["caniuse-lite@1.0.30001780", "", {}, "sha512-llngX0E7nQci5BPJDqoZSbuZ5Bcs9F5db7EtgfwBerX9XGtkkiO4NwfDDIRzHTTwcYC8vC7bmeUEPGrKlR/TkQ=="],
 
     "canvas-confetti": ["canvas-confetti@1.9.4", "", {}, "sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw=="],
 
@@ -5370,7 +5370,7 @@
 
     "botbuilder/uuid": ["uuid@10.0.0", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ=="],
 
-    "botbuilder/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+    "botbuilder/zod": ["zod@3.24.4", "", {}, "sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg=="],
 
     "botbuilder-core/uuid": ["uuid@10.0.0", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ=="],
 
@@ -5380,7 +5380,7 @@
 
     "botframework-connector/node-fetch": ["node-fetch@2.7.0", "", { "dependencies": { "whatwg-url": "^5.0.0" }, "peerDependencies": { "encoding": "^0.1.0" }, "optionalPeers": ["encoding"] }, "sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A=="],
 
-    "botframework-connector/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+    "botframework-connector/zod": ["zod@3.24.4", "", {}, "sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg=="],
 
     "botframework-schema/uuid": ["uuid@10.0.0", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ=="],
 
@@ -5402,7 +5402,7 @@
 
     "cheerio/parse5": ["parse5@7.3.0", "", { "dependencies": { "entities": "^6.0.0" } }, "sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw=="],
 
-    "cheerio/undici": ["undici@6.24.1", "", {}, "sha512-sC+b0tB1whOCzbtlx20fx3WgCXwkW627p4EA9uM+/tNNPkSS+eSEld6pAs9nDv7WbY1UUljBMYPtu9BCOrCWKA=="],
+    "cheerio/undici": ["undici@6.21.3", "", {}, "sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw=="],
 
     "cheerio/whatwg-mimetype": ["whatwg-mimetype@4.0.0", "", {}, "sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg=="],
 

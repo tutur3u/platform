@@ -72,7 +72,7 @@ export function ListActions({
 
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
-  const moveTaskMutation = useMoveTask(boardId);
+  const moveTaskMutation = useMoveTask(boardId, wsId);
   const moveAllTasksFromListMutation = useMoveAllTasksFromList(
     boardId,
     broadcast

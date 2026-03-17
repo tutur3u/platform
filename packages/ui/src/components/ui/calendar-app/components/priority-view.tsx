@@ -21,6 +21,7 @@ import {
   User,
   unicornHead,
 } from '@tuturuuu/icons';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { cn } from '@tuturuuu/utils/format';
@@ -450,17 +451,16 @@ export default function PriorityView({
       return;
     }
 
+    const taskWsId = task.ws_id ?? wsId;
+
     try {
       const supabase = createClient();
 
       // If task has no list_id, just update closed_at directly
       if (!task.list_id) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ closed_at: new Date().toISOString() })
-          .eq('id', taskId);
-
-        if (error) throw error;
+        await updateWorkspaceTask(taskWsId, taskId, {
+          closed_at: new Date().toISOString(),
+        });
         toast.success('Task marked as done');
         router.refresh();
         return;
@@ -493,18 +493,15 @@ export default function PriorityView({
       if (targetList && targetList.id !== task.list_id) {
         // Move to the done list (this also sets closed_at via the moveTask helper)
         const taskHelper = await import('@tuturuuu/utils/task-helper');
-        await taskHelper.moveTask(supabase, taskId, targetList.id);
+        await taskHelper.moveTask(taskWsId, taskId, targetList.id);
         toast.success('Task completed', {
           description: `Moved to ${targetList.name}`,
         });
       } else {
         // No done list or already in done list, just set closed_at
-        const { error } = await supabase
-          .from('tasks')
-          .update({ closed_at: new Date().toISOString() })
-          .eq('id', taskId);
-
-        if (error) throw error;
+        await updateWorkspaceTask(taskWsId, taskId, {
+          closed_at: new Date().toISOString(),
+        });
         toast.success('Task marked as done');
       }
 
