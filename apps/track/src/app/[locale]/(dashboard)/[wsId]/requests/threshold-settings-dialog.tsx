@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -36,6 +37,13 @@ export function ThresholdSettingsDialog({
   onUpdate,
 }: ThresholdSettingsDialogProps) {
   const t = useTranslations('time-tracker.requests.settings');
+  const statusChangeGracePeriodConfigId =
+    'TIME_TRACKING_REQUEST_STATUS_CHANGE_GRACE_PERIOD_MINUTES';
+  const { data: statusChangeGracePeriodValue } = useWorkspaceConfig<string>(
+    wsId,
+    statusChangeGracePeriodConfigId,
+    '0'
+  );
   const [open, setOpen] = useState(false);
   // noApprovalNeeded is true when threshold is null (default - no restrictions)
   const [noApprovalNeeded, setNoApprovalNeeded] = useState(
@@ -45,24 +53,40 @@ export function ThresholdSettingsDialog({
     currentThreshold === null ? '1' : String(currentThreshold)
   );
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [gracePeriodInputValue, setGracePeriodInputValue] = useState(
+    statusChangeGracePeriodValue ?? '0'
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   // Always parse the input value to maintain clear typing
   const parsed = thresholdSchema.safeParse(inputValue);
+  const parsedGracePeriod = thresholdSchema.safeParse(gracePeriodInputValue);
 
   // Check if values have changed from initial state
   const hasChanged =
     noApprovalNeeded !== (currentThreshold === null) ||
-    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold);
+    (!noApprovalNeeded && parsed.success && parsed.data !== currentThreshold) ||
+    (parsedGracePeriod.success
+      ? parsedGracePeriod.data !==
+        Number.parseInt(statusChangeGracePeriodValue ?? '0', 10)
+      : false);
 
   const isSubmitDisabled =
-    isLoading || (!noApprovalNeeded && !parsed.success) || !hasChanged;
+    isLoading ||
+    (!noApprovalNeeded && !parsed.success) ||
+    !parsedGracePeriod.success ||
+    !hasChanged;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!noApprovalNeeded && !parsed.success) {
       toast.error(parsed.error.message);
+      return;
+    }
+
+    if (!parsedGracePeriod.success) {
+      toast.error(parsedGracePeriod.error.message);
       return;
     }
 
@@ -88,6 +112,26 @@ export function ThresholdSettingsDialog({
         throw new Error(error.error || 'Failed to update threshold');
       }
 
+      const gracePeriodResponse = await fetch(
+        `/api/v1/workspaces/${wsId}/settings/${statusChangeGracePeriodConfigId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            value: String(parsedGracePeriod.data),
+          }),
+        }
+      );
+
+      if (!gracePeriodResponse.ok) {
+        const error = await gracePeriodResponse.json();
+        throw new Error(
+          error.error || 'Failed to update request status change grace period'
+        );
+      }
+
       toast.success(t('success'));
       setOpen(false);
       onUpdate();
@@ -111,6 +155,7 @@ export function ThresholdSettingsDialog({
             setInputValue(
               currentThreshold === null ? '1' : String(currentThreshold)
             );
+            setGracePeriodInputValue(statusChangeGracePeriodValue ?? '0');
             setValidationError(null);
             setOpen(true);
           }}
@@ -186,6 +231,26 @@ export function ThresholdSettingsDialog({
                 <p className="text-muted-foreground text-sm">{t('help')}</p>
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="status-change-grace-period">
+                {t('statusChangeGracePeriodLabel')}
+              </Label>
+              <Input
+                id="status-change-grace-period"
+                type="number"
+                min={0}
+                value={gracePeriodInputValue}
+                onChange={(e) => {
+                  setGracePeriodInputValue(e.target.value);
+                  setValidationError(null);
+                }}
+                className="w-full"
+              />
+              <p className="text-muted-foreground text-sm">
+                {t('statusChangeGracePeriodHelp')}
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button
