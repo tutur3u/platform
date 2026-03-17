@@ -6,6 +6,7 @@ import {
   type FormExportEnvelope,
   type FormStudioInput,
   formExportEnvelopeSchema,
+  normalizeOptionalFormDateTimeValue,
 } from '../schema';
 import { getThemePreset } from '../theme';
 import type { FormDefinition } from '../types';
@@ -152,6 +153,60 @@ export function duplicateSectionInput(
   };
 }
 
+const CHOICE_QUESTION_TYPES = [
+  'single_choice',
+  'multiple_choice',
+  'dropdown',
+] as const;
+
+/**
+ * Sanitizes form payload before save to prevent 400 errors from transient invalid state.
+ * Handles: empty strings for dates (schema expects null), and options with empty label/value.
+ */
+export function sanitizeFormStudioPayloadForSave(
+  input: FormStudioInput
+): FormStudioInput {
+  const openAt =
+    input.openAt === '' ||
+    (typeof input.openAt === 'string' && !input.openAt.trim())
+      ? null
+      : (normalizeOptionalFormDateTimeValue(
+          input.openAt
+        ) as FormStudioInput['openAt']);
+  const closeAt =
+    input.closeAt === '' ||
+    (typeof input.closeAt === 'string' && !input.closeAt.trim())
+      ? null
+      : (normalizeOptionalFormDateTimeValue(
+          input.closeAt
+        ) as FormStudioInput['closeAt']);
+
+  const sections = input.sections.map((section) => ({
+    ...section,
+    questions: section.questions.map((question) => {
+      const isChoice = CHOICE_QUESTION_TYPES.includes(
+        question.type as (typeof CHOICE_QUESTION_TYPES)[number]
+      );
+      const options = isChoice
+        ? question.options.filter(
+            (opt) =>
+              (opt.label ?? '').trim().length > 0 &&
+              (opt.value ?? '').trim().length > 0
+          )
+        : question.options;
+
+      return { ...question, options };
+    }),
+  }));
+
+  return {
+    ...input,
+    openAt,
+    closeAt,
+    sections,
+  };
+}
+
 export function ensureIdentifiers(input: FormStudioInput): FormStudioInput {
   return {
     ...input,
@@ -265,7 +320,15 @@ export function remapFormStudioIds(input: FormStudioInput): FormStudioInput {
 export function exportFormStudioPayload(
   values: FormStudioInput
 ): FormExportEnvelope {
-  const normalized = ensureIdentifiers(values);
+  const normalized = ensureIdentifiers({
+    ...values,
+    openAt: normalizeOptionalFormDateTimeValue(
+      values.openAt
+    ) as FormStudioInput['openAt'],
+    closeAt: normalizeOptionalFormDateTimeValue(
+      values.closeAt
+    ) as FormStudioInput['closeAt'],
+  });
   return {
     formatVersion: FORM_EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),

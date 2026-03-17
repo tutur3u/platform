@@ -1,5 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 
@@ -52,7 +52,8 @@ export async function batchFetch({
   wsColumn = 'ws_id',
   supabase: providedSupabase,
 }: BatchFetchOptions) {
-  const supabase = (await providedSupabase) ?? (await createClient());
+  const supabase =
+    (await providedSupabase) ?? (await createAdminClient({ noCookie: true }));
 
   const { data, error, count } = await supabase
     .from(table as 'workspace_users')
@@ -110,7 +111,8 @@ export async function batchUpsert({
   ignoreDuplicates = false,
   supabase: providedSupabase,
 }: BatchUpsertOptions): Promise<BatchUpsertResult> {
-  const supabase = (await providedSupabase) ?? (await createClient());
+  const supabase =
+    (await providedSupabase) ?? (await createAdminClient({ noCookie: true }));
   const errors: unknown[] = [];
   let successCount = 0;
 

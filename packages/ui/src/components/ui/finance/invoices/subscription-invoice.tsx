@@ -10,7 +10,14 @@ import { formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useDebounce } from '../../../../hooks/use-debounce';
 import { useFinanceHref } from '../finance-route-context';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
@@ -45,7 +52,9 @@ import { ProductSelection } from './product-selection';
 import type { SelectedProductItem } from './types';
 import {
   getAttendanceStats,
+  getAvailableMonths,
   getEffectiveAttendanceDays,
+  getGroupsDateRange,
   getTotalSessionsForGroups,
 } from './utils';
 
@@ -84,15 +93,14 @@ export function SubscriptionInvoice({
   const [selectedGroupIds, setSelectedGroupIds] = useQueryState(
     'group_ids',
     parseAsArrayOf(parseAsString).withDefault([]).withOptions({
-      shallow: false,
+      shallow: true,
     })
   );
   const [selectedMonth, setSelectedMonth] = useQueryState('month', {
     defaultValue: new Date().toISOString().slice(0, 7),
-    shallow: false,
+    shallow: true,
   });
 
-  const [activeGroupId, setActiveGroupId] = useState<string>('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [debouncedCustomerSearch] = useDebounce(customerSearch, 300);
 
@@ -107,16 +115,10 @@ export function SubscriptionInvoice({
     [setSelectedUserId, setSelectedMonth]
   );
 
-  useEffect(() => {
-    if (selectedGroupIds.length === 0) return;
-    if (activeGroupId && selectedGroupIds.includes(activeGroupId)) return;
-    setActiveGroupId(selectedGroupIds[0] || '');
-  }, [selectedGroupIds, activeGroupId]);
-
-  const selectedGroupIdsForCreate = useMemo(() => {
-    if (selectedGroupIds.length > 0) return selectedGroupIds;
-    return activeGroupId ? [activeGroupId] : [];
-  }, [selectedGroupIds, activeGroupId]);
+  const selectedGroupIdsForCreate = useMemo(
+    () => (selectedGroupIds.length > 0 ? selectedGroupIds : []),
+    [selectedGroupIds]
+  );
 
   // Data queries
   const {
@@ -147,14 +149,10 @@ export function SubscriptionInvoice({
   // Blocked groups check
   const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId);
 
-  const isBlocked = useMemo(() => {
-    if (selectedGroupIds.length > 0) {
-      return selectedGroupIds.some((groupId) =>
-        blockedGroupIds.includes(groupId)
-      );
-    }
-    return !!activeGroupId && blockedGroupIds.includes(activeGroupId);
-  }, [selectedGroupIds, activeGroupId, blockedGroupIds]);
+  const isBlocked = useMemo(
+    () => selectedGroupIds.some((groupId) => blockedGroupIds.includes(groupId)),
+    [selectedGroupIds, blockedGroupIds]
+  );
 
   // State management
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
@@ -184,8 +182,8 @@ export function SubscriptionInvoice({
   const [isCreating, setIsCreating] = useState(false);
   const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
-  // Track previous user ID to detect user changes
-  const prevUserIdRef = useRef<string>(selectedUserId);
+  // Track previous user ID to detect user changes (skip initial mount for reset)
+  const prevUserIdRef = useRef<string | null>(null);
 
   // Product selection state
   const [subscriptionSelectedProducts, setSubscriptionSelectedProducts] =
@@ -356,63 +354,80 @@ export function SubscriptionInvoice({
     defaultCategoryId,
   ]);
 
-  // Auto-select the first group when userGroups are loaded
+  const groupsWithScheduleIds = useMemo(() => {
+    const sessions = (g: (typeof userGroups)[0]) =>
+      g.workspace_user_groups?.sessions;
+    return userGroups
+      .filter(
+        (g) =>
+          g.workspace_user_groups?.id &&
+          Array.isArray(sessions(g)) &&
+          (sessions(g)?.length ?? 0) > 0
+      )
+      .map((g) => g.workspace_user_groups!.id);
+  }, [userGroups]);
+
+  // Auto-select all groups with schedule when userGroups are loaded
   useEffect(() => {
     if (
-      userGroups.length > 0 &&
+      groupsWithScheduleIds.length > 0 &&
       selectedGroupIds.length === 0 &&
       !userGroupsLoading &&
       selectedUserId
     ) {
-      const firstGroup = userGroups[0];
-      if (firstGroup?.workspace_user_groups?.id) {
-        setSelectedGroupIds([firstGroup.workspace_user_groups.id]);
-        setActiveGroupId(firstGroup.workspace_user_groups.id);
-      }
+      setSelectedGroupIds(groupsWithScheduleIds);
     }
   }, [
-    userGroups,
+    groupsWithScheduleIds,
     selectedGroupIds.length,
     userGroupsLoading,
     selectedUserId,
     setSelectedGroupIds,
   ]);
 
-  const getGroupsDateRange = useCallback(
-    (groups: typeof userGroups, groupIds: string[]) => {
-      if (groupIds.length === 0)
-        return { earliestStart: null, latestEnd: null };
-      const selectedGroupsData = groups.filter((g) =>
-        groupIds.includes(g.workspace_user_groups?.id || '')
-      );
-      if (selectedGroupsData.length === 0)
-        return { earliestStart: null, latestEnd: null };
-
-      let earliestStart: Date | null = null;
-      let latestEnd: Date | null = null;
-
-      for (const selectedGroupItem of selectedGroupsData) {
-        const group = selectedGroupItem.workspace_user_groups;
-        if (!group) continue;
-
-        const startDate = group.starting_date
-          ? new Date(group.starting_date)
-          : null;
-        const endDate = group.ending_date ? new Date(group.ending_date) : null;
-
-        if (startDate && (!earliestStart || startDate < earliestStart))
-          earliestStart = startDate;
-        if (endDate && (!latestEnd || endDate > latestEnd)) latestEnd = endDate;
-      }
-
-      return { earliestStart, latestEnd };
-    },
-    []
+  const availableMonths = useMemo(
+    () =>
+      getAvailableMonths(
+        userGroups,
+        selectedGroupIds,
+        latestSubscriptionInvoices,
+        locale,
+        selectedMonth
+      ),
+    [
+      userGroups,
+      selectedGroupIds,
+      latestSubscriptionInvoices,
+      locale,
+      selectedMonth,
+    ]
   );
 
-  // Validate and reset selectedMonth when groups change
+  // Validate and reset selectedMonth when groups change (not when selectedMonth changes, to avoid update loops)
+  const monthValidationKey = `${selectedGroupIds.join(',')}-${userGroups.length}`;
+  const lastValidatedKeyRef = useRef<string | null>(null);
+  const lastMonthSyncRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (selectedGroupIds.length === 0 || !userGroups.length) return;
+
+    // Sync when selectedMonth is not in availableMonths (prevents Radix Select infinite loop)
+    const isValidInList =
+      availableMonths.length > 0 &&
+      availableMonths.some((m) => m.value === selectedMonth);
+    if (availableMonths.length > 0 && !isValidInList) {
+      const syncKey = `${monthValidationKey}-${selectedMonth}`;
+      if (lastMonthSyncRef.current === syncKey) return;
+      lastMonthSyncRef.current = syncKey;
+
+      const fallback = availableMonths[0]?.value;
+      if (!fallback) return;
+      if (fallback && fallback !== selectedMonth) {
+        startTransition(() => updateSearchParam('month', fallback));
+      }
+      return;
+    }
+    lastMonthSyncRef.current = null;
 
     const { earliestStart, latestEnd } = getGroupsDateRange(
       userGroups,
@@ -422,12 +437,18 @@ export function SubscriptionInvoice({
     if (!earliestStart || !latestEnd) return;
 
     const currentMonth = new Date(`${selectedMonth}-01`);
+    if (Number.isNaN(currentMonth.getTime())) return;
+
     const earliestMonthStart = new Date(earliestStart);
     earliestMonthStart.setDate(1);
     const latestMonthStart = new Date(latestEnd);
     latestMonthStart.setDate(1);
 
     if (currentMonth < earliestMonthStart || currentMonth > latestMonthStart) {
+      // Only correct once per groups-selection to avoid update loops
+      if (lastValidatedKeyRef.current === monthValidationKey) return;
+      lastValidatedKeyRef.current = monthValidationKey;
+
       const now = new Date();
       let defaultMonth: Date;
 
@@ -437,16 +458,19 @@ export function SubscriptionInvoice({
 
       const nextMonth = defaultMonth.toISOString().slice(0, 7);
       if (nextMonth !== selectedMonth) {
-        updateSearchParam('month', nextMonth);
+        startTransition(() => updateSearchParam('month', nextMonth));
       }
+    } else {
+      lastValidatedKeyRef.current = null;
     }
   }, [
+    availableMonths,
+    monthValidationKey,
     selectedGroupIds,
     userGroups.length,
     selectedMonth,
     updateSearchParam,
     userGroups,
-    getGroupsDateRange,
   ]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -641,23 +665,23 @@ export function SubscriptionInvoice({
             userGroups={userGroups}
             userGroupsLoading={userGroupsLoading}
             selectedGroupIds={selectedGroupIds}
-            activeGroupId={activeGroupId}
             onGroupSelect={(groupId) => {
               setSelectedGroupIds((prev) => {
                 const isAlreadySelected = prev.includes(groupId);
                 const updated = isAlreadySelected
                   ? prev.filter((id) => id !== groupId)
                   : [...prev, groupId];
-                if (updated.length > 0) {
-                  if (!isAlreadySelected) setActiveGroupId(groupId);
-                  else if (activeGroupId === groupId && updated.length > 0)
-                    setActiveGroupId(updated[0] || '');
-                }
                 return updated;
               });
             }}
+            onSelectAllWithSchedule={() =>
+              setSelectedGroupIds(groupsWithScheduleIds)
+            }
+            onDeselectAll={() => setSelectedGroupIds([])}
             isLoadingSubscriptionData={isLoadingSubscriptionData}
             locale={locale}
+            selectedMonth={selectedMonth}
+            latestSubscriptionInvoices={latestSubscriptionInvoices}
           />
         )}
 
@@ -679,6 +703,14 @@ export function SubscriptionInvoice({
               )}
           />
         )}
+
+        <InvoiceContentEditor
+          type="subscription"
+          contentValue={invoiceContent}
+          notesValue={invoiceNotes}
+          onContentChange={setInvoiceContent}
+          onNotesChange={setInvoiceNotes}
+        />
       </div>
 
       <div className="space-y-6">
@@ -695,6 +727,7 @@ export function SubscriptionInvoice({
                 navigateMonth={navigateMonth}
                 canNavigateMonth={canNavigateMonth}
                 onMonthChange={(value) => updateSearchParam('month', value)}
+                availableMonths={availableMonths}
                 userGroups={userGroups}
                 latestSubscriptionInvoices={latestSubscriptionInvoices}
                 isLoadingSubscriptionData={isLoadingSubscriptionData}
@@ -725,142 +758,130 @@ export function SubscriptionInvoice({
 
             {subscriptionSelectedProducts.length > 0 &&
               !isSelectedMonthPaid && (
-                <>
-                  <InvoiceContentEditor
-                    type="subscription"
-                    contentValue={invoiceContent}
-                    notesValue={invoiceNotes}
-                    onContentChange={setInvoiceContent}
-                    onNotesChange={setInvoiceNotes}
-                  />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      {t('ws-invoices.payment_and_checkout')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <InvoicePaymentSettings
+                      wallets={wallets}
+                      categories={categories}
+                      selectedWalletId={selectedWalletId}
+                      selectedCategoryId={selectedCategoryId}
+                      onWalletChange={setSelectedWalletId}
+                      onCategoryChange={setSelectedCategoryId}
+                      showPromotion
+                      currency={defaultCurrency}
+                      promotionsAllowed={true}
+                      selectedUserId={selectedUserId}
+                      selectedPromotionId={selectedPromotionId}
+                      availablePromotions={availablePromotions}
+                      linkedPromotions={linkedPromotions}
+                      referralDiscountMap={referralDiscountMap}
+                      onPromotionChange={setSelectedPromotionId}
+                      promotionActions={
+                        <CreatePromotionDialog
+                          wsId={wsId}
+                          open={createPromotionOpen}
+                          onOpenChange={setCreatePromotionOpen}
+                          onSuccess={(promotion) => {
+                            if (selectedUserId) {
+                              void queryClient.invalidateQueries({
+                                queryKey: [
+                                  'available-promotions',
+                                  wsId,
+                                  selectedUserId,
+                                ],
+                              });
+                            }
+                            if (promotion.id)
+                              setSelectedPromotionId(promotion.id);
+                          }}
+                        />
+                      }
+                      promotionActionsList={
+                        selectedUserId
+                          ? [
+                              {
+                                key: 'create-promotion',
+                                label: t('ws-invoices.create_promotion'),
+                                icon: <Plus className="h-4 w-4 text-primary" />,
+                                onSelect: () => setCreatePromotionOpen(true),
+                              },
+                            ]
+                          : undefined
+                      }
+                      promotionActionsPosition="top"
+                      promotionPlaceholder={
+                        selectedUserId
+                          ? t('ws-invoices.search_promotions')
+                          : t('ws-invoices.select_user_first')
+                      }
+                    />
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>
-                        {t('ws-invoices.payment_and_checkout')}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <InvoicePaymentSettings
-                        wallets={wallets}
-                        categories={categories}
-                        selectedWalletId={selectedWalletId}
-                        selectedCategoryId={selectedCategoryId}
-                        onWalletChange={setSelectedWalletId}
-                        onCategoryChange={setSelectedCategoryId}
-                        showPromotion
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                        <Calculator className="h-4 w-4" />
+                        {t('ws-invoices.checkout')}
+                      </div>
+
+                      <InvoiceCheckoutSummary
+                        subtotal={subtotal}
+                        totalBeforeRounding={totalBeforeRounding}
+                        roundedTotal={subscriptionRoundedTotal}
+                        discountAmount={
+                          selectedPromotion ? discountAmount : undefined
+                        }
+                        discountLabel={
+                          selectedPromotion
+                            ? selectedPromotion.name ||
+                              t('ws-invoices.unnamed_promotion')
+                            : null
+                        }
+                        onRoundUp={roundUpSubscription}
+                        onRoundDown={roundDownSubscription}
+                        onResetRounding={resetRoundingSubscription}
+                        showRoundingControls={
+                          totalBeforeRounding > 0 &&
+                          totalBeforeRounding % 1000 !== 0
+                        }
+                        roundingDisabled={
+                          Math.abs(
+                            subscriptionRoundedTotal - totalBeforeRounding
+                          ) < 0.01
+                        }
                         currency={defaultCurrency}
-                        promotionsAllowed={true}
-                        selectedUserId={selectedUserId}
-                        selectedPromotionId={selectedPromotionId}
-                        availablePromotions={availablePromotions}
-                        linkedPromotions={linkedPromotions}
-                        referralDiscountMap={referralDiscountMap}
-                        onPromotionChange={setSelectedPromotionId}
-                        promotionActions={
-                          <CreatePromotionDialog
-                            wsId={wsId}
-                            open={createPromotionOpen}
-                            onOpenChange={setCreatePromotionOpen}
-                            onSuccess={(promotion) => {
-                              if (selectedUserId) {
-                                void queryClient.invalidateQueries({
-                                  queryKey: [
-                                    'available-promotions',
-                                    wsId,
-                                    selectedUserId,
-                                  ],
-                                });
-                              }
-                              if (promotion.id)
-                                setSelectedPromotionId(promotion.id);
-                            }}
-                          />
-                        }
-                        promotionActionsList={
-                          selectedUserId
-                            ? [
-                                {
-                                  key: 'create-promotion',
-                                  label: t('ws-invoices.create_promotion'),
-                                  icon: (
-                                    <Plus className="h-4 w-4 text-primary" />
-                                  ),
-                                  onSelect: () => setCreatePromotionOpen(true),
-                                },
-                              ]
-                            : undefined
-                        }
-                        promotionActionsPosition="top"
-                        promotionPlaceholder={
-                          selectedUserId
-                            ? t('ws-invoices.search_promotions')
-                            : t('ws-invoices.select_user_first')
-                        }
                       />
 
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                          <Calculator className="h-4 w-4" />
-                          {t('ws-invoices.checkout')}
-                        </div>
-
-                        <InvoiceCheckoutSummary
-                          subtotal={subtotal}
-                          totalBeforeRounding={totalBeforeRounding}
-                          roundedTotal={subscriptionRoundedTotal}
-                          discountAmount={
-                            selectedPromotion ? discountAmount : undefined
-                          }
-                          discountLabel={
-                            selectedPromotion
-                              ? selectedPromotion.name ||
-                                t('ws-invoices.unnamed_promotion')
-                              : null
-                          }
-                          onRoundUp={roundUpSubscription}
-                          onRoundDown={roundDownSubscription}
-                          onResetRounding={resetRoundingSubscription}
-                          showRoundingControls={
-                            totalBeforeRounding > 0 &&
-                            totalBeforeRounding % 1000 !== 0
-                          }
-                          roundingDisabled={
-                            Math.abs(
-                              subscriptionRoundedTotal - totalBeforeRounding
-                            ) < 0.01
-                          }
-                          currency={defaultCurrency}
-                        />
-
-                        <Button
-                          className="w-full"
-                          onClick={handleCreateSubscriptionInvoice}
-                          disabled={
-                            !selectedUser ||
-                            selectedGroupIds.length === 0 ||
-                            subscriptionSelectedProducts.length === 0 ||
-                            !selectedWalletId ||
-                            !selectedCategoryId ||
-                            isCreating ||
-                            isSelectedMonthPaid
-                          }
-                        >
-                          {isCreating ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              {t('ws-invoices.creating_subscription_invoice')}
-                            </>
-                          ) : (
-                            t('ws-invoices.create_subscription_invoice')
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </>
+                      <Button
+                        className="w-full"
+                        onClick={handleCreateSubscriptionInvoice}
+                        disabled={
+                          !selectedUser ||
+                          selectedGroupIds.length === 0 ||
+                          subscriptionSelectedProducts.length === 0 ||
+                          !selectedWalletId ||
+                          !selectedCategoryId ||
+                          isCreating ||
+                          isSelectedMonthPaid
+                        }
+                      >
+                        {isCreating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {t('ws-invoices.creating_subscription_invoice')}
+                          </>
+                        ) : (
+                          t('ws-invoices.create_subscription_invoice')
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
           </>
         )}

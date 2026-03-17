@@ -2,6 +2,8 @@
 
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import { FadeSettingInitializer } from '@tuturuuu/ui/tu-do/shared/fade-setting-initializer';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
@@ -32,14 +34,25 @@ function FetchInterceptorI18n() {
 }
 
 export function ClientProviders({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isSharedSurface = /^\/[^/]+\/shared(?:\/|$)/.test(pathname ?? '');
+  const content = (
+    <>
+      <TooltipProvider>{children}</TooltipProvider>
+      {!isSharedSurface ? <FadeSettingInitializer /> : null}
+      {!isSharedSurface ? <AccountSwitcherKeyboardShortcut /> : null}
+      <FetchInterceptorI18n />
+      <ReactQueryDevtools initialIsOpen={false} />
+    </>
+  );
+
+  if (isSharedSurface) {
+    return content;
+  }
+
   return (
     <CalendarPreferencesProvider>
-      <AccountSwitcherProvider>
-        <TooltipProvider>{children}</TooltipProvider>
-        <AccountSwitcherKeyboardShortcut />
-        <FetchInterceptorI18n />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </AccountSwitcherProvider>
+      <AccountSwitcherProvider>{content}</AccountSwitcherProvider>
     </CalendarPreferencesProvider>
   );
 }

@@ -1,16 +1,20 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   {
     params,
   }: { params: Promise<{ wsId: string; projectId: string; taskId: string }> }
 ) {
   try {
-    const { wsId, projectId, taskId } = await params;
-    const supabase = await createClient();
+    const { wsId: rawWsId, projectId, taskId } = await params;
+    const supabase = await createClient(request);
 
     const {
       data: { user },
@@ -21,38 +25,74 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
+    let wsId: string;
+    try {
+      wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: projectRecord } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: projectRecord, error: projectError } = await sbAdmin
       .from('task_projects')
       .select('ws_id')
       .eq('id', projectId)
-      .single();
+      .maybeSingle();
+
+    if (projectError) {
+      console.error('Failed to load project:', projectError);
+      return NextResponse.json(
+        { error: 'Failed to load project' },
+        { status: 500 }
+      );
+    }
 
     if (!projectRecord || projectRecord.ws_id !== wsId) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    const { error } = await supabase
+    const { data: deletedLinks, error } = await sbAdmin
       .from('task_project_tasks')
       .delete()
       .eq('project_id', projectId)
-      .eq('task_id', taskId);
+      .eq('task_id', taskId)
+      .select('project_id,task_id');
 
     if (error) {
       console.error('Error unlinking task from project:', error);
       return NextResponse.json(
         { error: 'Failed to unlink task from project' },
         { status: 500 }
+      );
+    }
+
+    if (!deletedLinks || deletedLinks.length === 0) {
+      return NextResponse.json(
+        { error: 'Task link not found' },
+        { status: 404 }
       );
     }
 

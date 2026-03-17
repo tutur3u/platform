@@ -109,9 +109,24 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
         headers['TTR-API-KEY'] = effectiveApiKey;
       }
 
-      const res = await fetch(fetchUrl, { headers });
+      const MAX_429_RETRIES = 8;
 
-      const data = await res.json();
+      let res = await fetch(fetchUrl, { headers });
+      let data = (await res.json()) as Record<string, unknown>;
+      let retries = 0;
+
+      // 429 Rate limit — backoff and retry (external fetch can hit proxy/upstream limits)
+      while (res.status === 429 && retries < MAX_429_RETRIES) {
+        retries++;
+        const retryAfterSec =
+          Number.parseInt(res.headers.get('Retry-After') ?? '0', 10) ||
+          Math.min(2 ** retries, 60);
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryAfterSec * 1000)
+        );
+        res = await fetch(fetchUrl, { headers });
+        data = (await res.json()) as Record<string, unknown>;
+      }
 
       if (!res.ok || (data as Record<string, unknown>)?.error) {
         toast.error('API Error', {
@@ -251,7 +266,11 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
         externalUrl = `${effectiveApiEndpoint}${externalPath}`;
       }
       const chunkSize = 1000;
-      const healthCheckLimit = 1001;
+      // Sync chunk size kept under 200KB (MAX_PAYLOAD_SIZE) to avoid 413 from middleware
+      const syncChunkSize = 100;
+      // Separate limits for internal vs external fetch in health check mode (each starts at 1000, decreases individually)
+      const externalHealthCheckLimit = 1000;
+      const internalHealthCheckLimit = 1000;
 
       // Stage 1: Fetch external data
       setStage(module, 'external');
@@ -278,7 +297,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
           const allInternalData: unknown[] = [];
           let offset = 0;
           const batchSize = 1000;
-          const maxFetch = healthCheckMode ? healthCheckLimit : 100000;
+          const maxFetch = healthCheckMode ? internalHealthCheckLimit : 100000;
 
           try {
             while (offset < maxFetch) {
@@ -345,7 +364,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
         !cancelRequested.has(module) &&
         externalError === null &&
         (externalData.length < externalCount || externalCount === -1) &&
-        (!healthCheckMode || externalData.length < healthCheckLimit)
+        (!healthCheckMode || externalData.length < externalHealthCheckLimit)
       ) {
         while (pauseRequested.has(module) && !cancelRequested.has(module)) {
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -533,16 +552,22 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         // Sync only records that need syncing (new + updates), skipping duplicates
+        // Uses while loop to support retries: 413 triggers batch size reduction, 429 triggers backoff+retry
+        const MIN_SYNC_CHUNK = 10;
+        const MAX_429_RETRIES = 8;
         if (dataToSync.length > 0) {
-          for (let i = 0; i < dataToSync.length; i += chunkSize) {
+          let i = 0;
+          let currentChunkSize = syncChunkSize;
+
+          while (i < dataToSync.length) {
             while (pauseRequested.has(module) && !cancelRequested.has(module)) {
               await new Promise((resolve) => setTimeout(resolve, 500));
             }
 
             if (cancelRequested.has(module) || internalError !== null) break;
 
-            const chunkMax = Math.min(i + chunkSize, dataToSync.length);
-            const chunk = dataToSync.slice(i, chunkMax);
+            const chunkMax = Math.min(i + currentChunkSize, dataToSync.length);
+            let chunk = dataToSync.slice(i, chunkMax);
 
             // Tables that don't have ws_id column - RLS validates via foreign keys
             const tablesWithoutWsId = [
@@ -579,56 +604,105 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
             ];
             const hasNoWsIdColumn = tablesWithoutWsId.includes(module);
 
-            // For Tuturuuu mode, data is 1:1 - just add ws_id (except for tables without it)
-            // Platform user IDs are preserved (placeholder users created above)
-            // For legacy mode, use the mapping function if provided
-            const newInternalData =
+            // Helper to build internal payload from chunk (reused when reducing batch on 413)
+            const buildInternalData = (c: unknown[]) =>
               mode === 'tuturuuu'
-                ? chunk.map((item) => {
+                ? c.map((item) => {
                     const record = item as Record<string, unknown>;
-                    // Some tables don't have ws_id - RLS validates via foreign keys
-                    if (hasNoWsIdColumn) {
-                      return record;
-                    }
-                    return {
-                      ...record,
-                      ws_id: targetWorkspaceId,
-                    };
+                    if (hasNoWsIdColumn) return record;
+                    return { ...record, ws_id: targetWorkspaceId };
                   })
                 : mapping
-                  ? mapping(targetWorkspaceId, chunk)
-                  : chunk;
+                  ? mapping(targetWorkspaceId, c)
+                  : c;
 
-            try {
-              const res = await fetch(
-                internalPath.replace('[wsId]', targetWorkspaceId),
-                {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    [internalAlias ?? externalAlias ?? 'data']: newInternalData,
-                  }),
+            let newInternalData = buildInternalData(chunk);
+            let chunkSynced = false;
+            let rateLimitRetries = 0;
+
+            while (!chunkSynced) {
+              try {
+                const res = await fetch(
+                  internalPath.replace('[wsId]', targetWorkspaceId),
+                  {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      [internalAlias ?? externalAlias ?? 'data']:
+                        newInternalData,
+                    }),
+                  }
+                );
+
+                const data = (await res.json().catch(() => ({}))) as Record<
+                  string,
+                  unknown
+                >;
+
+                if (res.ok) {
+                  internalData.push(...newInternalData);
+                  setData(
+                    'internal',
+                    module,
+                    internalData,
+                    internalData.length
+                  );
+                  i += chunk.length;
+                  chunkSynced = true;
+                  break;
                 }
-              );
 
-              const data = await res.json();
+                // 413 Payload Too Large — reduce batch size and retry same position
+                if (res.status === 413) {
+                  currentChunkSize = Math.max(
+                    MIN_SYNC_CHUNK,
+                    Math.floor(currentChunkSize / 2)
+                  );
+                  const newChunkLen = Math.min(
+                    currentChunkSize,
+                    dataToSync.length - i
+                  );
+                  chunk = dataToSync.slice(i, i + newChunkLen);
+                  newInternalData = buildInternalData(chunk);
+                  rateLimitRetries = 0;
+                  console.log(
+                    `[${module}] 413 Payload Too Large — reducing chunk to ${chunk.length}, retrying`
+                  );
+                  continue;
+                }
 
-              if (!res.ok) {
+                // 429 Rate Limit — backoff and retry
+                if (res.status === 429 && rateLimitRetries < MAX_429_RETRIES) {
+                  rateLimitRetries++;
+                  const retryAfterSec =
+                    Number.parseInt(
+                      res.headers.get('Retry-After') ?? '0',
+                      10
+                    ) || Math.min(2 ** rateLimitRetries, 60);
+                  console.log(
+                    `[${module}] 429 Rate limit — waiting ${retryAfterSec}s (retry ${rateLimitRetries}/${MAX_429_RETRIES})`
+                  );
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, retryAfterSec * 1000)
+                  );
+                  continue;
+                }
+
+                // Fatal error
                 setLoading(module, false);
                 setError(module, data);
                 internalError = (data as Record<string, unknown>)?.error;
                 return;
+              } catch (error) {
+                setLoading(module, false);
+                setError(module, error);
+                internalError = error;
+                return;
+              } finally {
+                if (chunkSynced) {
+                  await new Promise((resolve) => setTimeout(resolve, 200));
+                }
               }
-
-              internalData.push(...newInternalData);
-              setData('internal', module, internalData, internalData.length);
-            } catch (error) {
-              setLoading(module, false);
-              setError(module, error);
-              internalError = error;
-              return;
-            } finally {
-              await new Promise((resolve) => setTimeout(resolve, 200));
             }
           }
         } else {

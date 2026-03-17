@@ -140,7 +140,6 @@ export function useUpsertPostMutation(
         title: post.title,
         content: post.content,
         notes: post.notes,
-        group_id: groupId,
       };
 
       if (post.id) {

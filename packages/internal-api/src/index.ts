@@ -7,11 +7,34 @@ export {
   createInternalApiClient,
   internalApiClient,
   resolveInternalApiUrl,
+  withForwardedInternalApiAuth,
 } from './client';
 export {
   listTransactionCategories,
   listWallets,
 } from './finance';
+export {
+  createWorkspaceStorageSignedUrl,
+  uploadWorkspaceStorageFile,
+} from './storage';
+export {
+  createWorkspaceTask,
+  createWorkspaceTaskProject,
+  createWorkspaceTaskRelationship,
+  deleteWorkspaceTaskRelationship,
+  getWorkspaceTask,
+  getWorkspaceTaskProject,
+  getWorkspaceTaskProjectTasks,
+  getWorkspaceTaskRelationships,
+  listWorkspaceTaskProjects,
+  listWorkspaceTasks,
+  resolveTaskProjectWorkspaceId,
+  updateWorkspaceTask,
+} from './tasks';
+export {
+  getWorkspaceTemplate,
+  getWorkspaceTemplateBackgroundUrl,
+} from './templates';
 export {
   createWorkspaceBreakType,
   deleteWorkspaceBreakType,

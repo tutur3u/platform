@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Sparkles, Target, TrendingUp } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
@@ -34,6 +34,7 @@ export function TaskProjectDetail({
   wsId,
 }: TaskProjectDetailProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const t = useTranslations('task_project_detail.tabs');
 
   // Animation variants
@@ -56,21 +57,19 @@ export function TaskProjectDetail({
   const { data: workspaceMembers = [], isLoading: isLoadingMembers } =
     useWorkspaceMembers(wsId);
 
-  // Virtual board ID for project-scoped task caching
-  const projectBoardId = `project:${project.id}`;
-
-  // Use TanStack Query for client-side task caching
-  const { data: cachedTasks } = useQuery({
-    queryKey: ['tasks', projectBoardId],
-    queryFn: () => Promise.resolve(tasks),
-    initialData: tasks,
-    staleTime: Infinity,
-  });
-
   // Handle task updates - refresh server data
   const handleUpdate = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: ['task-project', wsId, project.id],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ['task-project-tasks', wsId, project.id],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ['tasks', wsId, `project:${project.id}`],
+    });
     router.refresh();
-  }, [router]);
+  }, [project.id, queryClient, router, wsId]);
 
   // Task management state
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
@@ -103,7 +102,7 @@ export function TaskProjectDetail({
   // Filter tasks based on filters AND filtered lists
   const filteredTasks = useMemo(() => {
     const listIds = new Set(filteredLists.map((list) => list.id));
-    const tasksToFilter = cachedTasks ?? tasks;
+    const tasksToFilter = tasks;
     let result = tasksToFilter.filter((task) => listIds.has(task.list_id));
 
     // Filter by labels
@@ -158,7 +157,7 @@ export function TaskProjectDetail({
     }
 
     return result;
-  }, [cachedTasks, tasks, filters, filteredLists, currentUserId]);
+  }, [tasks, filters, filteredLists, currentUserId]);
 
   // Apply optimistic overrides
   const effectiveTasks = useMemo(() => {

@@ -78,9 +78,11 @@ async function getWorkspaceTask(
       description,
       priority,
       completed,
+      completed_at,
       start_date,
       end_date,
       estimation_points,
+      sort_key,
       created_at,
       closed_at,
       deleted_at,
@@ -164,9 +166,11 @@ function serializeTask(task: TaskRecord) {
     description: task.description,
     priority: task.priority,
     completed: task.completed,
+    completed_at: task.completed_at,
     start_date: task.start_date,
     end_date: task.end_date,
     estimation_points: task.estimation_points,
+    sort_key: task.sort_key,
     created_at: task.created_at,
     closed_at: task.closed_at,
     deleted_at: task.deleted_at,
@@ -346,7 +350,7 @@ export async function PUT(
     }
 
     if (normalizedProjectIds !== undefined && normalizedProjectIds.length > 0) {
-      const { data: projects, error: projectsError } = await supabase
+      const { data: projects, error: projectsError } = await sbAdmin
         .from('task_projects')
         .select('id')
         .eq('ws_id', wsId)
@@ -390,6 +394,7 @@ export async function PUT(
         : {}),
       ...(body.completed !== undefined ? { completed: body.completed } : {}),
       ...(body.list_id !== undefined ? { list_id: body.list_id } : {}),
+      ...(body.sort_key !== undefined ? { sort_key: body.sort_key } : {}),
       ...(body.deleted !== undefined
         ? { deleted_at: body.deleted ? new Date().toISOString() : null }
         : {}),

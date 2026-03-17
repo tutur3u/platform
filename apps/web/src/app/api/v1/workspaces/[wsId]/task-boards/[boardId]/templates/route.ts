@@ -1,8 +1,12 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types/supabase';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { validate } from 'uuid';
+import { z } from 'zod';
 
 interface SaveTemplateRequest {
   name: string;
@@ -54,7 +58,29 @@ interface TemplateContent {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const { wsId, boardId } = await params;
+    const { wsId: rawWsId, boardId } = await params;
+    const supabase = await createClient(req);
+
+    // Get authenticated user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Please sign in to save templates' },
+        { status: 401 }
+      );
+    }
+
+    const boardIdValidation = z.uuid().safeParse(boardId);
+    if (!boardIdValidation.success) {
+      return NextResponse.json({ error: 'Invalid board ID' }, { status: 400 });
+    }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
     const body: SaveTemplateRequest = await req.json();
 
     const {
@@ -74,35 +100,24 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!validate(wsId) || !validate(boardId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID or board ID' },
-        { status: 400 }
-      );
-    }
-
-    const supabase = await createClient();
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to save templates' },
-        { status: 401 }
-      );
-    }
-
     // Verify user has access to the workspace
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: membershipError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error(
+        'Error checking workspace membership when saving template:',
+        membershipError
+      );
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -111,8 +126,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch the source board with lists and tasks
-    const { data: sourceBoard, error: fetchError } = await supabase
+    const { data: sourceBoard, error: fetchError } = await sbAdmin
       .from('workspace_boards')
       .select(
         `
@@ -159,12 +176,24 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Labels in this system are workspace-scoped (workspace_task_labels)
     let labels: Array<{ name: string; color: string }> = [];
     if (includeLabels) {
-      const { data: workspaceLabels } = await supabase
-        .from('workspace_task_labels')
-        .select('name, color')
-        .eq('ws_id', wsId);
+      const { data: workspaceLabels, error: workspaceLabelsError } =
+        await sbAdmin
+          .from('workspace_task_labels')
+          .select('name, color')
+          .eq('ws_id', wsId);
 
-      labels = (workspaceLabels || []).map((label) => ({
+      if (workspaceLabelsError || !workspaceLabels) {
+        console.error(
+          'Failed to fetch workspace labels while saving template:',
+          workspaceLabelsError
+        );
+        return NextResponse.json(
+          { error: 'Failed to read workspace labels' },
+          { status: 500 }
+        );
+      }
+
+      labels = workspaceLabels.map((label) => ({
         name: label.name,
         color: label.color,
       }));
@@ -228,7 +257,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     };
 
     // Insert the template
-    const { error: insertError } = await supabase
+    const { error: insertError } = await sbAdmin
       .from('board_templates')
       .insert({
         ws_id: wsId,

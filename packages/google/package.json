@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "googleapis": "^171.4.0",
-    "google-auth-library": "^10.6.1"
+    "google-auth-library": "^10.6.2"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",

@@ -70,9 +70,10 @@ export const MAX_BIO_LENGTH = 1000;
 export const MAX_EMAIL_LENGTH = 320; // Based on RFC 5321 (64 for local-part + 1 for @ + 255 for domain)
 
 // Payload limits
-export const MAX_PAYLOAD_SIZE = 200 * 1024; // 200KB
-export const MAX_REQUEST_BODY_BYTES = 256 * 1024; // 256KB — global limit for non-file-upload API routes
-export const MAX_TEXT_FIELD_BYTES = 40_000; // 40KB — covers 10K emoji chars (4 bytes each)
+export const MAX_PAYLOAD_SIZE = 512 * 1024; // 512KB
+export const MAX_REQUEST_BODY_BYTES = 512 * 1024; // 512KB — global limit for non-file-upload API routes
+export const MAX_TEXT_FIELD_BYTES = 64000;
+// 40KB — covers 10K emoji chars (4 bytes each)
 export const MAX_WORKSPACE_NAME_LENGTH = 100;
 export const MAX_TASK_NAME_LENGTH = 255;
 export const MAX_TASK_DESCRIPTION_LENGTH = 100000;

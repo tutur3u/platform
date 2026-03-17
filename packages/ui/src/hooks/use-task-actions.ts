@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -12,6 +13,7 @@ import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast
 interface UseTaskActionsProps {
   task?: Task; // Made optional to handle loading states
   boardId: string;
+  workspaceId?: string;
   targetCompletionList?: TaskList | null;
   targetClosedList?: TaskList | null;
   availableLists: TaskList[];
@@ -32,6 +34,7 @@ interface UseTaskActionsProps {
 export function useTaskActions({
   task,
   boardId,
+  workspaceId,
   targetCompletionList,
   targetClosedList,
   availableLists,
@@ -749,11 +752,24 @@ export function useTaskActions({
           }
         );
 
-        // Use direct Supabase update for bulk operations
-        if (shouldBulkUpdate) {
+        const succeededTaskIds: string[] = [];
+
+        if (workspaceId) {
+          for (const taskId of tasksToUpdate) {
+            try {
+              await updateWorkspaceTask(workspaceId, taskId, {
+                end_date: newDate,
+              });
+              succeededTaskIds.push(taskId);
+            } catch (error) {
+              console.error(
+                `Failed to update due date for task ${taskId}:`,
+                error
+              );
+            }
+          }
+        } else if (shouldBulkUpdate) {
           const supabase = createClient();
-          // Update one by one to ensure triggers fire for each task
-          let successCount = 0;
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
               .from('tasks')
@@ -765,35 +781,63 @@ export function useTaskActions({
                 error
               );
             } else {
-              successCount++;
+              succeededTaskIds.push(taskId);
             }
           }
-          if (successCount === 0) throw new Error('Failed to update any tasks');
-          for (const tid of tasksToUpdate) {
-            broadcast?.('task:upsert', {
-              task: { id: tid, end_date: newDate },
-            });
-          }
         } else {
-          // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
             updates: { end_date: newDate },
           });
+          succeededTaskIds.push(task.id);
+        }
+
+        if (succeededTaskIds.length === 0) {
+          throw new Error('Failed to update any tasks');
+        }
+
+        const failedTaskIds = tasksToUpdate.filter(
+          (taskId) => !succeededTaskIds.includes(taskId)
+        );
+
+        if (failedTaskIds.length > 0 && previousTasks) {
+          const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
+          queryClient.setQueryData(
+            ['tasks', boardId],
+            (current: Task[] | undefined) => {
+              if (!current) return current;
+              return current.map((task) => {
+                if (!failedTaskIds.includes(task.id)) {
+                  return task;
+                }
+
+                return previousTaskMap.get(task.id) || task;
+              });
+            }
+          );
+        }
+
+        for (const tid of succeededTaskIds) {
           broadcast?.('task:upsert', {
-            task: { id: task.id, end_date: newDate },
+            task: { id: tid, end_date: newDate },
           });
         }
 
-        const taskCount = tasksToUpdate.length;
-        toast.success('Due date updated', {
-          description:
-            taskCount > 1
-              ? `${taskCount} tasks updated`
-              : newDate
-                ? 'Due date set successfully'
-                : 'Due date removed',
-        });
+        if (failedTaskIds.length > 0) {
+          toast.warning('Partial due date update', {
+            description: `${succeededTaskIds.length}/${tasksToUpdate.length} tasks updated`,
+          });
+        } else {
+          const taskCount = tasksToUpdate.length;
+          toast.success('Due date updated', {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : newDate
+                  ? 'Due date set successfully'
+                  : 'Due date removed',
+          });
+        }
       } catch (error) {
         console.error('Failed to update due date:', error);
         // Rollback on error
@@ -811,6 +855,7 @@ export function useTaskActions({
       task?.id,
       updateTaskMutation,
       setIsLoading,
+      workspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -866,8 +911,23 @@ export function useTaskActions({
           }
         );
 
-        // Use direct Supabase update for bulk operations
-        if (shouldBulkUpdate) {
+        const succeededTaskIds: string[] = [];
+
+        if (workspaceId) {
+          for (const taskId of tasksToUpdate) {
+            try {
+              await updateWorkspaceTask(workspaceId, taskId, {
+                priority: newPriority,
+              });
+              succeededTaskIds.push(taskId);
+            } catch (error) {
+              console.error(
+                `Failed to update priority for task ${taskId}:`,
+                error
+              );
+            }
+          }
+        } else if (shouldBulkUpdate) {
           const supabase = createClient();
           console.log('🔄 Executing sequential Supabase updates:', {
             tasksToUpdate,
@@ -875,8 +935,6 @@ export function useTaskActions({
             priority: newPriority,
           });
 
-          // Update one by one to ensure triggers fire for each task
-          let successCount = 0;
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
               .from('tasks')
@@ -888,41 +946,68 @@ export function useTaskActions({
                 error
               );
             } else {
-              successCount++;
+              succeededTaskIds.push(taskId);
             }
           }
 
           console.log('✅ Sequential update result:', {
-            successCount,
+            successCount: succeededTaskIds.length,
             totalTasks: tasksToUpdate.length,
           });
-
-          if (successCount === 0) throw new Error('Failed to update any tasks');
-          for (const tid of tasksToUpdate) {
-            broadcast?.('task:upsert', {
-              task: { id: tid, priority: newPriority },
-            });
-          }
         } else {
-          // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
             updates: { priority: newPriority },
           });
+          succeededTaskIds.push(task.id);
+        }
+
+        if (succeededTaskIds.length === 0) {
+          throw new Error('Failed to update any tasks');
+        }
+
+        const failedTaskIds = tasksToUpdate.filter(
+          (taskId) => !succeededTaskIds.includes(taskId)
+        );
+
+        if (failedTaskIds.length > 0 && previousTasks) {
+          const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
+          queryClient.setQueryData(
+            ['tasks', boardId],
+            (current: Task[] | undefined) => {
+              if (!current) return current;
+              return current.map((task) => {
+                if (!failedTaskIds.includes(task.id)) {
+                  return task;
+                }
+
+                return previousTaskMap.get(task.id) || task;
+              });
+            }
+          );
+        }
+
+        for (const tid of succeededTaskIds) {
           broadcast?.('task:upsert', {
-            task: { id: task.id, priority: newPriority },
+            task: { id: tid, priority: newPriority },
           });
         }
 
-        const taskCount = tasksToUpdate.length;
-        toast.success('Priority updated', {
-          description:
-            taskCount > 1
-              ? `${taskCount} tasks updated`
-              : newPriority
-                ? 'Priority changed'
-                : 'Priority cleared',
-        });
+        if (failedTaskIds.length > 0) {
+          toast.warning('Partial priority update', {
+            description: `${succeededTaskIds.length}/${tasksToUpdate.length} tasks updated`,
+          });
+        } else {
+          const taskCount = tasksToUpdate.length;
+          toast.success('Priority updated', {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : newPriority
+                  ? 'Priority changed'
+                  : 'Priority cleared',
+          });
+        }
 
         // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (error) {
@@ -943,6 +1028,7 @@ export function useTaskActions({
       task?.priority,
       updateTaskMutation,
       setIsLoading,
+      workspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -1003,11 +1089,71 @@ export function useTaskActions({
           }
         );
 
-        // Use direct Supabase update for bulk operations
-        if (tasksToUpdate.length > 1) {
+        if (workspaceId) {
+          const succeededIds: string[] = [];
+          for (const taskId of tasksToUpdate) {
+            try {
+              await updateWorkspaceTask(workspaceId, taskId, {
+                estimation_points: points,
+              });
+              succeededIds.push(taskId);
+            } catch (error) {
+              console.error(
+                `Failed to update estimation for task ${taskId}:`,
+                error
+              );
+            }
+          }
+
+          if (succeededIds.length === 0) {
+            throw new Error('Failed to update any tasks');
+          }
+
+          const failedIds = tasksToUpdate.filter(
+            (taskId) => !succeededIds.includes(taskId)
+          );
+
+          if (failedIds.length > 0 && previousTasks) {
+            const previousTaskMap = new Map(
+              previousTasks.map((t) => [t.id, t])
+            );
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              (current: Task[] | undefined) => {
+                if (!current) return current;
+                return current.map((task) => {
+                  if (!failedIds.includes(task.id)) {
+                    return task;
+                  }
+
+                  return previousTaskMap.get(task.id) || task;
+                });
+              }
+            );
+
+            throw new Error(
+              `Partial update failed (${succeededIds.length}/${tasksToUpdate.length} tasks updated). Failed task IDs: ${failedIds.join(', ')}`
+            );
+          }
+
+          for (const tid of succeededIds) {
+            broadcast?.('task:upsert', {
+              task: { id: tid, estimation_points: points },
+            });
+          }
+
+          const taskCount = succeededIds.length;
+          toast.success('Estimation updated', {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : 'Estimation points updated successfully',
+          });
+
+          return;
+        } else if (tasksToUpdate.length > 1) {
           const supabase = createClient();
-          // Update one by one to ensure triggers fire for each task
-          let successCount = 0;
+          const succeededIds: string[] = [];
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
               .from('tasks')
@@ -1019,33 +1165,71 @@ export function useTaskActions({
                 error
               );
             } else {
-              successCount++;
+              succeededIds.push(taskId);
             }
           }
-          if (successCount === 0) throw new Error('Failed to update any tasks');
-          for (const tid of tasksToUpdate) {
+
+          if (succeededIds.length === 0)
+            throw new Error('Failed to update any tasks');
+
+          const failedIds = tasksToUpdate.filter(
+            (taskId) => !succeededIds.includes(taskId)
+          );
+
+          if (failedIds.length > 0 && previousTasks) {
+            const previousTaskMap = new Map(
+              previousTasks.map((t) => [t.id, t])
+            );
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              (current: Task[] | undefined) => {
+                if (!current) return current;
+                return current.map((task) => {
+                  if (!failedIds.includes(task.id)) {
+                    return task;
+                  }
+
+                  return previousTaskMap.get(task.id) || task;
+                });
+              }
+            );
+
+            throw new Error(
+              `Partial update failed (${succeededIds.length}/${tasksToUpdate.length} tasks updated). Failed task IDs: ${failedIds.join(', ')}`
+            );
+          }
+
+          for (const tid of succeededIds) {
             broadcast?.('task:upsert', {
               task: { id: tid, estimation_points: points },
             });
           }
+
+          const taskCount = succeededIds.length;
+          toast.success('Estimation updated', {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : 'Estimation points updated successfully',
+          });
+
+          return;
         } else {
-          // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: tasksToUpdate[0]!,
             updates: { estimation_points: points },
           });
+
           broadcast?.('task:upsert', {
             task: { id: tasksToUpdate[0]!, estimation_points: points },
           });
-        }
 
-        const taskCount = tasksToUpdate.length;
-        toast.success('Estimation updated', {
-          description:
-            taskCount > 1
-              ? `${taskCount} tasks updated`
-              : 'Estimation points updated successfully',
-        });
+          toast.success('Estimation updated', {
+            description: 'Estimation points updated successfully',
+          });
+
+          return;
+        }
       } catch (e: any) {
         console.error('Failed to update estimation', e);
         // Rollback on error
@@ -1064,6 +1248,7 @@ export function useTaskActions({
       task?.estimation_points,
       updateTaskMutation,
       setEstimationSaving,
+      workspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,

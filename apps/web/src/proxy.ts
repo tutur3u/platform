@@ -34,6 +34,8 @@ const ONBOARDING_BYPASS_PATHS = [
 const isDev = process.env.NODE_ENV !== 'production';
 
 const WEB_APP_URL = isDev ? `http://localhost:${PORT}` : 'https://tuturuuu.com';
+const OFFLINE_FALLBACK_PATH = '/~offline';
+const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 
 /**
  * Check if a user's personal workspace is missing an active subscription.
@@ -193,6 +195,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     return NextResponse.next();
+  }
+
+  const reservedRootRouteResponse = handleReservedRootRoute(req);
+  if (reservedRootRouteResponse) {
+    return reservedRootRouteResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
@@ -468,6 +475,35 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   propagateAuthCookies(authRes, localeRes);
   return localeRes;
 }
+
+const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
+  const { pathname } = req.nextUrl;
+  const segments = pathname.split('/').filter(Boolean);
+  const localizedReservedSegment = segments[1];
+
+  if (pathname === OFFLINE_FALLBACK_PATH) {
+    return NextResponse.next();
+  }
+
+  if (segments[0]?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)) {
+    return NextResponse.next();
+  }
+
+  if (
+    supportedLocales.includes((segments[0] ?? '') as Locale) &&
+    localizedReservedSegment?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)
+  ) {
+    const canonicalReservedPath =
+      localizedReservedSegment === OFFLINE_FALLBACK_PATH.slice(1)
+        ? OFFLINE_FALLBACK_PATH
+        : `/${segments.slice(1).join('/')}`;
+    const redirectUrl = new URL(canonicalReservedPath, req.nextUrl);
+    redirectUrl.search = req.nextUrl.search;
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  return null;
+};
 
 export const config = {
   matcher: [

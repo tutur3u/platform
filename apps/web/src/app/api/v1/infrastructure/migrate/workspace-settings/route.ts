@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import {
   batchFetch,
@@ -57,7 +57,7 @@ export async function PATCH(req: Request) {
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const json = await req.json();
 
   // Expect array of { ws_id, referral_promotion_id } pairs

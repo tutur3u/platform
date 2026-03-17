@@ -67,7 +67,6 @@ export function InvoiceCustomerSelectCard({
   selectedUserId,
   onSelect,
   selectedUser,
-  showUserPreview = false,
   loading,
   isFetchingNextPage = false,
   hasNextPage = false,
@@ -336,32 +335,6 @@ export function InvoiceCustomerSelectCard({
           </Popover>
         </div>
 
-        {showUserPreview && selectedUser && (
-          <div className="rounded-2xl border border-border/80 bg-muted/30 p-3">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-11 w-11 shrink-0 border">
-                <AvatarImage
-                  src={
-                    selectedUser.avatar_url ||
-                    getAvatarPlaceholder(getUserDisplayName(selectedUser))
-                  }
-                  alt={getUserDisplayName(selectedUser)}
-                />
-                <AvatarFallback>
-                  {getInitials(getUserDisplayName(selectedUser))}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">
-                  {getUserDisplayName(selectedUser)}
-                </p>
-                <p className="truncate text-muted-foreground text-sm">
-                  {getUserSecondaryLabel(selectedUser)}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
         {children}
       </CardContent>
     </Card>

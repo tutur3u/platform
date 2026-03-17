@@ -1,5 +1,15 @@
 import { z } from 'zod';
 
+export const FORM_TITLE_MAX_LENGTH = 4000;
+export const FORM_DESCRIPTION_MAX_LENGTH = 16000;
+export const FORM_SECTION_TITLE_MAX_LENGTH = 2000;
+export const FORM_SECTION_DESCRIPTION_MAX_LENGTH = 8000;
+export const FORM_QUESTION_TITLE_MAX_LENGTH = 4000;
+export const FORM_QUESTION_DESCRIPTION_MAX_LENGTH = 16000;
+export const FORM_RESPONSE_ANSWER_MAX_LENGTH = 16000;
+export const FORM_CONFIRMATION_TITLE_MAX_LENGTH = 120;
+export const FORM_CONFIRMATION_MESSAGE_MAX_LENGTH = 1000;
+
 export const FORM_STATUS_VALUES = ['draft', 'published', 'closed'] as const;
 export const FORM_ACCESS_MODE_VALUES = [
   'anonymous',
@@ -67,6 +77,10 @@ export const FORM_LOGIC_OPERATOR_VALUES = [
 export const FORM_LOGIC_ACTION_VALUES = ['go_to_section', 'submit'] as const;
 export const FORM_LOGIC_TRIGGER_VALUES = ['question', 'section_end'] as const;
 
+const formIsoDateTimeSchema = z.iso.datetime({ offset: true });
+const formLocalIsoDateTimePattern =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
+
 export const formMediaSchema = z.object({
   storagePath: z.string().max(500).optional().default(''),
   url: z.string().max(2000).optional().default(''),
@@ -99,6 +113,7 @@ export const FORM_VALIDATION_MODE_VALUES = [
   'numeric',
   'regex',
   'email',
+  'url',
 ] as const;
 
 export const formQuestionSettingsSchema = z.object({
@@ -122,8 +137,12 @@ export const formQuestionSettingsSchema = z.object({
 export const formQuestionSchema = z.object({
   id: formStudioIdentifierSchema.optional(),
   type: z.enum(FORM_QUESTION_TYPE_VALUES),
-  title: z.string().trim().min(1).max(4000),
-  description: z.string().max(12000).optional().default(''),
+  title: z.string().trim().min(1).max(FORM_QUESTION_TITLE_MAX_LENGTH),
+  description: z
+    .string()
+    .max(FORM_QUESTION_DESCRIPTION_MAX_LENGTH)
+    .optional()
+    .default(''),
   required: z.boolean().default(false),
   image: formMediaSchema.default(defaultFormMediaValue),
   settings: formQuestionSettingsSchema.default({}),
@@ -132,8 +151,12 @@ export const formQuestionSchema = z.object({
 
 export const formSectionSchema = z.object({
   id: formStudioIdentifierSchema.optional(),
-  title: z.string().trim().max(2000).default(''),
-  description: z.string().max(8000).optional().default(''),
+  title: z.string().trim().max(FORM_SECTION_TITLE_MAX_LENGTH).default(''),
+  description: z
+    .string()
+    .max(FORM_SECTION_DESCRIPTION_MAX_LENGTH)
+    .optional()
+    .default(''),
   image: formMediaSchema.default(defaultFormMediaValue),
   questions: z.array(formQuestionSchema).min(1),
 });
@@ -225,20 +248,75 @@ export const formSettingsSchema = z.object({
   allowMultipleSubmissions: z.boolean().default(true),
   oneResponsePerUser: z.boolean().default(false),
   requireTurnstile: z.boolean().default(true),
-  confirmationTitle: z.string().max(120).default('Response received'),
+  confirmationTitle: z
+    .string()
+    .max(FORM_CONFIRMATION_TITLE_MAX_LENGTH)
+    .default('Response received'),
   confirmationMessage: z
     .string()
-    .max(1000)
+    .max(FORM_CONFIRMATION_MESSAGE_MAX_LENGTH)
     .default('Thanks for taking the time to respond.'),
 });
 
+function normalizeLegacyLocalIsoDateTime(value: string): string | null {
+  const match = formLocalIsoDateTimePattern.exec(value);
+  if (!match) {
+    return null;
+  }
+
+  const [, yearPart, monthPart, dayPart, hourPart, minutePart, secondPart] =
+    match;
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+  const hour = Number(hourPart);
+  const minute = Number(minutePart);
+  const second = Number(secondPart ?? '0');
+  const date = new Date(year, month - 1, day, hour, minute, second, 0);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day ||
+    date.getHours() !== hour ||
+    date.getMinutes() !== minute ||
+    date.getSeconds() !== second
+  ) {
+    return null;
+  }
+
+  return date.toISOString();
+}
+
+export function normalizeOptionalFormDateTimeValue(value: unknown): unknown {
+  if (value === '') {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  if (formIsoDateTimeSchema.safeParse(value).success) {
+    return value;
+  }
+
+  return normalizeLegacyLocalIsoDateTime(value) ?? value;
+}
+
+const optionalFormDateTimeSchema = z.preprocess(
+  normalizeOptionalFormDateTimeValue,
+  formIsoDateTimeSchema.nullable().optional()
+);
+
 export const formStudioSchema = z.object({
-  title: z.string().trim().min(1).max(4000),
-  description: z.string().max(16000).default(''),
+  title: z.string().trim().min(1).max(FORM_TITLE_MAX_LENGTH),
+  description: z.string().max(FORM_DESCRIPTION_MAX_LENGTH).default(''),
   status: z.enum(FORM_STATUS_VALUES).default('draft'),
   accessMode: z.enum(FORM_ACCESS_MODE_VALUES).default('anonymous'),
-  openAt: z.string().datetime().nullable().optional(),
-  closeAt: z.string().datetime().nullable().optional(),
+  openAt: optionalFormDateTimeSchema,
+  closeAt: optionalFormDateTimeSchema,
   maxResponses: z.number().int().positive().nullable().optional(),
   theme: formThemeSchema,
   settings: formSettingsSchema,

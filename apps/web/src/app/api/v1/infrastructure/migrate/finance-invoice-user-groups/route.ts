@@ -51,7 +51,7 @@ export async function PUT(req: Request) {
   if (devModeError) return devModeError;
 
   const json = await req.json();
-  const supabase = createAdminClient({ noCookie: true });
+  const supabase = await createAdminClient({ noCookie: true });
   // Unique constraint: (invoice_id, user_group_id)
   const result = await batchUpsert({
     table: 'finance_invoice_user_groups',

@@ -2,7 +2,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
-import { MAX_PAYLOAD_SIZE } from './constants';
+import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import {
   getUpstashRatelimitRedisClient,
@@ -102,6 +102,15 @@ const TASK_DESCRIPTION_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const FORM_SUBMISSION_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    { window: 'minute', limit: 60, duration: '1 m' },
+    { window: 'hour', limit: 600, duration: '1 h' },
+    { window: 'day', limit: 4000, duration: '1 d' },
+  ],
+};
+
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   {
     key: 'otp-send',
@@ -117,6 +126,13 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
         req.nextUrl.pathname
       ),
     rateLimits: AUTH_RATE_LIMITS,
+  },
+  {
+    key: 'form-submission',
+    matches: (req) =>
+      req.method === 'POST' &&
+      /^\/api\/v1\/shared\/forms\/[^/]+(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: FORM_SUBMISSION_RATE_LIMITS,
   },
   {
     key: 'high-fanout',
@@ -221,6 +237,11 @@ const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
         pathname.startsWith('/api/v1/webhooks/')) &&
       !!process.env.SUPABASE_WEBHOOK_SECRET &&
       headers.get('x-webhook-secret') === process.env.SUPABASE_WEBHOOK_SECRET,
+  },
+  // Migration APIs: bypass rate limit in DEV_MODE (routes already return 403 in production)
+  {
+    matches: (pathname, _headers) =>
+      pathname.startsWith('/api/v1/infrastructure/migrate/') && DEV_MODE,
   },
 ];
 
@@ -389,5 +410,12 @@ export async function guardApiProxyRequest(
     }
   }
 
-  return (await validateRequestEmojiLimit(req)) ?? null;
+  const allowDescriptionYjsState =
+    /\/api\/v1\/workspaces\/[^/]+\/tasks\/[^/]+\/description$/.test(
+      req.nextUrl.pathname
+    );
+
+  return (
+    (await validateRequestEmojiLimit(req, { allowDescriptionYjsState })) ?? null
+  );
 }

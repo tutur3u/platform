@@ -2,7 +2,6 @@
 
 import { FormRuntime } from '@/features/forms/form-runtime';
 import {
-  usePublicFormProgress,
   usePublicFormResponseCopy,
   usePublicFormSubmit,
 } from '@/features/forms/hooks';
@@ -39,7 +38,6 @@ export default function SharedFormContent({
   canRequestResponseCopy?: boolean;
   responseCopyAlreadySent?: boolean;
 }) {
-  const progressMutation = usePublicFormProgress(shareCode);
   const submitMutation = usePublicFormSubmit(shareCode);
   const responseCopyMutation = usePublicFormResponseCopy(shareCode);
 
@@ -47,7 +45,6 @@ export default function SharedFormContent({
     <FormRuntime
       form={form}
       mode="public"
-      sessionId={sessionId}
       readOnly={readOnly}
       initialAnswers={initialAnswers}
       answerIssues={answerIssues}
@@ -57,7 +54,6 @@ export default function SharedFormContent({
       readOnlyResponseSessionId={readOnlyResponseSessionId}
       canRequestResponseCopy={canRequestResponseCopy}
       responseCopyAlreadySent={responseCopyAlreadySent}
-      onProgress={(payload) => progressMutation.mutate(payload)}
       onSubmit={async ({ answers, turnstileToken, sendResponseCopy }) => {
         if (!sessionId) return;
         return submitMutation.mutateAsync({

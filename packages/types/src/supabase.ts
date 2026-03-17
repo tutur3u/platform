@@ -25066,6 +25066,15 @@ export type Database = {
         Args: { p_fields: Json; p_session_id: string };
         Returns: string;
       };
+      update_time_tracking_threshold_settings: {
+        Args: {
+          p_no_approval_needed: boolean;
+          p_status_change_grace_period_minutes: number;
+          p_threshold: number;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
       upsert_calendar_events_and_count: {
         Args: { events: Json };
         Returns: Json;

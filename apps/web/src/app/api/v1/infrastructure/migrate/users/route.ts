@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { NextResponse } from 'next/server';
 import { batchUpsert, requireDevMode } from '../batch-upsert';
@@ -9,7 +9,7 @@ export async function PUT(req: Request) {
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const json = await req.json();
   const users = (json?.data || []) as WorkspaceUser[];

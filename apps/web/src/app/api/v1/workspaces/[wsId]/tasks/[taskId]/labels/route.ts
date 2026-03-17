@@ -1,206 +1,192 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-interface RouteParams {
-  params: Promise<{
-    wsId: string;
-    taskId: string;
-  }>;
-}
+const paramsSchema = z.object({
+  wsId: z.string().min(1),
+  taskId: z.uuid(),
+});
 
-// GET - Fetch all labels for a task
-export async function GET(_request: NextRequest, { params }: RouteParams) {
-  try {
-    const { wsId, taskId } = await params;
-    const supabase = await createClient();
+const payloadSchema = z.object({
+  labelId: z.uuid(),
+});
 
-    // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user has access to the workspace
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!workspaceMember) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-    }
-
-    // Verify the task exists and belongs to the workspace
-    const { data: task } = await supabase
-      .from('tasks')
-      .select(`
-        id,
-        list_id,
-        task_lists!inner(
-          board_id,
-          workspace_boards!inner(
-            ws_id
-          )
+async function verifyTaskInWorkspace(
+  wsId: string,
+  taskId: string,
+  sbAdmin: TypedSupabaseClient
+) {
+  const { data: taskRow, error: taskError } = await sbAdmin
+    .from('tasks')
+    .select(
+      `
+      id,
+      list:task_lists!inner(
+        board:workspace_boards!inner(
+          ws_id
         )
-      `)
-      .eq('id', taskId)
-      .eq('task_lists.workspace_boards.ws_id', wsId)
-      .is('deleted_at', null)
-      .single();
+      )
+    `
+    )
+    .eq('id', taskId)
+    .is('deleted_at', null)
+    .maybeSingle();
 
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-
-    // Fetch task labels with label details
-    const { data: taskLabels, error } = await supabase
-      .from('task_labels')
-      .select(`
-        label_id,
-        workspace_task_labels!inner(
-          id,
-          name,
-          color,
-          created_at
-        )
-      `)
-      .eq('task_id', taskId);
-
-    if (error) {
-      console.error('Error fetching task labels:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch task labels' },
-        { status: 500 }
-      );
-    }
-
-    const labels = taskLabels?.map((tl) => tl.workspace_task_labels) || [];
-    return NextResponse.json(labels);
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  if (taskError) {
+    return { error: 'Failed to load task', status: 500 } as const;
   }
+
+  if (!taskRow || taskRow.list?.board?.ws_id !== wsId) {
+    return { error: 'Task not found', status: 404 } as const;
+  }
+
+  return null;
 }
 
-// POST - Assign a label to a task
-export async function POST(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { wsId, taskId } = await params;
-    const body = await request.json();
-    const { label_id } = body;
+async function verifyWorkspaceMembership(
+  wsId: string,
+  userId: string,
+  supabase: TypedSupabaseClient
+) {
+  const { data: membership, error: membershipError } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
 
-    if (!label_id) {
+  if (membershipError) {
+    return {
+      error: 'Failed to verify workspace membership',
+      status: 500,
+    } as const;
+  }
+
+  if (!membership) {
+    return { error: 'Forbidden', status: 403 } as const;
+  }
+
+  return null;
+}
+
+async function verifyLabelInWorkspace(
+  wsId: string,
+  labelId: string,
+  supabase: TypedSupabaseClient
+) {
+  const { data: label, error: labelError } = await supabase
+    .from('workspace_task_labels')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('id', labelId)
+    .maybeSingle();
+
+  if (labelError) {
+    return { error: 'Failed to validate label', status: 500 } as const;
+  }
+
+  if (!label) {
+    return {
+      error: 'Label not found or does not belong to this workspace',
+      status: 404,
+    } as const;
+  }
+
+  return null;
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+) {
+  try {
+    const parsedParams = paramsSchema.safeParse(await params);
+    if (!parsedParams.success) {
       return NextResponse.json(
-        { error: 'Label ID is required' },
+        { error: 'Invalid workspace or task ID' },
         { status: 400 }
       );
     }
 
-    const supabase = await createClient();
-
-    // Get current user
+    const supabase = await createClient(request);
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
-    if (userError || !user) {
+
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user has access to the workspace
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
 
-    if (!workspaceMember) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-    }
-
-    // Verify the task exists and belongs to the workspace
-    const { data: task } = await supabase
-      .from('tasks')
-      .select(`
-        id,
-        list_id,
-        task_lists!inner(
-          board_id,
-          workspace_boards!inner(
-            ws_id
-          )
-        )
-      `)
-      .eq('id', taskId)
-      .eq('task_lists.workspace_boards.ws_id', wsId)
-      .is('deleted_at', null)
-      .single();
-
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-
-    // Verify the label exists and belongs to the workspace
-    const { data: label } = await supabase
-      .from('workspace_task_labels')
-      .select('id, ws_id')
-      .eq('id', label_id)
-      .eq('ws_id', wsId)
-      .single();
-
-    if (!label) {
-      return NextResponse.json({ error: 'Label not found' }, { status: 404 });
-    }
-
-    // Check if assignment already exists
-    const { data: existingAssignment } = await supabase
-      .from('task_labels')
-      .select('task_id, label_id')
-      .eq('task_id', taskId)
-      .eq('label_id', label_id)
-      .single();
-
-    if (existingAssignment) {
+    const membershipCheck = await verifyWorkspaceMembership(
+      wsId,
+      user.id,
+      supabase
+    );
+    if (membershipCheck) {
       return NextResponse.json(
-        { error: 'Label already assigned to task' },
-        { status: 409 }
+        { error: membershipCheck.error },
+        { status: membershipCheck.status }
       );
     }
 
-    // Create the assignment
-    const { error: assignError } = await supabase.from('task_labels').insert({
-      task_id: taskId,
-      label_id: label_id,
+    const body = payloadSchema.safeParse(await request.json());
+    if (!body.success) {
+      return NextResponse.json(
+        { error: 'Invalid request payload', details: body.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+    const taskCheck = await verifyTaskInWorkspace(
+      wsId,
+      parsedParams.data.taskId,
+      sbAdmin
+    );
+    if (taskCheck) {
+      return NextResponse.json(
+        { error: taskCheck.error },
+        { status: taskCheck.status }
+      );
+    }
+
+    const labelCheck = await verifyLabelInWorkspace(
+      wsId,
+      body.data.labelId,
+      supabase
+    );
+    if (labelCheck) {
+      return NextResponse.json(
+        { error: labelCheck.error },
+        { status: labelCheck.status }
+      );
+    }
+
+    const { error: insertError } = await sbAdmin.from('task_labels').insert({
+      task_id: parsedParams.data.taskId,
+      label_id: body.data.labelId,
     });
 
-    if (assignError) {
-      console.error('Error assigning label to task:', assignError);
+    if (insertError && insertError.code !== '23505') {
+      console.error('Failed to add task label:', insertError);
       return NextResponse.json(
-        { error: 'Failed to assign label to task' },
+        { error: 'Failed to add label to task' },
         { status: 500 }
       );
     }
 
-    // Return the label details
-    const { data: labelDetails } = await supabase
-      .from('workspace_task_labels')
-      .select('id, name, color, created_at')
-      .eq('id', label_id)
-      .single();
-
-    return NextResponse.json(labelDetails, { status: 201 });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Error in task labels POST route:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -208,74 +194,72 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE - Remove a label from a task
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+) {
   try {
-    const { wsId, taskId } = await params;
-    const { searchParams } = new URL(request.url);
-    const labelId = searchParams.get('label_id');
-
-    if (!labelId) {
+    const parsedParams = paramsSchema.safeParse(await params);
+    if (!parsedParams.success) {
       return NextResponse.json(
-        { error: 'Label ID is required' },
+        { error: 'Invalid workspace or task ID' },
         { status: 400 }
       );
     }
 
-    const supabase = await createClient();
-
-    // Get current user
+    const supabase = await createClient(request);
     const {
       data: { user },
-      error: userError,
+      error: authError,
     } = await supabase.auth.getUser();
-    if (userError || !user) {
+
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user has access to the workspace
-    const { data: workspaceMember } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
 
-    if (!workspaceMember) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    const membershipCheck = await verifyWorkspaceMembership(
+      wsId,
+      user.id,
+      supabase
+    );
+    if (membershipCheck) {
+      return NextResponse.json(
+        { error: membershipCheck.error },
+        { status: membershipCheck.status }
+      );
     }
 
-    // Verify the task exists and belongs to the workspace
-    const { data: task } = await supabase
-      .from('tasks')
-      .select(`
-        id,
-        list_id,
-        task_lists!inner(
-          board_id,
-          workspace_boards!inner(
-            ws_id
-          )
-        )
-      `)
-      .eq('id', taskId)
-      .eq('task_lists.workspace_boards.ws_id', wsId)
-      .is('deleted_at', null)
-      .single();
-
-    if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    const body = payloadSchema.safeParse(await request.json());
+    if (!body.success) {
+      return NextResponse.json(
+        { error: 'Invalid request payload', details: body.error.issues },
+        { status: 400 }
+      );
     }
 
-    // Remove the assignment
-    const { error: removeError } = await supabase
+    const sbAdmin = await createAdminClient();
+    const taskCheck = await verifyTaskInWorkspace(
+      wsId,
+      parsedParams.data.taskId,
+      sbAdmin
+    );
+    if (taskCheck) {
+      return NextResponse.json(
+        { error: taskCheck.error },
+        { status: taskCheck.status }
+      );
+    }
+
+    const { error: deleteError } = await sbAdmin
       .from('task_labels')
       .delete()
-      .eq('task_id', taskId)
-      .eq('label_id', labelId);
+      .eq('task_id', parsedParams.data.taskId)
+      .eq('label_id', body.data.labelId);
 
-    if (removeError) {
-      console.error('Error removing label from task:', removeError);
+    if (deleteError) {
+      console.error('Failed to remove task label:', deleteError);
       return NextResponse.json(
         { error: 'Failed to remove label from task' },
         { status: 500 }
@@ -284,7 +268,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Error in task labels DELETE route:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

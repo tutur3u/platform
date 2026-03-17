@@ -69,6 +69,16 @@ export const reportConfigs: (WorkspaceConfig & {
     type: 'TEXT',
     defaultValue: '',
   },
+  {
+    id: 'ENABLE_REPORT_EXPORT_ONLY_APPROVED',
+    type: 'TEXT',
+    defaultValue: 'false',
+  },
+  {
+    id: 'ENABLE_REPORT_PENDING_WATERMARK',
+    type: 'TEXT',
+    defaultValue: 'false',
+  },
 ];
 
 // Lead generation email template configs

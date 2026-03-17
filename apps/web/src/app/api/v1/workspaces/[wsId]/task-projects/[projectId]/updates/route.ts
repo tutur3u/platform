@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -97,24 +100,42 @@ export async function POST(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify project exists and belongs to workspace
-    const { data: project } = await supabase
+    const { data: project, error: projectError } = await sbAdmin
       .from('task_projects')
       .select('id')
       .eq('id', projectId)
       .eq('ws_id', normalizedWsId)
-      .single();
+      .maybeSingle();
+
+    if (projectError) {
+      console.error('Error loading project:', projectError);
+      return NextResponse.json(
+        { error: 'Failed to verify project access' },
+        { status: 500 }
+      );
+    }
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -125,7 +146,7 @@ export async function POST(
     const { content } = createUpdateSchema.parse(body);
 
     // Create update
-    const { data: newUpdate, error: createError } = await supabase
+    const { data: newUpdate, error: createError } = await sbAdmin
       .from('task_project_updates')
       .insert({
         project_id: projectId,
@@ -198,13 +219,35 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
+    // Verify project belongs to this workspace
+    const { data: project, error: projectError } = await sbAdmin
+      .from('task_projects')
+      .select('id')
+      .eq('id', projectId)
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
+
+    if (projectError) {
+      console.error('Error verifying project access:', projectError);
+      return NextResponse.json(
+        { error: 'Failed to verify project access' },
+        { status: 500 }
+      );
+    }
+
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     // Fetch updates with reactions, comments, and attachments
-    const { data: updates, error: fetchError } = await supabase
+    const { data: updates, error: fetchError } = await sbAdmin
       .from('task_project_updates')
       .select(
         `

@@ -8,7 +8,15 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!dist", "!**/dist", "!apps/mobile", "!.worktrees"]
+    "includes": [
+      "**",
+      "!**/*.md",
+      "!**/*.mdx",
+      "!dist",
+      "!**/dist",
+      "!apps/mobile",
+      "!.worktrees"
+    ]
   },
   "formatter": {
     "enabled": true,

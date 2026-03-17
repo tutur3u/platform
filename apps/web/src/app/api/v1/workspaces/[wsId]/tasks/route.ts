@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_TASK_DESCRIPTION_LENGTH,
@@ -14,16 +15,20 @@ import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const SORT_KEY_BASE_UNIT = 1000000;
 const SORT_KEY_DEFAULT = SORT_KEY_BASE_UNIT * 1000;
-let sortKeySequence = 0;
 
 function calculateEndSortKey(prevSortKey: number | null | undefined) {
-  sortKeySequence = (sortKeySequence % 999) + 1;
+  // Use a per-call unique suffix derived from high-resolution time to
+  // avoid module-level mutable state in serverless environments.
+  const uniqueSuffix =
+    typeof performance !== 'undefined'
+      ? Math.floor(performance.now() * 1000) % 1000
+      : Math.floor((Date.now() % 1000) + Math.random() * 1000) % 1000;
 
   if (prevSortKey === null || prevSortKey === undefined) {
-    return SORT_KEY_DEFAULT + sortKeySequence;
+    return SORT_KEY_DEFAULT + uniqueSuffix;
   }
 
-  return prevSortKey + SORT_KEY_BASE_UNIT + sortKeySequence;
+  return prevSortKey + SORT_KEY_BASE_UNIT + uniqueSuffix;
 }
 
 const CreateTaskSchema = z.object({
@@ -47,6 +52,7 @@ const CreateTaskSchema = z.object({
   assignee_ids: z.array(z.string().uuid()).optional(),
 });
 interface TaskAssigneeRelation {
+  user_id: string | null;
   user: {
     id: string | null;
     display_name: string | null;
@@ -70,6 +76,8 @@ interface TaskProjectRelation {
     status: string | null;
   } | null;
 }
+
+type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 
 export async function GET(
   request: NextRequest,
@@ -134,8 +142,7 @@ export async function GET(
     const listId = url.searchParams.get('listId');
     const searchQuery = url.searchParams.get('q')?.trim();
 
-    // Check if this is a request for time tracking (indicated by limit=100 and no specific filters)
-    const isTimeTrackingRequest = limit === 100 && !boardId && !listId;
+    const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
 
     // Build the query for fetching tasks with relation details plus IDs.
     let query = sbAdmin
@@ -158,6 +165,7 @@ export async function GET(
           id,
           name,
           status,
+          deleted,
           board_id,
           workspace_boards!inner (
             id,
@@ -166,6 +174,7 @@ export async function GET(
           )
         ),
         assignees:task_assignees(
+          user_id,
           user:users(
             id,
             display_name,
@@ -192,12 +201,13 @@ export async function GET(
       .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId)
       .is('deleted_at', null);
 
+    query = query.eq('task_lists.deleted', false);
+
     // IMPORTANT: If this is for time tracking, apply the same filters as the server-side helper
-    if (isTimeTrackingRequest) {
+    if (forTimeTracking) {
       query = query
         .is('closed_at', null) // Only non-archived tasks
-        .in('task_lists.status', ['not_started', 'active']) // Only from active lists
-        .eq('task_lists.deleted', false); // Ensure list is not deleted (task_lists still uses boolean)
+        .in('task_lists.status', ['not_started', 'active']); // Only from active lists
     }
 
     // Apply filters based on query parameters
@@ -224,35 +234,74 @@ export async function GET(
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
       data?.map((task) => {
-        const assigneeIds = [
-          ...(task.assignees ?? [])
-            .map((entry: TaskAssigneeRelation) => entry.user?.id)
-            .filter((id): id is string => !!id)
-            .reduce((uniqueIds: Set<string>, assigneeId: string) => {
-              uniqueIds.add(assigneeId);
-              return uniqueIds;
-            }, new Set()),
-        ];
+        const normalizedAssignees = (task.assignees ?? []).flatMap(
+          (entry: TaskAssigneeRelation) => {
+            const resolvedId = entry.user?.id || entry.user_id;
+            if (!resolvedId) {
+              return [];
+            }
 
-        const labelIds = [
-          ...(task.labels ?? [])
-            .map((entry: TaskLabelRelation) => entry.label?.id)
-            .filter((id): id is string => !!id)
-            .reduce((uniqueIds: Set<string>, labelId: string) => {
-              uniqueIds.add(labelId);
-              return uniqueIds;
-            }, new Set()),
-        ];
+            return [
+              {
+                id: resolvedId,
+                user_id: resolvedId,
+                display_name: entry.user?.display_name ?? undefined,
+                avatar_url: entry.user?.avatar_url ?? undefined,
+              },
+            ];
+          }
+        );
 
-        const projectIds = [
-          ...(task.projects ?? [])
-            .map((entry: TaskProjectRelation) => entry.project?.id)
-            .filter((id): id is string => !!id)
-            .reduce((uniqueIds: Set<string>, projectId: string) => {
-              uniqueIds.add(projectId);
-              return uniqueIds;
-            }, new Set()),
-        ];
+        const assigneeIds = Array.from(
+          new Set(normalizedAssignees.map((assignee) => assignee.id))
+        );
+
+        const normalizedLabels = (task.labels ?? []).flatMap(
+          (entry: TaskLabelRelation) => {
+            const label = entry.label;
+            if (!label?.id || !label.name || !label.color) {
+              return [];
+            }
+
+            return [
+              {
+                id: label.id,
+                name: label.name,
+                color: label.color,
+                created_at: label.created_at ?? null,
+              },
+            ];
+          }
+        );
+
+        const labelIds = Array.from(
+          new Set(normalizedLabels.map((label) => label.id))
+        );
+
+        const normalizedProjects = (task.projects ?? []).flatMap(
+          (entry: TaskProjectRelation) => {
+            const project = entry.project;
+            if (!project?.id || !project.name) {
+              return [];
+            }
+
+            return [
+              {
+                id: project.id,
+                name: project.name,
+                status: project.status ?? 'active',
+              },
+            ];
+          }
+        );
+
+        const projectIds = Array.from(
+          new Set(normalizedProjects.map((project) => project.id))
+        );
+
+        const assignees = normalizedAssignees;
+        const labels = normalizedLabels;
+        const projects = normalizedProjects;
 
         return {
           id: task.id,
@@ -271,9 +320,10 @@ export async function GET(
           board_name: task.task_lists?.workspace_boards?.name,
           list_name: task.task_lists?.name,
           list_status: task.task_lists?.status,
-          assignees: task.assignees ?? [],
-          labels: task.labels ?? [],
-          projects: task.projects ?? [],
+          list_deleted: task.task_lists?.deleted ?? false,
+          assignees,
+          labels,
+          projects,
           // Keep ID arrays for clients that hydrate by ID.
           assignee_ids: assigneeIds,
           label_ids: labelIds,
@@ -499,23 +549,24 @@ export async function POST(
     const highestSortKey = existingTasks?.[0]?.sort_key ?? null;
     const newSortKey = calculateEndSortKey(highestSortKey);
 
+    const insertPayload: TaskInsert = {
+      name: taskName.trim(),
+      description: description?.trim() || null,
+      description_yjs_state: validatedData.description_yjs_state ?? null,
+      list_id: listId,
+      priority: priority ?? null,
+      start_date: start_date ?? null,
+      end_date: end_date ?? null,
+      estimation_points: estimation_points ?? null,
+      sort_key: newSortKey,
+      created_at: new Date().toISOString(),
+      deleted_at: null,
+      completed: false,
+    };
+
     const { data, error } = await sbAdmin
       .from('tasks')
-      .insert({
-        name: taskName.trim(),
-        description: description?.trim() || null,
-        description_yjs_state: validatedData.description_yjs_state ?? null,
-        list_id: listId,
-        creator_id: user.id,
-        priority: priority || null,
-        start_date: start_date || null,
-        end_date: end_date || null,
-        estimation_points: estimation_points || null,
-        sort_key: newSortKey,
-        created_at: new Date().toISOString(),
-        deleted_at: null,
-        completed: false,
-      } as any)
+      .insert(insertPayload)
       .select(
         `
         id,

@@ -34,7 +34,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEV_MODE } from '@/constants/common';
 import { isAnswerableQuestionType } from './block-utils';
 import { getNextSectionTarget } from './branching';
@@ -63,7 +63,6 @@ import {
 interface FormRuntimeProps {
   form: FormDefinition;
   mode: 'preview' | 'public';
-  sessionId?: string;
   initialAnswers?: Record<string, FormAnswerValue>;
   answerIssues?: FormReadOnlyAnswerIssue[];
   submittedAt?: string | null;
@@ -72,11 +71,6 @@ interface FormRuntimeProps {
   readOnlyResponseSessionId?: string | null;
   canRequestResponseCopy?: boolean;
   responseCopyAlreadySent?: boolean;
-  onProgress?: (payload: {
-    sessionId: string;
-    lastQuestionId?: string | null;
-    lastSectionId?: string | null;
-  }) => void;
   onSubmit?: (payload: {
     answers: Record<string, FormAnswerValue>;
     turnstileToken?: string;
@@ -243,7 +237,6 @@ function QuestionBlock({
   question,
   value,
   onChange,
-  onProgress,
   onImagePreview,
   disabled = false,
   validationError,
@@ -253,7 +246,6 @@ function QuestionBlock({
   question: FormDefinitionQuestion;
   value: FormAnswerValue | undefined;
   onChange: (value: FormAnswerValue) => void;
-  onProgress: () => void;
   onImagePreview: (image: { src: string; alt: string }) => void;
   disabled?: boolean;
   validationError?: string;
@@ -579,7 +571,6 @@ function QuestionBlock({
           value={typeof value === 'string' ? value : ''}
           placeholder={settings.placeholder || t('runtime.type_your_answer')}
           onChange={(event) => onChange(event.target.value)}
-          onBlur={onProgress}
           className={cn(
             toneClasses.fieldClassName,
             validationError
@@ -595,7 +586,6 @@ function QuestionBlock({
           value={typeof value === 'string' ? value : ''}
           placeholder={settings.placeholder || t('runtime.type_your_answer')}
           onChange={(event) => onChange(event.target.value)}
-          onBlur={onProgress}
           className={cn(
             'min-h-32',
             toneClasses.fieldClassName,
@@ -613,7 +603,6 @@ function QuestionBlock({
           disabled={disabled}
           onValueChange={(nextValue) => {
             onChange(nextValue);
-            onProgress();
           }}
           className={choiceLayoutClassName}
         >
@@ -758,7 +747,6 @@ function QuestionBlock({
                         nextValue.delete(option.value);
                       }
                       onChange([...nextValue]);
-                      onProgress();
                     }}
                   />
                   <div className="min-w-0 flex-1 space-y-3">
@@ -831,7 +819,6 @@ function QuestionBlock({
           disabled={disabled}
           onValueChange={(nextValue) => {
             onChange(nextValue);
-            onProgress();
           }}
         >
           <SelectTrigger
@@ -1008,7 +995,6 @@ function QuestionBlock({
                   }
 
                   onChange(String(nextScore));
-                  onProgress();
                 }}
                 className={cn(
                   'px-1 py-4 **:data-[slot=slider-thumb]:h-5 **:data-[slot=slider-thumb]:w-5 **:data-[slot=slider-thumb]:border-2 **:data-[slot=slider-thumb]:border-current **:data-[slot=slider-range]:bg-current **:data-[slot=slider-thumb]:bg-background',
@@ -1039,11 +1025,9 @@ function QuestionBlock({
                       onClick={() => {
                         if (active) {
                           onChange('');
-                          onProgress();
                           return;
                         }
                         onChange(option.value);
-                        onProgress();
                       }}
                       className={cn(
                         'rounded-[1.15rem] border px-3 py-3 text-left focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -1133,11 +1117,9 @@ function QuestionBlock({
                       onClick={() => {
                         if (selected) {
                           onChange('');
-                          onProgress();
                           return;
                         }
                         onChange(option.value);
-                        onProgress();
                       }}
                       className={cn(
                         'group flex h-14 w-14 items-center justify-center rounded-[1.15rem] border focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -1216,7 +1198,6 @@ function QuestionBlock({
             date={parseDateAnswer(value)}
             setDate={(date) => {
               onChange(formatDateAnswer(date));
-              onProgress();
             }}
             showTimeSelect={false}
             disabled={disabled}
@@ -1230,7 +1211,6 @@ function QuestionBlock({
           disabled={disabled}
           onValueChange={(nextValue) => {
             onChange(nextValue);
-            onProgress();
           }}
         >
           <SelectTrigger
@@ -1279,7 +1259,6 @@ function QuestionBlock({
 export function FormRuntime({
   form,
   mode,
-  sessionId,
   initialAnswers,
   answerIssues = [],
   submittedAt,
@@ -1288,7 +1267,6 @@ export function FormRuntime({
   readOnlyResponseSessionId,
   canRequestResponseCopy = false,
   responseCopyAlreadySent = false,
-  onProgress,
   onSubmit,
   onRequestResponseCopy,
   isSubmitting = false,
@@ -1331,8 +1309,7 @@ export function FormRuntime({
     src: string;
     alt: string;
   } | null>(null);
-  const [, startTransition] = useTransition();
-  const captchaRef = useRef<TurnstileInstance>(null);
+  const captchaRef = useRef<TurnstileInstance | null>(null);
   const sectionCardRef = useRef<HTMLDivElement | null>(null);
   const previousSectionIdRef = useRef(currentSectionId);
 
@@ -1465,6 +1442,77 @@ export function FormRuntime({
     !captchaToken;
   const isBusy = isSubmitting || isRequestingResponseCopy;
 
+  const draftKey = `tuturuuu_form_draft_${form.id}`;
+
+  // Load draft from localStorage on mount
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional run on mount
+  useEffect(() => {
+    if (mode !== 'public' || readOnly || submittedAt) {
+      return;
+    }
+
+    try {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.answers && Object.keys(parsed.answers).length > 0) {
+          const mergedAnswers = {
+            ...(initialAnswers ?? {}),
+            ...parsed.answers,
+          };
+          setAnswers(mergedAnswers);
+          answersRef.current = mergedAnswers;
+        }
+        if (
+          parsed.currentSectionId &&
+          form.sections.some((s) => s.id === parsed.currentSectionId)
+        ) {
+          setCurrentSectionId(parsed.currentSectionId);
+        }
+        if (parsed.sectionTrail && Array.isArray(parsed.sectionTrail)) {
+          const validTrail = parsed.sectionTrail.filter((id: string) =>
+            form.sections.some((s) => s.id === id)
+          );
+          if (validTrail.length > 0) {
+            setSectionTrail(validTrail);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to load form draft from local storage', err);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save draft to localStorage when answers/section changes
+  useEffect(() => {
+    if (mode !== 'public' || readOnly || submittedAt || isSubmitting) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        draftKey,
+        JSON.stringify({
+          answers,
+          currentSectionId,
+          sectionTrail,
+        })
+      );
+    } catch (err) {
+      console.warn('Failed to save form draft to local storage', err);
+    }
+  }, [
+    answers,
+    currentSectionId,
+    sectionTrail,
+    mode,
+    readOnly,
+    submittedAt,
+    isSubmitting,
+    draftKey,
+  ]);
+
   useEffect(() => {
     const nextAnswers = initialAnswers ?? {};
     answersRef.current = nextAnswers;
@@ -1527,20 +1575,6 @@ export function FormRuntime({
       const next = { ...prev };
       delete next[questionId];
       return next;
-    });
-  };
-
-  const emitProgress = (payload: { lastQuestionId?: string | null }) => {
-    if (!sessionId || !onProgress) {
-      return;
-    }
-
-    startTransition(() => {
-      onProgress({
-        sessionId,
-        lastSectionId: currentSection?.id ?? null,
-        ...payload,
-      });
     });
   };
 
@@ -1608,10 +1642,6 @@ export function FormRuntime({
       ? advanceTarget
       : getNextSectionTarget(form, currentSection.id, currentAnswers);
 
-    emitProgress({
-      lastQuestionId: currentSection.questions.at(-1)?.id ?? null,
-    });
-
     if (readOnly) {
       if (target.targetSectionId) {
         setCurrentSectionId(target.targetSectionId);
@@ -1677,6 +1707,13 @@ export function FormRuntime({
         turnstileToken: captchaToken,
         sendResponseCopy: Boolean(responseCopyEmail && sendResponseCopy),
       });
+
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (err) {
+        console.warn('Failed to clear form draft from local storage', err);
+      }
+
       captchaRef.current?.reset();
       setCaptchaToken(undefined);
       setSubmittedResponseCopyRequested(
@@ -2202,11 +2239,6 @@ export function FormRuntime({
                   question={question}
                   value={answers[question.id]}
                   onChange={(value) => updateAnswer(question.id, value)}
-                  onProgress={() =>
-                    mode === 'public' && !readOnly
-                      ? emitProgress({ lastQuestionId: question.id })
-                      : undefined
-                  }
                   onImagePreview={(image) => setPreviewImage(image)}
                   disabled={isBusy || readOnly}
                   validationError={validationErrorsByQuestionId[question.id]}

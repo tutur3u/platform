@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ export function useTaskLinking({
   linkedTasks,
 }: UseTaskLinkingOptions) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showLinkTaskDialog, setShowLinkTaskDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -67,6 +68,12 @@ export function useTaskLinking({
     },
     onSuccess: () => {
       toast.success('Task linked successfully');
+      void queryClient.invalidateQueries({
+        queryKey: ['task-project-tasks', wsId, projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['tasks', wsId, `project:${projectId}`],
+      });
       router.refresh();
       setShowLinkTaskDialog(false);
       setSearchQuery('');

@@ -289,7 +289,9 @@ export function ModuleCard({
                 errorObj?.message ||
                 (err?.message as string) ||
                 'Migration failed';
-              const errorDetails = errorObj?.details;
+              // errorDetails from createMigrationResponse (batch-upsert); errorObj.details for other API shapes
+              const errorDetails =
+                (err?.errorDetails as string) ?? errorObj?.details;
 
               return (
                 <div className="mt-2 flex items-start gap-2 rounded-md border border-dynamic-red/20 bg-dynamic-red/5 p-2">

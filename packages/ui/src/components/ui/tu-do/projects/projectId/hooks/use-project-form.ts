@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
 import dayjs from 'dayjs';
@@ -50,6 +50,7 @@ interface UpdateProjectData {
 
 export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Editing UI state
   const [isEditingName, setIsEditingName] = useState(false);
@@ -133,6 +134,12 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
       setIsEditingName(false);
       setIsEditingDescription(false);
       setShowTimelineEditor(false);
+      void queryClient.invalidateQueries({
+        queryKey: ['task-project', wsId, project.id],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['task-project-tasks', wsId, project.id],
+      });
       router.refresh();
     },
     onError: (error) => {
