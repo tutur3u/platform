@@ -1,8 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import {
-  fetchSharedFormData,
-  getSharedFormPresentation,
-} from './shared-form-data';
+import { getSharedFormPresentation } from './shared-form-data';
+import { loadSharedFormSnapshot } from './shared-form-loader';
 import {
   contentType,
   createSharedFormSocialImage,
@@ -10,8 +8,7 @@ import {
 } from './shared-form-social-image';
 
 export { contentType, size };
-export const runtime = 'edge';
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{
@@ -22,9 +19,7 @@ interface Props {
 export default async function Image({ params }: Props) {
   const { shareCode } = await params;
   const t = await getTranslations('forms');
-  const { status, data } = await fetchSharedFormData(shareCode, {
-    revalidateSeconds: 3600,
-  });
+  const { status, data } = await loadSharedFormSnapshot(shareCode);
   const strings = {
     brand: t('brand'),
     fallbackTitle: t('shared.metadata_fallback_title'),

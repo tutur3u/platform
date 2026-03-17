@@ -12,7 +12,7 @@ export default defineConfig({
         inline: ['next-intl'],
       },
     },
-    exclude: ['e2e/**', 'node_modules/**'],
+    exclude: ['**/.next/**', '**/e2e/**', '**/node_modules/**'],
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     env: {
