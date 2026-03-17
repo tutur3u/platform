@@ -250,7 +250,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
   return (
     <div className="space-y-6">
       {/* Camera Device Selection */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-medium text-lg">Camera Selection</h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -307,7 +307,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-dynamic-light-gray">
                 <CameraOff className="h-8 w-8 text-dynamic-gray" />
               </div>
-              <div className="space-y-2">
+              <div className="hidden space-y-2 sm:block">
                 <p className="font-medium text-gray-700 text-lg">
                   Camera is Off
                 </p>
@@ -370,13 +370,13 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Control Buttons */}
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <Button
           onClick={toggleCamera}
           size="lg"
           variant={cameraOn ? 'destructive' : 'default'}
           className={cn(
-            'h-14 flex-1 font-medium text-base transition-all duration-200',
+            'h-14 w-full font-medium text-base transition-all duration-200',
             cameraOn
               ? 'bg-red-500 shadow-lg shadow-red-500/25 hover:bg-red-600'
               : 'bg-blue-500 text-white shadow-blue-500/25 shadow-lg hover:bg-blue-600'
@@ -400,7 +400,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           size="lg"
           disabled={!cameraOn || capturing || !isReady}
           className={cn(
-            'h-14 flex-1 font-medium text-base transition-all duration-200',
+            'h-14 w-full font-medium text-base transition-all duration-200',
             'bg-linear-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700'
           )}
         >

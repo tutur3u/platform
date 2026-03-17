@@ -1,6 +1,4 @@
-import AddStudentDialog from './AddStudentDialog';
-import { DatePicker } from './DatePicker';
-import { Student } from '@ncthub/types/primitives/Student';
+import type { Student } from '@ncthub/types/primitives/Student';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +36,9 @@ import {
   TableRow,
 } from '@ncthub/ui/table';
 import { cn } from '@ncthub/utils/format';
-import React, { useState } from 'react';
+import { useState } from 'react';
+import AddStudentDialog from './AddStudentDialog';
+import { DatePicker } from './DatePicker';
 
 interface StudentListProps {
   students: Student[];
@@ -220,7 +220,7 @@ export default function StudentList({
       </div>
 
       {/* Search and Filters */}
-      <Card className="border-0 bg-background/80 shadow-lg">
+      <Card className="border bg-background/80 shadow-lg">
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Search Bar */}
@@ -275,7 +275,7 @@ export default function StudentList({
             {showFilters && (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <label className="flex items-center gap-2 font-medium text-gray-700 text-sm">
                     <Calendar className="h-4 w-4" />
                     Start Date
                   </label>
@@ -286,7 +286,7 @@ export default function StudentList({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <label className="flex items-center gap-2 font-medium text-gray-700 text-sm">
                     <Calendar className="h-4 w-4" />
                     End Date
                   </label>
@@ -312,7 +312,7 @@ export default function StudentList({
       </Card>
 
       {/* Results Summary */}
-      <div className="flex items-center justify-between text-sm text-gray-600">
+      <div className="flex items-center justify-between text-md text-muted-foreground">
         <span>
           Showing {currentItems.length} of {sortedItems.length} students
           {searchTerm && (

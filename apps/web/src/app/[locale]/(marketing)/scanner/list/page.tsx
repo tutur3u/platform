@@ -1,8 +1,8 @@
-import StudentListClient from './client';
 import { createClient } from '@ncthub/supabase/next/server';
 import { redirect } from 'next/navigation';
+import StudentListClient from './client';
 
-export default async function Page() {
+export default async function StudentListPage() {
   const supabase = await createClient();
 
   const {

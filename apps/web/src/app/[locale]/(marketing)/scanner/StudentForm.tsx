@@ -50,7 +50,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-2 text-base font-medium">
+                <FormLabel className="flex items-center gap-2 font-medium text-base">
                   <User className="h-4 w-4 text-blue-500" />
                   Full Name
                 </FormLabel>
@@ -76,7 +76,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
             name="studentNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-2 text-base font-medium">
+                <FormLabel className="flex items-center gap-2 font-medium text-base">
                   <Hash className="h-4 w-4 text-purple-500" />
                   Student Number
                 </FormLabel>
@@ -102,7 +102,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
             name="program"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-2 text-base font-medium">
+                <FormLabel className="flex items-center gap-2 font-medium text-base">
                   <GraduationCap className="h-4 w-4 text-green-500" />
                   Program
                   <Badge variant="secondary" className="text-xs">
@@ -130,7 +130,7 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
           size="lg"
           disabled={isSubmitting}
           className={cn(
-            'h-14 w-full text-base font-medium transition-all duration-200',
+            'h-14 w-full font-medium text-base transition-all duration-200',
             'bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700',
             'shadow-lg hover:shadow-xl'
           )}
