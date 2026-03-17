@@ -57,18 +57,26 @@ class RequestInfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: theme.typography.small.copyWith(
-              color: theme.colorScheme.mutedForeground,
+          Expanded(
+            child: Text(
+              label,
+              style: theme.typography.small.copyWith(
+                color: theme.colorScheme.mutedForeground,
+              ),
+              maxLines: 2,
             ),
           ),
-          Text(
-            value,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w600,
+          const shad.Gap(12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: theme.typography.small.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

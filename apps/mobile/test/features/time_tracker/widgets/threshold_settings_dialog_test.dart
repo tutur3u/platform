@@ -14,7 +14,8 @@ void main() {
         Scaffold(
           body: ThresholdSettingsDialog(
             currentThreshold: 2,
-            onSave: (threshold) async {
+            currentStatusChangeGracePeriodMinutes: 5,
+            onSave: (threshold, _) async {
               savedThreshold = threshold;
             },
           ),
@@ -35,7 +36,8 @@ void main() {
         Scaffold(
           body: ThresholdSettingsDialog(
             currentThreshold: 3,
-            onSave: (threshold) async {
+            currentStatusChangeGracePeriodMinutes: 5,
+            onSave: (threshold, _) async {
               savedThreshold = threshold;
             },
           ),

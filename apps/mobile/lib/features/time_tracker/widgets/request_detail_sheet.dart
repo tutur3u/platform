@@ -26,6 +26,7 @@ class RequestDetailSheet extends StatefulWidget {
     this.isManager = false,
     this.canEdit = false,
     this.currentUserId,
+    this.statusChangeGracePeriodMinutes = 0,
     this.onEdit,
     super.key,
   });
@@ -40,6 +41,7 @@ class RequestDetailSheet extends StatefulWidget {
   final bool isManager;
   final bool canEdit;
   final String? currentUserId;
+  final int statusChangeGracePeriodMinutes;
   final Future<TimeTrackingRequest?> Function(
     String title,
     DateTime startTime,
@@ -172,6 +174,19 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
         _currentUserId != null && _request.userId == _currentUserId;
     final showManagerActions =
         widget.isManager && _request.approvalStatus == ApprovalStatus.pending;
+    final canRejectApprovedRequest =
+        widget.isManager &&
+        _request.approvalStatus == ApprovalStatus.approved &&
+        _request.approvedAt != null &&
+        _isWithinGracePeriod(_request.approvedAt!);
+    final canApproveRejectedRequest =
+        widget.isManager &&
+        _request.approvalStatus == ApprovalStatus.rejected &&
+        _request.rejectedAt != null &&
+        _isWithinGracePeriod(_request.rejectedAt!);
+    final showRevertActions =
+        !showManagerActions &&
+        (canRejectApprovedRequest || canApproveRejectedRequest);
     final showResubmitAction =
         isRequestOwner && _request.approvalStatus == ApprovalStatus.needsInfo;
 
@@ -258,6 +273,33 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         RequestInfoRow(
                           label: l10n.timerEndTime,
                           value: _formatDateTime(_request.endTime!),
+                        ),
+                      if (_request.approvalStatus == ApprovalStatus.approved &&
+                          _request.approvedAt != null)
+                        RequestInfoRow(
+                          label: l10n.timerRequestLastModifiedBy,
+                          value: l10n.timerRequestApprovedByAt(
+                            _request.approvedByName ??
+                                l10n.timerRequestActivityUnknownUser,
+                            _formatDateTime(_request.approvedAt!),
+                          ),
+                        ),
+                      if (_request.approvalStatus == ApprovalStatus.rejected &&
+                          _request.rejectedAt != null)
+                        RequestInfoRow(
+                          label: l10n.timerRequestLastModifiedBy,
+                          value: l10n.timerRequestRejectedByAt(
+                            _request.rejectedByName ??
+                                l10n.timerRequestActivityUnknownUser,
+                            _formatDateTime(_request.rejectedAt!),
+                          ),
+                        ),
+                      if (_request.approvalStatus == ApprovalStatus.needsInfo)
+                        RequestInfoRow(
+                          label: l10n.timerRequestLastModifiedBy,
+                          value:
+                              _request.needsInfoRequestedByName ??
+                              l10n.timerRequestActivityUnknownUser,
                         ),
                       if (_request.images.isNotEmpty) ...[
                         const shad.Gap(16),
@@ -374,6 +416,42 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                       );
                     });
                   },
+                ),
+              if (showRevertActions)
+                RequestManagerActionsBar(
+                  onApprove: () async {
+                    await widget.onApprove();
+
+                    if (!mounted) {
+                      return;
+                    }
+
+                    setState(() {
+                      _request = _requestWithStatus(
+                        ApprovalStatus.approved,
+                      );
+                    });
+                  },
+                  onReject: (reason) async {
+                    await widget.onReject(reason);
+
+                    if (!mounted) {
+                      return;
+                    }
+
+                    setState(() {
+                      _request = _requestWithStatus(
+                        ApprovalStatus.rejected,
+                        reason: reason,
+                      );
+                    });
+                  },
+                  onRequestInfo: (_) async {},
+                  showApprove: canApproveRejectedRequest,
+                  showReject: canRejectApprovedRequest,
+                  showRequestInfo: false,
+                  showRevertToRejected: canRejectApprovedRequest,
+                  showRevertToApproved: canApproveRejectedRequest,
                 ),
               if (showResubmitAction)
                 Column(
@@ -503,16 +581,35 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
       approvedBy: status == ApprovalStatus.approved
           ? (_currentUserId ?? _request.approvedBy)
           : null,
+      approvedByName: status == ApprovalStatus.approved
+          ? _request.approvedByName
+          : null,
       approvedAt: status == ApprovalStatus.approved ? now : null,
       rejectedBy: status == ApprovalStatus.rejected
           ? (_currentUserId ?? _request.rejectedBy)
           : null,
+      rejectedByName: status == ApprovalStatus.rejected
+          ? _request.rejectedByName
+          : null,
       rejectedAt: status == ApprovalStatus.rejected ? now : null,
+      needsInfoRequestedByName: _request.needsInfoRequestedByName,
       rejectionReason: status == ApprovalStatus.rejected ? reason : null,
       needsInfoReason: status == ApprovalStatus.needsInfo ? reason : null,
       createdAt: _request.createdAt,
       updatedAt: now,
     );
+  }
+
+  bool _isWithinGracePeriod(DateTime changedAt) {
+    final graceMinutes = widget.statusChangeGracePeriodMinutes;
+    if (graceMinutes <= 0) {
+      return false;
+    }
+
+    final elapsed = DateTime.now().toUtc().difference(changedAt.toUtc());
+    final allowed =
+        Duration(minutes: graceMinutes) - const Duration(seconds: 30);
+    return elapsed <= allowed;
   }
 }
 

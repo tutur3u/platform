@@ -926,7 +926,35 @@
     "timerRequestsThresholdLabel": "Ngưỡng (ngày)",
     "timerRequestsThresholdHelp": "Các mục cũ hơn số ngày này phải gửi yêu cầu để được duyệt.",
     "timerRequestsThresholdInvalid": "Nhập số nguyên lớn hơn hoặc bằng 0.",
+    "timerRequestsStatusChangeGracePeriodLabel": "Thời gian gia hạn cho phép đổi giữa Đã duyệt và Đã từ chối (phút)",
+    "timerRequestsStatusChangeGracePeriodHelp": "Đặt số phút cho phép người duyệt hoàn tác trạng thái giữa Đã duyệt và Đã từ chối theo cả hai chiều. Đặt 0 để tắt cả hai thao tác.",
+    "timerRequestsStatusChangeGracePeriodInvalid": "Nhập số nguyên lớn hơn hoặc bằng 0 cho thời gian gia hạn hoàn tác trạng thái.",
     "timerRequestsThresholdUpdated": "Đã cập nhật ngưỡng yêu cầu.",
+    "timerRequestRevertToApproved": "Hoàn tác về Đã duyệt",
+    "timerRequestRevertToRejected": "Hoàn tác về Đã từ chối",
+    "timerRequestLastModifiedBy": "Chỉnh sửa gần nhất bởi",
+    "timerRequestApprovedByAt": "Đã duyệt bởi {name} vào {date}",
+    "@timerRequestApprovedByAt": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            },
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "timerRequestRejectedByAt": "Đã từ chối bởi {name} vào {date}",
+    "@timerRequestRejectedByAt": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            },
+            "date": {
+                "type": "String"
+            }
+        }
+    },
     "timerAutoStartBreaks": "Tự động bắt đầu nghỉ",
     "timerAutoStartFocus": "Tự động bắt đầu tập trung",
     "commonCancel": "Hủy",

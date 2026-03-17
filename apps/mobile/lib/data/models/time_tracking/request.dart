@@ -36,9 +36,12 @@ class TimeTrackingRequest extends Equatable {
     this.images = const [],
     this.approvalStatus = ApprovalStatus.pending,
     this.approvedBy,
+    this.approvedByName,
     this.approvedAt,
     this.rejectedBy,
+    this.rejectedByName,
     this.rejectedAt,
+    this.needsInfoRequestedByName,
     this.rejectionReason,
     this.needsInfoReason,
     this.createdAt,
@@ -69,13 +72,18 @@ class TimeTrackingRequest extends Equatable {
           json['approval_status'] as String?,
         ),
         approvedBy: json['approved_by'] as String?,
+        approvedByName: _nestedDisplayName(json['approved_by_user']),
         approvedAt: json['approved_at'] != null
             ? DateTime.parse(json['approved_at'] as String)
             : null,
         rejectedBy: json['rejected_by'] as String?,
+        rejectedByName: _nestedDisplayName(json['rejected_by_user']),
         rejectedAt: json['rejected_at'] != null
             ? DateTime.parse(json['rejected_at'] as String)
             : null,
+        needsInfoRequestedByName: _nestedDisplayName(
+          json['needs_info_requested_by_user'],
+        ),
         rejectionReason: json['rejection_reason'] as String?,
         needsInfoReason: json['needs_info_reason'] as String?,
         createdAt: json['created_at'] != null
@@ -98,9 +106,12 @@ class TimeTrackingRequest extends Equatable {
   final List<String> images;
   final ApprovalStatus approvalStatus;
   final String? approvedBy;
+  final String? approvedByName;
   final DateTime? approvedAt;
   final String? rejectedBy;
+  final String? rejectedByName;
   final DateTime? rejectedAt;
+  final String? needsInfoRequestedByName;
   final String? rejectionReason;
   final String? needsInfoReason;
   final DateTime? createdAt;
@@ -125,12 +136,26 @@ class TimeTrackingRequest extends Equatable {
     images,
     approvalStatus,
     approvedBy,
+    approvedByName,
     approvedAt,
     rejectedBy,
+    rejectedByName,
     rejectedAt,
+    needsInfoRequestedByName,
     rejectionReason,
     needsInfoReason,
     createdAt,
     updatedAt,
   ];
+}
+
+String? _nestedDisplayName(dynamic value) {
+  if (value is! Map<String, dynamic>) {
+    return null;
+  }
+
+  final displayName = value['display_name'];
+  return displayName is String && displayName.trim().isNotEmpty
+      ? displayName.trim()
+      : null;
 }

@@ -58,6 +58,9 @@ class _RequestsView extends StatefulWidget {
 }
 
 class _RequestsViewState extends State<_RequestsView> {
+  static const String _statusChangeGracePeriodConfigId =
+      'TIME_TRACKING_REQUEST_STATUS_CHANGE_GRACE_PERIOD_MINUTES';
+
   _RequestStatusFilter _selectedFilter = _RequestStatusFilter.pending;
   final WorkspacePermissionsRepository _workspacePermissionsRepository =
       WorkspacePermissionsRepository();
@@ -65,6 +68,7 @@ class _RequestsViewState extends State<_RequestsView> {
   bool _canManageRequests = false;
   bool _canManageThresholdSettings = false;
   int? _missedEntryDateThreshold;
+  int _statusChangeGracePeriodMinutes = 0;
   bool _isThresholdLoading = false;
 
   @override
@@ -250,6 +254,7 @@ class _RequestsViewState extends State<_RequestsView> {
         _canManageRequests = false;
         _canManageThresholdSettings = false;
         _missedEntryDateThreshold = null;
+        _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
       return;
@@ -264,6 +269,7 @@ class _RequestsViewState extends State<_RequestsView> {
     bool canManageRequests;
     bool canManageThresholdSettings;
     int? threshold;
+    var statusChangeGracePeriodMinutes = 0;
     try {
       final workspacePermissions = await _workspacePermissionsRepository
           .getPermissions(wsId: wsId, userId: currentUserId);
@@ -287,6 +293,22 @@ class _RequestsViewState extends State<_RequestsView> {
           threshold = null;
         }
       }
+
+      if (canManageRequests) {
+        try {
+          final gracePeriodValue = await repository.getWorkspaceConfigValue(
+            wsId,
+            _statusChangeGracePeriodConfigId,
+          );
+          statusChangeGracePeriodMinutes =
+              int.tryParse(gracePeriodValue ?? '0') ?? 0;
+          if (statusChangeGracePeriodMinutes < 0) {
+            statusChangeGracePeriodMinutes = 0;
+          }
+        } on Exception {
+          statusChangeGracePeriodMinutes = 0;
+        }
+      }
     } on Exception catch (error, stackTrace) {
       developer.log(
         'Failed to load workspace permissions for threshold settings',
@@ -301,6 +323,7 @@ class _RequestsViewState extends State<_RequestsView> {
         _canManageRequests = false;
         _canManageThresholdSettings = false;
         _missedEntryDateThreshold = null;
+        _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
       return;
@@ -313,6 +336,7 @@ class _RequestsViewState extends State<_RequestsView> {
       _canManageRequests = canManageRequests;
       _canManageThresholdSettings = canManageThresholdSettings;
       _missedEntryDateThreshold = threshold;
+      _statusChangeGracePeriodMinutes = statusChangeGracePeriodMinutes;
       _isThresholdLoading = false;
     });
   }
@@ -329,18 +353,25 @@ class _RequestsViewState extends State<_RequestsView> {
       builder: (dialogContext) {
         return ThresholdSettingsDialog(
           currentThreshold: _missedEntryDateThreshold,
-          onSave: (threshold) async {
+          currentStatusChangeGracePeriodMinutes:
+              _statusChangeGracePeriodMinutes,
+          onSave: (threshold, statusChangeGracePeriodMinutes) async {
             try {
               await repo.updateMissedEntryDateThreshold(
                 wsId,
                 threshold,
+                statusChangeGracePeriodMinutes: statusChangeGracePeriodMinutes,
               );
 
               if (!mounted) {
                 return;
               }
 
-              setState(() => _missedEntryDateThreshold = threshold);
+              setState(() {
+                _missedEntryDateThreshold = threshold;
+                _statusChangeGracePeriodMinutes =
+                    statusChangeGracePeriodMinutes;
+              });
               shad.showToast(
                 context: context,
                 builder: (context, overlay) => shad.Alert(
@@ -380,6 +411,7 @@ class _RequestsViewState extends State<_RequestsView> {
         repository: repository,
         currentUserId: currentUserId,
         isManager: _canManageRequests,
+        statusChangeGracePeriodMinutes: _statusChangeGracePeriodMinutes,
         onApprove: () => cubit.approveRequest(request.id, wsId),
         onReject: (reason) =>
             cubit.rejectRequest(request.id, wsId, reason: reason),
