@@ -34,6 +34,7 @@ const ONBOARDING_BYPASS_PATHS = [
 const isDev = process.env.NODE_ENV !== 'production';
 
 const WEB_APP_URL = isDev ? `http://localhost:${PORT}` : 'https://tuturuuu.com';
+const OFFLINE_FALLBACK_PATH = '/~offline';
 
 /**
  * Check if a user's personal workspace is missing an active subscription.
@@ -193,6 +194,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     return NextResponse.next();
+  }
+
+  const offlineResponse = handleOfflineFallbackRoute(req);
+  if (offlineResponse) {
+    return offlineResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
@@ -468,6 +474,27 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   propagateAuthCookies(authRes, localeRes);
   return localeRes;
 }
+
+const handleOfflineFallbackRoute = (req: NextRequest): NextResponse | null => {
+  const { pathname } = req.nextUrl;
+
+  if (pathname === OFFLINE_FALLBACK_PATH) {
+    return NextResponse.next();
+  }
+
+  const segments = pathname.split('/').filter(Boolean);
+  if (
+    segments.length === 2 &&
+    supportedLocales.includes(segments[0] as Locale) &&
+    segments[1] === '~offline'
+  ) {
+    const redirectUrl = new URL(OFFLINE_FALLBACK_PATH, req.nextUrl);
+    redirectUrl.search = req.nextUrl.search;
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  return null;
+};
 
 export const config = {
   matcher: [
