@@ -63,7 +63,7 @@
     "@tiptap/extension-subscript": "3.20.2",
     "@tiptap/extension-superscript": "3.20.2",
     "@tiptap/extension-text-align": "3.20.2",
-    "@tiptap/extension-underline": "3.20.2",
+    "@tiptap/extension-underline": "3.20.4",
     "@tiptap/html": "3.20.2",
     "@tiptap/react": "3.20.2",
     "@tiptap/starter-kit": "3.20.2",
