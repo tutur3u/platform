@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { API_URL } from '@/constants/common';
 import { siteConfig } from '@/constants/configs';
 import { normalizeMarkdownToText } from '@/features/forms/content';
 import type {
@@ -34,37 +33,6 @@ export interface SharedFormMetadataStrings {
   protectedDescription: string;
   unavailableDescription: string;
   openGraphAlt: string;
-}
-
-export async function fetchSharedFormData(
-  shareCode: string,
-  options?: {
-    cookieHeader?: string;
-    revalidateSeconds?: number;
-  }
-): Promise<SharedFormFetchResult> {
-  const headers = options?.cookieHeader
-    ? {
-        cookie: options.cookieHeader,
-      }
-    : undefined;
-
-  const response = await fetch(`${API_URL}/v1/shared/forms/${shareCode}`, {
-    cache: 'no-store',
-    headers,
-  });
-
-  if (!response.ok) {
-    return {
-      status: response.status,
-      data: null,
-    };
-  }
-
-  return {
-    status: response.status,
-    data: (await response.json()) as SharedFormPayload,
-  };
 }
 
 function buildSharedFormUrl(locale: string, shareCode: string) {

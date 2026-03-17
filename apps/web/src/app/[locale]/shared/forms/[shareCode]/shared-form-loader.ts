@@ -18,7 +18,24 @@ import type {
   SharedFormPayload,
 } from './shared-form-data';
 
-async function loadSharedForm(shareCode: string) {
+interface LoadedSharedFormRecord {
+  adminClient: any;
+  shareLink: { id: string; form_id: string; active: boolean } | null;
+  form: {
+    id: string;
+    ws_id: string;
+    status: string;
+    access_mode: string;
+    open_at: string | null;
+    close_at: string | null;
+  } | null;
+  definition: SharedFormPayload['form'] | null;
+  accessMode: 'anonymous' | 'authenticated' | 'authenticated_email';
+}
+
+async function loadSharedFormRecord(
+  shareCode: string
+): Promise<LoadedSharedFormRecord> {
   const adminClient = await createAdminClient();
   const { data: shareLink } = await adminClient
     .from('form_share_links')
@@ -27,7 +44,13 @@ async function loadSharedForm(shareCode: string) {
     .maybeSingle();
 
   if (!shareLink?.active) {
-    return { adminClient, shareLink: null, form: null, definition: null };
+    return {
+      adminClient,
+      shareLink: null,
+      form: null,
+      definition: null,
+      accessMode: 'anonymous',
+    };
   }
 
   const { data: form } = await adminClient
@@ -40,7 +63,13 @@ async function loadSharedForm(shareCode: string) {
     ? await fetchFormDefinition(adminClient, form.id)
     : null;
 
-  return { adminClient, shareLink, form, definition };
+  return {
+    adminClient,
+    shareLink,
+    form,
+    definition,
+    accessMode: form ? resolveAccessMode(form.access_mode) : 'anonymous',
+  };
 }
 
 function isFormAcceptingResponses(form: {
@@ -110,6 +139,55 @@ async function getResponderContext(
   };
 }
 
+function resolveSharedFormBaseResult(
+  loaded: Pick<LoadedSharedFormRecord, 'shareLink' | 'form' | 'definition'>
+): { status: 200 | 404 | 410; form: SharedFormPayload['form'] | null } {
+  if (!loaded.shareLink || !loaded.form || !loaded.definition) {
+    return { status: 404, form: null };
+  }
+
+  if (!isFormAcceptingResponses(loaded.form)) {
+    return { status: 410, form: null };
+  }
+
+  return { status: 200, form: loaded.definition };
+}
+
+export function buildSharedFormSnapshotResult(
+  loaded: Pick<
+    LoadedSharedFormRecord,
+    'shareLink' | 'form' | 'definition' | 'accessMode'
+  >
+): SharedFormFetchResult {
+  const resolved = resolveSharedFormBaseResult(loaded);
+
+  if (resolved.status !== 200 || !resolved.form) {
+    return { status: resolved.status, data: null };
+  }
+
+  if (loaded.accessMode !== 'anonymous') {
+    return { status: 401, data: null };
+  }
+
+  return {
+    status: 200,
+    data: {
+      form: resolved.form,
+    },
+  };
+}
+
+export async function loadSharedFormSnapshot(
+  shareCode: string
+): Promise<SharedFormFetchResult> {
+  try {
+    const loaded = await loadSharedFormRecord(shareCode);
+    return buildSharedFormSnapshotResult(loaded);
+  } catch {
+    return { status: 500, data: null };
+  }
+}
+
 /**
  * Server-only loader for shared form page data.
  * Replaces the internal HTTP fetch to the API with direct DB + auth access.
@@ -120,21 +198,19 @@ export async function loadSharedFormForPage(
   try {
     const headersList = await headers();
     const headersObj = { headers: headersList };
-    const { adminClient, shareLink, form, definition } =
-      await loadSharedForm(shareCode);
+    const { adminClient, shareLink, form, definition, accessMode } =
+      await loadSharedFormRecord(shareCode);
+    const resolved = resolveSharedFormBaseResult({
+      shareLink,
+      form,
+      definition,
+    });
 
-    if (!shareLink || !form || !definition) {
-      return { status: 404, data: null };
+    if (resolved.status !== 200 || !shareLink || !form || !definition) {
+      return { status: resolved.status, data: null };
     }
 
-    if (!isFormAcceptingResponses(form)) {
-      return { status: 410, data: null };
-    }
-
-    const responder = await getResponderContext(
-      headersObj,
-      resolveAccessMode(form.access_mode)
-    );
+    const responder = await getResponderContext(headersObj, accessMode);
 
     if (definition.settings.oneResponsePerUser && responder.user?.id) {
       const { data: existingResponse } = await adminClient

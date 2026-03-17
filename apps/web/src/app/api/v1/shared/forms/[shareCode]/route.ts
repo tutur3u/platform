@@ -4,6 +4,7 @@ import {
   verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { loadSharedFormSnapshot } from '@/app/[locale]/shared/forms/[shareCode]/shared-form-loader';
 import { normalizeMarkdownToText } from '@/features/forms/content';
 import {
   getAuthenticatedUserContext,
@@ -12,7 +13,6 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-import { loadSharedFormForPage } from '@/app/[locale]/shared/forms/[shareCode]/shared-form-loader';
 import {
   FORM_ACCESS_MODE_VALUES,
   formSubmitSchema,
@@ -121,7 +121,7 @@ export async function GET(
 ) {
   try {
     const { shareCode } = await params;
-    const { status, data } = await loadSharedFormForPage(shareCode);
+    const { status, data } = await loadSharedFormSnapshot(shareCode);
 
     if (status === 401) {
       return NextResponse.json(

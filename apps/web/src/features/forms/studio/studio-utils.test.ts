@@ -111,6 +111,64 @@ describe('studio-utils export/import', () => {
     }
   });
 
+  it('importFormStudioPayload normalizes legacy local datetimes', () => {
+    const input = createDefaultFormStudioInput();
+    input.openAt = '2026-03-16T06:57';
+    input.closeAt = '2026-03-16T06:57:14';
+    const json = JSON.stringify({
+      formatVersion: '1',
+      exportedAt: new Date().toISOString(),
+      form: input,
+    });
+
+    const result = importFormStudioPayload(json);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.openAt).toBe(
+        new Date(2026, 2, 16, 6, 57, 0, 0).toISOString()
+      );
+      expect(result.data.closeAt).toBe(
+        new Date(2026, 2, 16, 6, 57, 14, 0).toISOString()
+      );
+      expect(result.data.sections[0]?.id).not.toBe(input.sections[0]?.id);
+    }
+  });
+
+  it('importFormStudioPayload accepts offset-bearing ISO datetimes', () => {
+    const input = createDefaultFormStudioInput();
+    input.openAt = '2026-03-16T17:00:00+00:00';
+    input.closeAt = '2026-03-23T17:00:00+00:00';
+    const json = JSON.stringify({
+      formatVersion: '1',
+      exportedAt: new Date().toISOString(),
+      form: input,
+    });
+
+    const result = importFormStudioPayload(json);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.openAt).toBe('2026-03-16T17:00:00+00:00');
+      expect(result.data.closeAt).toBe('2026-03-23T17:00:00+00:00');
+    }
+  });
+
+  it('exportFormStudioPayload rewrites legacy local datetimes to canonical ISO', () => {
+    const input = createDefaultFormStudioInput();
+    input.openAt = '2026-03-16T06:57';
+    input.closeAt = '2026-03-16T06:57:14';
+
+    const envelope = exportFormStudioPayload(input);
+
+    expect(envelope.form.openAt).toBe(
+      new Date(2026, 2, 16, 6, 57, 0, 0).toISOString()
+    );
+    expect(envelope.form.closeAt).toBe(
+      new Date(2026, 2, 16, 6, 57, 14, 0).toISOString()
+    );
+  });
+
   it('export/import preserves validation settings (integer, real, regex, email)', () => {
     const input = createDefaultFormStudioInput();
     input.sections[0]!.questions[0] = {
