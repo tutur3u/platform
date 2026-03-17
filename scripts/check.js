@@ -7,8 +7,8 @@
  * and displays a summary at the end.
  *
  * Usage:
- *   node scripts/check.js [--table] [--timing] [--details]
- *   bun check [--table] [--timing] [--details]
+ *   node scripts/check.js [--table] [--timing] [--details] [--fail-fast]
+ *   bun check [--table] [--timing] [--details] [--fail-fast]
  *
  * Exit codes:
  *   0 - All checks passed
@@ -16,10 +16,74 @@
  */
 
 const { spawn } = require('node:child_process');
+const os = require('node:os');
 
 const useTable = process.argv.includes('--table');
 const showTiming = process.argv.includes('--timing');
 const showDetails = process.argv.includes('--details');
+const forceSerial = process.argv.includes('--serial');
+const failFastNoFlag = process.argv.includes('--no-fail-fast');
+const failFast = !failFastNoFlag;
+const failFastRequiredChecks = new Set(['tests', 'type-check']);
+
+function getNumericFlagValue(flagName) {
+  const direct = process.argv.find((arg) => arg.startsWith(`${flagName}=`));
+  if (direct) {
+    const raw = direct.slice(flagName.length + 1);
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  const index = process.argv.indexOf(flagName);
+  if (index !== -1 && process.argv[index + 1]) {
+    const parsed = Number.parseInt(process.argv[index + 1], 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  return null;
+}
+
+function getRecommendedConcurrency(totalChecks) {
+  const cpuCount = os.cpus()?.length ?? 1;
+  const totalMemoryGb = os.totalmem() / 1024 / 1024 / 1024;
+  const availableMemoryBytes =
+    typeof os.availableMemory === 'function'
+      ? os.availableMemory()
+      : os.freemem();
+  const availableMemoryGb = availableMemoryBytes / 1024 / 1024 / 1024;
+  const availableRatio =
+    totalMemoryGb > 0 ? availableMemoryGb / totalMemoryGb : 0;
+
+  let concurrency = 2;
+  if (cpuCount <= 4 || totalMemoryGb < 8) {
+    concurrency = 1;
+  } else if (cpuCount >= 12 && totalMemoryGb >= 24) {
+    concurrency = 4;
+  } else if (cpuCount >= 8 && totalMemoryGb >= 16) {
+    concurrency = 3;
+  }
+
+  if (availableMemoryGb < 4 || availableRatio < 0.2) {
+    concurrency = 1;
+  } else if (availableMemoryGb < 8 || availableRatio < 0.35) {
+    concurrency = Math.min(concurrency, 2);
+  } else if (availableMemoryGb < 12 || availableRatio < 0.5) {
+    concurrency = Math.min(concurrency, 3);
+  }
+
+  return Math.max(1, Math.min(totalChecks, concurrency));
+}
+
+const concurrencyFromFlag = getNumericFlagValue('--concurrency');
+const concurrencyFromEnv = Number.parseInt(
+  process.env.CHECK_CONCURRENCY ?? '',
+  10
+);
+const requestedConcurrency =
+  concurrencyFromFlag ??
+  (Number.isFinite(concurrencyFromEnv) && concurrencyFromEnv > 0
+    ? concurrencyFromEnv
+    : null);
 
 /**
  * Strip ANSI escape codes from a string
@@ -117,18 +181,8 @@ const colors = {
   cyan: '\x1b[36m',
 };
 
-// Check definitions
+// Check definitions - ordered by priority: tests/type-check first (fail-fast protected), then fast checks, then slow ones
 const checks = [
-  {
-    name: 'biome',
-    command: 'bun',
-    args: ['biome', 'check'],
-    parseOutput: (stdout) => {
-      const clean = stripAnsi(stdout);
-      const match = clean.match(/Checked (\d+) files?/i);
-      return match ? `${match[1]} files checked` : 'Passed';
-    },
-  },
   {
     name: 'tests',
     command: 'bun',
@@ -149,22 +203,6 @@ const checks = [
     },
   },
   {
-    name: 'script-tests',
-    command: 'bun',
-    args: ['run', 'test:scripts'],
-    errorsOnly: true,
-    quietSuccessMessage: `${colors.dim}No script test errors${colors.reset}`,
-    formatFailureOutput: formatScriptTestErrors,
-    parseOutput: (stdout) => {
-      const clean = stripAnsi(stdout);
-      const match = clean.match(/# tests (\d+)/i);
-      if (match) {
-        return `${match[1]} tests passed`;
-      }
-      return 'Passed';
-    },
-  },
-  {
     name: 'type-check',
     command: 'bun',
     args: showDetails
@@ -177,6 +215,31 @@ const checks = [
       );
       if (tasksMatch) {
         return `${tasksMatch[1]}/${tasksMatch[2]} packages`;
+      }
+      return 'Passed';
+    },
+  },
+  {
+    name: 'biome',
+    command: 'bun',
+    args: ['biome', 'check'],
+    parseOutput: (stdout) => {
+      const clean = stripAnsi(stdout);
+      const match = clean.match(/Checked (\d+) files?/i);
+      return match ? `${match[1]} files checked` : 'Passed';
+    },
+  },
+  {
+    name: 'script-tests',
+    command: 'bun',
+    args: ['run', 'test:scripts'],
+    errorsOnly: true,
+    formatFailureOutput: formatScriptTestErrors,
+    parseOutput: (stdout) => {
+      const clean = stripAnsi(stdout);
+      const match = clean.match(/# tests (\d+)/i);
+      if (match) {
+        return `${match[1]} tests passed`;
       }
       return 'Passed';
     },
@@ -255,12 +318,13 @@ const checks = [
 /**
  * Run a single check and capture output
  */
-function runCheck(check) {
+function runCheck(check, options = {}) {
   return new Promise((resolve) => {
     const startTime = Date.now();
     let stdout = '';
     let stderr = '';
-    const streamOutput = showDetails || !check.errorsOnly;
+    const streamOutput =
+      options.forceBuffered === true ? false : showDetails || !check.errorsOnly;
 
     const proc = spawn(check.command, check.args, {
       cwd: process.cwd(),
@@ -290,7 +354,7 @@ function runCheck(check) {
 
     proc.on('close', (code) => {
       const duration = Date.now() - startTime;
-      if (!streamOutput && code !== 0) {
+      if (!streamOutput && options.forceBuffered !== true && code !== 0) {
         const failureOutput = check.formatFailureOutput
           ? check.formatFailureOutput(stdout, stderr)
           : `${stdout}${stderr}`;
@@ -299,7 +363,12 @@ function runCheck(check) {
             failureOutput.endsWith('\n') ? failureOutput : `${failureOutput}\n`
           );
         }
-      } else if (!streamOutput && code === 0 && check.quietSuccessMessage) {
+      } else if (
+        !streamOutput &&
+        options.forceBuffered !== true &&
+        code === 0 &&
+        check.quietSuccessMessage
+      ) {
         console.log(check.quietSuccessMessage);
       }
       resolve({
@@ -322,6 +391,303 @@ function runCheck(check) {
         status: 'Error',
       });
     });
+  });
+}
+
+function startCheck(check, options = {}) {
+  const startTime = Date.now();
+  let stdout = '';
+  let stderr = '';
+  let wasCancelled = false;
+  let settled = false;
+  const streamOutput =
+    options.forceBuffered === true ? false : showDetails || !check.errorsOnly;
+
+  const proc = spawn(check.command, check.args, {
+    cwd: process.cwd(),
+    shell: true,
+    env: {
+      ...process.env,
+      FORCE_COLOR: '1',
+      CHECK_DETAILS: showDetails ? '1' : '0',
+    },
+  });
+
+  function terminate() {
+    if (settled || proc.killed) return;
+    wasCancelled = true;
+
+    if (process.platform === 'win32') {
+      spawn('taskkill', ['/pid', String(proc.pid), '/t', '/f'], {
+        shell: true,
+        stdio: 'ignore',
+      });
+      return;
+    }
+
+    proc.kill('SIGTERM');
+  }
+
+  const promise = new Promise((resolve) => {
+    proc.stdout.on('data', (data) => {
+      const str = data.toString();
+      stdout += str;
+      if (streamOutput) {
+        process.stdout.write(str);
+      }
+    });
+
+    proc.stderr.on('data', (data) => {
+      const str = data.toString();
+      stderr += str;
+      if (streamOutput) {
+        process.stderr.write(str);
+      }
+    });
+
+    proc.on('close', (code) => {
+      settled = true;
+      const duration = Date.now() - startTime;
+      if (!streamOutput && options.forceBuffered !== true && code !== 0) {
+        const failureOutput = check.formatFailureOutput
+          ? check.formatFailureOutput(stdout, stderr)
+          : `${stdout}${stderr}`;
+        if (failureOutput) {
+          process.stderr.write(
+            failureOutput.endsWith('\n') ? failureOutput : `${failureOutput}\n`
+          );
+        }
+      } else if (
+        !streamOutput &&
+        options.forceBuffered !== true &&
+        code === 0 &&
+        check.quietSuccessMessage
+      ) {
+        console.log(check.quietSuccessMessage);
+      }
+      resolve({
+        name: check.name,
+        success: !wasCancelled && code === 0,
+        cancelled: wasCancelled,
+        stdout,
+        stderr,
+        duration,
+        status: wasCancelled
+          ? 'Cancelled (fail-fast)'
+          : code === 0
+            ? check.parseOutput(stdout + stderr)
+            : 'Failed',
+      });
+    });
+
+    proc.on('error', (err) => {
+      settled = true;
+      resolve({
+        name: check.name,
+        success: false,
+        cancelled: wasCancelled,
+        stdout,
+        stderr: err.message,
+        duration: Date.now() - startTime,
+        status: wasCancelled ? 'Cancelled (fail-fast)' : 'Error',
+      });
+    });
+  });
+
+  return { promise, terminate };
+}
+
+function getFailureOutput(check, stdout, stderr) {
+  return check.formatFailureOutput
+    ? check.formatFailureOutput(stdout, stderr)
+    : `${stdout}${stderr}`;
+}
+
+function printBufferedResult(check, result) {
+  if (result.cancelled) {
+    return;
+  }
+
+  const combinedOutput = `${result.stdout}${result.stderr}`;
+
+  console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
+
+  if (showDetails) {
+    if (combinedOutput.trim()) {
+      process.stdout.write(
+        combinedOutput.endsWith('\n') ? combinedOutput : `${combinedOutput}\n`
+      );
+    }
+  } else if (!result.success) {
+    const failureOutput = getFailureOutput(check, result.stdout, result.stderr);
+    if (failureOutput.trim()) {
+      process.stderr.write(
+        failureOutput.endsWith('\n') ? failureOutput : `${failureOutput}\n`
+      );
+    }
+  } else if (check.quietSuccessMessage) {
+    console.log(check.quietSuccessMessage);
+  }
+
+  const statusColor = result.success ? colors.green : colors.red;
+  const statusLabel = result.success ? 'PASS' : 'FAIL';
+  let footer = `${statusColor}${statusLabel}${colors.reset} ${check.name}`;
+  if (showDetails) footer += `: ${result.status}`;
+  if (showTiming) footer += ` (${formatDuration(result.duration)})`;
+  console.log(footer);
+  console.log('');
+}
+
+async function runChecksWithConcurrency(checkList, concurrency, options = {}) {
+  const results = new Array(checkList.length);
+  let nextIndex = 0;
+  let activeCount = 0;
+  let failureSeen = false;
+  let continuationLogged = false;
+  let stopScheduling = false;
+  let failingCheckName = null;
+  const activeRuns = new Map();
+  const requiredOnFailure = options.requiredOnFailure ?? new Set();
+
+  function isRequiredOnFailure(checkName) {
+    return requiredOnFailure.has(checkName);
+  }
+
+  function hasPendingRequiredChecks() {
+    for (let i = nextIndex; i < checkList.length; i += 1) {
+      if (!results[i] && isRequiredOnFailure(checkList[i].name)) {
+        return true;
+      }
+    }
+
+    for (const activeIndex of activeRuns.keys()) {
+      if (
+        !results[activeIndex] &&
+        isRequiredOnFailure(checkList[activeIndex].name)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function cancelNonRequiredActive(exceptIndex = null) {
+    for (const [activeIndex, activeRun] of activeRuns.entries()) {
+      if (activeIndex === exceptIndex) continue;
+      if (isRequiredOnFailure(checkList[activeIndex].name)) continue;
+      activeRun.terminate();
+    }
+  }
+
+  return new Promise((resolve) => {
+    function finalizeAndResolve() {
+      if (!stopScheduling || nextIndex >= checkList.length) {
+        resolve(results);
+        return;
+      }
+
+      for (let i = nextIndex; i < checkList.length; i += 1) {
+        if (!results[i]) {
+          results[i] = {
+            name: checkList[i].name,
+            success: false,
+            cancelled: true,
+            stdout: '',
+            stderr: '',
+            duration: 0,
+            status: `Skipped (fail-fast after ${failingCheckName})`,
+          };
+        }
+      }
+
+      resolve(results);
+    }
+
+    function launchNext() {
+      while (
+        activeCount < concurrency &&
+        nextIndex < checkList.length &&
+        (!stopScheduling || hasPendingRequiredChecks())
+      ) {
+        if (stopScheduling && !isRequiredOnFailure(checkList[nextIndex].name)) {
+          results[nextIndex] = {
+            name: checkList[nextIndex].name,
+            success: false,
+            cancelled: true,
+            stdout: '',
+            stderr: '',
+            duration: 0,
+            status: `Skipped (fail-fast after ${failingCheckName})`,
+          };
+          nextIndex += 1;
+          continue;
+        }
+
+        const index = nextIndex;
+        const check = checkList[index];
+        nextIndex += 1;
+        activeCount += 1;
+
+        const run = startCheck(check, { forceBuffered: true });
+        activeRuns.set(index, run);
+
+        run.promise
+          .then((result) => {
+            results[index] = result;
+            printBufferedResult(check, result);
+
+            if (options.failFast && !result.success && !result.cancelled) {
+              failureSeen = true;
+              failingCheckName = check.name;
+            }
+
+            if (
+              options.failFast &&
+              failureSeen &&
+              !stopScheduling &&
+              !hasPendingRequiredChecks()
+            ) {
+              stopScheduling = true;
+              console.log(
+                `${colors.yellow}${colors.bold}${failingCheckName} failed; skipping remaining checks.${colors.reset}`
+              );
+              cancelNonRequiredActive(index);
+            } else if (
+              options.failFast &&
+              failureSeen &&
+              !stopScheduling &&
+              hasPendingRequiredChecks()
+            ) {
+              if (!continuationLogged) {
+                console.log(
+                  `${colors.yellow}${failingCheckName} failed; running tests/type-check for full context...${colors.reset}`
+                );
+                continuationLogged = true;
+              }
+            }
+          })
+          .finally(() => {
+            activeRuns.delete(index);
+            activeCount -= 1;
+            if (nextIndex >= checkList.length && activeCount === 0) {
+              finalizeAndResolve();
+              return;
+            }
+
+            if (activeCount === 0 && stopScheduling) {
+              finalizeAndResolve();
+              return;
+            }
+
+            if (!stopScheduling) {
+              launchNext();
+            }
+          });
+      }
+    }
+
+    launchNext();
   });
 }
 
@@ -357,8 +723,12 @@ function createRow(cells, colWidths) {
 /**
  * Print the summary table
  */
-function printSummary(results) {
-  const allPassed = results.every((r) => r.success);
+function printSummary(results, options = {}) {
+  const { hideSkipped = false } = options;
+  const displayedResults = hideSkipped
+    ? results.filter((r) => !r.cancelled)
+    : results;
+  const allPassed = displayedResults.every((r) => r.success);
 
   console.log('\n');
 
@@ -379,17 +749,17 @@ function printSummary(results) {
     const col4Header = 'Time';
     const col1Width = Math.max(
       col1Header.length,
-      ...results.map((r) => r.name.length)
+      ...displayedResults.map((r) => r.name.length)
     );
     const col2Width = Math.max(
       col2Header.length,
-      ...results.map((r) => {
+      ...displayedResults.map((r) => {
         const prefix = r.success ? 'PASS' : 'FAIL';
         return getDisplayWidth(prefix);
       })
     );
-    const detailsValues = results.map((r) => r.status);
-    const timeValues = results.map((r) => formatDuration(r.duration));
+    const detailsValues = displayedResults.map((r) => r.status);
+    const timeValues = displayedResults.map((r) => formatDuration(r.duration));
     const colWidths = [col1Width, col2Width];
     if (showDetails) {
       colWidths.push(
@@ -422,10 +792,12 @@ function printSummary(results) {
     console.log(createRow(headerCells, colWidths));
     console.log(createLine('├', '┼', '┤', colWidths));
 
-    for (const result of results) {
+    for (const result of displayedResults) {
       const statusText = result.success
         ? `${colors.green}PASS${colors.reset}`
-        : `${colors.red}FAIL${colors.reset}`;
+        : result.cancelled
+          ? `${colors.yellow}SKIP${colors.reset}`
+          : `${colors.red}FAIL${colors.reset}`;
       const rowCells = [result.name, statusText];
       if (showDetails) rowCells.push(result.status);
       if (showTiming) {
@@ -435,16 +807,24 @@ function printSummary(results) {
       }
       console.log(createRow(rowCells, colWidths));
 
-      if (result !== results[results.length - 1]) {
+      if (result !== displayedResults[displayedResults.length - 1]) {
         console.log(createLine('├', '┼', '┤', colWidths));
       }
     }
 
     console.log(createLine('└', '┴', '┘', colWidths));
   } else {
-    for (const result of results) {
-      const statusLabel = result.success ? 'PASS' : 'FAIL';
-      const statusColor = result.success ? colors.green : colors.red;
+    for (const result of displayedResults) {
+      const statusLabel = result.success
+        ? 'PASS'
+        : result.cancelled
+          ? 'SKIP'
+          : 'FAIL';
+      const statusColor = result.success
+        ? colors.green
+        : result.cancelled
+          ? colors.yellow
+          : colors.red;
       let output = `${statusColor}${statusLabel}${colors.reset} ${result.name}`;
       if (showDetails) output += `: ${result.status}`;
       if (showTiming) output += ` (${formatDuration(result.duration)})`;
@@ -457,20 +837,69 @@ function printSummary(results) {
  * Main function
  */
 async function main() {
+  const defaultConcurrency = getRecommendedConcurrency(checks.length);
+  const concurrency = forceSerial
+    ? 1
+    : requestedConcurrency
+      ? Math.min(Math.max(1, requestedConcurrency), checks.length)
+      : defaultConcurrency;
+
   console.log(
     `${colors.cyan}${colors.bold}Running all checks...${colors.reset}\n`
   );
 
-  const results = [];
+  let results = [];
 
-  for (const check of checks) {
-    console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
-    const result = await runCheck(check);
-    results.push(result);
-    console.log('\n');
+  if (concurrency === 1) {
+    let failureSeen = false;
+    let failingCheckName = null;
+
+    for (const check of checks) {
+      console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
+      const result = await runCheck(check);
+      results.push(result);
+      console.log('\n');
+
+      if (failFast && !result.success) {
+        failureSeen = true;
+        failingCheckName = check.name;
+      }
+
+      if (failFast && failureSeen) {
+        const pendingRequiredChecks = checks
+          .slice(results.length)
+          .some((pendingCheck) =>
+            failFastRequiredChecks.has(pendingCheck.name)
+          );
+
+        if (!pendingRequiredChecks) {
+          for (let i = results.length; i < checks.length; i += 1) {
+            results.push({
+              name: checks[i].name,
+              success: false,
+              cancelled: true,
+              stdout: '',
+              stderr: '',
+              duration: 0,
+              status: `Skipped (fail-fast after ${failingCheckName})`,
+            });
+          }
+
+          console.log(
+            `${colors.yellow}${colors.bold}${failingCheckName} failed; skipping remaining checks.${colors.reset}`
+          );
+          break;
+        }
+      }
+    }
+  } else {
+    results = await runChecksWithConcurrency(checks, concurrency, {
+      failFast,
+      requiredOnFailure: failFastRequiredChecks,
+    });
   }
 
-  printSummary(results);
+  printSummary(results, { hideSkipped: failFast });
 
   const allPassed = results.every((r) => r.success);
   process.exit(allPassed ? 0 : 1);
