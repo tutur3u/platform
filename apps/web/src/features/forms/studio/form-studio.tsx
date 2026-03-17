@@ -89,6 +89,7 @@ import {
   duplicateSectionInput,
   ensureIdentifiers,
   exportFormStudioPayload,
+  sanitizeFormStudioPayloadForSave,
   toPreviewDefinition,
   toStudioInput,
 } from './studio-utils';
@@ -605,7 +606,8 @@ export function FormStudio({
 
   const performSave = useCallback(
     async (payload: FormStudioInput, isAutosave: boolean) => {
-      const normalizedPayload = ensureIdentifiers(payload);
+      const sanitizedPayload = sanitizeFormStudioPayloadForSave(payload);
+      const normalizedPayload = ensureIdentifiers(sanitizedPayload);
       const variables = isAutosave
         ? { payload: normalizedPayload, isAutosave: true }
         : normalizedPayload;

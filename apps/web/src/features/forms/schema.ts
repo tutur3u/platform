@@ -259,8 +259,14 @@ export const formStudioSchema = z.object({
   description: z.string().max(FORM_DESCRIPTION_MAX_LENGTH).default(''),
   status: z.enum(FORM_STATUS_VALUES).default('draft'),
   accessMode: z.enum(FORM_ACCESS_MODE_VALUES).default('anonymous'),
-  openAt: z.string().datetime().nullable().optional(),
-  closeAt: z.string().datetime().nullable().optional(),
+  openAt: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.iso.datetime().nullable().optional()
+  ),
+  closeAt: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.iso.datetime().nullable().optional()
+  ),
   maxResponses: z.number().int().positive().nullable().optional(),
   theme: formThemeSchema,
   settings: formSettingsSchema,

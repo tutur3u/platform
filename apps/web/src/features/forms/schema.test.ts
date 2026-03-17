@@ -4,8 +4,40 @@ import {
   formExportEnvelopeSchema,
   formLogicRuleSchema,
   formProgressSchema,
+  formStudioSchema,
   formSubmitSchema,
 } from './schema';
+
+describe('formStudioSchema', () => {
+  it('accepts empty strings for openAt and closeAt as null', () => {
+    const input = {
+      ...createDefaultFormStudioInput(),
+      openAt: '',
+      closeAt: '',
+    };
+    const parsed = formStudioSchema.safeParse(input);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.openAt).toBe(null);
+      expect(parsed.data.closeAt).toBe(null);
+    }
+  });
+
+  it('accepts valid ISO datetime strings for openAt and closeAt', () => {
+    const validDate = new Date().toISOString();
+    const input = {
+      ...createDefaultFormStudioInput(),
+      openAt: validDate,
+      closeAt: validDate,
+    };
+    const parsed = formStudioSchema.safeParse(input);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.openAt).toBe(validDate);
+      expect(parsed.data.closeAt).toBe(validDate);
+    }
+  });
+});
 
 describe('formSubmitSchema', () => {
   it('accepts canonical Postgres UUID answer keys used by seeded forms', () => {
