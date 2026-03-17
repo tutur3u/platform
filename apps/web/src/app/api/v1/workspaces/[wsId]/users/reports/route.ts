@@ -9,13 +9,17 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  MAX_MONTHLY_REPORT_TEXT_LENGTH,
+  MAX_MONTHLY_REPORT_TITLE_LENGTH,
+} from '@/features/reports/report-limits';
 
 const CreateReportSchema = z.object({
   user_id: z.uuid(),
   group_id: z.uuid(),
-  title: z.string().min(1),
-  content: z.string(),
-  feedback: z.string(),
+  title: z.string().min(1).max(MAX_MONTHLY_REPORT_TITLE_LENGTH),
+  content: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
+  feedback: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
   score: z.number().nullable().optional(),
   scores: z.array(z.number()).nullable().optional(),
 });

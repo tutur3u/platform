@@ -23,6 +23,7 @@ const UpdateThresholdSchema = z.object({
       message: 'Threshold must be a non-negative integer or null',
     }
   ),
+  statusChangeGracePeriodMinutes: z.number().int().nonnegative().optional(),
 });
 
 export async function PUT(
@@ -120,26 +121,26 @@ export async function PUT(
       );
     }
 
-    const threshold = validationResult.data.threshold;
+    const { threshold, statusChangeGracePeriodMinutes } = validationResult.data;
+    const statusChangeGracePeriodForRpc =
+      statusChangeGracePeriodMinutes ?? null;
 
-    // Update workspace settings
-    const { error: updateError } = await supabase
-      .from('workspace_settings')
-      .upsert(
-        {
-          ws_id: normalizedWsId,
-          missed_entry_date_threshold: threshold,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'ws_id',
-        }
-      );
+    const { error: updateError } = await supabase.rpc(
+      'update_time_tracking_threshold_settings',
+      {
+        p_ws_id: normalizedWsId,
+        p_threshold: threshold ?? 0,
+        p_no_approval_needed: threshold === null,
+        p_status_change_grace_period_minutes:
+          statusChangeGracePeriodForRpc as unknown as number,
+      }
+    );
 
     if (updateError) {
-      console.error('Error updating threshold:', updateError);
+      console.error('Error updating threshold settings:', updateError);
+
       return NextResponse.json(
-        { error: 'Failed to update threshold setting' },
+        { error: 'Failed to update threshold settings' },
         { status: 500 }
       );
     }
@@ -147,6 +148,7 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       threshold,
+      statusChangeGracePeriodMinutes,
     });
   } catch (error) {
     console.error('Error in threshold API:', error);

@@ -114,6 +114,10 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
           'manage_time_tracking_requests'
         );
 
+        const canManageWorkspaceSettings = containsPermission(
+          'manage_workspace_settings'
+        );
+
         const canBypassTimeTrackingRequestApproval = containsPermission(
           'bypass_time_tracking_request_approval'
         );
@@ -124,6 +128,7 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
               wsId={wsId}
               currentUser={currentUser}
               canManageTimeTrackingRequests={canManageTimeTrackingRequests}
+              canManageWorkspaceSettings={canManageWorkspaceSettings}
               canBypassTimeTrackingRequestApproval={
                 canBypassTimeTrackingRequestApproval
               }
