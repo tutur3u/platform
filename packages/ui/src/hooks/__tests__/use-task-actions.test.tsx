@@ -35,6 +35,7 @@ describe('useTaskActions', () => {
   let queryClient: QueryClient;
   let mockSupabase: any;
   let mockMoveTask: any;
+  let mockUpdateWorkspaceTask: any;
   let mockUpdateTaskMutation: any;
   let mockToast: any;
 
@@ -117,8 +118,13 @@ describe('useTaskActions', () => {
     const { moveTask, useUpdateTask } = await import(
       '@tuturuuu/utils/task-helper'
     );
+    const { updateWorkspaceTask } = await import('@tuturuuu/internal-api/tasks');
+
     mockMoveTask = moveTask as any;
     mockMoveTask.mockResolvedValue(undefined);
+
+    mockUpdateWorkspaceTask = updateWorkspaceTask as any;
+    mockUpdateWorkspaceTask.mockResolvedValue({ task: { id: 'task-1' } });
 
     mockUpdateTaskMutation = {
       mutate: vi.fn(),
@@ -159,11 +165,9 @@ describe('useTaskActions', () => {
       });
 
       expect(setIsLoading).toHaveBeenCalledWith(true);
-      expect(mockMoveTask).toHaveBeenCalledWith(
-        mockSupabase,
-        'task-1',
-        'completion-list'
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'completion-list',
+      });
       expect(mockToast.success).toHaveBeenCalledWith('Task completed', {
         description: 'Task marked as done and moved to Done',
       });
@@ -198,13 +202,15 @@ describe('useTaskActions', () => {
         await result.current.handleArchiveToggle();
       });
 
-      expect(mockUpdateTaskMutation.mutate).toHaveBeenCalled();
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        closed_at: expect.any(String),
+      });
       expect(mockMoveTask).not.toHaveBeenCalled();
     });
 
     it('should rollback on error', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      mockMoveTask.mockRejectedValueOnce(new Error('Network error'));
+      mockUpdateWorkspaceTask.mockRejectedValueOnce(new Error('Network error'));
 
       const onUpdate = vi.fn();
       const setIsLoading = vi.fn();
@@ -266,11 +272,9 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToCompletion();
       });
 
-      expect(mockMoveTask).toHaveBeenCalledWith(
-        mockSupabase,
-        'task-1',
-        'completion-list'
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'completion-list',
+      });
       expect(mockToast.success).toHaveBeenCalledWith('Task completed', {
         description: 'Task marked as done and moved to Done',
       });
@@ -307,7 +311,7 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToCompletion();
       });
 
-      expect(mockMoveTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
       expect(mockToast.success).toHaveBeenCalledWith('2 tasks completed', {
         description: 'Tasks marked as done',
       });
@@ -341,11 +345,9 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToClose();
       });
 
-      expect(mockMoveTask).toHaveBeenCalledWith(
-        mockSupabase,
-        'task-1',
-        'closed-list'
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'closed-list',
+      });
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: 'Task marked as closed',
       });
@@ -382,7 +384,7 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToClose();
       });
 
-      expect(mockMoveTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: '2 tasks marked as closed',
       });
@@ -392,8 +394,8 @@ describe('useTaskActions', () => {
   describe('handleDelete', () => {
     it('should soft delete single task', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      // Configure the .in() call to resolve to a success response
-      mockSupabase.in = vi.fn(() =>
+      // Configure the .eq() call to resolve to a success response
+      mockSupabase.eq = vi.fn(() =>
         Promise.resolve({ error: null, data: [], count: 1 })
       );
 
@@ -424,6 +426,7 @@ describe('useTaskActions', () => {
       expect(mockSupabase.update).toHaveBeenCalledWith({
         deleted_at: expect.any(String),
       });
+      expect(mockSupabase.eq).toHaveBeenCalledWith('id', 'task-1');
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: 'Task deleted successfully',
       });
@@ -513,9 +516,8 @@ describe('useTaskActions', () => {
         await result.current.handleDueDateChange(7); // 7 days from now
       });
 
-      expect(mockUpdateTaskMutation.mutateAsync).toHaveBeenCalledWith({
-        taskId: 'task-1',
-        updates: { end_date: expect.any(String) },
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        end_date: expect.any(String),
       });
       expect(mockToast.success).toHaveBeenCalledWith('Due date updated', {
         description: 'Due date set successfully',
@@ -554,11 +556,11 @@ describe('useTaskActions', () => {
         await result.current.handleDueDateChange(7);
       });
 
-      // Implementation uses sequential .update().eq() calls per task
-      expect(mockSupabase.update).toHaveBeenCalledWith({
+      // Implementation uses sequential updateWorkspaceTask calls per task
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         end_date: expect.any(String),
       });
-      expect(mockSupabase.eq).toHaveBeenCalled();
     });
 
     it('should remove due date when null is passed', async () => {
@@ -585,9 +587,8 @@ describe('useTaskActions', () => {
         await result.current.handleDueDateChange(null);
       });
 
-      expect(mockUpdateTaskMutation.mutateAsync).toHaveBeenCalledWith({
-        taskId: 'task-1',
-        updates: { end_date: null },
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        end_date: null,
       });
     });
   });
@@ -617,9 +618,8 @@ describe('useTaskActions', () => {
         await result.current.handlePriorityChange('high');
       });
 
-      expect(mockUpdateTaskMutation.mutateAsync).toHaveBeenCalledWith({
-        taskId: 'task-1',
-        updates: { priority: 'high' },
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        priority: 'high',
       });
       expect(mockToast.success).toHaveBeenCalledWith('Priority updated', {
         description: 'Priority changed',
@@ -658,9 +658,11 @@ describe('useTaskActions', () => {
         await result.current.handlePriorityChange('high');
       });
 
-      // Implementation uses sequential .update().eq() calls per task
-      expect(mockSupabase.update).toHaveBeenCalledWith({ priority: 'high' });
-      expect(mockSupabase.eq).toHaveBeenCalled();
+      // Implementation uses sequential updateWorkspaceTask calls per task
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        priority: 'high',
+      });
     });
   });
 
@@ -690,9 +692,8 @@ describe('useTaskActions', () => {
         await result.current.updateEstimationPoints(5);
       });
 
-      expect(mockUpdateTaskMutation.mutateAsync).toHaveBeenCalledWith({
-        taskId: 'task-1',
-        updates: { estimation_points: 5 },
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        estimation_points: 5,
       });
       expect(mockToast.success).toHaveBeenCalledWith('Estimation updated', {
         description: 'Estimation points updated successfully',
@@ -762,21 +763,21 @@ describe('useTaskActions', () => {
         await result.current.updateEstimationPoints(8);
       });
 
-      // Implementation uses sequential .update().eq() calls per task
-      expect(mockSupabase.update).toHaveBeenCalledWith({
+      // Implementation uses sequential updateWorkspaceTask calls per task
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         estimation_points: 8,
       });
-      expect(mockSupabase.eq).toHaveBeenCalled();
     });
 
     it('should rollback estimation points on update failure', async () => {
       const taskWithEstimation = { ...mockTask, estimation_points: 3 };
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithEstimation]);
 
-      // Mock the mutation to fail
-      mockUpdateTaskMutation.mutateAsync = vi
-        .fn()
-        .mockRejectedValueOnce(new Error('Database connection failed'));
+      // Mock the API call to fail
+      mockUpdateWorkspaceTask.mockRejectedValueOnce(
+        new Error('Database connection failed')
+      );
 
       const setEstimationSaving = vi.fn();
 
@@ -814,7 +815,7 @@ describe('useTaskActions', () => {
       expect(mockToast.error).toHaveBeenCalledWith(
         'Failed to update estimation',
         {
-          description: 'Database connection failed',
+          description: 'Failed to update any tasks',
         }
       );
 
@@ -827,10 +828,8 @@ describe('useTaskActions', () => {
   describe('handleToggleAssignee', () => {
     it('should add assignee to task', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      // Configure the .in() call to resolve to a success response
-      mockSupabase.in = vi.fn(() =>
-        Promise.resolve({ error: null, data: [], count: 1 })
-      );
+      // Configure the .insert() call to resolve to a success response
+      mockSupabase.insert = vi.fn(() => Promise.resolve({ error: null }));
 
       const setIsLoading = vi.fn();
 
@@ -856,6 +855,10 @@ describe('useTaskActions', () => {
       // Verify the Supabase call was made
       await waitFor(() => {
         expect(mockSupabase.from).toHaveBeenCalledWith('task_assignees');
+        expect(mockSupabase.insert).toHaveBeenCalledWith({
+          task_id: 'task-1',
+          user_id: 'user-1',
+        });
       });
     });
 
@@ -867,7 +870,9 @@ describe('useTaskActions', () => {
         ],
       };
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
-      mockSupabase.eq.mockResolvedValueOnce({ error: null });
+      mockSupabase.delete = vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ error: null })),
+      }));
 
       const setIsLoading = vi.fn();
 
@@ -1043,11 +1048,9 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToList('list-2');
       });
 
-      expect(mockMoveTask).toHaveBeenCalledWith(
-        mockSupabase,
-        'task-1',
-        'list-2'
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'list-2',
+      });
       expect(setMenuOpen).toHaveBeenCalledWith(false);
     });
 
@@ -1075,7 +1078,7 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToList('list-1');
       });
 
-      expect(mockMoveTask).not.toHaveBeenCalled();
+      expect(mockUpdateWorkspaceTask).not.toHaveBeenCalled();
       expect(setMenuOpen).toHaveBeenCalledWith(false);
     });
   });
