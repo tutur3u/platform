@@ -169,9 +169,6 @@ export function ThresholdSettingsDialog({
               : t('requiresManageWorkspaceSettings')
           }
           onClick={() => {
-            if (!canManageWorkspaceSettings) {
-              return;
-            }
             setNoApprovalNeeded(currentThreshold === null);
             setInputValue(
               currentThreshold === null ? '1' : String(currentThreshold)

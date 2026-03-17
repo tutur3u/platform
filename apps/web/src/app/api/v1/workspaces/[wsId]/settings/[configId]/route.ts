@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -64,8 +67,9 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const { value } = await req.json();
+  const sbAdmin = await createAdminClient();
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('workspace_configs')
     .upsert({
       id,
@@ -87,11 +91,37 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
+  const supabase = await createClient(req);
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({}, { status: 401 });
+  }
 
   // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
-  const wsId = await normalizeWorkspaceId(rawWsId);
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+  const { data: memberCheck, error: memberError } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (memberError) {
+    return NextResponse.json({}, { status: 500 });
+  }
+
+  if (!memberCheck) {
+    return NextResponse.json({}, { status: 403 });
+  }
+
   const value = await getWorkspaceConfig(wsId, id);
 
   if (value === null) {

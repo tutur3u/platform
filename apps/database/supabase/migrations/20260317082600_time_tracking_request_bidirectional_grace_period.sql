@@ -188,6 +188,14 @@ BEGIN
 
         PERFORM set_config('time_tracking.bypass_approval_rules', 'on', true);
 
+        v_session_id := v_request.linked_session_id;
+
+        IF v_session_id IS NOT NULL THEN
+            DELETE FROM public.time_tracking_sessions
+            WHERE id = v_session_id
+              AND ws_id = p_workspace_id;
+        END IF;
+
         UPDATE public.time_tracking_requests
         SET
             approval_status = 'REJECTED',
@@ -196,6 +204,7 @@ BEGIN
             rejected_by = v_actor_id,
             rejected_at = now(),
             rejection_reason = p_rejection_reason,
+            linked_session_id = NULL,
             needs_info_requested_by = NULL,
             needs_info_requested_at = NULL,
             needs_info_reason = NULL,
@@ -297,6 +306,10 @@ BEGIN
         RETURN NEW;
     END IF;
 
+    IF v_actor_id IS NULL THEN
+        RAISE EXCEPTION 'User authentication required for time tracking request updates';
+    END IF;
+
     -- Check if the current user has manage_time_tracking_requests permission
     v_has_manage_permission := has_workspace_permission(
         NEW.workspace_id,
@@ -316,6 +329,82 @@ BEGIN
     );
 
     v_status_changed := (NEW.approval_status <> OLD.approval_status);
+
+    IF NOT v_status_changed THEN
+        IF NEW.linked_session_id IS DISTINCT FROM OLD.linked_session_id
+            OR NEW.approved_by IS DISTINCT FROM OLD.approved_by
+            OR NEW.approved_at IS DISTINCT FROM OLD.approved_at
+            OR NEW.rejected_by IS DISTINCT FROM OLD.rejected_by
+            OR NEW.rejected_at IS DISTINCT FROM OLD.rejected_at
+            OR NEW.rejection_reason IS DISTINCT FROM OLD.rejection_reason
+            OR NEW.needs_info_requested_by IS DISTINCT FROM OLD.needs_info_requested_by
+            OR NEW.needs_info_requested_at IS DISTINCT FROM OLD.needs_info_requested_at
+            OR NEW.needs_info_reason IS DISTINCT FROM OLD.needs_info_reason THEN
+            RAISE EXCEPTION 'Cannot modify system-managed request fields without an approval status transition';
+        END IF;
+    ELSE
+        IF NEW.approved_by IS DISTINCT FROM OLD.approved_by
+            OR NEW.approved_at IS DISTINCT FROM OLD.approved_at THEN
+            IF NOT (
+                NEW.approval_status = 'APPROVED'
+                OR (
+                    OLD.approval_status = 'APPROVED'
+                    AND NEW.approval_status = 'REJECTED'
+                    AND NEW.approved_by IS NULL
+                    AND NEW.approved_at IS NULL
+                )
+            ) THEN
+                RAISE EXCEPTION 'Approval audit fields can only change when transitioning to APPROVED or clearing APPROVED -> REJECTED';
+            END IF;
+        END IF;
+
+        IF NEW.rejected_by IS DISTINCT FROM OLD.rejected_by
+            OR NEW.rejected_at IS DISTINCT FROM OLD.rejected_at
+            OR NEW.rejection_reason IS DISTINCT FROM OLD.rejection_reason THEN
+            IF NOT (
+                NEW.approval_status = 'REJECTED'
+                OR (
+                    OLD.approval_status = 'REJECTED'
+                    AND NEW.approval_status = 'APPROVED'
+                    AND NEW.rejected_by IS NULL
+                    AND NEW.rejected_at IS NULL
+                    AND NEW.rejection_reason IS NULL
+                )
+            ) THEN
+                RAISE EXCEPTION 'Rejection audit fields can only change when transitioning to REJECTED or clearing REJECTED -> APPROVED';
+            END IF;
+        END IF;
+
+        IF NEW.needs_info_requested_by IS DISTINCT FROM OLD.needs_info_requested_by
+            OR NEW.needs_info_requested_at IS DISTINCT FROM OLD.needs_info_requested_at
+            OR NEW.needs_info_reason IS DISTINCT FROM OLD.needs_info_reason THEN
+            IF NOT (
+                NEW.approval_status = 'NEEDS_INFO'
+                OR (
+                    OLD.approval_status = 'NEEDS_INFO'
+                    AND NEW.approval_status = 'PENDING'
+                    AND NEW.needs_info_requested_by IS NULL
+                    AND NEW.needs_info_requested_at IS NULL
+                    AND NEW.needs_info_reason IS NULL
+                )
+            ) THEN
+                RAISE EXCEPTION 'Needs-info audit fields can only change when transitioning to NEEDS_INFO or clearing NEEDS_INFO -> PENDING';
+            END IF;
+        END IF;
+
+        IF NEW.linked_session_id IS DISTINCT FROM OLD.linked_session_id THEN
+            IF NOT (
+                NEW.approval_status = 'APPROVED'
+                OR (
+                    OLD.approval_status = 'APPROVED'
+                    AND NEW.approval_status = 'REJECTED'
+                    AND NEW.linked_session_id IS NULL
+                )
+            ) THEN
+                RAISE EXCEPTION 'linked_session_id can only change when approving or when reverting APPROVED to REJECTED';
+            END IF;
+        END IF;
+    END IF;
 
     IF v_status_changed AND (
         (NEW.approval_status = 'REJECTED' AND OLD.approval_status = 'APPROVED')

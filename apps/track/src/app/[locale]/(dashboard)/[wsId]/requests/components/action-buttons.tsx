@@ -65,6 +65,20 @@ export function ActionButtons({
 }: ActionButtonsProps) {
   const t = useTranslations('time-tracker.requests');
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const bufferMs = 30 * 1000;
+  const allowedMs = Math.max(
+    0,
+    statusChangeGracePeriodMinutes * 60 * 1000 - bufferMs
+  );
+
+  const graceStartMs =
+    request.approval_status === 'APPROVED' && request.approved_at
+      ? new Date(request.approved_at).getTime()
+      : request.approval_status === 'REJECTED' && request.rejected_at
+        ? new Date(request.rejected_at).getTime()
+        : null;
+
+  const graceExpiryMs = graceStartMs !== null ? graceStartMs + allowedMs : null;
 
   useEffect(() => {
     const shouldTrackGraceWindow =
@@ -72,33 +86,43 @@ export function ActionButtons({
       (request.approval_status === 'APPROVED' ||
         request.approval_status === 'REJECTED');
 
-    if (!shouldTrackGraceWindow) {
+    if (!shouldTrackGraceWindow || graceExpiryMs === null) {
       return;
     }
 
-    setNowMs(Date.now());
+    const updateNow = () => {
+      const nextNow = Date.now();
+      setNowMs(nextNow);
+      return nextNow;
+    };
+
+    if (updateNow() > graceExpiryMs) {
+      return;
+    }
+
     const intervalId = window.setInterval(() => {
-      setNowMs(Date.now());
+      const nextNow = updateNow();
+      if (nextNow > graceExpiryMs) {
+        window.clearInterval(intervalId);
+      }
     }, 1_000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [request.approval_status, statusChangeGracePeriodMinutes]);
+  }, [graceExpiryMs, request.approval_status, statusChangeGracePeriodMinutes]);
 
   const canRejectApprovedRequest =
     request.approval_status === 'APPROVED' &&
     !!request.approved_at &&
     statusChangeGracePeriodMinutes > 0 &&
-    nowMs - new Date(request.approved_at).getTime() <=
-      statusChangeGracePeriodMinutes * 60 * 1000;
+    nowMs - new Date(request.approved_at).getTime() <= allowedMs;
 
   const canApproveRejectedRequest =
     request.approval_status === 'REJECTED' &&
     !!request.rejected_at &&
     statusChangeGracePeriodMinutes > 0 &&
-    nowMs - new Date(request.rejected_at).getTime() <=
-      statusChangeGracePeriodMinutes * 60 * 1000;
+    nowMs - new Date(request.rejected_at).getTime() <= allowedMs;
 
   // Resubmit button for request owner when status is NEEDS_INFO
   if (

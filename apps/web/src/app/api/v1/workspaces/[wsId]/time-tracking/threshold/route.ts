@@ -122,47 +122,27 @@ export async function PUT(
     }
 
     const { threshold, statusChangeGracePeriodMinutes } = validationResult.data;
+    const statusChangeGracePeriodForRpc =
+      statusChangeGracePeriodMinutes ?? null;
 
-    if (statusChangeGracePeriodMinutes !== undefined) {
-      const { error: updateError } = await supabase.rpc(
-        'update_time_tracking_threshold_settings',
-        {
-          p_ws_id: normalizedWsId,
-          p_threshold: threshold ?? 0,
-          p_no_approval_needed: threshold === null,
-          p_status_change_grace_period_minutes: statusChangeGracePeriodMinutes,
-        }
+    const { error: updateError } = await supabase.rpc(
+      'update_time_tracking_threshold_settings',
+      {
+        p_ws_id: normalizedWsId,
+        p_threshold: threshold ?? 0,
+        p_no_approval_needed: threshold === null,
+        p_status_change_grace_period_minutes:
+          statusChangeGracePeriodForRpc as unknown as number,
+      }
+    );
+
+    if (updateError) {
+      console.error('Error updating threshold settings:', updateError);
+
+      return NextResponse.json(
+        { error: 'Failed to update threshold settings' },
+        { status: 500 }
       );
-
-      if (updateError) {
-        console.error('Error updating threshold settings:', updateError);
-
-        return NextResponse.json(
-          { error: 'Failed to update threshold settings' },
-          { status: 500 }
-        );
-      }
-    } else {
-      const { error: updateError } = await supabase
-        .from('workspace_settings')
-        .upsert(
-          {
-            ws_id: normalizedWsId,
-            missed_entry_date_threshold: threshold,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'ws_id',
-          }
-        );
-
-      if (updateError) {
-        console.error('Error updating threshold:', updateError);
-        return NextResponse.json(
-          { error: 'Failed to update threshold setting' },
-          { status: 500 }
-        );
-      }
     }
 
     return NextResponse.json({

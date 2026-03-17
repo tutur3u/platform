@@ -54,7 +54,9 @@ export function ThresholdSettingsDialog({
     currentThreshold === null ? '1' : String(currentThreshold)
   );
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [gracePeriodInputValue, setGracePeriodInputValue] = useState('0');
+  const [gracePeriodInputValue, setGracePeriodInputValue] = useState(
+    initialGracePeriodValue || '0'
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   // Always parse the input value to maintain clear typing
