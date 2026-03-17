@@ -17,6 +17,14 @@ const payloadSchema = z.object({
   labelId: z.uuid(),
 });
 
+async function parseJsonBody(request: NextRequest) {
+  try {
+    return { data: await request.json(), error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 async function verifyTaskInWorkspace(
   wsId: string,
   taskId: string,
@@ -138,7 +146,14 @@ export async function POST(
       );
     }
 
-    const body = payloadSchema.safeParse(await request.json());
+    const jsonResult = await parseJsonBody(request);
+    if (jsonResult.error) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+    const body = payloadSchema.safeParse(jsonResult.data);
     if (!body.success) {
       return NextResponse.json(
         { error: 'Invalid request payload', details: body.error.issues },
@@ -231,7 +246,14 @@ export async function DELETE(
       );
     }
 
-    const body = payloadSchema.safeParse(await request.json());
+    const jsonResult = await parseJsonBody(request);
+    if (jsonResult.error) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+    const body = payloadSchema.safeParse(jsonResult.data);
     if (!body.success) {
       return NextResponse.json(
         { error: 'Invalid request payload', details: body.error.issues },

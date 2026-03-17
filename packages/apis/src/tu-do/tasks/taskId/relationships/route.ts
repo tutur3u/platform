@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type {
   RelatedTaskInfo,
@@ -48,6 +49,27 @@ interface SourceRelationshipRow {
 interface TargetRelationshipRow {
   type: 'parent_child' | 'blocks' | 'related';
   source_task: RelationshipTaskRow | null;
+}
+
+async function getWorkspaceTaskRow(
+  sbAdmin: TypedSupabaseClient,
+  taskId: string
+) {
+  return sbAdmin
+    .from('tasks')
+    .select(
+      `
+        id,
+        list:task_lists!inner(
+          board:workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+    )
+    .eq('id', taskId)
+    .is('deleted_at', null)
+    .maybeSingle();
 }
 
 function toTaskInfo(task: RelationshipTaskRow): RelatedTaskInfo {
@@ -327,7 +349,10 @@ export async function POST(
     }
 
     const payload = parsedBody.data;
-    if (payload.source_task_id !== taskId) {
+    const isSourceTask = payload.source_task_id === taskId;
+    const isTargetTask = payload.target_task_id === taskId;
+
+    if (!isSourceTask && !isTargetTask) {
       return NextResponse.json({ error: 'Task ID mismatch' }, { status: 400 });
     }
 
@@ -480,6 +505,37 @@ export async function DELETE(
     }
 
     const sbAdmin = await createAdminClient();
+    const { data: sourceTask, error: sourceTaskError } =
+      await getWorkspaceTaskRow(sbAdmin, payload.source_task_id);
+
+    if (sourceTaskError) {
+      return NextResponse.json(
+        { error: 'Failed to load task' },
+        { status: 500 }
+      );
+    }
+
+    if (!sourceTask || sourceTask.list?.board?.ws_id !== wsId) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    const { data: targetTask, error: targetTaskError } =
+      await getWorkspaceTaskRow(sbAdmin, payload.target_task_id);
+
+    if (targetTaskError) {
+      return NextResponse.json(
+        { error: 'Failed to load related task' },
+        { status: 500 }
+      );
+    }
+
+    if (!targetTask || targetTask.list?.board?.ws_id !== wsId) {
+      return NextResponse.json(
+        { error: 'Related task not found' },
+        { status: 404 }
+      );
+    }
+
     const { error: deleteError } = await sbAdmin
       .from('task_relationships')
       .delete()

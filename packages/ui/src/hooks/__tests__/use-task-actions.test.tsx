@@ -27,7 +27,6 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/task-helper', () => ({
-  moveTask: vi.fn(),
   useUpdateTask: vi.fn(),
 }));
 
@@ -35,8 +34,6 @@ describe('useTaskActions', () => {
   let queryClient: QueryClient;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockSupabase: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockMoveTask: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockUpdateWorkspaceTask: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,17 +118,12 @@ describe('useTaskActions', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (createClient as any).mockReturnValue(mockSupabase);
 
-    const { moveTask, useUpdateTask } = await import(
-      '@tuturuuu/utils/task-helper'
-    );
+    const { useUpdateTask } = await import('@tuturuuu/utils/task-helper');
     const { updateWorkspaceTask } = await import(
       '@tuturuuu/internal-api/tasks'
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mockMoveTask = moveTask as any;
-    mockMoveTask.mockResolvedValue(undefined);
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockUpdateWorkspaceTask = updateWorkspaceTask as any;
     mockUpdateWorkspaceTask.mockResolvedValue({ task: { id: 'task-1' } });
@@ -217,7 +209,6 @@ describe('useTaskActions', () => {
       expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         closed_at: expect.any(String),
       });
-      expect(mockMoveTask).not.toHaveBeenCalled();
     });
 
     it('should rollback on error', async () => {

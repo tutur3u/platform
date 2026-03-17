@@ -458,9 +458,16 @@ export default function PriorityView({
 
       // If task has no list_id, just update closed_at directly
       if (!task.list_id) {
-        await updateWorkspaceTask(taskWsId, taskId, {
-          closed_at: new Date().toISOString(),
-        });
+        const timestamp = new Date().toISOString();
+        const { error } = await supabase
+          .from('tasks')
+          .update({
+            closed_at: timestamp,
+            completed_at: timestamp,
+            completed: true,
+          })
+          .eq('id', taskId);
+        if (error) throw error;
         toast.success('Task marked as done');
         router.refresh();
         return;

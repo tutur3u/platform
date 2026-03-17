@@ -447,6 +447,8 @@ export async function PUT(
 
     let nextClosedAt = task.closed_at;
     let nextCompletedAt = task.completed_at;
+    const currentCompletedState = task.completed ?? false;
+    let nextCompleted = currentCompletedState;
     let shouldUpdateCompletion = false;
 
     if (body.closed_at !== undefined) {
@@ -456,6 +458,11 @@ export async function PUT(
 
     if (body.completed_at !== undefined) {
       nextCompletedAt = body.completed_at;
+      shouldUpdateCompletion = true;
+    }
+
+    if (body.completed !== undefined) {
+      nextCompleted = body.completed;
       shouldUpdateCompletion = true;
     }
 
@@ -469,14 +476,17 @@ export async function PUT(
         const timestamp = new Date().toISOString();
         nextClosedAt = timestamp;
         nextCompletedAt = effectiveTargetStatus === 'done' ? timestamp : null;
+        nextCompleted = effectiveTargetStatus === 'done';
       } else if (isSourceCompletion) {
         nextClosedAt = null;
         nextCompletedAt = null;
+        nextCompleted = false;
       }
 
       shouldUpdateCompletion =
         nextClosedAt !== task.closed_at ||
-        nextCompletedAt !== task.completed_at;
+        nextCompletedAt !== task.completed_at ||
+        nextCompleted !== currentCompletedState;
     }
 
     if (shouldUpdateCompletion) {
@@ -485,6 +495,7 @@ export async function PUT(
         .update({
           closed_at: nextClosedAt,
           completed_at: nextCompletedAt,
+          completed: nextCompleted,
         })
         .eq('id', taskId);
 

@@ -57,7 +57,7 @@ export function ListActions({
   listStatus,
   tasks = [],
   boardId = '',
-  wsId = '',
+  wsId,
   onUpdate,
   onSelectAll,
   isEditOpen,

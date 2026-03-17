@@ -66,6 +66,7 @@ async function requireWorkspaceTaskAccess(
     `
     )
     .eq('id', taskId)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (taskError) {

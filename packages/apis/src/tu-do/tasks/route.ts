@@ -363,6 +363,19 @@ export async function POST(
       assignee_ids,
     } = body;
 
+    const normalizedAssigneeIds =
+      assignee_ids && Array.isArray(assignee_ids)
+        ? Array.from(new Set(assignee_ids))
+        : undefined;
+    const normalizedLabelIds =
+      label_ids && Array.isArray(label_ids)
+        ? Array.from(new Set(label_ids))
+        : undefined;
+    const normalizedProjectIds =
+      project_ids && Array.isArray(project_ids)
+        ? Array.from(new Set(project_ids))
+        : undefined;
+
     const sbAdmin = await createAdminClient();
     const { data: listRow, error: listError } = await sbAdmin
       .from('task_lists')
@@ -396,6 +409,94 @@ export async function POST(
       return NextResponse.json({ error: 'List is archived' }, { status: 400 });
     }
 
+    if (normalizedAssigneeIds && normalizedAssigneeIds.length > 0) {
+      const { data: members, error: membersError } = await supabase
+        .from('workspace_members')
+        .select('user_id')
+        .eq('ws_id', normalizedWorkspaceId)
+        .in('user_id', normalizedAssigneeIds);
+
+      if (membersError) {
+        console.error('Error validating assignees:', membersError);
+        return NextResponse.json(
+          { error: 'Failed to validate task assignees' },
+          { status: 500 }
+        );
+      }
+
+      const validAssigneeIds = new Set(
+        (members ?? []).map((member) => member.user_id)
+      );
+      const hasInvalidAssignee = normalizedAssigneeIds.some(
+        (assigneeId) => !validAssigneeIds.has(assigneeId)
+      );
+
+      if (hasInvalidAssignee) {
+        return NextResponse.json(
+          { error: 'One or more assignees are not in this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (normalizedLabelIds && normalizedLabelIds.length > 0) {
+      const { data: labels, error: labelsError } = await supabase
+        .from('workspace_task_labels')
+        .select('id')
+        .eq('ws_id', normalizedWorkspaceId)
+        .in('id', normalizedLabelIds);
+
+      if (labelsError) {
+        console.error('Error validating labels:', labelsError);
+        return NextResponse.json(
+          { error: 'Failed to validate task labels' },
+          { status: 500 }
+        );
+      }
+
+      const validLabelIds = new Set((labels ?? []).map((label) => label.id));
+      const hasInvalidLabel = normalizedLabelIds.some(
+        (labelId) => !validLabelIds.has(labelId)
+      );
+
+      if (hasInvalidLabel) {
+        return NextResponse.json(
+          { error: 'One or more labels do not belong to this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (normalizedProjectIds && normalizedProjectIds.length > 0) {
+      const { data: projects, error: projectsError } = await sbAdmin
+        .from('task_projects')
+        .select('id')
+        .eq('ws_id', normalizedWorkspaceId)
+        .in('id', normalizedProjectIds);
+
+      if (projectsError) {
+        console.error('Error validating projects:', projectsError);
+        return NextResponse.json(
+          { error: 'Failed to validate task projects' },
+          { status: 500 }
+        );
+      }
+
+      const validProjectIds = new Set(
+        (projects ?? []).map((project) => project.id)
+      );
+      const hasInvalidProject = normalizedProjectIds.some(
+        (projectId) => !validProjectIds.has(projectId)
+      );
+
+      if (hasInvalidProject) {
+        return NextResponse.json(
+          { error: 'One or more projects do not belong to this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
     const { data: lastTask, error: lastTaskError } = await sbAdmin
       .from('tasks')
       .select('sort_key')
@@ -415,8 +516,10 @@ export async function POST(
 
     const sort_key = calculateEndSortKey(lastTask?.sort_key ?? null);
     const now = new Date().toISOString();
-    const shouldArchive =
-      listRow.status === 'done' || listRow.status === 'closed';
+    const isDoneList = listRow.status === 'done';
+    const isClosedList = listRow.status === 'closed';
+    const shouldArchive = isDoneList || isClosedList;
+    const completionTimestamp = isDoneList ? now : null;
 
     const taskInsert: TaskInsert = {
       name: name.trim(),
@@ -427,6 +530,8 @@ export async function POST(
       end_date: end_date ?? null,
       estimation_points: estimation_points ?? null,
       sort_key,
+      completed: isDoneList,
+      completed_at: completionTimestamp,
       closed_at: shouldArchive ? now : null,
     };
 
@@ -475,8 +580,9 @@ export async function POST(
       );
     }
 
-    if (label_ids && Array.isArray(label_ids) && label_ids.length > 0) {
-      const labelInserts = label_ids.map((labelId) => ({
+    const labelIdsToInsert = normalizedLabelIds ?? [];
+    if (labelIdsToInsert.length > 0) {
+      const labelInserts = labelIdsToInsert.map((labelId) => ({
         task_id: data.id,
         label_id: labelId,
       }));
@@ -490,8 +596,9 @@ export async function POST(
       }
     }
 
-    if (project_ids && Array.isArray(project_ids) && project_ids.length > 0) {
-      const projectInserts = project_ids.map((projectId) => ({
+    const projectIdsToInsert = normalizedProjectIds ?? [];
+    if (projectIdsToInsert.length > 0) {
+      const projectInserts = projectIdsToInsert.map((projectId) => ({
         task_id: data.id,
         project_id: projectId,
       }));
@@ -505,12 +612,9 @@ export async function POST(
       }
     }
 
-    if (
-      assignee_ids &&
-      Array.isArray(assignee_ids) &&
-      assignee_ids.length > 0
-    ) {
-      const assigneeInserts = assignee_ids.map((assigneeId) => ({
+    const assigneeIdsToInsert = normalizedAssigneeIds ?? [];
+    if (assigneeIdsToInsert.length > 0) {
+      const assigneeInserts = assigneeIdsToInsert.map((assigneeId) => ({
         task_id: data.id,
         user_id: assigneeId,
       }));

@@ -1407,7 +1407,7 @@ export function usePermanentlyDeleteTasks(boardId: string) {
   });
 }
 
-export function useMoveTask(boardId: string, wsId: string) {
+export function useMoveTask(boardId: string, wsId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -1422,16 +1422,33 @@ export function useMoveTask(boardId: string, wsId: string) {
       console.log('📋 Task ID:', taskId);
       console.log('🎯 New List ID:', newListId);
 
-      const baseUrl =
-        typeof window !== 'undefined' ? window.location.origin : undefined;
-      const result = await moveTask(wsId, taskId, newListId, {
-        baseUrl: baseUrl ?? undefined,
-      });
+      if (wsId) {
+        const baseUrl =
+          typeof window !== 'undefined' ? window.location.origin : undefined;
+        const result = await moveTask(wsId, taskId, newListId, {
+          baseUrl: baseUrl ?? undefined,
+        });
 
-      console.log('✅ moveTask completed successfully');
-      console.log('📊 Result:', result);
+        console.log('✅ moveTask completed successfully via workspace API');
+        console.log('📊 Result:', result);
 
-      return result;
+        return result;
+      }
+
+      console.log(
+        'ℹ️ No workspace ID provided; falling back to direct Supabase move'
+      );
+      const supabase = createClient();
+      const { task: movedTask } = await moveTaskToBoard(
+        supabase,
+        taskId,
+        newListId
+      );
+
+      console.log('✅ moveTask completed successfully via Supabase');
+      console.log('📊 Result:', movedTask);
+
+      return movedTask;
     },
     onMutate: async ({ taskId, newListId }) => {
       console.log('🎭 onMutate triggered - optimistic update');

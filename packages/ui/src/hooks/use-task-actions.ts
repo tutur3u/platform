@@ -1206,14 +1206,37 @@ export function useTaskActions({
 
           return;
         } else {
-          await updateTaskMutation.mutateAsync({
-            taskId: tasksToUpdate[0]!,
-            updates: { estimation_points: points },
-          });
+          const succeededIds: string[] = [];
+          const failedIds: string[] = [];
 
-          broadcast?.('task:upsert', {
-            task: { id: tasksToUpdate[0]!, estimation_points: points },
-          });
+          for (const taskId of tasksToUpdate) {
+            try {
+              await updateTaskMutation.mutateAsync({
+                taskId,
+                updates: { estimation_points: points },
+              });
+              succeededIds.push(taskId);
+              broadcast?.('task:upsert', {
+                task: { id: taskId, estimation_points: points },
+              });
+            } catch (error) {
+              console.error(
+                `Failed to update estimation for task ${taskId}:`,
+                error
+              );
+              failedIds.push(taskId);
+            }
+          }
+
+          if (succeededIds.length === 0) {
+            throw new Error('Failed to update any tasks');
+          }
+
+          if (failedIds.length > 0) {
+            throw new Error(
+              `Partial update failed (${succeededIds.length}/${tasksToUpdate.length} tasks updated). Failed task IDs: ${failedIds.join(', ')}`
+            );
+          }
 
           toast.success('Estimation updated', {
             description: 'Estimation points updated successfully',

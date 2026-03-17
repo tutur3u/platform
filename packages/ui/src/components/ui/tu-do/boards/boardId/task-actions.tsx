@@ -114,17 +114,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
     refetchOnWindowFocus: false,
   });
 
-  useEffect(() => {
-    if (workspaceId && isEditDialogOpen) {
-      refetchTask().catch((error) => {
-        console.error(
-          'Failed to refetch task after workspace resolved:',
-          error
-        );
-      });
-    }
-  }, [workspaceId, isEditDialogOpen, refetchTask]);
-
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
@@ -133,6 +122,8 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [newPriority, setNewPriority] = useState<TaskPriority | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [hasRefetchedAfterWorkspace, setHasRefetchedAfterWorkspace] =
+    useState(false);
 
   const updateTaskMutation = useUpdateTask(boardId);
 
@@ -166,6 +157,29 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
         hasPriorityChange
     );
   }, [newName, newDescription, newStartDate, newEndDate, newPriority, task]);
+
+  useEffect(() => {
+    if (!isEditDialogOpen) {
+      setHasRefetchedAfterWorkspace(false);
+      return;
+    }
+
+    if (workspaceId && !hasRefetchedAfterWorkspace && !hasChanges) {
+      refetchTask().catch((error) => {
+        console.error(
+          'Failed to refetch task after workspace resolved:',
+          error
+        );
+      });
+      setHasRefetchedAfterWorkspace(true);
+    }
+  }, [
+    workspaceId,
+    isEditDialogOpen,
+    refetchTask,
+    hasRefetchedAfterWorkspace,
+    hasChanges,
+  ]);
 
   async function handleDelete() {
     setIsLoading(true);
