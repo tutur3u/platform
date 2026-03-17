@@ -9,6 +9,10 @@ import {
   Trash2,
   Undo2,
 } from '@tuturuuu/icons';
+import {
+  getWorkspaceTask,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -37,32 +41,13 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useDeleteTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
+import {
+  transformTaskRecord,
+  useBoardConfig,
+  useUpdateTask,
+} from '@tuturuuu/utils/task-helper';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import { useEffect, useId, useState } from 'react';
-
-// Extract to a utility function for better performance and reusability
-const transformTaskData = (data: any): Task => {
-  return {
-    ...data,
-    description: data.description || undefined,
-    priority: data.priority || undefined,
-    start_date: data.start_date || undefined,
-    end_date: data.end_date || undefined,
-    assignees:
-      data.assignees
-        ?.map((a: any) => ({
-          id: a.user.id,
-          display_name: a.user.display_name || undefined,
-          avatar_url: a.user.avatar_url || undefined,
-          handle: a.user.handle || undefined,
-        }))
-        .filter(
-          (user: any, index: number, self: any[]) =>
-            user?.id && self.findIndex((u) => u?.id === user.id) === index
-        ) || [],
-  };
-};
 
 interface Props {
   taskId: string;
@@ -75,11 +60,32 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const { toast } = useToast();
   const nameId = useId();
   const descriptionId = useId();
+  const { data: boardConfig } = useBoardConfig(boardId);
+  const workspaceId = boardConfig?.ws_id;
 
   // Fetch the latest task data using React Query
-  const { data: task, isLoading: isTaskLoading } = useQuery<Task>({
+  const {
+    data: task,
+    isLoading: isTaskLoading,
+    refetch: refetchTask,
+  } = useQuery<Task>({
     queryKey: ['task', taskId],
     queryFn: async (): Promise<Task> => {
+      if (!taskId) {
+        throw new Error('Task ID is required');
+      }
+
+      if (workspaceId) {
+        const { task: workspaceTask } = await getWorkspaceTask(
+          workspaceId,
+          taskId
+        );
+        if (!workspaceTask) {
+          throw new Error('Task not found');
+        }
+        return transformTaskRecord(workspaceTask);
+      }
+
       const supabase = createClient();
       const { data, error } = await supabase
         .from('tasks')
@@ -101,12 +107,23 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
 
       if (error) throw error;
 
-      return transformTaskData(data);
+      return transformTaskRecord(data);
     },
     enabled: !!taskId && isEditDialogOpen, // Only fetch when modal is open
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    if (workspaceId && isEditDialogOpen) {
+      refetchTask().catch((error) => {
+        console.error(
+          'Failed to refetch task after workspace resolved:',
+          error
+        );
+      });
+    }
+  }, [workspaceId, isEditDialogOpen, refetchTask]);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -118,7 +135,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [hasChanges, setHasChanges] = useState(false);
 
   const updateTaskMutation = useUpdateTask(boardId);
-  const deleteTaskMutation = useDeleteTask(boardId);
 
   // Update local state when task data changes
   useEffect(() => {
@@ -153,67 +169,73 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
 
   async function handleDelete() {
     setIsLoading(true);
-    deleteTaskMutation.mutate(taskId, {
-      onSuccess: () => {
-        toast({
-          title: 'Task deleted',
-          description: 'The task has been successfully deleted.',
-        });
-        setIsDeleteDialogOpen(false);
-        onUpdate();
-        setIsEditDialogOpen(false);
-      },
-      onError: (error) => {
-        toast({
-          title: 'Error deleting task',
-          description:
-            error.message || 'Failed to delete the task. Please try again.',
-          variant: 'destructive',
-        });
-      },
-      onSettled: () => {
-        setIsLoading(false);
-      },
-    });
+
+    try {
+      if (workspaceId) {
+        await updateWorkspaceTask(workspaceId, taskId, { deleted: true });
+      } else {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('tasks')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', taskId);
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Task deleted',
+        description: 'The task has been successfully deleted.',
+      });
+      setIsDeleteDialogOpen(false);
+      onUpdate();
+      setIsEditDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Error deleting task',
+        description:
+          error?.message || 'Failed to delete the task. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function handleUpdate() {
     if (!hasChanges || !task) return;
 
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      {
-        taskId,
-        updates: {
-          name: newName,
-          description: newDescription === '' ? undefined : newDescription,
-          start_date: newStartDate?.toISOString() ?? undefined,
-          end_date: newEndDate?.toISOString() ?? undefined,
-          priority: newPriority,
-        },
-      },
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Task updated',
-            description: 'The task has been successfully updated.',
-          });
-          onUpdate();
-          setIsEditDialogOpen(false);
-        },
-        onError: (error) => {
-          toast({
-            title: 'Error updating task',
-            description:
-              error.message || 'Failed to update the task. Please try again.',
-            variant: 'destructive',
-          });
-        },
-        onSettled: () => {
-          setIsLoading(false);
-        },
+    const updates = {
+      name: newName,
+      description: newDescription === '' ? undefined : newDescription,
+      start_date: newStartDate?.toISOString() ?? undefined,
+      end_date: newEndDate?.toISOString() ?? undefined,
+      priority: newPriority,
+    };
+
+    try {
+      if (workspaceId) {
+        await updateWorkspaceTask(workspaceId, taskId, updates);
+      } else {
+        await updateTaskMutation.mutateAsync({ taskId, updates });
       }
-    );
+
+      toast({
+        title: 'Task updated',
+        description: 'The task has been successfully updated.',
+      });
+      onUpdate();
+      setIsEditDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Error updating task',
+        description:
+          error?.message || 'Failed to update the task. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function handleResetChanges() {
@@ -287,7 +309,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       </DropdownMenu>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
@@ -324,7 +346,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
             <DialogDescription>
