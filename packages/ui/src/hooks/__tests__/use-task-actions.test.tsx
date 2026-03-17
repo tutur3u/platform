@@ -22,21 +22,29 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
   },
 }));
 
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  updateWorkspaceTask: vi.fn(() => Promise.resolve({ task: { id: 'task-1' } })),
+}));
+
 vi.mock('@tuturuuu/utils/task-helper', () => ({
-  moveTask: vi.fn(),
   useUpdateTask: vi.fn(),
 }));
 
 describe('useTaskActions', () => {
   let queryClient: QueryClient;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockSupabase: any;
-  let mockMoveTask: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockUpdateWorkspaceTask: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockUpdateTaskMutation: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockToast: any;
 
   const mockTask = {
     id: 'task-1',
     name: 'Test Task',
+    ws_id: 'ws-1',
     list_id: 'list-1',
     created_at: '2025-01-01T00:00:00Z',
     closed_at: null,
@@ -107,18 +115,25 @@ describe('useTaskActions', () => {
     };
 
     const { createClient } = await import('@tuturuuu/supabase/next/client');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (createClient as any).mockReturnValue(mockSupabase);
 
-    const { moveTask, useUpdateTask } = await import(
-      '@tuturuuu/utils/task-helper'
+    const { useUpdateTask } = await import('@tuturuuu/utils/task-helper');
+    const { updateWorkspaceTask } = await import(
+      '@tuturuuu/internal-api/tasks'
     );
-    mockMoveTask = moveTask as any;
-    mockMoveTask.mockResolvedValue(undefined);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockUpdateWorkspaceTask = updateWorkspaceTask as any;
+    mockUpdateWorkspaceTask.mockResolvedValue({ task: { id: 'task-1' } });
 
     mockUpdateTaskMutation = {
       mutate: vi.fn(),
       mutateAsync: vi.fn().mockResolvedValue(undefined),
     };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useUpdateTask as any).mockReturnValue(mockUpdateTaskMutation);
 
     const { toast } = await import('@tuturuuu/ui/sonner');
@@ -154,11 +169,9 @@ describe('useTaskActions', () => {
       });
 
       expect(setIsLoading).toHaveBeenCalledWith(true);
-      expect(mockMoveTask).toHaveBeenCalledWith(
-        mockSupabase,
-        'task-1',
-        'completion-list'
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'completion-list',
+      });
       expect(mockToast.success).toHaveBeenCalledWith('Task completed', {
         description: 'Task marked as done and moved to Done',
       });
@@ -193,13 +206,14 @@ describe('useTaskActions', () => {
         await result.current.handleArchiveToggle();
       });
 
-      expect(mockUpdateTaskMutation.mutate).toHaveBeenCalled();
-      expect(mockMoveTask).not.toHaveBeenCalled();
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        closed_at: expect.any(String),
+      });
     });
 
     it('should rollback on error', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      mockMoveTask.mockRejectedValueOnce(new Error('Network error'));
+      mockUpdateWorkspaceTask.mockRejectedValueOnce(new Error('Network error'));
 
       const onUpdate = vi.fn();
       const setIsLoading = vi.fn();
@@ -261,11 +275,9 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToCompletion();
       });
 
-      expect(mockMoveTask).toHaveBeenCalledWith(
-        mockSupabase,
-        'task-1',
-        'completion-list'
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'completion-list',
+      });
       expect(mockToast.success).toHaveBeenCalledWith('Task completed', {
         description: 'Task marked as done and moved to Done',
       });
@@ -302,7 +314,7 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToCompletion();
       });
 
-      expect(mockMoveTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
       expect(mockToast.success).toHaveBeenCalledWith('2 tasks completed', {
         description: 'Tasks marked as done',
       });
@@ -336,11 +348,9 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToClose();
       });
 
-      expect(mockMoveTask).toHaveBeenCalledWith(
-        mockSupabase,
-        'task-1',
-        'closed-list'
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'closed-list',
+      });
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: 'Task marked as closed',
       });
@@ -377,7 +387,7 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToClose();
       });
 
-      expect(mockMoveTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: '2 tasks marked as closed',
       });
@@ -387,8 +397,8 @@ describe('useTaskActions', () => {
   describe('handleDelete', () => {
     it('should soft delete single task', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      // Configure the .in() call to resolve to a success response
-      mockSupabase.in = vi.fn(() =>
+      // Configure the .eq() call to resolve to a success response
+      mockSupabase.eq = vi.fn(() =>
         Promise.resolve({ error: null, data: [], count: 1 })
       );
 
@@ -415,9 +425,8 @@ describe('useTaskActions', () => {
         await result.current.handleDelete();
       });
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('tasks');
-      expect(mockSupabase.update).toHaveBeenCalledWith({
-        deleted_at: expect.any(String),
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        deleted: true,
       });
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: 'Task deleted successfully',
@@ -466,9 +475,7 @@ describe('useTaskActions', () => {
         await result.current.handleDelete();
       });
 
-      // Implementation uses sequential .eq() calls per task
-      expect(mockSupabase.update).toHaveBeenCalled();
-      expect(mockSupabase.eq).toHaveBeenCalled();
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: '2 tasks deleted',
       });
@@ -508,9 +515,8 @@ describe('useTaskActions', () => {
         await result.current.handleDueDateChange(7); // 7 days from now
       });
 
-      expect(mockUpdateTaskMutation.mutateAsync).toHaveBeenCalledWith({
-        taskId: 'task-1',
-        updates: { end_date: expect.any(String) },
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        end_date: expect.any(String),
       });
       expect(mockToast.success).toHaveBeenCalledWith('Due date updated', {
         description: 'Due date set successfully',
@@ -549,11 +555,11 @@ describe('useTaskActions', () => {
         await result.current.handleDueDateChange(7);
       });
 
-      // Implementation uses sequential .update().eq() calls per task
-      expect(mockSupabase.update).toHaveBeenCalledWith({
+      // Implementation uses sequential updateWorkspaceTask calls per task
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         end_date: expect.any(String),
       });
-      expect(mockSupabase.eq).toHaveBeenCalled();
     });
 
     it('should remove due date when null is passed', async () => {
@@ -580,9 +586,8 @@ describe('useTaskActions', () => {
         await result.current.handleDueDateChange(null);
       });
 
-      expect(mockUpdateTaskMutation.mutateAsync).toHaveBeenCalledWith({
-        taskId: 'task-1',
-        updates: { end_date: null },
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        end_date: null,
       });
     });
   });
@@ -612,9 +617,8 @@ describe('useTaskActions', () => {
         await result.current.handlePriorityChange('high');
       });
 
-      expect(mockUpdateTaskMutation.mutateAsync).toHaveBeenCalledWith({
-        taskId: 'task-1',
-        updates: { priority: 'high' },
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        priority: 'high',
       });
       expect(mockToast.success).toHaveBeenCalledWith('Priority updated', {
         description: 'Priority changed',
@@ -653,9 +657,11 @@ describe('useTaskActions', () => {
         await result.current.handlePriorityChange('high');
       });
 
-      // Implementation uses sequential .update().eq() calls per task
-      expect(mockSupabase.update).toHaveBeenCalledWith({ priority: 'high' });
-      expect(mockSupabase.eq).toHaveBeenCalled();
+      // Implementation uses sequential updateWorkspaceTask calls per task
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        priority: 'high',
+      });
     });
   });
 
@@ -685,9 +691,8 @@ describe('useTaskActions', () => {
         await result.current.updateEstimationPoints(5);
       });
 
-      expect(mockUpdateTaskMutation.mutateAsync).toHaveBeenCalledWith({
-        taskId: 'task-1',
-        updates: { estimation_points: 5 },
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        estimation_points: 5,
       });
       expect(mockToast.success).toHaveBeenCalledWith('Estimation updated', {
         description: 'Estimation points updated successfully',
@@ -757,21 +762,21 @@ describe('useTaskActions', () => {
         await result.current.updateEstimationPoints(8);
       });
 
-      // Implementation uses sequential .update().eq() calls per task
-      expect(mockSupabase.update).toHaveBeenCalledWith({
+      // Implementation uses sequential updateWorkspaceTask calls per task
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(2);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         estimation_points: 8,
       });
-      expect(mockSupabase.eq).toHaveBeenCalled();
     });
 
     it('should rollback estimation points on update failure', async () => {
       const taskWithEstimation = { ...mockTask, estimation_points: 3 };
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithEstimation]);
 
-      // Mock the mutation to fail
-      mockUpdateTaskMutation.mutateAsync = vi
-        .fn()
-        .mockRejectedValueOnce(new Error('Database connection failed'));
+      // Mock the API call to fail
+      mockUpdateWorkspaceTask.mockRejectedValueOnce(
+        new Error('Database connection failed')
+      );
 
       const setEstimationSaving = vi.fn();
 
@@ -809,7 +814,7 @@ describe('useTaskActions', () => {
       expect(mockToast.error).toHaveBeenCalledWith(
         'Failed to update estimation',
         {
-          description: 'Database connection failed',
+          description: 'Failed to update any tasks',
         }
       );
 
@@ -819,20 +824,60 @@ describe('useTaskActions', () => {
     });
   });
 
+  describe('handleCustomDateChange', () => {
+    it('should update task end_date and close dialog', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+
+      const setIsLoading = vi.fn();
+      const setCustomDateDialogOpen = vi.fn();
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: mockTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading,
+            setMenuOpen: vi.fn(),
+            setCustomDateDialogOpen,
+          }),
+        { wrapper }
+      );
+
+      const testDate = new Date('2024-01-01T00:00:00');
+
+      await act(async () => {
+        await result.current.handleCustomDateChange(testDate);
+      });
+
+      expect(setCustomDateDialogOpen).toHaveBeenCalledWith(false);
+      expect(mockUpdateTaskMutation.mutate).toHaveBeenCalledWith(
+        { taskId: 'task-1', updates: { end_date: expect.any(String) } },
+        expect.any(Object)
+      );
+    });
+  });
+
   describe('handleToggleAssignee', () => {
     it('should add assignee to task', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-      // Configure the .in() call to resolve to a success response
-      mockSupabase.in = vi.fn(() =>
-        Promise.resolve({ error: null, data: [], count: 1 })
-      );
+      const taskNoWorkspace = {
+        ...mockTask,
+        ws_id: undefined,
+      } as unknown as Task;
+
+      queryClient.setQueryData(['tasks', 'board-1'], [taskNoWorkspace]);
+      // Configure the .insert() call to resolve to a success response
+      mockSupabase.insert = vi.fn(() => Promise.resolve({ error: null }));
 
       const setIsLoading = vi.fn();
 
       const { result } = renderHook(
         () =>
           useTaskActions({
-            task: mockTask,
+            task: taskNoWorkspace,
             boardId: 'board-1',
             targetCompletionList: mockCompletionList,
             targetClosedList: mockClosedList,
@@ -851,18 +896,25 @@ describe('useTaskActions', () => {
       // Verify the Supabase call was made
       await waitFor(() => {
         expect(mockSupabase.from).toHaveBeenCalledWith('task_assignees');
+        expect(mockSupabase.insert).toHaveBeenCalledWith({
+          task_id: 'task-1',
+          user_id: 'user-1',
+        });
       });
     });
 
     it('should remove assignee from task', async () => {
       const taskWithAssignee = {
         ...mockTask,
+        ws_id: undefined,
         assignees: [
           { id: 'user-1', display_name: 'User 1', email: 'user1@test.com' },
         ],
-      };
+      } as unknown as Task;
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
-      mockSupabase.eq.mockResolvedValueOnce({ error: null });
+      mockSupabase.delete = vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ error: null })),
+      }));
 
       const setIsLoading = vi.fn();
 
@@ -892,7 +944,11 @@ describe('useTaskActions', () => {
     });
 
     it('should rollback on error when adding assignee fails', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+      const taskNoWorkspace = {
+        ...mockTask,
+        ws_id: undefined,
+      } as unknown as Task;
+      queryClient.setQueryData(['tasks', 'board-1'], [taskNoWorkspace]);
 
       // Mock insert to fail (simulating add assignee flow)
       mockSupabase.insert = vi.fn(() =>
@@ -909,7 +965,7 @@ describe('useTaskActions', () => {
       const { result } = renderHook(
         () =>
           useTaskActions({
-            task: mockTask,
+            task: taskNoWorkspace,
             boardId: 'board-1',
             targetCompletionList: mockCompletionList,
             targetClosedList: mockClosedList,
@@ -937,7 +993,7 @@ describe('useTaskActions', () => {
         'tasks',
         'board-1',
       ]);
-      expect(cachedTasks).toEqual([mockTask]);
+      expect(cachedTasks).toEqual([taskNoWorkspace]);
       expect(cachedTasks?.[0]?.assignees).toEqual([]);
 
       // Verify loading state was managed correctly
@@ -948,10 +1004,11 @@ describe('useTaskActions', () => {
     it('should rollback on error when removing assignee fails', async () => {
       const taskWithAssignee = {
         ...mockTask,
+        ws_id: undefined,
         assignees: [
           { id: 'user-1', display_name: 'User 1', email: 'user1@test.com' },
         ],
-      };
+      } as unknown as Task;
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
 
       // Mock delete to fail (simulating remove assignee flow)
@@ -1038,12 +1095,36 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToList('list-2');
       });
 
-      expect(mockMoveTask).toHaveBeenCalledWith(
-        mockSupabase,
-        'task-1',
-        'list-2'
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'list-2',
+      });
       expect(setMenuOpen).toHaveBeenCalledWith(false);
+    });
+
+    it('should set loading when target list not found', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+      const setIsLoading = vi.fn();
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: mockTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading,
+            setMenuOpen: vi.fn(),
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleMoveToList('new-list');
+      });
+
+      expect(setIsLoading).toHaveBeenCalledWith(true);
     });
 
     it('should skip move if target list is same as current', async () => {
@@ -1070,7 +1151,7 @@ describe('useTaskActions', () => {
         await result.current.handleMoveToList('list-1');
       });
 
-      expect(mockMoveTask).not.toHaveBeenCalled();
+      expect(mockUpdateWorkspaceTask).not.toHaveBeenCalled();
       expect(setMenuOpen).toHaveBeenCalledWith(false);
     });
   });

@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { embed } from 'ai';
 
 /**
@@ -11,12 +11,10 @@ function extractTextFromTipTap(content: unknown, depth = 0): string {
   if (typeof content === 'string') return content;
 
   if (typeof content === 'object' && content !== null) {
-    // Handle text nodes
     if ('type' in content && content.type === 'text' && 'text' in content) {
       return String(content.text || '');
     }
 
-    // Handle array of nodes
     if (Array.isArray(content)) {
       return content
         .map((node) => extractTextFromTipTap(node, depth))
@@ -24,7 +22,6 @@ function extractTextFromTipTap(content: unknown, depth = 0): string {
         .join(' ');
     }
 
-    // Handle nodes with content
     if ('type' in content && 'content' in content) {
       const nodeType = String(content.type);
       const nodeContent = Array.isArray(content.content)
@@ -34,10 +31,8 @@ function extractTextFromTipTap(content: unknown, depth = 0): string {
             .join(' ')
         : '';
 
-      // Add context markers for better semantic understanding
       switch (nodeType) {
         case 'heading':
-          // Headings are important - repeat them for emphasis
           return `${nodeContent}. ${nodeContent}`;
         case 'codeBlock':
           return `code: ${nodeContent}`;
@@ -76,7 +71,6 @@ export async function generateTaskEmbedding({
   taskDescription,
   supabase,
 }: GenerateTaskEmbeddingOptions): Promise<void> {
-  // Only run if API key is available
   const hasApiKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
   if (!hasApiKey) {
@@ -84,7 +78,6 @@ export async function generateTaskEmbedding({
   }
 
   try {
-    // Fetch task with all metadata for richer embeddings
     const { data: taskData, error: fetchError } = await supabase
       .from('tasks')
       .select(
@@ -118,7 +111,6 @@ export async function generateTaskEmbedding({
       return;
     }
 
-    // Extract text from description
     let descriptionText = '';
     if (taskDescription || taskData.description) {
       try {
@@ -130,19 +122,15 @@ export async function generateTaskEmbedding({
       }
     }
 
-    // Build rich context for better semantic search
     const contextParts: string[] = [];
 
-    // 1. Task title (most important - include multiple times)
     contextParts.push(`Title: ${taskName}`);
-    contextParts.push(taskName); // Include raw title for exact matches
+    contextParts.push(taskName);
 
-    // 2. Description
     if (descriptionText) {
       contextParts.push(`Description: ${descriptionText}`);
     }
 
-    // 3. Priority context
     if (taskData.priority) {
       const priorityLabels: Record<
         'low' | 'normal' | 'high' | 'critical',
@@ -159,25 +147,20 @@ export async function generateTaskEmbedding({
       }
     }
 
-    // 4. Labels
-    const labels = (taskData.labels as any[])
-      ?.map((l: any) => l.label?.name)
-      .filter(Boolean);
+    const labels = taskData.labels?.map((l) => l.label?.name).filter(Boolean);
     if (labels?.length) {
       contextParts.push(`Tags: ${labels.join(', ')}`);
     }
 
-    // 5. Assignees
-    const assignees = (taskData.assignees as any[])
-      ?.map((a: any) => a.user?.display_name)
+    const assignees = taskData.assignees
+      ?.map((a) => a.user?.display_name)
       .filter(Boolean);
     if (assignees?.length) {
       contextParts.push(`Assigned to: ${assignees.join(', ')}`);
     }
 
-    // 6. Projects
-    const projects = (taskData.projects as any[])
-      ?.map((p: any) => p.project?.name)
+    const projects = taskData.projects
+      ?.map((p) => p.project?.name)
       .filter(Boolean);
     if (projects?.length) {
       contextParts.push(`Projects: ${projects.join(', ')}`);
@@ -185,37 +168,34 @@ export async function generateTaskEmbedding({
 
     const textForEmbedding = contextParts.filter(Boolean).join('. ').trim();
 
-    // Skip if no meaningful content
     if (!textForEmbedding) {
       return;
     }
 
-    // Generate embedding using Google Gemini with RETRIEVAL_DOCUMENT task type
-    // This optimizes the embedding for being searched against
     const { embedding } = await embed({
       model: google.embedding('gemini-embedding-001'),
       value: textForEmbedding,
       providerOptions: {
         google: {
           outputDimensionality: 768,
-          taskType: 'RETRIEVAL_DOCUMENT', // Better for document retrieval
+          taskType: 'RETRIEVAL_DOCUMENT',
         },
       },
     });
 
-    // Validate embedding shape before writing
-    if (!Array.isArray(embedding) || embedding.length !== 768) {
-      console.error('Invalid embedding shape:', embedding?.length);
+    if (!embedding?.length) {
       return;
     }
 
-    // Update task with embedding (pgvector expects number[] not JSON string)
-    await supabase
+    const { error: updateError } = await supabase
       .from('tasks')
       .update({ embedding: JSON.stringify(embedding) })
       .eq('id', taskId);
+
+    if (updateError) {
+      console.error('Failed to update task embedding:', updateError);
+    }
   } catch (error) {
-    // Log error but don't throw - embedding generation is optional
     console.error('Error generating task embedding:', error);
   }
 }

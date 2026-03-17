@@ -1,5 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  type TaskSchedulingUpdatePayload,
+  updateTaskSchedulingSettings,
+} from '@tuturuuu/internal-api';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
@@ -56,8 +59,6 @@ export interface UseTaskMutationsReturn {
   estimationSaving: boolean;
   schedulingSaving: boolean;
 }
-
-const supabase = createClient();
 
 /**
  * Custom hook for task database mutations (CRUD operations on task properties)
@@ -468,32 +469,16 @@ export function useTaskMutations({
       queryClient.setQueryData(['task-user-scheduling', taskId], settings);
 
       try {
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser();
-        if (authError || !user?.id)
-          throw authError ?? new Error('Not signed in');
+        const schedulingPayload: TaskSchedulingUpdatePayload = {
+          total_duration: settings.totalDuration,
+          is_splittable: settings.isSplittable,
+          min_split_duration_minutes: settings.minSplitDurationMinutes,
+          max_split_duration_minutes: settings.maxSplitDurationMinutes,
+          calendar_hours: settings.calendarHours ?? null,
+          auto_schedule: settings.autoSchedule,
+        };
 
-        // NOTE: table is added via migration: task_user_scheduling_settings
-        // Using `any` types until the user runs migrations + typegen.
-        const { error } = await (supabase as any)
-          .from('task_user_scheduling_settings')
-          .upsert(
-            {
-              task_id: taskId,
-              user_id: user.id,
-              total_duration: settings.totalDuration,
-              is_splittable: settings.isSplittable,
-              min_split_duration_minutes: settings.minSplitDurationMinutes,
-              max_split_duration_minutes: settings.maxSplitDurationMinutes,
-              calendar_hours: settings.calendarHours,
-              auto_schedule: settings.autoSchedule,
-            },
-            { onConflict: 'task_id,user_id' }
-          );
-
-        if (error) throw error;
+        await updateTaskSchedulingSettings(wsId, taskId, schedulingPayload);
 
         // Keep any related query data consistent
         queryClient.invalidateQueries({
@@ -530,7 +515,7 @@ export function useTaskMutations({
         setSchedulingSaving(false);
       }
     },
-    [isCreateMode, taskId, queryClient, toast, triggerRefresh]
+    [isCreateMode, taskId, queryClient, toast, triggerRefresh, wsId]
   );
 
   return {
