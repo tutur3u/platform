@@ -142,18 +142,41 @@ class _RelationshipSectionCard extends StatelessWidget {
   const _RelationshipSectionCard({
     required this.title,
     required this.children,
+    this.icon,
   });
 
   final String title;
   final List<Widget> children;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
     return _EditorSectionCard(
-      title: title,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
+        children: [
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: 14,
+                  color: shad.Theme.of(context).colorScheme.mutedForeground,
+                ),
+                const shad.Gap(6),
+              ],
+              Text(
+                title,
+                style: shad.Theme.of(context).typography.small.copyWith(
+                  color: shad.Theme.of(context).colorScheme.mutedForeground,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const shad.Gap(8),
+          ...children,
+        ],
       ),
     );
   }

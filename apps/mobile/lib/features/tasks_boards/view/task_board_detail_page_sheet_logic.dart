@@ -120,14 +120,9 @@ Future<void> _pickTaskRelationship(
 Future<void> _loadRelationshipTaskOptions(
   _TaskBoardTaskEditorSheetState state,
 ) async {
-  final wsId = state.context.read<TaskBoardDetailCubit>().state.workspaceId;
-  if (wsId == null) {
-    throw StateError('Workspace not selected');
-  }
-
   final options = await state.context
-      .read<TaskRepository>()
-      .getWorkspaceTasksForProjectLinking(wsId);
+      .read<TaskBoardDetailCubit>()
+      .getRelationshipTaskOptions();
   final currentTaskId = state.widget.task?.id;
 
   state._updateState(() {
@@ -195,11 +190,34 @@ Future<void> _createTaskRelationship(
 
   final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;
   final toastContext = Navigator.of(state.context, rootNavigator: true).context;
+  final previousRelationships = state._relationshipsState;
+
+  final selectedOption = state._relationshipTaskOptions
+      .where((option) => option.id == selectedTaskId)
+      .cast<TaskLinkOption?>()
+      .firstWhere((option) => option != null, orElse: () => null);
+
+  final optimisticTask = selectedOption == null
+      ? null
+      : RelatedTaskInfo(
+          id: selectedOption.id,
+          name: selectedOption.name,
+          completed: selectedOption.completed,
+          priority: selectedOption.priority,
+          boardName: selectedOption.boardName,
+        );
 
   state._updateState(() {
     state
       .._isMutatingRelationships = true
-      .._relationshipsError = null;
+      .._relationshipsError = null
+      .._relationshipsState = optimisticTask == null
+          ? state._relationshipsState
+          : _optimisticAddRelationship(
+              state._relationshipsState,
+              task: optimisticTask,
+              role: role,
+            );
   });
 
   try {
@@ -219,6 +237,11 @@ Future<void> _createTaskRelationship(
       ),
     );
   } on ApiException catch (error) {
+    if (state.mounted) {
+      state._updateState(
+        () => state._relationshipsState = previousRelationships,
+      );
+    }
     if (!state.mounted || !toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -229,6 +252,11 @@ Future<void> _createTaskRelationship(
       ),
     );
   } on Exception {
+    if (state.mounted) {
+      state._updateState(
+        () => state._relationshipsState = previousRelationships,
+      );
+    }
     if (!state.mounted || !toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -258,11 +286,17 @@ Future<void> _removeTaskRelationship(
 
   final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;
   final toastContext = Navigator.of(state.context, rootNavigator: true).context;
+  final previousRelationships = state._relationshipsState;
 
   state._updateState(() {
     state
       .._isMutatingRelationships = true
-      .._relationshipsError = null;
+      .._relationshipsError = null
+      .._relationshipsState = _optimisticRemoveRelationship(
+        state._relationshipsState,
+        taskId: targetTask.id,
+        role: role,
+      );
   });
 
   try {
@@ -282,6 +316,11 @@ Future<void> _removeTaskRelationship(
       ),
     );
   } on ApiException catch (error) {
+    if (state.mounted) {
+      state._updateState(
+        () => state._relationshipsState = previousRelationships,
+      );
+    }
     if (!state.mounted || !toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -292,6 +331,11 @@ Future<void> _removeTaskRelationship(
       ),
     );
   } on Exception {
+    if (state.mounted) {
+      state._updateState(
+        () => state._relationshipsState = previousRelationships,
+      );
+    }
     if (!state.mounted || !toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -342,6 +386,121 @@ _relationshipMutation({
       type: TaskRelationshipType.related,
     ),
   };
+}
+
+TaskRelationshipsResponse _optimisticAddRelationship(
+  TaskRelationshipsResponse current, {
+  required RelatedTaskInfo task,
+  required _TaskRelationshipRole role,
+}) {
+  switch (role) {
+    case _TaskRelationshipRole.parentTask:
+      return TaskRelationshipsResponse(
+        parentTask: task,
+        childTasks: current.childTasks,
+        blockedBy: current.blockedBy,
+        blocking: current.blocking,
+        relatedTasks: current.relatedTasks,
+      );
+    case _TaskRelationshipRole.childTask:
+      return TaskRelationshipsResponse(
+        parentTask: current.parentTask,
+        childTasks: _appendUniqueTask(current.childTasks, task),
+        blockedBy: current.blockedBy,
+        blocking: current.blocking,
+        relatedTasks: current.relatedTasks,
+      );
+    case _TaskRelationshipRole.blockedBy:
+      return TaskRelationshipsResponse(
+        parentTask: current.parentTask,
+        childTasks: current.childTasks,
+        blockedBy: _appendUniqueTask(current.blockedBy, task),
+        blocking: current.blocking,
+        relatedTasks: current.relatedTasks,
+      );
+    case _TaskRelationshipRole.blocking:
+      return TaskRelationshipsResponse(
+        parentTask: current.parentTask,
+        childTasks: current.childTasks,
+        blockedBy: current.blockedBy,
+        blocking: _appendUniqueTask(current.blocking, task),
+        relatedTasks: current.relatedTasks,
+      );
+    case _TaskRelationshipRole.relatedTask:
+      return TaskRelationshipsResponse(
+        parentTask: current.parentTask,
+        childTasks: current.childTasks,
+        blockedBy: current.blockedBy,
+        blocking: current.blocking,
+        relatedTasks: _appendUniqueTask(current.relatedTasks, task),
+      );
+  }
+}
+
+TaskRelationshipsResponse _optimisticRemoveRelationship(
+  TaskRelationshipsResponse current, {
+  required String taskId,
+  required _TaskRelationshipRole role,
+}) {
+  switch (role) {
+    case _TaskRelationshipRole.parentTask:
+      return TaskRelationshipsResponse(
+        childTasks: current.childTasks,
+        blockedBy: current.blockedBy,
+        blocking: current.blocking,
+        relatedTasks: current.relatedTasks,
+      );
+    case _TaskRelationshipRole.childTask:
+      return TaskRelationshipsResponse(
+        parentTask: current.parentTask,
+        childTasks: current.childTasks
+            .where((task) => task.id != taskId)
+            .toList(growable: false),
+        blockedBy: current.blockedBy,
+        blocking: current.blocking,
+        relatedTasks: current.relatedTasks,
+      );
+    case _TaskRelationshipRole.blockedBy:
+      return TaskRelationshipsResponse(
+        parentTask: current.parentTask,
+        childTasks: current.childTasks,
+        blockedBy: current.blockedBy
+            .where((task) => task.id != taskId)
+            .toList(growable: false),
+        blocking: current.blocking,
+        relatedTasks: current.relatedTasks,
+      );
+    case _TaskRelationshipRole.blocking:
+      return TaskRelationshipsResponse(
+        parentTask: current.parentTask,
+        childTasks: current.childTasks,
+        blockedBy: current.blockedBy,
+        blocking: current.blocking
+            .where((task) => task.id != taskId)
+            .toList(growable: false),
+        relatedTasks: current.relatedTasks,
+      );
+    case _TaskRelationshipRole.relatedTask:
+      return TaskRelationshipsResponse(
+        parentTask: current.parentTask,
+        childTasks: current.childTasks,
+        blockedBy: current.blockedBy,
+        blocking: current.blocking,
+        relatedTasks: current.relatedTasks
+            .where((task) => task.id != taskId)
+            .toList(growable: false),
+      );
+  }
+}
+
+List<RelatedTaskInfo> _appendUniqueTask(
+  List<RelatedTaskInfo> tasks,
+  RelatedTaskInfo task,
+) {
+  if (tasks.any((item) => item.id == task.id)) {
+    return tasks;
+  }
+  return [...tasks, task];
 }
 
 Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {

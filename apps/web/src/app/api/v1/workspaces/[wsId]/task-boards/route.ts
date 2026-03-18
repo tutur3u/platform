@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import {
   getPermissions,
@@ -49,6 +52,30 @@ export async function GET(req: Request, { params }: Params) {
         { status: 403 }
       );
     }
+
+    // Verify membership before proceeding with data fetching
+    const { data: memberCheck, error: memberCheckError } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
 
     const searchParams = listBoardsSearchSchema.parse(
       Object.fromEntries(new URL(req.url).searchParams)
@@ -107,7 +134,7 @@ export async function GET(req: Request, { params }: Params) {
     const listIds = taskLists.map((list) => list.id);
     const taskCountsByList: { [key: string]: number } = {};
     if (listIds.length > 0) {
-      const { data: tasks, error: tasksError } = await supabase
+      const { data: tasks, error: tasksError } = await sbAdmin
         .from('tasks')
         .select('list_id')
         .in('list_id', listIds)
@@ -178,6 +205,28 @@ export async function POST(req: Request, { params }: Params) {
     if (!permissions?.containsPermission('manage_projects')) {
       return NextResponse.json(
         { error: "You don't have permission to perform this operation" },
+        { status: 403 }
+      );
+    }
+
+    // Verify membership
+    const { data: memberCheck, error: memberCheckError } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
         { status: 403 }
       );
     }

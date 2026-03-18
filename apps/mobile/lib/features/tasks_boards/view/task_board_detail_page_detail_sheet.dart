@@ -216,82 +216,69 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
                   ),
                 ),
               ],
-              const shad.Gap(10),
-              _RelationshipSectionCard(
-                title: context.l10n.taskBoardDetailParentTask,
-                children: [
-                  if (_task.relationships.parentTask != null)
-                    _RelationshipTaskTile(
-                      task: _task.relationships.parentTask!,
-                    )
-                  else
-                    Text(
-                      context.l10n.taskBoardDetailNone,
-                      style: shad.Theme.of(context).typography.small,
-                    ),
-                ],
-              ),
-              const shad.Gap(10),
-              _RelationshipSectionCard(
-                title: context.l10n.taskBoardDetailChildTasks,
-                children: _task.relationships.childTasks.isEmpty
-                    ? [
-                        Text(
-                          context.l10n.taskBoardDetailNone,
-                          style: shad.Theme.of(context).typography.small,
-                        ),
-                      ]
-                    : _task.relationships.childTasks
-                          .map((task) => _RelationshipTaskTile(task: task))
-                          .toList(growable: false),
-              ),
-              const shad.Gap(10),
-              _RelationshipSectionCard(
-                title: context.l10n.taskBoardDetailBlockedBy,
-                children: _task.relationships.blockedBy.isEmpty
-                    ? [
-                        Text(
-                          context.l10n.taskBoardDetailNone,
-                          style: shad.Theme.of(context).typography.small,
-                        ),
-                      ]
-                    : _task.relationships.blockedBy
-                          .map((task) => _RelationshipTaskTile(task: task))
-                          .toList(growable: false),
-              ),
-              const shad.Gap(10),
-              _RelationshipSectionCard(
-                title: context.l10n.taskBoardDetailBlocking,
-                children: _task.relationships.blocking.isEmpty
-                    ? [
-                        Text(
-                          context.l10n.taskBoardDetailNone,
-                          style: shad.Theme.of(context).typography.small,
-                        ),
-                      ]
-                    : _task.relationships.blocking
-                          .map((task) => _RelationshipTaskTile(task: task))
-                          .toList(growable: false),
-              ),
-              const shad.Gap(10),
-              _RelationshipSectionCard(
-                title: context.l10n.taskBoardDetailRelatedTasks,
-                children: _task.relationships.relatedTasks.isEmpty
-                    ? [
-                        Text(
-                          context.l10n.taskBoardDetailNone,
-                          style: shad.Theme.of(context).typography.small,
-                        ),
-                      ]
-                    : _task.relationships.relatedTasks
-                          .map((task) => _RelationshipTaskTile(task: task))
-                          .toList(growable: false),
-              ),
+              ..._buildRelationshipSections(context),
             ],
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildRelationshipSections(BuildContext context) {
+    final sections = <Widget>[
+      if (_task.relationships.parentTask != null)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailParentTask,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.parent),
+          children: [
+            _RelationshipTaskTile(task: _task.relationships.parentTask!),
+          ],
+        ),
+      if (_task.relationships.childTasks.isNotEmpty)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailChildTasks,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.child),
+          children: _task.relationships.childTasks
+              .map((task) => _RelationshipTaskTile(task: task))
+              .toList(growable: false),
+        ),
+      if (_task.relationships.blockedBy.isNotEmpty)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailBlockedBy,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.blockedBy),
+          children: _task.relationships.blockedBy
+              .map((task) => _RelationshipTaskTile(task: task))
+              .toList(growable: false),
+        ),
+      if (_task.relationships.blocking.isNotEmpty)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailBlocking,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.blocking),
+          children: _task.relationships.blocking
+              .map((task) => _RelationshipTaskTile(task: task))
+              .toList(growable: false),
+        ),
+      if (_task.relationships.relatedTasks.isNotEmpty)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailRelatedTasks,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.related),
+          children: _task.relationships.relatedTasks
+              .map((task) => _RelationshipTaskTile(task: task))
+              .toList(growable: false),
+        ),
+    ];
+
+    if (sections.isEmpty) {
+      return const [];
+    }
+
+    return [
+      const shad.Gap(10),
+      for (var index = 0; index < sections.length; index++) ...[
+        if (index > 0) const shad.Gap(10),
+        sections[index],
+      ],
+    ];
   }
 
   Future<void> _openTaskEditor() async {

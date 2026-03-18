@@ -364,6 +364,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         const shad.Gap(10),
         _RelationshipSectionCard(
           title: context.l10n.taskBoardDetailParentTask,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.parent),
           children: [
             if (_relationships.parentTask != null)
               _RelationshipTaskTile(
@@ -390,6 +391,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         const shad.Gap(10),
         _RelationshipSectionCard(
           title: context.l10n.taskBoardDetailChildTasks,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.child),
           children: [
             if (_relationships.childTasks.isEmpty)
               Text(
@@ -419,6 +421,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         const shad.Gap(10),
         _RelationshipSectionCard(
           title: context.l10n.taskBoardDetailBlockedBy,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.blockedBy),
           children: [
             if (_relationships.blockedBy.isEmpty)
               Text(
@@ -448,6 +451,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         const shad.Gap(10),
         _RelationshipSectionCard(
           title: context.l10n.taskBoardDetailBlocking,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.blocking),
           children: [
             if (_relationships.blocking.isEmpty)
               Text(
@@ -477,6 +481,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         const shad.Gap(10),
         _RelationshipSectionCard(
           title: context.l10n.taskBoardDetailRelatedTasks,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.related),
           children: [
             if (_relationships.relatedTasks.isEmpty)
               Text(

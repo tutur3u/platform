@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 
@@ -208,6 +209,15 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         type: type,
       ),
     );
+  }
+
+  Future<List<TaskLinkOption>> getRelationshipTaskOptions() async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    return _taskRepository.getWorkspaceTasksForProjectLinking(wsId);
   }
 
   Future<void> deleteTaskRelationship({

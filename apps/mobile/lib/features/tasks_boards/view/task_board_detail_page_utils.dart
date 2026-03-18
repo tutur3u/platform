@@ -248,6 +248,86 @@ class _TaskPriorityStyle {
   final Color border;
 }
 
+enum _TaskRelationshipKind { parent, child, blockedBy, blocking, related }
+
+class _TaskRelationshipIndicator {
+  const _TaskRelationshipIndicator({
+    required this.kind,
+    required this.count,
+  });
+
+  final _TaskRelationshipKind kind;
+  final int count;
+}
+
+IconData _taskRelationshipIcon(_TaskRelationshipKind kind) {
+  return switch (kind) {
+    _TaskRelationshipKind.parent => shad.LucideIcons.circleArrowUp,
+    _TaskRelationshipKind.child => shad.LucideIcons.listTree,
+    _TaskRelationshipKind.blockedBy => shad.LucideIcons.ban,
+    _TaskRelationshipKind.blocking => shad.LucideIcons.ban,
+    _TaskRelationshipKind.related => shad.LucideIcons.link2,
+  };
+}
+
+String _taskRelationshipLabel(
+  BuildContext context,
+  _TaskRelationshipKind kind,
+) {
+  return switch (kind) {
+    _TaskRelationshipKind.parent => context.l10n.taskBoardDetailParentTask,
+    _TaskRelationshipKind.child => context.l10n.taskBoardDetailChildTasks,
+    _TaskRelationshipKind.blockedBy => context.l10n.taskBoardDetailBlockedBy,
+    _TaskRelationshipKind.blocking => context.l10n.taskBoardDetailBlocking,
+    _TaskRelationshipKind.related => context.l10n.taskBoardDetailRelatedTasks,
+  };
+}
+
+Color _taskRelationshipColor(BuildContext context, _TaskRelationshipKind kind) {
+  final palette = context.dynamicColors;
+  return switch (kind) {
+    _TaskRelationshipKind.parent => palette.purple,
+    _TaskRelationshipKind.child => palette.gray,
+    _TaskRelationshipKind.blockedBy => palette.red,
+    _TaskRelationshipKind.blocking => palette.orange,
+    _TaskRelationshipKind.related => palette.blue,
+  };
+}
+
+List<_TaskRelationshipIndicator> _taskRelationshipIndicators(
+  TaskBoardTask task,
+) {
+  final relationships = task.relationships;
+
+  return [
+    if (relationships.parentTask != null)
+      const _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.parent,
+        count: 1,
+      ),
+    if (relationships.childTasks.isNotEmpty)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.child,
+        count: relationships.childTasks.length,
+      ),
+    if (relationships.blockedBy.isNotEmpty)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.blockedBy,
+        count: relationships.blockedBy.length,
+      ),
+    if (relationships.blocking.isNotEmpty)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.blocking,
+        count: relationships.blocking.length,
+      ),
+    if (relationships.relatedTasks.isNotEmpty)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.related,
+        count: relationships.relatedTasks.length,
+      ),
+  ];
+}
+
 _TaskPriorityStyle _taskPriorityStyle(BuildContext context, String? priority) {
   final normalized = (priority ?? 'normal').trim().toLowerCase();
   final label = _taskPriorityLabel(context, normalized);
