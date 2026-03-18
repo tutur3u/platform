@@ -541,18 +541,20 @@ export async function DELETE(
         .eq('target_task_id', targetTaskId)
         .eq('type', payload.type);
 
-    const { count: deletedCount, error: deleteError } =
+    const { count: deletedForwardCount, error: deleteForwardError } =
       await deleteRelationship(payload.source_task_id, payload.target_task_id);
 
-    if (deleteError) {
+    if (deleteForwardError) {
       return NextResponse.json(
         { error: 'Failed to delete relationship' },
         { status: 500 }
       );
     }
 
-    if (payload.type === 'related' && (deletedCount ?? 0) === 0) {
-      const { error: reverseDeleteError } = await deleteRelationship(
+    let deletedReverseCount = 0;
+
+    if (payload.type === 'related') {
+      const { count, error: reverseDeleteError } = await deleteRelationship(
         payload.target_task_id,
         payload.source_task_id
       );
@@ -563,6 +565,17 @@ export async function DELETE(
           { status: 500 }
         );
       }
+
+      deletedReverseCount = count ?? 0;
+    }
+
+    const deletedCount = (deletedForwardCount ?? 0) + deletedReverseCount;
+
+    if (deletedCount <= 0) {
+      return NextResponse.json(
+        { error: 'Relationship not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ success: true });

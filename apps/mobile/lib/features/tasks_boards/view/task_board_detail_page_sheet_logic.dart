@@ -14,14 +14,21 @@ Future<void> _loadTaskRelationshipsIfNeeded(
 }) async {
   final task = state.widget.task;
   if (task == null) return;
+  if (state._isLoadingRelationships &&
+      state._relationshipsLoadingTaskId == task.id) {
+    return;
+  }
 
   if (!force && task.relationshipsLoaded) {
     return;
   }
 
+  final requestToken = ++state._relationshipsLoadRequestToken;
+
   state._updateState(() {
     state
       .._isLoadingRelationships = true
+      .._relationshipsLoadingTaskId = task.id
       .._relationshipsError = null;
   });
 
@@ -30,31 +37,42 @@ Future<void> _loadTaskRelationshipsIfNeeded(
       taskId: task.id,
     );
     if (!state.mounted) return;
+    if (requestToken != state._relationshipsLoadRequestToken) return;
+    if (state.widget.task?.id != task.id) return;
 
     final updatedTask = _findTaskInBoardState(state, task.id);
     state._updateState(() {
       state
         .._relationshipsState =
             updatedTask?.relationships ?? TaskRelationshipsResponse.empty
-        .._isLoadingRelationships = false
         .._relationshipsError = null;
     });
   } on ApiException catch (error) {
     if (!state.mounted) return;
+    if (requestToken != state._relationshipsLoadRequestToken) return;
+    if (state.widget.task?.id != task.id) return;
+    final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;
     state._updateState(() {
-      state
-        .._isLoadingRelationships = false
-        .._relationshipsError = error.message.trim().isEmpty
-            ? null
-            : error.message;
+      state._relationshipsError = error.message.trim().isEmpty
+          ? fallbackErrorMessage
+          : error.message;
     });
   } on Exception {
     if (!state.mounted) return;
+    if (requestToken != state._relationshipsLoadRequestToken) return;
+    if (state.widget.task?.id != task.id) return;
+    final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;
     state._updateState(() {
-      state
-        .._isLoadingRelationships = false
-        .._relationshipsError = state.context.l10n.commonSomethingWentWrong;
+      state._relationshipsError = fallbackErrorMessage;
     });
+  } finally {
+    if (state.mounted && requestToken == state._relationshipsLoadRequestToken) {
+      state._updateState(() {
+        state
+          .._isLoadingRelationships = false
+          .._relationshipsLoadingTaskId = null;
+      });
+    }
   }
 }
 

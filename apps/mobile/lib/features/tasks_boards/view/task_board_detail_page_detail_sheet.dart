@@ -452,19 +452,21 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       if (!mounted) return;
       if (requestToken != _relationshipLoadRequestToken) return;
       if (_task.id != requestTaskId) return;
+      final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
       setState(() {
         _isLoadingRelationships = false;
         _relationshipsError = error.message.trim().isEmpty
-            ? null
+            ? fallbackErrorMessage
             : error.message;
       });
     } on Exception {
       if (!mounted) return;
       if (requestToken != _relationshipLoadRequestToken) return;
       if (_task.id != requestTaskId) return;
+      final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
       setState(() {
         _isLoadingRelationships = false;
-        _relationshipsError = context.l10n.commonSomethingWentWrong;
+        _relationshipsError = fallbackErrorMessage;
       });
     }
   }

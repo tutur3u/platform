@@ -54,6 +54,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   DateTime? _endDate;
   int _activeTab = _detailsTabIndex;
   bool _isLoadingRelationships = false;
+  int _relationshipsLoadRequestToken = 0;
+  String? _relationshipsLoadingTaskId;
   bool _isMutatingRelationships = false;
   String? _relationshipsError;
   TaskRelationshipsResponse _relationshipsState =

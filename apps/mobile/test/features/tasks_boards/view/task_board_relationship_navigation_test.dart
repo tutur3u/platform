@@ -110,6 +110,43 @@ class _CrossBoardTaskRepository extends TaskRepository {
   }
 }
 
+void setTestViewport(
+  WidgetTester tester,
+  Size size, {
+  double devicePixelRatio = 1,
+}) {
+  tester.view.devicePixelRatio = devicePixelRatio;
+  tester.view.physicalSize = size;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+}
+
+Widget buildTestApp({
+  required GoRouter routerConfig,
+  required WorkspaceCubit workspaceCubit,
+  shad.ThemeData? theme,
+}) {
+  return BlocProvider<WorkspaceCubit>.value(
+    value: workspaceCubit,
+    child: shad.ShadcnApp.router(
+      theme:
+          theme ??
+          const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+      darkTheme: const shad.ThemeData.dark(
+        colorScheme: shad.ColorSchemes.darkZinc,
+      ),
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        shad.ShadcnLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: routerConfig,
+    ),
+  );
+}
+
 void main() {
   group('Task relationship cross-board navigation', () {
     late _MockWorkspaceCubit workspaceCubit;
@@ -161,12 +198,7 @@ void main() {
     testWidgets('opens initial task detail from cold-start taskId query', (
       tester,
     ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(900, 1200);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewport(tester, const Size(900, 1200));
 
       final deepLinkRouter = GoRouter(
         initialLocation:
@@ -191,22 +223,9 @@ void main() {
       addTearDown(deepLinkRouter.dispose);
 
       await tester.pumpWidget(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: shad.ShadcnApp.router(
-            theme: const shad.ThemeData(
-              colorScheme: shad.ColorSchemes.lightZinc,
-            ),
-            darkTheme: const shad.ThemeData.dark(
-              colorScheme: shad.ColorSchemes.darkZinc,
-            ),
-            localizationsDelegates: const [
-              ...AppLocalizations.localizationsDelegates,
-              shad.ShadcnLocalizations.delegate,
-            ],
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: deepLinkRouter,
-          ),
+        buildTestApp(
+          routerConfig: deepLinkRouter,
+          workspaceCubit: workspaceCubit,
         ),
       );
       await tester.pumpAndSettle();
@@ -222,31 +241,10 @@ void main() {
     testWidgets('replaces current task sheet when navigating to other board', (
       tester,
     ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(900, 1200);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewport(tester, const Size(900, 1200));
 
       await tester.pumpWidget(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: shad.ShadcnApp.router(
-            theme: const shad.ThemeData(
-              colorScheme: shad.ColorSchemes.lightZinc,
-            ),
-            darkTheme: const shad.ThemeData.dark(
-              colorScheme: shad.ColorSchemes.darkZinc,
-            ),
-            localizationsDelegates: const [
-              ...AppLocalizations.localizationsDelegates,
-              shad.ShadcnLocalizations.delegate,
-            ],
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: router,
-          ),
-        ),
+        buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
       );
       await tester.pumpAndSettle();
 
@@ -274,31 +272,10 @@ void main() {
     testWidgets('supports repeated cross-board navigation A to B to A', (
       tester,
     ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(900, 1200);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewport(tester, const Size(900, 1200));
 
       await tester.pumpWidget(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: shad.ShadcnApp.router(
-            theme: const shad.ThemeData(
-              colorScheme: shad.ColorSchemes.lightZinc,
-            ),
-            darkTheme: const shad.ThemeData.dark(
-              colorScheme: shad.ColorSchemes.darkZinc,
-            ),
-            localizationsDelegates: const [
-              ...AppLocalizations.localizationsDelegates,
-              shad.ShadcnLocalizations.delegate,
-            ],
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: router,
-          ),
-        ),
+        buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
       );
       await tester.pumpAndSettle();
 
@@ -341,31 +318,10 @@ void main() {
     testWidgets('compact mode cross-board navigation does not blank page', (
       tester,
     ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 844);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+      setTestViewport(tester, const Size(390, 844));
 
       await tester.pumpWidget(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: shad.ShadcnApp.router(
-            theme: const shad.ThemeData(
-              colorScheme: shad.ColorSchemes.lightZinc,
-            ),
-            darkTheme: const shad.ThemeData.dark(
-              colorScheme: shad.ColorSchemes.darkZinc,
-            ),
-            localizationsDelegates: const [
-              ...AppLocalizations.localizationsDelegates,
-              shad.ShadcnLocalizations.delegate,
-            ],
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: router,
-          ),
-        ),
+        buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
       );
       await tester.pumpAndSettle();
 

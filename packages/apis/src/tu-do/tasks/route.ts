@@ -12,6 +12,12 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateTaskEmbedding } from './generate-task-embedding';
+import {
+  buildTaskRelationshipSummary,
+  normalizeTask,
+  type TaskRecord,
+  type TaskRelationshipSummary,
+} from './get-tasks-helpers';
 
 const SORT_KEY_BASE_UNIT = 1000000;
 const SORT_KEY_DEFAULT = SORT_KEY_BASE_UNIT * 1000;
@@ -49,43 +55,7 @@ const CreateTaskSchema = z.object({
   project_ids: z.array(z.string().uuid()).optional(),
   assignee_ids: z.array(z.string().uuid()).optional(),
 });
-interface TaskAssigneeRelation {
-  user_id: string | null;
-  user: {
-    id: string | null;
-    display_name: string | null;
-    avatar_url: string | null;
-  } | null;
-}
-
-interface TaskLabelRelation {
-  label: {
-    id: string | null;
-    name: string | null;
-    color: string | null;
-    created_at: string | null;
-  } | null;
-}
-
-interface TaskProjectRelation {
-  project: {
-    id: string | null;
-    name: string | null;
-    status: string | null;
-  } | null;
-}
-
-interface TaskRelationshipSummary {
-  parentTaskId: string | null;
-  childCount: number;
-  blockedByCount: number;
-  blockingCount: number;
-  relatedCount: number;
-}
-
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
-type TaskRelationshipEdge =
-  Database['public']['Tables']['task_relationships']['Row'];
 
 export async function GET(
   request: NextRequest,
@@ -233,188 +203,29 @@ export async function GET(
       throw new Error('TASKS_QUERY_FAILED');
     }
 
-    const tasks =
-      data?.map((task) => {
-        const normalizedAssignees = (task.assignees ?? []).flatMap(
-          (entry: TaskAssigneeRelation) => {
-            const resolvedId = entry.user?.id || entry.user_id;
-            if (!resolvedId) {
-              return [];
-            }
+    const tasks = (data as TaskRecord[] | null)?.map(normalizeTask) ?? [];
 
-            return [
-              {
-                id: resolvedId,
-                user_id: resolvedId,
-                display_name: entry.user?.display_name ?? undefined,
-                avatar_url: entry.user?.avatar_url ?? undefined,
-              },
-            ];
-          }
-        );
-
-        const assigneeIds = Array.from(
-          new Set(normalizedAssignees.map((assignee) => assignee.id))
-        );
-
-        const normalizedLabels = (task.labels ?? []).flatMap(
-          (entry: TaskLabelRelation) => {
-            if (!entry.label?.id) {
-              return [];
-            }
-
-            return [
-              {
-                id: entry.label.id,
-                name: entry.label.name ?? undefined,
-                color: entry.label.color ?? undefined,
-                created_at: entry.label.created_at ?? undefined,
-              },
-            ];
-          }
-        );
-
-        const labelIds = Array.from(
-          new Set(normalizedLabels.map((label) => label.id))
-        );
-
-        const normalizedProjects = (task.projects ?? []).flatMap(
-          (entry: TaskProjectRelation) => {
-            if (!entry.project?.id) {
-              return [];
-            }
-
-            return [
-              {
-                id: entry.project.id,
-                name: entry.project.name ?? undefined,
-                status: entry.project.status ?? undefined,
-              },
-            ];
-          }
-        );
-
-        const projectIds = Array.from(
-          new Set(normalizedProjects.map((project) => project.id))
-        );
-
-        return {
-          ...task,
-          assignees: normalizedAssignees,
-          labels: normalizedLabels,
-          projects: normalizedProjects,
-          assignee_ids: assigneeIds,
-          label_ids: labelIds,
-          project_ids: projectIds,
-          list_deleted: task.task_lists?.deleted ?? false,
-        };
-      }) ?? [];
-
-    const relationshipSummaryByTaskId = new Map<
+    let relationshipSummaryByTaskId = new Map<
       string,
       TaskRelationshipSummary
     >();
-    const taskIds = tasks
-      .map((task) => (typeof task.id === 'string' ? task.id : null))
-      .filter((taskId): taskId is string => Boolean(taskId));
+    const taskIds = tasks.map((task) => task.id).filter(Boolean);
 
-    for (const taskId of taskIds) {
-      relationshipSummaryByTaskId.set(taskId, {
-        parentTaskId: null,
-        childCount: 0,
-        blockedByCount: 0,
-        blockingCount: 0,
-        relatedCount: 0,
-      });
-    }
-
-    if (taskIds.length > 0) {
-      const chunkSize = 200;
-      const processedRelationshipEdgeKeys = new Set<string>();
-
-      for (let index = 0; index < taskIds.length; index += chunkSize) {
-        const chunk = taskIds.slice(index, index + chunkSize);
-
-        const [sourceEdgesResult, targetEdgesResult] = await Promise.all([
-          sbAdmin
-            .from('task_relationships')
-            .select('id, source_task_id, target_task_id, type')
-            .in('source_task_id', chunk),
-          sbAdmin
-            .from('task_relationships')
-            .select('id, source_task_id, target_task_id, type')
-            .in('target_task_id', chunk),
-        ]);
-
-        const relationshipError =
-          sourceEdgesResult.error ?? targetEdgesResult.error;
-
-        if (relationshipError) {
-          console.error(
-            'Failed to load task relationship summaries:',
-            relationshipError
-          );
-          return NextResponse.json(
-            { error: 'Failed to load task relationships' },
-            { status: 500 }
-          );
-        }
-
-        const relationshipEdges = [
-          ...(sourceEdgesResult.data ?? []),
-          ...(targetEdgesResult.data ?? []),
-        ];
-
-        for (const edge of relationshipEdges as TaskRelationshipEdge[]) {
-          const sourceId = edge.source_task_id;
-          const targetId = edge.target_task_id;
-          const type = edge.type;
-          const edgeKey = edge.id ?? `${sourceId}:${targetId}:${type}`;
-
-          if (processedRelationshipEdgeKeys.has(edgeKey)) {
-            continue;
-          }
-
-          processedRelationshipEdgeKeys.add(edgeKey);
-
-          if (!sourceId || !targetId || !type) {
-            continue;
-          }
-
-          const sourceSummary = relationshipSummaryByTaskId.get(sourceId);
-          const targetSummary = relationshipSummaryByTaskId.get(targetId);
-
-          switch (type) {
-            case 'parent_child': {
-              if (sourceSummary) {
-                sourceSummary.childCount += 1;
-              }
-              if (targetSummary && !targetSummary.parentTaskId) {
-                targetSummary.parentTaskId = sourceId;
-              }
-              break;
-            }
-            case 'blocks': {
-              if (sourceSummary) {
-                sourceSummary.blockingCount += 1;
-              }
-              if (targetSummary) {
-                targetSummary.blockedByCount += 1;
-              }
-              break;
-            }
-            case 'related': {
-              if (sourceSummary) {
-                sourceSummary.relatedCount += 1;
-              }
-              if (targetSummary) {
-                targetSummary.relatedCount += 1;
-              }
-              break;
-            }
-          }
-        }
-      }
+    try {
+      relationshipSummaryByTaskId = await buildTaskRelationshipSummary(
+        sbAdmin,
+        normalizedWorkspaceId,
+        taskIds
+      );
+    } catch (relationshipError) {
+      console.error(
+        'Failed to load task relationship summaries:',
+        relationshipError
+      );
+      return NextResponse.json(
+        { error: 'Failed to load task relationships' },
+        { status: 500 }
+      );
     }
 
     const tasksWithRelationshipSummary = tasks.map((task) => {

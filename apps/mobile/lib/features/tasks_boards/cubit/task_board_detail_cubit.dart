@@ -166,6 +166,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   Future<void> loadTaskRelationships({required String taskId}) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
+    final requestToken = _loadRequestToken;
     if (wsId == null || boardId == null || state.board == null) {
       throw StateError('Board detail is not initialized');
     }
@@ -174,6 +175,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       wsId: wsId,
       taskId: taskId,
     );
+
+    if (requestToken != _loadRequestToken) {
+      return;
+    }
 
     if (state.workspaceId != wsId || state.boardId != boardId) {
       return;

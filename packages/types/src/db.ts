@@ -89,6 +89,38 @@ export type TaskLabel = Tables<'workspace_task_labels'>;
 export type TaskProject = Tables<'task_projects'>;
 export type TaskProjectUpdate = Tables<'task_project_updates'>;
 export type TaskCalendarEvent = Tables<'task_calendar_events'>;
+export type TaskAssigneeRelationRow = Pick<
+  Tables<'task_assignees'>,
+  'user_id'
+> & {
+  user: Pick<Tables<'users'>, 'id' | 'display_name' | 'avatar_url'> | null;
+};
+export type TaskLabelRelationRow = {
+  label: Pick<
+    Tables<'workspace_task_labels'>,
+    'id' | 'name' | 'color' | 'created_at'
+  > | null;
+};
+export type TaskProjectRelationRow = {
+  project: Pick<Tables<'task_projects'>, 'id' | 'name' | 'status'> | null;
+};
+export type TaskCounterpartLookupRow = Pick<
+  Tables<'tasks'>,
+  'id' | 'deleted_at'
+> & {
+  list: {
+    board: Pick<Tables<'workspace_boards'>, 'ws_id'> | null;
+  } | null;
+};
+export type TaskListDeletedRelationRow = {
+  task_lists: Pick<Tables<'task_lists'>, 'deleted'> | null;
+};
+export type TaskRouteRecordRow = Pick<Tables<'tasks'>, 'id'> &
+  TaskListDeletedRelationRow & {
+    assignees: TaskAssigneeRelationRow[] | null;
+    labels: TaskLabelRelationRow[] | null;
+    projects: TaskProjectRelationRow[] | null;
+  };
 export type WorkspaceHabit = Tables<'workspace_habits'>;
 export type HabitCalendarEventRow = Tables<'habit_calendar_events'>;
 export type HabitCompletionRow = Tables<'habit_completions'>;
