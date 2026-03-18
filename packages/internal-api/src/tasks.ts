@@ -27,6 +27,8 @@ export interface WorkspaceTaskUpdatePayload {
   priority?: TaskPriority | null;
   start_date?: string | null;
   end_date?: string | null;
+  closed_at?: string | null;
+  completed_at?: string | null;
   list_id?: string;
   estimation_points?: number | null;
   label_ids?: string[];

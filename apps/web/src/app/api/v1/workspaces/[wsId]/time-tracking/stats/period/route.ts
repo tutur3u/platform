@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  DEV_MODE,
   MAX_COLOR_LENGTH,
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
@@ -33,10 +34,16 @@ const querySchema = z
     timezone: z
       .enum(timezoneEnumValues as [string, ...string[]])
       .default('UTC'),
-    targetUserId: z.string().max(MAX_NAME_LENGTH).min(1).optional(),
+    targetUserId: DEV_MODE
+      ? z.string().max(MAX_SEARCH_LENGTH).optional()
+      : z.uuid().optional(),
     searchQuery: z.string().max(MAX_SEARCH_LENGTH).optional(),
-    categoryId: z.string().max(MAX_NAME_LENGTH).optional(),
-    taskId: z.string().max(MAX_NAME_LENGTH).optional(),
+    categoryId: DEV_MODE
+      ? z.string().max(MAX_SEARCH_LENGTH).optional()
+      : z.literal('all').or(z.uuid()).optional(),
+    taskId: DEV_MODE
+      ? z.string().max(MAX_SEARCH_LENGTH).optional()
+      : z.uuid().optional(),
     duration: z.enum(['all', 'short', 'medium', 'long']).optional(),
     timeOfDay: z
       .enum(['all', 'morning', 'afternoon', 'evening', 'night'])
@@ -169,16 +176,6 @@ export const GET = withSessionAuth<{ wsId: string }>(
         timeOfDay,
         projectContext,
       } = parsedQuery.data;
-
-      if (targetUserId) {
-        const targetUserIdValidation = z.uuid().safeParse(targetUserId);
-        if (!targetUserIdValidation.success) {
-          return NextResponse.json(
-            { error: 'Invalid target user ID format' },
-            { status: 400 }
-          );
-        }
-      }
 
       const dateFromIso = dateFrom.toISOString();
       const dateToIso = dateTo.toISOString();

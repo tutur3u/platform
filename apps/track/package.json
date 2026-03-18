@@ -26,8 +26,8 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.2",
     "@hookform/resolvers": "^5.2.2",
-    "@mantine/charts": "^8.3.17",
-    "@mantine/core": "^8.3.17",
+    "@mantine/charts": "^8.3.18",
+    "@mantine/core": "^8.3.18",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/apis": "workspace:*",

@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -34,6 +37,7 @@ type Params = { wsId: string; draftId: string };
 
 async function verifyAccess(wsId: string, draftId: string) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -54,7 +58,7 @@ async function verifyAccess(wsId: string, draftId: string) {
     return { error: 'Forbidden', status: 403, supabase, user };
   }
 
-  const { data: draft, error: draftError } = await supabase
+  const { data: draft, error: draftError } = await sbAdmin
     .from('task_drafts')
     .select('*')
     .eq('id', draftId)
@@ -66,7 +70,7 @@ async function verifyAccess(wsId: string, draftId: string) {
     return { error: 'Draft not found', status: 404, supabase, user };
   }
 
-  return { draft, supabase, user, error: null, status: 200 };
+  return { draft, sbAdmin, user, error: null, status: 200 };
 }
 
 export async function GET(
@@ -77,10 +81,10 @@ export async function GET(
     const { wsId, draftId } = await params;
     const result = await verifyAccess(wsId, draftId);
 
-    if (result.error) {
+    if (result.error || !result.sbAdmin || !result.user) {
       return NextResponse.json(
-        { error: result.error },
-        { status: result.status }
+        { error: result.error ?? 'Internal server error' },
+        { status: result.error ? result.status : 500 }
       );
     }
 
@@ -102,12 +106,15 @@ export async function PUT(
     const { wsId, draftId } = await params;
     const result = await verifyAccess(wsId, draftId);
 
-    if (result.error) {
+    if (result.error || !result.sbAdmin || !result.user) {
       return NextResponse.json(
-        { error: result.error },
-        { status: result.status }
+        { error: result.error ?? 'Internal server error' },
+        { status: result.error ? result.status : 500 }
       );
     }
+
+    const sbAdmin = result.sbAdmin;
+    const user = result.user;
 
     const body = await request.json();
     const parsed = updateDraftSchema.parse(body);
@@ -133,10 +140,12 @@ export async function PUT(
     if (parsed.project_ids !== undefined)
       updateData.project_ids = parsed.project_ids;
 
-    const { data, error } = await result.supabase
+    const { data, error } = await sbAdmin
       .from('task_drafts')
       .update(updateData)
       .eq('id', draftId)
+      .eq('ws_id', wsId)
+      .eq('creator_id', user.id)
       .select()
       .single();
 
@@ -169,17 +178,22 @@ export async function DELETE(
     const { wsId, draftId } = await params;
     const result = await verifyAccess(wsId, draftId);
 
-    if (result.error) {
+    if (result.error || !result.sbAdmin || !result.user) {
       return NextResponse.json(
-        { error: result.error },
-        { status: result.status }
+        { error: result.error ?? 'Internal server error' },
+        { status: result.error ? result.status : 500 }
       );
     }
 
-    const { error } = await result.supabase
+    const sbAdmin = result.sbAdmin;
+    const user = result.user;
+
+    const { error } = await sbAdmin
       .from('task_drafts')
       .delete()
-      .eq('id', draftId);
+      .eq('id', draftId)
+      .eq('ws_id', wsId)
+      .eq('creator_id', user.id);
 
     if (error) {
       console.error('Error deleting draft:', error);
