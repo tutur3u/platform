@@ -115,9 +115,81 @@ void main() {
       expect(find.text('Rejected'), findsOneWidget);
       expect(find.text('Approve'), findsNothing);
 
-      await tester.pump(const Duration(seconds: 6));
-      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
     });
+
+    testWidgets('expires revert actions while sheet remains open', (
+      tester,
+    ) async {
+      final approvedRequest = TimeTrackingRequest(
+        id: 'req_approved',
+        userId: 'requester_1',
+        title: 'Already approved request',
+        approvalStatus: ApprovalStatus.approved,
+        approvedAt: DateTime.now().toUtc().subtract(
+          const Duration(seconds: 55),
+        ),
+      );
+
+      await tester.pumpApp(
+        Scaffold(
+          body: RequestDetailSheet(
+            request: approvedRequest,
+            wsId: 'test_ws_id',
+            repository: repository,
+            isManager: true,
+            statusChangeGracePeriodMinutes: 1,
+            onApprove: () async {},
+            onReject: (_) async {},
+            onRequestInfo: (_) async {},
+            onResubmit: () async {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.textContaining('Revert'), findsOneWidget);
+
+      await tester.drainShadToastTimers();
+
+      expect(find.textContaining('Revert'), findsNothing);
+    });
+
+    testWidgets(
+      'uses current manager display name on optimistic status update',
+      (
+        tester,
+      ) async {
+        await tester.pumpApp(
+          Scaffold(
+            body: RequestDetailSheet(
+              request: request,
+              wsId: 'test_ws_id',
+              repository: repository,
+              isManager: true,
+              currentUserId: 'manager_1',
+              currentUserDisplayName: 'Manager Jane',
+              onApprove: () async {},
+              onReject: (_) async {},
+              onRequestInfo: (_) async {},
+              onResubmit: () async {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Reject').first);
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(EditableText), 'Missing details');
+        await tester.tap(find.text('Reject').last);
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Manager Jane'), findsOneWidget);
+
+        await tester.drainShadToastTimers();
+      },
+    );
 
     testWidgets(
       'shows feedback and allows owner to resubmit needs-info request',

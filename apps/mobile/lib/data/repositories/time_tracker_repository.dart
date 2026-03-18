@@ -147,7 +147,13 @@ abstract class ITimeTrackerRepository {
 
   Future<WorkspaceSettings?> getWorkspaceSettings(String wsId);
 
-  Future<void> updateMissedEntryDateThreshold(String wsId, int? threshold);
+  Future<String?> getWorkspaceConfigValue(String wsId, String configId);
+
+  Future<void> updateMissedEntryDateThreshold(
+    String wsId,
+    int? threshold, {
+    int? statusChangeGracePeriodMinutes,
+  });
 
   Future<void> updateRequestStatus(
     String wsId,
@@ -766,13 +772,29 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   }
 
   @override
+  Future<String?> getWorkspaceConfigValue(String wsId, String configId) async {
+    final data = await _api.getJson(
+      '/api/v1/workspaces/$wsId/settings/$configId',
+    );
+    final value = data['value'];
+    return value is String ? value : null;
+  }
+
+  @override
   Future<void> updateMissedEntryDateThreshold(
     String wsId,
-    int? threshold,
-  ) async {
-    await _api.putJson('/api/v1/workspaces/$wsId/time-tracking/threshold', {
-      'threshold': threshold,
-    });
+    int? threshold, {
+    int? statusChangeGracePeriodMinutes,
+  }) async {
+    final body = <String, dynamic>{'threshold': threshold};
+    if (statusChangeGracePeriodMinutes != null) {
+      body['statusChangeGracePeriodMinutes'] = statusChangeGracePeriodMinutes;
+    }
+
+    await _api.putJson(
+      '/api/v1/workspaces/$wsId/time-tracking/threshold',
+      body,
+    );
   }
 
   @override

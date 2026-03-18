@@ -2361,7 +2361,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestsThresholdInvalid => 'Enter a whole number greater than or equal to 0.';
 
   @override
+  String get timerRequestsStatusChangeGracePeriodLabel => 'Approved/rejected status change grace period (minutes)';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodHelp => 'Set how many minutes approvers can revert a request between Approved and Rejected in either direction. Set to 0 to disable both actions.';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodInvalid => 'Enter a whole number greater than or equal to 0 for status revert grace period.';
+
+  @override
   String get timerRequestsThresholdUpdated => 'Request threshold updated.';
+
+  @override
+  String get timerRequestRevertToApproved => 'Revert to Approved';
+
+  @override
+  String get timerRequestRevertToRejected => 'Revert to Rejected';
+
+  @override
+  String get timerRequestLastModifiedBy => 'Last modified by';
+
+  @override
+  String timerRequestApprovedByAt(String name, String date) {
+    return 'Approved by $name on $date';
+  }
+
+  @override
+  String timerRequestRejectedByAt(String name, String date) {
+    return 'Rejected by $name on $date';
+  }
 
   @override
   String get timerAutoStartBreaks => 'Auto-start breaks';
