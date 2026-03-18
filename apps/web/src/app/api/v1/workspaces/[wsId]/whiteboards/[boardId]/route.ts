@@ -1,3 +1,4 @@
+import type { Json } from '@tuturuuu/types';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -21,7 +22,11 @@ const updateWhiteboardSchema = z
       .max(MAX_LONG_TEXT_LENGTH)
       .nullable()
       .optional(),
-    snapshot: z.json().nullable().optional(),
+    snapshot: z
+      .unknown()
+      .transform((value) => value as Json)
+      .nullable()
+      .optional(),
     archived_at: z.string().datetime().nullable().optional(),
     updated_at: z.string().datetime().optional(),
   })
