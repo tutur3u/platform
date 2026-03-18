@@ -39,7 +39,7 @@ export interface WorkspaceTaskUpdatePayload {
   sort_key?: number;
 }
 
-export interface WorkspaceTaskApiTask extends Task, Record<string, unknown> {
+export interface WorkspaceTaskApiTask extends Task {
   assignee_ids?: string[];
   label_ids?: string[];
   project_ids?: string[];

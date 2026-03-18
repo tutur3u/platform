@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 export const paramsSchema = z.object({
   wsId: z.string().min(1),
-  taskId: z.uuid(),
+  taskId: z.guid(),
 });
 
 export const updateTaskSchema = z
@@ -27,13 +27,13 @@ export const updateTaskSchema = z
     closed_at: z.string().datetime().nullable().optional(),
     completed_at: z.string().datetime().nullable().optional(),
     completed: z.boolean().optional(),
-    list_id: z.uuid().optional(),
+    list_id: z.guid().optional(),
     sort_key: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
     deleted: z.boolean().optional(),
     estimation_points: z.number().int().min(0).max(8).nullable().optional(),
-    label_ids: z.array(z.uuid()).optional(),
-    project_ids: z.array(z.uuid()).optional(),
-    assignee_ids: z.array(z.uuid()).optional(),
+    label_ids: z.array(z.guid()).optional(),
+    project_ids: z.array(z.guid()).optional(),
+    assignee_ids: z.array(z.guid()).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'At least one task field is required',
@@ -74,26 +74,20 @@ type TaskListContext = Pick<
   > | null;
 };
 
-type TaskAssigneeContext = {
-  user: Pick<
-    Database['public']['Tables']['users']['Row'],
-    'id' | 'display_name' | 'avatar_url'
-  > | null;
-};
+type TaskAssigneeContext = Pick<
+  Database['public']['Tables']['users']['Row'],
+  'id' | 'display_name' | 'avatar_url'
+> | null;
 
-type TaskLabelContext = {
-  label: Pick<
-    Database['public']['Tables']['workspace_task_labels']['Row'],
-    'id' | 'name' | 'color' | 'created_at'
-  > | null;
-};
+type TaskLabelContext = Pick<
+  Database['public']['Tables']['workspace_task_labels']['Row'],
+  'id' | 'name' | 'color' | 'created_at'
+> | null;
 
-type TaskProjectContext = {
-  project: Pick<
-    Database['public']['Tables']['task_projects']['Row'],
-    'id' | 'name' | 'status'
-  > | null;
-};
+type TaskProjectContext = Pick<
+  Database['public']['Tables']['task_projects']['Row'],
+  'id' | 'name' | 'status'
+> | null;
 
 export type TaskRecord = TaskBaseRow & {
   task_lists: TaskListContext | null;

@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -447,33 +446,22 @@ export function useTaskActions({
 
     try {
       let successCount = 0;
-      if (resolvedWorkspaceId) {
-        for (const tid of tasksToDelete) {
-          try {
-            await updateWorkspaceTask(resolvedWorkspaceId, tid, {
-              deleted: true,
-            });
-            broadcast?.('task:delete', { taskId: tid });
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to delete task ${tid}:`, error);
-          }
-        }
-      } else {
-        const supabase = createClient();
-        for (const taskId of tasksToDelete) {
-          const { error } = await supabase
-            .from('tasks')
-            .update({ deleted_at: new Date().toISOString() })
-            .eq('id', taskId);
-          if (error) {
-            console.error(`Failed to delete task ${taskId}:`, error);
-          } else {
-            broadcast?.('task:delete', { taskId });
-            successCount++;
-          }
+      if (!resolvedWorkspaceId) {
+        throw new Error('Workspace ID is required');
+      }
+
+      for (const tid of tasksToDelete) {
+        try {
+          await updateWorkspaceTask(resolvedWorkspaceId, tid, {
+            deleted: true,
+          });
+          broadcast?.('task:delete', { taskId: tid });
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to delete task ${tid}:`, error);
         }
       }
+
       if (successCount === 0) throw new Error('Failed to delete any tasks');
 
       const taskCount = tasksToDelete.length;
@@ -538,18 +526,13 @@ export function useTaskActions({
     );
 
     try {
-      if (resolvedWorkspaceId) {
-        await updateWorkspaceTask(resolvedWorkspaceId, task.id, {
-          assignee_ids: [],
-        });
-      } else {
-        const supabase = createClient();
-        const { error } = await supabase
-          .from('task_assignees')
-          .delete()
-          .eq('task_id', task.id);
-        if (error) throw error;
+      if (!resolvedWorkspaceId) {
+        throw new Error('Workspace ID is required');
       }
+
+      await updateWorkspaceTask(resolvedWorkspaceId, task.id, {
+        assignee_ids: [],
+      });
 
       broadcast?.('task:relations-changed', { taskId: task.id });
 
@@ -616,21 +599,13 @@ export function useTaskActions({
           [];
         const filteredIds = newIds.filter((id) => id !== assigneeId);
 
-        if (resolvedWorkspaceId) {
-          await updateWorkspaceTask(resolvedWorkspaceId, task.id, {
-            assignee_ids: filteredIds,
-          });
-        } else {
-          const supabase = createClient();
-          const { error } = await supabase
-            .from('task_assignees')
-            .delete()
-            .eq('task_id', task.id)
-            .eq('user_id', assigneeId);
-          if (error) {
-            throw error;
-          }
+        if (!resolvedWorkspaceId) {
+          throw new Error('Workspace ID is required');
         }
+
+        await updateWorkspaceTask(resolvedWorkspaceId, task.id, {
+          assignee_ids: filteredIds,
+        });
 
         const assignee = task.assignees?.find((a) => a.id === assigneeId);
         toast.success('Success', {
@@ -1509,81 +1484,39 @@ export function useTaskActions({
         const succeededTaskIds: string[] = [];
         const targetTasks = active ? tasksToRemoveFrom : tasksNeedingAssignee;
 
-        if (resolvedWorkspaceId) {
-          for (const tid of targetTasks) {
-            const current = getTaskState(tid);
-            const existingIds =
-              current?.assignees
-                ?.map((assignee) => assignee.id)
-                .filter(Boolean) ?? [];
-            const newIds = active
-              ? existingIds.filter((id) => id !== assigneeId)
-              : Array.from(new Set([...existingIds, assigneeId]));
+        if (!resolvedWorkspaceId) {
+          throw new Error('Workspace ID is required');
+        }
 
-            try {
-              await updateWorkspaceTask(resolvedWorkspaceId, tid, {
-                assignee_ids: newIds,
-              });
-              succeededTaskIds.push(tid);
-            } catch (error) {
-              console.error(
-                `Failed to ${
-                  active ? 'remove' : 'add'
-                } assignee from task ${tid}:`,
-                error
-              );
-            }
+        for (const tid of targetTasks) {
+          const current = getTaskState(tid);
+          const existingIds =
+            current?.assignees
+              ?.map((assignee) => assignee.id)
+              .filter(Boolean) ?? [];
+          const newIds = active
+            ? existingIds.filter((id) => id !== assigneeId)
+            : Array.from(new Set([...existingIds, assigneeId]));
+
+          try {
+            await updateWorkspaceTask(resolvedWorkspaceId, tid, {
+              assignee_ids: newIds,
+            });
+            succeededTaskIds.push(tid);
+          } catch (error) {
+            console.error(
+              `Failed to ${active ? 'remove' : 'add'} assignee from task ${tid}:`,
+              error
+            );
           }
+        }
 
-          if (targetTasks.length > 0 && succeededTaskIds.length === 0) {
-            throw new Error('Failed to update any tasks');
-          }
+        if (targetTasks.length > 0 && succeededTaskIds.length === 0) {
+          throw new Error('Failed to update any tasks');
+        }
 
-          for (const tid of succeededTaskIds) {
-            broadcast?.('task:relations-changed', { taskId: tid });
-          }
-        } else {
-          const supabase = createClient();
-          if (active) {
-            for (const taskId of tasksToRemoveFrom) {
-              const { error } = await supabase
-                .from('task_assignees')
-                .delete()
-                .eq('task_id', taskId)
-                .eq('user_id', assigneeId);
-
-              if (error) {
-                console.error(
-                  `Failed to remove assignee from task ${taskId}:`,
-                  error
-                );
-              } else {
-                succeededTaskIds.push(taskId);
-                broadcast?.('task:relations-changed', { taskId });
-              }
-            }
-          } else {
-            for (const taskId of tasksNeedingAssignee) {
-              const { error } = await supabase
-                .from('task_assignees')
-                .insert({ task_id: taskId, user_id: assigneeId });
-
-              if (error && error.code !== '23505') {
-                console.error(
-                  `Failed to add assignee to task ${taskId}:`,
-                  error
-                );
-              } else {
-                succeededTaskIds.push(taskId);
-                broadcast?.('task:relations-changed', { taskId });
-              }
-            }
-          }
-
-          const targetCount = targetTasks.length;
-          if (targetCount > 0 && succeededTaskIds.length === 0) {
-            throw new Error('Failed to update any tasks');
-          }
+        for (const tid of succeededTaskIds) {
+          broadcast?.('task:relations-changed', { taskId: tid });
         }
 
         const selectedAssignee = task.assignees?.find(

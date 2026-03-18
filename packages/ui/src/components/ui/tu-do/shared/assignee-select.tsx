@@ -9,7 +9,7 @@ import {
   UserX,
   X,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
@@ -58,7 +58,8 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     }));
     const [searchQuery, setSearchQuery] = useState('');
     const params = useParams();
-    const wsId = params.wsId as string;
+    const rawWsId = params.wsId;
+    const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
     const boardId = params.boardId as string;
     const queryClient = useQueryClient();
     const broadcast = useBoardBroadcast();
@@ -116,36 +117,25 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         memberId: string;
         action: 'add' | 'remove';
       }) => {
-        const supabase = createClient();
-
-        if (action === 'remove') {
-          const { error } = await supabase
-            .from('task_assignees')
-            .delete()
-            .eq('task_id', taskId)
-            .eq('user_id', memberId);
-
-          if (error) {
-            console.error('Remove assignee error:', error);
-            throw new Error(error.message || t('please_try_again_later'));
-          }
-        } else {
-          const { error } = await supabase.from('task_assignees').upsert(
-            {
-              task_id: taskId,
-              user_id: memberId,
-            },
-            {
-              onConflict: 'task_id,user_id',
-              ignoreDuplicates: true,
-            }
-          );
-
-          if (error) {
-            console.error('Add assignee error:', error);
-            throw new Error(error.message || t('please_try_again_later'));
-          }
+        if (!wsId) {
+          throw new Error(t('please_try_again_later'));
         }
+
+        const boardTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+        const currentTask = boardTasks?.find((task) => task.id === taskId);
+        const existingIds =
+          currentTask?.assignees
+            ?.map((assignee) => assignee.id)
+            .filter(Boolean) ?? uniqueAssignees.map((assignee) => assignee.id);
+
+        const nextIds =
+          action === 'remove'
+            ? existingIds.filter((id) => id !== memberId)
+            : Array.from(new Set([...existingIds, memberId]));
+
+        await updateWorkspaceTask(wsId, taskId, {
+          assignee_ids: nextIds,
+        });
 
         return { memberId, action };
       },
