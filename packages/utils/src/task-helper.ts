@@ -2941,6 +2941,50 @@ export async function createTaskWithRelationship(
   return { task, relationship };
 }
 
+/**
+ * React Query mutation hook for creating a task with a relationship
+ */
+export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateTaskWithRelationshipInput) => {
+      const supabase = createClient();
+      return createTaskWithRelationship(supabase, input);
+    },
+    onSuccess: async (result, variables) => {
+      // Add the new task to the cache directly instead of invalidating
+      // This avoids full-board refetch flickering and conflicts with realtime sync
+      if (boardId) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [result.task];
+            // Check if task already exists (from realtime), if so don't duplicate
+            if (old.some((t) => t.id === result.task.id)) return old;
+            return [...old, result.task];
+          }
+        );
+      }
+
+      // Invalidate relationship caches for both tasks involved
+      // Note: We do NOT invalidate the tasks cache to avoid conflicts with realtime sync
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.currentTaskId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', result.task.id],
+        }),
+        // Invalidate workspace tasks (for task picker) - scoped to specific workspace
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-tasks', wsId],
+        }),
+      ]);
+    },
+  });
+}
+
 // Bulk clear activities from a list (sequential processing for auditing)
 export async function clearAllAssigneesFromList(
   supabase: TypedSupabaseClient,
