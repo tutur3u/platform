@@ -94,6 +94,9 @@ describe('web proxy api handling', () => {
     const response = await proxy(new NextRequest('http://localhost/~'));
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
@@ -108,6 +111,18 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('location')).toBe(
       'http://localhost/~unknown?retry=1'
     );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('redirects localized bare tilde routes before they can fall through to workspace resolution', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/en/~?retry=1')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('http://localhost/~?retry=1');
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });

@@ -2,6 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -11,13 +15,13 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
 
   const apiKey = (await headers()).get('API_KEY');
   return apiKey
     ? getDataWithApiKey({ wsId, apiKey })
-    : getDataFromSession({ wsId });
+    : getDataFromSession({ req, wsId });
 }
 
 async function getDataWithApiKey({
@@ -64,13 +68,40 @@ async function getDataWithApiKey({
   return NextResponse.json(data?.count || 0);
 }
 
-async function getDataFromSession({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
+async function getDataFromSession({
+  req,
+  wsId,
+}: {
+  req: Request;
+  wsId: string;
+}) {
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const permissions = await getPermissions({ wsId, request: req });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  if (!permissions.containsPermission('view_inventory')) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  const { data, error } = await sbAdmin
     .from('workspace_products')
     .select('count()')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .single();
 
   if (error) {

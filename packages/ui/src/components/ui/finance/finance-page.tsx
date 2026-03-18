@@ -1,4 +1,8 @@
 import {
+  listWallets,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
@@ -20,6 +24,7 @@ import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -54,7 +59,12 @@ export default async function FinancePage({
   // Parse includeConfidential from URL param (defaults to true if not set)
   const includeConfidentialBool = sp.includeConfidential !== 'false';
 
-  const { data: recentTransactions } = await getRecentTransactions(wsId);
+  const requestHeaders = await headers();
+  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
+  const { data: recentTransactions } = await getRecentTransactions(
+    wsId,
+    internalApiOptions
+  );
 
   // Map recent transactions to match the data structure expected by CustomDataTable
   const transactionsData = recentTransactions.map((d) => ({
@@ -176,9 +186,11 @@ export default async function FinancePage({
   );
 }
 
-async function getRecentTransactions(wsId: string) {
+async function getRecentTransactions(
+  wsId: string,
+  internalApiOptions: Parameters<typeof listWallets>[1]
+) {
   const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
 
   // Use RPC function to get redacted transactions with confidential filtering
   const { data: transactions, error } = await supabase.rpc(
@@ -213,22 +225,18 @@ async function getRecentTransactions(wsId: string) {
 
   // Fetch wallet names
   const walletMap = new Map<string, string>();
-  if (walletIds.length > 0) {
-    const { data: wallets, error: walletError } = await sbAdmin
-      .from('workspace_wallets')
-      .select('id, name')
-      .in('id', walletIds)
-      .eq('ws_id', wsId);
-
-    if (!walletError && wallets) {
-      wallets.forEach((w) => {
-        if (w.id && w.name) walletMap.set(w.id, w.name);
-      });
+  const wallets = walletIds.length
+    ? await listWallets(wsId, internalApiOptions)
+    : [];
+  wallets.forEach((wallet) => {
+    if (wallet.id && wallet.name) {
+      walletMap.set(wallet.id, wallet.name);
     }
-  }
+  });
 
   // Fetch category names
   const categoryMap = new Map<string, string>();
+  const sbAdmin = await createAdminClient();
   if (categoryIds.length > 0) {
     const { data: categories, error: categoryError } = await sbAdmin
       .from('transaction_categories')

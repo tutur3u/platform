@@ -248,6 +248,102 @@ class _TaskPriorityStyle {
   final Color border;
 }
 
+enum _TaskRelationshipKind { parent, child, blockedBy, blocking, related }
+
+class _TaskRelationshipIndicator {
+  const _TaskRelationshipIndicator({
+    required this.kind,
+    required this.count,
+  });
+
+  final _TaskRelationshipKind kind;
+  final int count;
+}
+
+IconData _taskRelationshipIcon(_TaskRelationshipKind kind) {
+  return switch (kind) {
+    _TaskRelationshipKind.parent => shad.LucideIcons.circleArrowUp,
+    _TaskRelationshipKind.child => shad.LucideIcons.listTree,
+    _TaskRelationshipKind.blockedBy => shad.LucideIcons.ban,
+    _TaskRelationshipKind.blocking => shad.LucideIcons.ban,
+    _TaskRelationshipKind.related => shad.LucideIcons.link2,
+  };
+}
+
+String _taskRelationshipLabel(
+  BuildContext context,
+  _TaskRelationshipKind kind,
+) {
+  return switch (kind) {
+    _TaskRelationshipKind.parent => context.l10n.taskBoardDetailParentTask,
+    _TaskRelationshipKind.child => context.l10n.taskBoardDetailChildTasks,
+    _TaskRelationshipKind.blockedBy => context.l10n.taskBoardDetailBlockedBy,
+    _TaskRelationshipKind.blocking => context.l10n.taskBoardDetailBlocking,
+    _TaskRelationshipKind.related => context.l10n.taskBoardDetailRelatedTasks,
+  };
+}
+
+Color _taskRelationshipColor(BuildContext context, _TaskRelationshipKind kind) {
+  final palette = context.dynamicColors;
+  return switch (kind) {
+    _TaskRelationshipKind.parent => palette.purple,
+    _TaskRelationshipKind.child => palette.gray,
+    _TaskRelationshipKind.blockedBy => palette.red,
+    _TaskRelationshipKind.blocking => palette.orange,
+    _TaskRelationshipKind.related => palette.blue,
+  };
+}
+
+List<_TaskRelationshipIndicator> _taskRelationshipIndicators(
+  TaskBoardTask task,
+) {
+  final summary = task.relationshipSummary;
+  final relationships = task.relationships;
+  final parentCount = task.relationshipsLoaded
+      ? (relationships.parentTask == null ? 0 : 1)
+      : (summary.hasParent ? 1 : 0);
+  final childCount = task.relationshipsLoaded
+      ? relationships.childTasks.length
+      : summary.childCount;
+  final blockedByCount = task.relationshipsLoaded
+      ? relationships.blockedBy.length
+      : summary.blockedByCount;
+  final blockingCount = task.relationshipsLoaded
+      ? relationships.blocking.length
+      : summary.blockingCount;
+  final relatedCount = task.relationshipsLoaded
+      ? relationships.relatedTasks.length
+      : summary.relatedCount;
+
+  return [
+    if (parentCount > 0)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.parent,
+        count: parentCount,
+      ),
+    if (childCount > 0)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.child,
+        count: childCount,
+      ),
+    if (blockedByCount > 0)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.blockedBy,
+        count: blockedByCount,
+      ),
+    if (blockingCount > 0)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.blocking,
+        count: blockingCount,
+      ),
+    if (relatedCount > 0)
+      _TaskRelationshipIndicator(
+        kind: _TaskRelationshipKind.related,
+        count: relatedCount,
+      ),
+  ];
+}
+
 _TaskPriorityStyle _taskPriorityStyle(BuildContext context, String? priority) {
   final normalized = (priority ?? 'normal').trim().toLowerCase();
   final label = _taskPriorityLabel(context, normalized);

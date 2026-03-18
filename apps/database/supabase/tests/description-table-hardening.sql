@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(23);
+select plan(27);
 
 select ok(
   not exists (
@@ -340,6 +340,30 @@ select is(
   strict_text_field_char_limit('workspace_chat_messages', 'content'),
   512,
   'payload fields default to the lower 512-character ceiling'
+);
+
+select is(
+  strict_text_field_char_limit('sent_emails', 'content'),
+  1048576,
+  'sent email HTML content keeps the large character ceiling'
+);
+
+select is(
+  strict_text_field_byte_limit('sent_emails', 'content'),
+  4194304,
+  'sent email HTML content keeps the large byte ceiling'
+);
+
+select is(
+  strict_text_field_char_limit('email_audit', 'html_content'),
+  1048576,
+  'email audit HTML content keeps the large character ceiling'
+);
+
+select is(
+  strict_text_field_byte_limit('email_audit', 'html_content'),
+  4194304,
+  'email audit HTML content keeps the large byte ceiling'
 );
 
 select is(

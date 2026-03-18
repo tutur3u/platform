@@ -2,9 +2,10 @@ import { PlusIcon } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import WhiteboardsList, { type Whiteboard } from './client';
 import CreateWhiteboardDialog from './createWhiteboardDialog';
 
@@ -20,41 +21,42 @@ interface WhiteboardsPageProps {
 export default async function WhiteboardsPage({
   params,
 }: WhiteboardsPageProps) {
+  const { wsId } = await params;
+  const workspace = await getWorkspace(wsId);
+
+  if (!workspace) {
+    return notFound();
+  }
+
+  const t = await getTranslations('common');
+  const whiteboards = await getWhiteboards(workspace.id);
+
   return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const t = await getTranslations('common');
-        const whiteboards = await getWhiteboards(wsId);
+    <div className="container mx-auto space-y-6 p-6">
+      {/* Header */}
+      <div className="flex justify-between">
+        <div className="space-y-2">
+          <h1 className="font-bold text-3xl tracking-tight">
+            {t('whiteboards')}
+          </h1>
+          <p className="text-muted-foreground">
+            {t('whiteboards_description')}
+          </p>
+        </div>
+        <CreateWhiteboardDialog
+          wsId={workspace.id}
+          trigger={
+            <Button className="gap-2">
+              <PlusIcon className="h-4 w-4" />
+              {t('new_whiteboard')}
+            </Button>
+          }
+        />
+      </div>
 
-        return (
-          <div className="container mx-auto space-y-6 p-6">
-            {/* Header */}
-            <div className="flex justify-between">
-              <div className="space-y-2">
-                <h1 className="font-bold text-3xl tracking-tight">
-                  {t('whiteboards')}
-                </h1>
-                <p className="text-muted-foreground">
-                  {t('whiteboards_description')}
-                </p>
-              </div>
-              <CreateWhiteboardDialog
-                wsId={wsId}
-                trigger={
-                  <Button className="gap-2">
-                    <PlusIcon className="h-4 w-4" />
-                    {t('new_whiteboard')}
-                  </Button>
-                }
-              />
-            </div>
-
-            <Separator />
-            <WhiteboardsList wsId={wsId} whiteboards={whiteboards} />
-          </div>
-        );
-      }}
-    </WorkspaceWrapper>
+      <Separator />
+      <WhiteboardsList wsId={workspace.id} whiteboards={whiteboards} />
+    </div>
   );
 }
 

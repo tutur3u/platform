@@ -2,10 +2,10 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
-import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { userColumns } from './columns';
 
 export const metadata: Metadata = {
@@ -30,9 +30,7 @@ export default async function InfrastructureUsersPage({
   searchParams,
 }: Props) {
   const { wsId } = await params;
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  await enforceInfrastructureRootWorkspace(wsId);
 
   const t = await getTranslations();
   const { data: users, count } = await getUsers(await searchParams);

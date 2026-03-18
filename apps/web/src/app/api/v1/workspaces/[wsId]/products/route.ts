@@ -1,5 +1,8 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
@@ -58,7 +61,9 @@ const getWorkspaceUserId = async (
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id);
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Validate request body
   const parsed = ProductCreateSchema.safeParse(await req.json());
@@ -70,7 +75,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -82,10 +87,9 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
   const { inventory, ...data } = parsed.data;
 
-  const product = await supabase
+  const product = await sbAdmin
     .from('workspace_products')
     .insert({
       ...data,

@@ -1,8 +1,9 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ellipsis, Plus } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { deleteBudget, listBudgets } from '@tuturuuu/internal-api';
+import type { FinanceBudget } from '@tuturuuu/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,67 +48,41 @@ interface BudgetsPageProps {
   };
 }
 
-interface Budget {
-  id: string;
-  name: string;
-  description: string | null;
-  amount: number;
-  spent: number;
-  period: string;
-  start_date: string;
-  end_date: string | null;
-  alert_threshold: number;
-  is_active: boolean;
-  category_id: string | null;
-  wallet_id: string | null;
-}
-
 export default function BudgetsPage({
   wsId,
   currency = 'USD',
 }: BudgetsPageProps) {
   const locale = getCurrencyLocale(currency);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [editingBudget, setEditingBudget] = useState<FinanceBudget | null>(
+    null
+  );
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   const { data: budgets, isLoading } = useQuery({
     queryKey: ['budgets', wsId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('finance_budgets')
-        .select('*')
-        .eq('ws_id', wsId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Budget[];
-    },
+    queryFn: () => listBudgets(wsId),
   });
 
-  const deleteBudget = async (id: string) => {
-    setDeletingId(id);
-    try {
-      const { error } = await supabase
-        .from('finance_budgets')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
+  const deleteBudgetMutation = useMutation({
+    mutationFn: async (id: string) => {
+      setDeletingId(id);
+      await deleteBudget(wsId, id);
+    },
+    onSuccess: () => {
       toast.success('Budget deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['budgets', wsId] });
-      queryClient.invalidateQueries({ queryKey: ['budget_status', wsId] });
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: ['budgets', wsId] });
+      void queryClient.invalidateQueries({ queryKey: ['budget_status', wsId] });
+    },
+    onError: (error) => {
       console.error('Error deleting budget:', error);
       toast.error('Failed to delete budget');
-    } finally {
+    },
+    onSettled: () => {
       setDeletingId(null);
-    }
-  };
+    },
+  });
 
   const getProgressColor = (percentage: number, threshold: number) => {
     if (percentage >= 100) return 'bg-dynamic-red';
@@ -161,11 +136,12 @@ export default function BudgetsPage({
       ) : budgets && budgets.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {budgets.map((budget) => {
+            const alertThreshold = budget.alert_threshold ?? 80;
             const percentage =
               budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0;
             const remaining = budget.amount - budget.spent;
             const isOverBudget = budget.spent > budget.amount;
-            const isNearThreshold = percentage >= budget.alert_threshold;
+            const isNearThreshold = percentage >= alertThreshold;
 
             return (
               <Card
@@ -229,7 +205,9 @@ export default function BudgetsPage({
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => deleteBudget(budget.id)}
+                                  onClick={() =>
+                                    deleteBudgetMutation.mutate(budget.id)
+                                  }
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   disabled={deletingId === budget.id}
                                 >
@@ -274,7 +252,7 @@ export default function BudgetsPage({
                       className="h-2"
                       indicatorClassName={getProgressColor(
                         percentage,
-                        budget.alert_threshold
+                        alertThreshold
                       )}
                     />
                     <div className="flex justify-between text-sm">

@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { roleFormSchema } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -11,11 +14,12 @@ interface Params {
 }
 
 // GET - List roles that have access to a wallet
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { wsId, walletId } = await params;
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
@@ -60,10 +64,12 @@ export async function GET(_: Request, { params }: Params) {
 
 // POST - Add role access to wallet
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   const { wsId, walletId } = await params;
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
@@ -90,12 +96,12 @@ export async function POST(req: Request, { params }: Params) {
   const { role_id, viewing_window, custom_days } = result.data;
 
   // Validate wallet belongs to workspace
-  const { data: wallet, error: walletError } = await supabase
+  const { data: wallet, error: walletError } = await sbAdmin
     .from('workspace_wallets')
     .select('id, ws_id')
     .eq('id', walletId)
     .eq('ws_id', wsId)
-    .single();
+    .maybeSingle();
 
   if (walletError || !wallet) {
     return NextResponse.json(

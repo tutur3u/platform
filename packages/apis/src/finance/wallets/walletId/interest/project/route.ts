@@ -3,11 +3,9 @@
  *
  * GET: Get interest projections
  */
-
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { formatDateString, projectInterest } from '@tuturuuu/utils/finance';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { getAccessibleWallet } from '../../../wallet-access';
 
 interface Params {
   params: Promise<{
@@ -24,21 +22,17 @@ interface Params {
  * - startDate: Start date for projection (YYYY-MM-DD), defaults to today
  */
 export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'view_transactions',
+    select: 'balance',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('view_transactions')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Parse query params
@@ -59,7 +53,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   // Get config
-  const { data: config, error: configError } = await supabase
+  const { data: config, error: configError } = await access.context.supabase
     .from('wallet_interest_configs')
     .select('id, enabled')
     .eq('wallet_id', walletId)
@@ -80,7 +74,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   // Get current rate
-  const { data: rates } = await supabase
+  const { data: rates } = await access.context.supabase
     .from('wallet_interest_rates')
     .select('annual_rate')
     .eq('config_id', config.id)
@@ -98,25 +92,19 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   // Get wallet balance
-  const { data: wallet } = await supabase
-    .from('workspace_wallets')
-    .select('balance')
-    .eq('id', walletId)
-    .single();
-
-  const balance = wallet?.balance || 0;
+  const balance = (access.wallet.balance as number | null) || 0;
 
   // Get holidays for projection period
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + days);
 
-  const { data: holidays } = await supabase
+  const { data: holidays } = await access.context.supabase
     .from('vietnamese_holidays')
     .select('date')
     .gte('date', startDate)
     .lte('date', formatDateString(endDate));
 
-  const holidayDates = holidays?.map((h) => h.date) || [];
+  const holidayDates = holidays?.map((h: { date: string }) => h.date) || [];
 
   // Generate projections
   const projections = projectInterest({

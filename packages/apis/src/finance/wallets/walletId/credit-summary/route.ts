@@ -1,6 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { getAccessibleWallet } from '../../wallet-access';
 
 interface Params {
   params: Promise<{
@@ -79,47 +78,29 @@ function computeCycleDates(
   };
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'view_transactions',
+    select: 'balance, credit_wallets(limit, statement_date, payment_date)',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('view_transactions')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
-  }
-
-  // 1. Fetch wallet + credit_wallets data
-  const { data: walletData, error: walletError } = await supabase
-    .from('workspace_wallets')
-    .select('balance, credit_wallets(limit, statement_date, payment_date)')
-    .eq('id', walletId)
-    .single();
-
-  if (walletError || !walletData) {
-    return NextResponse.json(
-      { message: 'Error fetching wallet data' },
-      { status: 500 }
-    );
-  }
-
-  const creditData = (
-    walletData as typeof walletData & {
-      credit_wallets?: {
-        limit: number;
-        statement_date: number;
-        payment_date: number;
-      } | null;
-    }
-  ).credit_wallets;
+  const walletData = access.wallet as {
+    balance?: number | null;
+    credit_wallets?: {
+      limit: number;
+      statement_date: number;
+      payment_date: number;
+    } | null;
+  };
+  const creditData = walletData.credit_wallets;
 
   if (!creditData) {
     return NextResponse.json(
@@ -144,13 +125,13 @@ export async function GET(_: Request, { params }: Params) {
 
   // 3. Query transactions for previous cycle and current cycle in parallel
   const [prevCycleResult, currentCycleResult] = await Promise.all([
-    supabase
+    access.context.supabase
       .from('wallet_transactions')
       .select('amount')
       .eq('wallet_id', walletId)
       .gte('taken_at', formatDate(prevCycleStart))
       .lt('taken_at', formatDate(lastStatementClose)),
-    supabase
+    access.context.supabase
       .from('wallet_transactions')
       .select('amount')
       .eq('wallet_id', walletId)
@@ -159,12 +140,12 @@ export async function GET(_: Request, { params }: Params) {
   ]);
 
   const statementBalance = (prevCycleResult.data || []).reduce(
-    (sum, tx) => sum + (tx.amount ?? 0),
+    (sum: number, tx: { amount: number | null }) => sum + (tx.amount ?? 0),
     0
   );
 
   const currentActivity = (currentCycleResult.data || []).reduce(
-    (sum, tx) => sum + (tx.amount ?? 0),
+    (sum: number, tx: { amount: number | null }) => sum + (tx.amount ?? 0),
     0
   );
 

@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { canCreateInvitation } from '@/utils/seat-limits';
 
@@ -39,6 +42,7 @@ async function triggerImmediateNotification() {
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const { wsId } = await params;
 
   // Block invitations to personal workspaces
@@ -65,7 +69,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Check if seat limit allows creating invitations
-  const inviteCheck = await canCreateInvitation(supabase, wsId);
+  const inviteCheck = await canCreateInvitation(sbAdmin, wsId);
   if (!inviteCheck.allowed) {
     return NextResponse.json(
       {

@@ -8,6 +8,7 @@
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
+import { getWorkspaceStorageMetrics } from '@/lib/storage-analytics';
 
 export const GET = withApiAuth(
   async (_, { context }) => {
@@ -32,61 +33,13 @@ export const GET = withApiAuth(
         );
       }
 
-      // Get file count from database (same method as Drive page)
-      const { count: fileCount, error: countError } = await supabase
-        .schema('storage')
-        .from('objects')
-        .select('*', { count: 'exact', head: true })
-        .eq('bucket_id', 'workspaces')
-        .ilike('name', `${wsId}/%`)
-        .not('name', 'ilike', '%/.emptyFolderPlaceholder');
-
-      if (countError) {
-        console.error('Error counting files:', countError);
-        return createErrorResponse(
-          'Internal Server Error',
-          'Failed to count files',
-          500,
-          'STORAGE_COUNT_ERROR'
-        );
-      }
-
-      // Get largest and smallest file metadata
-      const { data: largestFileData, error: largestError } = await supabase
-        .schema('storage')
-        .from('objects')
-        .select('metadata, name, created_at')
-        .eq('bucket_id', 'workspaces')
-        .ilike('name', `${wsId}/%`)
-        .not('name', 'ilike', '%/.emptyFolderPlaceholder')
-        .order('metadata->size', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const { data: smallestFileData, error: smallestError } = await supabase
-        .schema('storage')
-        .from('objects')
-        .select('metadata, name, created_at')
-        .eq('bucket_id', 'workspaces')
-        .ilike('name', `${wsId}/%`)
-        .not('name', 'ilike', '%/.emptyFolderPlaceholder')
-        .order('metadata->size', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+      const storageMetrics = await getWorkspaceStorageMetrics(supabase, wsId);
       const totalSize = sizeData || 0;
-
-      if (largestError) {
-        console.error('Error fetching largest file:', largestError);
-      }
-
-      if (smallestError) {
-        console.error('Error fetching smallest file:', smallestError);
-      }
 
       // Get storage limit from workspace_secrets or use 100MB default
       const { data: storageLimitData, error: limitError } = await supabase.rpc(
         'get_workspace_storage_limit',
-        { ws_id: wsId }
+        { p_ws_id: wsId }
       );
 
       if (limitError) {
@@ -106,23 +59,11 @@ export const GET = withApiAuth(
       return NextResponse.json({
         data: {
           totalSize,
-          fileCount: fileCount || 0,
+          fileCount: storageMetrics.fileCount,
           storageLimit,
           usagePercentage,
-          largestFile: largestFileData
-            ? {
-                name: largestFileData.name,
-                size: largestFileData.metadata?.size || 0,
-                createdAt: largestFileData.created_at,
-              }
-            : null,
-          smallestFile: smallestFileData
-            ? {
-                name: smallestFileData.name,
-                size: smallestFileData.metadata?.size || 0,
-                createdAt: smallestFileData.created_at,
-              }
-            : null,
+          largestFile: storageMetrics.largestFile,
+          smallestFile: storageMetrics.smallestFile,
         },
       });
     } catch (error) {

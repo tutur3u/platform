@@ -246,7 +246,7 @@ describe('media-utils', () => {
       expect(result).toBe(200 * 1024 * 1024);
       expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
         'get_workspace_storage_limit',
-        { ws_id: 'workspace-1' }
+        { p_ws_id: 'workspace-1' }
       );
     });
 

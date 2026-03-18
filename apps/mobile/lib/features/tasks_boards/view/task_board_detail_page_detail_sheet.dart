@@ -23,12 +23,39 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
 }
 
 class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
+  static const int _detailsTabIndex = 0;
+
   late TaskBoardTask _task;
+  int _activeTab = _detailsTabIndex;
+  bool _isLoadingRelationships = false;
+  String? _relationshipsError;
+  bool _isDescriptionExpanded = false;
+  int _relationshipLoadRequestToken = 0;
 
   @override
   void initState() {
     super.initState();
     _task = widget.task;
+    if (!_task.relationshipsLoaded) {
+      unawaited(_loadRelationships());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _TaskBoardTaskDetailSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task == widget.task) {
+      return;
+    }
+
+    _task = widget.task;
+    _relationshipLoadRequestToken += 1;
+    _isLoadingRelationships = false;
+    _relationshipsError = null;
+
+    if (!_task.relationshipsLoaded) {
+      unawaited(_loadRelationships());
+    }
   }
 
   @override
@@ -45,6 +72,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               assignee.id.trim().isNotEmpty,
         )
         .toList(growable: false);
+
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -85,102 +113,268 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               ],
             ),
             const shad.Gap(16),
-            if (description != null) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskDescriptionLabel,
-                value: description,
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.priority?.trim().isNotEmpty == true) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailPriority,
-                child: _TaskPriorityChip(priority: _task.priority),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.startDate != null) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskStartDate,
-                value: DateFormat.yMd().format(_task.startDate!),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.endDate != null) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskEndDate,
-                value: DateFormat.yMd().format(_task.endDate!),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.estimationPoints != null) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskEstimation,
-                child: shad.OutlineBadge(
-                  child: Text(
-                    _taskEstimationPointLabel(
-                      points: _task.estimationPoints!,
-                      board: widget.board,
+            shad.Tabs(
+              index: _activeTab,
+              onChanged: (value) => setState(() => _activeTab = value),
+              children: [
+                shad.TabItem(
+                  child: Text(context.l10n.taskBoardDetailEditorDetailsTab),
+                ),
+                shad.TabItem(
+                  child: _TaskEditorTabLabel(
+                    label: context.l10n.taskBoardDetailEditorRelationshipsTab,
+                    count: _task.relationships.totalCount,
+                  ),
+                ),
+              ],
+            ),
+            const shad.Gap(12),
+            if (_activeTab == _detailsTabIndex) ...[
+              if (description != null) ...[
+                _TaskBoardDescriptionAccordion(
+                  label: context.l10n.taskBoardDetailTaskDescriptionLabel,
+                  description: description,
+                  isExpanded: _isDescriptionExpanded,
+                  onToggle: () => setState(
+                    () => _isDescriptionExpanded = !_isDescriptionExpanded,
+                  ),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.priority?.trim().isNotEmpty == true) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailPriority,
+                  child: _TaskPriorityChip(priority: _task.priority),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.startDate != null) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskStartDate,
+                  value: DateFormat.yMd().format(_task.startDate!),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.endDate != null) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskEndDate,
+                  value: DateFormat.yMd().format(_task.endDate!),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.estimationPoints != null) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskEstimation,
+                  child: shad.OutlineBadge(
+                    child: Text(
+                      _taskEstimationPointLabel(
+                        points: _task.estimationPoints!,
+                        board: widget.board,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const shad.Gap(12),
-            ],
-            if (assignees.isNotEmpty) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskAssignees,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: assignees
-                      .map(
-                        (assignee) => _AssigneeChip(
-                          label: assignee.displayName?.trim().isNotEmpty == true
-                              ? assignee.displayName!.trim()
-                              : assignee.id,
-                          avatarUrl: assignee.avatarUrl,
-                        ),
-                      )
-                      .toList(growable: false),
+                const shad.Gap(12),
+              ],
+              if (assignees.isNotEmpty) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskAssignees,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: assignees
+                        .map(
+                          (assignee) => _AssigneeChip(
+                            label:
+                                assignee.displayName?.trim().isNotEmpty == true
+                                ? assignee.displayName!.trim()
+                                : assignee.id,
+                            avatarUrl: assignee.avatarUrl,
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
                 ),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.labels.isNotEmpty) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskLabels,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _task.labels
-                      .map(_TaskLabelBadge.new)
-                      .toList(growable: false),
+                const shad.Gap(12),
+              ],
+              if (_task.labels.isNotEmpty) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskLabels,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _task.labels
+                        .map(_TaskLabelBadge.new)
+                        .toList(growable: false),
+                  ),
                 ),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.projects.isNotEmpty) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskProjects,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _task.projects
-                      .map(
-                        (project) => _ProjectBadge(
-                          label: _taskProjectLabel(project),
-                        ),
-                      )
-                      .toList(growable: false),
+                const shad.Gap(12),
+              ],
+              if (_task.projects.isNotEmpty) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskProjects,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _task.projects
+                        .map(
+                          (project) => _ProjectBadge(
+                            label: _taskProjectLabel(project),
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
                 ),
-              ),
-              const shad.Gap(12),
+                const shad.Gap(12),
+              ],
+            ] else ...[
+              if (_isLoadingRelationships)
+                const LinearProgressIndicator(minHeight: 2),
+              if (_relationshipsError != null) ...[
+                const shad.Gap(8),
+                Text(
+                  _relationshipsError!,
+                  style: shad.Theme.of(context).typography.small.copyWith(
+                    color: shad.Theme.of(context).colorScheme.destructive,
+                  ),
+                ),
+              ],
+              ..._buildRelationshipSections(context),
             ],
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildRelationshipSections(BuildContext context) {
+    final sections = <Widget>[
+      if (_task.relationships.parentTask != null)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailParentTask,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.parent),
+          children: [
+            _RelationshipTaskTile(
+              task: _task.relationships.parentTask!,
+              onNavigate: () => _navigateToLinkedTask(
+                _task.relationships.parentTask!,
+              ),
+            ),
+          ],
+        ),
+      if (_task.relationships.childTasks.isNotEmpty)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailChildTasks,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.child),
+          children: _task.relationships.childTasks
+              .map(
+                (task) => _RelationshipTaskTile(
+                  task: task,
+                  onNavigate: () => _navigateToLinkedTask(task),
+                ),
+              )
+              .toList(growable: false),
+        ),
+      if (_task.relationships.blockedBy.isNotEmpty)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailBlockedBy,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.blockedBy),
+          children: _task.relationships.blockedBy
+              .map(
+                (task) => _RelationshipTaskTile(
+                  task: task,
+                  onNavigate: () => _navigateToLinkedTask(task),
+                ),
+              )
+              .toList(growable: false),
+        ),
+      if (_task.relationships.blocking.isNotEmpty)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailBlocking,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.blocking),
+          children: _task.relationships.blocking
+              .map(
+                (task) => _RelationshipTaskTile(
+                  task: task,
+                  onNavigate: () => _navigateToLinkedTask(task),
+                ),
+              )
+              .toList(growable: false),
+        ),
+      if (_task.relationships.relatedTasks.isNotEmpty)
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailRelatedTasks,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.related),
+          children: _task.relationships.relatedTasks
+              .map(
+                (task) => _RelationshipTaskTile(
+                  task: task,
+                  onNavigate: () => _navigateToLinkedTask(task),
+                ),
+              )
+              .toList(growable: false),
+        ),
+    ];
+
+    if (sections.isEmpty) {
+      return const [];
+    }
+
+    return [
+      const shad.Gap(10),
+      for (var index = 0; index < sections.length; index++) ...[
+        if (index > 0) const shad.Gap(10),
+        sections[index],
+      ],
+    ];
+  }
+
+  void _navigateToLinkedTask(RelatedTaskInfo linkedTask) {
+    final state = context.read<TaskBoardDetailCubit>().state;
+    final tasks = state.board?.tasks;
+    if (tasks != null) {
+      for (final task in tasks) {
+        if (task.id != linkedTask.id) continue;
+        setState(() {
+          _task = task;
+          _relationshipLoadRequestToken += 1;
+          _activeTab = _detailsTabIndex;
+          _isLoadingRelationships = false;
+          _relationshipsError = null;
+          _isDescriptionExpanded = false;
+        });
+        if (!task.relationshipsLoaded) {
+          unawaited(_loadRelationships());
+        }
+        return;
+      }
+    }
+
+    final linkedBoardId = linkedTask.boardId?.trim();
+    if (linkedBoardId != null &&
+        linkedBoardId.isNotEmpty &&
+        linkedBoardId != widget.board.id) {
+      final router = GoRouter.of(context);
+      final destination = Uri(
+        path: Routes.taskBoardDetailPath(linkedBoardId),
+        queryParameters: {'taskId': linkedTask.id},
+      );
+      unawaited(_navigateAcrossBoard(router, destination));
+      return;
+    }
+
+    setState(() {
+      _relationshipsError = context.l10n.taskBoardDetailUnableToOpenLinkedTask;
+    });
+  }
+
+  Future<void> _navigateAcrossBoard(GoRouter router, Uri destination) async {
+    try {
+      await shad.closeOverlay<void>(context);
+    } on Exception catch (error) {
+      debugPrint('Task relationship overlay close failed: $error');
+    }
+    router.go(destination.toString());
   }
 
   Future<void> _openTaskEditor() async {
@@ -220,6 +414,60 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     final refreshedTask = _findTaskInState(cubit.state, _task.id);
     if (refreshedTask != null) {
       setState(() => _task = refreshedTask);
+      if (!refreshedTask.relationshipsLoaded) {
+        unawaited(_loadRelationships());
+      }
+    }
+  }
+
+  Future<void> _loadRelationships() async {
+    final requestTaskId = _task.id;
+    final requestToken = ++_relationshipLoadRequestToken;
+
+    setState(() {
+      _isLoadingRelationships = true;
+      _relationshipsError = null;
+    });
+
+    try {
+      await context.read<TaskBoardDetailCubit>().loadTaskRelationships(
+        taskId: requestTaskId,
+      );
+
+      if (!mounted) return;
+      if (requestToken != _relationshipLoadRequestToken) return;
+      if (_task.id != requestTaskId) return;
+      final refreshedTask = _findTaskInState(
+        context.read<TaskBoardDetailCubit>().state,
+        requestTaskId,
+      );
+      setState(() {
+        if (refreshedTask != null) {
+          _task = refreshedTask;
+        }
+        _isLoadingRelationships = false;
+        _relationshipsError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      if (requestToken != _relationshipLoadRequestToken) return;
+      if (_task.id != requestTaskId) return;
+      final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
+      setState(() {
+        _isLoadingRelationships = false;
+        _relationshipsError = error.message.trim().isEmpty
+            ? fallbackErrorMessage
+            : error.message;
+      });
+    } on Exception {
+      if (!mounted) return;
+      if (requestToken != _relationshipLoadRequestToken) return;
+      if (_task.id != requestTaskId) return;
+      final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
+      setState(() {
+        _isLoadingRelationships = false;
+        _relationshipsError = fallbackErrorMessage;
+      });
     }
   }
 
@@ -266,6 +514,9 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       );
       if (refreshedTask != null) {
         setState(() => _task = refreshedTask);
+        if (!refreshedTask.relationshipsLoaded) {
+          unawaited(_loadRelationships());
+        }
       }
 
       shad.showToast(
@@ -291,6 +542,111 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
             shad.Alert.destructive(content: Text(fallbackErrorMessage)),
       );
     }
+  }
+}
+
+class _TaskBoardDescriptionAccordion extends StatelessWidget {
+  const _TaskBoardDescriptionAccordion({
+    required this.label,
+    required this.description,
+    required this.isExpanded,
+    required this.onToggle,
+  });
+
+  final String label;
+  final String description;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.border),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: onToggle,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: theme.typography.small.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18,
+                      color: theme.colorScheme.mutedForeground,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            child: isExpanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 220),
+                          child: Scrollbar(
+                            thumbVisibility: true,
+                            child: SingleChildScrollView(
+                              child: Text(
+                                description,
+                                style: theme.typography.base,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const shad.Gap(8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Tooltip(
+                            message: label,
+                            child: shad.IconButton.ghost(
+                              onPressed: onToggle,
+                              icon: Icon(
+                                Icons.expand_less,
+                                size: 16,
+                                color: theme.colorScheme.mutedForeground,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -15,6 +15,7 @@ export type RequestContentViolation = {
 };
 
 type FindRequestContentViolationOptions = {
+  skipValidationForFields?: string[];
   skipEmojiCheckForFields?: string[];
   skipShortTextLengthCheckForFields?: string[];
 };
@@ -138,6 +139,14 @@ function getStringContentViolation(
   options?: FindRequestContentViolationOptions
 ): RequestContentViolation | null {
   const lastFieldName = getLastFieldName(path);
+  const shouldSkipValidationForField =
+    !!lastFieldName &&
+    (options?.skipValidationForFields ?? []).includes(lastFieldName);
+
+  if (shouldSkipValidationForField) {
+    return null;
+  }
+
   const shouldSkipEmojiLimitForField =
     !!lastFieldName &&
     (options?.skipEmojiCheckForFields ?? []).includes(lastFieldName);
@@ -265,7 +274,10 @@ export function isTrustedEmojiBypassRequest(
 
 export async function getRequestContentViolationForRequest(
   request: NextRequest,
-  options?: { allowDescriptionYjsState?: boolean }
+  options?: {
+    allowDescriptionYjsState?: boolean;
+    skipValidationForFields?: string[];
+  }
 ): Promise<RequestContentViolation | null> {
   if (
     !shouldValidateEmojiLimit(request) ||
@@ -315,13 +327,16 @@ export async function getRequestContentViolationForRequest(
         },
         'body',
         {
+          skipValidationForFields: options?.skipValidationForFields,
           skipEmojiCheckForFields: ['description'],
           skipShortTextLengthCheckForFields: ['description'],
         }
       );
     }
 
-    return findRequestContentViolation(parsedBody);
+    return findRequestContentViolation(parsedBody, 'body', {
+      skipValidationForFields: options?.skipValidationForFields,
+    });
   } catch {
     // Let route handlers keep their own invalid JSON behavior.
     return null;
@@ -346,7 +361,10 @@ export function createRequestContentViolationResponse(
 
 export async function validateRequestEmojiLimit(
   request: NextRequest,
-  options?: { allowDescriptionYjsState?: boolean }
+  options?: {
+    allowDescriptionYjsState?: boolean;
+    skipValidationForFields?: string[];
+  }
 ): Promise<NextResponse | null> {
   const violation = await getRequestContentViolationForRequest(
     request,

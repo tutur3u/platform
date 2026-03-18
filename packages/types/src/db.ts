@@ -32,6 +32,17 @@ export type AbuseEvent = Tables<'abuse_events'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
+export type FinanceBudget = Tables<'finance_budgets'>;
+export interface FinanceBudgetStatus {
+  budget_id: string;
+  budget_name: string;
+  amount: number;
+  spent: number;
+  remaining: number;
+  percentage_used: number;
+  is_over_budget: boolean;
+  is_near_threshold: boolean;
+}
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
 export type InternalApiWorkspaceSummary = Pick<
@@ -67,6 +78,7 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
 };
 export type TaskListIdRow = Pick<Tables<'task_lists'>, 'id'>;
 export type WorkspaceTask = Tables<'tasks'>;
+export type TaskRelationshipRow = Tables<'task_relationships'>;
 export type RestorableTaskRow = Pick<Tables<'tasks'>, 'id' | 'list_id'>;
 export type WorkspaceTaskPickerRow = Pick<
   Tables<'tasks'>,
@@ -88,6 +100,38 @@ export type TaskLabel = Tables<'workspace_task_labels'>;
 export type TaskProject = Tables<'task_projects'>;
 export type TaskProjectUpdate = Tables<'task_project_updates'>;
 export type TaskCalendarEvent = Tables<'task_calendar_events'>;
+export type TaskAssigneeRelationRow = Pick<
+  Tables<'task_assignees'>,
+  'user_id'
+> & {
+  user: Pick<Tables<'users'>, 'id' | 'display_name' | 'avatar_url'> | null;
+};
+export type TaskLabelRelationRow = {
+  label: Pick<
+    Tables<'workspace_task_labels'>,
+    'id' | 'name' | 'color' | 'created_at'
+  > | null;
+};
+export type TaskProjectRelationRow = {
+  project: Pick<Tables<'task_projects'>, 'id' | 'name' | 'status'> | null;
+};
+export type TaskCounterpartLookupRow = Pick<
+  Tables<'tasks'>,
+  'id' | 'deleted_at'
+> & {
+  list: {
+    board: Pick<Tables<'workspace_boards'>, 'ws_id'> | null;
+  } | null;
+};
+export type TaskListDeletedRelationRow = {
+  task_lists: Pick<Tables<'task_lists'>, 'deleted'> | null;
+};
+export type TaskRouteRecordRow = Pick<Tables<'tasks'>, 'id'> &
+  TaskListDeletedRelationRow & {
+    assignees: TaskAssigneeRelationRow[] | null;
+    labels: TaskLabelRelationRow[] | null;
+    projects: TaskProjectRelationRow[] | null;
+  };
 export type WorkspaceHabit = Tables<'workspace_habits'>;
 export type HabitCalendarEventRow = Tables<'habit_calendar_events'>;
 export type HabitCompletionRow = Tables<'habit_completions'>;

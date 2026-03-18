@@ -1,7 +1,6 @@
 import { Activity, Building2, Lock, TrendingUp, Users } from '@tuturuuu/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -35,6 +34,7 @@ import {
   getWorkspaceMemberDistribution,
   getWorkspaceStatistics,
 } from './data-fetching';
+import { enforceInfrastructureRootWorkspace } from './enforce-infrastructure-root';
 
 export const metadata: Metadata = {
   title: 'Infrastructure',
@@ -50,9 +50,7 @@ interface Props {
 
 export default async function InfrastructureOverviewPage({ params }: Props) {
   const { wsId } = await params;
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  await enforceInfrastructureRootWorkspace(wsId);
 
   const t = await getTranslations();
 

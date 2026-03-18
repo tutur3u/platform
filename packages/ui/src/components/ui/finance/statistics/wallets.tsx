@@ -1,8 +1,12 @@
 import { Wallet2 } from '@tuturuuu/icons';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  listWallets,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -25,17 +29,11 @@ export default async function WalletsStatistics({
 
   if (!enabled || !containsPermission('manage_finance')) return null;
 
-  const sbAdmin = await createAdminClient();
-
-  const { count: walletsCount } = enabled
-    ? await sbAdmin
-        .from('workspace_wallets')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
+  const requestHeaders = await headers();
+  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
+  const walletsCount = enabled
+    ? (await listWallets(wsId, internalApiOptions)).length
+    : 0;
 
   return (
     <StatisticCard
