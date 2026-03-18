@@ -120,6 +120,7 @@ class TaskBoardTask extends Equatable {
     this.projects = const [],
     this.relationships = TaskRelationshipsResponse.empty,
     this.relationshipsLoaded = false,
+    this.relationshipSummary = const TaskRelationshipSummary(),
   });
 
   factory TaskBoardTask.fromJson(Map<String, dynamic> json) {
@@ -141,6 +142,10 @@ class TaskBoardTask extends Equatable {
     final assigneeIds = _parseIdList(json['assignee_ids']);
     final labelIds = _parseIdList(json['label_ids']);
     final projectIds = _parseIdList(json['project_ids']);
+
+    final relationshipSummary = _parseRelationshipSummary(
+      json['relationship_summary'],
+    );
 
     return TaskBoardTask(
       id: rawId.trim(),
@@ -167,6 +172,7 @@ class TaskBoardTask extends Equatable {
       projects: projectIds
           .map((id) => TaskBoardTaskProject(id: id))
           .toList(growable: false),
+      relationshipSummary: relationshipSummary,
     );
   }
 
@@ -190,6 +196,7 @@ class TaskBoardTask extends Equatable {
     List<TaskBoardTaskProject>? projects,
     TaskRelationshipsResponse? relationships,
     bool? relationshipsLoaded,
+    TaskRelationshipSummary? relationshipSummary,
   }) {
     return TaskBoardTask(
       id: id,
@@ -212,7 +219,16 @@ class TaskBoardTask extends Equatable {
       projects: projects ?? this.projects,
       relationships: relationships ?? this.relationships,
       relationshipsLoaded: relationshipsLoaded ?? this.relationshipsLoaded,
+      relationshipSummary: relationshipSummary ?? this.relationshipSummary,
     );
+  }
+
+  static TaskRelationshipSummary _parseRelationshipSummary(dynamic rawSummary) {
+    if (rawSummary is! Map<String, dynamic>) {
+      return const TaskRelationshipSummary();
+    }
+
+    return TaskRelationshipSummary.fromJson(rawSummary);
   }
 
   static List<String> _parseIdList(dynamic value) {
@@ -251,6 +267,7 @@ class TaskBoardTask extends Equatable {
   final List<TaskBoardTaskProject> projects;
   final TaskRelationshipsResponse relationships;
   final bool relationshipsLoaded;
+  final TaskRelationshipSummary relationshipSummary;
 
   @override
   List<Object?> get props => [
@@ -274,5 +291,44 @@ class TaskBoardTask extends Equatable {
     projects,
     relationships,
     relationshipsLoaded,
+    relationshipSummary,
+  ];
+}
+
+class TaskRelationshipSummary extends Equatable {
+  const TaskRelationshipSummary({
+    this.parentTaskId,
+    this.childCount = 0,
+    this.blockedByCount = 0,
+    this.blockingCount = 0,
+    this.relatedCount = 0,
+  });
+
+  factory TaskRelationshipSummary.fromJson(Map<String, dynamic> json) {
+    final parentTaskId = (json['parent_task_id'] as String?)?.trim();
+    return TaskRelationshipSummary(
+      parentTaskId: parentTaskId?.isNotEmpty == true ? parentTaskId : null,
+      childCount: (json['child_count'] as num?)?.toInt() ?? 0,
+      blockedByCount: (json['blocked_by_count'] as num?)?.toInt() ?? 0,
+      blockingCount: (json['blocking_count'] as num?)?.toInt() ?? 0,
+      relatedCount: (json['related_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final String? parentTaskId;
+  final int childCount;
+  final int blockedByCount;
+  final int blockingCount;
+  final int relatedCount;
+
+  bool get hasParent => parentTaskId != null;
+
+  @override
+  List<Object?> get props => [
+    parentTaskId,
+    childCount,
+    blockedByCount,
+    blockingCount,
+    relatedCount,
   ];
 }

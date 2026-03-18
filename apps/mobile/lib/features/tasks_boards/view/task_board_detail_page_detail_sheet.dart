@@ -29,6 +29,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   int _activeTab = _detailsTabIndex;
   bool _isLoadingRelationships = false;
   String? _relationshipsError;
+  bool _isDescriptionExpanded = false;
 
   @override
   void initState() {
@@ -112,9 +113,13 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
             const shad.Gap(12),
             if (_activeTab == _detailsTabIndex) ...[
               if (description != null) ...[
-                _TaskBoardTaskDetailRow(
+                _TaskBoardDescriptionAccordion(
                   label: context.l10n.taskBoardDetailTaskDescriptionLabel,
-                  value: description,
+                  description: description,
+                  isExpanded: _isDescriptionExpanded,
+                  onToggle: () => setState(
+                    () => _isDescriptionExpanded = !_isDescriptionExpanded,
+                  ),
                 ),
                 const shad.Gap(12),
               ],
@@ -231,7 +236,12 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           title: context.l10n.taskBoardDetailParentTask,
           icon: _taskRelationshipIcon(_TaskRelationshipKind.parent),
           children: [
-            _RelationshipTaskTile(task: _task.relationships.parentTask!),
+            _RelationshipTaskTile(
+              task: _task.relationships.parentTask!,
+              onNavigate: () => _navigateToLinkedTask(
+                _task.relationships.parentTask!,
+              ),
+            ),
           ],
         ),
       if (_task.relationships.childTasks.isNotEmpty)
@@ -239,7 +249,12 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           title: context.l10n.taskBoardDetailChildTasks,
           icon: _taskRelationshipIcon(_TaskRelationshipKind.child),
           children: _task.relationships.childTasks
-              .map((task) => _RelationshipTaskTile(task: task))
+              .map(
+                (task) => _RelationshipTaskTile(
+                  task: task,
+                  onNavigate: () => _navigateToLinkedTask(task),
+                ),
+              )
               .toList(growable: false),
         ),
       if (_task.relationships.blockedBy.isNotEmpty)
@@ -247,7 +262,12 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           title: context.l10n.taskBoardDetailBlockedBy,
           icon: _taskRelationshipIcon(_TaskRelationshipKind.blockedBy),
           children: _task.relationships.blockedBy
-              .map((task) => _RelationshipTaskTile(task: task))
+              .map(
+                (task) => _RelationshipTaskTile(
+                  task: task,
+                  onNavigate: () => _navigateToLinkedTask(task),
+                ),
+              )
               .toList(growable: false),
         ),
       if (_task.relationships.blocking.isNotEmpty)
@@ -255,7 +275,12 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           title: context.l10n.taskBoardDetailBlocking,
           icon: _taskRelationshipIcon(_TaskRelationshipKind.blocking),
           children: _task.relationships.blocking
-              .map((task) => _RelationshipTaskTile(task: task))
+              .map(
+                (task) => _RelationshipTaskTile(
+                  task: task,
+                  onNavigate: () => _navigateToLinkedTask(task),
+                ),
+              )
               .toList(growable: false),
         ),
       if (_task.relationships.relatedTasks.isNotEmpty)
@@ -263,7 +288,12 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           title: context.l10n.taskBoardDetailRelatedTasks,
           icon: _taskRelationshipIcon(_TaskRelationshipKind.related),
           children: _task.relationships.relatedTasks
-              .map((task) => _RelationshipTaskTile(task: task))
+              .map(
+                (task) => _RelationshipTaskTile(
+                  task: task,
+                  onNavigate: () => _navigateToLinkedTask(task),
+                ),
+              )
               .toList(growable: false),
         ),
     ];
@@ -279,6 +309,47 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         sections[index],
       ],
     ];
+  }
+
+  void _navigateToLinkedTask(RelatedTaskInfo linkedTask) {
+    final state = context.read<TaskBoardDetailCubit>().state;
+    final tasks = state.board?.tasks;
+    if (tasks != null) {
+      for (final task in tasks) {
+        if (task.id != linkedTask.id) continue;
+        setState(() {
+          _task = task;
+          _activeTab = _detailsTabIndex;
+          _relationshipsError = null;
+          _isDescriptionExpanded = false;
+        });
+        if (!task.relationshipsLoaded) {
+          unawaited(_loadRelationships());
+        }
+        return;
+      }
+    }
+
+    final linkedBoardId = linkedTask.boardId?.trim();
+    if (linkedBoardId != null &&
+        linkedBoardId.isNotEmpty &&
+        linkedBoardId != widget.board.id) {
+      final router = GoRouter.of(context);
+      final destination = Uri(
+        path: Routes.taskBoardDetailPath(linkedBoardId),
+        queryParameters: {'taskId': linkedTask.id},
+      );
+      unawaited(_navigateAcrossBoard(router, destination));
+    }
+  }
+
+  Future<void> _navigateAcrossBoard(GoRouter router, Uri destination) async {
+    try {
+      await shad.closeOverlay<void>(context);
+    } on Exception catch (error) {
+      debugPrint('Task relationship overlay close failed: $error');
+    }
+    router.go(destination.toString());
   }
 
   Future<void> _openTaskEditor() async {
@@ -429,6 +500,104 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
             shad.Alert.destructive(content: Text(fallbackErrorMessage)),
       );
     }
+  }
+}
+
+class _TaskBoardDescriptionAccordion extends StatelessWidget {
+  const _TaskBoardDescriptionAccordion({
+    required this.label,
+    required this.description,
+    required this.isExpanded,
+    required this.onToggle,
+  });
+
+  final String label;
+  final String description;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.border),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: onToggle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 18,
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            child: isExpanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 220),
+                          child: Scrollbar(
+                            thumbVisibility: true,
+                            child: SingleChildScrollView(
+                              child: Text(
+                                description,
+                                style: theme.typography.base,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const shad.Gap(8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Tooltip(
+                            message: label,
+                            child: shad.IconButton.ghost(
+                              onPressed: onToggle,
+                              icon: Icon(
+                                Icons.expand_less,
+                                size: 16,
+                                color: theme.colorScheme.mutedForeground,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
   }
 }
 

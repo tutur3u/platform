@@ -186,10 +186,12 @@ class _RelationshipTaskTile extends StatelessWidget {
   const _RelationshipTaskTile({
     required this.task,
     this.onRemove,
+    this.onNavigate,
   });
 
   final RelatedTaskInfo task;
   final VoidCallback? onRemove;
+  final VoidCallback? onNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +203,7 @@ class _RelationshipTaskTile extends StatelessWidget {
       if (task.displayNumber != null) '#${task.displayNumber}',
     ];
 
-    return Container(
+    final content = Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -225,12 +227,28 @@ class _RelationshipTaskTile extends StatelessWidget {
               ],
             ),
           ),
+          if (onNavigate != null)
+            shad.IconButton.ghost(
+              onPressed: onNavigate,
+              icon: const Icon(Icons.arrow_forward, size: 14),
+            ),
           if (onRemove != null)
             shad.IconButton.ghost(
               onPressed: onRemove,
               icon: const Icon(Icons.close, size: 14),
             ),
         ],
+      ),
+    );
+
+    if (onNavigate == null) return content;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onNavigate,
+        child: content,
       ),
     );
   }

@@ -1,10 +1,10 @@
-import { DEV_MODE } from '@/constants/common';
 import type { Database } from '@tuturuuu/types';
 import {
   MAX_TASK_DESCRIPTION_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
+import { DEV_MODE } from '@/constants/common';
 
 export const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -30,9 +30,15 @@ export const updateTaskSchema = z
     sort_key: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
     deleted: z.boolean().optional(),
     estimation_points: z.number().int().min(0).max(8).nullable().optional(),
-    label_ids: DEV_MODE ? z.array(z.string().max(255)).optional() : z.array(z.uuid()).optional(),
-    project_ids: DEV_MODE ? z.array(z.string().max(255)).optional() : z.array(z.uuid()).optional(),
-    assignee_ids: DEV_MODE ? z.array(z.string().max(255)).optional() : z.array(z.uuid()).optional(),
+    label_ids: DEV_MODE
+      ? z.array(z.string().max(255)).optional()
+      : z.array(z.uuid()).optional(),
+    project_ids: DEV_MODE
+      ? z.array(z.string().max(255)).optional()
+      : z.array(z.uuid()).optional(),
+    assignee_ids: DEV_MODE
+      ? z.array(z.string().max(255)).optional()
+      : z.array(z.uuid()).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'At least one task field is required',

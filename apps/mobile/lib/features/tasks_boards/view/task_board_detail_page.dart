@@ -46,10 +46,12 @@ class TaskBoardDetailPage extends StatelessWidget {
     required this.boardId,
     super.key,
     this.taskRepository,
+    this.initialTaskId,
   });
 
   final String boardId;
   final TaskRepository? taskRepository;
+  final String? initialTaskId;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +72,10 @@ class TaskBoardDetailPage extends StatelessWidget {
           }
           return cubit;
         },
-        child: _TaskBoardDetailPageView(boardId: boardId),
+        child: _TaskBoardDetailPageView(
+          boardId: boardId,
+          initialTaskId: initialTaskId,
+        ),
       ),
     );
   }

@@ -75,6 +75,20 @@ interface TaskProjectRelation {
   } | null;
 }
 
+interface TaskRelationshipEdge {
+  source_task_id: string | null;
+  target_task_id: string | null;
+  type: 'parent_child' | 'blocks' | 'related' | null;
+}
+
+interface TaskRelationshipSummary {
+  parentTaskId: string | null;
+  childCount: number;
+  blockedByCount: number;
+  blockingCount: number;
+  relatedCount: number;
+}
+
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 
 export async function GET(
@@ -300,7 +314,109 @@ export async function GET(
         };
       }) ?? [];
 
-    return NextResponse.json({ tasks });
+    const relationshipSummaryByTaskId = new Map<
+      string,
+      TaskRelationshipSummary
+    >();
+    const taskIds = tasks
+      .map((task) => (typeof task.id === 'string' ? task.id : null))
+      .filter((taskId): taskId is string => Boolean(taskId));
+
+    for (const taskId of taskIds) {
+      relationshipSummaryByTaskId.set(taskId, {
+        parentTaskId: null,
+        childCount: 0,
+        blockedByCount: 0,
+        blockingCount: 0,
+        relatedCount: 0,
+      });
+    }
+
+    if (taskIds.length > 0) {
+      const chunkSize = 200;
+
+      for (let index = 0; index < taskIds.length; index += chunkSize) {
+        const chunk = taskIds.slice(index, index + chunkSize);
+
+        const { data: relationshipEdges, error: relationshipError } =
+          await sbAdmin
+            .from('task_relationships')
+            .select('source_task_id, target_task_id, type')
+            .or(
+              `source_task_id.in.(${chunk.join(',')}),target_task_id.in.(${chunk.join(',')})`
+            );
+
+        if (relationshipError) {
+          console.error(
+            'Failed to load task relationship summaries:',
+            relationshipError
+          );
+          return NextResponse.json(
+            { error: 'Failed to load task relationships' },
+            { status: 500 }
+          );
+        }
+
+        for (const edge of (relationshipEdges ??
+          []) as TaskRelationshipEdge[]) {
+          const sourceId = edge.source_task_id;
+          const targetId = edge.target_task_id;
+          const type = edge.type;
+          if (!sourceId || !targetId || !type) {
+            continue;
+          }
+
+          const sourceSummary = relationshipSummaryByTaskId.get(sourceId);
+          const targetSummary = relationshipSummaryByTaskId.get(targetId);
+
+          switch (type) {
+            case 'parent_child': {
+              if (sourceSummary) {
+                sourceSummary.childCount += 1;
+              }
+              if (targetSummary && !targetSummary.parentTaskId) {
+                targetSummary.parentTaskId = sourceId;
+              }
+              break;
+            }
+            case 'blocks': {
+              if (sourceSummary) {
+                sourceSummary.blockingCount += 1;
+              }
+              if (targetSummary) {
+                targetSummary.blockedByCount += 1;
+              }
+              break;
+            }
+            case 'related': {
+              if (sourceSummary) {
+                sourceSummary.relatedCount += 1;
+              }
+              if (targetSummary) {
+                targetSummary.relatedCount += 1;
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    const tasksWithRelationshipSummary = tasks.map((task) => {
+      const summary = relationshipSummaryByTaskId.get(task.id);
+      return {
+        ...task,
+        relationship_summary: {
+          parent_task_id: summary?.parentTaskId ?? null,
+          child_count: summary?.childCount ?? 0,
+          blocked_by_count: summary?.blockedByCount ?? 0,
+          blocking_count: summary?.blockingCount ?? 0,
+          related_count: summary?.relatedCount ?? 0,
+        },
+      };
+    });
+
+    return NextResponse.json({ tasks: tasksWithRelationshipSummary });
   } catch (error) {
     console.error('Error fetching tasks:', error);
     return NextResponse.json(

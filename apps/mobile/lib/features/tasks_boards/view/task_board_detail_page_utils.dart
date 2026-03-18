@@ -297,33 +297,49 @@ Color _taskRelationshipColor(BuildContext context, _TaskRelationshipKind kind) {
 List<_TaskRelationshipIndicator> _taskRelationshipIndicators(
   TaskBoardTask task,
 ) {
+  final summary = task.relationshipSummary;
   final relationships = task.relationships;
+  final parentCount = task.relationshipsLoaded
+      ? (relationships.parentTask == null ? 0 : 1)
+      : (summary.hasParent ? 1 : 0);
+  final childCount = task.relationshipsLoaded
+      ? relationships.childTasks.length
+      : summary.childCount;
+  final blockedByCount = task.relationshipsLoaded
+      ? relationships.blockedBy.length
+      : summary.blockedByCount;
+  final blockingCount = task.relationshipsLoaded
+      ? relationships.blocking.length
+      : summary.blockingCount;
+  final relatedCount = task.relationshipsLoaded
+      ? relationships.relatedTasks.length
+      : summary.relatedCount;
 
   return [
-    if (relationships.parentTask != null)
-      const _TaskRelationshipIndicator(
+    if (parentCount > 0)
+      _TaskRelationshipIndicator(
         kind: _TaskRelationshipKind.parent,
-        count: 1,
+        count: parentCount,
       ),
-    if (relationships.childTasks.isNotEmpty)
+    if (childCount > 0)
       _TaskRelationshipIndicator(
         kind: _TaskRelationshipKind.child,
-        count: relationships.childTasks.length,
+        count: childCount,
       ),
-    if (relationships.blockedBy.isNotEmpty)
+    if (blockedByCount > 0)
       _TaskRelationshipIndicator(
         kind: _TaskRelationshipKind.blockedBy,
-        count: relationships.blockedBy.length,
+        count: blockedByCount,
       ),
-    if (relationships.blocking.isNotEmpty)
+    if (blockingCount > 0)
       _TaskRelationshipIndicator(
         kind: _TaskRelationshipKind.blocking,
-        count: relationships.blocking.length,
+        count: blockingCount,
       ),
-    if (relationships.relatedTasks.isNotEmpty)
+    if (relatedCount > 0)
       _TaskRelationshipIndicator(
         kind: _TaskRelationshipKind.related,
-        count: relationships.relatedTasks.length,
+        count: relatedCount,
       ),
   ];
 }

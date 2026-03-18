@@ -1,9 +1,13 @@
 part of 'task_board_detail_page.dart';
 
 class _TaskBoardDetailPageView extends StatefulWidget {
-  const _TaskBoardDetailPageView({required this.boardId});
+  const _TaskBoardDetailPageView({
+    required this.boardId,
+    this.initialTaskId,
+  });
 
   final String boardId;
+  final String? initialTaskId;
 
   @override
   State<_TaskBoardDetailPageView> createState() =>
@@ -14,17 +18,59 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   static const double _fabContentBottomPadding = 96;
   late final TextEditingController _searchController;
   final Set<String> _collapsedListIds = <String>{};
+  String? _pendingInitialTaskId;
+  bool _didHandleInitialTaskNavigation = false;
+  bool _isHandlingInitialTaskNavigation = false;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    final initialTaskId = widget.initialTaskId?.trim();
+    _pendingInitialTaskId = (initialTaskId != null && initialTaskId.isNotEmpty)
+        ? initialTaskId
+        : null;
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TaskBoardDetailPageView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final currentTaskId = widget.initialTaskId?.trim();
+    final previousTaskId = oldWidget.initialTaskId?.trim();
+    final normalizedCurrentTaskId =
+        currentTaskId != null && currentTaskId.isNotEmpty
+        ? currentTaskId
+        : null;
+    final normalizedPreviousTaskId =
+        previousTaskId != null && previousTaskId.isNotEmpty
+        ? previousTaskId
+        : null;
+
+    if (oldWidget.boardId != widget.boardId ||
+        normalizedPreviousTaskId != normalizedCurrentTaskId) {
+      _pendingInitialTaskId = normalizedCurrentTaskId;
+      _didHandleInitialTaskNavigation = false;
+      _isHandlingInitialTaskNavigation = false;
+    }
+
+    if (oldWidget.boardId != widget.boardId) {
+      final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+      if (wsId != null) {
+        unawaited(
+          context.read<TaskBoardDetailCubit>().loadBoardDetail(
+            wsId: wsId,
+            boardId: widget.boardId,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -157,6 +203,12 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               );
             }
 
+            _maybeOpenInitialTask(
+              context,
+              detail: detail,
+              lists: sortedLists,
+            );
+
             return Stack(
               children: [
                 ResponsiveWrapper(
@@ -263,6 +315,57 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         ),
       ),
     );
+  }
+
+  void _maybeOpenInitialTask(
+    BuildContext context, {
+    required TaskBoardDetail detail,
+    required List<TaskBoardList> lists,
+  }) {
+    if (_didHandleInitialTaskNavigation || _isHandlingInitialTaskNavigation) {
+      return;
+    }
+    final targetTaskId = _pendingInitialTaskId;
+    if (targetTaskId == null) {
+      _didHandleInitialTaskNavigation = true;
+      return;
+    }
+
+    TaskBoardTask? matchedTask;
+    for (final task in detail.tasks) {
+      if (task.id == targetTaskId) {
+        matchedTask = task;
+        break;
+      }
+    }
+
+    if (matchedTask == null) return;
+
+    _isHandlingInitialTaskNavigation = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(_openInitialTaskDetails(context, matchedTask!, lists));
+    });
+  }
+
+  Future<void> _openInitialTaskDetails(
+    BuildContext context,
+    TaskBoardTask task,
+    List<TaskBoardList> lists,
+  ) async {
+    try {
+      await _openTaskDetails(context, task, lists);
+      if (mounted) {
+        _pendingInitialTaskId = null;
+        _didHandleInitialTaskNavigation = true;
+      }
+    } on Exception {
+      // Keep pending task id for a future retry.
+    } finally {
+      if (mounted) {
+        _isHandlingInitialTaskNavigation = false;
+      }
+    }
   }
 
   Widget _buildListView(
