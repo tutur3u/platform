@@ -67,6 +67,7 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
 };
 export type TaskListIdRow = Pick<Tables<'task_lists'>, 'id'>;
 export type WorkspaceTask = Tables<'tasks'>;
+export type TaskRelationshipRow = Tables<'task_relationships'>;
 export type RestorableTaskRow = Pick<Tables<'tasks'>, 'id' | 'list_id'>;
 export type WorkspaceTaskPickerRow = Pick<
   Tables<'tasks'>,

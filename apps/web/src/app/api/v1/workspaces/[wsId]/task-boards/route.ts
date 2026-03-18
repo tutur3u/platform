@@ -134,11 +134,24 @@ export async function GET(req: Request, { params }: Params) {
     const listIds = taskLists.map((list) => list.id);
     const taskCountsByList: { [key: string]: number } = {};
     if (listIds.length > 0) {
-      const { data: tasks, error: tasksError } = await sbAdmin
-        .from('tasks')
-        .select('list_id')
-        .in('list_id', listIds)
-        .is('deleted_at', null);
+      const tasks: Array<{ list_id: string | null }> = [];
+      let tasksError: { message: string } | null = null;
+
+      for (let i = 0; i < listIds.length; i += BOARD_IDS_BATCH_SIZE) {
+        const listIdBatch = listIds.slice(i, i + BOARD_IDS_BATCH_SIZE);
+        const { data: batchTasks, error: batchTasksError } = await sbAdmin
+          .from('tasks')
+          .select('list_id')
+          .in('list_id', listIdBatch)
+          .is('deleted_at', null);
+
+        if (batchTasksError) {
+          tasksError = batchTasksError;
+          break;
+        }
+
+        tasks.push(...(batchTasks ?? []));
+      }
 
       if (tasksError) {
         return NextResponse.json(
@@ -147,7 +160,7 @@ export async function GET(req: Request, { params }: Params) {
         );
       }
 
-      for (const task of tasks ?? []) {
+      for (const task of tasks) {
         if (!task.list_id) continue;
         taskCountsByList[task.list_id] =
           (taskCountsByList[task.list_id] ?? 0) + 1;

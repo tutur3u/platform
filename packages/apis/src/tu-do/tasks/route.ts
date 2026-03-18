@@ -75,13 +75,6 @@ interface TaskProjectRelation {
   } | null;
 }
 
-interface TaskRelationshipEdge {
-  id: string | null;
-  source_task_id: string | null;
-  target_task_id: string | null;
-  type: 'parent_child' | 'blocks' | 'related' | null;
-}
-
 interface TaskRelationshipSummary {
   parentTaskId: string | null;
   childCount: number;
@@ -91,6 +84,8 @@ interface TaskRelationshipSummary {
 }
 
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
+type TaskRelationshipEdge =
+  Database['public']['Tables']['task_relationships']['Row'];
 
 export async function GET(
   request: NextRequest,
@@ -340,13 +335,19 @@ export async function GET(
       for (let index = 0; index < taskIds.length; index += chunkSize) {
         const chunk = taskIds.slice(index, index + chunkSize);
 
-        const { data: relationshipEdges, error: relationshipError } =
-          await sbAdmin
+        const [sourceEdgesResult, targetEdgesResult] = await Promise.all([
+          sbAdmin
             .from('task_relationships')
             .select('id, source_task_id, target_task_id, type')
-            .or(
-              `source_task_id.in.(${chunk.join(',')}),target_task_id.in.(${chunk.join(',')})`
-            );
+            .in('source_task_id', chunk),
+          sbAdmin
+            .from('task_relationships')
+            .select('id, source_task_id, target_task_id, type')
+            .in('target_task_id', chunk),
+        ]);
+
+        const relationshipError =
+          sourceEdgesResult.error ?? targetEdgesResult.error;
 
         if (relationshipError) {
           console.error(
@@ -359,8 +360,12 @@ export async function GET(
           );
         }
 
-        for (const edge of (relationshipEdges ??
-          []) as TaskRelationshipEdge[]) {
+        const relationshipEdges = [
+          ...(sourceEdgesResult.data ?? []),
+          ...(targetEdgesResult.data ?? []),
+        ];
+
+        for (const edge of relationshipEdges as TaskRelationshipEdge[]) {
           const sourceId = edge.source_task_id;
           const targetId = edge.target_task_id;
           const type = edge.type;

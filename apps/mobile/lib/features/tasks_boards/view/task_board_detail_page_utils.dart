@@ -299,29 +299,20 @@ List<_TaskRelationshipIndicator> _taskRelationshipIndicators(
 ) {
   final summary = task.relationshipSummary;
   final relationships = task.relationships;
-  final loadedParentCount = relationships.parentTask == null ? 0 : 1;
   final parentCount = task.relationshipsLoaded
-      ? (loadedParentCount > 0
-            ? loadedParentCount
-            : (summary.hasParent ? 1 : 0))
+      ? (relationships.parentTask == null ? 0 : 1)
       : (summary.hasParent ? 1 : 0);
-  final loadedChildCount = relationships.childTasks.length;
   final childCount = task.relationshipsLoaded
-      ? (loadedChildCount > 0 ? loadedChildCount : summary.childCount)
+      ? relationships.childTasks.length
       : summary.childCount;
-  final loadedBlockedByCount = relationships.blockedBy.length;
   final blockedByCount = task.relationshipsLoaded
-      ? (loadedBlockedByCount > 0
-            ? loadedBlockedByCount
-            : summary.blockedByCount)
+      ? relationships.blockedBy.length
       : summary.blockedByCount;
-  final loadedBlockingCount = relationships.blocking.length;
   final blockingCount = task.relationshipsLoaded
-      ? (loadedBlockingCount > 0 ? loadedBlockingCount : summary.blockingCount)
+      ? relationships.blocking.length
       : summary.blockingCount;
-  final loadedRelatedCount = relationships.relatedTasks.length;
   final relatedCount = task.relationshipsLoaded
-      ? (loadedRelatedCount > 0 ? loadedRelatedCount : summary.relatedCount)
+      ? relationships.relatedTasks.length
       : summary.relatedCount;
 
   return [

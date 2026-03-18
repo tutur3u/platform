@@ -839,6 +839,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailAddRelatedTask => 'Thêm công việc liên quan';
 
   @override
+  String get taskBoardDetailOpenRelatedTask => 'Mở công việc liên quan';
+
+  @override
+  String get taskBoardDetailRemoveRelationship => 'Xóa quan hệ';
+
+  @override
+  String get taskBoardDetailUnableToOpenLinkedTask => 'Không thể mở công việc liên kết từ đây.';
+
+  @override
   String get taskBoardDetailSelectTask => 'Chọn công việc';
 
   @override

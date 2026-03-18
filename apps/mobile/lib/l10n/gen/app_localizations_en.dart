@@ -839,6 +839,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailAddRelatedTask => 'Add related task';
 
   @override
+  String get taskBoardDetailOpenRelatedTask => 'Open related task';
+
+  @override
+  String get taskBoardDetailRemoveRelationship => 'Remove relationship';
+
+  @override
+  String get taskBoardDetailUnableToOpenLinkedTask => 'This linked task can\'t be opened from here.';
+
+  @override
   String get taskBoardDetailSelectTask => 'Select task';
 
   @override

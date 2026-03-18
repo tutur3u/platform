@@ -195,6 +195,7 @@ class _RelationshipTaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final title = task.name.trim().isEmpty
         ? context.l10n.taskBoardDetailUntitledTask
         : task.name.trim();
@@ -228,14 +229,28 @@ class _RelationshipTaskTile extends StatelessWidget {
             ),
           ),
           if (onNavigate != null)
-            shad.IconButton.ghost(
-              onPressed: onNavigate,
-              icon: const Icon(Icons.arrow_forward, size: 14),
+            Semantics(
+              button: true,
+              label: l10n.taskBoardDetailOpenRelatedTask,
+              child: Tooltip(
+                message: l10n.taskBoardDetailOpenRelatedTask,
+                child: shad.IconButton.ghost(
+                  onPressed: onNavigate,
+                  icon: const Icon(Icons.arrow_forward, size: 14),
+                ),
+              ),
             ),
           if (onRemove != null)
-            shad.IconButton.ghost(
-              onPressed: onRemove,
-              icon: const Icon(Icons.close, size: 14),
+            Semantics(
+              button: true,
+              label: l10n.taskBoardDetailRemoveRelationship,
+              child: Tooltip(
+                message: l10n.taskBoardDetailRemoveRelationship,
+                child: shad.IconButton.ghost(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.close, size: 14),
+                ),
+              ),
             ),
         ],
       ),

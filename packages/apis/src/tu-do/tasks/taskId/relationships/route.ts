@@ -482,54 +482,87 @@ export async function DELETE(
     }
 
     const payload = parsedBody.data;
-    if (payload.source_task_id !== taskId) {
+    const isSourceTask = payload.source_task_id === taskId;
+    const isTargetTask = payload.target_task_id === taskId;
+
+    if (!isSourceTask && !isTargetTask) {
       return NextResponse.json({ error: 'Task ID mismatch' }, { status: 400 });
     }
 
     const sbAdmin = await createAdminClient();
-    const { data: sourceTask, error: sourceTaskError } =
-      await getWorkspaceTaskRow(sbAdmin, payload.source_task_id);
 
-    if (sourceTaskError) {
+    const { data: taskRow, error: taskError } = await getWorkspaceTaskRow(
+      sbAdmin,
+      taskId
+    );
+
+    if (taskError) {
       return NextResponse.json(
         { error: 'Failed to load task' },
         { status: 500 }
       );
     }
 
-    if (!sourceTask || sourceTask.list?.board?.ws_id !== wsId) {
+    if (!taskRow || taskRow.list?.board?.ws_id !== wsId) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const { data: targetTask, error: targetTaskError } =
-      await getWorkspaceTaskRow(sbAdmin, payload.target_task_id);
+    const otherTaskId = isSourceTask
+      ? payload.target_task_id
+      : payload.source_task_id;
 
-    if (targetTaskError) {
-      return NextResponse.json(
-        { error: 'Failed to load related task' },
-        { status: 500 }
-      );
+    if (otherTaskId !== taskId) {
+      const { data: otherTask, error: otherTaskError } =
+        await getWorkspaceTaskRow(sbAdmin, otherTaskId);
+
+      if (otherTaskError) {
+        return NextResponse.json(
+          { error: 'Failed to load related task' },
+          { status: 500 }
+        );
+      }
+
+      if (!otherTask || otherTask.list?.board?.ws_id !== wsId) {
+        const notFoundMessage = isSourceTask
+          ? 'Related task not found'
+          : 'Source task not found';
+        return NextResponse.json({ error: notFoundMessage }, { status: 404 });
+      }
     }
 
-    if (!targetTask || targetTask.list?.board?.ws_id !== wsId) {
-      return NextResponse.json(
-        { error: 'Related task not found' },
-        { status: 404 }
-      );
-    }
+    const deleteRelationship = async (
+      sourceTaskId: string,
+      targetTaskId: string
+    ) =>
+      sbAdmin
+        .from('task_relationships')
+        .delete({ count: 'exact' })
+        .eq('source_task_id', sourceTaskId)
+        .eq('target_task_id', targetTaskId)
+        .eq('type', payload.type);
 
-    const { error: deleteError } = await sbAdmin
-      .from('task_relationships')
-      .delete()
-      .eq('source_task_id', payload.source_task_id)
-      .eq('target_task_id', payload.target_task_id)
-      .eq('type', payload.type);
+    const { count: deletedCount, error: deleteError } =
+      await deleteRelationship(payload.source_task_id, payload.target_task_id);
 
     if (deleteError) {
       return NextResponse.json(
         { error: 'Failed to delete relationship' },
         { status: 500 }
       );
+    }
+
+    if (payload.type === 'related' && (deletedCount ?? 0) === 0) {
+      const { error: reverseDeleteError } = await deleteRelationship(
+        payload.target_task_id,
+        payload.source_task_id
+      );
+
+      if (reverseDeleteError) {
+        return NextResponse.json(
+          { error: 'Failed to delete relationship' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({ success: true });

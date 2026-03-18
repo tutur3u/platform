@@ -170,51 +170,48 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       throw StateError('Board detail is not initialized');
     }
 
-    await _runMutation(() async {
-      final relationships = await _taskRepository.getTaskRelationships(
-        wsId: wsId,
-        taskId: taskId,
-      );
+    final relationships = await _taskRepository.getTaskRelationships(
+      wsId: wsId,
+      taskId: taskId,
+    );
 
-      if (state.workspaceId != wsId || state.boardId != boardId) {
-        return null;
-      }
+    if (state.workspaceId != wsId || state.boardId != boardId) {
+      return;
+    }
 
-      final board = state.board;
-      if (board == null) {
-        return null;
-      }
+    final board = state.board;
+    if (board == null) {
+      return;
+    }
 
-      var taskFound = false;
-      final nextTasks = board.tasks
-          .map(
-            (task) {
-              if (task.id != taskId) {
-                return task;
-              }
-              taskFound = true;
-              return task.copyWith(
-                relationships: relationships,
-                relationshipsLoaded: true,
-                relationshipSummary: TaskRelationshipSummary(
-                  parentTaskId: relationships.parentTask?.id,
-                  childCount: relationships.childTasks.length,
-                  blockedByCount: relationships.blockedBy.length,
-                  blockingCount: relationships.blocking.length,
-                  relatedCount: relationships.relatedTasks.length,
-                ),
-              );
-            },
-          )
-          .toList(growable: false);
+    var taskFound = false;
+    final nextTasks = board.tasks
+        .map(
+          (task) {
+            if (task.id != taskId) {
+              return task;
+            }
+            taskFound = true;
+            return task.copyWith(
+              relationships: relationships,
+              relationshipsLoaded: true,
+              relationshipSummary: TaskRelationshipSummary(
+                parentTaskId: relationships.parentTask?.id,
+                childCount: relationships.childTasks.length,
+                blockedByCount: relationships.blockedBy.length,
+                blockingCount: relationships.blocking.length,
+                relatedCount: relationships.relatedTasks.length,
+              ),
+            );
+          },
+        )
+        .toList(growable: false);
 
-      if (!taskFound) {
-        return null;
-      }
+    if (!taskFound) {
+      return;
+    }
 
-      emit(state.copyWith(board: board.copyWith(tasks: nextTasks)));
-      return null;
-    }, reloadBoard: false);
+    emit(state.copyWith(board: board.copyWith(tasks: nextTasks)));
   }
 
   Future<void> createTaskRelationship({
@@ -245,6 +242,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       throw StateError('Workspace not selected');
     }
 
+    // getRelationshipTaskOptions intentionally skips _runMutation because this
+    // is a read-only fetch; keeping reads out of _runMutation avoids toggling
+    // isMutating, and callers should handle any propagated errors.
     return _taskRepository.getWorkspaceTasksForProjectLinking(wsId);
   }
 

@@ -158,6 +158,67 @@ void main() {
       router.dispose();
     });
 
+    testWidgets('opens initial task detail from cold-start taskId query', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(900, 1200);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final deepLinkRouter = GoRouter(
+        initialLocation:
+            "${Routes.taskBoardDetailPath('board-a')}?taskId=task-a1",
+        routes: [
+          GoRoute(
+            path: Routes.taskBoardDetail,
+            builder: (context, state) {
+              final boardId = state.pathParameters['boardId'];
+              if (boardId == null || boardId.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return TaskBoardDetailPage(
+                boardId: boardId,
+                initialTaskId: state.uri.queryParameters['taskId'],
+                taskRepository: taskRepository,
+              );
+            },
+          ),
+        ],
+      );
+      addTearDown(deepLinkRouter.dispose);
+
+      await tester.pumpWidget(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: shad.ShadcnApp.router(
+            theme: const shad.ThemeData(
+              colorScheme: shad.ColorSchemes.lightZinc,
+            ),
+            darkTheme: const shad.ThemeData.dark(
+              colorScheme: shad.ColorSchemes.darkZinc,
+            ),
+            localizationsDelegates: const [
+              ...AppLocalizations.localizationsDelegates,
+              shad.ShadcnLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: deepLinkRouter,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        deepLinkRouter.routeInformationProvider.value.uri.toString(),
+        '/tasks/boards/board-a?taskId=task-a1',
+      );
+      expect(find.text('Relationships'), findsOneWidget);
+      expect(find.text('Task A1'), findsWidgets);
+    });
+
     testWidgets('replaces current task sheet when navigating to other board', (
       tester,
     ) async {

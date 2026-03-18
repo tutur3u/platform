@@ -336,7 +336,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
             children: [
               shad.TextField(
                 controller: _nameController,
-                placeholder: Text(context.l10n.taskBoardDetailTaskTitleHint),
+                hintText: context.l10n.taskBoardDetailTaskTitleHint,
                 autofocus: _isCreate,
                 onSubmitted: (_) => unawaited(_saveTask()),
               ),
@@ -344,9 +344,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
               shad.TextField(
                 controller: _descriptionController,
                 maxLines: 3,
-                placeholder: Text(
-                  context.l10n.taskBoardDetailTaskDescriptionHint,
-                ),
+                hintText: context.l10n.taskBoardDetailTaskDescriptionHint,
               ),
             ],
           ),

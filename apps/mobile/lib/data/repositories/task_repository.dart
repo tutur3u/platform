@@ -875,17 +875,6 @@ class TaskRepository {
       '/api/v1/workspaces/$wsId/tasks/$taskId/relationships',
       body: payload,
     );
-
-    if (type == TaskRelationshipType.related) {
-      await _apiClient.deleteJson(
-        '/api/v1/workspaces/$wsId/tasks/$targetTaskId/relationships',
-        body: {
-          'source_task_id': targetTaskId,
-          'target_task_id': sourceTaskId,
-          'type': type.apiValue,
-        },
-      );
-    }
   }
 
   Future<void> createTaskProject({

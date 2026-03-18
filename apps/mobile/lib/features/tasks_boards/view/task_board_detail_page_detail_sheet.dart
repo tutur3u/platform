@@ -30,6 +30,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   bool _isLoadingRelationships = false;
   String? _relationshipsError;
   bool _isDescriptionExpanded = false;
+  int _relationshipLoadRequestToken = 0;
 
   @override
   void initState() {
@@ -48,6 +49,8 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     }
 
     _task = widget.task;
+    _relationshipLoadRequestToken += 1;
+    _isLoadingRelationships = false;
     _relationshipsError = null;
 
     if (!_task.relationshipsLoaded) {
@@ -334,7 +337,9 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         if (task.id != linkedTask.id) continue;
         setState(() {
           _task = task;
+          _relationshipLoadRequestToken += 1;
           _activeTab = _detailsTabIndex;
+          _isLoadingRelationships = false;
           _relationshipsError = null;
           _isDescriptionExpanded = false;
         });
@@ -355,7 +360,12 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         queryParameters: {'taskId': linkedTask.id},
       );
       unawaited(_navigateAcrossBoard(router, destination));
+      return;
     }
+
+    setState(() {
+      _relationshipsError = context.l10n.taskBoardDetailUnableToOpenLinkedTask;
+    });
   }
 
   Future<void> _navigateAcrossBoard(GoRouter router, Uri destination) async {
@@ -411,6 +421,9 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   }
 
   Future<void> _loadRelationships() async {
+    final requestTaskId = _task.id;
+    final requestToken = ++_relationshipLoadRequestToken;
+
     setState(() {
       _isLoadingRelationships = true;
       _relationshipsError = null;
@@ -418,13 +431,15 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
 
     try {
       await context.read<TaskBoardDetailCubit>().loadTaskRelationships(
-        taskId: _task.id,
+        taskId: requestTaskId,
       );
 
       if (!mounted) return;
+      if (requestToken != _relationshipLoadRequestToken) return;
+      if (_task.id != requestTaskId) return;
       final refreshedTask = _findTaskInState(
         context.read<TaskBoardDetailCubit>().state,
-        _task.id,
+        requestTaskId,
       );
       setState(() {
         if (refreshedTask != null) {
@@ -435,6 +450,8 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       });
     } on ApiException catch (error) {
       if (!mounted) return;
+      if (requestToken != _relationshipLoadRequestToken) return;
+      if (_task.id != requestTaskId) return;
       setState(() {
         _isLoadingRelationships = false;
         _relationshipsError = error.message.trim().isEmpty
@@ -443,6 +460,8 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       });
     } on Exception {
       if (!mounted) return;
+      if (requestToken != _relationshipLoadRequestToken) return;
+      if (_task.id != requestTaskId) return;
       setState(() {
         _isLoadingRelationships = false;
         _relationshipsError = context.l10n.commonSomethingWentWrong;
@@ -550,28 +569,35 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
+          Material(
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(10),
-            onTap: onToggle,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: theme.typography.small.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                        fontWeight: FontWeight.w600,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: onToggle,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: theme.typography.small.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
-                    size: 18,
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ],
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18,
+                      color: theme.colorScheme.mutedForeground,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

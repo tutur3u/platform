@@ -1687,6 +1687,24 @@ abstract class AppLocalizations {
   /// **'Add related task'**
   String get taskBoardDetailAddRelatedTask;
 
+  /// No description provided for @taskBoardDetailOpenRelatedTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Open related task'**
+  String get taskBoardDetailOpenRelatedTask;
+
+  /// No description provided for @taskBoardDetailRemoveRelationship.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove relationship'**
+  String get taskBoardDetailRemoveRelationship;
+
+  /// No description provided for @taskBoardDetailUnableToOpenLinkedTask.
+  ///
+  /// In en, this message translates to:
+  /// **'This linked task can\'t be opened from here.'**
+  String get taskBoardDetailUnableToOpenLinkedTask;
+
   /// No description provided for @taskBoardDetailSelectTask.
   ///
   /// In en, this message translates to:
