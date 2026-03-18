@@ -6,7 +6,7 @@ import { CalendarIcon } from '@ncthub/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@ncthub/ui/popover';
 import { cn } from '@ncthub/utils/format';
 import { format } from 'date-fns';
-import { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
 interface DatePickerProps {
   date: Date | null;
@@ -38,7 +38,7 @@ export function DatePicker({
           mode="single"
           selected={date || undefined}
           onSelect={(date: Date | undefined) => setDate(date || null)}
-          initialFocus
+          autoFocus
         />
       </PopoverContent>
     </Popover>
