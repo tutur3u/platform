@@ -2999,8 +2999,7 @@ export async function getWorkspaceTasks(
       completed: !!task.closed_at || !!task.completed_at,
       priority: isTaskPriority(task.priority) ? task.priority : null,
       board_id: task.board_id ?? null,
-      board_name:
-        typeof task.board_name === 'string' ? task.board_name : undefined,
+      board_name: task.board_name,
     });
 
     if (collected.length >= targetLimit) {
