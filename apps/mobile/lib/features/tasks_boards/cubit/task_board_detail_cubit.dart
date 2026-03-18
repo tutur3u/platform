@@ -3,6 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_link_option.dart';
+import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 
 part 'task_board_detail_state.dart';
@@ -161,6 +163,118 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
+  Future<void> loadTaskRelationships({required String taskId}) async {
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+    final requestToken = _loadRequestToken;
+    if (wsId == null || boardId == null || state.board == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    final relationships = await _taskRepository.getTaskRelationships(
+      wsId: wsId,
+      taskId: taskId,
+    );
+
+    if (requestToken != _loadRequestToken) {
+      return;
+    }
+
+    if (state.workspaceId != wsId || state.boardId != boardId) {
+      return;
+    }
+
+    final board = state.board;
+    if (board == null) {
+      return;
+    }
+
+    var taskFound = false;
+    final nextTasks = board.tasks
+        .map(
+          (task) {
+            if (task.id != taskId) {
+              return task;
+            }
+            taskFound = true;
+            return task.copyWith(
+              relationships: relationships,
+              relationshipsLoaded: true,
+              relationshipSummary: TaskRelationshipSummary(
+                parentTaskId: relationships.parentTask?.id,
+                childCount: relationships.childTasks.length,
+                blockedByCount: relationships.blockedBy.length,
+                blockingCount: relationships.blocking.length,
+                relatedCount: relationships.relatedTasks.length,
+              ),
+            );
+          },
+        )
+        .toList(growable: false);
+
+    if (!taskFound) {
+      return;
+    }
+
+    emit(state.copyWith(board: board.copyWith(tasks: nextTasks)));
+  }
+
+  Future<void> createTaskRelationship({
+    required String taskId,
+    required String sourceTaskId,
+    required String targetTaskId,
+    required TaskRelationshipType type,
+  }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    await _runMutation(
+      () => _taskRepository.createTaskRelationship(
+        wsId: wsId,
+        taskId: taskId,
+        sourceTaskId: sourceTaskId,
+        targetTaskId: targetTaskId,
+        type: type,
+      ),
+    );
+  }
+
+  Future<List<TaskLinkOption>> getRelationshipTaskOptions() async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    // getRelationshipTaskOptions intentionally skips _runMutation because this
+    // is a read-only fetch; keeping reads out of _runMutation avoids toggling
+    // isMutating, and callers should handle any propagated errors.
+    return _taskRepository.getWorkspaceTasksForProjectLinking(wsId);
+  }
+
+  Future<void> deleteTaskRelationship({
+    required String taskId,
+    required String sourceTaskId,
+    required String targetTaskId,
+    required TaskRelationshipType type,
+  }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    await _runMutation(
+      () => _taskRepository.deleteTaskRelationship(
+        wsId: wsId,
+        taskId: taskId,
+        sourceTaskId: sourceTaskId,
+        targetTaskId: targetTaskId,
+        type: type,
+      ),
+    );
+  }
+
   void setView(TaskBoardDetailView view) {
     emit(state.copyWith(currentView: view));
   }
@@ -247,7 +361,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
-  Future<void> _runMutation(Future<Object?> Function() action) async {
+  Future<void> _runMutation(
+    Future<Object?> Function() action, {
+    bool reloadBoard = true,
+  }) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
 
@@ -289,7 +406,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         ),
       );
 
-      await loadBoardDetail(wsId: wsId, boardId: boardId);
+      if (reloadBoard) {
+        await loadBoardDetail(wsId: wsId, boardId: boardId);
+      }
     } on Exception catch (error) {
       final isSameBoard = state.workspaceId == wsId && state.boardId == boardId;
       emit(

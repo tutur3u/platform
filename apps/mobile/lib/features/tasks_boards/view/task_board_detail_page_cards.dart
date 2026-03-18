@@ -213,6 +213,7 @@ class _BoardTaskTile extends StatelessWidget {
     final dueLabel = _taskDueLabel(context, task);
     final startLabel = _taskStartLabel(context, task);
     final isOverdue = _taskIsOverdue(task);
+    final relationshipIndicators = _taskRelationshipIndicators(task);
 
     return InkWell(
       borderRadius: BorderRadius.circular(10),
@@ -343,6 +344,20 @@ class _BoardTaskTile extends StatelessWidget {
                     ),
                   ],
                 ],
+              ),
+            ],
+            if (relationshipIndicators.isNotEmpty) ...[
+              const shad.Gap(8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: relationshipIndicators
+                    .map(
+                      (indicator) => _TaskRelationshipIndicatorBadge(
+                        indicator: indicator,
+                      ),
+                    )
+                    .toList(growable: false),
               ),
             ],
             // Chips row: priority, estimation, project, labels
@@ -476,6 +491,46 @@ class _TaskPriorityChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TaskRelationshipIndicatorBadge extends StatelessWidget {
+  const _TaskRelationshipIndicatorBadge({required this.indicator});
+
+  final _TaskRelationshipIndicator indicator;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final color = _taskRelationshipColor(context, indicator.kind);
+    final label = _taskRelationshipLabel(context, indicator.kind);
+
+    return Tooltip(
+      message: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: color.withValues(alpha: 0.28)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_taskRelationshipIcon(indicator.kind), size: 12, color: color),
+            const shad.Gap(4),
+            Text(
+              '${indicator.count}',
+              style: theme.typography.small.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -199,7 +199,10 @@ GoRouter createAppRouter(
               if (boardId == null || boardId.isEmpty) {
                 return const TaskBoardsPage();
               }
-              return TaskBoardDetailPage(boardId: boardId);
+              return TaskBoardDetailPage(
+                boardId: boardId,
+                initialTaskId: state.uri.queryParameters['taskId'],
+              );
             },
           ),
           GoRoute(

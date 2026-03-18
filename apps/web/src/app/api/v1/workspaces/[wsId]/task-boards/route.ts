@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import {
   getPermissions,
@@ -49,6 +52,30 @@ export async function GET(req: Request, { params }: Params) {
         { status: 403 }
       );
     }
+
+    // Verify membership before proceeding with data fetching
+    const { data: memberCheck, error: memberCheckError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
 
     const searchParams = listBoardsSearchSchema.parse(
       Object.fromEntries(new URL(req.url).searchParams)
@@ -107,11 +134,24 @@ export async function GET(req: Request, { params }: Params) {
     const listIds = taskLists.map((list) => list.id);
     const taskCountsByList: { [key: string]: number } = {};
     if (listIds.length > 0) {
-      const { data: tasks, error: tasksError } = await supabase
-        .from('tasks')
-        .select('list_id')
-        .in('list_id', listIds)
-        .is('deleted_at', null);
+      const tasks: Array<{ list_id: string | null }> = [];
+      let tasksError: { message: string } | null = null;
+
+      for (let i = 0; i < listIds.length; i += BOARD_IDS_BATCH_SIZE) {
+        const listIdBatch = listIds.slice(i, i + BOARD_IDS_BATCH_SIZE);
+        const { data: batchTasks, error: batchTasksError } = await sbAdmin
+          .from('tasks')
+          .select('list_id')
+          .in('list_id', listIdBatch)
+          .is('deleted_at', null);
+
+        if (batchTasksError) {
+          tasksError = batchTasksError;
+          break;
+        }
+
+        tasks.push(...(batchTasks ?? []));
+      }
 
       if (tasksError) {
         return NextResponse.json(
@@ -120,7 +160,7 @@ export async function GET(req: Request, { params }: Params) {
         );
       }
 
-      for (const task of tasks ?? []) {
+      for (const task of tasks) {
         if (!task.list_id) continue;
         taskCountsByList[task.list_id] =
           (taskCountsByList[task.list_id] ?? 0) + 1;
@@ -178,6 +218,28 @@ export async function POST(req: Request, { params }: Params) {
     if (!permissions?.containsPermission('manage_projects')) {
       return NextResponse.json(
         { error: "You don't have permission to perform this operation" },
+        { status: 403 }
+      );
+    }
+
+    // Verify membership
+    const { data: memberCheck, error: memberCheckError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
         { status: 403 }
       );
     }

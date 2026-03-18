@@ -25,6 +25,7 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
 }
 
 class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
+  static const int _detailsTabIndex = 0;
   static const List<String> _priorityOptions = [
     'critical',
     'high',
@@ -34,6 +35,15 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
+  late final String _initialName;
+  late final String? _initialDescription;
+  late final String _initialPriority;
+  late final int? _initialEstimationPoints;
+  late final Set<String> _initialAssigneeIds;
+  late final Set<String> _initialLabelIds;
+  late final Set<String> _initialProjectIds;
+  DateTime? _initialStartDate;
+  DateTime? _initialEndDate;
   late String _priority;
   late String _selectedListId;
   int? _estimationPoints;
@@ -42,10 +52,100 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   late Set<String> _selectedProjectIds;
   DateTime? _startDate;
   DateTime? _endDate;
+  int _activeTab = _detailsTabIndex;
+  bool _isLoadingRelationships = false;
+  int _relationshipsLoadRequestToken = 0;
+  String? _relationshipsLoadingTaskId;
+  bool _isMutatingRelationships = false;
+  String? _relationshipsError;
+  TaskRelationshipsResponse _relationshipsState =
+      TaskRelationshipsResponse.empty;
+  List<TaskLinkOption> _relationshipTaskOptions = const [];
   bool _isSaving = false;
   bool _isMoving = false;
 
   bool get _isCreate => widget.task == null;
+
+  bool get _isBusy {
+    return _isSaving || _isMoving || _isMutatingRelationships;
+  }
+
+  bool get _hasTaskChanges {
+    if (_isCreate) {
+      return _nameController.text.trim().isNotEmpty;
+    }
+
+    if (_nameController.text.trim() != _initialName) {
+      return true;
+    }
+
+    final description = FormDirtyUtils.normalizeOptionalText(
+      _descriptionController.text,
+    );
+    if (description != _initialDescription) {
+      return true;
+    }
+
+    if (_priority != _initialPriority) {
+      return true;
+    }
+
+    if (_estimationPoints != _initialEstimationPoints) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameUnorderedValues(
+      _selectedAssigneeIds,
+      _initialAssigneeIds,
+    )) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameUnorderedValues(
+      _selectedLabelIds,
+      _initialLabelIds,
+    )) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameUnorderedValues(
+      _selectedProjectIds,
+      _initialProjectIds,
+    )) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameMoment(_startDate, _initialStartDate)) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameMoment(_endDate, _initialEndDate)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  bool get _canSave {
+    if (_isBusy) {
+      return false;
+    }
+
+    if (_nameController.text.trim().isEmpty) {
+      return false;
+    }
+
+    return _isCreate || _hasTaskChanges;
+  }
+
+  TaskRelationshipsResponse get _relationships {
+    return _relationshipsState;
+  }
+
+  int get _relationshipIndicatorCount {
+    if (_isCreate) return 0;
+    return _relationships.totalCount;
+  }
 
   @override
   void initState() {
@@ -55,6 +155,17 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     _descriptionController = TextEditingController(
       text: task?.description ?? '',
     );
+    _initialName = (task?.name ?? '').trim();
+    _initialDescription = FormDirtyUtils.normalizeOptionalText(
+      task?.description ?? '',
+    );
+    _initialPriority = _normalizePriority(task?.priority);
+    _initialEstimationPoints = task?.estimationPoints;
+    _initialAssigneeIds = {...?task?.assigneeIds};
+    _initialLabelIds = {...?task?.labelIds};
+    _initialProjectIds = {...?task?.projectIds};
+    _initialStartDate = task?.startDate;
+    _initialEndDate = task?.endDate;
     _priority = _normalizePriority(task?.priority);
     _selectedListId = _resolveInitialListId(task);
     _estimationPoints = task?.estimationPoints;
@@ -63,13 +174,29 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     _selectedProjectIds = {...?task?.projectIds};
     _startDate = task?.startDate;
     _endDate = task?.endDate;
+    _relationshipsState =
+        task?.relationships ?? TaskRelationshipsResponse.empty;
+
+    if (!_isCreate) {
+      unawaited(_loadRelationshipsIfNeeded(force: true));
+    }
+
+    _nameController.addListener(_handleFormFieldChanged);
+    _descriptionController.addListener(_handleFormFieldChanged);
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_handleFormFieldChanged);
+    _descriptionController.removeListener(_handleFormFieldChanged);
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _handleFormFieldChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   @override
@@ -108,145 +235,46 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                     ),
                     shad.IconButton.ghost(
                       icon: const Icon(Icons.close),
-                      onPressed: _isSaving || _isMoving
+                      onPressed: _isBusy
                           ? null
                           : () => unawaited(_closeEditor()),
                     ),
                   ],
                 ),
                 const shad.Gap(12),
-                if (_isCreate) ...[
-                  _SelectionFieldButton(
-                    label: context.l10n.taskBoardDetailTaskListLabel,
-                    value: _selectedListLabel(context),
-                    enabled:
-                        !_isSaving && !_isMoving && widget.lists.length > 1,
-                    onPressed: _pickList,
+                if (!_isCreate) ...[
+                  shad.Tabs(
+                    index: _activeTab,
+                    onChanged: (value) {
+                      if (_isBusy) return;
+                      setState(() => _activeTab = value);
+                    },
+                    children: [
+                      shad.TabItem(
+                        child: Text(
+                          context.l10n.taskBoardDetailEditorDetailsTab,
+                        ),
+                      ),
+                      shad.TabItem(
+                        child: _TaskEditorTabLabel(
+                          label: context
+                              .l10n
+                              .taskBoardDetailEditorRelationshipsTab,
+                          count: _relationshipIndicatorCount,
+                        ),
+                      ),
+                    ],
                   ),
                   const shad.Gap(10),
                 ],
-                _EditorSectionCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      shad.TextField(
-                        controller: _nameController,
-                        placeholder: Text(
-                          context.l10n.taskBoardDetailTaskTitleHint,
-                        ),
-                        autofocus: _isCreate,
-                        onSubmitted: (_) => unawaited(_saveTask()),
-                      ),
-                      const shad.Gap(10),
-                      shad.TextField(
-                        controller: _descriptionController,
-                        maxLines: 3,
-                        placeholder: Text(
-                          context.l10n.taskBoardDetailTaskDescriptionHint,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const shad.Gap(10),
-                _EditorSectionCard(
-                  title: context.l10n.taskBoardDetailPriority,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _priorityOptions
-                            .map((value) {
-                              final selected = _priority == value;
-                              final label = _taskPriorityLabel(context, value);
-                              return selected
-                                  ? shad.PrimaryButton(
-                                      onPressed: () {},
-                                      child: Text(label),
-                                    )
-                                  : shad.OutlineButton(
-                                      onPressed: _isSaving || _isMoving
-                                          ? null
-                                          : () => setState(
-                                              () => _priority = value,
-                                            ),
-                                      child: Text(label),
-                                    );
-                            })
-                            .toList(growable: false),
-                      ),
-                    ],
-                  ),
-                ),
-                const shad.Gap(10),
-                _EditorSectionCard(
-                  title: context.l10n.taskBoardDetailTaskDates,
-                  child: Column(
-                    children: [
-                      _DateFieldRow(
-                        label: context.l10n.taskBoardDetailTaskStartDate,
-                        value: _startDate,
-                        onPick: _isSaving || _isMoving
-                            ? null
-                            : () => _pickDate(isStart: true),
-                        onClear: _isSaving || _isMoving || _startDate == null
-                            ? null
-                            : () => setState(() => _startDate = null),
-                      ),
-                      const shad.Gap(8),
-                      _DateFieldRow(
-                        label: context.l10n.taskBoardDetailTaskEndDate,
-                        value: _endDate,
-                        onPick: _isSaving || _isMoving
-                            ? null
-                            : () => _pickDate(isStart: false),
-                        onClear: _isSaving || _isMoving || _endDate == null
-                            ? null
-                            : () => setState(() => _endDate = null),
-                      ),
-                    ],
-                  ),
-                ),
-                const shad.Gap(10),
-                _EditorSectionCard(
-                  child: Column(
-                    children: [
-                      _SelectionFieldButton(
-                        label: context.l10n.taskBoardDetailTaskEstimation,
-                        value: _estimationLabel(context),
-                        enabled: !_isSaving && !_isMoving,
-                        onPressed: _pickEstimation,
-                      ),
-                      const shad.Gap(8),
-                      _SelectionFieldButton(
-                        label: context.l10n.taskBoardDetailTaskAssignees,
-                        value: _selectedAssigneesLabel(context),
-                        enabled: !_isSaving && !_isMoving,
-                        onPressed: _pickAssignees,
-                      ),
-                      const shad.Gap(8),
-                      _SelectionFieldButton(
-                        label: context.l10n.taskBoardDetailTaskLabels,
-                        value: _selectedLabelsLabel(context),
-                        enabled: !_isSaving && !_isMoving,
-                        onPressed: _pickLabels,
-                      ),
-                      const shad.Gap(8),
-                      _SelectionFieldButton(
-                        label: context.l10n.taskBoardDetailTaskProjects,
-                        value: _selectedProjectsLabel(context),
-                        enabled: !_isSaving && !_isMoving,
-                        onPressed: _pickProjects,
-                      ),
-                    ],
-                  ),
-                ),
+                if (_isCreate || _activeTab == _detailsTabIndex)
+                  _buildDetailsTab(context)
+                else
+                  _buildRelationshipsTab(context),
                 if (!_isCreate && widget.lists.length > 1) ...[
                   const shad.Gap(14),
                   shad.OutlineButton(
-                    onPressed: _isSaving || _isMoving ? null : _moveTask,
+                    onPressed: _isBusy ? null : _moveTask,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -262,7 +290,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                   children: [
                     Expanded(
                       child: shad.OutlineButton(
-                        onPressed: _isSaving || _isMoving
+                        onPressed: _isBusy
                             ? null
                             : () => unawaited(_closeEditor()),
                         child: Text(context.l10n.commonCancel),
@@ -271,7 +299,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                     const shad.Gap(10),
                     Expanded(
                       child: shad.PrimaryButton(
-                        onPressed: _isSaving || _isMoving ? null : _saveTask,
+                        onPressed: _canSave ? _saveTask : null,
                         child: _isSaving
                             ? const SizedBox(
                                 width: 16,
@@ -288,6 +316,297 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDetailsTab(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_isCreate) ...[
+          _SelectionFieldButton(
+            label: context.l10n.taskBoardDetailTaskListLabel,
+            value: _selectedListLabel(context),
+            enabled: !_isBusy && widget.lists.length > 1,
+            onPressed: _pickList,
+          ),
+          const shad.Gap(10),
+        ],
+        _EditorSectionCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              shad.TextField(
+                controller: _nameController,
+                hintText: context.l10n.taskBoardDetailTaskTitleHint,
+                autofocus: _isCreate,
+                onSubmitted: (_) => unawaited(_saveTask()),
+              ),
+              const shad.Gap(10),
+              shad.TextField(
+                controller: _descriptionController,
+                maxLines: 3,
+                hintText: context.l10n.taskBoardDetailTaskDescriptionHint,
+              ),
+            ],
+          ),
+        ),
+        const shad.Gap(10),
+        _EditorSectionCard(
+          title: context.l10n.taskBoardDetailPriority,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _priorityOptions
+                    .map((value) {
+                      final selected = _priority == value;
+                      final label = _taskPriorityLabel(context, value);
+                      return selected
+                          ? shad.PrimaryButton(
+                              onPressed: () {},
+                              child: Text(label),
+                            )
+                          : shad.OutlineButton(
+                              onPressed: _isBusy
+                                  ? null
+                                  : () => setState(() => _priority = value),
+                              child: Text(label),
+                            );
+                    })
+                    .toList(growable: false),
+              ),
+            ],
+          ),
+        ),
+        const shad.Gap(10),
+        _EditorSectionCard(
+          title: context.l10n.taskBoardDetailTaskDates,
+          child: Column(
+            children: [
+              _DateFieldRow(
+                label: context.l10n.taskBoardDetailTaskStartDate,
+                value: _startDate,
+                onPick: _isBusy ? null : () => _pickDate(isStart: true),
+                onClear: _isBusy || _startDate == null
+                    ? null
+                    : () => setState(() => _startDate = null),
+              ),
+              const shad.Gap(8),
+              _DateFieldRow(
+                label: context.l10n.taskBoardDetailTaskEndDate,
+                value: _endDate,
+                onPick: _isBusy ? null : () => _pickDate(isStart: false),
+                onClear: _isBusy || _endDate == null
+                    ? null
+                    : () => setState(() => _endDate = null),
+              ),
+            ],
+          ),
+        ),
+        const shad.Gap(10),
+        _EditorSectionCard(
+          child: Column(
+            children: [
+              _SelectionFieldButton(
+                label: context.l10n.taskBoardDetailTaskEstimation,
+                value: _estimationLabel(context),
+                enabled: !_isBusy,
+                onPressed: _pickEstimation,
+              ),
+              const shad.Gap(8),
+              _SelectionFieldButton(
+                label: context.l10n.taskBoardDetailTaskAssignees,
+                value: _selectedAssigneesLabel(context),
+                enabled: !_isBusy,
+                onPressed: _pickAssignees,
+              ),
+              const shad.Gap(8),
+              _SelectionFieldButton(
+                label: context.l10n.taskBoardDetailTaskLabels,
+                value: _selectedLabelsLabel(context),
+                enabled: !_isBusy,
+                onPressed: _pickLabels,
+              ),
+              const shad.Gap(8),
+              _SelectionFieldButton(
+                label: context.l10n.taskBoardDetailTaskProjects,
+                value: _selectedProjectsLabel(context),
+                enabled: !_isBusy,
+                onPressed: _pickProjects,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRelationshipsTab(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_isLoadingRelationships)
+          const LinearProgressIndicator(minHeight: 2),
+        if (_relationshipsError != null) ...[
+          const shad.Gap(8),
+          Text(
+            _relationshipsError!,
+            style: shad.Theme.of(context).typography.small.copyWith(
+              color: shad.Theme.of(context).colorScheme.destructive,
+            ),
+          ),
+        ],
+        const shad.Gap(10),
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailParentTask,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.parent),
+          children: [
+            if (_relationships.parentTask != null)
+              _RelationshipTaskTile(
+                task: _relationships.parentTask!,
+                onRemove: _isBusy
+                    ? null
+                    : () =>
+                          _removeParentRelationship(_relationships.parentTask!),
+              )
+            else
+              Text(
+                context.l10n.taskBoardDetailNone,
+                style: shad.Theme.of(context).typography.small,
+              ),
+            const shad.Gap(8),
+            _SelectionFieldButton(
+              label: context.l10n.taskBoardDetailAddParentTask,
+              value: context.l10n.taskBoardDetailSelectTask,
+              enabled: !_isBusy,
+              onPressed: _pickParentTask,
+            ),
+          ],
+        ),
+        const shad.Gap(10),
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailChildTasks,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.child),
+          children: [
+            if (_relationships.childTasks.isEmpty)
+              Text(
+                context.l10n.taskBoardDetailNone,
+                style: shad.Theme.of(context).typography.small,
+              ),
+            ..._relationships.childTasks.map(
+              (task) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _RelationshipTaskTile(
+                  task: task,
+                  onRemove: _isBusy
+                      ? null
+                      : () => _removeChildRelationship(task),
+                ),
+              ),
+            ),
+            const shad.Gap(8),
+            _SelectionFieldButton(
+              label: context.l10n.taskBoardDetailAddChildTask,
+              value: context.l10n.taskBoardDetailSelectTask,
+              enabled: !_isBusy,
+              onPressed: _pickChildTask,
+            ),
+          ],
+        ),
+        const shad.Gap(10),
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailBlockedBy,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.blockedBy),
+          children: [
+            if (_relationships.blockedBy.isEmpty)
+              Text(
+                context.l10n.taskBoardDetailNone,
+                style: shad.Theme.of(context).typography.small,
+              ),
+            ..._relationships.blockedBy.map(
+              (task) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _RelationshipTaskTile(
+                  task: task,
+                  onRemove: _isBusy
+                      ? null
+                      : () => _removeBlockedByRelationship(task),
+                ),
+              ),
+            ),
+            const shad.Gap(8),
+            _SelectionFieldButton(
+              label: context.l10n.taskBoardDetailAddBlockedByTask,
+              value: context.l10n.taskBoardDetailSelectTask,
+              enabled: !_isBusy,
+              onPressed: _pickBlockedByTask,
+            ),
+          ],
+        ),
+        const shad.Gap(10),
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailBlocking,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.blocking),
+          children: [
+            if (_relationships.blocking.isEmpty)
+              Text(
+                context.l10n.taskBoardDetailNone,
+                style: shad.Theme.of(context).typography.small,
+              ),
+            ..._relationships.blocking.map(
+              (task) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _RelationshipTaskTile(
+                  task: task,
+                  onRemove: _isBusy
+                      ? null
+                      : () => _removeBlockingRelationship(task),
+                ),
+              ),
+            ),
+            const shad.Gap(8),
+            _SelectionFieldButton(
+              label: context.l10n.taskBoardDetailAddBlockingTask,
+              value: context.l10n.taskBoardDetailSelectTask,
+              enabled: !_isBusy,
+              onPressed: _pickBlockingTask,
+            ),
+          ],
+        ),
+        const shad.Gap(10),
+        _RelationshipSectionCard(
+          title: context.l10n.taskBoardDetailRelatedTasks,
+          icon: _taskRelationshipIcon(_TaskRelationshipKind.related),
+          children: [
+            if (_relationships.relatedTasks.isEmpty)
+              Text(
+                context.l10n.taskBoardDetailNone,
+                style: shad.Theme.of(context).typography.small,
+              ),
+            ..._relationships.relatedTasks.map(
+              (task) => Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _RelationshipTaskTile(
+                  task: task,
+                  onRemove: _isBusy
+                      ? null
+                      : () => _removeRelatedRelationship(task),
+                ),
+              ),
+            ),
+            const shad.Gap(8),
+            _SelectionFieldButton(
+              label: context.l10n.taskBoardDetailAddRelatedTask,
+              value: context.l10n.taskBoardDetailSelectTask,
+              enabled: !_isBusy,
+              onPressed: _pickRelatedTask,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -323,8 +642,72 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     await _pickTaskProjects(this);
   }
 
+  Future<void> _pickParentTask() async {
+    await _pickTaskRelationship(this, role: _TaskRelationshipRole.parentTask);
+  }
+
+  Future<void> _pickChildTask() async {
+    await _pickTaskRelationship(this, role: _TaskRelationshipRole.childTask);
+  }
+
+  Future<void> _pickBlockedByTask() async {
+    await _pickTaskRelationship(this, role: _TaskRelationshipRole.blockedBy);
+  }
+
+  Future<void> _pickBlockingTask() async {
+    await _pickTaskRelationship(this, role: _TaskRelationshipRole.blocking);
+  }
+
+  Future<void> _pickRelatedTask() async {
+    await _pickTaskRelationship(this, role: _TaskRelationshipRole.relatedTask);
+  }
+
+  Future<void> _removeParentRelationship(RelatedTaskInfo task) async {
+    await _removeTaskRelationship(
+      this,
+      targetTask: task,
+      role: _TaskRelationshipRole.parentTask,
+    );
+  }
+
+  Future<void> _removeChildRelationship(RelatedTaskInfo task) async {
+    await _removeTaskRelationship(
+      this,
+      targetTask: task,
+      role: _TaskRelationshipRole.childTask,
+    );
+  }
+
+  Future<void> _removeBlockedByRelationship(RelatedTaskInfo task) async {
+    await _removeTaskRelationship(
+      this,
+      targetTask: task,
+      role: _TaskRelationshipRole.blockedBy,
+    );
+  }
+
+  Future<void> _removeBlockingRelationship(RelatedTaskInfo task) async {
+    await _removeTaskRelationship(
+      this,
+      targetTask: task,
+      role: _TaskRelationshipRole.blocking,
+    );
+  }
+
+  Future<void> _removeRelatedRelationship(RelatedTaskInfo task) async {
+    await _removeTaskRelationship(
+      this,
+      targetTask: task,
+      role: _TaskRelationshipRole.relatedTask,
+    );
+  }
+
   Future<void> _closeEditor() async {
     await _closeTaskEditor(this);
+  }
+
+  Future<void> _loadRelationshipsIfNeeded({bool force = false}) async {
+    await _loadTaskRelationshipsIfNeeded(this, force: force);
   }
 
   void _updateState(VoidCallback updates) {

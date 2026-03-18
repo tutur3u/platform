@@ -203,6 +203,7 @@ class ApiClient {
   /// Returns the decoded JSON body on success, or throws [ApiException].
   Future<Map<String, dynamic>> deleteJson(
     String path, {
+    Map<String, dynamic>? body,
     bool requiresAuth = true,
   }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
@@ -210,7 +211,11 @@ class ApiClient {
     final response = await _performRequest(
       () async => _client.delete(
         url,
-        headers: await _getHeaders(requiresAuth: requiresAuth),
+        headers: await _getHeaders(
+          contentType: body == null ? null : 'application/json',
+          requiresAuth: requiresAuth,
+        ),
+        body: body == null ? null : jsonEncode(body),
       ),
       requiresAuth: requiresAuth,
     );
