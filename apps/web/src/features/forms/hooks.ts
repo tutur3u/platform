@@ -13,12 +13,6 @@ import type {
   FormResponsesQuestionAnalytics,
 } from './types';
 
-type ProgressPayload = {
-  sessionId: string;
-  lastQuestionId?: string | null;
-  lastSectionId?: string | null;
-};
-
 type SaveFormVariables =
   | FormStudioInput
   | { payload: FormStudioInput; isAutosave?: boolean };
@@ -212,20 +206,6 @@ export function useFormMediaUploadMutation({ wsId }: { wsId: string }) {
           : t('toast.failed_to_upload_image')
       );
     },
-  });
-}
-
-export function usePublicFormProgress(shareCode: string) {
-  return useMutation({
-    mutationFn: async (payload: ProgressPayload) =>
-      apiFetch<{ ok: true }>(`/api/v1/shared/forms/${shareCode}/progress`, {
-        method: 'POST',
-        cache: 'no-store',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      }),
   });
 }
 

@@ -56,12 +56,22 @@ class RequestManagerActionsBar extends StatefulWidget {
     required this.onApprove,
     required this.onReject,
     required this.onRequestInfo,
+    this.showApprove = true,
+    this.showReject = true,
+    this.showRequestInfo = true,
+    this.showRevertToRejected = false,
+    this.showRevertToApproved = false,
     super.key,
   });
 
   final Future<void> Function() onApprove;
   final Future<void> Function(String?) onReject;
   final Future<void> Function(String) onRequestInfo;
+  final bool showApprove;
+  final bool showReject;
+  final bool showRequestInfo;
+  final bool showRevertToRejected;
+  final bool showRevertToApproved;
 
   @override
   State<RequestManagerActionsBar> createState() =>
@@ -86,48 +96,66 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: shad.PrimaryButton(
-                        onPressed: _isProcessing ? null : _handleApprove,
-                        child: _isProcessing
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: shad.CircularProgressIndicator(),
-                              )
-                            : Text(l10n.timerApprove),
-                      ),
-                    ),
-                    const shad.Gap(8),
-                    Expanded(
-                      child: shad.DestructiveButton(
-                        onPressed: _isProcessing
-                            ? null
-                            : () => _showReasonDialog(
-                                context,
-                                title: l10n.timerReject,
-                                requiresText: false,
-                                onSubmit: (reason) => widget.onReject(reason),
-                              ),
-                        child: Text(l10n.timerReject),
-                      ),
-                    ),
-                  ],
-                ),
-                const shad.Gap(8),
-                shad.OutlineButton(
-                  onPressed: _isProcessing
-                      ? null
-                      : () => _showReasonDialog(
-                          context,
-                          title: l10n.timerRequestInfo,
-                          requiresText: true,
-                          onSubmit: (reason) => widget.onRequestInfo(reason!),
+                if (widget.showApprove || widget.showReject) ...[
+                  Row(
+                    children: [
+                      if (widget.showApprove)
+                        Expanded(
+                          child: shad.PrimaryButton(
+                            onPressed: _isProcessing ? null : _handleApprove,
+                            child: _isProcessing
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: shad.CircularProgressIndicator(),
+                                  )
+                                : Text(
+                                    widget.showRevertToApproved
+                                        ? l10n.timerRequestRevertToApproved
+                                        : l10n.timerApprove,
+                                  ),
+                          ),
                         ),
-                  child: Text(l10n.timerRequestInfo),
-                ),
+                      if (widget.showApprove && widget.showReject)
+                        const shad.Gap(8),
+                      if (widget.showReject)
+                        Expanded(
+                          child: shad.DestructiveButton(
+                            onPressed: _isProcessing
+                                ? null
+                                : () => _showReasonDialog(
+                                    context,
+                                    title: widget.showRevertToRejected
+                                        ? l10n.timerRequestRevertToRejected
+                                        : l10n.timerReject,
+                                    requiresText: false,
+                                    onSubmit: (reason) =>
+                                        widget.onReject(reason),
+                                  ),
+                            child: Text(
+                              widget.showRevertToRejected
+                                  ? l10n.timerRequestRevertToRejected
+                                  : l10n.timerReject,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+                if (widget.showRequestInfo) ...[
+                  const shad.Gap(8),
+                  shad.OutlineButton(
+                    onPressed: _isProcessing
+                        ? null
+                        : () => _showReasonDialog(
+                            context,
+                            title: l10n.timerRequestInfo,
+                            requiresText: true,
+                            onSubmit: (reason) => widget.onRequestInfo(reason!),
+                          ),
+                    child: Text(l10n.timerRequestInfo),
+                  ),
+                ],
               ],
             ),
           ),

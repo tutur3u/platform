@@ -9,6 +9,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import type { ExtendedTimeTrackingRequest } from '../page';
 
 interface ActionButtonsProps {
@@ -36,6 +37,7 @@ interface ActionButtonsProps {
   // Resubmit
   isResubmitting: boolean;
   onResubmit: () => void;
+  statusChangeGracePeriodMinutes: number;
 }
 
 export function ActionButtons({
@@ -59,8 +61,48 @@ export function ActionButtons({
   onRequestMoreInfo,
   isResubmitting,
   onResubmit,
+  statusChangeGracePeriodMinutes,
 }: ActionButtonsProps) {
   const t = useTranslations('time-tracker.requests');
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const shouldTrackGraceWindow =
+      statusChangeGracePeriodMinutes > 0 &&
+      (request.approval_status === 'APPROVED' ||
+        request.approval_status === 'REJECTED');
+
+    if (!shouldTrackGraceWindow) {
+      return;
+    }
+
+    setNowMs(Date.now());
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [request.approval_status, statusChangeGracePeriodMinutes]);
+
+  const bufferMs = 30 * 1000;
+  const allowedMs = Math.max(
+    0,
+    statusChangeGracePeriodMinutes * 60 * 1000 - bufferMs
+  );
+
+  const canRejectApprovedRequest =
+    request.approval_status === 'APPROVED' &&
+    !!request.approved_at &&
+    statusChangeGracePeriodMinutes > 0 &&
+    nowMs - new Date(request.approved_at).getTime() <= allowedMs;
+
+  const canApproveRejectedRequest =
+    request.approval_status === 'REJECTED' &&
+    !!request.rejected_at &&
+    statusChangeGracePeriodMinutes > 0 &&
+    nowMs - new Date(request.rejected_at).getTime() <= allowedMs;
 
   // Resubmit button for request owner when status is NEEDS_INFO
   if (
@@ -83,9 +125,11 @@ export function ActionButtons({
     );
   }
 
-  // Action buttons for approvers when status is PENDING
+  // Action buttons for approvers when status is PENDING or recently APPROVED
   if (
-    request.approval_status === 'PENDING' &&
+    (request.approval_status === 'PENDING' ||
+      canRejectApprovedRequest ||
+      canApproveRejectedRequest) &&
     canManageTimeTrackingRequests &&
     currentUser &&
     (request.user_id !== currentUser.id || canBypassTimeTrackingRequestApproval)
@@ -172,31 +216,58 @@ export function ActionButtons({
     // Show main action buttons
     return (
       <div className="space-y-2">
-        <Button
-          onClick={onApprove}
-          disabled={isApproving}
-          className="w-full bg-dynamic-green hover:bg-dynamic-green/90"
-        >
-          {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          <CheckCircle2Icon className="mr-2 h-4 w-4" />
-          {t('detail.approveButton')}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => setShowNeedsInfoForm(true)}
-          className="w-full border-dynamic-blue/20 bg-dynamic-blue hover:bg-dynamic-blue/90"
-        >
-          <InfoIcon className="mr-2 h-4 w-4" />
-          <span className="truncate">{t('detail.requestInfoButton')}</span>
-        </Button>
-        <Button
-          variant="destructive"
-          onClick={() => setShowRejectionForm(true)}
-          className="w-full"
-        >
-          <XCircleIcon className="mr-2 h-4 w-4" />
-          {t('detail.rejectButton')}
-        </Button>
+        {request.approval_status === 'PENDING' && (
+          <>
+            <Button
+              onClick={onApprove}
+              disabled={isApproving}
+              className="w-full bg-dynamic-green hover:bg-dynamic-green/90"
+            >
+              {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <CheckCircle2Icon className="mr-2 h-4 w-4" />
+              {t('detail.approveButton')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowNeedsInfoForm(true)}
+              className="w-full border-dynamic-blue/20 bg-dynamic-blue hover:bg-dynamic-blue/90"
+            >
+              <InfoIcon className="mr-2 h-4 w-4" />
+              <span className="truncate">{t('detail.requestInfoButton')}</span>
+            </Button>
+          </>
+        )}
+        {canRejectApprovedRequest && (
+          <Button
+            variant="destructive"
+            onClick={() => setShowRejectionForm(true)}
+            className="w-full"
+          >
+            <XCircleIcon className="mr-2 h-4 w-4" />
+            {t('detail.revertToRejectedButton')}
+          </Button>
+        )}
+        {request.approval_status === 'PENDING' && (
+          <Button
+            variant="destructive"
+            onClick={() => setShowRejectionForm(true)}
+            className="w-full"
+          >
+            <XCircleIcon className="mr-2 h-4 w-4" />
+            {t('detail.rejectButton')}
+          </Button>
+        )}
+        {canApproveRejectedRequest && (
+          <Button
+            onClick={onApprove}
+            disabled={isApproving}
+            className="w-full bg-dynamic-green hover:bg-dynamic-green/90"
+          >
+            {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <CheckCircle2Icon className="mr-2 h-4 w-4" />
+            {t('detail.revertToApprovedButton')}
+          </Button>
+        )}
       </div>
     );
   }

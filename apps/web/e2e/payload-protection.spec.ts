@@ -37,11 +37,11 @@ test.describe('Payload size protection', () => {
     await resetDbRateLimits();
   });
 
-  test('rejects body exceeding byte size limit', async ({
+  test('reject body exceeding byte size limit', async ({
     context,
   }, testInfo) => {
-    // Create a payload ~300KB (exceeds 256KB MAX_REQUEST_BODY_BYTES)
-    const largeValue = 'x'.repeat(300 * 1024);
+    // Create a payload ~600KB (exceeds 512KB MAX_PAYLOAD_SIZE)
+    const largeValue = 'x'.repeat(600 * 1024);
 
     const res = await context.request.put(CONFIG_URL, {
       headers: clientHeaders(ip(1, testInfo.retry)),
@@ -57,10 +57,8 @@ test.describe('Payload size protection', () => {
   test('rejects emoji-heavy payload exceeding byte limit', async ({
     context,
   }, testInfo) => {
-    // 50000 emojis × 4 bytes each = ~200KB + JSON overhead > 256KB limit
-    // Actually 50000 × 4 = 200000 bytes for just emojis
-    // Need more to exceed 256KB: 65000 × 4 = 260000 bytes + JSON overhead
-    const emojiPayload = '🎉'.repeat(65000);
+    // 150000 emojis × 4 bytes each = 600000 bytes (~585KB) > 512KB limit
+    const emojiPayload = '🎉'.repeat(150000);
 
     const res = await context.request.put(CONFIG_URL, {
       headers: clientHeaders(ip(2, testInfo.retry)),

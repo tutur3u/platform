@@ -2355,7 +2355,35 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestsThresholdInvalid => 'Nhập số nguyên lớn hơn hoặc bằng 0.';
 
   @override
+  String get timerRequestsStatusChangeGracePeriodLabel => 'Thời gian gia hạn cho phép đổi giữa Đã duyệt và Đã từ chối (phút)';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodHelp => 'Đặt số phút cho phép người duyệt hoàn tác trạng thái giữa Đã duyệt và Đã từ chối theo cả hai chiều. Đặt 0 để tắt cả hai thao tác.';
+
+  @override
+  String get timerRequestsStatusChangeGracePeriodInvalid => 'Nhập số nguyên lớn hơn hoặc bằng 0 cho thời gian gia hạn hoàn tác trạng thái.';
+
+  @override
   String get timerRequestsThresholdUpdated => 'Đã cập nhật ngưỡng yêu cầu.';
+
+  @override
+  String get timerRequestRevertToApproved => 'Hoàn tác về Đã duyệt';
+
+  @override
+  String get timerRequestRevertToRejected => 'Hoàn tác về Đã từ chối';
+
+  @override
+  String get timerRequestLastModifiedBy => 'Chỉnh sửa gần nhất bởi';
+
+  @override
+  String timerRequestApprovedByAt(String name, String date) {
+    return 'Đã duyệt bởi $name vào $date';
+  }
+
+  @override
+  String timerRequestRejectedByAt(String name, String date) {
+    return 'Đã từ chối bởi $name vào $date';
+  }
 
   @override
   String get timerAutoStartBreaks => 'Tự động bắt đầu nghỉ';

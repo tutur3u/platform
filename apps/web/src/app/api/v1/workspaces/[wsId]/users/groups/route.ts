@@ -85,7 +85,16 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     if (sp.userId) {
-      queryBuilder.eq('workspace_user_groups_users.user_id', sp.userId);
+      const { data: userGroups } = await supabase
+        .from('workspace_user_groups_users')
+        .select('group_id')
+        .eq('user_id', sp.userId);
+
+      const groupIds = userGroups?.map((ug) => ug.group_id) || [];
+      if (groupIds.length === 0) {
+        return NextResponse.json({ data: [], count: 0 });
+      }
+      queryBuilder.in('id', groupIds);
     } else if (!hasManageUsers) {
       const groupIds = await getUserGroupMemberships(wsId);
       if (groupIds.length === 0) {

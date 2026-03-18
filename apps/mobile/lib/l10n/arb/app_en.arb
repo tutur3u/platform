@@ -922,7 +922,35 @@
     "timerRequestsThresholdLabel": "Threshold (days)",
     "timerRequestsThresholdHelp": "Entries older than this number of days must be submitted for approval.",
     "timerRequestsThresholdInvalid": "Enter a whole number greater than or equal to 0.",
+    "timerRequestsStatusChangeGracePeriodLabel": "Approved/rejected status change grace period (minutes)",
+    "timerRequestsStatusChangeGracePeriodHelp": "Set how many minutes approvers can revert a request between Approved and Rejected in either direction. Set to 0 to disable both actions.",
+    "timerRequestsStatusChangeGracePeriodInvalid": "Enter a whole number greater than or equal to 0 for status revert grace period.",
     "timerRequestsThresholdUpdated": "Request threshold updated.",
+    "timerRequestRevertToApproved": "Revert to Approved",
+    "timerRequestRevertToRejected": "Revert to Rejected",
+    "timerRequestLastModifiedBy": "Last modified by",
+    "timerRequestApprovedByAt": "Approved by {name} on {date}",
+    "@timerRequestApprovedByAt": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            },
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "timerRequestRejectedByAt": "Rejected by {name} on {date}",
+    "@timerRequestRejectedByAt": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            },
+            "date": {
+                "type": "String"
+            }
+        }
+    },
     "timerAutoStartBreaks": "Auto-start breaks",
     "timerAutoStartFocus": "Auto-start focus",
     "commonCancel": "Cancel",

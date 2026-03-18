@@ -6,6 +6,13 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
+import {
+  createWorkspaceTaskRelationship,
+  deleteWorkspaceTaskRelationship,
+  listWorkspaceTasks,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
@@ -13,7 +20,6 @@ import type {
   RestorableTaskRow,
   TaskListIdRow,
   WorkspaceTaskBoard,
-  WorkspaceTaskPickerRow,
 } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -587,133 +593,21 @@ export async function syncTaskArchivedStatus(
 }
 
 export async function moveTask(
-  supabase: TypedSupabaseClient,
+  wsId: string,
   taskId: string,
-  newListId: string
+  newListId: string,
+  options?: InternalApiClientOptions
 ) {
-  console.log('🗄️ moveTask function called');
-  console.log('📋 Task ID:', taskId);
-  console.log('🎯 New List ID:', newListId);
-
-  // First, get the current task details including its current archived status and source list
-  console.log('🔍 Fetching current task details...');
-  const { data: currentTask, error: taskError } = await supabase
-    .from('tasks')
-    .select(`
-      id,
-      list_id,
-      closed_at,
-      task_lists!inner(status, name)
-    `)
-    .eq('id', taskId)
-    .single();
-
-  if (taskError) {
-    console.log('❌ Error fetching current task:', taskError);
-    throw taskError;
-  }
-
-  console.log('📊 Current task details:', currentTask);
-
-  // Get the target list to check its status
-  console.log('🔍 Fetching target list details...');
-  const { data: targetList, error: listError } = await supabase
-    .from('task_lists')
-    .select('status, name')
-    .eq('id', newListId)
-    .single();
-
-  if (listError) {
-    console.log('❌ Error fetching target list:', listError);
-    throw listError;
-  }
-
-  console.log('📊 Target list details:', targetList);
-
-  // Determine task completion status based on improved logic:
-  // 1. If moving TO a "done"/"closed" list: archive the task
-  // 2. If moving FROM a "done"/"closed" list to any other list: unarchive the task
-  // 3. If moving between non-done lists: preserve current archived status
-  const sourceListStatus = currentTask.task_lists.status;
-  const targetListStatus = targetList.status;
-  const currentlyArchived = !!currentTask.closed_at;
-
-  let shouldArchive: boolean;
-
-  if (targetListStatus === 'done' || targetListStatus === 'closed') {
-    // Moving TO a completion list - always archive
-    shouldArchive = true;
-    console.log('📦 Moving to completion list, will archive task');
-  } else if (sourceListStatus === 'done' || sourceListStatus === 'closed') {
-    // Moving FROM a completion list to a non-completion list - always unarchive
-    shouldArchive = false;
-    console.log('📦 Moving from completion list, will unarchive task');
-  } else {
-    // Moving between non-completion lists - preserve current status
-    shouldArchive = currentlyArchived || false;
-    console.log(
-      '📦 Moving between non-completion lists, preserving current status:',
-      currentlyArchived
-    );
-  }
-
-  console.log('📊 Source list status:', sourceListStatus);
-  console.log('📊 Target list status:', targetListStatus);
-  console.log('📊 Currently archived:', currentlyArchived);
-  console.log('📦 Will archive:', shouldArchive);
-
-  console.log('🔄 Updating task in database...');
-  const { data, error } = await supabase
-    .from('tasks')
-    .update({
+  const { task } = await updateWorkspaceTask(
+    wsId,
+    taskId,
+    {
       list_id: newListId,
-      closed_at: shouldArchive ? new Date().toISOString() : null,
-    })
-    .eq('id', taskId)
-    .select(
-      `
-        *,
-        assignees:task_assignees(
-          user:users(
-            id,
-            display_name,
-            avatar_url
-          )
-        ),
-        labels:task_labels(
-          label:workspace_task_labels(
-            id,
-            name,
-            color,
-            created_at
-          )
-        ),
-        projects:task_project_tasks(
-          project:task_projects(
-            id,
-            name,
-            status
-          )
-        )
-      `
-    )
-    .single();
+    },
+    options
+  );
 
-  if (error) {
-    console.log('❌ Error updating task:', error);
-    throw error;
-  }
-
-  console.log('✅ Task updated successfully in database');
-  console.log('📊 Updated task data:', data);
-
-  // Transform the nested assignees data
-  const transformedTask = transformTaskRecord(data);
-
-  console.log('🔄 Task data transformed');
-  console.log('📊 Final transformed task:', transformedTask);
-
-  return transformedTask as Task;
+  return task as Task;
 }
 
 export async function moveTaskToBoard(
@@ -1513,7 +1407,7 @@ export function usePermanentlyDeleteTasks(boardId: string) {
   });
 }
 
-export function useMoveTask(boardId: string) {
+export function useMoveTask(boardId: string, wsId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -1528,10 +1422,18 @@ export function useMoveTask(boardId: string) {
       console.log('📋 Task ID:', taskId);
       console.log('🎯 New List ID:', newListId);
 
-      const supabase = createClient();
-      const result = await moveTask(supabase, taskId, newListId);
+      if (!wsId) {
+        console.error('Workspace ID missing for moveTask');
+        throw new Error('Workspace ID is required to move tasks');
+      }
 
-      console.log('✅ moveTask completed successfully');
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : undefined;
+      const result = await moveTask(wsId, taskId, newListId, {
+        baseUrl: baseUrl ?? undefined,
+      });
+
+      console.log('✅ moveTask completed successfully via workspace API');
       console.log('📊 Result:', result);
 
       return result;
@@ -2978,13 +2880,20 @@ export function useTaskRelationships(taskId: string | undefined) {
 /**
  * React Query mutation hook for creating task relationships
  */
-export function useCreateTaskRelationship(_boardId?: string) {
+export function useCreateTaskRelationship(wsId: string, _boardId?: string) {
   const queryClient = useQueryClient();
+  const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : undefined;
 
   return useMutation({
     mutationFn: async (input: CreateTaskRelationshipInput) => {
-      const supabase = createClient();
-      return createTaskRelationship(supabase, input);
+      const { relationship } = await createWorkspaceTaskRelationship(
+        wsId,
+        input.source_task_id,
+        input,
+        baseUrl ? { baseUrl } : undefined
+      );
+      return relationship;
     },
     onSuccess: async (_, variables) => {
       // Invalidate relationships for both tasks involved
@@ -3006,8 +2915,10 @@ export function useCreateTaskRelationship(_boardId?: string) {
 /**
  * React Query mutation hook for deleting task relationships
  */
-export function useDeleteTaskRelationship(_boardId?: string) {
+export function useDeleteTaskRelationship(wsId: string, _boardId?: string) {
   const queryClient = useQueryClient();
+  const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : undefined;
 
   return useMutation({
     mutationFn: async ({
@@ -3019,12 +2930,15 @@ export function useDeleteTaskRelationship(_boardId?: string) {
       targetTaskId: string;
       type: TaskRelationshipType;
     }) => {
-      const supabase = createClient();
-      return deleteTaskRelationshipByDetails(
-        supabase,
+      return deleteWorkspaceTaskRelationship(
+        wsId,
         sourceTaskId,
-        targetTaskId,
-        type
+        {
+          source_task_id: sourceTaskId,
+          target_task_id: targetTaskId,
+          type,
+        },
+        baseUrl ? { baseUrl } : undefined
       );
     },
     onSuccess: async (_, variables) => {
@@ -3048,7 +2962,6 @@ export function useDeleteTaskRelationship(_boardId?: string) {
  * Fetch tasks for a workspace (for task picker across all boards)
  */
 export async function getWorkspaceTasks(
-  supabase: TypedSupabaseClient,
   wsId: string,
   options?: {
     excludeTaskIds?: string[];
@@ -3056,66 +2969,46 @@ export async function getWorkspaceTasks(
     limit?: number;
   }
 ): Promise<RelatedTaskInfo[]> {
-  let query = supabase
-    .from('tasks')
-    .select(
-      `
-      id,
-      name,
-      display_number,
-      completed_at,
-      closed_at,
-      priority,
-      board_id,
-      list:task_lists!inner(
-        board:workspace_boards!inner(
-          id,
-          name,
-          ws_id
-        )
-      )
-    `
-    )
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+  const excluded = new Set(options?.excludeTaskIds ?? []);
+  const targetLimit = options?.limit ?? 50;
+  const requestLimit = Math.max(25, Math.min(targetLimit * 2, 200));
+  const collected: RelatedTaskInfo[] = [];
+  const seenTaskIds = new Set<string>();
 
-  // Filter by workspace through the board
-  query = query.eq('list.board.ws_id', wsId);
+  const { tasks } = await listWorkspaceTasks(
+    wsId,
+    {
+      q: options?.searchQuery,
+      limit: requestLimit,
+    },
+    typeof window !== 'undefined'
+      ? { baseUrl: window.location.origin }
+      : undefined
+  );
 
-  // Exclude specific task IDs
-  if (options?.excludeTaskIds?.length) {
-    query = query.filter(
-      'id',
-      'not.in',
-      `(${options.excludeTaskIds.join(',')})`
-    );
+  for (const task of tasks ?? []) {
+    if (excluded.has(task.id) || seenTaskIds.has(task.id)) {
+      continue;
+    }
+
+    seenTaskIds.add(task.id);
+    collected.push({
+      id: task.id,
+      name: task.name,
+      display_number: task.display_number,
+      completed: !!task.closed_at || !!task.completed_at,
+      priority: isTaskPriority(task.priority) ? task.priority : null,
+      board_id: task.board_id ?? null,
+      board_name:
+        typeof task.board_name === 'string' ? task.board_name : undefined,
+    });
+
+    if (collected.length >= targetLimit) {
+      break;
+    }
   }
 
-  // Search by name
-  if (options?.searchQuery) {
-    query = query.ilike('name', `%${options.searchQuery}%`);
-  }
-
-  // Limit results
-  if (options?.limit) {
-    query = query.limit(options.limit);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-
-  const workspaceTasks = (data ?? []) as WorkspaceTaskPickerRow[];
-
-  return workspaceTasks.map((task) => ({
-    id: task.id,
-    name: task.name,
-    display_number: task.display_number,
-    completed: !!task.closed_at || !!task.completed_at,
-    priority: task.priority,
-    board_id: task.board_id,
-    board_name: task.list?.board?.name ?? undefined,
-  }));
+  return collected;
 }
 
 /**
@@ -3140,8 +3033,7 @@ export function useWorkspaceTasks(
     ],
     queryFn: async () => {
       if (!wsId) return [];
-      const supabase = createClient();
-      return getWorkspaceTasks(supabase, wsId, options);
+      return getWorkspaceTasks(wsId, options);
     },
     enabled: !!wsId && (options?.enabled ?? true),
     staleTime: 30000, // 30 seconds

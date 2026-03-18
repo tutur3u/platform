@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
@@ -19,6 +20,7 @@ import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.d
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 class TimeTrackerRequestsPage extends StatelessWidget {
   const TimeTrackerRequestsPage({super.key, this.repository});
@@ -58,6 +60,9 @@ class _RequestsView extends StatefulWidget {
 }
 
 class _RequestsViewState extends State<_RequestsView> {
+  static const String _statusChangeGracePeriodConfigId =
+      'TIME_TRACKING_REQUEST_STATUS_CHANGE_GRACE_PERIOD_MINUTES';
+
   _RequestStatusFilter _selectedFilter = _RequestStatusFilter.pending;
   final WorkspacePermissionsRepository _workspacePermissionsRepository =
       WorkspacePermissionsRepository();
@@ -65,7 +70,9 @@ class _RequestsViewState extends State<_RequestsView> {
   bool _canManageRequests = false;
   bool _canManageThresholdSettings = false;
   int? _missedEntryDateThreshold;
+  int _statusChangeGracePeriodMinutes = 0;
   bool _isThresholdLoading = false;
+  int _permissionLoadToken = 0;
 
   @override
   void didChangeDependencies() {
@@ -240,22 +247,37 @@ class _RequestsViewState extends State<_RequestsView> {
   Future<void> _loadPermissionsAndThreshold() async {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final wsId = workspace?.id;
+    final localWsId = wsId;
+    final localToken = ++_permissionLoadToken;
     final currentUserId = context.read<AuthCubit>().state.user?.id;
 
-    if (wsId == null || wsId.isEmpty || currentUserId == null) {
+    bool canApplyState() {
       if (!mounted) {
+        return false;
+      }
+      final currentWsId = context
+          .read<WorkspaceCubit>()
+          .state
+          .currentWorkspace
+          ?.id;
+      return currentWsId == localWsId && localToken == _permissionLoadToken;
+    }
+
+    if (wsId == null || wsId.isEmpty || currentUserId == null) {
+      if (!canApplyState()) {
         return;
       }
       setState(() {
         _canManageRequests = false;
         _canManageThresholdSettings = false;
         _missedEntryDateThreshold = null;
+        _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
       return;
     }
 
-    if (mounted) {
+    if (canApplyState()) {
       setState(() => _isThresholdLoading = true);
     }
 
@@ -264,9 +286,13 @@ class _RequestsViewState extends State<_RequestsView> {
     bool canManageRequests;
     bool canManageThresholdSettings;
     int? threshold;
+    var statusChangeGracePeriodMinutes = 0;
     try {
       final workspacePermissions = await _workspacePermissionsRepository
           .getPermissions(wsId: wsId, userId: currentUserId);
+      if (!canApplyState()) {
+        return;
+      }
       canManageRequests = workspacePermissions.containsPermission(
         manageTimeTrackingRequestsPermission,
       );
@@ -282,9 +308,37 @@ class _RequestsViewState extends State<_RequestsView> {
       if (canManageThresholdSettings) {
         try {
           final settings = await repository.getWorkspaceSettings(wsId);
+          if (!canApplyState()) {
+            return;
+          }
           threshold = settings?.missedEntryDateThreshold;
         } on Exception {
+          if (!canApplyState()) {
+            return;
+          }
           threshold = null;
+        }
+      }
+
+      if (canManageRequests) {
+        try {
+          final gracePeriodValue = await repository.getWorkspaceConfigValue(
+            wsId,
+            _statusChangeGracePeriodConfigId,
+          );
+          if (!canApplyState()) {
+            return;
+          }
+          statusChangeGracePeriodMinutes =
+              int.tryParse(gracePeriodValue ?? '0') ?? 0;
+          if (statusChangeGracePeriodMinutes < 0) {
+            statusChangeGracePeriodMinutes = 0;
+          }
+        } on Exception {
+          if (!canApplyState()) {
+            return;
+          }
+          statusChangeGracePeriodMinutes = 0;
         }
       }
     } on Exception catch (error, stackTrace) {
@@ -294,25 +348,27 @@ class _RequestsViewState extends State<_RequestsView> {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!mounted) {
+      if (!canApplyState()) {
         return;
       }
       setState(() {
         _canManageRequests = false;
         _canManageThresholdSettings = false;
         _missedEntryDateThreshold = null;
+        _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
       return;
     }
 
-    if (!mounted) {
+    if (!canApplyState()) {
       return;
     }
     setState(() {
       _canManageRequests = canManageRequests;
       _canManageThresholdSettings = canManageThresholdSettings;
       _missedEntryDateThreshold = threshold;
+      _statusChangeGracePeriodMinutes = statusChangeGracePeriodMinutes;
       _isThresholdLoading = false;
     });
   }
@@ -329,33 +385,67 @@ class _RequestsViewState extends State<_RequestsView> {
       builder: (dialogContext) {
         return ThresholdSettingsDialog(
           currentThreshold: _missedEntryDateThreshold,
-          onSave: (threshold) async {
+          currentStatusChangeGracePeriodMinutes:
+              _statusChangeGracePeriodMinutes,
+          onSave: (threshold, statusChangeGracePeriodMinutes) async {
+            final toastContext = Navigator.of(
+              context,
+              rootNavigator: true,
+            ).context;
             try {
               await repo.updateMissedEntryDateThreshold(
                 wsId,
                 threshold,
+                statusChangeGracePeriodMinutes: statusChangeGracePeriodMinutes,
               );
 
               if (!mounted) {
                 return;
               }
 
-              setState(() => _missedEntryDateThreshold = threshold);
+              setState(() {
+                _missedEntryDateThreshold = threshold;
+                _statusChangeGracePeriodMinutes =
+                    statusChangeGracePeriodMinutes;
+              });
+              if (!toastContext.mounted) {
+                return;
+              }
               shad.showToast(
-                context: context,
+                context: toastContext,
                 builder: (context, overlay) => shad.Alert(
                   content: Text(context.l10n.timerRequestsThresholdUpdated),
                 ),
               );
-            } on Object catch (error) {
+            } on ApiException catch (e) {
               if (!mounted) {
                 return;
               }
+              if (!toastContext.mounted) {
+                return;
+              }
+              final message = e.message.isNotEmpty
+                  ? e.message
+                  : context.l10n.commonSomethingWentWrong;
               shad.showToast(
-                context: context,
+                context: toastContext,
                 builder: (context, overlay) => shad.Alert.destructive(
                   title: Text(context.l10n.commonSomethingWentWrong),
-                  content: Text(error.toString()),
+                  content: Text(message),
+                ),
+              );
+            } on Object {
+              if (!mounted) {
+                return;
+              }
+              if (!toastContext.mounted) {
+                return;
+              }
+              shad.showToast(
+                context: toastContext,
+                builder: (context, overlay) => shad.Alert.destructive(
+                  title: Text(context.l10n.commonSomethingWentWrong),
+                  content: Text(context.l10n.commonSomethingWentWrong),
                 ),
               );
             }
@@ -370,7 +460,9 @@ class _RequestsViewState extends State<_RequestsView> {
     final repository = context.read<ITimeTrackerRepository>();
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
-    final currentUserId = context.read<AuthCubit>().state.user?.id;
+    final currentUser = context.read<AuthCubit>().state.user;
+    final currentUserId = currentUser?.id;
+    final currentUserDisplayName = _extractUserDisplayName(currentUser);
 
     showAdaptiveDrawer(
       context: context,
@@ -379,7 +471,9 @@ class _RequestsViewState extends State<_RequestsView> {
         wsId: wsId,
         repository: repository,
         currentUserId: currentUserId,
+        currentUserDisplayName: currentUserDisplayName,
         isManager: _canManageRequests,
+        statusChangeGracePeriodMinutes: _statusChangeGracePeriodMinutes,
         onApprove: () => cubit.approveRequest(request.id, wsId),
         onReject: (reason) =>
             cubit.rejectRequest(request.id, wsId, reason: reason),
@@ -409,6 +503,25 @@ class _RequestsViewState extends State<_RequestsView> {
             ),
       ),
     );
+  }
+
+  String? _extractUserDisplayName(User? user) {
+    final metadata = user?.userMetadata;
+    if (metadata == null) {
+      return null;
+    }
+
+    final displayName = metadata['display_name'];
+    if (displayName is String && displayName.trim().isNotEmpty) {
+      return displayName.trim();
+    }
+
+    final fullName = metadata['full_name'];
+    if (fullName is String && fullName.trim().isNotEmpty) {
+      return fullName.trim();
+    }
+
+    return null;
   }
 
   String _filterLabel(BuildContext context, _RequestStatusFilter filter) {

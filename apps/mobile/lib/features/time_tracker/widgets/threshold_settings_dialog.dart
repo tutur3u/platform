@@ -6,12 +6,18 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class ThresholdSettingsDialog extends StatefulWidget {
   const ThresholdSettingsDialog({
     required this.currentThreshold,
+    required this.currentStatusChangeGracePeriodMinutes,
     required this.onSave,
     super.key,
   });
 
   final int? currentThreshold;
-  final Future<void> Function(int? threshold) onSave;
+  final int currentStatusChangeGracePeriodMinutes;
+  final Future<void> Function(
+    int? threshold,
+    int statusChangeGracePeriodMinutes,
+  )
+  onSave;
 
   @override
   State<ThresholdSettingsDialog> createState() =>
@@ -20,6 +26,7 @@ class ThresholdSettingsDialog extends StatefulWidget {
 
 class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
   late final TextEditingController _thresholdController;
+  late final TextEditingController _statusChangeGracePeriodController;
   late bool _noApprovalNeeded;
   bool _isSaving = false;
   String? _error;
@@ -91,6 +98,23 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
                 style: theme.typography.textMuted,
               ),
             ],
+            const shad.Gap(12),
+            Text(
+              l10n.timerRequestsStatusChangeGracePeriodLabel,
+              style: theme.typography.small,
+            ),
+            const shad.Gap(4),
+            shad.TextField(
+              controller: _statusChangeGracePeriodController,
+              keyboardType: TextInputType.number,
+              hintText: '0',
+              enabled: !_isSaving,
+            ),
+            const shad.Gap(8),
+            Text(
+              l10n.timerRequestsStatusChangeGracePeriodHelp,
+              style: theme.typography.textMuted,
+            ),
             if (_error != null) ...[
               const shad.Gap(8),
               Text(
@@ -125,6 +149,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
   @override
   void dispose() {
     _thresholdController.dispose();
+    _statusChangeGracePeriodController.dispose();
     super.dispose();
   }
 
@@ -135,12 +160,23 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
     _thresholdController = TextEditingController(
       text: widget.currentThreshold?.toString() ?? '1',
     );
+    _statusChangeGracePeriodController = TextEditingController(
+      text: widget.currentStatusChangeGracePeriodMinutes.toString(),
+    );
   }
 
   Future<void> _handleSave() async {
     final threshold = _parseThreshold();
     if (!_noApprovalNeeded && threshold == null) {
       setState(() => _error = context.l10n.timerRequestsThresholdInvalid);
+      return;
+    }
+
+    final statusChangeGracePeriodMinutes = _parseStatusChangeGracePeriod();
+    if (statusChangeGracePeriodMinutes == null) {
+      setState(
+        () => _error = context.l10n.timerRequestsStatusChangeGracePeriodInvalid,
+      );
       return;
     }
 
@@ -152,7 +188,10 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
     var shouldCloseDialog = false;
 
     try {
-      await widget.onSave(_noApprovalNeeded ? null : threshold);
+      await widget.onSave(
+        _noApprovalNeeded ? null : threshold,
+        statusChangeGracePeriodMinutes,
+      );
       shouldCloseDialog = true;
     } on Exception catch (error) {
       if (!mounted) {
@@ -181,6 +220,14 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
 
   int? _parseThreshold() {
     final value = int.tryParse(_thresholdController.text.trim());
+    if (value == null || value < 0) {
+      return null;
+    }
+    return value;
+  }
+
+  int? _parseStatusChangeGracePeriod() {
+    final value = int.tryParse(_statusChangeGracePeriodController.text.trim());
     if (value == null || value < 0) {
       return null;
     }

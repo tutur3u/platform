@@ -26,6 +26,7 @@ export const updateTaskSchema = z
     end_date: z.string().datetime().nullable().optional(),
     completed: z.boolean().optional(),
     list_id: z.uuid().optional(),
+    sort_key: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
     deleted: z.boolean().optional(),
     estimation_points: z.number().int().min(0).max(8).nullable().optional(),
     label_ids: z.array(z.uuid()).optional(),
@@ -50,9 +51,11 @@ type TaskBaseRow = Pick<
   | 'description'
   | 'priority'
   | 'completed'
+  | 'completed_at'
   | 'start_date'
   | 'end_date'
   | 'estimation_points'
+  | 'sort_key'
   | 'created_at'
   | 'closed_at'
   | 'deleted_at'

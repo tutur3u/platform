@@ -38,9 +38,57 @@ export async function GET(
     }
 
     const sbAdmin = await createAdminClient();
+    const { searchParams } = new URL(request.url);
+    const compact = searchParams.get('compact') === 'true';
+    const requestedIds = [
+      ...searchParams.getAll('id'),
+      ...((searchParams.get('ids') ?? '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean) as string[]),
+    ];
+    const uniqueRequestedIds = [...new Set(requestedIds)];
+
+    if (uniqueRequestedIds.length > 0) {
+      const invalidId = uniqueRequestedIds.find(
+        (projectId) => !z.uuid().safeParse(projectId).success
+      );
+
+      if (invalidId) {
+        return NextResponse.json(
+          { error: 'Invalid project ID filter' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (compact) {
+      let compactQuery = sbAdmin
+        .from('task_projects')
+        .select('id, name, status')
+        .eq('ws_id', wsId)
+        .eq('deleted', false)
+        .order('name', { ascending: true });
+
+      if (uniqueRequestedIds.length > 0) {
+        compactQuery = compactQuery.in('id', uniqueRequestedIds);
+      }
+
+      const { data: projects, error: projectsError } = await compactQuery;
+
+      if (projectsError) {
+        console.error('Error fetching task projects:', projectsError);
+        return NextResponse.json(
+          { error: 'Failed to fetch projects' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(projects ?? []);
+    }
 
     // Fetch task projects
-    const { data: projects, error: projectsError } = await sbAdmin
+    let projectsQuery = sbAdmin
       .from('task_projects')
       .select(`
         *,
@@ -70,7 +118,14 @@ export async function GET(
         )
       `)
       .eq('ws_id', wsId)
+      .eq('deleted', false)
       .order('created_at', { ascending: false });
+
+    if (uniqueRequestedIds.length > 0) {
+      projectsQuery = projectsQuery.in('id', uniqueRequestedIds);
+    }
+
+    const { data: projects, error: projectsError } = await projectsQuery;
 
     if (projectsError) {
       console.error('Error fetching task projects:', projectsError);

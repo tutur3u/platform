@@ -3,7 +3,10 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import SharedFormContent from './content';
 import { buildSharedFormMetadata } from './shared-form-data';
-import { loadSharedFormForPage } from './shared-form-loader';
+import {
+  loadSharedFormForPage,
+  loadSharedFormSnapshot,
+} from './shared-form-loader';
 
 interface PageProps {
   params: Promise<{ locale: string; shareCode: string }>;
@@ -16,7 +19,7 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { locale, shareCode } = await params;
   const t = await getTranslations('forms');
-  const { status, data } = await loadSharedFormForPage(shareCode);
+  const { status, data } = await loadSharedFormSnapshot(shareCode);
 
   return buildSharedFormMetadata({
     locale,

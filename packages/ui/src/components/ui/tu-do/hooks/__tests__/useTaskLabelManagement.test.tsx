@@ -10,10 +10,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskLabelManagement } from '../useTaskLabelManagement';
 
 // Mock modules with proper hoisting
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: vi.fn(),
-}));
-
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {
     error: vi.fn(),
@@ -22,16 +18,21 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
   },
 }));
 
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  updateWorkspaceTask: vi.fn(),
+  addWorkspaceTaskLabel: vi.fn(),
+  removeWorkspaceTaskLabel: vi.fn(),
+}));
+
 // Mock fetch globally
 global.fetch = vi.fn() as any;
 
 describe('useTaskLabelManagement', () => {
   let queryClient: QueryClient;
-  let mockDelete: any;
-  let mockInsert: any;
-  let mockFrom: any;
   let mockToast: any;
-  let mockCreateClient: any;
+  let mockUpdateWorkspaceTask: any;
+  let mockAddWorkspaceTaskLabel: any;
+  let mockRemoveWorkspaceTaskLabel: any;
 
   const mockTask: Task = {
     id: 'task-1',
@@ -73,41 +74,22 @@ describe('useTaskLabelManagement', () => {
     });
 
     // Import mocked modules
-    const { createClient } = await import('@tuturuuu/supabase/next/client');
     const { toast } = await import('@tuturuuu/ui/sonner');
+    const {
+      updateWorkspaceTask,
+      addWorkspaceTaskLabel,
+      removeWorkspaceTaskLabel,
+    } = await import('@tuturuuu/internal-api/tasks');
 
-    // Create mock functions
-    mockDelete = vi.fn();
-    mockInsert = vi.fn();
-    mockFrom = vi.fn();
     mockToast = toast as any;
-    mockCreateClient = createClient as any;
+    mockUpdateWorkspaceTask = updateWorkspaceTask as any;
+    mockAddWorkspaceTaskLabel = addWorkspaceTaskLabel as any;
+    mockRemoveWorkspaceTaskLabel = removeWorkspaceTaskLabel as any;
 
     vi.clearAllMocks();
-
-    // Setup default mock implementations
-    // The actual code uses: .delete().eq('task_id', taskId).eq('label_id', labelId)
-    mockDelete.mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      }),
-    });
-
-    mockInsert.mockResolvedValue({ error: null });
-
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'task_labels') {
-        return {
-          delete: mockDelete,
-          insert: mockInsert,
-        };
-      }
-      return {};
-    });
-
-    mockCreateClient.mockReturnValue({
-      from: mockFrom,
-    });
+    mockUpdateWorkspaceTask.mockResolvedValue({ task: { id: 'task-1' } });
+    mockAddWorkspaceTaskLabel.mockResolvedValue({ success: true });
+    mockRemoveWorkspaceTaskLabel.mockResolvedValue({ success: true });
 
     (global.fetch as any).mockClear();
   });
@@ -159,9 +141,12 @@ describe('useTaskLabelManagement', () => {
       expect(cachedTasks?.[0]?.labels).toHaveLength(1);
       expect(cachedTasks?.[0]?.labels?.[0]?.id).toBe('label-2');
 
-      // Verify Supabase delete was called
-      expect(mockFrom).toHaveBeenCalledWith('task_labels');
-      expect(mockDelete).toHaveBeenCalled();
+      expect(mockRemoveWorkspaceTaskLabel).toHaveBeenCalledWith(
+        'ws-1',
+        'task-1',
+        'label-1',
+        expect.anything()
+      );
     });
 
     it('should add label when not active', async () => {
@@ -192,20 +177,18 @@ describe('useTaskLabelManagement', () => {
         true
       );
 
-      // Verify Supabase insert was called
-      expect(mockFrom).toHaveBeenCalledWith('task_labels');
-      expect(mockInsert).toHaveBeenCalled();
+      expect(mockAddWorkspaceTaskLabel).toHaveBeenCalledWith(
+        'ws-1',
+        'task-1',
+        'label-3',
+        expect.anything()
+      );
     });
 
     it('should rollback on error and show toast', async () => {
-      // Mock error for this test - using .eq().eq() pattern
-      mockDelete.mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi
-            .fn()
-            .mockResolvedValue({ error: { message: 'Database error' } }),
-        }),
-      });
+      mockRemoveWorkspaceTaskLabel.mockRejectedValueOnce(
+        new Error('Database error')
+      );
 
       const originalTasks = [mockTask];
       queryClient.setQueryData(['tasks', 'board-1'], originalTasks);
@@ -386,8 +369,7 @@ describe('useTaskLabelManagement', () => {
         }),
       });
 
-      // Mock Supabase error on insert for this test
-      mockInsert.mockResolvedValueOnce({ error: { message: 'Insert failed' } });
+      mockUpdateWorkspaceTask.mockRejectedValueOnce(new Error('Insert failed'));
 
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
 

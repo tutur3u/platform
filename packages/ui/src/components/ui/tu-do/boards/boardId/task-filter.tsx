@@ -14,7 +14,7 @@ import {
   UserX,
   X,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -334,14 +334,12 @@ export function TaskFilter({
   const { data: availableProjects = [] } = useQuery({
     queryKey: ['workspace-projects', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('task_projects')
-        .select('id, name')
-        .eq('ws_id', wsId)
-        .eq('deleted', false);
-
-      return (data || []) as TaskProject[];
+      return (await listWorkspaceTaskProjects(wsId))
+        .filter((project) => project.status !== 'deleted')
+        .map((project) => ({
+          id: project.id,
+          name: project.name,
+        })) as TaskProject[];
     },
     enabled: !!wsId,
   });

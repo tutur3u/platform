@@ -4609,11 +4609,59 @@ abstract class AppLocalizations {
   /// **'Enter a whole number greater than or equal to 0.'**
   String get timerRequestsThresholdInvalid;
 
+  /// No description provided for @timerRequestsStatusChangeGracePeriodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved/rejected status change grace period (minutes)'**
+  String get timerRequestsStatusChangeGracePeriodLabel;
+
+  /// No description provided for @timerRequestsStatusChangeGracePeriodHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set how many minutes approvers can revert a request between Approved and Rejected in either direction. Set to 0 to disable both actions.'**
+  String get timerRequestsStatusChangeGracePeriodHelp;
+
+  /// No description provided for @timerRequestsStatusChangeGracePeriodInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number greater than or equal to 0 for status revert grace period.'**
+  String get timerRequestsStatusChangeGracePeriodInvalid;
+
   /// No description provided for @timerRequestsThresholdUpdated.
   ///
   /// In en, this message translates to:
   /// **'Request threshold updated.'**
   String get timerRequestsThresholdUpdated;
+
+  /// No description provided for @timerRequestRevertToApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert to Approved'**
+  String get timerRequestRevertToApproved;
+
+  /// No description provided for @timerRequestRevertToRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert to Rejected'**
+  String get timerRequestRevertToRejected;
+
+  /// No description provided for @timerRequestLastModifiedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Last modified by'**
+  String get timerRequestLastModifiedBy;
+
+  /// No description provided for @timerRequestApprovedByAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved by {name} on {date}'**
+  String timerRequestApprovedByAt(String name, String date);
+
+  /// No description provided for @timerRequestRejectedByAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected by {name} on {date}'**
+  String timerRequestRejectedByAt(String name, String date);
 
   /// No description provided for @timerAutoStartBreaks.
   ///

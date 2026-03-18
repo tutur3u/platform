@@ -1,5 +1,7 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { getWorkspaceTaskRelationships } from '@tuturuuu/internal-api/tasks';
 import type {
   RelatedTaskInfo,
   TaskRelationshipType,
@@ -7,7 +9,6 @@ import type {
 import {
   useCreateTaskRelationship,
   useDeleteTaskRelationship,
-  useTaskRelationships,
 } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import { useBoardBroadcast } from '../shared/board-broadcast-context';
@@ -15,6 +16,7 @@ import { useBoardBroadcast } from '../shared/board-broadcast-context';
 export interface UseTaskCardRelationshipsProps {
   taskId: string;
   boardId: string;
+  wsId?: string;
 }
 
 export interface UseTaskCardRelationshipsReturn {
@@ -52,16 +54,29 @@ export interface UseTaskCardRelationshipsReturn {
 export function useTaskCardRelationships({
   taskId,
   boardId,
+  wsId,
 }: UseTaskCardRelationshipsProps): UseTaskCardRelationshipsReturn {
   const broadcast = useBoardBroadcast();
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
 
   // Fetch relationships
-  const { data: relationships, isLoading } = useTaskRelationships(taskId);
+  const { data: relationships, isLoading } = useQuery({
+    queryKey: ['task-relationships', taskId, wsId ?? 'unknown'],
+    queryFn: async () => {
+      if (!wsId || !taskId) {
+        return null;
+      }
+
+      return getWorkspaceTaskRelationships(wsId, taskId);
+    },
+    enabled: !!wsId && !!taskId,
+    staleTime: 30000,
+  });
 
   // Mutations
-  const createRelationship = useCreateTaskRelationship(boardId);
-  const deleteRelationship = useDeleteTaskRelationship(boardId);
+  const resolvedWsId = wsId ?? '';
+  const createRelationship = useCreateTaskRelationship(resolvedWsId, boardId);
+  const deleteRelationship = useDeleteTaskRelationship(resolvedWsId, boardId);
 
   const isSaving = createRelationship.isPending || deleteRelationship.isPending;
 
@@ -75,6 +90,7 @@ export function useTaskCardRelationships({
   // Parent task actions
   const setParentTask = useCallback(
     (task: RelatedTaskInfo) => {
+      if (!wsId) return;
       setSavingTaskId(task.id);
       createRelationship.mutate(
         {
@@ -90,10 +106,11 @@ export function useTaskCardRelationships({
         }
       );
     },
-    [taskId, createRelationship, broadcast]
+    [taskId, createRelationship, broadcast, wsId]
   );
 
   const removeParentTask = useCallback(() => {
+    if (!wsId) return;
     if (!parentTask) return;
     setSavingTaskId(parentTask.id);
     deleteRelationship.mutate(
@@ -111,11 +128,12 @@ export function useTaskCardRelationships({
         onSettled: () => setSavingTaskId(null),
       }
     );
-  }, [taskId, parentTask, deleteRelationship, broadcast]);
+  }, [taskId, parentTask, deleteRelationship, broadcast, wsId]);
 
   // Blocking task actions (this task blocks another)
   const addBlockingTask = useCallback(
     (task: RelatedTaskInfo) => {
+      if (!wsId) return;
       setSavingTaskId(task.id);
       createRelationship.mutate(
         {
@@ -131,11 +149,12 @@ export function useTaskCardRelationships({
         }
       );
     },
-    [taskId, createRelationship, broadcast]
+    [taskId, createRelationship, broadcast, wsId]
   );
 
   const removeBlockingTask = useCallback(
     (targetTaskId: string) => {
+      if (!wsId) return;
       setSavingTaskId(targetTaskId);
       deleteRelationship.mutate(
         {
@@ -153,12 +172,13 @@ export function useTaskCardRelationships({
         }
       );
     },
-    [taskId, deleteRelationship, broadcast]
+    [taskId, deleteRelationship, broadcast, wsId]
   );
 
   // Blocked by task actions (another task blocks this)
   const addBlockedByTask = useCallback(
     (task: RelatedTaskInfo) => {
+      if (!wsId) return;
       setSavingTaskId(task.id);
       createRelationship.mutate(
         {
@@ -174,11 +194,12 @@ export function useTaskCardRelationships({
         }
       );
     },
-    [taskId, createRelationship, broadcast]
+    [taskId, createRelationship, broadcast, wsId]
   );
 
   const removeBlockedByTask = useCallback(
     (sourceTaskId: string) => {
+      if (!wsId) return;
       setSavingTaskId(sourceTaskId);
       deleteRelationship.mutate(
         {
@@ -196,12 +217,13 @@ export function useTaskCardRelationships({
         }
       );
     },
-    [taskId, deleteRelationship, broadcast]
+    [taskId, deleteRelationship, broadcast, wsId]
   );
 
   // Related task actions
   const addRelatedTask = useCallback(
     (task: RelatedTaskInfo) => {
+      if (!wsId) return;
       setSavingTaskId(task.id);
       createRelationship.mutate(
         {
@@ -217,11 +239,12 @@ export function useTaskCardRelationships({
         }
       );
     },
-    [taskId, createRelationship, broadcast]
+    [taskId, createRelationship, broadcast, wsId]
   );
 
   const removeRelatedTask = useCallback(
     (targetTaskId: string) => {
+      if (!wsId) return;
       setSavingTaskId(targetTaskId);
       const broadcastDeps = () => {
         broadcast?.('task:deps-changed', { taskIds: [taskId, targetTaskId] });
@@ -255,7 +278,7 @@ export function useTaskCardRelationships({
         }
       );
     },
-    [taskId, deleteRelationship, broadcast]
+    [taskId, deleteRelationship, broadcast, wsId]
   );
 
   return {

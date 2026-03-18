@@ -214,7 +214,7 @@ export default function TimeTrackerContent({
   const fetchNextTasks = useCallback(async () => {
     try {
       const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/tasks?limit=100`
+        `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`
       );
 
       // 1. First priority: Urgent tasks (priority 1) assigned to current user
@@ -345,7 +345,10 @@ export default function TimeTrackerContent({
           },
           {
             name: 'tasks',
-            call: () => apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`),
+            call: () =>
+              apiCall(
+                `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`
+              ),
             fallback: { tasks: [] },
           },
         ];

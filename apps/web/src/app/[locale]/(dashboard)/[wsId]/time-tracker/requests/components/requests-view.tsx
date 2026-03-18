@@ -63,6 +63,7 @@ interface ConsolidatedRequestsViewProps extends RequestsViewProps {
 export function RequestsView({
   wsId,
   currentUser,
+  canManageWorkspaceSettings,
   onSelectRequest,
   viewMode,
 }: ConsolidatedRequestsViewProps) {
@@ -320,12 +321,14 @@ export function RequestsView({
         <div className="flex items-center gap-2">
           {/* Threshold settings - only shown in 'all' mode */}
           {isAllMode &&
+            canManageWorkspaceSettings &&
             (thresholdLoading ? (
               <Loader2 className="animate-spin" />
             ) : (
               <ThresholdSettingsDialog
                 wsId={wsId}
                 currentThreshold={thresholdData?.threshold}
+                canManageWorkspaceSettings={canManageWorkspaceSettings}
                 onUpdate={handleThresholdUpdate}
               />
             ))}

@@ -2,14 +2,14 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
+import { updateTaskSchedulingSettings } from '@tuturuuu/internal-api';
+import type { WorkspaceTaskUpdatePayload } from '@tuturuuu/internal-api/tasks';
+import { createWorkspaceTaskRelationship } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
-import {
-  createTask,
-  createTaskRelationship,
-} from '@tuturuuu/utils/task-helper';
+import { createTask } from '@tuturuuu/utils/task-helper';
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
@@ -149,6 +149,8 @@ export interface UseTaskSaveReturn {
 }
 
 const supabase = createClient();
+const internalApiBaseUrl =
+  typeof window !== 'undefined' ? window.location.origin : undefined;
 
 export function useTaskSave({
   wsId,
@@ -334,6 +336,7 @@ export function useTaskSave({
 
     if (isCreateMode) {
       await handleCreateTask({
+        wsId,
         name,
         descriptionString,
         descriptionYjsState,
@@ -634,6 +637,7 @@ async function handleSaveAsDraft({
 
 // Helper function for creating tasks
 async function handleCreateTask({
+  wsId,
   name,
   descriptionString,
   descriptionYjsState,
@@ -675,6 +679,7 @@ async function handleCreateTask({
   setSelectedAssignees,
   setSelectedProjects,
 }: {
+  wsId: string;
   name: string;
   descriptionString: string | null;
   descriptionYjsState: number[] | null;
@@ -794,49 +799,45 @@ async function handleCreateTask({
     });
 
     // Save per-user scheduling settings for the creator (if any were provided)
-    if (resolvedUserId) {
-      const hasAnySchedulingValue =
-        totalDuration != null ||
-        calendarHours != null ||
-        autoSchedule === true ||
-        isSplittable === true ||
-        minSplitDurationMinutes != null ||
-        maxSplitDurationMinutes != null;
+    const hasAnySchedulingValue =
+      totalDuration != null ||
+      calendarHours != null ||
+      autoSchedule === true ||
+      isSplittable === true ||
+      minSplitDurationMinutes != null ||
+      maxSplitDurationMinutes != null;
 
-      if (hasAnySchedulingValue) {
-        const { error: schedulingError } = await supabase
-          .from('task_user_scheduling_settings')
-          .upsert(
-            {
-              task_id: newTask.id,
-              user_id: resolvedUserId,
-              total_duration: totalDuration,
-              is_splittable: isSplittable,
-              min_split_duration_minutes: minSplitDurationMinutes,
-              max_split_duration_minutes: maxSplitDurationMinutes,
-              calendar_hours: calendarHours,
-              auto_schedule: autoSchedule,
-            },
-            { onConflict: 'task_id,user_id' }
-          );
-
-        if (schedulingError) {
-          console.error(
-            'Failed to save personal scheduling settings:',
-            schedulingError
-          );
-        }
+    if (hasAnySchedulingValue) {
+      try {
+        await updateTaskSchedulingSettings(wsId, newTask.id, {
+          total_duration: totalDuration,
+          is_splittable: isSplittable,
+          min_split_duration_minutes: minSplitDurationMinutes,
+          max_split_duration_minutes: maxSplitDurationMinutes,
+          calendar_hours: calendarHours ?? null,
+          auto_schedule: autoSchedule,
+        });
+      } catch (schedulingError) {
+        console.error(
+          'Failed to save personal scheduling settings via API:',
+          schedulingError
+        );
       }
     }
 
     // Handle parent task relationship
     if (parentTaskId) {
       try {
-        await createTaskRelationship(supabase, {
-          source_task_id: parentTaskId,
-          target_task_id: newTask.id,
-          type: 'parent_child',
-        });
+        await createWorkspaceTaskRelationship(
+          wsId,
+          parentTaskId,
+          {
+            source_task_id: parentTaskId,
+            target_task_id: newTask.id,
+            type: 'parent_child',
+          },
+          internalApiBaseUrl ? { baseUrl: internalApiBaseUrl } : undefined
+        );
       } catch (relationshipError) {
         console.error(
           'Failed to create parent-child relationship:',
@@ -851,6 +852,7 @@ async function handleCreateTask({
     // Handle pending relationships
     if (pendingRelationship) {
       await handlePendingRelationship(
+        wsId,
         newTask.id,
         pendingRelationship,
         queryClient
@@ -956,6 +958,7 @@ async function handleCreateTask({
 
 // Helper function for pending relationships
 async function handlePendingRelationship(
+  wsId: string,
   newTaskId: string,
   pendingRelationship: PendingRelationship,
   queryClient: QueryClient
@@ -1002,7 +1005,12 @@ async function handlePendingRelationship(
     }
 
     if (relationshipData) {
-      await createTaskRelationship(supabase, relationshipData);
+      await createWorkspaceTaskRelationship(
+        wsId,
+        relationshipData.source_task_id,
+        relationshipData,
+        internalApiBaseUrl ? { baseUrl: internalApiBaseUrl } : undefined
+      );
       await queryClient.invalidateQueries({
         queryKey: ['task-relationships', relatedTaskId],
       });
@@ -1061,7 +1069,7 @@ async function handleUpdateTask({
   setIsLoading: (loading: boolean) => void;
   setIsSaving: (saving: boolean) => void;
 }) {
-  const taskUpdates: Partial<Task> = {
+  const taskUpdates: WorkspaceTaskUpdatePayload = {
     name: name.trim(),
     priority: priority,
     start_date: startDate ? startDate.toISOString() : undefined,

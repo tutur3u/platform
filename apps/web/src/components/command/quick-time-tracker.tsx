@@ -125,7 +125,7 @@ export function QuickTimeTracker({
     queryKey: ['next-task-preview', wsId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?limit=100`,
+        `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`,
         { cache: 'no-store' }
       );
       if (!response.ok) throw new Error('Failed to fetch tasks');

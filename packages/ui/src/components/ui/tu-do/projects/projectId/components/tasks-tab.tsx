@@ -14,8 +14,13 @@ import {
 } from '@tuturuuu/ui/tu-do/shared/board-header';
 import type { ViewType } from '@tuturuuu/ui/tu-do/shared/board-views';
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
+import {
+  ProgressiveLoaderProvider,
+  type ProgressiveLoaderValue,
+} from '@tuturuuu/ui/tu-do/shared/progressive-loader-context';
 import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 
 interface TasksTabProps {
   workspace: Workspace;
@@ -59,6 +64,43 @@ export function TasksTab({
   const t = useTranslations('task_project_detail.tasks_tab');
   const tasksHref = useTasksHref();
   const projectBoardId = `project:${projectId}`;
+
+  const progressiveLoader = useMemo<ProgressiveLoaderValue>(() => {
+    const tasksByList = tasks.reduce(
+      (acc, task) => {
+        const listTasks = acc[task.list_id] ?? [];
+        listTasks.push(task);
+        acc[task.list_id] = listTasks;
+        return acc;
+      },
+      {} as Record<string, Task[]>
+    );
+
+    return {
+      pagination: lists.reduce(
+        (acc, list) => {
+          const listTasks = tasksByList[list.id] ?? [];
+          acc[list.id] = {
+            page: 0,
+            hasMore: false,
+            totalCount: listTasks.length,
+            isLoading: false,
+            isInitialLoad: false,
+          };
+          return acc;
+        },
+        {} as ProgressiveLoaderValue['pagination']
+      ),
+      loadListPage: async (listId) => {
+        const listTasks = tasksByList[listId] ?? [];
+        return {
+          tasks: listTasks,
+          totalCount: listTasks.length,
+          hasMore: false,
+        };
+      },
+    };
+  }, [lists, tasks]);
 
   const virtualBoard: Pick<
     WorkspaceTaskBoard,
@@ -169,7 +211,11 @@ export function TasksTab({
           {t('link_tasks')}
         </Button>
       </div>
-      <div className="h-full overflow-hidden">{renderView()}</div>
+      <div className="h-full overflow-hidden">
+        <ProgressiveLoaderProvider value={progressiveLoader}>
+          {renderView()}
+        </ProgressiveLoaderProvider>
+      </div>
     </div>
   );
 }

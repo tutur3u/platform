@@ -60,19 +60,29 @@ export async function PATCH(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Internal Server Error' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify update exists and user is the creator
-    const { data: existingUpdate } = await supabase
+    const { data: existingUpdate, error: existingUpdateError } = await sbAdmin
       .from('task_project_updates')
       .select(
         `
@@ -86,7 +96,18 @@ export async function PATCH(
       .eq('project_id', projectId)
       .eq('task_projects.ws_id', wsId)
       .is('deleted_at', null)
-      .single();
+      .maybeSingle();
+
+    if (existingUpdateError) {
+      console.error(
+        'Error checking existing project update:',
+        existingUpdateError
+      );
+      return NextResponse.json(
+        { error: 'Failed to load update' },
+        { status: 500 }
+      );
+    }
 
     if (!existingUpdate) {
       return NextResponse.json({ error: 'Update not found' }, { status: 404 });
@@ -105,10 +126,13 @@ export async function PATCH(
     const { content } = updateUpdateSchema.parse(body);
 
     // Update the update
-    const { data: updatedUpdate, error: updateError } = await supabase
+    const { data: updatedUpdate, error: updateError } = await sbAdmin
       .from('task_project_updates')
       .update({ content })
       .eq('id', updateId)
+      .eq('project_id', projectId)
+      .eq('creator_id', user.id)
+      .is('deleted_at', null)
       .select(
         `
         *,
@@ -119,11 +143,15 @@ export async function PATCH(
         )
       `
       )
-      .single();
+      .maybeSingle();
 
     if (updateError) {
       console.error('Error updating project update:', updateError);
       return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+    }
+
+    if (!updatedUpdate) {
+      return NextResponse.json({ error: 'Update not found' }, { status: 404 });
     }
 
     return NextResponse.json(updatedUpdate);
@@ -183,19 +211,29 @@ export async function DELETE(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Internal Server Error' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify update exists and user is the creator
-    const { data: existingUpdate } = await supabase
+    const { data: existingUpdate, error: existingUpdateError } = await sbAdmin
       .from('task_project_updates')
       .select(
         `
@@ -209,7 +247,18 @@ export async function DELETE(
       .eq('project_id', projectId)
       .eq('task_projects.ws_id', wsId)
       .is('deleted_at', null)
-      .single();
+      .maybeSingle();
+
+    if (existingUpdateError) {
+      console.error(
+        'Error checking existing project update:',
+        existingUpdateError
+      );
+      return NextResponse.json(
+        { error: 'Failed to load update' },
+        { status: 500 }
+      );
+    }
 
     if (!existingUpdate) {
       return NextResponse.json({ error: 'Update not found' }, { status: 404 });
@@ -223,20 +272,25 @@ export async function DELETE(
       );
     }
 
-    // Soft delete the update using admin client (bypasses RLS after permission verification)
-    const sbAdmin = await createAdminClient();
-
-    const { error: deleteError } = await sbAdmin
+    const { data: updatedRows, error: deleteError } = await sbAdmin
       .from('task_project_updates')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', updateId)
-      .eq('creator_id', user.id); // Extra safety: double-check creator
+      .eq('creator_id', user.id)
+      .select('id'); // Extra safety: double-check creator
 
     if (deleteError) {
       console.error('Error deleting project update:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete update' },
         { status: 500 }
+      );
+    }
+
+    if (!updatedRows || updatedRows.length === 0) {
+      return NextResponse.json(
+        { error: 'Update not found or already deleted' },
+        { status: 404 }
       );
     }
 

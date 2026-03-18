@@ -1,9 +1,15 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -61,6 +67,89 @@ const updateProjectSchema = z
     }
   });
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string; projectId: string }> }
+) {
+  try {
+    const { wsId: rawWsId, projectId } = await params;
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('ws_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const permissions = await getPermissions({ wsId, request });
+    if (!permissions?.containsPermission('manage_projects')) {
+      return NextResponse.json(
+        { error: "You don't have permission to perform this operation" },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    const { data: project, error: projectError } = await sbAdmin
+      .from('task_projects')
+      .select(
+        `
+        *,
+        creator:users!task_projects_creator_id_fkey(id, display_name, avatar_url),
+        lead:users!task_projects_lead_id_fkey(id, display_name, avatar_url)
+      `
+      )
+      .eq('id', projectId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (projectError) {
+      return NextResponse.json(
+        { error: projectError.message || 'Internal server error' },
+        { status: 500 }
+      );
+    }
+
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(project);
+  } catch (error) {
+    console.error(
+      'Error in GET /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
+      error
+    );
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 async function updateProject(
   request: NextRequest,
   params: Promise<{ wsId: string; projectId: string }>
@@ -80,15 +169,30 @@ async function updateProject(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: membershipError.message || 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const permissions = await getPermissions({ wsId, request });
+    if (!permissions?.containsPermission('manage_projects')) {
+      return NextResponse.json(
+        { error: "You don't have permission to perform this operation" },
+        { status: 403 }
+      );
     }
 
     // Parse and validate request body
@@ -154,14 +258,26 @@ async function updateProject(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // If lead_id is being set, verify the user belongs to the workspace
     if (validatedData.lead_id !== undefined && validatedData.lead_id !== null) {
-      const { data: leadMembership } = await supabase
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .eq('user_id', validatedData.lead_id)
-        .single();
+      const { data: leadMembership, error: leadMembershipError } =
+        await supabase
+          .from('workspace_members')
+          .select('user_id')
+          .eq('ws_id', wsId)
+          .eq('user_id', validatedData.lead_id)
+          .maybeSingle();
+
+      if (leadMembershipError) {
+        return NextResponse.json(
+          {
+            error: leadMembershipError.message || 'Membership lookup failed',
+          },
+          { status: 500 }
+        );
+      }
 
       if (!leadMembership) {
         return NextResponse.json(
@@ -172,7 +288,7 @@ async function updateProject(
     }
 
     // Update project
-    const { data: updatedProject, error: updateError } = await supabase
+    const { data: updatedProject, error: updateError } = await sbAdmin
       .from('task_projects')
       .update(updateData)
       .eq('id', projectId)
@@ -195,7 +311,7 @@ async function updateProject(
           )
         )
       `)
-      .single();
+      .maybeSingle();
 
     if (updateError) {
       console.error('Error updating project:', updateError);
@@ -288,19 +404,36 @@ export async function DELETE(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: membershipError.message || 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const permissions = await getPermissions({ wsId, request });
+    if (!permissions?.containsPermission('manage_projects')) {
+      return NextResponse.json(
+        { error: "You don't have permission to perform this operation" },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
     // Delete project
-    const { data: deletedProjects, error: deleteError } = await supabase
+    const { data: deletedProjects, error: deleteError } = await sbAdmin
       .from('task_projects')
       .delete()
       .eq('id', projectId)
