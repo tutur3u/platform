@@ -76,6 +76,7 @@ interface TaskProjectRelation {
 }
 
 interface TaskRelationshipEdge {
+  id: string | null;
   source_task_id: string | null;
   target_task_id: string | null;
   type: 'parent_child' | 'blocks' | 'related' | null;
@@ -334,6 +335,7 @@ export async function GET(
 
     if (taskIds.length > 0) {
       const chunkSize = 200;
+      const processedRelationshipEdgeKeys = new Set<string>();
 
       for (let index = 0; index < taskIds.length; index += chunkSize) {
         const chunk = taskIds.slice(index, index + chunkSize);
@@ -341,7 +343,7 @@ export async function GET(
         const { data: relationshipEdges, error: relationshipError } =
           await sbAdmin
             .from('task_relationships')
-            .select('source_task_id, target_task_id, type')
+            .select('id, source_task_id, target_task_id, type')
             .or(
               `source_task_id.in.(${chunk.join(',')}),target_task_id.in.(${chunk.join(',')})`
             );
@@ -362,6 +364,14 @@ export async function GET(
           const sourceId = edge.source_task_id;
           const targetId = edge.target_task_id;
           const type = edge.type;
+          const edgeKey = edge.id ?? `${sourceId}:${targetId}:${type}`;
+
+          if (processedRelationshipEdgeKeys.has(edgeKey)) {
+            continue;
+          }
+
+          processedRelationshipEdgeKeys.add(edgeKey);
+
           if (!sourceId || !targetId || !type) {
             continue;
           }

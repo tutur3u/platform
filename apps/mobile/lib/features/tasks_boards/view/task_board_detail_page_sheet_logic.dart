@@ -82,7 +82,21 @@ Future<void> _pickTaskRelationship(
   if (task == null) return;
 
   if (state._relationshipTaskOptions.isEmpty) {
-    await _loadRelationshipTaskOptions(state);
+    final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;
+    try {
+      await _loadRelationshipTaskOptions(state);
+    } on ApiException catch (error) {
+      if (!state.mounted) return;
+      _showTaskEditorErrorToast(
+        state,
+        error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
+      );
+      return;
+    } on Exception {
+      if (!state.mounted) return;
+      _showTaskEditorErrorToast(state, fallbackErrorMessage);
+      return;
+    }
   }
 
   if (!state.mounted) return;
@@ -123,6 +137,8 @@ Future<void> _loadRelationshipTaskOptions(
   final options = await state.context
       .read<TaskBoardDetailCubit>()
       .getRelationshipTaskOptions();
+  if (!state.mounted) return;
+
   final currentTaskId = state.widget.task?.id;
 
   state._updateState(() {

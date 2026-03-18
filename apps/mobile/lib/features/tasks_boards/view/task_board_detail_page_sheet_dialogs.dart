@@ -265,7 +265,7 @@ class _TaskRelationshipPickerDialogState
           mainAxisSize: MainAxisSize.min,
           children: [
             shad.TextField(
-              placeholder: Text(context.l10n.taskBoardDetailSearchTasks),
+              hintText: context.l10n.taskBoardDetailSearchTasks,
               onChanged: (value) => setState(() => _query = value),
             ),
             const shad.Gap(10),

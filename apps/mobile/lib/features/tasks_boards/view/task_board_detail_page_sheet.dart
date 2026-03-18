@@ -35,6 +35,15 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
+  late final String _initialName;
+  late final String? _initialDescription;
+  late final String _initialPriority;
+  late final int? _initialEstimationPoints;
+  late final Set<String> _initialAssigneeIds;
+  late final Set<String> _initialLabelIds;
+  late final Set<String> _initialProjectIds;
+  DateTime? _initialStartDate;
+  DateTime? _initialEndDate;
   late String _priority;
   late String _selectedListId;
   int? _estimationPoints;
@@ -59,6 +68,74 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     return _isSaving || _isMoving || _isMutatingRelationships;
   }
 
+  bool get _hasTaskChanges {
+    if (_isCreate) {
+      return _nameController.text.trim().isNotEmpty;
+    }
+
+    if (_nameController.text.trim() != _initialName) {
+      return true;
+    }
+
+    final description = FormDirtyUtils.normalizeOptionalText(
+      _descriptionController.text,
+    );
+    if (description != _initialDescription) {
+      return true;
+    }
+
+    if (_priority != _initialPriority) {
+      return true;
+    }
+
+    if (_estimationPoints != _initialEstimationPoints) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameUnorderedValues(
+      _selectedAssigneeIds,
+      _initialAssigneeIds,
+    )) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameUnorderedValues(
+      _selectedLabelIds,
+      _initialLabelIds,
+    )) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameUnorderedValues(
+      _selectedProjectIds,
+      _initialProjectIds,
+    )) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameMoment(_startDate, _initialStartDate)) {
+      return true;
+    }
+
+    if (!FormDirtyUtils.sameMoment(_endDate, _initialEndDate)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  bool get _canSave {
+    if (_isBusy) {
+      return false;
+    }
+
+    if (_nameController.text.trim().isEmpty) {
+      return false;
+    }
+
+    return _isCreate || _hasTaskChanges;
+  }
+
   TaskRelationshipsResponse get _relationships {
     return _relationshipsState;
   }
@@ -76,6 +153,17 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     _descriptionController = TextEditingController(
       text: task?.description ?? '',
     );
+    _initialName = (task?.name ?? '').trim();
+    _initialDescription = FormDirtyUtils.normalizeOptionalText(
+      task?.description ?? '',
+    );
+    _initialPriority = _normalizePriority(task?.priority);
+    _initialEstimationPoints = task?.estimationPoints;
+    _initialAssigneeIds = {...?task?.assigneeIds};
+    _initialLabelIds = {...?task?.labelIds};
+    _initialProjectIds = {...?task?.projectIds};
+    _initialStartDate = task?.startDate;
+    _initialEndDate = task?.endDate;
     _priority = _normalizePriority(task?.priority);
     _selectedListId = _resolveInitialListId(task);
     _estimationPoints = task?.estimationPoints;
@@ -90,13 +178,23 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     if (!_isCreate) {
       unawaited(_loadRelationshipsIfNeeded(force: true));
     }
+
+    _nameController.addListener(_handleFormFieldChanged);
+    _descriptionController.addListener(_handleFormFieldChanged);
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_handleFormFieldChanged);
+    _descriptionController.removeListener(_handleFormFieldChanged);
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _handleFormFieldChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   @override
@@ -199,7 +297,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                     const shad.Gap(10),
                     Expanded(
                       child: shad.PrimaryButton(
-                        onPressed: _isBusy ? null : _saveTask,
+                        onPressed: _canSave ? _saveTask : null,
                         child: _isSaving
                             ? const SizedBox(
                                 width: 16,

@@ -165,28 +165,56 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
   Future<void> loadTaskRelationships({required String taskId}) async {
     final wsId = state.workspaceId;
-    final board = state.board;
-    if (wsId == null || board == null) {
+    final boardId = state.boardId;
+    if (wsId == null || boardId == null || state.board == null) {
       throw StateError('Board detail is not initialized');
     }
 
-    final relationships = await _taskRepository.getTaskRelationships(
-      wsId: wsId,
-      taskId: taskId,
-    );
+    await _runMutation(() async {
+      final relationships = await _taskRepository.getTaskRelationships(
+        wsId: wsId,
+        taskId: taskId,
+      );
 
-    final nextTasks = board.tasks
-        .map(
-          (task) => task.id == taskId
-              ? task.copyWith(
-                  relationships: relationships,
-                  relationshipsLoaded: true,
-                )
-              : task,
-        )
-        .toList(growable: false);
+      if (state.workspaceId != wsId || state.boardId != boardId) {
+        return null;
+      }
 
-    emit(state.copyWith(board: board.copyWith(tasks: nextTasks)));
+      final board = state.board;
+      if (board == null) {
+        return null;
+      }
+
+      var taskFound = false;
+      final nextTasks = board.tasks
+          .map(
+            (task) {
+              if (task.id != taskId) {
+                return task;
+              }
+              taskFound = true;
+              return task.copyWith(
+                relationships: relationships,
+                relationshipsLoaded: true,
+                relationshipSummary: TaskRelationshipSummary(
+                  parentTaskId: relationships.parentTask?.id,
+                  childCount: relationships.childTasks.length,
+                  blockedByCount: relationships.blockedBy.length,
+                  blockingCount: relationships.blocking.length,
+                  relatedCount: relationships.relatedTasks.length,
+                ),
+              );
+            },
+          )
+          .toList(growable: false);
+
+      if (!taskFound) {
+        return null;
+      }
+
+      emit(state.copyWith(board: board.copyWith(tasks: nextTasks)));
+      return null;
+    }, reloadBoard: false);
   }
 
   Future<void> createTaskRelationship({
@@ -328,7 +356,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
-  Future<void> _runMutation(Future<Object?> Function() action) async {
+  Future<void> _runMutation(
+    Future<Object?> Function() action, {
+    bool reloadBoard = true,
+  }) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
 
@@ -370,7 +401,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         ),
       );
 
-      await loadBoardDetail(wsId: wsId, boardId: boardId);
+      if (reloadBoard) {
+        await loadBoardDetail(wsId: wsId, boardId: boardId);
+      }
     } on Exception catch (error) {
       final isSameBoard = state.workspaceId == wsId && state.boardId == boardId;
       emit(

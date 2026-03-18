@@ -56,7 +56,7 @@ export async function GET(req: Request, { params }: Params) {
     // Verify membership before proceeding with data fetching
     const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
-      .select('id:user_id')
+      .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .maybeSingle();
@@ -212,7 +212,7 @@ export async function POST(req: Request, { params }: Params) {
     // Verify membership
     const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
-      .select('id:user_id')
+      .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .maybeSingle();

@@ -230,6 +230,7 @@ void main() {
 
       final addRelatedTaskButton = find.text('Add related task').last;
       await tester.ensureVisible(addRelatedTaskButton);
+      final betaTaskTextCountBefore = find.text('Beta task').evaluate().length;
       await tester.tap(addRelatedTaskButton, warnIfMissed: false);
       await tester.pumpAndSettle();
 
@@ -239,13 +240,19 @@ void main() {
       await tester.pump();
 
       expect(taskRepository.createRelationshipCalls, 1);
-      expect(find.text('Beta task'), findsWidgets);
+      expect(
+        find.text('Beta task').evaluate().length,
+        greaterThan(betaTaskTextCountBefore),
+      );
       expect(find.widgetWithText(shad.OutlineBadge, '1'), findsWidgets);
 
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpAndSettle();
 
-      expect(find.text('Beta task'), findsWidgets);
+      expect(
+        find.text('Beta task').evaluate().length,
+        greaterThan(betaTaskTextCountBefore),
+      );
       expect(find.widgetWithText(shad.OutlineBadge, '1'), findsWidgets);
 
       await tester.drainShadToastTimers();

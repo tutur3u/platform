@@ -41,6 +41,21 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   }
 
   @override
+  void didUpdateWidget(covariant _TaskBoardTaskDetailSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task == widget.task) {
+      return;
+    }
+
+    _task = widget.task;
+    _relationshipsError = null;
+
+    if (!_task.relationshipsLoaded) {
+      unawaited(_loadRelationships());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final title = _task.name?.trim().isNotEmpty == true
@@ -389,6 +404,9 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     final refreshedTask = _findTaskInState(cubit.state, _task.id);
     if (refreshedTask != null) {
       setState(() => _task = refreshedTask);
+      if (!refreshedTask.relationshipsLoaded) {
+        unawaited(_loadRelationships());
+      }
     }
   }
 
@@ -475,6 +493,9 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       );
       if (refreshedTask != null) {
         setState(() => _task = refreshedTask);
+        if (!refreshedTask.relationshipsLoaded) {
+          unawaited(_loadRelationships());
+        }
       }
 
       shad.showToast(
