@@ -151,7 +151,8 @@ export default function History() {
           viewport={{ once: true }}
           className="mx-auto max-w-3xl font-medium text-lg text-muted-foreground md:text-xl"
         >
-          A journey of innovation, community, and passion for technology.<br />
+          A journey of innovation, community, and passion for technology.
+          <br />
           <span className="relative font-semibold text-[#5FC6E5]">
             Step through our history
             <motion.span
