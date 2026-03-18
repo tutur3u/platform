@@ -3,8 +3,8 @@
 import { Button } from '@ncthub/ui/button';
 import { Building2, Code, Users } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
-import { Link } from '@/i18n/routing';
 import Image from 'next/image';
+import { Link } from '@/i18n/routing';
 
 const stats = [
   {
@@ -91,7 +91,13 @@ export default function HeroSection() {
           {/* Buttons */}
           <div className="mb-12 flex flex-wrap gap-4">
             <Button size="lg" asChild>
-              <Link href="https://forms.office.com/r/csPz8V73ad">Join Us</Link>
+              <Link
+                href="https://forms.office.com/r/csPz8V73ad"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Join Us
+              </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <Link href="/about">Learn More</Link>
