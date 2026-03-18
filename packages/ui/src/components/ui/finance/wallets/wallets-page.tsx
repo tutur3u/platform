@@ -1,7 +1,7 @@
 import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+  listWallets,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
@@ -12,6 +12,7 @@ import {
   getWorkspace,
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -46,12 +47,12 @@ export default async function WalletsPage({
   const canCreateWallets = containsPermission('create_wallets');
   const canUpdateWallets = containsPermission('update_wallets');
   const canDeleteWallets = containsPermission('delete_wallets');
-  const hasManageFinance = containsPermission('manage_finance');
-
+  const requestHeaders = await headers();
+  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
   const { data: rawData, count } = await getData(
     wsId,
     searchParams,
-    hasManageFinance
+    internalApiOptions
   );
 
   const data = rawData.map((d) => ({
@@ -93,85 +94,24 @@ async function getData(
     page = '1',
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string },
-  hasManageFinance: boolean
+  internalApiOptions: Parameters<typeof listWallets>[1]
 ) {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+  const wallets = await listWallets(wsId, internalApiOptions);
+  const normalizedQuery = q?.trim().toLowerCase();
+  const filteredWallets = wallets
+    .filter((wallet) =>
+      normalizedQuery
+        ? wallet.name?.toLowerCase().includes(normalizedQuery)
+        : true
+    )
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-  const queryBuilder = sbAdmin
-    .from('workspace_wallets')
-    .select('*, credit_wallets(limit, statement_date, payment_date)', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId);
+  const parsedPage = parseInt(page, 10);
+  const parsedPageSize = parseInt(pageSize, 10);
+  const start = (parsedPage - 1) * parsedPageSize;
 
-  if (!hasManageFinance) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { data: [], count: 0 };
-    }
-
-    // Get whitelisted wallet IDs by joining role members and role wallet whitelist
-    const { data: whitelistData } = await sbAdmin
-      .from('workspace_role_wallet_whitelist')
-      .select(
-        'wallet_id, workspace_roles!inner(workspace_role_members!inner(user_id))'
-      )
-      .eq('workspace_roles.ws_id', wsId)
-      .eq('workspace_roles.workspace_role_members.user_id', user.id);
-
-    const whitelistedWalletIds = (whitelistData || []).map(
-      (item) => item.wallet_id
-    );
-
-    if (whitelistedWalletIds.length > 0) {
-      queryBuilder.in('id', whitelistedWalletIds);
-    } else {
-      // No whitelisted wallets or roles, return empty result
-      return { data: [], count: 0 };
-    }
-  }
-
-  queryBuilder.order('name', { ascending: true });
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  // Flatten credit_wallets join data onto wallet objects
-  const flatData = (data || []).map(
-    ({
-      credit_wallets,
-      ...wallet
-    }: {
-      credit_wallets?: {
-        limit: number;
-        statement_date: number;
-        payment_date: number;
-      } | null;
-    } & Record<string, unknown>) => ({
-      ...wallet,
-      ...(credit_wallets
-        ? {
-            limit: credit_wallets.limit,
-            statement_date: credit_wallets.statement_date,
-            payment_date: credit_wallets.payment_date,
-          }
-        : {}),
-    })
-  );
-
-  return { data: flatData, count } as { data: Wallet[]; count: number };
+  return {
+    data: filteredWallets.slice(start, start + parsedPageSize) as Wallet[],
+    count: filteredWallets.length,
+  };
 }

@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -12,11 +15,12 @@ interface Params {
 }
 
 // GET - List whitelisted wallets for a role
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const sbAdmin = await createAdminClient();
   const { wsId, roleId } = await params;
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
@@ -30,7 +34,7 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspace_role_wallet_whitelist')
     .select(
       `
@@ -64,10 +68,12 @@ export async function GET(_: Request, { params }: Params) {
 
 // POST - Add wallet to role whitelist
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   const { wsId, roleId } = await params;
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
@@ -140,12 +146,12 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Validate wallet belongs to workspace
-  const { data: wallet, error: walletError } = await supabase
+  const { data: wallet, error: walletError } = await sbAdmin
     .from('workspace_wallets')
     .select('id, ws_id')
     .eq('id', wallet_id)
     .eq('ws_id', wsId)
-    .single();
+    .maybeSingle();
 
   if (walletError || !wallet) {
     return NextResponse.json(

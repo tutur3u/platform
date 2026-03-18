@@ -1,5 +1,8 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -48,11 +51,12 @@ const getWorkspaceUserId = async (
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
-
-  const wsId = await normalizeWorkspaceId(id);
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -64,7 +68,6 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
   const parsed = BodySchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json(
@@ -87,12 +90,12 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Validate that product exists
-  const { data: product, error: productError } = await supabase
+  const { data: product, error: productError } = await sbAdmin
     .from('workspace_products')
     .select('id')
     .eq('id', productId)
     .eq('ws_id', wsId)
-    .single();
+    .maybeSingle();
 
   if (productError) {
     console.log(productError);
@@ -155,10 +158,11 @@ export async function POST(req: Request, { params }: Params) {
 
 export async function PATCH(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
-
-  const wsId = await normalizeWorkspaceId(id);
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
+  const wsId = await normalizeWorkspaceId(id, supabase);
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -170,7 +174,6 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -199,12 +202,12 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   // Validate that product exists
-  const { data: product, error: productError } = await supabase
+  const { data: product, error: productError } = await sbAdmin
     .from('workspace_products')
     .select('id')
     .eq('id', productId)
     .eq('ws_id', wsId)
-    .single();
+    .maybeSingle();
 
   if (productError || !product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
@@ -447,11 +450,10 @@ export async function PATCH(req: Request, { params }: Params) {
   });
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
-
-  const wsId = await normalizeWorkspaceId(id);
-  const permissions = await getPermissions({ wsId });
+  const supabase = await createClient(req);
+  const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -459,8 +461,6 @@ export async function GET(_: Request, { params }: Params) {
   if (!containsPermission('view_stock_quantity')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
-
-  const supabase = await createClient();
 
   // Get inventory for this product
   const { data: inventory, error } = await supabase
@@ -479,12 +479,13 @@ export async function GET(_: Request, { params }: Params) {
   return NextResponse.json({ data: inventory });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
-
-  const wsId = await normalizeWorkspaceId(id);
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
+  const wsId = await normalizeWorkspaceId(id, supabase);
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -496,15 +497,13 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
-
   // Check worksapce product exists
-  const { data: product, error: productError } = await supabase
+  const { data: product, error: productError } = await sbAdmin
     .from('workspace_products')
     .select('id')
     .eq('id', productId)
     .eq('ws_id', wsId)
-    .single();
+    .maybeSingle();
 
   if (productError || !product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });

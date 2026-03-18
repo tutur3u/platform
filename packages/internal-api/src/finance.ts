@@ -19,6 +19,20 @@ export async function listWallets(
   );
 }
 
+export async function getWallet(
+  workspaceId: string,
+  walletId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<Wallet>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function listTransactionCategories(
   workspaceId: string,
   options?: InternalApiClientOptions

@@ -1,5 +1,8 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -10,7 +13,7 @@ async function verifyTransactionWorkspace(
   wsId: string,
   supabase?: TypedSupabaseClient
 ) {
-  const sbClient = supabase || (await createClient());
+  const sbClient = supabase || (await createAdminClient());
 
   const { data, error } = await sbClient
     .from('wallet_transactions')
@@ -179,6 +182,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
   // Verify transaction belongs to workspace
   const transaction = await verifyTransactionWorkspace(
@@ -251,12 +255,12 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Verify new wallet belongs to workspace if being changed
   if (newData.wallet_id) {
-    const { data: walletCheck } = await supabase
+    const { data: walletCheck } = await sbAdmin
       .from('workspace_wallets')
       .select('id')
       .eq('id', newData.wallet_id)
       .eq('ws_id', wsId)
-      .single();
+      .maybeSingle();
 
     if (!walletCheck) {
       return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });

@@ -4,11 +4,9 @@
  * PUT: Update config (tier, enabled status)
  * DELETE: Disable/remove interest tracking
  */
-
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getAccessibleWallet } from '../../../wallet-access';
 
 interface Params {
   params: Promise<{
@@ -36,21 +34,17 @@ const updateConfigSchema = z.object({
  * PUT: Update interest config
  */
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'update_wallets',
+    select: 'id',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('update_wallets')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Validate input
@@ -68,7 +62,7 @@ export async function PUT(req: Request, { params }: Params) {
     parseResult.data;
 
   // Get existing config
-  const { data: config, error: configError } = await supabase
+  const { data: config, error: configError } = await access.context.supabase
     .from('wallet_interest_configs')
     .select('*')
     .eq('wallet_id', walletId)
@@ -108,12 +102,13 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   // Update config
-  const { data: updatedConfig, error: updateError } = await supabase
-    .from('wallet_interest_configs')
-    .update(updates)
-    .eq('id', config.id)
-    .select()
-    .single();
+  const { data: updatedConfig, error: updateError } =
+    await access.context.supabase
+      .from('wallet_interest_configs')
+      .update(updates)
+      .eq('id', config.id)
+      .select()
+      .single();
 
   if (updateError) {
     console.error('Error updating interest config:', updateError);
@@ -129,26 +124,22 @@ export async function PUT(req: Request, { params }: Params) {
 /**
  * DELETE: Remove interest tracking
  */
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'update_wallets',
+    select: 'id',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('update_wallets')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Delete config (rates will cascade delete)
-  const { error } = await supabase
+  const { error } = await access.context.supabase
     .from('wallet_interest_configs')
     .delete()
     .eq('wallet_id', walletId);

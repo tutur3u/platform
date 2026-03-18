@@ -89,6 +89,7 @@ const UpdateTransferSchema = z
 export async function PUT(req: Request, { params }: Params) {
   const { wsId } = await params;
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   let normalizedWsId: string;
 
   try {
@@ -186,7 +187,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const { data: wallets, error: walletsErr } = await supabase
+  const { data: wallets, error: walletsErr } = await sbAdmin
     .from('workspace_wallets')
     .select('id, currency')
     .eq('ws_id', normalizedWsId)
@@ -240,8 +241,6 @@ export async function PUT(req: Request, { params }: Params) {
       { status: 404 }
     );
   }
-
-  const sbAdmin = await createAdminClient();
 
   const originUpdate: {
     id: string;
@@ -326,6 +325,7 @@ export async function PUT(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   let normalizedWsId: string;
 
   try {
@@ -412,7 +412,6 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     try {
-      const sbAdmin = await createAdminClient();
       await sbAdmin.rpc('ensure_workspace_user_link', {
         target_user_id: user.id,
         target_ws_id: normalizedWsId,
@@ -454,7 +453,7 @@ export async function POST(req: Request, { params }: Params) {
       : data.taken_at.toISOString();
 
   // Validate both wallets belong to this workspace
-  const { data: wallets, error: walletsErr } = await supabase
+  const { data: wallets, error: walletsErr } = await sbAdmin
     .from('workspace_wallets')
     .select('id, currency')
     .eq('ws_id', normalizedWsId)
@@ -542,7 +541,6 @@ export async function POST(req: Request, { params }: Params) {
 
   // Link transactions in workspace_wallet_transfers
   // Use admin client to bypass the same-abs-amount RLS check for cross-currency
-  const sbAdmin = await createAdminClient();
   const { error: linkErr } = await sbAdmin
     .from('workspace_wallet_transfers')
     .insert({

@@ -14,6 +14,7 @@ export {
   withForwardedInternalApiAuth,
 } from './client';
 export {
+  getWallet,
   listTransactionCategories,
   listWallets,
 } from './finance';

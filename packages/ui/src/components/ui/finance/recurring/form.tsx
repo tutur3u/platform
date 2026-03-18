@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { listWallets } from '@tuturuuu/internal-api/finance';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -70,16 +71,7 @@ export function RecurringTransactionForm({
 
   const { data: wallets } = useQuery({
     queryKey: ['wallets', wsId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspace_wallets')
-        .select('id, name')
-        .eq('ws_id', wsId)
-        .order('name');
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => listWallets(wsId),
   });
 
   const { data: categories } = useQuery({
@@ -221,11 +213,16 @@ export function RecurringTransactionForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {wallets?.map((wallet) => (
-                      <SelectItem key={wallet.id} value={wallet.id}>
-                        {wallet.name}
-                      </SelectItem>
-                    ))}
+                    {wallets
+                      ?.filter(
+                        (wallet): wallet is typeof wallet & { id: string } =>
+                          typeof wallet.id === 'string'
+                      )
+                      .map((wallet) => (
+                        <SelectItem key={wallet.id} value={wallet.id}>
+                          {wallet.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

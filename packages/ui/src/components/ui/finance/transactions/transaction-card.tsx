@@ -14,7 +14,7 @@ import {
   Tag,
   Trash2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWallets } from '@tuturuuu/internal-api/finance';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -133,16 +133,7 @@ export function TransactionCard({
   // This shares the cache with WalletsPage
   const { data: wallets } = useQuery({
     queryKey: ['wallets', wsId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_wallets')
-        .select('*')
-        .eq('ws_id', wsId);
-
-      if (error) throw error;
-      return data as Wallet[];
-    },
+    queryFn: async () => (await listWallets(wsId)) as Wallet[],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 

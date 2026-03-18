@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -12,6 +15,7 @@ export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId } = await params;
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const { searchParams } = new URL(req.url);
 
@@ -105,9 +109,10 @@ export async function GET(req: Request, { params }: Params) {
     const walletIconMap: Record<string, string> = {};
     const walletImageSrcMap: Record<string, string> = {};
     if (uniqueWalletIds.length > 0) {
-      const { data: walletDetails } = await supabase
+      const { data: walletDetails } = await sbAdmin
         .from('workspace_wallets')
         .select('id, currency, icon, image_src')
+        .eq('ws_id', normalizedWsId)
         .in('id', uniqueWalletIds);
       (walletDetails || []).forEach((w) => {
         if (w.currency) walletCurrencyMap[w.id] = w.currency;
@@ -186,9 +191,10 @@ export async function GET(req: Request, { params }: Params) {
         const walletNameMap: Record<string, string> = {};
         // Fetch wallet names + currencies for all relevant wallets
         if (allWalletIds.size > 0) {
-          const { data: walletDetails } = await supabase
+          const { data: walletDetails } = await sbAdmin
             .from('workspace_wallets')
             .select('id, name, currency')
+            .eq('ws_id', normalizedWsId)
             .in('id', [...allWalletIds]);
 
           (walletDetails || []).forEach((w) => {
