@@ -10,12 +10,16 @@ const updateListSchema = z
       .enum(['not_started', 'active', 'done', 'closed', 'documents'])
       .optional(),
     color: supportedColorSchema.optional(),
+    position: z.number().int().min(0).optional(),
+    deleted: z.boolean().optional(),
   })
   .refine(
     (data) =>
       data.name !== undefined ||
       data.status !== undefined ||
-      data.color !== undefined,
+      data.color !== undefined ||
+      data.position !== undefined ||
+      data.deleted !== undefined,
     {
       message: 'At least one field must be provided',
     }
@@ -45,16 +49,48 @@ export async function PATCH(
       name?: string;
       status?: 'not_started' | 'active' | 'done' | 'closed' | 'documents';
       color?: SupportedColor;
+      position?: number;
+      deleted?: boolean;
     } = {};
 
     if (body.name !== undefined) {
       updates.name = body.name;
     }
     if (body.status !== undefined) {
+      if (body.status === 'closed') {
+        const { data: existingClosed, error: checkError } = await supabase
+          .from('task_lists')
+          .select('id')
+          .eq('board_id', boardId)
+          .eq('status', 'closed')
+          .eq('deleted', false)
+          .neq('id', listId);
+
+        if (checkError) {
+          return NextResponse.json(
+            { error: 'Failed to validate task list status' },
+            { status: 500 }
+          );
+        }
+
+        if ((existingClosed?.length ?? 0) > 0) {
+          return NextResponse.json(
+            { error: 'Only one closed list is allowed per board' },
+            { status: 400 }
+          );
+        }
+      }
+
       updates.status = body.status;
     }
     if (body.color !== undefined) {
       updates.color = body.color;
+    }
+    if (body.position !== undefined) {
+      updates.position = body.position;
+    }
+    if (body.deleted !== undefined) {
+      updates.deleted = body.deleted;
     }
 
     const { data: list, error } = await supabase
@@ -62,7 +98,7 @@ export async function PATCH(
       .update(updates)
       .eq('id', listId)
       .eq('board_id', boardId)
-      .select('id, board_id, name, status, color, position, archived')
+      .select('id, board_id, name, status, color, position, archived, deleted')
       .maybeSingle();
 
     if (error) {

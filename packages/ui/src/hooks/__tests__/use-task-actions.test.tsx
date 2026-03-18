@@ -854,10 +854,9 @@ describe('useTaskActions', () => {
       });
 
       expect(setCustomDateDialogOpen).toHaveBeenCalledWith(false);
-      expect(mockUpdateTaskMutation.mutate).toHaveBeenCalledWith(
-        { taskId: 'task-1', updates: { end_date: expect.any(String) } },
-        expect.any(Object)
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        end_date: expect.any(String),
+      });
     });
   });
 

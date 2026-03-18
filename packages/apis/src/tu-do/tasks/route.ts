@@ -54,6 +54,12 @@ const CreateTaskSchema = z.object({
   label_ids: z.array(z.string().uuid()).optional(),
   project_ids: z.array(z.string().uuid()).optional(),
   assignee_ids: z.array(z.string().uuid()).optional(),
+  total_duration: z.number().nonnegative().nullable().optional(),
+  is_splittable: z.boolean().nullable().optional(),
+  min_split_duration_minutes: z.number().int().min(0).nullable().optional(),
+  max_split_duration_minutes: z.number().int().min(0).nullable().optional(),
+  calendar_hours: z.string().nullable().optional(),
+  auto_schedule: z.boolean().nullable().optional(),
 });
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 
@@ -303,6 +309,12 @@ export async function POST(
       label_ids,
       project_ids,
       assignee_ids,
+      total_duration,
+      is_splittable,
+      min_split_duration_minutes,
+      max_split_duration_minutes,
+      calendar_hours,
+      auto_schedule,
     } = body;
 
     const normalizedAssigneeIds =
@@ -567,6 +579,51 @@ export async function POST(
 
       if (assigneeError) {
         console.error('Failed to insert task assignees:', assigneeError);
+      }
+    }
+
+    const hasSchedulingInput =
+      total_duration !== undefined ||
+      is_splittable !== undefined ||
+      min_split_duration_minutes !== undefined ||
+      max_split_duration_minutes !== undefined ||
+      calendar_hours !== undefined ||
+      auto_schedule !== undefined;
+
+    if (hasSchedulingInput) {
+      const { error: schedulingError } = await sbAdmin
+        .from('task_user_scheduling_settings')
+        .upsert(
+          [
+            {
+              task_id: data.id,
+              user_id: user.id,
+              total_duration: total_duration ?? null,
+              is_splittable: is_splittable ?? false,
+              min_split_duration_minutes: min_split_duration_minutes ?? null,
+              max_split_duration_minutes: max_split_duration_minutes ?? null,
+              calendar_hours:
+                (calendar_hours as
+                  | Database['public']['Tables']['task_user_scheduling_settings']['Insert']['calendar_hours']
+                  | null
+                  | undefined) ?? null,
+              auto_schedule: auto_schedule ?? false,
+            },
+          ],
+          {
+            onConflict: 'task_id,user_id',
+          }
+        );
+
+      if (schedulingError) {
+        console.error(
+          'Failed to persist task scheduling settings:',
+          schedulingError
+        );
+        return NextResponse.json(
+          { error: 'Failed to create task scheduling settings' },
+          { status: 500 }
+        );
       }
     }
 

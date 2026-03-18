@@ -30,8 +30,12 @@ export {
 } from './storage';
 export {
   createWorkspaceTask,
+  createWorkspaceTaskBoard,
+  createWorkspaceTaskList,
   createWorkspaceTaskProject,
   createWorkspaceTaskRelationship,
+  createWorkspaceTaskWithRelationship,
+  deleteWorkspaceTask,
   deleteWorkspaceTaskRelationship,
   getWorkspaceTask,
   getWorkspaceTaskProject,
@@ -39,8 +43,10 @@ export {
   getWorkspaceTaskRelationships,
   listWorkspaceTaskProjects,
   listWorkspaceTasks,
+  moveWorkspaceTask,
   resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
+  updateWorkspaceTaskList,
 } from './tasks';
 export {
   type TaskSchedulingUpdatePayload,
