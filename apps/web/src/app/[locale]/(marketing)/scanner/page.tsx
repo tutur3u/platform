@@ -1,10 +1,7 @@
 'use client';
 
-import StudentForm from './StudentForm';
-import StudentList from './StudentList';
-import VideoCapture from './VideoCapture';
 import { createClient } from '@ncthub/supabase/next/client';
-import { Student } from '@ncthub/types/primitives/Student';
+import type { Student } from '@ncthub/types/primitives/Student';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,12 +12,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@ncthub/ui/alert-dialog';
-import { Badge } from '@ncthub/ui/badge';
 import { Button } from '@ncthub/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@ncthub/ui/card';
@@ -40,8 +37,11 @@ import { Separator } from '@ncthub/ui/separator';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import StudentForm from './StudentForm';
+import StudentList from './StudentList';
+import VideoCapture from './VideoCapture';
 
-export default function Page() {
+export default function ScannerPage() {
   const [newStudent, setNewStudent] = useState<Student | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
@@ -271,14 +271,14 @@ export default function Page() {
   }).length;
 
   return (
-    <div className="container mx-auto min-h-screen">
+    <div className="container mx-auto min-h-screen px-4">
       {/* Hero Section */}
       <div className="px-4 py-16">
         <div className="space-y-4 text-center">
-          <h1 className="bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-4xl font-bold text-transparent md:text-6xl">
+          <h1 className="bg-linear-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text font-bold text-4xl text-transparent md:text-6xl">
             NEO Scanner
           </h1>
-          <p className="mx-auto max-w-2xl text-xl text-dynamic-light-sky">
+          <p className="mx-auto max-w-2xl text-dynamic-light-sky text-xl">
             Effortlessly capture and manage student information with our
             AI-powered scanning technology
           </p>
@@ -287,70 +287,111 @@ export default function Page() {
 
       <div className="px-4 py-8">
         {/* Stats Cards */}
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-          <Card className="border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-100">
-                    Total Students
-                  </p>
-                  <p className="text-3xl font-bold">{students.length}</p>
+        <div className="mb-8">
+          {/* Mobile stats (stacked rows) */}
+          <div className="flex flex-col gap-3 md:hidden">
+            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20 text-blue-200">
+                  <Users className="h-5 w-5" />
                 </div>
-                <Users className="h-8 w-8 text-blue-200" />
+                <p className="font-medium text-sm">Total Students</p>
               </div>
-            </CardContent>
-          </Card>
+              <p className="font-bold text-xl">{students.length}</p>
+            </div>
 
-          <Card className="border-0 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-100">Today</p>
-                  <p className="text-3xl font-bold">{todayCount}</p>
+            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-green-200">
+                  <Clock className="h-5 w-5" />
                 </div>
-                <Clock className="h-8 w-8 text-green-200" />
+                <p className="font-medium text-sm">Today</p>
               </div>
-            </CardContent>
-          </Card>
+              <p className="font-bold text-xl">{todayCount}</p>
+            </div>
 
-          <Card className="border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-100">
-                    This Week
-                  </p>
-                  <p className="text-3xl font-bold">{thisWeekCount}</p>
+            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/20 text-purple-200">
+                  <TrendingUp className="h-5 w-5" />
                 </div>
-                <TrendingUp className="h-8 w-8 text-purple-200" />
+                <p className="font-medium text-sm">This Week</p>
               </div>
-            </CardContent>
-          </Card>
+              <p className="font-bold text-xl">{thisWeekCount}</p>
+            </div>
 
-          <Card className="border-0 bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-orange-100">
-                    Pending Upload
-                  </p>
-                  <p className="text-3xl font-bold">{students.length}</p>
+            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/20 text-orange-200">
+                  <Upload className="h-5 w-5" />
                 </div>
-                <Upload className="h-8 w-8 text-orange-200" />
+                <p className="font-medium text-sm">Pending Upload</p>
               </div>
-            </CardContent>
-          </Card>
+              <p className="font-bold text-xl">{students.length}</p>
+            </div>
+          </div>
+
+          {/* Desktop stats (grid) */}
+          <div className="hidden gap-6 md:grid md:grid-cols-4">
+            <Card className="border-0 bg-linear-to-br from-blue-500 to-blue-600 text-white shadow-lg">
+              <CardContent className="h-full p-6">
+                <div className="flex h-full flex-col justify-between gap-2">
+                  <p className="font-medium text-sm">Total Students</p>
+                  <div className="flex justify-between">
+                    <p className="font-bold text-3xl">{students.length}</p>
+                    <Users className="h-8 w-8" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-linear-to-br from-green-500 to-green-600 text-white shadow-lg">
+              <CardContent className="h-full p-6">
+                <div className="flex h-full flex-col justify-between gap-2">
+                  <p className="font-medium text-sm">Today</p>
+                  <div className="flex justify-between">
+                    <p className="font-bold text-3xl">{todayCount}</p>
+                    <Clock className="h-8 w-8" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-linear-to-br from-purple-500 to-purple-600 text-white shadow-lg">
+              <CardContent className="h-full p-6">
+                <div className="flex h-full flex-col justify-between gap-2">
+                  <p className="font-medium text-sm">This Week</p>
+                  <div className="flex justify-between">
+                    <p className="font-bold text-3xl">{thisWeekCount}</p>
+                    <TrendingUp className="h-8 w-8" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 bg-linear-to-br from-orange-500 to-orange-600 text-white shadow-lg">
+              <CardContent className="h-full p-6">
+                <div className="flex h-full flex-col justify-between gap-2">
+                  <p className="font-medium text-sm">Pending Upload</p>
+                  <div className="flex justify-between">
+                    <p className="font-bold text-3xl">{students.length}</p>
+                    <Upload className="h-8 w-8" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
-          {/* Scanner Section */}
-          <div className="space-y-6">
-            <Card className="border-0 shadow-xl">
-              <CardHeader className="pb-4">
+        <div className="space-y-8">
+          {/* Student Input Section */}
+          <Card className="border-border shadow-xl">
+            <CardContent className="grid grid-cols-1 gap-16 px-8 py-6 lg:grid-cols-2">
+              {/* Scanner Section */}
+              <div className="flex flex-col gap-8">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-2">
+                  <div className="rounded-lg bg-linear-to-br from-blue-500 to-purple-600 p-2">
                     <Camera className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -360,16 +401,15 @@ export default function Page() {
                     </CardDescription>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <VideoCapture onNewStudent={handleNewStudent} />
-              </CardContent>
-            </Card>
+                <div className="space-y-6">
+                  <VideoCapture onNewStudent={handleNewStudent} />
+                </div>
+              </div>
 
-            <Card className="border-0 shadow-xl">
-              <CardHeader className="pb-4">
+              {/* Student Form Section */}
+              <div className="flex flex-col gap-8">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 p-2">
+                  <div className="rounded-lg bg-linear-to-br from-green-500 to-emerald-600 p-2">
                     <FileText className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -381,102 +421,98 @@ export default function Page() {
                     </CardDescription>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <StudentForm
-                  values={
-                    newStudent
-                      ? {
-                          name: newStudent.name,
-                          studentNumber: newStudent.studentNumber,
-                          program: newStudent.program ?? undefined,
-                        }
-                      : undefined
-                  }
-                  onSubmit={(data) => {
-                    handleAddStudent(
-                      data.name,
-                      data.studentNumber,
-                      data.program ?? null
-                    );
-                    setNewStudent(null);
-                  }}
-                />
-              </CardContent>
-            </Card>
-          </div>
+                <div className="flex-1">
+                  <StudentForm
+                    values={
+                      newStudent
+                        ? {
+                            name: newStudent.name,
+                            studentNumber: newStudent.studentNumber,
+                            program: newStudent.program ?? undefined,
+                          }
+                        : undefined
+                    }
+                    onSubmit={(data) => {
+                      handleAddStudent(
+                        data.name,
+                        data.studentNumber,
+                        data.program ?? null
+                      );
+                      setNewStudent(null);
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Student List Section */}
-          <div className="space-y-6">
-            <Card className="border-0 shadow-xl">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 p-2">
-                      <Users className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Student Records</CardTitle>
-                      <CardDescription>
-                        Manage captured student information
-                      </CardDescription>
-                    </div>
+          <Card className="border-border shadow-xl">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 p-2">
+                    <Users className="h-5 w-5 text-white" />
                   </div>
-                  <Badge variant="secondary" className="px-3 py-1">
-                    {filteredStudents.length} students
-                  </Badge>
+                  <div>
+                    <CardTitle className="text-xl">Student Records</CardTitle>
+                    <CardDescription>
+                      Manage captured student information
+                    </CardDescription>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <StudentList
-                  students={filteredStudents}
-                  onAdd={handleAddStudent}
-                  onUpdate={handleUpdateStudent}
-                  onDelete={handleDeleteStudent}
-                  onDateRangeApply={handleDateRangeApply}
-                />
-              </CardContent>
-            </Card>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <StudentList
+                students={filteredStudents}
+                onAdd={handleAddStudent}
+                onUpdate={handleUpdateStudent}
+                onDelete={handleDeleteStudent}
+                onDateRangeApply={handleDateRangeApply}
+              />
+            </CardContent>
+            <CardFooter className="flex-col items-stretch gap-4">
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Button
+                  size="lg"
+                  variant="destructive"
+                  className="h-14 font-medium text-base shadow-lg"
+                  disabled={students.length === 0}
+                  onClick={() => setShowClearDialog(true)}
+                >
+                  <Trash2 className="mr-2 h-5 w-5" />
+                  Clear History
+                </Button>
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Button
-                size="lg"
-                variant="destructive"
-                className="h-14 text-base font-medium shadow-lg"
-                disabled={students.length === 0}
-                onClick={() => setShowClearDialog(true)}
-              >
-                <Trash2 className="mr-2 h-5 w-5" />
-                Clear History
-              </Button>
+                <Button
+                  size="lg"
+                  className="h-14 bg-linear-to-r from-green-500 to-emerald-600 font-medium text-base shadow-lg hover:from-green-600 hover:to-emerald-700"
+                  disabled={students.length === 0 || !whitelisted}
+                  onClick={handleUpload}
+                >
+                  <Database className="mr-2 h-5 w-5" />
+                  Upload to Database
+                </Button>
+              </div>
 
-              <Button
-                size="lg"
-                className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 text-base font-medium shadow-lg hover:from-green-600 hover:to-emerald-700"
-                disabled={students.length === 0 || !whitelisted}
-                onClick={handleUpload}
-              >
-                <Database className="mr-2 h-5 w-5" />
-                Upload to Database
-              </Button>
-            </div>
+              <Separator />
 
-            <Separator />
-
-            {/* View All Button */}
-            <Link href="/scanner/list">
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-14 w-full bg-primary/10 text-base font-medium hover:bg-primary/20"
-                disabled={!whitelisted}
-              >
-                <Scan className="mr-2 h-5 w-5" />
-                View All Students
-              </Button>
-            </Link>
-          </div>
+              {/* View All Button */}
+              <Link href="/scanner/list">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-14 w-full bg-primary/10 font-medium text-base hover:bg-primary/20"
+                  disabled={!whitelisted}
+                >
+                  <Scan className="mr-2 h-5 w-5" />
+                  View All Students
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
         </div>
 
         <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>

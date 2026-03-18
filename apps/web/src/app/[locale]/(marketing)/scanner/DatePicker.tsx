@@ -38,7 +38,7 @@ export function DatePicker({
           mode="single"
           selected={date || undefined}
           onSelect={(date: Date | undefined) => setDate(date || null)}
-          initialFocus
+          autoFocus
         />
       </PopoverContent>
     </Popover>

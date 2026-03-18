@@ -1,6 +1,5 @@
 'use client';
 
-import StudentForm, { type StudentFormData } from './StudentForm';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,7 @@ import {
 } from '@ncthub/ui/dialog';
 import { UserPlus } from '@ncthub/ui/icons';
 import { useState } from 'react';
+import StudentForm, { type StudentFormData } from './StudentForm';
 
 interface AddStudentDialogProps {
   trigger: React.ReactNode;
@@ -34,11 +34,11 @@ export default function AddStudentDialog({
       <DialogContent>
         <DialogHeader className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-2">
+            <div className="rounded-lg bg-linear-to-br from-blue-500 to-purple-600 p-2">
               <UserPlus className="h-5 w-5 text-white" />
             </div>
             <div className="space-y-1">
-              <DialogTitle className="text-xl font-semibold">
+              <DialogTitle className="font-semibold text-xl">
                 Add New Student
               </DialogTitle>
               <DialogDescription className="text-gray-600">

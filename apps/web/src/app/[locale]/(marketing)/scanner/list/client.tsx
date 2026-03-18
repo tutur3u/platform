@@ -1,13 +1,13 @@
 'use client';
 
-import StudentList from '../StudentList';
-import { Student } from '@ncthub/types/primitives/Student';
+import type { Student } from '@ncthub/types/primitives/Student';
 import { Button } from '@ncthub/ui/button';
 import { useToast } from '@ncthub/ui/hooks/use-toast';
 import { ArrowLeft } from '@ncthub/ui/icons';
 import Link from 'next/link';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import StudentList from '../StudentList';
 
 export default function StudentListClient() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -187,13 +187,13 @@ export default function StudentListClient() {
   }
 
   return (
-    <div className="container mx-auto min-h-screen">
+    <div className="container mx-auto min-h-screen px-4">
       <div className="mt-4">
         <Link href="/scanner">
           <Button
             variant="outline"
             size="lg"
-            className="h-12 bg-primary/10 text-base font-medium hover:bg-primary/20"
+            className="h-12 bg-primary/10 font-medium text-base hover:bg-primary/20"
           >
             <ArrowLeft className="mr-2 h-5 w-5" />
             Back to Capture Page
@@ -203,10 +203,10 @@ export default function StudentListClient() {
 
       <div className="px-4 py-16">
         <div className="space-y-4 text-center">
-          <h1 className="bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-4xl font-bold text-transparent md:text-6xl">
+          <h1 className="bg-linear-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text font-bold text-4xl text-transparent md:text-6xl">
             Student Records
           </h1>
-          <p className="mx-auto max-w-2xl text-xl text-dynamic-light-sky">
+          <p className="mx-auto max-w-2xl text-dynamic-light-sky text-xl">
             Manage and track student information
           </p>
         </div>
