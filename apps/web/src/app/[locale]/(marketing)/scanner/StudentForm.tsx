@@ -32,18 +32,26 @@ export default function StudentForm({ values, onSubmit }: StudentFormProps) {
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
     values: {
-      name: '',
-      studentNumber: '',
-      program: undefined,
-      ...values,
+      name: values?.name || '',
+      studentNumber: values?.studentNumber || '',
+      program: values?.program ?? '',
     },
   });
 
   const isSubmitting = form.formState.isSubmitting;
 
+  const handleSubmit = (data: StudentFormData) => {
+    onSubmit(data);
+    form.reset({
+      name: '',
+      studentNumber: '',
+      program: '',
+    });
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid gap-6">
           <FormField
             control={form.control}
