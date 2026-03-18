@@ -1,5 +1,349 @@
 part of 'task_board_detail_page.dart';
 
+enum _TaskRelationshipRole {
+  parentTask,
+  childTask,
+  blockedBy,
+  blocking,
+  relatedTask,
+}
+
+Future<void> _loadTaskRelationshipsIfNeeded(
+  _TaskBoardTaskEditorSheetState state, {
+  bool force = false,
+}) async {
+  final task = state.widget.task;
+  if (task == null) return;
+
+  if (!force && task.relationshipsLoaded) {
+    return;
+  }
+
+  state._updateState(() {
+    state
+      .._isLoadingRelationships = true
+      .._relationshipsError = null;
+  });
+
+  try {
+    await state.context.read<TaskBoardDetailCubit>().loadTaskRelationships(
+      taskId: task.id,
+    );
+    if (!state.mounted) return;
+
+    final updatedTask = _findTaskInBoardState(state, task.id);
+    state._updateState(() {
+      state
+        .._relationshipsState =
+            updatedTask?.relationships ?? TaskRelationshipsResponse.empty
+        .._isLoadingRelationships = false
+        .._relationshipsError = null;
+    });
+  } on ApiException catch (error) {
+    if (!state.mounted) return;
+    state._updateState(() {
+      state
+        .._isLoadingRelationships = false
+        .._relationshipsError = error.message.trim().isEmpty
+            ? null
+            : error.message;
+    });
+  } on Exception {
+    if (!state.mounted) return;
+    state._updateState(() {
+      state
+        .._isLoadingRelationships = false
+        .._relationshipsError = state.context.l10n.commonSomethingWentWrong;
+    });
+  }
+}
+
+TaskBoardTask? _findTaskInBoardState(
+  _TaskBoardTaskEditorSheetState state,
+  String taskId,
+) {
+  final tasks = state.context.read<TaskBoardDetailCubit>().state.board?.tasks;
+  if (tasks == null) return null;
+
+  for (final task in tasks) {
+    if (task.id == taskId) {
+      return task;
+    }
+  }
+
+  return null;
+}
+
+Future<void> _pickTaskRelationship(
+  _TaskBoardTaskEditorSheetState state, {
+  required _TaskRelationshipRole role,
+}) async {
+  final task = state.widget.task;
+  if (task == null) return;
+
+  if (state._relationshipTaskOptions.isEmpty) {
+    await _loadRelationshipTaskOptions(state);
+  }
+
+  if (!state.mounted) return;
+
+  final blockedIds = _blockedRelationshipTaskIds(state, role: role);
+  final options = state._relationshipTaskOptions
+      .where((option) => !blockedIds.contains(option.id))
+      .toList(growable: false);
+
+  if (options.isEmpty) {
+    _showTaskEditorErrorToast(
+      state,
+      state.context.l10n.taskBoardDetailNoAvailableRelationshipTasks,
+    );
+    return;
+  }
+
+  final selectedTaskId = await shad.showDialog<String>(
+    context: state.context,
+    builder: (context) => _TaskRelationshipPickerDialog(
+      title: _relationshipPickerTitle(state.context, role),
+      tasks: options,
+    ),
+  );
+
+  if (selectedTaskId == null || !state.mounted) return;
+
+  await _createTaskRelationship(
+    state,
+    selectedTaskId: selectedTaskId,
+    role: role,
+  );
+}
+
+Future<void> _loadRelationshipTaskOptions(
+  _TaskBoardTaskEditorSheetState state,
+) async {
+  final wsId = state.context.read<TaskBoardDetailCubit>().state.workspaceId;
+  if (wsId == null) {
+    throw StateError('Workspace not selected');
+  }
+
+  final options = await state.context
+      .read<TaskRepository>()
+      .getWorkspaceTasksForProjectLinking(wsId);
+  final currentTaskId = state.widget.task?.id;
+
+  state._updateState(() {
+    state._relationshipTaskOptions = options
+        .where((option) => option.id != currentTaskId)
+        .toList(growable: false);
+  });
+}
+
+Set<String> _blockedRelationshipTaskIds(
+  _TaskBoardTaskEditorSheetState state, {
+  required _TaskRelationshipRole role,
+}) {
+  final relationships = state._relationships;
+
+  return switch (role) {
+    _TaskRelationshipRole.parentTask => {
+      if (relationships.parentTask != null) relationships.parentTask!.id,
+    },
+    _TaskRelationshipRole.childTask => {
+      for (final task in relationships.childTasks) task.id,
+    },
+    _TaskRelationshipRole.blockedBy => {
+      for (final task in relationships.blockedBy) task.id,
+    },
+    _TaskRelationshipRole.blocking => {
+      for (final task in relationships.blocking) task.id,
+    },
+    _TaskRelationshipRole.relatedTask => {
+      for (final task in relationships.relatedTasks) task.id,
+    },
+  };
+}
+
+String _relationshipPickerTitle(
+  BuildContext context,
+  _TaskRelationshipRole role,
+) {
+  return switch (role) {
+    _TaskRelationshipRole.parentTask =>
+      context.l10n.taskBoardDetailAddParentTask,
+    _TaskRelationshipRole.childTask => context.l10n.taskBoardDetailAddChildTask,
+    _TaskRelationshipRole.blockedBy =>
+      context.l10n.taskBoardDetailAddBlockedByTask,
+    _TaskRelationshipRole.blocking =>
+      context.l10n.taskBoardDetailAddBlockingTask,
+    _TaskRelationshipRole.relatedTask =>
+      context.l10n.taskBoardDetailAddRelatedTask,
+  };
+}
+
+Future<void> _createTaskRelationship(
+  _TaskBoardTaskEditorSheetState state, {
+  required String selectedTaskId,
+  required _TaskRelationshipRole role,
+}) async {
+  final currentTask = state.widget.task;
+  if (currentTask == null) return;
+
+  final relation = _relationshipMutation(
+    currentTaskId: currentTask.id,
+    selectedTaskId: selectedTaskId,
+    role: role,
+  );
+
+  final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;
+  final toastContext = Navigator.of(state.context, rootNavigator: true).context;
+
+  state._updateState(() {
+    state
+      .._isMutatingRelationships = true
+      .._relationshipsError = null;
+  });
+
+  try {
+    await state.context.read<TaskBoardDetailCubit>().createTaskRelationship(
+      taskId: currentTask.id,
+      sourceTaskId: relation.sourceTaskId,
+      targetTaskId: relation.targetTaskId,
+      type: relation.type,
+    );
+    await _loadTaskRelationshipsIfNeeded(state, force: true);
+
+    if (!state.mounted || !toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert(
+        content: Text(context.l10n.taskBoardDetailRelationshipAdded),
+      ),
+    );
+  } on ApiException catch (error) {
+    if (!state.mounted || !toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert.destructive(
+        content: Text(
+          error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
+        ),
+      ),
+    );
+  } on Exception {
+    if (!state.mounted || !toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) =>
+          shad.Alert.destructive(content: Text(fallbackErrorMessage)),
+    );
+  } finally {
+    if (state.mounted) {
+      state._updateState(() => state._isMutatingRelationships = false);
+    }
+  }
+}
+
+Future<void> _removeTaskRelationship(
+  _TaskBoardTaskEditorSheetState state, {
+  required RelatedTaskInfo targetTask,
+  required _TaskRelationshipRole role,
+}) async {
+  final currentTask = state.widget.task;
+  if (currentTask == null) return;
+
+  final relation = _relationshipMutation(
+    currentTaskId: currentTask.id,
+    selectedTaskId: targetTask.id,
+    role: role,
+  );
+
+  final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;
+  final toastContext = Navigator.of(state.context, rootNavigator: true).context;
+
+  state._updateState(() {
+    state
+      .._isMutatingRelationships = true
+      .._relationshipsError = null;
+  });
+
+  try {
+    await state.context.read<TaskBoardDetailCubit>().deleteTaskRelationship(
+      taskId: currentTask.id,
+      sourceTaskId: relation.sourceTaskId,
+      targetTaskId: relation.targetTaskId,
+      type: relation.type,
+    );
+    await _loadTaskRelationshipsIfNeeded(state, force: true);
+
+    if (!state.mounted || !toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert(
+        content: Text(context.l10n.taskBoardDetailRelationshipRemoved),
+      ),
+    );
+  } on ApiException catch (error) {
+    if (!state.mounted || !toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert.destructive(
+        content: Text(
+          error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
+        ),
+      ),
+    );
+  } on Exception {
+    if (!state.mounted || !toastContext.mounted) return;
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) =>
+          shad.Alert.destructive(content: Text(fallbackErrorMessage)),
+    );
+  } finally {
+    if (state.mounted) {
+      state._updateState(() => state._isMutatingRelationships = false);
+    }
+  }
+}
+
+({
+  String sourceTaskId,
+  String targetTaskId,
+  TaskRelationshipType type,
+})
+_relationshipMutation({
+  required String currentTaskId,
+  required String selectedTaskId,
+  required _TaskRelationshipRole role,
+}) {
+  return switch (role) {
+    _TaskRelationshipRole.parentTask => (
+      sourceTaskId: selectedTaskId,
+      targetTaskId: currentTaskId,
+      type: TaskRelationshipType.parentChild,
+    ),
+    _TaskRelationshipRole.childTask => (
+      sourceTaskId: currentTaskId,
+      targetTaskId: selectedTaskId,
+      type: TaskRelationshipType.parentChild,
+    ),
+    _TaskRelationshipRole.blockedBy => (
+      sourceTaskId: selectedTaskId,
+      targetTaskId: currentTaskId,
+      type: TaskRelationshipType.blocks,
+    ),
+    _TaskRelationshipRole.blocking => (
+      sourceTaskId: currentTaskId,
+      targetTaskId: selectedTaskId,
+      type: TaskRelationshipType.blocks,
+    ),
+    _TaskRelationshipRole.relatedTask => (
+      sourceTaskId: currentTaskId,
+      targetTaskId: selectedTaskId,
+      type: TaskRelationshipType.related,
+    ),
+  };
+}
+
 Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
   final title = state._nameController.text.trim();
   final fallbackErrorMessage = state.context.l10n.commonSomethingWentWrong;

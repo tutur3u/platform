@@ -23,12 +23,20 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
 }
 
 class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
+  static const int _detailsTabIndex = 0;
+
   late TaskBoardTask _task;
+  int _activeTab = _detailsTabIndex;
+  bool _isLoadingRelationships = false;
+  String? _relationshipsError;
 
   @override
   void initState() {
     super.initState();
     _task = widget.task;
+    if (!_task.relationshipsLoaded) {
+      unawaited(_loadRelationships());
+    }
   }
 
   @override
@@ -45,6 +53,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               assignee.id.trim().isNotEmpty,
         )
         .toList(growable: false);
+
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -85,97 +94,199 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               ],
             ),
             const shad.Gap(16),
-            if (description != null) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskDescriptionLabel,
-                value: description,
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.priority?.trim().isNotEmpty == true) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailPriority,
-                child: _TaskPriorityChip(priority: _task.priority),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.startDate != null) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskStartDate,
-                value: DateFormat.yMd().format(_task.startDate!),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.endDate != null) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskEndDate,
-                value: DateFormat.yMd().format(_task.endDate!),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.estimationPoints != null) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskEstimation,
-                child: shad.OutlineBadge(
-                  child: Text(
-                    _taskEstimationPointLabel(
-                      points: _task.estimationPoints!,
-                      board: widget.board,
+            shad.Tabs(
+              index: _activeTab,
+              onChanged: (value) => setState(() => _activeTab = value),
+              children: [
+                shad.TabItem(
+                  child: Text(context.l10n.taskBoardDetailEditorDetailsTab),
+                ),
+                shad.TabItem(
+                  child: _TaskEditorTabLabel(
+                    label: context.l10n.taskBoardDetailEditorRelationshipsTab,
+                    count: _task.relationships.totalCount,
+                  ),
+                ),
+              ],
+            ),
+            const shad.Gap(12),
+            if (_activeTab == _detailsTabIndex) ...[
+              if (description != null) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskDescriptionLabel,
+                  value: description,
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.priority?.trim().isNotEmpty == true) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailPriority,
+                  child: _TaskPriorityChip(priority: _task.priority),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.startDate != null) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskStartDate,
+                  value: DateFormat.yMd().format(_task.startDate!),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.endDate != null) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskEndDate,
+                  value: DateFormat.yMd().format(_task.endDate!),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.estimationPoints != null) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskEstimation,
+                  child: shad.OutlineBadge(
+                    child: Text(
+                      _taskEstimationPointLabel(
+                        points: _task.estimationPoints!,
+                        board: widget.board,
+                      ),
                     ),
                   ),
                 ),
+                const shad.Gap(12),
+              ],
+              if (assignees.isNotEmpty) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskAssignees,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: assignees
+                        .map(
+                          (assignee) => _AssigneeChip(
+                            label:
+                                assignee.displayName?.trim().isNotEmpty == true
+                                ? assignee.displayName!.trim()
+                                : assignee.id,
+                            avatarUrl: assignee.avatarUrl,
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.labels.isNotEmpty) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskLabels,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _task.labels
+                        .map(_TaskLabelBadge.new)
+                        .toList(growable: false),
+                  ),
+                ),
+                const shad.Gap(12),
+              ],
+              if (_task.projects.isNotEmpty) ...[
+                _TaskBoardTaskDetailRow(
+                  label: context.l10n.taskBoardDetailTaskProjects,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _task.projects
+                        .map(
+                          (project) => _ProjectBadge(
+                            label: _taskProjectLabel(project),
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
+                ),
+                const shad.Gap(12),
+              ],
+            ] else ...[
+              if (_isLoadingRelationships)
+                const LinearProgressIndicator(minHeight: 2),
+              if (_relationshipsError != null) ...[
+                const shad.Gap(8),
+                Text(
+                  _relationshipsError!,
+                  style: shad.Theme.of(context).typography.small.copyWith(
+                    color: shad.Theme.of(context).colorScheme.destructive,
+                  ),
+                ),
+              ],
+              const shad.Gap(10),
+              _RelationshipSectionCard(
+                title: context.l10n.taskBoardDetailParentTask,
+                children: [
+                  if (_task.relationships.parentTask != null)
+                    _RelationshipTaskTile(
+                      task: _task.relationships.parentTask!,
+                    )
+                  else
+                    Text(
+                      context.l10n.taskBoardDetailNone,
+                      style: shad.Theme.of(context).typography.small,
+                    ),
+                ],
               ),
-              const shad.Gap(12),
-            ],
-            if (assignees.isNotEmpty) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskAssignees,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: assignees
-                      .map(
-                        (assignee) => _AssigneeChip(
-                          label: assignee.displayName?.trim().isNotEmpty == true
-                              ? assignee.displayName!.trim()
-                              : assignee.id,
-                          avatarUrl: assignee.avatarUrl,
+              const shad.Gap(10),
+              _RelationshipSectionCard(
+                title: context.l10n.taskBoardDetailChildTasks,
+                children: _task.relationships.childTasks.isEmpty
+                    ? [
+                        Text(
+                          context.l10n.taskBoardDetailNone,
+                          style: shad.Theme.of(context).typography.small,
                         ),
-                      )
-                      .toList(growable: false),
-                ),
+                      ]
+                    : _task.relationships.childTasks
+                          .map((task) => _RelationshipTaskTile(task: task))
+                          .toList(growable: false),
               ),
-              const shad.Gap(12),
-            ],
-            if (_task.labels.isNotEmpty) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskLabels,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _task.labels
-                      .map(_TaskLabelBadge.new)
-                      .toList(growable: false),
-                ),
-              ),
-              const shad.Gap(12),
-            ],
-            if (_task.projects.isNotEmpty) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskProjects,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _task.projects
-                      .map(
-                        (project) => _ProjectBadge(
-                          label: _taskProjectLabel(project),
+              const shad.Gap(10),
+              _RelationshipSectionCard(
+                title: context.l10n.taskBoardDetailBlockedBy,
+                children: _task.relationships.blockedBy.isEmpty
+                    ? [
+                        Text(
+                          context.l10n.taskBoardDetailNone,
+                          style: shad.Theme.of(context).typography.small,
                         ),
-                      )
-                      .toList(growable: false),
-                ),
+                      ]
+                    : _task.relationships.blockedBy
+                          .map((task) => _RelationshipTaskTile(task: task))
+                          .toList(growable: false),
               ),
-              const shad.Gap(12),
+              const shad.Gap(10),
+              _RelationshipSectionCard(
+                title: context.l10n.taskBoardDetailBlocking,
+                children: _task.relationships.blocking.isEmpty
+                    ? [
+                        Text(
+                          context.l10n.taskBoardDetailNone,
+                          style: shad.Theme.of(context).typography.small,
+                        ),
+                      ]
+                    : _task.relationships.blocking
+                          .map((task) => _RelationshipTaskTile(task: task))
+                          .toList(growable: false),
+              ),
+              const shad.Gap(10),
+              _RelationshipSectionCard(
+                title: context.l10n.taskBoardDetailRelatedTasks,
+                children: _task.relationships.relatedTasks.isEmpty
+                    ? [
+                        Text(
+                          context.l10n.taskBoardDetailNone,
+                          style: shad.Theme.of(context).typography.small,
+                        ),
+                      ]
+                    : _task.relationships.relatedTasks
+                          .map((task) => _RelationshipTaskTile(task: task))
+                          .toList(growable: false),
+              ),
             ],
           ],
         ),
@@ -220,6 +331,46 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     final refreshedTask = _findTaskInState(cubit.state, _task.id);
     if (refreshedTask != null) {
       setState(() => _task = refreshedTask);
+    }
+  }
+
+  Future<void> _loadRelationships() async {
+    setState(() {
+      _isLoadingRelationships = true;
+      _relationshipsError = null;
+    });
+
+    try {
+      await context.read<TaskBoardDetailCubit>().loadTaskRelationships(
+        taskId: _task.id,
+      );
+
+      if (!mounted) return;
+      final refreshedTask = _findTaskInState(
+        context.read<TaskBoardDetailCubit>().state,
+        _task.id,
+      );
+      setState(() {
+        if (refreshedTask != null) {
+          _task = refreshedTask;
+        }
+        _isLoadingRelationships = false;
+        _relationshipsError = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingRelationships = false;
+        _relationshipsError = error.message.trim().isEmpty
+            ? null
+            : error.message;
+      });
+    } on Exception {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingRelationships = false;
+        _relationshipsError = context.l10n.commonSomethingWentWrong;
+      });
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/utils/date_utils.dart';
 
 class TaskBoardTaskAssignee extends Equatable {
@@ -117,6 +118,8 @@ class TaskBoardTask extends Equatable {
     this.assignees = const [],
     this.labels = const [],
     this.projects = const [],
+    this.relationships = TaskRelationshipsResponse.empty,
+    this.relationshipsLoaded = false,
   });
 
   factory TaskBoardTask.fromJson(Map<String, dynamic> json) {
@@ -185,6 +188,8 @@ class TaskBoardTask extends Equatable {
     List<TaskBoardTaskAssignee>? assignees,
     List<TaskBoardTaskLabel>? labels,
     List<TaskBoardTaskProject>? projects,
+    TaskRelationshipsResponse? relationships,
+    bool? relationshipsLoaded,
   }) {
     return TaskBoardTask(
       id: id,
@@ -205,6 +210,8 @@ class TaskBoardTask extends Equatable {
       assignees: assignees ?? this.assignees,
       labels: labels ?? this.labels,
       projects: projects ?? this.projects,
+      relationships: relationships ?? this.relationships,
+      relationshipsLoaded: relationshipsLoaded ?? this.relationshipsLoaded,
     );
   }
 
@@ -242,6 +249,8 @@ class TaskBoardTask extends Equatable {
   final List<TaskBoardTaskAssignee> assignees;
   final List<TaskBoardTaskLabel> labels;
   final List<TaskBoardTaskProject> projects;
+  final TaskRelationshipsResponse relationships;
+  final bool relationshipsLoaded;
 
   @override
   List<Object?> get props => [
@@ -263,5 +272,7 @@ class TaskBoardTask extends Equatable {
     assignees,
     labels,
     projects,
+    relationships,
+    relationshipsLoaded,
   ];
 }

@@ -113,3 +113,102 @@ class _SelectionFieldButton extends StatelessWidget {
     );
   }
 }
+
+class _TaskEditorTabLabel extends StatelessWidget {
+  const _TaskEditorTabLabel({
+    required this.label,
+    required this.count,
+  });
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label),
+        if (count > 0) ...[
+          const shad.Gap(6),
+          shad.OutlineBadge(child: Text('$count')),
+        ],
+      ],
+    );
+  }
+}
+
+class _RelationshipSectionCard extends StatelessWidget {
+  const _RelationshipSectionCard({
+    required this.title,
+    required this.children,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return _EditorSectionCard(
+      title: title,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+}
+
+class _RelationshipTaskTile extends StatelessWidget {
+  const _RelationshipTaskTile({
+    required this.task,
+    this.onRemove,
+  });
+
+  final RelatedTaskInfo task;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = task.name.trim().isEmpty
+        ? context.l10n.taskBoardDetailUntitledTask
+        : task.name.trim();
+    final metadata = [
+      if (task.boardName?.trim().isNotEmpty == true) task.boardName!.trim(),
+      if (task.displayNumber != null) '#${task.displayNumber}',
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: shad.Theme.of(context).colorScheme.border),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, overflow: TextOverflow.ellipsis),
+                if (metadata.isNotEmpty)
+                  Text(
+                    metadata.join(' · '),
+                    style: shad.Theme.of(context).typography.xSmall.copyWith(
+                      color: shad.Theme.of(context).colorScheme.mutedForeground,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (onRemove != null)
+            shad.IconButton.ghost(
+              onPressed: onRemove,
+              icon: const Icon(Icons.close, size: 14),
+            ),
+        ],
+      ),
+    );
+  }
+}

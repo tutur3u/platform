@@ -1615,6 +1615,108 @@ abstract class AppLocalizations {
   /// **'Select projects'**
   String get taskBoardDetailTaskSelectProjects;
 
+  /// No description provided for @taskBoardDetailEditorDetailsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get taskBoardDetailEditorDetailsTab;
+
+  /// No description provided for @taskBoardDetailEditorRelationshipsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Relationships'**
+  String get taskBoardDetailEditorRelationshipsTab;
+
+  /// No description provided for @taskBoardDetailParentTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent task'**
+  String get taskBoardDetailParentTask;
+
+  /// No description provided for @taskBoardDetailChildTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Child tasks'**
+  String get taskBoardDetailChildTasks;
+
+  /// No description provided for @taskBoardDetailBlockedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked by'**
+  String get taskBoardDetailBlockedBy;
+
+  /// No description provided for @taskBoardDetailBlocking.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocking'**
+  String get taskBoardDetailBlocking;
+
+  /// No description provided for @taskBoardDetailRelatedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Related tasks'**
+  String get taskBoardDetailRelatedTasks;
+
+  /// No description provided for @taskBoardDetailAddParentTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Add parent task'**
+  String get taskBoardDetailAddParentTask;
+
+  /// No description provided for @taskBoardDetailAddChildTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Add child task'**
+  String get taskBoardDetailAddChildTask;
+
+  /// No description provided for @taskBoardDetailAddBlockedByTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Add blocker'**
+  String get taskBoardDetailAddBlockedByTask;
+
+  /// No description provided for @taskBoardDetailAddBlockingTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Add blocked task'**
+  String get taskBoardDetailAddBlockingTask;
+
+  /// No description provided for @taskBoardDetailAddRelatedTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Add related task'**
+  String get taskBoardDetailAddRelatedTask;
+
+  /// No description provided for @taskBoardDetailSelectTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Select task'**
+  String get taskBoardDetailSelectTask;
+
+  /// No description provided for @taskBoardDetailSearchTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get taskBoardDetailSearchTasks;
+
+  /// No description provided for @taskBoardDetailNoAvailableRelationshipTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No available tasks for this relationship.'**
+  String get taskBoardDetailNoAvailableRelationshipTasks;
+
+  /// No description provided for @taskBoardDetailRelationshipAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Relationship added.'**
+  String get taskBoardDetailRelationshipAdded;
+
+  /// No description provided for @taskBoardDetailRelationshipRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Relationship removed.'**
+  String get taskBoardDetailRelationshipRemoved;
+
   /// No description provided for @taskBoardDetailNone.
   ///
   /// In en, this message translates to:

@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 
 part 'task_board_detail_state.dart';
@@ -157,6 +158,76 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         wsId: wsId,
         taskId: taskId,
         listId: listId,
+      ),
+    );
+  }
+
+  Future<void> loadTaskRelationships({required String taskId}) async {
+    final wsId = state.workspaceId;
+    final board = state.board;
+    if (wsId == null || board == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    final relationships = await _taskRepository.getTaskRelationships(
+      wsId: wsId,
+      taskId: taskId,
+    );
+
+    final nextTasks = board.tasks
+        .map(
+          (task) => task.id == taskId
+              ? task.copyWith(
+                  relationships: relationships,
+                  relationshipsLoaded: true,
+                )
+              : task,
+        )
+        .toList(growable: false);
+
+    emit(state.copyWith(board: board.copyWith(tasks: nextTasks)));
+  }
+
+  Future<void> createTaskRelationship({
+    required String taskId,
+    required String sourceTaskId,
+    required String targetTaskId,
+    required TaskRelationshipType type,
+  }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    await _runMutation(
+      () => _taskRepository.createTaskRelationship(
+        wsId: wsId,
+        taskId: taskId,
+        sourceTaskId: sourceTaskId,
+        targetTaskId: targetTaskId,
+        type: type,
+      ),
+    );
+  }
+
+  Future<void> deleteTaskRelationship({
+    required String taskId,
+    required String sourceTaskId,
+    required String targetTaskId,
+    required TaskRelationshipType type,
+  }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    await _runMutation(
+      () => _taskRepository.deleteTaskRelationship(
+        wsId: wsId,
+        taskId: taskId,
+        sourceTaskId: sourceTaskId,
+        targetTaskId: targetTaskId,
+        type: type,
       ),
     );
   }

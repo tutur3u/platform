@@ -803,6 +803,57 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskSelectProjects => 'Chọn dự án';
 
   @override
+  String get taskBoardDetailEditorDetailsTab => 'Chi tiết';
+
+  @override
+  String get taskBoardDetailEditorRelationshipsTab => 'Quan hệ';
+
+  @override
+  String get taskBoardDetailParentTask => 'Công việc cha';
+
+  @override
+  String get taskBoardDetailChildTasks => 'Công việc con';
+
+  @override
+  String get taskBoardDetailBlockedBy => 'Bị chặn bởi';
+
+  @override
+  String get taskBoardDetailBlocking => 'Đang chặn';
+
+  @override
+  String get taskBoardDetailRelatedTasks => 'Công việc liên quan';
+
+  @override
+  String get taskBoardDetailAddParentTask => 'Thêm công việc cha';
+
+  @override
+  String get taskBoardDetailAddChildTask => 'Thêm công việc con';
+
+  @override
+  String get taskBoardDetailAddBlockedByTask => 'Thêm công việc chặn';
+
+  @override
+  String get taskBoardDetailAddBlockingTask => 'Thêm công việc bị chặn';
+
+  @override
+  String get taskBoardDetailAddRelatedTask => 'Thêm công việc liên quan';
+
+  @override
+  String get taskBoardDetailSelectTask => 'Chọn công việc';
+
+  @override
+  String get taskBoardDetailSearchTasks => 'Tìm kiếm công việc';
+
+  @override
+  String get taskBoardDetailNoAvailableRelationshipTasks => 'Không có công việc khả dụng cho quan hệ này.';
+
+  @override
+  String get taskBoardDetailRelationshipAdded => 'Đã thêm quan hệ.';
+
+  @override
+  String get taskBoardDetailRelationshipRemoved => 'Đã xóa quan hệ.';
+
+  @override
   String get taskBoardDetailNone => 'Không có';
 
   @override
