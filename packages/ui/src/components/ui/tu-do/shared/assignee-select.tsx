@@ -123,10 +123,13 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
 
         const boardTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
         const currentTask = boardTasks?.find((task) => task.id === taskId);
-        const existingIds =
-          currentTask?.assignees
-            ?.map((assignee) => assignee.id)
-            .filter(Boolean) ?? uniqueAssignees.map((assignee) => assignee.id);
+        const existingIds = currentTask?.assignees
+          ?.map((assignee) => assignee.id)
+          .filter(Boolean);
+
+        if (!existingIds) {
+          throw new Error(t('please_try_again_later'));
+        }
 
         const nextIds =
           action === 'remove'

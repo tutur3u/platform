@@ -4,7 +4,6 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { addDays } from 'date-fns';
 import { useCallback } from 'react';
 import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast-context';
@@ -49,10 +48,18 @@ export function useTaskActions({
   bulkUpdateCustomDueDate,
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
-  const updateTaskMutation = useUpdateTask(boardId);
   const broadcast = useBoardBroadcast();
-  const resolvedWorkspaceId =
-    workspaceId ?? (task as Task & { ws_id?: string })?.ws_id;
+
+  const getWorkspaceId = useCallback(() => {
+    const resolvedWorkspaceId =
+      workspaceId ?? (task as Task & { ws_id?: string })?.ws_id;
+
+    if (!resolvedWorkspaceId) {
+      throw new Error('Workspace ID is required');
+    }
+
+    return resolvedWorkspaceId;
+  }, [task, workspaceId]);
 
   const handleArchiveToggle = useCallback(async () => {
     if (!task || !onUpdate) return;
@@ -87,12 +94,10 @@ export function useTaskActions({
         );
 
         // moveTask handles setting archived status based on target list
-        if (!resolvedWorkspaceId) {
-          throw new Error('Workspace ID is required');
-        }
+        const workspaceId = getWorkspaceId();
 
         const { task: movedTask } = await updateWorkspaceTask(
-          resolvedWorkspaceId,
+          workspaceId,
           task.id,
           {
             list_id: targetCompletionList.id,
@@ -140,12 +145,10 @@ export function useTaskActions({
       );
 
       try {
-        if (!resolvedWorkspaceId) {
-          throw new Error('Workspace ID is required');
-        }
+        const workspaceId = getWorkspaceId();
 
         const { task: updatedTask } = await updateWorkspaceTask(
-          resolvedWorkspaceId,
+          workspaceId,
           task.id,
           {
             closed_at: newClosedState ? new Date().toISOString() : null,
@@ -183,7 +186,7 @@ export function useTaskActions({
     boardId,
     task,
     broadcast,
-    resolvedWorkspaceId,
+    getWorkspaceId,
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
@@ -227,14 +230,12 @@ export function useTaskActions({
 
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
-      if (!resolvedWorkspaceId) {
-        throw new Error('Workspace ID is required');
-      }
+      const workspaceId = getWorkspaceId();
 
       for (const taskId of tasksToMove) {
         try {
           const { task: movedTask } = await updateWorkspaceTask(
-            resolvedWorkspaceId,
+            workspaceId,
             taskId,
             {
               list_id: targetCompletionList.id,
@@ -290,7 +291,7 @@ export function useTaskActions({
     boardId,
     task,
     broadcast,
-    resolvedWorkspaceId,
+    getWorkspaceId,
   ]);
 
   const handleMoveToClose = useCallback(async () => {
@@ -330,14 +331,12 @@ export function useTaskActions({
 
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
-      if (!resolvedWorkspaceId) {
-        throw new Error('Workspace ID is required');
-      }
+      const workspaceId = getWorkspaceId();
 
       for (const taskId of tasksToMove) {
         try {
           const { task: movedTask } = await updateWorkspaceTask(
-            resolvedWorkspaceId,
+            workspaceId,
             taskId,
             {
               list_id: targetClosedList.id,
@@ -390,7 +389,7 @@ export function useTaskActions({
     boardId,
     task,
     broadcast,
-    resolvedWorkspaceId,
+    getWorkspaceId,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -446,13 +445,11 @@ export function useTaskActions({
 
     try {
       let successCount = 0;
-      if (!resolvedWorkspaceId) {
-        throw new Error('Workspace ID is required');
-      }
+      const workspaceId = getWorkspaceId();
 
       for (const tid of tasksToDelete) {
         try {
-          await updateWorkspaceTask(resolvedWorkspaceId, tid, {
+          await updateWorkspaceTask(workspaceId, tid, {
             deleted: true,
           });
           broadcast?.('task:delete', { taskId: tid });
@@ -501,7 +498,7 @@ export function useTaskActions({
     boardId,
     task,
     broadcast,
-    resolvedWorkspaceId,
+    getWorkspaceId,
   ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
@@ -526,11 +523,9 @@ export function useTaskActions({
     );
 
     try {
-      if (!resolvedWorkspaceId) {
-        throw new Error('Workspace ID is required');
-      }
+      const workspaceId = getWorkspaceId();
 
-      await updateWorkspaceTask(resolvedWorkspaceId, task.id, {
+      await updateWorkspaceTask(workspaceId, task.id, {
         assignee_ids: [],
       });
 
@@ -558,7 +553,7 @@ export function useTaskActions({
     setMenuOpen,
     task,
     broadcast,
-    resolvedWorkspaceId,
+    getWorkspaceId,
   ]);
 
   const handleRemoveAssignee = useCallback(
@@ -599,11 +594,9 @@ export function useTaskActions({
           [];
         const filteredIds = newIds.filter((id) => id !== assigneeId);
 
-        if (!resolvedWorkspaceId) {
-          throw new Error('Workspace ID is required');
-        }
+        const workspaceId = getWorkspaceId();
 
-        await updateWorkspaceTask(resolvedWorkspaceId, task.id, {
+        await updateWorkspaceTask(workspaceId, task.id, {
           assignee_ids: filteredIds,
         });
 
@@ -630,7 +623,7 @@ export function useTaskActions({
       setIsLoading,
       setMenuOpen,
       broadcast,
-      resolvedWorkspaceId,
+      getWorkspaceId,
     ]
   );
 
@@ -707,15 +700,13 @@ export function useTaskActions({
         );
 
         // Move tasks one by one to ensure triggers fire for each task
-        if (!resolvedWorkspaceId) {
-          throw new Error('Workspace ID is required');
-        }
+        const workspaceId = getWorkspaceId();
 
         let successCount = 0;
         for (const taskId of tasksToMove) {
           try {
             const { task: movedTask } = await updateWorkspaceTask(
-              resolvedWorkspaceId,
+              workspaceId,
               taskId,
               {
                 list_id: targetListId,
@@ -769,7 +760,7 @@ export function useTaskActions({
       boardId,
       task,
       broadcast,
-      resolvedWorkspaceId,
+      getWorkspaceId,
     ]
   );
 
@@ -814,27 +805,20 @@ export function useTaskActions({
         );
 
         const succeededTaskIds: string[] = [];
+        const workspaceId = getWorkspaceId();
 
-        if (resolvedWorkspaceId) {
-          for (const taskId of tasksToUpdate) {
-            try {
-              await updateWorkspaceTask(resolvedWorkspaceId, taskId, {
-                end_date: newDate,
-              });
-              succeededTaskIds.push(taskId);
-            } catch (error) {
-              console.error(
-                `Failed to update due date for task ${taskId}:`,
-                error
-              );
-            }
+        for (const taskId of tasksToUpdate) {
+          try {
+            await updateWorkspaceTask(workspaceId, taskId, {
+              end_date: newDate,
+            });
+            succeededTaskIds.push(taskId);
+          } catch (error) {
+            console.error(
+              `Failed to update due date for task ${taskId}:`,
+              error
+            );
           }
-        } else {
-          await updateTaskMutation.mutateAsync({
-            taskId: task.id,
-            updates: { end_date: newDate },
-          });
-          succeededTaskIds.push(task.id);
         }
 
         if (succeededTaskIds.length === 0) {
@@ -898,9 +882,8 @@ export function useTaskActions({
     },
     [
       task?.id,
-      updateTaskMutation,
       setIsLoading,
-      resolvedWorkspaceId,
+      getWorkspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -957,39 +940,32 @@ export function useTaskActions({
         );
 
         const succeededTaskIds: string[] = [];
+        const workspaceId = getWorkspaceId();
 
-        if (resolvedWorkspaceId) {
-          console.log('🔄 Executing sequential API updates:', {
-            tasksToUpdate,
-            count: tasksToUpdate.length,
-            priority: newPriority,
-          });
+        console.log('🔄 Executing sequential API updates:', {
+          tasksToUpdate,
+          count: tasksToUpdate.length,
+          priority: newPriority,
+        });
 
-          for (const taskId of tasksToUpdate) {
-            try {
-              await updateWorkspaceTask(resolvedWorkspaceId, taskId, {
-                priority: newPriority,
-              });
-              succeededTaskIds.push(taskId);
-            } catch (error) {
-              console.error(
-                `Failed to update priority for task ${taskId}:`,
-                error
-              );
-            }
+        for (const taskId of tasksToUpdate) {
+          try {
+            await updateWorkspaceTask(workspaceId, taskId, {
+              priority: newPriority,
+            });
+            succeededTaskIds.push(taskId);
+          } catch (error) {
+            console.error(
+              `Failed to update priority for task ${taskId}:`,
+              error
+            );
           }
-
-          console.log('✅ Sequential update result:', {
-            successCount: succeededTaskIds.length,
-            totalTasks: tasksToUpdate.length,
-          });
-        } else {
-          await updateTaskMutation.mutateAsync({
-            taskId: task.id,
-            updates: { priority: newPriority },
-          });
-          succeededTaskIds.push(task.id);
         }
+
+        console.log('✅ Sequential update result:', {
+          successCount: succeededTaskIds.length,
+          totalTasks: tasksToUpdate.length,
+        });
 
         if (succeededTaskIds.length === 0) {
           throw new Error('Failed to update any tasks');
@@ -1055,9 +1031,8 @@ export function useTaskActions({
     [
       task?.id,
       task?.priority,
-      updateTaskMutation,
       setIsLoading,
-      resolvedWorkspaceId,
+      getWorkspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -1130,45 +1105,33 @@ export function useTaskActions({
           }
         );
 
-        if (resolvedWorkspaceId) {
-          const succeededIds: string[] = [];
-          for (const taskId of tasksToUpdate) {
-            try {
-              await updateWorkspaceTask(resolvedWorkspaceId, taskId, {
-                estimation_points: points,
-              });
-              succeededIds.push(taskId);
-            } catch (error) {
-              console.error(
-                `Failed to update estimation for task ${taskId}:`,
-                error
-              );
-            }
-          }
+        const succeededIds: string[] = [];
+        const workspaceId = getWorkspaceId();
 
-          if (succeededIds.length === 0) {
-            throw new Error('Failed to update any tasks');
-          }
-
-          const failedIds = tasksToUpdate.filter(
-            (taskId) => !succeededIds.includes(taskId)
-          );
-
-          if (failedIds.length > 0) {
-            rollbackFailedTasks(failedIds);
-
-            for (const tid of succeededIds) {
-              broadcast?.('task:upsert', {
-                task: { id: tid, estimation_points: points },
-              });
-            }
-
-            toast.warning('Partial estimation update', {
-              description: `${succeededIds.length}/${tasksToUpdate.length} tasks updated`,
+        for (const taskId of tasksToUpdate) {
+          try {
+            await updateWorkspaceTask(workspaceId, taskId, {
+              estimation_points: points,
             });
-
-            return;
+            succeededIds.push(taskId);
+          } catch (error) {
+            console.error(
+              `Failed to update estimation for task ${taskId}:`,
+              error
+            );
           }
+        }
+
+        if (succeededIds.length === 0) {
+          throw new Error('Failed to update any tasks');
+        }
+
+        const failedIds = tasksToUpdate.filter(
+          (taskId) => !succeededIds.includes(taskId)
+        );
+
+        if (failedIds.length > 0) {
+          rollbackFailedTasks(failedIds);
 
           for (const tid of succeededIds) {
             broadcast?.('task:upsert', {
@@ -1176,56 +1139,28 @@ export function useTaskActions({
             });
           }
 
-          const taskCount = succeededIds.length;
-          toast.success('Estimation updated', {
-            description:
-              taskCount > 1
-                ? `${taskCount} tasks updated`
-                : 'Estimation points updated successfully',
-          });
-
-          return;
-        } else {
-          const succeededIds: string[] = [];
-          const failedIds: string[] = [];
-
-          for (const taskId of tasksToUpdate) {
-            try {
-              await updateTaskMutation.mutateAsync({
-                taskId,
-                updates: { estimation_points: points },
-              });
-              succeededIds.push(taskId);
-              broadcast?.('task:upsert', {
-                task: { id: taskId, estimation_points: points },
-              });
-            } catch (error) {
-              console.error(
-                `Failed to update estimation for task ${taskId}:`,
-                error
-              );
-              failedIds.push(taskId);
-            }
-          }
-
-          if (succeededIds.length === 0) {
-            throw new Error('Failed to update any tasks');
-          }
-
-          if (failedIds.length > 0) {
-            rollbackFailedTasks(failedIds);
-            toast.warning('Partial estimation update', {
-              description: `${succeededIds.length}/${tasksToUpdate.length} tasks updated`,
-            });
-            return;
-          }
-
-          toast.success('Estimation updated', {
-            description: 'Estimation points updated successfully',
+          toast.warning('Partial estimation update', {
+            description: `${succeededIds.length}/${tasksToUpdate.length} tasks updated`,
           });
 
           return;
         }
+
+        for (const tid of succeededIds) {
+          broadcast?.('task:upsert', {
+            task: { id: tid, estimation_points: points },
+          });
+        }
+
+        const taskCount = succeededIds.length;
+        toast.success('Estimation updated', {
+          description:
+            taskCount > 1
+              ? `${taskCount} tasks updated`
+              : 'Estimation points updated successfully',
+        });
+
+        return;
       } catch (e: any) {
         console.error('Failed to update estimation', e);
         // Rollback on error
@@ -1242,9 +1177,8 @@ export function useTaskActions({
     [
       task?.id,
       task?.estimation_points,
-      updateTaskMutation,
       setEstimationSaving,
-      resolvedWorkspaceId,
+      getWorkspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -1295,27 +1229,29 @@ export function useTaskActions({
           setIsLoading(false);
         }
       } else {
-        // Single task update via mutation
-        updateTaskMutation.mutate(
-          { taskId: task.id, updates: { end_date: newDate } },
-          {
-            onSuccess: () => {
-              toast.success('Due date updated', {
-                description: newDate
-                  ? 'Custom due date set successfully'
-                  : 'Due date removed',
-              });
-            },
-            onSettled: () => {
-              setIsLoading(false);
-            },
-          }
-        );
+        // Single task update via workspace API
+        try {
+          const workspaceId = getWorkspaceId();
+          await updateWorkspaceTask(workspaceId, task.id, {
+            end_date: newDate,
+          });
+
+          toast.success('Due date updated', {
+            description: newDate
+              ? 'Custom due date set successfully'
+              : 'Due date removed',
+          });
+        } catch (error) {
+          console.error('Failed to update due date:', error);
+          toast.error('Failed to update due date. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
       }
     },
     [
       task?.id,
-      updateTaskMutation,
+      getWorkspaceId,
       setIsLoading,
       setCustomDateDialogOpen,
       isMultiSelectMode,
@@ -1484,9 +1420,7 @@ export function useTaskActions({
         const succeededTaskIds: string[] = [];
         const targetTasks = active ? tasksToRemoveFrom : tasksNeedingAssignee;
 
-        if (!resolvedWorkspaceId) {
-          throw new Error('Workspace ID is required');
-        }
+        const workspaceId = getWorkspaceId();
 
         for (const tid of targetTasks) {
           const current = getTaskState(tid);
@@ -1499,7 +1433,7 @@ export function useTaskActions({
             : Array.from(new Set([...existingIds, assigneeId]));
 
           try {
-            await updateWorkspaceTask(resolvedWorkspaceId, tid, {
+            await updateWorkspaceTask(workspaceId, tid, {
               assignee_ids: newIds,
             });
             succeededTaskIds.push(tid);
@@ -1556,7 +1490,7 @@ export function useTaskActions({
       isMultiSelectMode,
       selectedTasks,
       broadcast,
-      resolvedWorkspaceId,
+      getWorkspaceId,
     ]
   );
 
