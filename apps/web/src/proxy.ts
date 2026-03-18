@@ -36,6 +36,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 const WEB_APP_URL = isDev ? `http://localhost:${PORT}` : 'https://tuturuuu.com';
 const OFFLINE_FALLBACK_PATH = '/~offline';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
+const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';
 
 /**
  * Check if a user's personal workspace is missing an active subscription.
@@ -486,7 +487,9 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   }
 
   if (segments[0]?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)) {
-    return NextResponse.next();
+    return NextResponse.rewrite(
+      new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
+    );
   }
 
   if (

@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { enforceSeatLimit } from '@/utils/seat-limits';
 import type { ValidateInviteResult, Workspace, WorkspaceInfo } from './types';
 
 /**
@@ -119,58 +119,39 @@ export async function validateInvite(
       };
     }
 
-    // Validate invite link via API with error handling
-    const baseUrl = DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com';
+    const { data: inviteStats, error: inviteStatsError } = await sbAdmin
+      .from('workspace_invite_links_with_stats')
+      .select('is_expired, is_full')
+      .eq('code', code)
+      .maybeSingle();
 
-    let response: Response;
-    try {
-      response = await fetch(`${baseUrl}/api/invite/${code}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-      });
-    } catch (fetchError) {
-      console.error('Network error validating invite:', fetchError);
+    if (inviteStatsError || !inviteStats) {
       return {
         authenticated: true,
-        error: 'Network error. Please check your connection and try again.',
-        errorCode: 'NETWORK_ERROR',
+        error: 'This invite link is invalid or has expired.',
+        errorCode: 'INVITE_INVALID_OR_EXPIRED',
       };
     }
 
-    if (!response.ok) {
-      let errorData: { error?: string; errorCode?: string } = {};
-      try {
-        errorData = await response.json();
-      } catch (jsonError) {
-        console.error('Failed to parse error response:', jsonError);
-        return {
-          authenticated: true,
-          error: 'Failed to validate invite link',
-          errorCode: 'INTERNAL_ERROR',
-        };
-      }
-
+    if (inviteStats.is_expired) {
       return {
         authenticated: true,
-        error: errorData.error || 'This invite link is invalid or has expired.',
-        errorCode: errorData.errorCode || 'INVITE_INVALID_OR_EXPIRED',
+        error: 'This invite link has expired.',
+        errorCode: 'INVITE_EXPIRED',
       };
     }
 
-    // Parse workspace info with error handling
-    let apiResponse: {
-      workspace: WorkspaceInfo['workspace'];
-      memberCount: number;
-      seatLimitReached?: boolean;
-      seatStatus?: WorkspaceInfo['seatStatus'];
-    };
-    try {
-      apiResponse = await response.json();
-    } catch (jsonError) {
-      console.error('Failed to parse workspace info:', jsonError);
+    if (inviteStats.is_full) {
+      return {
+        authenticated: true,
+        error: 'This invite link has reached its maximum number of uses.',
+        errorCode: 'INVITE_MAX_USES_REACHED',
+      };
+    }
+
+    const seatCheck = await enforceSeatLimit(sbAdmin, inviteLink.ws_id);
+
+    if (!seatCheck.status) {
       return {
         authenticated: true,
         error: 'Failed to load workspace information',
@@ -178,26 +159,20 @@ export async function validateInvite(
       };
     }
 
-    // Validate workspaceInfo structure
-    if (
-      !apiResponse ||
-      !apiResponse.workspace ||
-      !apiResponse.workspace.id ||
-      !apiResponse.workspace.name
-    ) {
-      return {
-        authenticated: true,
-        error: 'Invalid workspace information received',
-        errorCode: 'INTERNAL_ERROR',
-      };
-    }
-
-    // Build WorkspaceInfo including seat status
     const workspaceInfo: WorkspaceInfo = {
-      workspace: apiResponse.workspace,
-      memberCount: apiResponse.memberCount,
-      seatLimitReached: apiResponse.seatLimitReached,
-      seatStatus: apiResponse.seatStatus,
+      workspace,
+      memberCount: seatCheck.status.memberCount,
+      seatLimitReached: !seatCheck.allowed,
+      seatStatus: {
+        currentSeats: seatCheck.status.memberCount,
+        maxSeats: seatCheck.status.isSeatBased
+          ? seatCheck.status.seatCount
+          : null,
+        availableSeats: seatCheck.status.isSeatBased
+          ? seatCheck.status.availableSeats
+          : null,
+        hasLimit: seatCheck.status.isSeatBased,
+      },
     };
 
     return {

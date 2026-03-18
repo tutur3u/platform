@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -37,6 +40,7 @@ export async function GET(
   try {
     const { wsId } = await params;
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     const {
       data: { user },
@@ -59,7 +63,7 @@ export async function GET(
 
     const boardId = request.nextUrl.searchParams.get('boardId');
 
-    let query = supabase
+    let query = sbAdmin
       .from('task_drafts')
       .select('*')
       .eq('ws_id', wsId)
@@ -97,6 +101,7 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     const {
       data: { user },
@@ -120,7 +125,7 @@ export async function POST(
     const body = await request.json();
     const parsed = createDraftSchema.parse(body);
 
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('task_drafts')
       .insert({
         ws_id: wsId,

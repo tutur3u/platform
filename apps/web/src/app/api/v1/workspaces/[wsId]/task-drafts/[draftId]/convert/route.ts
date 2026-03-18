@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -23,6 +26,7 @@ export async function POST(
   try {
     const { wsId, draftId } = await params;
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     const {
       data: { user },
@@ -44,7 +48,7 @@ export async function POST(
     }
 
     // Fetch the draft
-    const { data: draft, error: draftError } = await supabase
+    const { data: draft, error: draftError } = await sbAdmin
       .from('task_drafts')
       .select('*')
       .eq('id', draftId)
@@ -140,7 +144,12 @@ export async function POST(
     }
 
     // Delete the draft
-    await supabase.from('task_drafts').delete().eq('id', draftId);
+    await sbAdmin
+      .from('task_drafts')
+      .delete()
+      .eq('id', draftId)
+      .eq('ws_id', wsId)
+      .eq('creator_id', user.id);
 
     return NextResponse.json({
       success: true,
