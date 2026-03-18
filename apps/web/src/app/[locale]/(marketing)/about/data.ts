@@ -242,6 +242,7 @@ export const departments: {
   bio: string;
   characteristics: string;
   mission: string[];
+  activities: { title: string; description: string }[];
 }[] = [
   {
     name: 'Technology',
@@ -261,12 +262,29 @@ export const departments: {
       'Collaborative',
       'Work Hard, Play Harder',
     ],
+    activities: [
+      {
+        title: 'Project Development',
+        description:
+          'We turn club ideas into working products, from planning flows and building features to testing demos that members can present with confidence.',
+      },
+      {
+        title: 'Technical Workshops',
+        description:
+          'Hands-on sessions help members explore frameworks, hardware, and problem solving through guided practice instead of passive theory.',
+      },
+      {
+        title: 'Product Pitching',
+        description:
+          'We prepare teams to explain what they build, why it matters, and how a technical concept becomes a clear, compelling solution.',
+      },
+    ],
   },
   {
     name: 'Human Resources',
     images: [
-      '/departments/human-resources/award-day-c-2025.jpg',
       '/departments/human-resources/secret-santa-c-2025.jpg',
+      '/departments/human-resources/award-day-c-2025.jpg',
       '/departments/human-resources/welcome-day-c-2025.jpg',
       '/departments/human-resources/welcome-day-a-2025-2.jpg',
       '/departments/human-resources/welcome-day-a-2025.jpg',
@@ -282,6 +300,23 @@ export const departments: {
       'Corporate Culture',
       'Risk Management',
       'Conflict Resolution',
+    ],
+    activities: [
+      {
+        title: 'Recruitment',
+        description:
+          'We design welcoming recruitment journeys, coordinate interviews, and help new members step into the club with clarity and confidence.',
+      },
+      {
+        title: 'Event Management',
+        description:
+          'From internal operations to club-wide experiences, we organize the people side of events so every activity runs smoothly and feels intentional.',
+      },
+      {
+        title: 'Bonding Days',
+        description:
+          'We create moments that bring members closer, strengthen trust across teams, and turn a student club into a community people genuinely enjoy being part of.',
+      },
     ],
   },
   {
@@ -305,5 +340,22 @@ export const departments: {
       'External Relations',
       'Keo 502',
     ],
+    activities: [
+          {
+            title: 'Design Production',
+            description:
+              'We create booth concepts, uniforms, and event visuals that give every campaign a polished look members can instantly recognize.',
+          },
+          {
+            title: 'Brand Building',
+            description:
+              'We shape the club’s visual identity, refine how NEO appears to students, and make sure every touchpoint feels consistent and memorable.',
+          },
+          {
+            title: 'Social Media Content',
+            description:
+              'We turn activities into stories through posts and creative assets that keep the community updated, engaged, and excited to join in.',
+          },
+        ],
   },
 ];

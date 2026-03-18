@@ -13,19 +13,10 @@ const cardVariants = {
   },
 };
 
-type CoreDepartmentName = Extract<
+export type CoreDepartmentName = Extract<
   DepartmentName,
   'Technology' | 'Human Resources' | 'Marketing'
 >;
-
-const departmentStyles: Record<CoreDepartmentName, string> = {
-  Technology:
-    'bg-dynamic-blue/5 text-dynamic-blue border-dynamic-blue/20 hover:bg-dynamic-blue/10',
-  'Human Resources':
-    'bg-dynamic-purple/5 text-dynamic-purple border-dynamic-purple/20 hover:bg-dynamic-purple/10',
-  Marketing:
-    'bg-dynamic-orange/5 text-dynamic-orange border-dynamic-orange/20 hover:bg-dynamic-orange/10',
-};
 
 const coreDepartments: { name: CoreDepartmentName; color: string }[] = [
   { name: 'Technology', color: 'text-dynamic-blue' },
@@ -44,16 +35,17 @@ export default function Departments() {
   return (
     <div className="w-full">
       <section id="about-departments" className="w-full">
-        <motion.h1
-          className="mt-4 mb-8 text-center font-extrabold text-6xl"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          Our{' '}
-          <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
-            Departments
-          </span>
+          <motion.h1
+            className="text-center font-extrabold text-5xl leading-tight md:text-6xl"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            Our{' '}
+            <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
+              Departments
+            </span>
           <motion.div
             className="ml-3 inline-block"
             initial={{ rotate: 0 }}
@@ -97,23 +89,21 @@ export default function Departments() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -50 }}
         transition={{ duration: 0.5 }}
-        className="mt-8 flex w-full justify-center px-4"
+        className="mt-10 flex w-full justify-center px-4"
       >
         {activeDepartments.map((department) => (
           <motion.div
             key={department.name}
-            className="relative flex justify-center transition-all duration-300"
+            className="relative flex w-full justify-center transition-all duration-300"
             variants={cardVariants}
           >
             <DepartmentCard
-              name={department.name}
+              name={department.name as CoreDepartmentName}
               images={department.images}
               bio={department.bio}
               characteristics={department.characteristics}
               mission={department.mission}
-              className={
-                departmentStyles[department.name as CoreDepartmentName]
-              }
+              activities={department.activities}
             />
           </motion.div>
         ))}
