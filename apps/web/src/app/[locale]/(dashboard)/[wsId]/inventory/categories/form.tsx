@@ -109,6 +109,7 @@ export function ProductCategoryForm({
                   placeholder={t(
                     'transaction-category-data-table.category_name'
                   )}
+                  autoFocus
                   {...field}
                 />
               </FormControl>
