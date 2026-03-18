@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { NextResponse } from 'next/server';
 
@@ -9,11 +12,30 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   const data = await req.json();
   const { wsId: id } = await params;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', id)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!membership) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  const { error } = await sbAdmin
     .from('workspace_wallets')
     .upsert(
       (data?.wallets || []).map((p: Wallet) => ({

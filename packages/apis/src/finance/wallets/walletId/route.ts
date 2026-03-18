@@ -1,12 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { flattenWalletCreditData, getAccessibleWallet } from '../wallet-access';
 
 interface Params {
   params: Promise<{
@@ -16,110 +9,46 @@ interface Params {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
   const { walletId: id, wsId } = await params;
-  let normalizedWsId: string;
-
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const permissions = await getPermissions({
+  const result = await getAccessibleWallet({
+    req,
     wsId,
-    request: req,
+    walletId: id,
+    requiredPermission: 'view_transactions',
+    select: '*, credit_wallets(limit, statement_date, payment_date)',
   });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (result.response) {
+    return result.response;
   }
 
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('view_transactions')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
-  }
-
-  const sbAdmin = await createAdminClient();
-
-  const { data, error } = await sbAdmin
-    .from('workspace_wallets')
-    .select('*, credit_wallets(limit, statement_date, payment_date)')
-    .eq('id', id)
-    .eq('ws_id', normalizedWsId)
-    .single();
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching workspace wallets' },
-      { status: 500 }
-    );
-  }
-
-  // Flatten credit data onto the wallet object
-  const { credit_wallets, ...wallet } = data as typeof data & {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    credit_wallets: any;
-  };
-  const result = {
-    ...wallet,
-    ...(credit_wallets
-      ? {
-          limit: credit_wallets.limit,
-          statement_date: credit_wallets.statement_date,
-          payment_date: credit_wallets.payment_date,
-        }
-      : {}),
-  };
-
-  return NextResponse.json(result);
+  return NextResponse.json(flattenWalletCreditData(result.wallet));
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
   const data = await req.json();
   const { walletId: id, wsId } = await params;
-  let normalizedWsId: string;
-
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const permissions = await getPermissions({
+  const access = await getAccessibleWallet({
+    req,
     wsId,
-    request: req,
+    walletId: id,
+    requiredPermission: 'update_wallets',
+    select: 'id',
   });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('update_wallets')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Extract credit-specific fields before updating the wallet
   const { limit, statement_date, payment_date, ...walletData } = data;
 
-  const { data: updatedWallet, error } = await sbAdmin
+  const { data: updatedWallet, error } = await access.context.sbAdmin
     .from('workspace_wallets')
     .update(walletData)
     .select('id')
     .eq('id', id)
-    .eq('ws_id', normalizedWsId)
+    .eq('ws_id', access.context.normalizedWsId)
     .maybeSingle();
 
   if (error) {
@@ -136,12 +65,14 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Handle credit wallet data based on type
   if (data.type === 'CREDIT') {
-    const { error: creditError } = await sbAdmin.from('credit_wallets').upsert({
-      wallet_id: id,
-      statement_date: statement_date ?? 1,
-      payment_date: payment_date ?? 1,
-      limit: limit ?? 0,
-    });
+    const { error: creditError } = await access.context.sbAdmin
+      .from('credit_wallets')
+      .upsert({
+        wallet_id: id,
+        statement_date: statement_date ?? 1,
+        payment_date: payment_date ?? 1,
+        limit: limit ?? 0,
+      });
 
     if (creditError) {
       console.log(creditError);
@@ -152,7 +83,7 @@ export async function PUT(req: Request, { params }: Params) {
     }
   } else if (data.type === 'STANDARD') {
     // Remove credit data if switching from CREDIT to STANDARD
-    const deleteResult = await sbAdmin
+    const deleteResult = await access.context.sbAdmin
       .from('credit_wallets')
       .delete()
       .eq('wallet_id', id);
@@ -160,7 +91,7 @@ export async function PUT(req: Request, { params }: Params) {
     if (deleteResult.error) {
       console.error('Failed to delete credit wallet details', {
         walletId: id,
-        workspaceId: normalizedWsId,
+        workspaceId: access.context.normalizedWsId,
         error: deleteResult.error,
       });
       return NextResponse.json(
@@ -174,40 +105,24 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
   const { walletId: id, wsId } = await params;
-  let normalizedWsId: string;
-
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const permissions = await getPermissions({
+  const access = await getAccessibleWallet({
+    req,
     wsId,
-    request: req,
+    walletId: id,
+    requiredPermission: 'delete_wallets',
+    select: 'id',
   });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('delete_wallets')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
-  }
-
-  const { error } = await sbAdmin
+  const { error } = await access.context.sbAdmin
     .from('workspace_wallets')
     .delete()
     .eq('id', id)
-    .eq('ws_id', normalizedWsId);
+    .eq('ws_id', access.context.normalizedWsId);
 
   if (error) {
     console.log(error);

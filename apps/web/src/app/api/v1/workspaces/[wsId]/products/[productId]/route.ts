@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { RawInventoryProductWithChanges } from '@tuturuuu/types/primitives/InventoryProductRelations';
 import type { Product2 } from '@tuturuuu/types/primitives/Product';
 import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
@@ -22,7 +25,7 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const parsedParams = RouteParamsSchema.safeParse(await params);
   if (!parsedParams.success) {
     return NextResponse.json(
@@ -32,12 +35,14 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   const { wsId: id, productId } = parsedParams.data;
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
   // Resolve workspace ID
-  const wsId = await normalizeWorkspaceId(id);
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -48,21 +53,26 @@ export async function GET(_: Request, { params }: Params) {
 
   const canViewStockQuantity = containsPermission('view_stock_quantity');
 
-  const supabase = await createClient();
-
   const selectFields = canViewStockQuantity
     ? '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email), warehouse:inventory_warehouses!product_stock_changes_warehouse_id_fkey(id, name))'
     : '*, product_categories(name)';
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspace_products')
     .select(selectFields)
     .eq('ws_id', wsId)
     .eq('id', productId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error fetching product:', error);
+    return NextResponse.json(
+      { message: 'Error fetching product' },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
@@ -130,10 +140,12 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const { wsId: id, productId } = parsedParams.data;
-  const wsId = await normalizeWorkspaceId(id);
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -146,20 +158,20 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const canUpdateStockQuantity = containsPermission('update_stock_quantity');
-
-  const supabase = await createClient();
   const { inventory, ...data } = (await req.json()) as Product2 & {
     inventory?: ProductInventory[];
   };
 
   // Update product details
-  const product = await supabase
+  const product = await sbAdmin
     .from('workspace_products')
     .update({
       ...data,
     })
+    .select('id')
     .eq('id', productId)
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .maybeSingle();
 
   if (product.error) {
     console.log(product.error);
@@ -167,6 +179,10 @@ export async function PATCH(req: Request, { params }: Params) {
       { message: 'Error updating product' },
       { status: 500 }
     );
+  }
+
+  if (!product.data) {
+    return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
   // Update inventory if provided
@@ -213,8 +229,7 @@ export async function PATCH(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
   const parsedParams = RouteParamsSchema.safeParse(await params);
   if (!parsedParams.success) {
     return NextResponse.json(
@@ -224,27 +239,48 @@ export async function DELETE(_: Request, { params }: Params) {
   }
 
   const { wsId: id, productId } = parsedParams.data;
-  const wsId = await normalizeWorkspaceId(id);
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
-  const { data: product, error: productError } = await supabase
+  const permissions = await getPermissions({ wsId: id, request: req });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!permissions.containsPermission('delete_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to delete products' },
+      { status: 403 }
+    );
+  }
+
+  const { data: product, error: productError } = await sbAdmin
     .from('workspace_products')
     .select('id, ws_id')
     .eq('id', productId)
-    .single();
+    .eq('ws_id', wsId)
+    .maybeSingle();
 
-  if (productError || !product) {
+  if (productError) {
+    console.error('Error fetching product for deletion:', productError);
+    return NextResponse.json(
+      { message: 'Error deleting workspace product' },
+      { status: 500 }
+    );
+  }
+
+  if (!product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
-  if (product.ws_id !== wsId) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
-  }
-
-  const { error } = await supabase
+  const { data: deletedProduct, error } = await sbAdmin
     .from('workspace_products')
     .delete()
+    .select('id')
     .eq('id', productId)
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .maybeSingle();
 
   if (error) {
     console.log(error);
@@ -252,6 +288,10 @@ export async function DELETE(_: Request, { params }: Params) {
       { message: 'Error deleting workspace product' },
       { status: 500 }
     );
+  }
+
+  if (!deletedProduct) {
+    return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
   return NextResponse.json({ message: 'success' });

@@ -3,8 +3,12 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { flattenWalletCreditList } from './wallet-access';
 
 interface Params {
   params: Promise<{
@@ -15,6 +19,14 @@ interface Params {
 export async function GET(request: Request, { params }: Params) {
   const supabase = await createClient(request);
   const { wsId } = await params;
+  let normalizedWsId: string;
+
+  try {
+    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const permissions = await getPermissions({
     wsId,
     request,
@@ -44,7 +56,7 @@ export async function GET(request: Request, { params }: Params) {
     const { data, error } = await sbAdmin
       .from('workspace_wallets')
       .select('*, credit_wallets(limit, statement_date, payment_date)')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .order('name', { ascending: true });
 
     if (error) {
@@ -55,7 +67,7 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    return NextResponse.json(flattenCreditData(data));
+    return NextResponse.json(flattenWalletCreditList(data ?? []));
   }
 
   // User doesn't have manage_finance - check wallet whitelist
@@ -63,8 +75,9 @@ export async function GET(request: Request, { params }: Params) {
   // Get user's role IDs
   const { data: userRoles, error: rolesError } = await sbAdmin
     .from('workspace_role_members')
-    .select('role_id')
-    .eq('user_id', user.id);
+    .select('role_id, workspace_roles!inner(ws_id)')
+    .eq('user_id', user.id)
+    .eq('workspace_roles.ws_id', normalizedWsId);
 
   if (rolesError) {
     console.log(rolesError);
@@ -105,7 +118,7 @@ export async function GET(request: Request, { params }: Params) {
   const { data: wallets, error: walletsError } = await sbAdmin
     .from('workspace_wallets')
     .select('*, credit_wallets(limit, statement_date, payment_date)')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .in('id', walletIds)
     .order('name', { ascending: true });
 
@@ -175,33 +188,29 @@ export async function GET(request: Request, { params }: Params) {
     { viewing_window: string | null; custom_days: number | null }
   >());
 
-  const walletsWithWindow = flattenCreditData(wallets || []).map((wallet) => ({
-    ...wallet,
-    viewing_window: walletMap.get(wallet.id)?.viewing_window,
-    custom_days: walletMap.get(wallet.id)?.custom_days,
-  }));
+  const walletsWithWindow = flattenWalletCreditList(wallets ?? []).map(
+    (wallet) => ({
+      ...wallet,
+      viewing_window: walletMap.get(wallet.id)?.viewing_window,
+      custom_days: walletMap.get(wallet.id)?.custom_days,
+    })
+  );
 
   return NextResponse.json(walletsWithWindow);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function flattenCreditData(wallets: any[]) {
-  return wallets.map(({ credit_wallets, ...wallet }) => ({
-    ...wallet,
-    ...(credit_wallets
-      ? {
-          limit: credit_wallets.limit,
-          statement_date: credit_wallets.statement_date,
-          payment_date: credit_wallets.payment_date,
-        }
-      : {}),
-  }));
-}
-
 export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const { wsId } = await params;
   const data: Wallet = await req.json();
+  let normalizedWsId: string;
+
+  try {
+    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   const permissions = await getPermissions({
     wsId,
@@ -224,7 +233,7 @@ export async function POST(req: Request, { params }: Params) {
   // Extract only fields that exist in the database schema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const walletData: { ws_id: string } & Record<string, any> = {
-    ws_id: wsId,
+    ws_id: normalizedWsId,
   };
   if (data.id) walletData.id = data.id;
   if (data.name) walletData.name = data.name;

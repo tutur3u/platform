@@ -1,12 +1,10 @@
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import {
-  enforceRootWorkspaceAdmin,
-  getPermissions,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import {
   getWorkspaceOverview,
   getWorkspaceOverviewSummary,
@@ -40,9 +38,7 @@ export default async function InfrastructureWorkspacesPage({
   searchParams,
 }: Props) {
   const { wsId } = await params;
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  await enforceInfrastructureRootWorkspace(wsId);
   const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
 
   if (!permissions || permissions.withoutPermission('manage_workspace_roles')) {

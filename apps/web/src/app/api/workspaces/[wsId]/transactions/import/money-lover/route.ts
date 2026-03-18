@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface MoneyLoverTransaction {
@@ -21,6 +24,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const { wsId } = await params;
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     console.log('[Money Lover Import] Starting import for workspace:', wsId);
 
@@ -102,7 +106,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { data: existingWallets, error: walletsError } = await supabase
+    const { data: existingWallets, error: walletsError } = await sbAdmin
       .from('workspace_wallets')
       .select('id, name')
       .eq('ws_id', wsId);
@@ -154,7 +158,7 @@ export async function POST(req: Request, { params }: Params) {
         '[Money Lover Import] Creating missing wallets:',
         walletsToCreate
       );
-      const { data: newWallets, error: walletCreateError } = await supabase
+      const { data: newWallets, error: walletCreateError } = await sbAdmin
         .from('workspace_wallets')
         .insert(
           walletsToCreate.map((wallet) => ({

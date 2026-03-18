@@ -10,6 +10,7 @@ import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/task_project_update.dart';
+import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/models/user_tasks_page.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -828,6 +829,52 @@ class TaskRepository {
         .whereType<Map<String, dynamic>>()
         .map(WorkspaceUserOption.fromJson)
         .toList(growable: false);
+  }
+
+  Future<TaskRelationshipsResponse> getTaskRelationships({
+    required String wsId,
+    required String taskId,
+  }) async {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/tasks/$taskId/relationships',
+    );
+    return TaskRelationshipsResponse.fromJson(response);
+  }
+
+  Future<void> createTaskRelationship({
+    required String wsId,
+    required String taskId,
+    required String sourceTaskId,
+    required String targetTaskId,
+    required TaskRelationshipType type,
+  }) async {
+    await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/tasks/$taskId/relationships',
+      {
+        'source_task_id': sourceTaskId,
+        'target_task_id': targetTaskId,
+        'type': type.apiValue,
+      },
+    );
+  }
+
+  Future<void> deleteTaskRelationship({
+    required String wsId,
+    required String taskId,
+    required String sourceTaskId,
+    required String targetTaskId,
+    required TaskRelationshipType type,
+  }) async {
+    final payload = {
+      'source_task_id': sourceTaskId,
+      'target_task_id': targetTaskId,
+      'type': type.apiValue,
+    };
+
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/tasks/$taskId/relationships',
+      body: payload,
+    );
   }
 
   Future<void> createTaskProject({

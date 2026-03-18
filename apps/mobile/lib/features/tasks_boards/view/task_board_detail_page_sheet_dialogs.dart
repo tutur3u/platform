@@ -225,6 +225,115 @@ class _TaskListPickerDialog extends StatelessWidget {
   }
 }
 
+class _TaskRelationshipPickerDialog extends StatefulWidget {
+  const _TaskRelationshipPickerDialog({
+    required this.title,
+    required this.tasks,
+  });
+
+  final String title;
+  final List<TaskLinkOption> tasks;
+
+  @override
+  State<_TaskRelationshipPickerDialog> createState() =>
+      _TaskRelationshipPickerDialogState();
+}
+
+class _TaskRelationshipPickerDialogState
+    extends State<_TaskRelationshipPickerDialog> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedQuery = _query.trim().toLowerCase();
+    final filtered = widget.tasks
+        .where((task) {
+          if (normalizedQuery.isEmpty) return true;
+          return task.name.toLowerCase().contains(normalizedQuery) ||
+              (task.listName?.toLowerCase().contains(normalizedQuery) ??
+                  false) ||
+              (task.boardName?.toLowerCase().contains(normalizedQuery) ??
+                  false);
+        })
+        .toList(growable: false);
+
+    return shad.AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            shad.TextField(
+              hintText: context.l10n.taskBoardDetailSearchTasks,
+              onChanged: (value) => setState(() => _query = value),
+            ),
+            const shad.Gap(10),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: filtered.isEmpty
+                  ? Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        context.l10n.taskBoardDetailNoMatchingTasks,
+                        style: shad.Theme.of(context).typography.textMuted,
+                      ),
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final task = filtered[index];
+                        final title = task.name.trim().isNotEmpty
+                            ? task.name.trim()
+                            : context.l10n.taskBoardDetailUntitledTask;
+                        final metadata = [
+                          if (task.boardName?.trim().isNotEmpty == true)
+                            task.boardName!.trim(),
+                          if (task.listName?.trim().isNotEmpty == true)
+                            task.listName!.trim(),
+                        ];
+
+                        return shad.GhostButton(
+                          onPressed: () => Navigator.of(context).pop(task.id),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (metadata.isNotEmpty)
+                                Text(
+                                  metadata.join(' · '),
+                                  style:
+                                      shad.Theme.of(
+                                        context,
+                                      ).typography.xSmall.copyWith(
+                                        color: shad.Theme.of(
+                                          context,
+                                        ).colorScheme.mutedForeground,
+                                      ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            const shad.Gap(10),
+            shad.OutlineButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.commonCancel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TaskBoardListOptionRow extends StatelessWidget {
   const _TaskBoardListOptionRow({required this.list});
 

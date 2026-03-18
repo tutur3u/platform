@@ -83,7 +83,7 @@ export async function getWorkspaceStorageLimit(
     const { data, error } = await supabaseClient.rpc(
       'get_workspace_storage_limit',
       {
-        ws_id: workspaceId,
+        p_ws_id: workspaceId,
       }
     );
 

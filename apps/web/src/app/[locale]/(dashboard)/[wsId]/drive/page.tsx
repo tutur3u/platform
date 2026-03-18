@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
-  type StorageDatabase,
   type StorageObject,
 } from '@tuturuuu/types/primitives/StorageObject';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -11,6 +10,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getWorkspaceStorageMetrics } from '@/lib/storage-analytics';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath } from '@/utils/path-helper';
 import DriveBreadcrumbs from './breadcrumbs';
@@ -52,11 +52,11 @@ export default async function WorkspaceStorageObjectsPage({
         if (withoutPermission('manage_drive')) redirect(`/${wsId}`);
 
         const { data } = await getData(wsId, await searchParams);
-
-        const count = (await getFileCount(wsId)) ?? 0;
+        const storageMetrics = await getStorageMetrics(wsId);
+        const count = storageMetrics.fileCount ?? 0;
         const totalSize = (await getTotalSize(wsId)) ?? 0;
-        const largestFile = await getLargestFile(wsId);
-        const smallestFile = await getSmallestFile(wsId);
+        const largestFile = storageMetrics.largestFile;
+        const smallestFile = storageMetrics.smallestFile;
 
         // Get storage limit from workspace_secrets or use 100MB default
         const STORAGE_LIMIT = (await getStorageLimit(wsId)) ?? 104857600; // 100MB default
@@ -252,66 +252,6 @@ async function getTotalSize(wsId: string) {
   return data ?? 0;
 }
 
-async function getFileCount(wsId: string) {
-  const supabase = await createAdminClient<StorageDatabase>();
-
-  const { count, error } = await supabase
-    .schema('storage')
-    .from('objects')
-    .select('*', { count: 'exact', head: true })
-    .eq('bucket_id', 'workspaces')
-    .ilike('name', `${wsId}/%`)
-    .not('name', 'ilike', `%${EMPTY_FOLDER_PLACEHOLDER_NAME}`);
-
-  if (error) {
-    console.error('Error fetching file count:', error);
-    return 0;
-  }
-  return count ?? 0;
-}
-
-async function getLargestFile(wsId: string) {
-  const supabase = await createAdminClient<StorageDatabase>();
-
-  const { data, error } = await supabase
-    .schema('storage')
-    .from('objects')
-    .select('metadata')
-    .eq('bucket_id', 'workspaces')
-    .ilike('name', `${wsId}/%`)
-    .not('name', 'ilike', `%${EMPTY_FOLDER_PLACEHOLDER_NAME}`)
-    .order('metadata->size', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching largest file:', error);
-    return null;
-  }
-  return data?.metadata as { size: number } | null;
-}
-
-async function getSmallestFile(wsId: string) {
-  const supabase = await createAdminClient<StorageDatabase>();
-
-  const { data, error } = await supabase
-    .schema('storage')
-    .from('objects')
-    .select('metadata')
-    .eq('bucket_id', 'workspaces')
-    .ilike('name', `${wsId}/%`)
-    .not('name', 'ilike', `%${EMPTY_FOLDER_PLACEHOLDER_NAME}`)
-    .order('metadata->size', { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching smallest file:', error);
-    return null;
-  }
-  return data?.metadata as { size: number } | null;
-}
-
 async function getStorageLimit(wsId: string) {
   const supabase = await createAdminClient();
 
@@ -324,4 +264,18 @@ async function getStorageLimit(wsId: string) {
     return 104857600; // 100MB default
   }
   return data ?? 104857600; // 100MB default
+}
+
+async function getStorageMetrics(wsId: string) {
+  try {
+    const supabase = await createAdminClient();
+    return await getWorkspaceStorageMetrics(supabase, wsId);
+  } catch (error) {
+    console.error('Error fetching storage metrics:', error);
+    return {
+      fileCount: 0,
+      largestFile: null,
+      smallestFile: null,
+    };
+  }
 }

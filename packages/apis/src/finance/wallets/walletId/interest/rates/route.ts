@@ -4,12 +4,10 @@
  * GET: Get rate history
  * POST: Add new rate (auto-closes previous)
  */
-
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { formatDateString } from '@tuturuuu/utils/finance';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getAccessibleWallet } from '../../../wallet-access';
 
 interface Params {
   params: Promise<{
@@ -29,26 +27,22 @@ const createRateSchema = z.object({
 /**
  * GET: Get rate history for wallet
  */
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'view_transactions',
+    select: 'id',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('view_transactions')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Get config
-  const { data: config, error: configError } = await supabase
+  const { data: config, error: configError } = await access.context.supabase
     .from('wallet_interest_configs')
     .select('id')
     .eq('wallet_id', walletId)
@@ -62,7 +56,7 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   // Get rates
-  const { data: rates, error: ratesError } = await supabase
+  const { data: rates, error: ratesError } = await access.context.supabase
     .from('wallet_interest_rates')
     .select('*')
     .eq('config_id', config.id)
@@ -84,21 +78,17 @@ export async function GET(_: Request, { params }: Params) {
  * The database trigger will automatically close the previous rate.
  */
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'update_wallets',
+    select: 'id',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('update_wallets')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Validate input
@@ -115,7 +105,7 @@ export async function POST(req: Request, { params }: Params) {
   const { annual_rate, effective_from } = parseResult.data;
 
   // Get config
-  const { data: config, error: configError } = await supabase
+  const { data: config, error: configError } = await access.context.supabase
     .from('wallet_interest_configs')
     .select('id')
     .eq('wallet_id', walletId)
@@ -129,7 +119,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Create rate
-  const { data: rate, error: rateError } = await supabase
+  const { data: rate, error: rateError } = await access.context.supabase
     .from('wallet_interest_rates')
     .insert({
       config_id: config.id,

@@ -7,8 +7,8 @@
  * and displays a summary at the end.
  *
  * Usage:
- *   node scripts/check.js [--table] [--timing] [--details]
- *   bun check [--table] [--timing] [--details]
+ *   node scripts/check.js [--table] [--timing] [--details] [--run-all]
+ *   bun check [--table] [--timing] [--details] [--run-all]
  *
  * Exit codes:
  *   0 - All checks passed
@@ -20,6 +20,9 @@ const { spawn } = require('node:child_process');
 const useTable = process.argv.includes('--table');
 const showTiming = process.argv.includes('--timing');
 const showDetails = process.argv.includes('--details');
+const runAll = process.argv.includes('--run-all');
+const failFast = !runAll;
+const failFastRequiredChecks = new Set(['tests', 'type-check']);
 
 /**
  * Strip ANSI escape codes from a string
@@ -117,18 +120,8 @@ const colors = {
   cyan: '\x1b[36m',
 };
 
-// Check definitions
+// Check definitions - ordered by priority: tests/type-check first (fail-fast protected), then fast checks, then slow ones
 const checks = [
-  {
-    name: 'biome',
-    command: 'bun',
-    args: ['biome', 'check'],
-    parseOutput: (stdout) => {
-      const clean = stripAnsi(stdout);
-      const match = clean.match(/Checked (\d+) files?/i);
-      return match ? `${match[1]} files checked` : 'Passed';
-    },
-  },
   {
     name: 'tests',
     command: 'bun',
@@ -149,22 +142,6 @@ const checks = [
     },
   },
   {
-    name: 'script-tests',
-    command: 'bun',
-    args: ['run', 'test:scripts'],
-    errorsOnly: true,
-    quietSuccessMessage: `${colors.dim}No script test errors${colors.reset}`,
-    formatFailureOutput: formatScriptTestErrors,
-    parseOutput: (stdout) => {
-      const clean = stripAnsi(stdout);
-      const match = clean.match(/# tests (\d+)/i);
-      if (match) {
-        return `${match[1]} tests passed`;
-      }
-      return 'Passed';
-    },
-  },
-  {
     name: 'type-check',
     command: 'bun',
     args: showDetails
@@ -177,6 +154,31 @@ const checks = [
       );
       if (tasksMatch) {
         return `${tasksMatch[1]}/${tasksMatch[2]} packages`;
+      }
+      return 'Passed';
+    },
+  },
+  {
+    name: 'biome',
+    command: 'bun',
+    args: ['biome', 'check'],
+    parseOutput: (stdout) => {
+      const clean = stripAnsi(stdout);
+      const match = clean.match(/Checked (\d+) files?/i);
+      return match ? `${match[1]} files checked` : 'Passed';
+    },
+  },
+  {
+    name: 'script-tests',
+    command: 'bun',
+    args: ['run', 'test:scripts'],
+    errorsOnly: true,
+    formatFailureOutput: formatScriptTestErrors,
+    parseOutput: (stdout) => {
+      const clean = stripAnsi(stdout);
+      const match = clean.match(/# tests (\d+)/i);
+      if (match) {
+        return `${match[1]} tests passed`;
       }
       return 'Passed';
     },
@@ -255,12 +257,12 @@ const checks = [
 /**
  * Run a single check and capture output
  */
-function runCheck(check) {
+function runCheck(check, options = {}) {
   return new Promise((resolve) => {
     const startTime = Date.now();
     let stdout = '';
     let stderr = '';
-    const streamOutput = showDetails || !check.errorsOnly;
+    const streamOutput = options.forceBuffered === true ? false : showDetails;
 
     const proc = spawn(check.command, check.args, {
       cwd: process.cwd(),
@@ -290,7 +292,7 @@ function runCheck(check) {
 
     proc.on('close', (code) => {
       const duration = Date.now() - startTime;
-      if (!streamOutput && code !== 0) {
+      if (!streamOutput && options.forceBuffered !== true && code !== 0) {
         const failureOutput = check.formatFailureOutput
           ? check.formatFailureOutput(stdout, stderr)
           : `${stdout}${stderr}`;
@@ -299,7 +301,12 @@ function runCheck(check) {
             failureOutput.endsWith('\n') ? failureOutput : `${failureOutput}\n`
           );
         }
-      } else if (!streamOutput && code === 0 && check.quietSuccessMessage) {
+      } else if (
+        !streamOutput &&
+        options.forceBuffered !== true &&
+        code === 0 &&
+        check.quietSuccessMessage
+      ) {
         console.log(check.quietSuccessMessage);
       }
       resolve({
@@ -357,8 +364,12 @@ function createRow(cells, colWidths) {
 /**
  * Print the summary table
  */
-function printSummary(results) {
-  const allPassed = results.every((r) => r.success);
+function printSummary(results, options = {}) {
+  const { hideSkipped = false } = options;
+  const displayedResults = hideSkipped
+    ? results.filter((r) => !r.cancelled)
+    : results;
+  const allPassed = displayedResults.every((r) => r.success);
 
   console.log('\n');
 
@@ -379,17 +390,17 @@ function printSummary(results) {
     const col4Header = 'Time';
     const col1Width = Math.max(
       col1Header.length,
-      ...results.map((r) => r.name.length)
+      ...displayedResults.map((r) => r.name.length)
     );
     const col2Width = Math.max(
       col2Header.length,
-      ...results.map((r) => {
+      ...displayedResults.map((r) => {
         const prefix = r.success ? 'PASS' : 'FAIL';
         return getDisplayWidth(prefix);
       })
     );
-    const detailsValues = results.map((r) => r.status);
-    const timeValues = results.map((r) => formatDuration(r.duration));
+    const detailsValues = displayedResults.map((r) => r.status);
+    const timeValues = displayedResults.map((r) => formatDuration(r.duration));
     const colWidths = [col1Width, col2Width];
     if (showDetails) {
       colWidths.push(
@@ -422,10 +433,12 @@ function printSummary(results) {
     console.log(createRow(headerCells, colWidths));
     console.log(createLine('├', '┼', '┤', colWidths));
 
-    for (const result of results) {
+    for (const result of displayedResults) {
       const statusText = result.success
         ? `${colors.green}PASS${colors.reset}`
-        : `${colors.red}FAIL${colors.reset}`;
+        : result.cancelled
+          ? `${colors.yellow}SKIP${colors.reset}`
+          : `${colors.red}FAIL${colors.reset}`;
       const rowCells = [result.name, statusText];
       if (showDetails) rowCells.push(result.status);
       if (showTiming) {
@@ -435,16 +448,24 @@ function printSummary(results) {
       }
       console.log(createRow(rowCells, colWidths));
 
-      if (result !== results[results.length - 1]) {
+      if (result !== displayedResults[displayedResults.length - 1]) {
         console.log(createLine('├', '┼', '┤', colWidths));
       }
     }
 
     console.log(createLine('└', '┴', '┘', colWidths));
   } else {
-    for (const result of results) {
-      const statusLabel = result.success ? 'PASS' : 'FAIL';
-      const statusColor = result.success ? colors.green : colors.red;
+    for (const result of displayedResults) {
+      const statusLabel = result.success
+        ? 'PASS'
+        : result.cancelled
+          ? 'SKIP'
+          : 'FAIL';
+      const statusColor = result.success
+        ? colors.green
+        : result.cancelled
+          ? colors.yellow
+          : colors.red;
       let output = `${statusColor}${statusLabel}${colors.reset} ${result.name}`;
       if (showDetails) output += `: ${result.status}`;
       if (showTiming) output += ` (${formatDuration(result.duration)})`;
@@ -462,15 +483,47 @@ async function main() {
   );
 
   const results = [];
+  let failureSeen = false;
+  let failingCheckName = null;
 
   for (const check of checks) {
     console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
     const result = await runCheck(check);
     results.push(result);
     console.log('\n');
+
+    if (failFast && !result.success && failFastRequiredChecks.has(check.name)) {
+      failureSeen = true;
+      failingCheckName = check.name;
+    }
+
+    if (failFast && failureSeen) {
+      const pendingRequiredChecks = checks
+        .slice(results.length)
+        .some((pendingCheck) => failFastRequiredChecks.has(pendingCheck.name));
+
+      if (!pendingRequiredChecks) {
+        for (let i = results.length; i < checks.length; i += 1) {
+          results.push({
+            name: checks[i].name,
+            success: false,
+            cancelled: true,
+            stdout: '',
+            stderr: '',
+            duration: 0,
+            status: `Skipped (fail-fast after ${failingCheckName})`,
+          });
+        }
+
+        console.log(
+          `${colors.yellow}${colors.bold}${failingCheckName} failed; skipping remaining checks.${colors.reset}`
+        );
+        break;
+      }
+    }
   }
 
-  printSummary(results);
+  printSummary(results, { hideSkipped: failFast });
 
   const allPassed = results.every((r) => r.success);
   process.exit(allPassed ? 0 : 1);

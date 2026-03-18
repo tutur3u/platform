@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Banknote, Loader2, Search, Trash2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWallets } from '@tuturuuu/internal-api/finance';
 import type { WorkspaceRoleWalletWhitelist } from '@tuturuuu/types/primitives/WorkspaceRoleWalletWhitelist';
 import {
   AlertDialog,
@@ -77,7 +77,10 @@ export default function RoleFormWalletAccessSection({
         (item: WorkspaceRoleWalletWhitelist) => item.wallet_id
       )
     );
-    return allWallets.filter((w) => !whitelistedIds.has(w.id));
+    return allWallets.filter(
+      (wallet) =>
+        typeof wallet.id === 'string' && !whitelistedIds.has(wallet.id)
+    );
   }, [allWallets, whitelistedWallets]);
 
   const updateWalletMutation = useMutation({
@@ -387,14 +390,28 @@ async function getWhitelistedWallets(
   return res.json() as Promise<WorkspaceRoleWalletWhitelist[]>;
 }
 
-async function getAvailableWallets(wsId: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('workspace_wallets')
-    .select('id, name, balance, currency, type')
-    .eq('ws_id', wsId)
-    .order('name', { ascending: true });
+async function getAvailableWallets(wsId: string): Promise<
+  Array<{
+    id: string;
+    name: string | null;
+    balance?: number | null;
+    currency?: string;
+    type?: string;
+  }>
+> {
+  const wallets = await listWallets(wsId);
 
-  if (error) throw error;
-  return data || [];
+  return wallets.flatMap((wallet) =>
+    typeof wallet.id === 'string'
+      ? [
+          {
+            id: wallet.id,
+            name: wallet.name ?? null,
+            balance: wallet.balance ?? null,
+            currency: wallet.currency,
+            type: wallet.type,
+          },
+        ]
+      : []
+  );
 }

@@ -1,8 +1,16 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
@@ -16,10 +24,26 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, error, count } = await supabase
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const permissions = await getPermissions({ wsId, request: req });
+
+  if (!permissions || !permissions.containsPermission('view_transactions')) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  const { data, error, count } = await sbAdmin
     .from('workspace_wallets')
     .select('*', { count: 'exact' })
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .range(
       Number.parseInt(offset, 10),
       Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1

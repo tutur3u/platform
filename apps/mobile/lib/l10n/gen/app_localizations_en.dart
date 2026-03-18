@@ -803,6 +803,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskSelectProjects => 'Select projects';
 
   @override
+  String get taskBoardDetailEditorDetailsTab => 'Details';
+
+  @override
+  String get taskBoardDetailEditorRelationshipsTab => 'Relationships';
+
+  @override
+  String get taskBoardDetailParentTask => 'Parent task';
+
+  @override
+  String get taskBoardDetailChildTasks => 'Child tasks';
+
+  @override
+  String get taskBoardDetailBlockedBy => 'Blocked by';
+
+  @override
+  String get taskBoardDetailBlocking => 'Blocking';
+
+  @override
+  String get taskBoardDetailRelatedTasks => 'Related tasks';
+
+  @override
+  String get taskBoardDetailAddParentTask => 'Add parent task';
+
+  @override
+  String get taskBoardDetailAddChildTask => 'Add child task';
+
+  @override
+  String get taskBoardDetailAddBlockedByTask => 'Add blocker';
+
+  @override
+  String get taskBoardDetailAddBlockingTask => 'Add blocked task';
+
+  @override
+  String get taskBoardDetailAddRelatedTask => 'Add related task';
+
+  @override
+  String get taskBoardDetailOpenRelatedTask => 'Open related task';
+
+  @override
+  String get taskBoardDetailRemoveRelationship => 'Remove relationship';
+
+  @override
+  String get taskBoardDetailUnableToOpenLinkedTask => 'This linked task can\'t be opened from here.';
+
+  @override
+  String get taskBoardDetailSelectTask => 'Select task';
+
+  @override
+  String get taskBoardDetailSearchTasks => 'Search tasks';
+
+  @override
+  String get taskBoardDetailNoAvailableRelationshipTasks => 'No available tasks for this relationship.';
+
+  @override
+  String get taskBoardDetailRelationshipAdded => 'Relationship added.';
+
+  @override
+  String get taskBoardDetailRelationshipRemoved => 'Relationship removed.';
+
+  @override
   String get taskBoardDetailNone => 'None';
 
   @override

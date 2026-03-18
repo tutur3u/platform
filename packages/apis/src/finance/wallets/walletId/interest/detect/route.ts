@@ -4,8 +4,6 @@
  * GET: Scan wallet transactions for interest payments
  * POST: Confirm detected transactions as interest (future: category assignment)
  */
-
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { InterestDetectionResult } from '@tuturuuu/types';
 import {
   calculateDailyInterest,
@@ -13,8 +11,8 @@ import {
   formatDateString,
   summarizeDetectionResults,
 } from '@tuturuuu/utils/finance';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { getAccessibleWallet } from '../../../wallet-access';
 
 interface Params {
   params: Promise<{
@@ -26,26 +24,22 @@ interface Params {
 /**
  * GET: Scan wallet transactions for interest payments
  */
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'view_transactions',
+    select: 'balance',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('view_transactions')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Get interest config for this wallet
-  const { data: config } = await supabase
+  const { data: config } = await access.context.supabase
     .from('wallet_interest_configs')
     .select('*')
     .eq('wallet_id', walletId)
@@ -54,7 +48,7 @@ export async function GET(_: Request, { params }: Params) {
   // Get current rate to estimate expected daily interest
   let expectedDailyInterest: number | undefined;
   if (config) {
-    const { data: rate } = await supabase
+    const { data: rate } = await access.context.supabase
       .from('wallet_interest_rates')
       .select('annual_rate')
       .eq('config_id', config.id)
@@ -63,15 +57,11 @@ export async function GET(_: Request, { params }: Params) {
 
     if (rate) {
       // Get wallet balance for estimation
-      const { data: wallet } = await supabase
-        .from('workspace_wallets')
-        .select('balance')
-        .eq('id', walletId)
-        .single();
+      const balance = access.wallet.balance as number | null;
 
-      if (wallet?.balance) {
+      if (balance) {
         expectedDailyInterest = calculateDailyInterest(
-          wallet.balance,
+          balance,
           rate.annual_rate
         );
       }
@@ -86,7 +76,7 @@ export async function GET(_: Request, { params }: Params) {
     : new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
 
   // Get transactions in date range
-  let query = supabase
+  let query = access.context.supabase
     .from('wallet_transactions')
     .select('id, created_at, amount, description')
     .eq('wallet_id', walletId)
@@ -111,13 +101,26 @@ export async function GET(_: Request, { params }: Params) {
   // Transform transactions for detection
   const txForDetection =
     transactions
-      ?.filter((t) => t.id && t.created_at && t.amount !== null)
-      .map((t) => ({
-        id: t.id as string,
-        date: formatDateString(new Date(t.created_at as string)),
-        amount: t.amount as number,
-        description: t.description as string | null,
-      })) || [];
+      ?.filter(
+        (t: {
+          id: string | null;
+          created_at: string | null;
+          amount: number | null;
+        }) => t.id && t.created_at && t.amount !== null
+      )
+      .map(
+        (t: {
+          id: string | null;
+          created_at: string | null;
+          amount: number | null;
+          description: string | null;
+        }) => ({
+          id: t.id as string,
+          date: formatDateString(new Date(t.created_at as string)),
+          amount: t.amount as number,
+          description: t.description as string | null,
+        })
+      ) || [];
 
   // Run detection
   const detected = detectInterestTransactions(

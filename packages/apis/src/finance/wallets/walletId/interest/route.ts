@@ -4,8 +4,6 @@
  * GET: Get interest summary with projections
  * POST: Enable interest tracking (create config)
  */
-
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   CreateInterestConfigInput,
   InterestSummary,
@@ -23,9 +21,9 @@ import {
   holidaysToSet,
   projectInterest,
 } from '@tuturuuu/utils/finance';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getAccessibleWallet } from '../../wallet-access';
 
 interface Params {
   params: Promise<{
@@ -48,26 +46,22 @@ const createConfigSchema = z.object({
 /**
  * GET: Get interest summary with calculations and projections
  */
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'view_transactions',
+    select: 'balance',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('view_transactions')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Check if interest tracking is enabled for this wallet
-  const { data: config, error: configError } = await supabase
+  const { data: config, error: configError } = await access.context.supabase
     .from('wallet_interest_configs')
     .select('*')
     .eq('wallet_id', walletId)
@@ -92,7 +86,7 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   // Get rate history
-  const { data: rates, error: ratesError } = await supabase
+  const { data: rates, error: ratesError } = await access.context.supabase
     .from('wallet_interest_rates')
     .select('*')
     .eq('config_id', config.id)
@@ -106,27 +100,22 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   // Get current rate (most recent with no effective_to)
-  const currentRate = rates?.find((r) => !r.effective_to) || null;
+  const currentRate =
+    rates?.find((r: { effective_to: string | null }) => !r.effective_to) ||
+    null;
 
   // Get holidays for calculation
   const today = new Date();
   const yearStart = new Date(today.getFullYear(), 0, 1);
-  const { data: holidays } = await supabase
+  const { data: holidays } = await access.context.supabase
     .from('vietnamese_holidays')
     .select('date')
     .gte('date', formatDateString(yearStart))
     .lte('date', formatDateString(new Date(today.getFullYear() + 1, 11, 31)));
 
-  const holidayDates = holidays?.map((h) => h.date) || [];
+  const holidayDates = holidays?.map((h: { date: string }) => h.date) || [];
 
-  // Get wallet balance
-  const { data: wallet } = await supabase
-    .from('workspace_wallets')
-    .select('balance')
-    .eq('id', walletId)
-    .single();
-
-  const balance = wallet?.balance || 0;
+  const balance = (access.wallet.balance as number | null) || 0;
 
   // Determine the effective start date for tracking
   // Use tracking_start_date if set, otherwise use yearStart
@@ -139,7 +128,7 @@ export async function GET(_: Request, { params }: Params) {
     trackingStartStr > yearStartStr ? trackingStartStr : yearStartStr;
 
   // Get transactions for the tracking period
-  let transactionQuery = supabase
+  let transactionQuery = access.context.supabase
     .from('wallet_transactions')
     .select('created_at, amount')
     .eq('wallet_id', walletId)
@@ -158,8 +147,11 @@ export async function GET(_: Request, { params }: Params) {
 
   const txList =
     transactions
-      ?.filter((t) => t.amount !== null && t.created_at !== null)
-      .map((t) => ({
+      ?.filter(
+        (t: { amount: number | null; created_at: string | null }) =>
+          t.amount !== null && t.created_at !== null
+      )
+      .map((t: { created_at: string | null; amount: number | null }) => ({
         date: formatDateString(new Date(t.created_at as string)),
         amount: t.amount as number,
       })) || [];
@@ -177,7 +169,9 @@ export async function GET(_: Request, { params }: Params) {
   // Calculate MTD interest
   const mtdRange = getMonthToDateRange(today);
   const mtdResult = calculateInterest({
-    transactions: txList.filter((t) => t.date >= mtdRange.fromDate),
+    transactions: txList.filter(
+      (t: { date: string }) => t.date >= mtdRange.fromDate
+    ),
     rates: rates as WalletInterestRate[],
     holidays: holidayDates,
     fromDate: mtdRange.fromDate,
@@ -187,7 +181,7 @@ export async function GET(_: Request, { params }: Params) {
   // Calculate today's interest
   const todayStr = formatDateString(today);
   const todayResult = calculateInterest({
-    transactions: txList.filter((t) => t.date === todayStr),
+    transactions: txList.filter((t: { date: string }) => t.date === todayStr),
     rates: rates as WalletInterestRate[],
     holidays: holidayDates,
     fromDate: todayStr,
@@ -204,7 +198,7 @@ export async function GET(_: Request, { params }: Params) {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const sevenDaysAgoStr = formatDateString(sevenDaysAgo);
 
-  const recentTransactions = txList.filter((t) => {
+  const recentTransactions = txList.filter((t: { date: string }) => {
     // Must be within 7 days (using string comparison for consistency)
     if (t.date < sevenDaysAgoStr) return false;
     // Must not be in the future
@@ -283,21 +277,17 @@ export async function GET(_: Request, { params }: Params) {
  * POST: Enable interest tracking for a wallet
  */
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { walletId, wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getAccessibleWallet({
+    req,
+    wsId,
+    walletId,
+    requiredPermission: 'update_wallets',
+    select: 'id',
+  });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  if (withoutPermission('update_wallets')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
+  if (access.response) {
+    return access.response;
   }
 
   // Validate input
@@ -316,20 +306,8 @@ export async function POST(req: Request, { params }: Params) {
     ...parseResult.data,
   };
 
-  // Verify wallet exists and belongs to workspace
-  const { data: wallet, error: walletError } = await supabase
-    .from('workspace_wallets')
-    .select('id, ws_id')
-    .eq('id', walletId)
-    .eq('ws_id', wsId)
-    .single();
-
-  if (walletError || !wallet) {
-    return NextResponse.json({ message: 'Wallet not found' }, { status: 404 });
-  }
-
   // Check if config already exists
-  const { data: existingConfig } = await supabase
+  const { data: existingConfig } = await access.context.supabase
     .from('wallet_interest_configs')
     .select('id')
     .eq('wallet_id', walletId)
@@ -347,7 +325,7 @@ export async function POST(req: Request, { params }: Params) {
     input.tracking_start_date ?? formatDateString(new Date());
 
   // Create config
-  const { data: config, error: configError } = await supabase
+  const { data: config, error: configError } = await access.context.supabase
     .from('wallet_interest_configs')
     .insert({
       wallet_id: walletId,
@@ -376,7 +354,7 @@ export async function POST(req: Request, { params }: Params) {
     input.initial_rate ?? getDefaultRate(input.provider, input.zalopay_tier);
 
   // Create initial rate entry
-  const { error: rateError } = await supabase
+  const { error: rateError } = await access.context.supabase
     .from('wallet_interest_rates')
     .insert({
       config_id: config.id,

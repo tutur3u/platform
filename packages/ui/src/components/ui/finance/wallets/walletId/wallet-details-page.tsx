@@ -1,4 +1,8 @@
 import { Calendar, CreditCard, DollarSign, Globe } from '@tuturuuu/icons';
+import {
+  getWallet,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -13,6 +17,7 @@ import {
   getWorkspace,
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { notFound } from 'next/navigation';
@@ -64,17 +69,21 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
   const canViewConfidentialCategory = containsPermission(
     'view_confidential_category'
   );
-  const hasManageFinance = containsPermission('manage_finance');
   const canUpdateWallets = containsPermission('update_wallets');
   const canCreateTransactions = containsPermission('create_transactions');
   const canCreateConfidentialTransactions = containsPermission(
     'create_confidential_transactions'
   );
   const canDeleteWallets = containsPermission('delete_wallets');
+  const requestHeaders = await headers();
+  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
 
-  const { wallet } = await getData(wsId, walletId, hasManageFinance);
-
-  if (!wallet) notFound();
+  let wallet: Wallet;
+  try {
+    wallet = await getWallet(wsId, walletId, internalApiOptions);
+  } catch {
+    notFound();
+  }
 
   const currency = wallet.currency || defaultCurrency || 'USD';
   const workspaceCurrency = defaultCurrency || 'USD';
@@ -305,78 +314,6 @@ function DetailItem({
       <span className="font-semibold">{label}:</span> {value}
     </div>
   );
-}
-
-async function getData(
-  _wsId: string,
-  walletId: string,
-  hasManageFinance: boolean
-) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Unauthorized');
-  }
-
-  const { data: rawWallet, error: walletError } = await supabase
-    .from('workspace_wallets')
-    .select('*, credit_wallets(limit, statement_date, payment_date)')
-    .eq('id', walletId)
-    .single();
-
-  if (walletError) throw walletError;
-
-  // Flatten credit_wallets join data
-  const { credit_wallets, ...walletBase } = rawWallet as typeof rawWallet & {
-    credit_wallets?: {
-      limit: number;
-      statement_date: number;
-      payment_date: number;
-    } | null;
-  };
-  const wallet = {
-    ...walletBase,
-    ...(credit_wallets
-      ? {
-          limit: credit_wallets.limit,
-          statement_date: credit_wallets.statement_date,
-          payment_date: credit_wallets.payment_date,
-        }
-      : {}),
-  };
-
-  if (!hasManageFinance) {
-    // Get user's role IDs
-    const { data: userRoles } = await supabase
-      .from('workspace_role_members')
-      .select('role_id')
-      .eq('user_id', user.id);
-
-    const roleIds = (userRoles || []).map((r) => r.role_id);
-
-    if (roleIds.length > 0) {
-      // Get whitelisted wallet IDs
-      const { data: whitelistData } = await supabase
-        .from('workspace_role_wallet_whitelist')
-        .select('wallet_id')
-        .eq('wallet_id', walletId)
-        .in('role_id', roleIds);
-
-      if (!whitelistData || whitelistData.length === 0) {
-        // No access
-        return { wallet: null };
-      }
-    } else {
-      // No roles, no access
-      return { wallet: null };
-    }
-  }
-
-  return { wallet };
 }
 
 async function getExchangeRates(): Promise<ExchangeRate[]> {

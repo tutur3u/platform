@@ -126,6 +126,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
   // Get authenticated user
   const {
@@ -225,12 +226,12 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Ensure wallet is in this workspace
-  const { data: walletCheck, error: walletErr } = await supabase
+  const { data: walletCheck, error: walletErr } = await sbAdmin
     .from('workspace_wallets')
     .select('id')
     .eq('id', data.origin_wallet_id)
-    .eq('ws_id', wsId)
-    .single();
+    .eq('ws_id', resolvedWsId)
+    .maybeSingle();
 
   if (walletErr || !walletCheck) {
     return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });

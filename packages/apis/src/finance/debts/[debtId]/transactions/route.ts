@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { DebtLoanTransaction } from '@tuturuuu/types/primitives/DebtLoan';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -89,6 +92,7 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const { wsId, debtId } = await params;
   const permissions = await getPermissions({ wsId });
 
@@ -160,12 +164,12 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Verify the wallet belongs to this workspace
-  const { data: wallet, error: walletError } = await supabase
+  const { data: wallet, error: walletError } = await sbAdmin
     .from('workspace_wallets')
     .select('id')
     .eq('id', transaction.wallet_id)
     .eq('ws_id', wsId)
-    .single();
+    .maybeSingle();
 
   if (walletError || !wallet) {
     return NextResponse.json(

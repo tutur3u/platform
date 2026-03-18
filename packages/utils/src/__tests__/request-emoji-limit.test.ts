@@ -97,6 +97,21 @@ describe('request emoji limit', () => {
     });
   });
 
+  it('can skip validation for machine-generated snapshot fields', () => {
+    const violation = findRequestContentViolation(
+      {
+        snapshot: `{"elements":[{"text":"${'0'.repeat(
+          MAX_REPEATED_GRAPHEME_RUN + 20
+        )}"}]}`,
+        title: 'Board',
+      },
+      'body',
+      { skipValidationForFields: ['snapshot'] }
+    );
+
+    expect(violation).toBeNull();
+  });
+
   it('skips validation for non-json requests', () => {
     const request = makeRequest('name=test', {
       contentType: 'application/x-www-form-urlencoded',
@@ -145,5 +160,21 @@ describe('request emoji limit', () => {
       message:
         'Field "body.wallets[1].name" cannot contain more than 10 emojis',
     });
+  });
+
+  it('skips whiteboard snapshot validation when configured for the request', async () => {
+    const request = makeRequest(
+      JSON.stringify({
+        snapshot: `{"elements":[{"text":"${'0'.repeat(
+          MAX_REPEATED_GRAPHEME_RUN + 20
+        )}"}]}`,
+      })
+    );
+
+    await expect(
+      getRequestContentViolationForRequest(request, {
+        skipValidationForFields: ['snapshot'],
+      })
+    ).resolves.toBeNull();
   });
 });

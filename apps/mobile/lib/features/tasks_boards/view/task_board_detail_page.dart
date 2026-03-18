@@ -10,11 +10,14 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/utils/form_dirty_utils.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/models/task_label.dart';
+import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
+import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -44,10 +47,12 @@ class TaskBoardDetailPage extends StatelessWidget {
     required this.boardId,
     super.key,
     this.taskRepository,
+    this.initialTaskId,
   });
 
   final String boardId;
   final TaskRepository? taskRepository;
+  final String? initialTaskId;
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +73,10 @@ class TaskBoardDetailPage extends StatelessWidget {
           }
           return cubit;
         },
-        child: _TaskBoardDetailPageView(boardId: boardId),
+        child: _TaskBoardDetailPageView(
+          boardId: boardId,
+          initialTaskId: initialTaskId,
+        ),
       ),
     );
   }
