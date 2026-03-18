@@ -41,7 +41,13 @@ vi.mock('../abuse-protection/edge', () => ({
 }));
 
 vi.mock('../request-emoji-limit', () => ({
-  validateRequestEmojiLimit: (req: NextRequest) => mocks.validateEmoji(req),
+  validateRequestEmojiLimit: (
+    req: NextRequest,
+    options?: {
+      allowDescriptionYjsState?: boolean;
+      skipValidationForFields?: string[];
+    }
+  ) => mocks.validateEmoji(req, options),
 }));
 
 function makeRequest(
@@ -437,5 +443,51 @@ describe('guardApiProxyRequest', () => {
 
     expect(response).toBe(emojiResponse);
     expect(mocks.validateEmoji).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips text-bomb validation for whiteboard snapshots on the whiteboard save route', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 12,
+        remaining: 11,
+        reset: Date.now() + 60_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 120,
+        remaining: 119,
+        reset: Date.now() + 60_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 400,
+        remaining: 399,
+        reset: Date.now() + 60_000,
+      });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    await guardApiProxyRequest(
+      makeRequest(
+        '/api/v1/workspaces/ws-1/whiteboards/11111111-1111-4111-8111-111111111111',
+        'PATCH'
+      ),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(mocks.validateEmoji).toHaveBeenCalledWith(expect.any(NextRequest), {
+      allowDescriptionYjsState: false,
+      skipValidationForFields: ['snapshot'],
+    });
   });
 });

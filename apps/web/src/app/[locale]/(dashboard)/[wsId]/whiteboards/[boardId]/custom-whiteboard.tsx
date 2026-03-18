@@ -20,7 +20,6 @@ import {
   WifiIcon,
   WifiOffIcon,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Input } from '@tuturuuu/ui/input';
@@ -124,7 +123,6 @@ export function CustomWhiteboard({
   boardName,
   initialData,
 }: CustomWhiteboardProps) {
-  const supabase = createClient();
   const { resolvedTheme } = useTheme();
   const t = useTranslations('ws-presence');
   const commonT = useTranslations('common');
@@ -348,26 +346,35 @@ export function CustomWhiteboard({
       requestedFileIdsRef.current.add(fileId);
 
       try {
-        const { data, error } = await supabase.storage
-          .from('workspaces')
-          .createSignedUrl(fileId, 60 * 60);
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/whiteboards/${boardId}/image-url?path=${encodeURIComponent(fileId)}`,
+          {
+            cache: 'no-store',
+          }
+        );
 
-        if (error || !data?.signedUrl) {
+        if (!response.ok) {
+          const error = await response.json().catch(() => null);
           console.error('Failed to create signed URL for file:', fileId, error);
           return;
         }
 
-        const response = await fetch(data.signedUrl, { cache: 'no-store' });
-        if (!response.ok) {
+        const data = (await response.json()) as { signedUrl?: string };
+        if (!data.signedUrl) return;
+
+        const imageResponse = await fetch(data.signedUrl, {
+          cache: 'no-store',
+        });
+        if (!imageResponse.ok) {
           console.error(
             'Failed to fetch image from signed URL:',
             fileId,
-            response.statusText
+            imageResponse.statusText
           );
           return;
         }
 
-        const blob = await response.blob();
+        const blob = await imageResponse.blob();
         const mimeType = blob.type || 'image/png';
         const dataURL = await blobToDataURL(blob);
 
@@ -389,7 +396,7 @@ export function CustomWhiteboard({
         );
       }
     },
-    [supabase, blobToDataURL]
+    [blobToDataURL, boardId, wsId]
   );
 
   const ensureImageFilesLoaded = useCallback(
@@ -556,40 +563,63 @@ export function CustomWhiteboard({
   const handleGenerateIdForFile = useCallback(
     async (file: File) => {
       try {
-        // Upload file to Supabase Storage
-        const lastDotIndex = file.name.lastIndexOf('.');
-        const fileName =
-          lastDotIndex > 0 ? file.name.substring(0, lastDotIndex) : file.name;
-        const fileExt =
-          lastDotIndex > 0 ? file.name.substring(lastDotIndex + 1) : '';
-        const fileId = `${Date.now()}-${fileName}`;
-        const storagePath = fileExt
-          ? `${wsId}/whiteboards/${boardId}/${fileId}.${fileExt}`
-          : `${wsId}/whiteboards/${boardId}/${fileId}`;
+        const uploadUrlResponse = await fetch(
+          `/api/v1/workspaces/${wsId}/whiteboards/${boardId}/image-url`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            cache: 'no-store',
+            body: JSON.stringify({
+              filename: file.name,
+            }),
+          }
+        );
 
-        const { error } = await supabase.storage
-          .from('workspaces')
-          .upload(storagePath, file, {
-            contentType: file.type || 'image/png',
-            upsert: false,
-          });
-
-        if (error) {
-          console.error('Failed to upload file:', error);
+        if (!uploadUrlResponse.ok) {
+          const error = await uploadUrlResponse.json().catch(() => null);
+          console.error('Failed to generate whiteboard upload URL:', error);
           toast.error('Failed to upload image');
-          throw error;
+          throw new Error(error?.error || 'Failed to generate upload URL');
         }
 
-        // Return the file storage path - Excalidraw will use this to reference the file
-        // The blob data will be retrieved from signed URL when the file needs to be rendered in the scene
-        return storagePath;
+        const uploadData = (await uploadUrlResponse.json()) as {
+          signedUrl?: string;
+          path?: string;
+        };
+
+        if (!uploadData.signedUrl || !uploadData.path) {
+          toast.error('Failed to upload image');
+          throw new Error('Missing upload URL');
+        }
+
+        const uploadResponse = await fetch(uploadData.signedUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file.type || 'image/png',
+          },
+          body: file,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text().catch(() => '');
+          console.error('Failed to upload whiteboard image:', {
+            status: uploadResponse.status,
+            errorText,
+          });
+          toast.error('Failed to upload image');
+          throw new Error('Failed to upload whiteboard image');
+        }
+
+        return uploadData.path;
       } catch (error) {
         console.error('Error in handleGenerateIdForFile:', error);
         toast.error('Failed to process image');
         throw error;
       }
     },
-    [supabase, wsId, boardId]
+    [boardId, wsId]
   );
 
   const handleTitleClick = useCallback(() => {

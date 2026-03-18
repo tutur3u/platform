@@ -414,8 +414,17 @@ export async function guardApiProxyRequest(
     /\/api\/v1\/workspaces\/[^/]+\/tasks\/[^/]+\/description$/.test(
       req.nextUrl.pathname
     );
+  const skipValidationForFields =
+    /^\/api\/v1\/workspaces\/[^/]+\/whiteboards\/[^/]+$/.test(
+      req.nextUrl.pathname
+    )
+      ? ['snapshot']
+      : undefined;
 
   return (
-    (await validateRequestEmojiLimit(req, { allowDescriptionYjsState })) ?? null
+    (await validateRequestEmojiLimit(req, {
+      allowDescriptionYjsState,
+      skipValidationForFields,
+    })) ?? null
   );
 }
