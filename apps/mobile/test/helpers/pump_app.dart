@@ -22,4 +22,9 @@ extension PumpApp on WidgetTester {
       ),
     );
   }
+
+  Future<void> drainShadToastTimers() async {
+    await pump(const Duration(seconds: 6));
+    await pumpAndSettle();
+  }
 }

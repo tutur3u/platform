@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
@@ -71,6 +72,7 @@ class _RequestsViewState extends State<_RequestsView> {
   int? _missedEntryDateThreshold;
   int _statusChangeGracePeriodMinutes = 0;
   bool _isThresholdLoading = false;
+  int _permissionLoadToken = 0;
 
   @override
   void didChangeDependencies() {
@@ -245,10 +247,24 @@ class _RequestsViewState extends State<_RequestsView> {
   Future<void> _loadPermissionsAndThreshold() async {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final wsId = workspace?.id;
+    final localWsId = wsId;
+    final localToken = ++_permissionLoadToken;
     final currentUserId = context.read<AuthCubit>().state.user?.id;
 
-    if (wsId == null || wsId.isEmpty || currentUserId == null) {
+    bool canApplyState() {
       if (!mounted) {
+        return false;
+      }
+      final currentWsId = context
+          .read<WorkspaceCubit>()
+          .state
+          .currentWorkspace
+          ?.id;
+      return currentWsId == localWsId && localToken == _permissionLoadToken;
+    }
+
+    if (wsId == null || wsId.isEmpty || currentUserId == null) {
+      if (!canApplyState()) {
         return;
       }
       setState(() {
@@ -261,7 +277,7 @@ class _RequestsViewState extends State<_RequestsView> {
       return;
     }
 
-    if (mounted) {
+    if (canApplyState()) {
       setState(() => _isThresholdLoading = true);
     }
 
@@ -274,6 +290,9 @@ class _RequestsViewState extends State<_RequestsView> {
     try {
       final workspacePermissions = await _workspacePermissionsRepository
           .getPermissions(wsId: wsId, userId: currentUserId);
+      if (!canApplyState()) {
+        return;
+      }
       canManageRequests = workspacePermissions.containsPermission(
         manageTimeTrackingRequestsPermission,
       );
@@ -289,8 +308,14 @@ class _RequestsViewState extends State<_RequestsView> {
       if (canManageThresholdSettings) {
         try {
           final settings = await repository.getWorkspaceSettings(wsId);
+          if (!canApplyState()) {
+            return;
+          }
           threshold = settings?.missedEntryDateThreshold;
         } on Exception {
+          if (!canApplyState()) {
+            return;
+          }
           threshold = null;
         }
       }
@@ -301,12 +326,18 @@ class _RequestsViewState extends State<_RequestsView> {
             wsId,
             _statusChangeGracePeriodConfigId,
           );
+          if (!canApplyState()) {
+            return;
+          }
           statusChangeGracePeriodMinutes =
               int.tryParse(gracePeriodValue ?? '0') ?? 0;
           if (statusChangeGracePeriodMinutes < 0) {
             statusChangeGracePeriodMinutes = 0;
           }
         } on Exception {
+          if (!canApplyState()) {
+            return;
+          }
           statusChangeGracePeriodMinutes = 0;
         }
       }
@@ -317,7 +348,7 @@ class _RequestsViewState extends State<_RequestsView> {
         error: error,
         stackTrace: stackTrace,
       );
-      if (!mounted) {
+      if (!canApplyState()) {
         return;
       }
       setState(() {
@@ -330,7 +361,7 @@ class _RequestsViewState extends State<_RequestsView> {
       return;
     }
 
-    if (!mounted) {
+    if (!canApplyState()) {
       return;
     }
     setState(() {
@@ -386,7 +417,24 @@ class _RequestsViewState extends State<_RequestsView> {
                   content: Text(context.l10n.timerRequestsThresholdUpdated),
                 ),
               );
-            } on Object catch (error) {
+            } on ApiException catch (e) {
+              if (!mounted) {
+                return;
+              }
+              if (!toastContext.mounted) {
+                return;
+              }
+              final message = e.message.isNotEmpty
+                  ? e.message
+                  : context.l10n.commonSomethingWentWrong;
+              shad.showToast(
+                context: toastContext,
+                builder: (context, overlay) => shad.Alert.destructive(
+                  title: Text(context.l10n.commonSomethingWentWrong),
+                  content: Text(message),
+                ),
+              );
+            } on Object {
               if (!mounted) {
                 return;
               }
@@ -397,7 +445,7 @@ class _RequestsViewState extends State<_RequestsView> {
                 context: toastContext,
                 builder: (context, overlay) => shad.Alert.destructive(
                   title: Text(context.l10n.commonSomethingWentWrong),
-                  content: Text(error.toString()),
+                  content: Text(context.l10n.commonSomethingWentWrong),
                 ),
               );
             }

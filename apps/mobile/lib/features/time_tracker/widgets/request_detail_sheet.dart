@@ -87,6 +87,10 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
   void didUpdateWidget(covariant RequestDetailSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    if (oldWidget.currentUserId != widget.currentUserId) {
+      _currentUserId = widget.currentUserId;
+    }
+
     if (oldWidget.currentUserDisplayName != widget.currentUserDisplayName) {
       _currentUserDisplayName = widget.currentUserDisplayName;
     }
@@ -614,18 +618,18 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
           ? (_currentUserId ?? _request.approvedBy)
           : null,
       approvedByName: status == ApprovalStatus.approved
-          ? (_currentUserDisplayName ?? _request.approvedByName)
+          ? _currentUserDisplayName
           : null,
       approvedAt: status == ApprovalStatus.approved ? now : null,
       rejectedBy: status == ApprovalStatus.rejected
           ? (_currentUserId ?? _request.rejectedBy)
           : null,
       rejectedByName: status == ApprovalStatus.rejected
-          ? (_currentUserDisplayName ?? _request.rejectedByName)
+          ? _currentUserDisplayName
           : null,
       rejectedAt: status == ApprovalStatus.rejected ? now : null,
       needsInfoRequestedByName: status == ApprovalStatus.needsInfo
-          ? (_currentUserDisplayName ?? _request.needsInfoRequestedByName)
+          ? _currentUserDisplayName
           : _request.needsInfoRequestedByName,
       rejectionReason: status == ApprovalStatus.rejected ? reason : null,
       needsInfoReason: status == ApprovalStatus.needsInfo ? reason : null,
