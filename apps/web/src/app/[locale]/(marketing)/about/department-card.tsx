@@ -2,7 +2,7 @@ import { Badge } from '@ncthub/ui/badge';
 import { Card, CardContent, CardHeader } from '@ncthub/ui/card';
 import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
-import type { CoreDepartmentName } from './departments';
+import type { CoreDepartmentName, DepartmentData } from './data';
 
 const badgeStyles = [
   'border-dynamic-orange/80 bg-dynamic-orange/20 text-dynamic-orange',
@@ -20,7 +20,6 @@ const departmentThemes: Record<
     bg: string;
     border: string;
     glow: string;
-    
   }
 > = {
   Technology: {
@@ -29,7 +28,6 @@ const departmentThemes: Record<
     bg: 'bg-dynamic-blue/10',
     border: 'border-dynamic-blue/20',
     glow: 'from-dynamic-blue/12 via-dynamic-blue/4 to-transparent',
-    
   },
   'Human Resources': {
     card: 'bg-dynamic-purple/5 text-dynamic-purple border-dynamic-purple/20 hover:bg-dynamic-purple/10',
@@ -37,7 +35,6 @@ const departmentThemes: Record<
     bg: 'bg-dynamic-purple/10',
     border: 'border-dynamic-purple/20',
     glow: 'from-dynamic-purple/12 via-dynamic-purple/4 to-transparent',
-    
   },
   Marketing: {
     card: 'bg-dynamic-orange/5 text-dynamic-orange border-dynamic-orange/20 hover:bg-dynamic-orange/10',
@@ -45,40 +42,32 @@ const departmentThemes: Record<
     bg: 'bg-dynamic-orange/10',
     border: 'border-dynamic-orange/20',
     glow: 'from-dynamic-orange/12 via-dynamic-orange/4 to-transparent',
-    
   },
 };
 
 interface DepartmentCardProps {
   name: CoreDepartmentName;
-  images: string[];
   bio: string;
-  characteristics: string;
-  mission: string[];
-  activities: { title: string; description: string }[];
+  characteristics: DepartmentData['characteristics'];
+  activities: DepartmentData['activities'];
 }
 
 export function DepartmentCard({
   name,
-  images,
   bio,
   characteristics,
-  mission,
   activities,
 }: DepartmentCardProps) {
-  const featuredImage = images[0]!;
-  const activityImages = images
-    .slice(1, 5);
   const theme = departmentThemes[name];
 
   return (
     <Card
       className={cn(
         'group w-full max-w-7xl overflow-hidden rounded-4xl border-2 bg-secondary/80 transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-secondary/20',
-        theme.card,
+        theme.card
       )}
     >
-      <CardHeader className="relative mt-4 mb-2 text-center">
+      <CardHeader className="mt-4 mb-2 space-y-4 text-center">
         <Badge
           variant="outline"
           className={cn(
@@ -90,6 +79,12 @@ export function DepartmentCard({
         >
           {name}
         </Badge>
+
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-balance font-medium text-foreground/80 text-md leading-8 md:text-lg">
+            {bio}
+          </p>
+        </div>
       </CardHeader>
 
       <CardContent className="relative space-y-10 px-5 pb-8 md:px-8 lg:px-10 lg:pb-10">
@@ -99,26 +94,19 @@ export function DepartmentCard({
             theme.glow
           )}
         />
-
-        <section className="relative mx-auto max-w-3xl text-center">
-          <p className="text-balance font-medium text-foreground/80 text-md leading-8 md:text-lg">
-            {bio}
-          </p>
-        </section>
-
-        <section className="relative grid items-center gap-8 pt-8 lg:grid-cols-2">
+        <div className="grid items-center gap-8 pt-8 lg:grid-cols-2">
           <div className="space-y-6">
             <div className="space-y-3">
               <p className="font-semibold text-muted-foreground text-sm uppercase tracking-[0.32em]">
-                {characteristics}
+                Our Characteristics
               </p>
               <h3 className="max-w-xl font-bold text-2xl leading-tight md:text-3xl">
-                The mindset behind how this department works.
+                {characteristics.bio}
               </h3>
             </div>
 
             <div className="flex flex-wrap gap-3">
-              {mission.map((point, index) => {
+              {characteristics.badges.map((point, index) => {
                 const badgeClass = badgeStyles[index % badgeStyles.length];
 
                 return (
@@ -137,23 +125,21 @@ export function DepartmentCard({
             </div>
 
             <p className="max-w-2xl text-foreground/70 text-sm leading-7 md:text-base">
-              Each department has its own way of moving, but all of them help
-              transform ideas into experiences that feel practical,
-              collaborative, and distinctly NEO.
+              {characteristics.quote}
             </p>
           </div>
 
           <div className="relative min-h-80 overflow-hidden rounded-[30px]">
             <Image
-              src={featuredImage}
+              src={characteristics.image}
               fill
               alt={`${name} featured activity`}
               className="object-cover transition duration-700 ease-out group-hover:scale-105"
             />
           </div>
-        </section>
+        </div>
 
-        <section className="relative grid gap-10 pt-10 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-10 pt-12 lg:grid-cols-2 lg:items-start">
           <div className="space-y-8">
             <div className="space-y-3">
               <p className="font-semibold text-muted-foreground text-sm uppercase tracking-[0.32em]">
@@ -161,12 +147,12 @@ export function DepartmentCard({
               </p>
 
               <h3 className="max-w-2xl font-bold text-3xl leading-tight md:text-4xl">
-                What {name} does and no one else can do the same way.
+                {activities.bio}
               </h3>
             </div>
 
             <div className="space-y-8">
-              {activities.map((activity, index) => (
+              {activities.items.map((activity, index) => (
                 <div
                   key={activity.title}
                   className="grid grid-cols-[auto_1fr] gap-4"
@@ -206,7 +192,7 @@ export function DepartmentCard({
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:gap-5">
-            {activityImages.map((image, index) => (
+            {activities.images.map((image, index) => (
               <div
                 key={`${image}-${index}`}
                 className={cn(
@@ -223,7 +209,7 @@ export function DepartmentCard({
               </div>
             ))}
           </div>
-        </section>
+        </div>
       </CardContent>
     </Card>
   );

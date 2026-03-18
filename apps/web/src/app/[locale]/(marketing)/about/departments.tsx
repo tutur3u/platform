@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { type DepartmentName, departments } from './data';
+import { type CoreDepartmentName, departments } from './data';
 import { DepartmentCard } from './department-card';
 
 const cardVariants = {
@@ -12,11 +12,6 @@ const cardVariants = {
     opacity: 1,
   },
 };
-
-export type CoreDepartmentName = Extract<
-  DepartmentName,
-  'Technology' | 'Human Resources' | 'Marketing'
->;
 
 const coreDepartments: { name: CoreDepartmentName; color: string }[] = [
   { name: 'Technology', color: 'text-dynamic-blue' },
@@ -35,17 +30,17 @@ export default function Departments() {
   return (
     <div className="w-full">
       <section id="about-departments" className="w-full">
-          <motion.h1
-            className="text-center font-extrabold text-5xl leading-tight md:text-6xl"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            Our{' '}
-            <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
-              Departments
-            </span>
+        <motion.h1
+          className="text-center font-extrabold text-5xl leading-tight md:text-6xl"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          Our{' '}
+          <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
+            Departments
+          </span>
           <motion.div
             className="ml-3 inline-block"
             initial={{ rotate: 0 }}
@@ -99,10 +94,8 @@ export default function Departments() {
           >
             <DepartmentCard
               name={department.name as CoreDepartmentName}
-              images={department.images}
               bio={department.bio}
               characteristics={department.characteristics}
-              mission={department.mission}
               activities={department.activities}
             />
           </motion.div>
