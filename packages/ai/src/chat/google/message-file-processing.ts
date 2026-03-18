@@ -1,7 +1,4 @@
-import {
-  createClient,
-  createDynamicClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { FilePart, ImagePart, ModelMessage, TextPart } from 'ai';
 
 type ChatFile = {
@@ -20,13 +17,13 @@ function maskIdentifier(value: string): string {
 async function getAllChatFiles(
   wsId: string,
   chatId: string,
-  request?: Pick<Request, 'headers'>
+  _request?: Pick<Request, 'headers'>
 ): Promise<ChatFile[]> {
   try {
-    const sbDynamic = await createDynamicClient(request);
+    const sbAdmin = await createAdminClient();
 
     const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
-    const { data: files, error: listError } = await sbDynamic.storage
+    const { data: files, error: listError } = await sbAdmin.storage
       .from('workspaces')
       .list(storagePath, {
         sortBy: { column: 'created_at', order: 'asc' },
@@ -47,7 +44,6 @@ async function getAllChatFiles(
       return [];
     }
 
-    const supabase = await createClient(request);
     let nextFileIndex = 0;
     const results = new Array<ChatFile | null>(files.length).fill(null);
     const workers = Array.from(
@@ -66,10 +62,9 @@ async function getAllChatFiles(
             file.metadata?.mimetype ||
             'application/octet-stream';
 
-          const { data: fileData, error: downloadError } =
-            await supabase.storage
-              .from('workspaces')
-              .download(`${storagePath}/${file.name}`);
+          const { data: fileData, error: downloadError } = await sbAdmin.storage
+            .from('workspaces')
+            .download(`${storagePath}/${file.name}`);
 
           if (downloadError) {
             console.error(`Error downloading file ${fileName}:`, downloadError);
