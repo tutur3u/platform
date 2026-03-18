@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -20132,7 +20127,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -21921,12 +21945,8 @@ export type Database = {
         Args: { p_balance_id: string };
         Returns: undefined;
       };
-      _resolve_platform_entity_limit_scope: {
-        Args: {
-          p_actor_user_id: string;
-          p_new_record: Json;
-          p_target_table: string;
-        };
+      _resolve_table_associated_ws_id: {
+        Args: { p_new_record: Json; p_target_table: string };
         Returns: {
           user_id: string;
           ws_id: string;
@@ -21935,10 +21955,6 @@ export type Database = {
       _resolve_user_personal_workspace_id: {
         Args: { p_user_id: string };
         Returns: string;
-      };
-      _resolve_user_personal_workspace_tier: {
-        Args: { p_user_id: string };
-        Returns: Database['public']['Enums']['workspace_product_tier'];
       };
       _resolve_workspace_tier: {
         Args: { p_ws_id: string };
