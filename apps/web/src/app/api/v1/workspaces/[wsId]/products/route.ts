@@ -39,17 +39,22 @@ interface Params {
   }>;
 }
 
-const getWorkspaceUserId = async (
-  supabase: TypedSupabaseClient,
-  wsId: string
-) => {
+const getWorkspaceUserId = async ({
+  supabase,
+  sbAdmin,
+  wsId,
+}: {
+  supabase: TypedSupabaseClient;
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) return null;
 
-  const { data: workspaceUser } = await supabase
+  const { data: workspaceUser } = await sbAdmin
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
     .eq('platform_user_id', user.id)
@@ -116,7 +121,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { error } = await supabase.from('inventory_products').insert(
+    const { error } = await sbAdmin.from('inventory_products').insert(
       inventory.map((item) => ({
         ...item,
         product_id: product.data.id,
@@ -131,7 +136,12 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const workspaceUserId = await getWorkspaceUserId(supabase, wsId);
+    const workspaceUserId = await getWorkspaceUserId({
+      supabase,
+      sbAdmin,
+      wsId,
+    });
+
     if (workspaceUserId) {
       const stockChanges = inventory
         .map((item) => ({
@@ -155,7 +165,7 @@ export async function POST(req: Request, { params }: Params) {
         }));
 
       if (stockChanges.length > 0) {
-        const { error: stockChangeError } = await supabase
+        const { error: stockChangeError } = await sbAdmin
           .from('product_stock_changes')
           .insert(stockChanges);
         if (stockChangeError) {

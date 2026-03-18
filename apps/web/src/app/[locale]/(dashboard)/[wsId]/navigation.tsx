@@ -1168,6 +1168,12 @@ export async function WorkspaceNavigationLinks({
               icon: <Blocks className="h-5 w-5" />,
             },
             {
+              title: t('infrastructure-tabs.entity_creation_limits'),
+              href: `/${personalOrWsId}/infrastructure/entity-creation-limits`,
+              icon: <RulerDimensionLine className="h-5 w-5" />,
+              disabled: withoutPermission('manage_workspace_roles'),
+            },
+            {
               title: t('infrastructure-tabs.mobile_versions'),
               href: `/${personalOrWsId}/infrastructure/mobile-versions`,
               icon: <Smartphone className="h-5 w-5" />,

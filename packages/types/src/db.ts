@@ -648,3 +648,5 @@ export type WorkforceUserProfile = WorkspaceUser & {
   contracts?: WorkforceContractWithCompensation[];
   current_contract?: WorkforceContract | null;
 };
+
+export type LimitRow = Tables<'platform_entity_creation_limits'>;

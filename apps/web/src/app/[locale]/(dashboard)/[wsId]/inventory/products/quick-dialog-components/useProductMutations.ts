@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 interface UpdateProductParams {
@@ -23,6 +24,7 @@ interface DeleteProductParams {
 export function useProductMutations() {
   const queryClient = useQueryClient();
   const t = useTranslations();
+  const router = useRouter();
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ wsId, productId, payload }: UpdateProductParams) => {
@@ -51,6 +53,7 @@ export function useProductMutations() {
       queryClient.invalidateQueries({
         queryKey: ['workspace-product', wsId, productId],
       });
+      router.refresh();
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -84,6 +87,7 @@ export function useProductMutations() {
       queryClient.invalidateQueries({
         queryKey: ['workspace-product', wsId, productId],
       });
+      router.refresh();
     },
   });
 
@@ -117,6 +121,7 @@ export function useProductMutations() {
       queryClient.invalidateQueries({
         queryKey: ['workspace-product', wsId, productId],
       });
+      router.refresh();
     },
     onError: (error: Error) => {
       toast.error(error.message);

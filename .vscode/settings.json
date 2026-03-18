@@ -98,7 +98,7 @@
   "IDX.aI.enableInlineCompletion": true,
   "IDX.aI.enableCodebaseIndexing": true,
   "i18n-ally.sourceLanguage": "en",
-  "typescript.experimental.useTsgo": true,
+  "js/ts.experimental.useTsgo": true,
   "cSpell.words": ["Tuturuuu", "tuturuuu"],
   "python-envs.defaultEnvManager": "ms-python.python:venv",
   "python-envs.defaultPackageManager": "ms-python.python:pip",
