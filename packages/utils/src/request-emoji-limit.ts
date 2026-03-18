@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export const MAX_EMOJIS_PER_FIELD = 10;
 export const MAX_SHORT_TEXT_FIELD_GRAPHEMES = 280;
-/** Form description, task description, etc. Allow up to 16k to match form schema. */
-export const MAX_DESCRIPTION_FIELD_GRAPHEMES = 16_000;
+/** Form description, task description, etc. Allow up to 100k to match database limits. */
+export const MAX_DESCRIPTION_FIELD_GRAPHEMES = 100_000;
 export const MAX_REPEATED_GRAPHEME_RUN = 48;
 
 export type RequestContentViolation = {

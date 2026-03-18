@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { MAX_APPROVAL_REJECTION_REASON_LENGTH } from '@/features/reports/report-limits';
 
 type ApprovalStatus = Database['public']['Enums']['approval_status'];
 
@@ -26,7 +27,7 @@ const MutationSchema = z.object({
   action: z.enum(['approve', 'reject', 'approveAll']),
   kind: z.enum(['reports', 'posts']),
   itemId: z.string().optional(),
-  reason: z.string().optional(),
+  reason: z.string().max(MAX_APPROVAL_REJECTION_REASON_LENGTH).optional(),
   filters: z
     .object({
       groupId: z.string().optional(),
@@ -50,7 +51,7 @@ export async function GET(request: Request, { params }: Params) {
     const wsId = await normalizeWorkspaceId(id);
 
     // Check permissions
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId, request });
     if (!permissions) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
@@ -263,13 +264,13 @@ export async function GET(request: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     const wsId = await normalizeWorkspaceId(id);
 
     // Check permissions
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId, request });
     if (!permissions) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
@@ -305,6 +306,20 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    const { data: workspaceUser, error: workspaceUserError } = await sbAdmin
+      .from('workspace_user_linked_users')
+      .select('virtual_user_id')
+      .eq('platform_user_id', user.id)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (workspaceUserError || !workspaceUser?.virtual_user_id) {
+      return NextResponse.json(
+        { message: 'User not found in workspace' },
+        { status: 403 }
+      );
+    }
+
     const now = new Date().toISOString();
 
     if (action === 'approve') {
@@ -315,10 +330,26 @@ export async function PUT(request: Request, { params }: Params) {
         );
 
       if (kind === 'reports') {
+        const { data: report, error: fetchError } = await sbAdmin
+          .from('external_user_monthly_reports')
+          .select('id, user:workspace_users!user_id!inner(ws_id)')
+          .eq('id', itemId)
+          .eq('user.ws_id', wsId)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+        if (!report) {
+          return NextResponse.json(
+            { message: 'Report not found' },
+            { status: 404 }
+          );
+        }
+
         const { error } = await sbAdmin
           .from('external_user_monthly_reports')
           .update({
             report_approval_status: 'APPROVED' as ApprovalStatus,
+            approved_by: workspaceUser.virtual_user_id,
             approved_at: now,
             rejected_by: null,
             rejected_at: null,
@@ -327,10 +358,26 @@ export async function PUT(request: Request, { params }: Params) {
           .eq('id', itemId);
         if (error) throw error;
       } else {
+        const { data: post, error: fetchError } = await sbAdmin
+          .from('user_group_posts')
+          .select('id, workspace_user_groups!inner(ws_id)')
+          .eq('id', itemId)
+          .eq('workspace_user_groups.ws_id', wsId)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+        if (!post) {
+          return NextResponse.json(
+            { message: 'Post not found' },
+            { status: 404 }
+          );
+        }
+
         const { error } = await sbAdmin
           .from('user_group_posts')
           .update({
             post_approval_status: 'APPROVED' as ApprovalStatus,
+            approved_by: workspaceUser.virtual_user_id,
             approved_at: now,
             rejected_by: null,
             rejected_at: null,
@@ -346,25 +393,64 @@ export async function PUT(request: Request, { params }: Params) {
           { status: 400 }
         );
 
+      if (!reason?.trim()) {
+        return NextResponse.json(
+          { message: 'Rejection reason is required' },
+          { status: 400 }
+        );
+      }
+
       if (kind === 'reports') {
+        const { data: report, error: fetchError } = await sbAdmin
+          .from('external_user_monthly_reports')
+          .select('id, user:workspace_users!user_id!inner(ws_id)')
+          .eq('id', itemId)
+          .eq('user.ws_id', wsId)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+        if (!report) {
+          return NextResponse.json(
+            { message: 'Report not found' },
+            { status: 404 }
+          );
+        }
+
         const { error } = await sbAdmin
           .from('external_user_monthly_reports')
           .update({
             report_approval_status: 'REJECTED' as ApprovalStatus,
+            rejected_by: workspaceUser.virtual_user_id,
             rejected_at: now,
-            rejection_reason: reason || null,
+            rejection_reason: reason.trim(),
             approved_by: null,
             approved_at: null,
           })
           .eq('id', itemId);
         if (error) throw error;
       } else {
+        const { data: post, error: fetchError } = await sbAdmin
+          .from('user_group_posts')
+          .select('id, workspace_user_groups!inner(ws_id)')
+          .eq('id', itemId)
+          .eq('workspace_user_groups.ws_id', wsId)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+        if (!post) {
+          return NextResponse.json(
+            { message: 'Post not found' },
+            { status: 404 }
+          );
+        }
+
         const { error } = await sbAdmin
           .from('user_group_posts')
           .update({
             post_approval_status: 'REJECTED' as ApprovalStatus,
+            rejected_by: workspaceUser.virtual_user_id,
             rejected_at: now,
-            rejection_reason: reason || null,
+            rejection_reason: reason.trim(),
             approved_by: null,
             approved_at: null,
           })
@@ -411,6 +497,7 @@ export async function PUT(request: Request, { params }: Params) {
               .from('external_user_monthly_reports')
               .update({
                 report_approval_status: 'APPROVED' as ApprovalStatus,
+                approved_by: workspaceUser.virtual_user_id,
                 approved_at: now,
                 rejected_by: null,
                 rejected_at: null,
@@ -423,6 +510,7 @@ export async function PUT(request: Request, { params }: Params) {
               .from('user_group_posts')
               .update({
                 post_approval_status: 'APPROVED' as ApprovalStatus,
+                approved_by: workspaceUser.virtual_user_id,
                 approved_at: now,
                 rejected_by: null,
                 rejected_at: null,

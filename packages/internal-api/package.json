@@ -13,8 +13,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./calendar": "./src/calendar.ts",
     "./finance": "./src/finance.ts",
     "./tasks": "./src/tasks.ts",
+    "./tasks-scheduling": "./src/tasks-scheduling.ts",
     "./templates": "./src/templates.ts",
     "./time-tracking": "./src/time-tracking.ts",
     "./users": "./src/users.ts",

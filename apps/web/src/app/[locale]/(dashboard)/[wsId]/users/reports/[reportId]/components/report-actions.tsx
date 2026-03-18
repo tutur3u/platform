@@ -32,7 +32,7 @@ import type { ExportType } from '../../../reports/[reportId]/hooks/use-report-ex
 type ReportTheme = 'auto' | 'light' | 'dark';
 
 interface ReportActionsProps {
-  isPendingApproval: boolean;
+  isExportBlockedByStatus: boolean;
   isExporting: boolean;
   isPaginationReady: boolean;
   paginationPageCount: number;
@@ -55,7 +55,7 @@ interface ReportActionsProps {
 }
 
 export function ReportActions({
-  isPendingApproval,
+  isExportBlockedByStatus,
   isExporting,
   isPaginationReady,
   paginationPageCount,
@@ -185,11 +185,11 @@ export function ReportActions({
                   variant="ghost"
                   className="gap-2 rounded-none rounded-l-xl border-r px-3 hover:bg-accent hover:text-accent-foreground"
                   disabled={
-                    isPendingApproval || isExporting || !isPaginationReady
+                    isExportBlockedByStatus || isExporting || !isPaginationReady
                   }
                   onClick={handleDefaultExport}
                   title={
-                    isPendingApproval
+                    isExportBlockedByStatus
                       ? t('ws-reports.export_blocked_not_approved')
                       : !isPaginationReady
                         ? t('ws-reports.export_waiting_for_layout')
@@ -213,7 +213,7 @@ export function ReportActions({
                       size="sm"
                       variant="ghost"
                       className="h-9 rounded-none rounded-r-xl px-2 hover:bg-accent hover:text-accent-foreground"
-                      disabled={isPendingApproval || !isPaginationReady}
+                      disabled={isExportBlockedByStatus || !isPaginationReady}
                     >
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
@@ -241,7 +241,11 @@ export function ReportActions({
                     </DropdownMenuItem>
                     <div className="my-1 h-px bg-muted" />
                     <DropdownMenuItem
-                      disabled={isExporting || !isPaginationReady}
+                      disabled={
+                        isExportBlockedByStatus ||
+                        isExporting ||
+                        !isPaginationReady
+                      }
                       onClick={handlePdfExport}
                       className="gap-2"
                     >
@@ -249,7 +253,11 @@ export function ReportActions({
                       {t('ws-reports.download_pdf')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      disabled={isExporting || !isPaginationReady}
+                      disabled={
+                        isExportBlockedByStatus ||
+                        isExporting ||
+                        !isPaginationReady
+                      }
                       onClick={handlePngExport}
                       className="gap-2"
                     >
@@ -257,7 +265,7 @@ export function ReportActions({
                       {t('ws-reports.download_png')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      disabled={!isPaginationReady}
+                      disabled={isExportBlockedByStatus || !isPaginationReady}
                       onClick={handlePrintExport}
                       className="gap-2"
                     >

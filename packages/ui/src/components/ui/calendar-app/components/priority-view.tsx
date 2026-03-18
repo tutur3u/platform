@@ -21,6 +21,7 @@ import {
   User,
   unicornHead,
 } from '@tuturuuu/icons';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { cn } from '@tuturuuu/utils/format';
@@ -450,16 +451,22 @@ export default function PriorityView({
       return;
     }
 
+    const taskWsId = task.ws_id ?? wsId;
+
     try {
       const supabase = createClient();
 
       // If task has no list_id, just update closed_at directly
       if (!task.list_id) {
+        const timestamp = new Date().toISOString();
         const { error } = await supabase
           .from('tasks')
-          .update({ closed_at: new Date().toISOString() })
+          .update({
+            closed_at: timestamp,
+            completed_at: timestamp,
+            completed: true,
+          })
           .eq('id', taskId);
-
         if (error) throw error;
         toast.success('Task marked as done');
         router.refresh();
@@ -493,18 +500,29 @@ export default function PriorityView({
       if (targetList && targetList.id !== task.list_id) {
         // Move to the done list (this also sets closed_at via the moveTask helper)
         const taskHelper = await import('@tuturuuu/utils/task-helper');
-        await taskHelper.moveTask(supabase, taskId, targetList.id);
+        await taskHelper.moveTask(taskWsId, taskId, targetList.id);
         toast.success('Task completed', {
           description: `Moved to ${targetList.name}`,
         });
       } else {
-        // No done list or already in done list, just set closed_at
-        const { error } = await supabase
-          .from('tasks')
-          .update({ closed_at: new Date().toISOString() })
-          .eq('id', taskId);
+        // No done list or already in done list, just update the necessary fields
+        const timestamp = new Date().toISOString();
+        const updates: {
+          closed_at: string;
+          completed_at?: string | null;
+          completed?: boolean;
+        } = { closed_at: timestamp };
 
-        if (error) throw error;
+        const shouldTreatAsDone = !targetList || targetList.status === 'done';
+        if (shouldTreatAsDone) {
+          updates.completed_at = timestamp;
+          updates.completed = true;
+        } else {
+          updates.completed_at = null;
+          updates.completed = false;
+        }
+
+        await updateWorkspaceTask(taskWsId, taskId, updates);
         toast.success('Task marked as done');
       }
 

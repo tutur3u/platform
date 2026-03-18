@@ -20,7 +20,7 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -30,6 +30,10 @@ import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
+import {
+  MAX_MONTHLY_REPORT_TEXT_LENGTH,
+  MAX_MONTHLY_REPORT_TITLE_LENGTH,
+} from '@/features/reports/report-limits';
 import { useConfigMap } from '@/hooks/use-config-map';
 import { RejectDialog } from '../../approvals/components/reject-dialog';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
@@ -46,12 +50,17 @@ import {
   type UserReport,
   useReportMutations,
 } from './hooks/use-report-mutations';
+import {
+  isWorkspaceBooleanEnabled,
+  shouldBlockReportExport,
+  shouldShowPendingWatermark,
+} from './report-feature-flags';
 import ScoreDisplay from './score-display';
 
 export const UserReportFormSchema = z.object({
-  title: z.string(),
-  content: z.string(),
-  feedback: z.string(),
+  title: z.string().max(MAX_MONTHLY_REPORT_TITLE_LENGTH),
+  content: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
+  feedback: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
 });
 
 export default function EditableReportPreview({
@@ -201,9 +210,9 @@ export default function EditableReportPreview({
     form,
   ]);
 
-  const title = form.watch('title');
-  const content = form.watch('content');
-  const feedback = form.watch('feedback');
+  const title = useWatch({ control: form.control, name: 'title' });
+  const content = useWatch({ control: form.control, name: 'content' });
+  const feedback = useWatch({ control: form.control, name: 'feedback' });
 
   const parseDynamicText = useReportDynamicText({
     userName: report.user_name,
@@ -283,8 +292,24 @@ export default function EditableReportPreview({
     isPaginationReady,
   });
 
+  const restrictReportExportToApproved = isWorkspaceBooleanEnabled(
+    getConfig('ENABLE_REPORT_EXPORT_ONLY_APPROVED')
+  );
+  const showPendingReportWatermark = isWorkspaceBooleanEnabled(
+    getConfig('ENABLE_REPORT_PENDING_WATERMARK')
+  );
+
   const isPendingApproval =
     report.report_approval_status === 'PENDING' && !canApproveReports;
+  const isExportBlockedByStatus = shouldBlockReportExport({
+    approvalStatus: report.report_approval_status,
+    canApproveReports,
+    restrictReportExportToApproved,
+  });
+  const shouldShowPendingWatermarkValue = shouldShowPendingWatermark({
+    approvalStatus: report.report_approval_status,
+    enablePendingWatermark: showPendingReportWatermark,
+  });
   const userArchiveState = getWorkspaceUserArchiveState({
     id: report.user_id || 'unknown-user',
     full_name: report.user_name,
@@ -620,7 +645,7 @@ export default function EditableReportPreview({
           )}
 
           <ReportActions
-            isPendingApproval={isPendingApproval}
+            isExportBlockedByStatus={isExportBlockedByStatus}
             isExporting={isExporting}
             isPaginationReady={isPaginationReady}
             paginationPageCount={previewPageCount}
@@ -716,7 +741,7 @@ export default function EditableReportPreview({
             </div>
           ) : null}
 
-          <div className="mx-auto w-[210mm] min-w-[210mm]">
+          <div className="relative mx-auto w-[210mm] min-w-[210mm]">
             <ReportPreview
               t={t}
               lang={locale}
@@ -753,6 +778,13 @@ export default function EditableReportPreview({
                 ) : undefined
               }
             />
+            {shouldShowPendingWatermarkValue ? (
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center print:hidden">
+                <div className="-rotate-12 rounded-2xl border border-dynamic-yellow/35 bg-dynamic-yellow/10 px-8 py-4 font-semibold text-3xl text-dynamic-yellow/70 uppercase tracking-[0.2em]">
+                  {t('ws-reports.pending_watermark')}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

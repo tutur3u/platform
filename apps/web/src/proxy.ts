@@ -35,6 +35,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 const WEB_APP_URL = isDev ? `http://localhost:${PORT}` : 'https://tuturuuu.com';
 const OFFLINE_FALLBACK_PATH = '/~offline';
+const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 
 /**
  * Check if a user's personal workspace is missing an active subscription.
@@ -196,9 +197,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  const offlineResponse = handleOfflineFallbackRoute(req);
-  if (offlineResponse) {
-    return offlineResponse;
+  const reservedRootRouteResponse = handleReservedRootRoute(req);
+  if (reservedRootRouteResponse) {
+    return reservedRootRouteResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
@@ -475,20 +476,28 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   return localeRes;
 }
 
-const handleOfflineFallbackRoute = (req: NextRequest): NextResponse | null => {
+const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   const { pathname } = req.nextUrl;
+  const segments = pathname.split('/').filter(Boolean);
+  const localizedReservedSegment = segments[1];
 
   if (pathname === OFFLINE_FALLBACK_PATH) {
     return NextResponse.next();
   }
 
-  const segments = pathname.split('/').filter(Boolean);
+  if (segments[0]?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)) {
+    return NextResponse.next();
+  }
+
   if (
-    segments.length === 2 &&
-    supportedLocales.includes(segments[0] as Locale) &&
-    segments[1] === '~offline'
+    supportedLocales.includes((segments[0] ?? '') as Locale) &&
+    localizedReservedSegment?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)
   ) {
-    const redirectUrl = new URL(OFFLINE_FALLBACK_PATH, req.nextUrl);
+    const canonicalReservedPath =
+      localizedReservedSegment === OFFLINE_FALLBACK_PATH.slice(1)
+        ? OFFLINE_FALLBACK_PATH
+        : `/${segments.slice(1).join('/')}`;
+    const redirectUrl = new URL(canonicalReservedPath, req.nextUrl);
     redirectUrl.search = req.nextUrl.search;
     return NextResponse.redirect(redirectUrl);
   }

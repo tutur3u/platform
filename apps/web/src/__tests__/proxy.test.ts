@@ -88,4 +88,27 @@ describe('web proxy api handling', () => {
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
+
+  it('bypasses auth and locale rewriting for reserved root tilde routes', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest('http://localhost/~'));
+
+    expect(response.status).toBe(200);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('redirects localized reserved tilde routes to the canonical root path', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/en/~unknown?retry=1')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/~unknown?retry=1'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
 });

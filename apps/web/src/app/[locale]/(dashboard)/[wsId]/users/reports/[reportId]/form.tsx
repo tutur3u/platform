@@ -4,6 +4,7 @@ import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -21,6 +22,10 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import type * as z from 'zod';
+import {
+  MAX_MONTHLY_REPORT_TEXT_LENGTH,
+  MAX_MONTHLY_REPORT_TITLE_LENGTH,
+} from '@/features/reports/report-limits';
 import type { UserReportFormSchema } from './editable-report-preview';
 
 export default function UserReportForm({
@@ -52,6 +57,18 @@ export default function UserReportForm({
   showHeading?: boolean;
 }) {
   const t = useTranslations();
+  const commonT = useTranslations('common');
+
+  const renderCharacterCount = (
+    value: string | undefined,
+    maxLength: number
+  ) => (
+    <FormDescription className="text-right text-xs">
+      {(value?.length ?? 0).toLocaleString()}/{maxLength.toLocaleString()}{' '}
+      {commonT('characters')}
+    </FormDescription>
+  );
+
   return (
     <div className="grid h-fit gap-2 rounded-lg border p-4">
       {showHeading ? (
@@ -107,10 +124,15 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.title')}</FormLabel>
                 <FormControl>
                   <Input
+                    maxLength={MAX_MONTHLY_REPORT_TITLE_LENGTH}
                     placeholder={t('user-report-data-table.title')}
                     {...field}
                   />
                 </FormControl>
+                {renderCharacterCount(
+                  field.value,
+                  MAX_MONTHLY_REPORT_TITLE_LENGTH
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -124,10 +146,15 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.content')}</FormLabel>
                 <FormControl>
                   <AutosizeTextarea
+                    maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
                     placeholder={t('user-report-data-table.content')}
                     {...field}
                   />
                 </FormControl>
+                {renderCharacterCount(
+                  field.value,
+                  MAX_MONTHLY_REPORT_TEXT_LENGTH
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -141,10 +168,15 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.feedback')}</FormLabel>
                 <FormControl>
                   <AutosizeTextarea
+                    maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
                     placeholder={t('user-report-data-table.feedback')}
                     {...field}
                   />
                 </FormControl>
+                {renderCharacterCount(
+                  field.value,
+                  MAX_MONTHLY_REPORT_TEXT_LENGTH
+                )}
                 <FormMessage />
               </FormItem>
             )}

@@ -44,6 +44,7 @@ interface Props {
   lists: TaskList[];
   tasks: Task[];
   boardId: string;
+  wsId: string;
   onUpdate: () => void;
   hideTasksMode?: boolean;
   isPersonalWorkspace?: boolean;
@@ -53,6 +54,7 @@ export function StatusGroupedBoard({
   lists,
   tasks,
   boardId,
+  wsId,
   onUpdate,
   hideTasksMode = true,
   isPersonalWorkspace,
@@ -105,7 +107,7 @@ export function StatusGroupedBoard({
   const broadcast = useBoardBroadcast();
 
   // Move task mutation using the helper function with auto-completion logic
-  const moveTaskMutation = useMoveTask(boardId);
+  const moveTaskMutation = useMoveTask(boardId, wsId);
 
   // Move list mutation
   const moveListMutation = useMutation({
