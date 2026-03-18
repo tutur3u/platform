@@ -1,6 +1,6 @@
 export {
-  type WorkspaceCalendarEventUpdatePayload,
   updateWorkspaceCalendarEvent,
+  type WorkspaceCalendarEventUpdatePayload,
 } from './calendar';
 export type {
   InternalApiClientOptions,
