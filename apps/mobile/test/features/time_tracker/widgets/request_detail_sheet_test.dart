@@ -115,8 +115,7 @@ void main() {
       expect(find.text('Rejected'), findsOneWidget);
       expect(find.text('Approve'), findsNothing);
 
-      await tester.pump(const Duration(seconds: 6));
-      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
     });
 
     testWidgets('expires revert actions while sheet remains open', (
@@ -151,8 +150,7 @@ void main() {
 
       expect(find.textContaining('Revert'), findsOneWidget);
 
-      await tester.pump(const Duration(seconds: 6));
-      await tester.pumpAndSettle();
+      await tester.drainShadToastTimers();
 
       expect(find.textContaining('Revert'), findsNothing);
     });
@@ -189,8 +187,7 @@ void main() {
 
         expect(find.textContaining('Manager Jane'), findsOneWidget);
 
-        await tester.pump(const Duration(seconds: 6));
-        await tester.pumpAndSettle();
+        await tester.drainShadToastTimers();
       },
     );
 

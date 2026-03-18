@@ -40,7 +40,7 @@ const querySchema = z
     searchQuery: z.string().max(MAX_SEARCH_LENGTH).optional(),
     categoryId: DEV_MODE
       ? z.string().max(MAX_SEARCH_LENGTH).optional()
-      : z.uuid().optional(),
+      : z.literal('all').or(z.uuid()).optional(),
     taskId: DEV_MODE
       ? z.string().max(MAX_SEARCH_LENGTH).optional()
       : z.uuid().optional(),
@@ -176,16 +176,6 @@ export const GET = withSessionAuth<{ wsId: string }>(
         timeOfDay,
         projectContext,
       } = parsedQuery.data;
-
-      if (!DEV_MODE && targetUserId) {
-        const targetUserIdValidation = z.uuid().safeParse(targetUserId);
-        if (!targetUserIdValidation.success) {
-          return NextResponse.json(
-            { error: 'Invalid target user ID format' },
-            { status: 400 }
-          );
-        }
-      }
 
       const dateFromIso = dateFrom.toISOString();
       const dateToIso = dateTo.toISOString();
