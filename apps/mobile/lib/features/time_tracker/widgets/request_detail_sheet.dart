@@ -660,7 +660,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
     );
     final delay = expiresAt.difference(DateTime.now().toUtc());
     if (delay <= Duration.zero) {
-      _gracePeriodExpired = true;
+      setState(() => _gracePeriodExpired = true);
       return;
     }
 

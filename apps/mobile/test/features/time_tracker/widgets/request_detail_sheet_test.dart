@@ -127,7 +127,9 @@ void main() {
         userId: 'requester_1',
         title: 'Already approved request',
         approvalStatus: ApprovalStatus.approved,
-        approvedAt: DateTime.now().toUtc().subtract(const Duration(seconds: 55)),
+        approvedAt: DateTime.now().toUtc().subtract(
+          const Duration(seconds: 55),
+        ),
       );
 
       await tester.pumpApp(
@@ -155,39 +157,42 @@ void main() {
       expect(find.textContaining('Revert'), findsNothing);
     });
 
-    testWidgets('uses current manager display name on optimistic status update', (
-      tester,
-    ) async {
-      await tester.pumpApp(
-        Scaffold(
-          body: RequestDetailSheet(
-            request: request,
-            wsId: 'test_ws_id',
-            repository: repository,
-            isManager: true,
-            currentUserId: 'manager_1',
-            currentUserDisplayName: 'Manager Jane',
-            onApprove: () async {},
-            onReject: (_) async {},
-            onRequestInfo: (_) async {},
-            onResubmit: () async {},
+    testWidgets(
+      'uses current manager display name on optimistic status update',
+      (
+        tester,
+      ) async {
+        await tester.pumpApp(
+          Scaffold(
+            body: RequestDetailSheet(
+              request: request,
+              wsId: 'test_ws_id',
+              repository: repository,
+              isManager: true,
+              currentUserId: 'manager_1',
+              currentUserDisplayName: 'Manager Jane',
+              onApprove: () async {},
+              onReject: (_) async {},
+              onRequestInfo: (_) async {},
+              onResubmit: () async {},
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Reject').first);
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Reject').first);
+        await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(EditableText), 'Missing details');
-      await tester.tap(find.text('Reject').last);
-      await tester.pumpAndSettle();
+        await tester.enterText(find.byType(EditableText), 'Missing details');
+        await tester.tap(find.text('Reject').last);
+        await tester.pumpAndSettle();
 
-      expect(find.textContaining('Manager Jane'), findsOneWidget);
+        expect(find.textContaining('Manager Jane'), findsOneWidget);
 
-      await tester.pump(const Duration(seconds: 6));
-      await tester.pumpAndSettle();
-    });
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pumpAndSettle();
+      },
+    );
 
     testWidgets(
       'shows feedback and allows owner to resubmit needs-info request',

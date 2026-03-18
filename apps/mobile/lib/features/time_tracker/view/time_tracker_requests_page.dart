@@ -19,6 +19,7 @@ import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.d
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 class TimeTrackerRequestsPage extends StatelessWidget {
   const TimeTrackerRequestsPage({super.key, this.repository});
@@ -356,6 +357,10 @@ class _RequestsViewState extends State<_RequestsView> {
           currentStatusChangeGracePeriodMinutes:
               _statusChangeGracePeriodMinutes,
           onSave: (threshold, statusChangeGracePeriodMinutes) async {
+            final toastContext = Navigator.of(
+              context,
+              rootNavigator: true,
+            ).context;
             try {
               await repo.updateMissedEntryDateThreshold(
                 wsId,
@@ -372,8 +377,11 @@ class _RequestsViewState extends State<_RequestsView> {
                 _statusChangeGracePeriodMinutes =
                     statusChangeGracePeriodMinutes;
               });
+              if (!toastContext.mounted) {
+                return;
+              }
               shad.showToast(
-                context: context,
+                context: toastContext,
                 builder: (context, overlay) => shad.Alert(
                   content: Text(context.l10n.timerRequestsThresholdUpdated),
                 ),
@@ -382,8 +390,11 @@ class _RequestsViewState extends State<_RequestsView> {
               if (!mounted) {
                 return;
               }
+              if (!toastContext.mounted) {
+                return;
+              }
               shad.showToast(
-                context: context,
+                context: toastContext,
                 builder: (context, overlay) => shad.Alert.destructive(
                   title: Text(context.l10n.commonSomethingWentWrong),
                   content: Text(error.toString()),
@@ -443,12 +454,12 @@ class _RequestsViewState extends State<_RequestsView> {
               newImageLocalPaths: newImageLocalPaths,
             ),
       ),
-      );
+    );
   }
 
-  String? _extractUserDisplayName(dynamic user) {
+  String? _extractUserDisplayName(User? user) {
     final metadata = user?.userMetadata;
-    if (metadata is! Map<String, dynamic>) {
+    if (metadata == null) {
       return null;
     }
 
