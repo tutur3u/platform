@@ -454,6 +454,7 @@ export async function PUT(
     return NextResponse.json({ task: serializeTask(updatedTaskResult.task) });
   } catch (error) {
     if (error instanceof ZodError) {
+      console.error('Validation error:', error);
       return NextResponse.json(
         { error: 'Invalid request data', details: error.issues },
         { status: 400 }
