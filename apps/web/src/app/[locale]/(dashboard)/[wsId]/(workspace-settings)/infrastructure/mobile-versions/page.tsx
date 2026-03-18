@@ -1,14 +1,12 @@
 import { Smartphone } from '@tuturuuu/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import {
-  enforceRootWorkspaceAdmin,
-  getPermissions,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getMobileVersionPolicies } from '@/lib/mobile-version-policy';
+import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { MobileVersionSettingsForm } from './mobile-version-settings-form';
 
 export const metadata: Metadata = {
@@ -26,9 +24,7 @@ export default async function InfrastructureMobileVersionsPage({
   params,
 }: Props) {
   const { wsId } = await params;
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  await enforceInfrastructureRootWorkspace(wsId);
 
   const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
   if (!permissions || permissions.withoutPermission('manage_workspace_roles')) {

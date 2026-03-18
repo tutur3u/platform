@@ -1,8 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  createBudget,
+  type FinanceBudgetUpsertPayload,
+  updateBudget,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -54,7 +58,6 @@ export function BudgetForm({
   onSuccess,
 }: BudgetFormProps) {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -71,48 +74,45 @@ export function BudgetForm({
     },
   });
 
-  const onSubmit = async (data: BudgetFormValues) => {
-    try {
-      const budgetData = {
-        ws_id: wsId,
-        name: data.name,
-        description: data.description || null,
-        amount: parseFloat(data.amount),
-        period: data.period,
-        start_date: data.start_date,
-        end_date: data.end_date || null,
-        alert_threshold: data.alert_threshold
-          ? parseFloat(data.alert_threshold)
-          : 80,
-        category_id: data.category_id || null,
-        wallet_id: data.wallet_id || null,
-      };
-
+  const mutation = useMutation({
+    mutationFn: async (payload: FinanceBudgetUpsertPayload) => {
       if (budgetId) {
-        const { error } = await supabase
-          .from('finance_budgets')
-          .update(budgetData)
-          .eq('id', budgetId);
-
-        if (error) throw error;
-        toast.success('Budget updated successfully');
-      } else {
-        const { error } = await supabase
-          .from('finance_budgets')
-          .insert([budgetData]);
-
-        if (error) throw error;
-        toast.success('Budget created successfully');
+        await updateBudget(wsId, budgetId, payload);
+        return 'updated';
       }
-
-      queryClient.invalidateQueries({ queryKey: ['budgets', wsId] });
-      queryClient.invalidateQueries({ queryKey: ['budget_status', wsId] });
-
-      if (onSuccess) onSuccess();
-    } catch (error) {
+      await createBudget(wsId, payload);
+      return 'created';
+    },
+    onSuccess: (result) => {
+      toast.success(
+        result === 'updated'
+          ? 'Budget updated successfully'
+          : 'Budget created successfully'
+      );
+      void queryClient.invalidateQueries({ queryKey: ['budgets', wsId] });
+      void queryClient.invalidateQueries({ queryKey: ['budget_status', wsId] });
+      onSuccess?.();
+    },
+    onError: (error) => {
       console.error('Error saving budget:', error);
       toast.error('Failed to save budget');
-    }
+    },
+  });
+
+  const onSubmit = async (data: BudgetFormValues) => {
+    await mutation.mutateAsync({
+      name: data.name,
+      description: data.description || null,
+      amount: parseFloat(data.amount),
+      period: data.period,
+      start_date: data.start_date,
+      end_date: data.end_date || null,
+      alert_threshold: data.alert_threshold
+        ? parseFloat(data.alert_threshold)
+        : 80,
+      category_id: data.category_id || null,
+      wallet_id: data.wallet_id || null,
+    });
   };
 
   return (
@@ -250,7 +250,7 @@ export function BudgetForm({
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button type="submit">
+          <Button type="submit" disabled={mutation.isPending}>
             {budgetId ? 'Update Budget' : 'Create Budget'}
           </Button>
         </div>

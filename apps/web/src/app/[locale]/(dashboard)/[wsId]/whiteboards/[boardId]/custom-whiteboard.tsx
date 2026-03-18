@@ -2,6 +2,11 @@
 
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import { useWhiteboardCollaboration } from '@/hooks/useWhiteboardCollaboration';
+import {
+  isExcalidrawSnapshot,
+  optimizeWhiteboardImageUpload,
+  parseStoredWhiteboardSnapshot,
+} from '@/lib/whiteboards';
 import { mergeElements } from '@/utils/excalidraw-helper';
 import { getSelectionSignature } from '@/utils/excalidraw-selection';
 import '@excalidraw/excalidraw/index.css';
@@ -230,14 +235,14 @@ export function CustomWhiteboard({
 
       const payload = (await response.json()) as {
         whiteboard?: {
-          snapshot?: string | null;
+          snapshot?: unknown;
           updated_at?: string | null;
         };
       };
       const data = payload.whiteboard;
 
       return {
-        snapshot: data?.snapshot as string | null | undefined,
+        snapshot: data?.snapshot,
         updated_at: data?.updated_at as string | null | undefined,
       };
     },
@@ -465,7 +470,7 @@ export function CustomWhiteboard({
           },
           cache: 'no-store',
           body: JSON.stringify({
-            snapshot: JSON.stringify(snapshot),
+            snapshot,
             updated_at: new Date().toISOString(),
           }),
         }
@@ -563,6 +568,7 @@ export function CustomWhiteboard({
   const handleGenerateIdForFile = useCallback(
     async (file: File) => {
       try {
+        const optimizedFile = await optimizeWhiteboardImageUpload(file);
         const uploadUrlResponse = await fetch(
           `/api/v1/workspaces/${wsId}/whiteboards/${boardId}/image-url`,
           {
@@ -572,7 +578,7 @@ export function CustomWhiteboard({
             },
             cache: 'no-store',
             body: JSON.stringify({
-              filename: file.name,
+              filename: optimizedFile.name,
             }),
           }
         );
@@ -586,31 +592,21 @@ export function CustomWhiteboard({
 
         const uploadData = (await uploadUrlResponse.json()) as {
           signedUrl?: string;
+          token?: string;
           path?: string;
         };
 
-        if (!uploadData.signedUrl || !uploadData.path) {
+        if (!uploadData.signedUrl || !uploadData.path || !uploadData.token) {
           toast.error('Failed to upload image');
           throw new Error('Missing upload URL');
         }
 
-        const uploadResponse = await fetch(uploadData.signedUrl, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': file.type || 'image/png',
-          },
-          body: file,
-        });
-
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text().catch(() => '');
-          console.error('Failed to upload whiteboard image:', {
-            status: uploadResponse.status,
-            errorText,
-          });
-          toast.error('Failed to upload image');
-          throw new Error('Failed to upload whiteboard image');
-        }
+        const { uploadToStorageUrl } = await import('@/lib/api-fetch');
+        await uploadToStorageUrl(
+          uploadData.signedUrl,
+          optimizedFile,
+          uploadData.token
+        );
 
         return uploadData.path;
       } catch (error) {
@@ -806,14 +802,12 @@ export function CustomWhiteboard({
 
     if (pendingChangesRef.current) return;
 
-    if (!snapshot) return;
+    const parsed = parseStoredWhiteboardSnapshot(
+      snapshot as Parameters<typeof parseStoredWhiteboardSnapshot>[0]
+    );
+    if (!isExcalidrawSnapshot(parsed)) return;
 
     try {
-      const parsed = JSON.parse(snapshot) as {
-        elements?: ExcalidrawElement[];
-        appState?: Partial<AppState>;
-      };
-
       const api = excalidrawAPIRef.current;
       if (!api) return;
 

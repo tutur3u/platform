@@ -1,5 +1,5 @@
-import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { ReactNode } from 'react';
+import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 
 interface Props {
   children: ReactNode;
@@ -10,9 +10,7 @@ interface Props {
 
 export default async function HolidaysLayout({ children, params }: Props) {
   const { wsId } = await params;
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  await enforceInfrastructureRootWorkspace(wsId);
 
   return <>{children}</>;
 }

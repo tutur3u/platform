@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, TrendingUp } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getBudgetStatus } from '@tuturuuu/internal-api';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
@@ -15,28 +15,11 @@ interface BudgetAlertsProps {
 }
 
 export function BudgetAlerts({ wsId, className }: BudgetAlertsProps) {
-  const supabase = createClient();
   const financeHref = useFinanceHref();
 
   const { data: budgetStatus } = useQuery({
     queryKey: ['budget_status', wsId],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_budget_status', {
-        _ws_id: wsId,
-      });
-
-      if (error) throw error;
-      return data as Array<{
-        budget_id: string;
-        budget_name: string;
-        amount: number;
-        spent: number;
-        remaining: number;
-        percentage_used: number;
-        is_over_budget: boolean;
-        is_near_threshold: boolean;
-      }>;
-    },
+    queryFn: () => getBudgetStatus(wsId),
   });
 
   if (!budgetStatus || budgetStatus.length === 0) return null;

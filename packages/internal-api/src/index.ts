@@ -13,10 +13,16 @@ export {
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
 } from './client';
+export type { FinanceBudgetUpsertPayload } from './finance';
 export {
+  createBudget,
+  deleteBudget,
+  getBudgetStatus,
   getWallet,
+  listBudgets,
   listTransactionCategories,
   listWallets,
+  updateBudget,
 } from './finance';
 export {
   createWorkspaceStorageSignedUrl,

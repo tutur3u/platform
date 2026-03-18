@@ -32,6 +32,17 @@ export type AbuseEvent = Tables<'abuse_events'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
+export type FinanceBudget = Tables<'finance_budgets'>;
+export interface FinanceBudgetStatus {
+  budget_id: string;
+  budget_name: string;
+  amount: number;
+  spent: number;
+  remaining: number;
+  percentage_used: number;
+  is_over_budget: boolean;
+  is_near_threshold: boolean;
+}
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
 export type InternalApiWorkspaceSummary = Pick<
