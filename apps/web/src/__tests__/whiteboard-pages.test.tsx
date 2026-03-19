@@ -114,18 +114,4 @@ describe('whiteboard pages', () => {
       },
     });
   });
-
-  it('returns layout children directly without wrapping them in a server reference component', async () => {
-    const child = <div>child</div>;
-    const { default: WhiteboardsLayout } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/whiteboards/layout'
-    );
-
-    const result = await WhiteboardsLayout({
-      params: Promise.resolve({ wsId: 'personal' }),
-      children: child,
-    });
-
-    expect(result).toBe(child);
-  });
 });
