@@ -68,6 +68,7 @@ import type {
 import {
   clearDraft,
   getDraftStorageKey,
+  getTaskDescriptionPercentLeft,
   getTaskDescriptionStorageLength,
   saveYjsDescriptionToDatabase,
 } from './task-edit-dialog/utils';
@@ -383,6 +384,7 @@ export function TaskEditDialog({
   // Editor state
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(true);
+  const [descriptionStorageLength, setDescriptionStorageLength] = useState(0);
 
   // Dialog states
   const [showNewLabelDialog, setShowNewLabelDialog] = useState(false);
@@ -747,12 +749,24 @@ export function TaskEditDialog({
     flushEditorPendingRef,
   });
 
-  const descriptionStorageLength = useMemo(
-    () => getTaskDescriptionStorageLength(formState.description),
-    [formState.description]
-  );
+  useEffect(() => {
+    setDescriptionStorageLength(
+      getTaskDescriptionStorageLength(formState.description)
+    );
+  }, [formState.description]);
+
+  const handleDescriptionStorageLengthChange = useCallback((length: number) => {
+    setDescriptionStorageLength((currentLength) =>
+      currentLength === length ? currentLength : length
+    );
+  }, []);
+
   const isDescriptionOverLimit =
     descriptionStorageLength > MAX_TASK_DESCRIPTION_LENGTH;
+  const descriptionPercentLeft = getTaskDescriptionPercentLeft(
+    descriptionStorageLength,
+    MAX_TASK_DESCRIPTION_LENGTH
+  );
 
   // Quick due date handler
   const handleQuickDueDate = useCallback(
@@ -1581,7 +1595,11 @@ export function TaskEditDialog({
                   }
                   onImageUpload={handleImageUpload}
                   onEditorReady={handleEditorReady}
+                  onDescriptionStorageLengthChange={
+                    handleDescriptionStorageLengthChange
+                  }
                   descriptionStorageLength={descriptionStorageLength}
+                  descriptionPercentLeft={descriptionPercentLeft}
                   descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
                   isDescriptionOverLimit={isDescriptionOverLimit}
                   disabled={disabled}

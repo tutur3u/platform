@@ -11,6 +11,7 @@ import { useEffect, useRef } from 'react';
 import type * as Y from 'yjs';
 import { RichTextEditor } from '../../../../text-editor/editor';
 import { fetchWorkspaceTask, updateWorkspaceTask } from '../hooks/task-api';
+import { getTaskDescriptionStorageLength } from '../utils';
 
 // Provider type from Yjs collaboration
 type HocuspocusProvider = Parameters<typeof RichTextEditor>[0]['yjsProvider'];
@@ -50,7 +51,9 @@ export interface TaskDescriptionEditorProps {
   // Callbacks
   onImageUpload: (file: File) => Promise<string>;
   onEditorReady: (editor: Editor) => void;
+  onDescriptionStorageLengthChange: (storageLength: number) => void;
   descriptionStorageLength: number;
+  descriptionPercentLeft: number;
   descriptionLimit: number;
   isDescriptionOverLimit: boolean;
 
@@ -101,13 +104,32 @@ export function TaskDescriptionEditor({
   collaborationUser,
   onImageUpload,
   onEditorReady,
+  onDescriptionStorageLengthChange,
   descriptionStorageLength,
+  descriptionPercentLeft,
   descriptionLimit,
   isDescriptionOverLimit,
   mentionTranslations,
   disabled = false,
 }: TaskDescriptionEditorProps) {
   const t = useTranslations('ws-task-boards.dialog');
+  const progressPercent = isDescriptionOverLimit
+    ? 100
+    : Math.max(0, Math.min(100, 100 - descriptionPercentLeft));
+  const circleRadius = 14;
+  const circleCircumference = 2 * Math.PI * circleRadius;
+  const circleOffset =
+    circleCircumference - (progressPercent / 100) * circleCircumference;
+  const indicatorToneClass = isDescriptionOverLimit
+    ? 'text-destructive'
+    : descriptionStorageLength >= descriptionLimit * 0.85
+      ? 'text-dynamic-yellow'
+      : 'text-dynamic-green';
+  const indicatorStrokeClass = isDescriptionOverLimit
+    ? 'stroke-destructive'
+    : descriptionStorageLength >= descriptionLimit * 0.85
+      ? 'stroke-dynamic-yellow'
+      : 'stroke-dynamic-green';
   // Yjs sync is enabled for all tiers (realtimeEnabled), but cursor labels only for paid tiers (collaborationMode)
   const allowYjsSync = isOpen && !isCreateMode && realtimeEnabled;
   const showCollaborationCursors = isOpen && !isCreateMode && collaborationMode;
@@ -246,6 +268,11 @@ export function TaskDescriptionEditor({
         <RichTextEditor
           content={description}
           onChange={setDescription}
+          onImmediateChange={(nextDescription) => {
+            onDescriptionStorageLengthChange(
+              getTaskDescriptionStorageLength(nextDescription)
+            );
+          }}
           writePlaceholder={t('description_placeholder')}
           titlePlaceholder=""
           className="min-h-[calc(100vh-16rem)] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
@@ -308,43 +335,99 @@ export function TaskDescriptionEditor({
             </p>
           </div>
         )}
-      </div>
 
-      <div className="flex items-center justify-between border-border/60 border-t px-4 py-3 md:px-8">
-        <p
-          className={cn(
-            'text-xs transition-colors',
-            isDescriptionOverLimit
-              ? 'text-destructive'
-              : descriptionStorageLength >= descriptionLimit * 0.85
-                ? 'text-dynamic-yellow'
-                : 'text-muted-foreground'
-          )}
-        >
-          {isDescriptionOverLimit
-            ? t('description_storage_over_limit', {
-                max: descriptionLimit,
-              })
-            : descriptionStorageLength >= descriptionLimit * 0.85
-              ? t('description_storage_warning', {
-                  remaining: descriptionLimit - descriptionStorageLength,
-                })
-              : t('description_storage_helper')}
-        </p>
-        <div
-          className={cn(
-            'rounded-full border px-3 py-1 font-medium text-xs tabular-nums transition-colors',
-            isDescriptionOverLimit
-              ? 'border-destructive/30 bg-destructive/10 text-destructive'
-              : descriptionStorageLength >= descriptionLimit * 0.85
-                ? 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
-                : 'border-border/60 bg-muted/40 text-muted-foreground'
-          )}
-        >
-          {t('description_storage_counter', {
-            count: descriptionStorageLength,
-            max: descriptionLimit,
-          })}
+        <div className="fixed right-4 bottom-20 z-20 md:right-8 md:bottom-6">
+          <div
+            className={cn(
+              'group relative rounded-full border bg-background/90 p-1 shadow-lg backdrop-blur-sm transition-colors',
+              isDescriptionOverLimit
+                ? 'border-destructive/40'
+                : descriptionStorageLength >= descriptionLimit * 0.85
+                  ? 'border-dynamic-yellow/40'
+                  : 'border-border/70'
+            )}
+          >
+            <div className="relative flex h-10 w-10 items-center justify-center">
+              <svg
+                className="h-10 w-10 -rotate-90"
+                viewBox="0 0 36 36"
+                aria-hidden="true"
+              >
+                <circle
+                  className="stroke-border/60"
+                  cx="18"
+                  cy="18"
+                  r={circleRadius}
+                  fill="none"
+                  strokeWidth="3"
+                />
+                <circle
+                  className={cn(
+                    'transition-all duration-200',
+                    indicatorStrokeClass
+                  )}
+                  cx="18"
+                  cy="18"
+                  r={circleRadius}
+                  fill="none"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={circleCircumference}
+                  strokeDashoffset={circleOffset}
+                />
+              </svg>
+              <span
+                className={cn(
+                  'absolute inset-0 flex items-center justify-center font-medium text-[10px] tabular-nums',
+                  indicatorToneClass
+                )}
+              >
+                {descriptionPercentLeft}%
+              </span>
+            </div>
+
+            <div
+              className={cn(
+                'pointer-events-none absolute right-0 bottom-12 w-[min(70vw,20rem)] translate-y-1 rounded-lg border bg-background/95 p-2 opacity-0 shadow-md backdrop-blur-sm transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100',
+                isDescriptionOverLimit
+                  ? 'border-destructive/40'
+                  : descriptionStorageLength >= descriptionLimit * 0.85
+                    ? 'border-dynamic-yellow/40'
+                    : 'border-border/70'
+              )}
+            >
+              <p
+                className={cn(
+                  'mb-1 text-xs transition-colors',
+                  isDescriptionOverLimit
+                    ? 'text-destructive'
+                    : descriptionStorageLength >= descriptionLimit * 0.85
+                      ? 'text-dynamic-yellow'
+                      : 'text-muted-foreground'
+                )}
+              >
+                {isDescriptionOverLimit
+                  ? t('description_storage_over_limit', {
+                      max: descriptionLimit,
+                    })
+                  : descriptionStorageLength >= descriptionLimit * 0.85
+                    ? t('description_storage_warning', {
+                        percent: descriptionPercentLeft,
+                      })
+                    : t('description_storage_helper')}
+              </p>
+              <p
+                className={cn(
+                  'text-right font-medium text-xs',
+                  indicatorToneClass
+                )}
+              >
+                {t('description_storage_counter', {
+                  percent: descriptionPercentLeft,
+                })}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { describe, expect, it } from 'vitest';
 import {
   buildTaskDescriptionUpdatePayload,
+  getTaskDescriptionPercentLeft,
   getTaskDescriptionPreviewText,
   getTaskDescriptionStorageLength,
   serializeTaskDescriptionContent,
@@ -34,6 +35,17 @@ describe('task edit dialog utils', () => {
     expect(getTaskDescriptionStorageLength(content)).toBe(
       JSON.stringify(content).length
     );
+  });
+
+  it('calculates percentage left within bounds', () => {
+    expect(getTaskDescriptionPercentLeft(0, 100)).toBe(100);
+    expect(getTaskDescriptionPercentLeft(15, 100)).toBe(85);
+    expect(getTaskDescriptionPercentLeft(100, 100)).toBe(0);
+    expect(getTaskDescriptionPercentLeft(120, 100)).toBe(0);
+  });
+
+  it('returns zero when description limit is invalid', () => {
+    expect(getTaskDescriptionPercentLeft(0, 0)).toBe(0);
   });
 
   it('keeps description in the update payload when within the cap', () => {
