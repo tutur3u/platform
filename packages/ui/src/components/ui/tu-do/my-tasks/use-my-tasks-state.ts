@@ -6,6 +6,7 @@ import {
   listWorkspaceBoardsWithLists,
   listWorkspaces,
   listWorkspaceTaskBoards,
+  listWorkspaceTaskProjects,
 } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -376,15 +377,18 @@ export function useMyTasksState({
     queryKey: ['workspaceProjects', JSON.stringify(allWorkspaceIds)],
     queryFn: async () => {
       if (allWorkspaceIds.length === 0) return [];
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('task_projects')
-        .select('id, name, ws_id')
-        .in('ws_id', allWorkspaceIds)
-        .order('name', { ascending: true });
+      const projectGroups = await Promise.all(
+        allWorkspaceIds.map(async (workspaceId) => {
+          const projects = await listWorkspaceTaskProjects(workspaceId);
+          return projects.map((project) => ({
+            id: project.id,
+            name: project.name,
+            ws_id: workspaceId,
+          }));
+        })
+      );
 
-      if (error) throw error;
-      return data || [];
+      return projectGroups.flat().sort((a, b) => a.name.localeCompare(b.name));
     },
     enabled: isPersonal && allWorkspaceIds.length > 0,
   });

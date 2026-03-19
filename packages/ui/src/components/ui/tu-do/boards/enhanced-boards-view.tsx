@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { LayoutGrid, LayoutList } from '@tuturuuu/icons';
+import { getWorkspaceBoardsData } from '@tuturuuu/internal-api';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
@@ -28,22 +29,6 @@ interface EnhancedBoardsViewProps {
   wsId: string;
 }
 
-async function getBoardsData(
-  wsId: string,
-  q: string,
-  page: string,
-  pageSize: string
-) {
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/boards-data?q=${q}&page=${page}&pageSize=${pageSize}`,
-    { cache: 'no-store' }
-  );
-  if (!response.ok) {
-    throw new Error('Failed to fetch boards data');
-  }
-  return response.json();
-}
-
 export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
   const t = useTranslations();
   const tasksHref = useTasksHref();
@@ -58,9 +43,12 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
   // Use React Query to consume the hydrated cache
   const { data: queryData, isPending } = useQuery({
     queryKey: ['boards', wsId, q, page, pageSize],
-    queryFn: () => getBoardsData(wsId, q, page, pageSize),
-    // Remove staleTime: 0 to use default behavior
-    // This allows React Query to handle staleness based on invalidation
+    queryFn: () =>
+      getWorkspaceBoardsData(wsId, {
+        q,
+        page: Number.parseInt(page, 10),
+        pageSize: Number.parseInt(pageSize, 10),
+      }),
   });
 
   const data = queryData?.data || [];
@@ -94,10 +82,11 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
       }
     >();
     for (const board of safeData) {
-      const lists = board.task_lists || [];
+      const lists = (board.task_lists || []) as Array<
+        TaskList & { tasks?: Task[] }
+      >;
       const totalTasks = lists.reduce(
-        (acc: number, list: TaskList & { tasks?: Task[] }) =>
-          acc + (list.tasks?.length ?? 0),
+        (acc, list) => acc + (list.tasks?.length ?? 0),
         0
       );
       map.set(board.id, {
