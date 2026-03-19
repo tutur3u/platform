@@ -1205,6 +1205,11 @@ export async function WorkspaceNavigationLinks({
               icon: <ShieldAlert className="h-5 w-5" />,
             },
             {
+              title: t('infrastructure-tabs.otp_limits'),
+              href: `/${personalOrWsId}/infrastructure/otp-limits`,
+              icon: <KeyRound className="h-5 w-5" />,
+            },
+            {
               title: t('infrastructure-tabs.timezones'),
               href: `/${personalOrWsId}/infrastructure/timezones`,
               icon: <Clock className="h-5 w-5" />,

@@ -56,16 +56,14 @@ export function extractTurnstileRemoteIp(request: TurnstileRequestLike) {
     return trueClientIp;
   }
 
-  const realIp = normalizeEnvValue(readHeader(request.headers, 'x-real-ip'));
-  if (realIp) {
-    return realIp;
-  }
-
   const forwardedFor = normalizeEnvValue(
     readHeader(request.headers, 'x-forwarded-for')
   );
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0]?.trim() || undefined;
+  }
 
-  return forwardedFor?.split(',')[0]?.trim() || undefined;
+  return normalizeEnvValue(readHeader(request.headers, 'x-real-ip'));
 }
 
 export interface ResolveTurnstileTokenOptions {

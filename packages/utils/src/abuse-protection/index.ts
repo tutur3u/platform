@@ -250,6 +250,32 @@ async function deleteKeys(...keys: string[]): Promise<void> {
   }
 }
 
+async function deleteKeysWithCount(...keys: string[]): Promise<number> {
+  if (keys.length === 0) {
+    return 0;
+  }
+
+  const redis = await getRedisClient();
+
+  if (redis) {
+    try {
+      const deleted = await redis.del(...keys);
+      return typeof deleted === 'number' ? deleted : 0;
+    } catch {
+      // Fall through to memory
+    }
+  }
+
+  let deleted = 0;
+  for (const key of keys) {
+    if (memoryStore.delete(key)) {
+      deleted++;
+    }
+  }
+
+  return deleted;
+}
+
 /**
  * Create Supabase admin client for database operations
  */
@@ -399,7 +425,7 @@ export async function blockIP(
       .insert([
         {
           ip_address: ipAddress,
-          reason,
+          reason: reason as never,
           block_level: newLevel,
           expires_at: expiresAt.toISOString(),
           metadata: (metadata || {}) as Json,
@@ -506,7 +532,7 @@ export async function logAbuseEvent(
     await sbAdmin.from('abuse_events').insert([
       {
         ip_address: ipAddress,
-        event_type: eventType,
+        event_type: eventType as never,
         email: normalizedEmail,
         email_hash: normalizedEmail ? hashEmail(normalizedEmail) : null,
         user_agent: options?.userAgent?.substring(0, 500),
@@ -518,6 +544,184 @@ export async function logAbuseEvent(
   } catch (error) {
     console.error('[Abuse Protection] Error logging event:', error);
   }
+}
+
+export interface ResetOtpLimitsForEmailOptions {
+  email: string;
+  clearEmailScoped: boolean;
+  clearRelatedIpCounters: boolean;
+  clearRelatedIpBlocks: boolean;
+  adminUserId: string;
+  reason?: string;
+  adminIpAddress?: string;
+}
+
+export interface ResetOtpLimitsForEmailResult {
+  relatedIps: string[];
+  clearedEmailKeys: number;
+  clearedIpCounterCount: number;
+  unblockedIpCount: number;
+}
+
+function normalizeOtpResetEmail(email: string): string {
+  const normalized = email.trim().toLowerCase();
+  const regex = /\S+@\S+\.\S+/;
+
+  if (!normalized || !regex.test(normalized)) {
+    throw new Error('Email is invalid');
+  }
+
+  return normalized;
+}
+
+function getOtpResetScopeKeys(ipAddress: string): string[] {
+  return [
+    REDIS_KEYS.OTP_SEND(ipAddress),
+    REDIS_KEYS.OTP_SEND_HOURLY(ipAddress),
+    REDIS_KEYS.OTP_SEND_DAILY(ipAddress),
+    REDIS_KEYS.OTP_VERIFY_FAILED(ipAddress),
+    REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress),
+  ];
+}
+
+export async function resetOtpLimitsForEmail({
+  email,
+  clearEmailScoped,
+  clearRelatedIpCounters,
+  clearRelatedIpBlocks,
+  adminUserId,
+  reason,
+  adminIpAddress,
+}: ResetOtpLimitsForEmailOptions): Promise<ResetOtpLimitsForEmailResult> {
+  if (!clearEmailScoped && !clearRelatedIpCounters && !clearRelatedIpBlocks) {
+    throw new Error('At least one OTP reset option is required');
+  }
+
+  const normalizedEmail = normalizeOtpResetEmail(email);
+  const emailHash = hashEmail(normalizedEmail);
+  const sbAdmin = await getSupabaseAdmin();
+
+  if (!sbAdmin) {
+    throw new Error('Failed to create Supabase client');
+  }
+
+  let relatedIps: string[] = [];
+  if (clearRelatedIpCounters || clearRelatedIpBlocks) {
+    const sinceIso = new Date(
+      Date.now() - WINDOW_MS.TWENTY_FOUR_HOURS
+    ).toISOString();
+    const { data: relatedEvents, error: relatedEventsError } = await sbAdmin
+      .from('abuse_events')
+      .select('ip_address')
+      .eq('email', normalizedEmail)
+      .in('event_type', ['otp_send', 'otp_verify_failed'])
+      .gte('created_at', sinceIso);
+
+    if (relatedEventsError) {
+      throw relatedEventsError;
+    }
+
+    relatedIps = Array.from(
+      new Set(
+        (relatedEvents ?? [])
+          .map((event: { ip_address: string | null }) => event.ip_address)
+          .filter((value: string | null): value is string => !!value)
+      )
+    );
+  }
+
+  let clearedEmailKeys = 0;
+  if (clearEmailScoped) {
+    clearedEmailKeys = await deleteKeysWithCount(
+      REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(emailHash),
+      REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash),
+      REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash),
+      REDIS_KEYS.OTP_VERIFY_FAILED_EMAIL(emailHash)
+    );
+  }
+
+  let clearedIpCounterCount = 0;
+  if (clearRelatedIpCounters && relatedIps.length > 0) {
+    const relatedIpKeys = relatedIps.flatMap((ipAddress) =>
+      getOtpResetScopeKeys(ipAddress)
+    );
+    clearedIpCounterCount = await deleteKeysWithCount(...relatedIpKeys);
+  }
+
+  let unblockedIpCount = 0;
+  let unblockedIps: string[] = [];
+  if (clearRelatedIpBlocks && relatedIps.length > 0) {
+    const { data: activeBlocks, error: activeBlocksError } = await sbAdmin
+      .from('blocked_ips')
+      .select('ip_address')
+      .in('ip_address', relatedIps)
+      .in('reason', ['otp_send', 'otp_verify_failed'])
+      .eq('status', 'active');
+
+    if (activeBlocksError) {
+      throw activeBlocksError;
+    }
+
+    unblockedIps = Array.from(
+      new Set(
+        (activeBlocks ?? [])
+          .map((block: { ip_address: string | null }) => block.ip_address)
+          .filter((value: string | null): value is string => !!value)
+      )
+    );
+
+    if (unblockedIps.length > 0) {
+      const { error: unblockError } = await sbAdmin
+        .from('blocked_ips')
+        .update({
+          status: 'manually_unblocked',
+          unblocked_at: new Date().toISOString(),
+          unblocked_by: adminUserId,
+          unblock_reason:
+            reason || 'Manual OTP limit reset unblock by infrastructure admin',
+        })
+        .in('ip_address', unblockedIps)
+        .in('reason', ['otp_send', 'otp_verify_failed'])
+        .eq('status', 'active');
+
+      if (unblockError) {
+        throw unblockError;
+      }
+
+      await deleteKeysWithCount(
+        ...unblockedIps.flatMap((ipAddress) => [
+          REDIS_KEYS.IP_BLOCKED(ipAddress),
+          REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress),
+        ])
+      );
+      unblockedIpCount = unblockedIps.length;
+    }
+  }
+
+  await logAbuseEvent(adminIpAddress || 'unknown', 'otp_limit_reset', {
+    email: normalizedEmail,
+    success: true,
+    metadata: {
+      admin_user_id: adminUserId,
+      reason: reason || null,
+      clearEmailScoped,
+      clearRelatedIpCounters,
+      clearRelatedIpBlocks,
+      related_ips: relatedIps,
+      related_ips_count: relatedIps.length,
+      cleared_email_keys: clearedEmailKeys,
+      cleared_ip_counter_count: clearedIpCounterCount,
+      unblocked_ips: unblockedIps,
+      unblocked_ip_count: unblockedIpCount,
+    },
+  });
+
+  return {
+    relatedIps,
+    clearedEmailKeys,
+    clearedIpCounterCount,
+    unblockedIpCount,
+  };
 }
 
 /**

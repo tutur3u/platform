@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import type { AbuseEventType } from '@tuturuuu/utils/abuse-protection';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -107,7 +106,7 @@ async function getData({
 
   // Filter by event type
   if (type && type !== '') {
-    queryBuilder = queryBuilder.eq('event_type', type as AbuseEventType);
+    queryBuilder = queryBuilder.eq('event_type', type as never);
   }
 
   // Filter by success

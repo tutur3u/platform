@@ -53,6 +53,9 @@ export default function Filters() {
           <SelectItem value="otp_verify_failed">
             {t('type_otp_verify_failed')}
           </SelectItem>
+          <SelectItem value="otp_limit_reset">
+            {t('type_otp_limit_reset')}
+          </SelectItem>
           <SelectItem value="mfa_challenge">
             {t('type_mfa_challenge')}
           </SelectItem>

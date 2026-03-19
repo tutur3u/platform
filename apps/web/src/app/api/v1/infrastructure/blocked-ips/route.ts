@@ -2,10 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type {
-  AbuseEventType,
-  IPBlockStatus,
-} from '@tuturuuu/utils/abuse-protection';
+import type { IPBlockStatus } from '@tuturuuu/utils/abuse-protection';
 import {
   BLOCK_DURATIONS,
   REDIS_KEYS,
@@ -225,7 +222,7 @@ export async function POST(req: Request) {
       .from('blocked_ips')
       .insert({
         ip_address,
-        reason: reason as AbuseEventType,
+        reason: reason as never,
         block_level,
         expires_at: expiresAt.toISOString(),
         metadata: {
