@@ -111,6 +111,7 @@ import { TaskNewProjectDialog } from './task-dialogs/TaskNewProjectDialog';
 interface TaskCardProps {
   task: Task;
   boardId: string;
+  workspaceId?: string;
   taskList?: TaskList;
   isOverlay?: boolean;
   onUpdate: () => void;
@@ -129,6 +130,7 @@ interface TaskCardProps {
 function TaskCardInner({
   task,
   boardId,
+  workspaceId,
   taskList,
   isOverlay,
   onUpdate,
@@ -181,7 +183,7 @@ function TaskCardInner({
 
   // Use React Query hooks for shared data (cached across all task cards)
   const { data: boardConfig } = useBoardConfig(boardId);
-  const effectiveWorkspaceId = boardConfig?.ws_id ?? wsId;
+  const effectiveWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
   const taskShareWsId = effectiveWorkspaceId;
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
     useWorkspaceLabels(effectiveWorkspaceId);
@@ -1932,6 +1934,7 @@ interface MeasuredTaskCardProps {
   task: Task;
   taskList: TaskList;
   boardId: string;
+  workspaceId?: string;
   onUpdate: () => void;
   isSelected: boolean;
   isMultiSelectMode?: boolean;
@@ -1948,6 +1951,7 @@ export function MeasuredTaskCard({
   task,
   taskList,
   boardId,
+  workspaceId,
   onUpdate,
   isSelected,
   isMultiSelectMode,
@@ -1995,6 +1999,7 @@ export function MeasuredTaskCard({
         task={task}
         taskList={taskList}
         boardId={boardId}
+        workspaceId={workspaceId}
         onUpdate={onUpdate}
         isSelected={isSelected}
         isMultiSelectMode={isMultiSelectMode}

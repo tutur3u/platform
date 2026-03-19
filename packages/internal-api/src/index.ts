@@ -63,6 +63,7 @@ export {
   getWorkspaceTaskProjectTasks,
   getWorkspaceTaskRelationships,
   listWorkspaceBoardsWithLists,
+  listWorkspaceLabels,
   listWorkspaceTaskBoards,
   listWorkspaceTaskProjects,
   listWorkspaceTasks,

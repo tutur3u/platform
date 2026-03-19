@@ -27,6 +27,7 @@ interface VirtualizedTaskListProps {
   tasks: Task[];
   column: TaskList;
   boardId: string;
+  workspaceId?: string;
   onUpdate: () => void;
   isMultiSelectMode?: boolean;
   selectedTasks?: Set<string>;
@@ -52,6 +53,7 @@ interface TaskListContentProps {
   tasks: Task[];
   column: TaskList;
   boardId: string;
+  workspaceId?: string;
   onUpdate: () => void;
   isMultiSelectMode?: boolean;
   selectedTasks?: Set<string>;
@@ -74,6 +76,7 @@ function TaskListContent({
   tasks,
   column,
   boardId,
+  workspaceId,
   onUpdate,
   isMultiSelectMode,
   selectedTasks,
@@ -122,6 +125,7 @@ function TaskListContent({
             task={task}
             taskList={column}
             boardId={boardId}
+            workspaceId={workspaceId}
             onUpdate={onUpdate}
             isSelected={Boolean(
               isMultiSelectMode && selectedTasks?.has(task.id)
@@ -193,6 +197,7 @@ function VirtualizedTaskListInner({
   tasks,
   column,
   boardId,
+  workspaceId,
   onUpdate,
   isMultiSelectMode,
   selectedTasks,
@@ -445,6 +450,7 @@ function VirtualizedTaskListInner({
                 tasks={visibleTasks}
                 column={column}
                 boardId={boardId}
+                workspaceId={workspaceId}
                 onUpdate={onUpdate}
                 isMultiSelectMode={isMultiSelectMode}
                 selectedTasks={selectedTasks}
@@ -465,11 +471,12 @@ function VirtualizedTaskListInner({
           items={tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
         >
-          <TaskListContent
-            tasks={tasks}
-            column={column}
-            boardId={boardId}
-            onUpdate={onUpdate}
+            <TaskListContent
+              tasks={tasks}
+              column={column}
+              boardId={boardId}
+              workspaceId={workspaceId}
+              onUpdate={onUpdate}
             isMultiSelectMode={isMultiSelectMode}
             selectedTasks={selectedTasks}
             isPersonalWorkspace={isPersonalWorkspace}

@@ -310,6 +310,7 @@ export function BoardColumn({
           tasks={tasks}
           column={column}
           boardId={boardId}
+          workspaceId={wsId}
           onUpdate={handleUpdate}
           isMultiSelectMode={isMultiSelectMode}
           selectedTasks={selectedTasks}

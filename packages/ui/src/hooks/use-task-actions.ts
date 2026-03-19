@@ -1,5 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import {
+  resolveTaskProjectWorkspaceId,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -50,9 +53,20 @@ export function useTaskActions({
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
 
-  const getWorkspaceId = useCallback(() => {
+  const getWorkspaceId = useCallback(async () => {
+    const taskWorkspaceId =
+      (task as Task & { ws_id?: string })?.ws_id ??
+      (
+        task as Task & {
+          task_lists?: { workspace_boards?: { ws_id?: string } };
+        }
+      )?.task_lists?.workspace_boards?.ws_id;
     const resolvedWorkspaceId =
-      workspaceId ?? (task as Task & { ws_id?: string })?.ws_id;
+      taskWorkspaceId ??
+      (boardId
+        ? await resolveTaskProjectWorkspaceId({ boardId }).catch(() => null)
+        : null) ??
+      workspaceId;
 
     if (!resolvedWorkspaceId) {
       throw new Error('Workspace ID is required');
@@ -160,7 +174,7 @@ export function useTaskActions({
         );
 
         // moveTask handles setting archived status based on target list
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
 
         const { task: movedTask } = await updateWorkspaceTask(
           workspaceId,
@@ -211,7 +225,7 @@ export function useTaskActions({
       );
 
       try {
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
 
         const { task: updatedTask } = await updateWorkspaceTask(
           workspaceId,
@@ -296,7 +310,7 @@ export function useTaskActions({
 
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
-      const workspaceId = getWorkspaceId();
+      const workspaceId = await getWorkspaceId();
       const failedTaskIds: string[] = [];
       const previousTaskMap = new Map(
         previousTasks?.map((item) => [item.id, item]) ?? []
@@ -415,7 +429,7 @@ export function useTaskActions({
 
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
-      const workspaceId = getWorkspaceId();
+      const workspaceId = await getWorkspaceId();
       const failedTaskIds: string[] = [];
       const previousTaskMap = new Map(
         previousTasks?.map((item) => [item.id, item]) ?? []
@@ -547,7 +561,7 @@ export function useTaskActions({
 
     try {
       let successCount = 0;
-      const workspaceId = getWorkspaceId();
+      const workspaceId = await getWorkspaceId();
       const failedTaskIds: string[] = [];
       const previousTaskMap = new Map(
         previousTasks?.map((item) => [item.id, item]) ?? []
@@ -643,7 +657,7 @@ export function useTaskActions({
     );
 
     try {
-      const workspaceId = getWorkspaceId();
+      const workspaceId = await getWorkspaceId();
 
       await updateWorkspaceTask(workspaceId, task.id, {
         assignee_ids: [],
@@ -714,7 +728,7 @@ export function useTaskActions({
           [];
         const filteredIds = newIds.filter((id) => id !== assigneeId);
 
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
 
         await updateWorkspaceTask(workspaceId, task.id, {
           assignee_ids: filteredIds,
@@ -820,7 +834,7 @@ export function useTaskActions({
         );
 
         // Move tasks one by one to ensure triggers fire for each task
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
 
         let successCount = 0;
         const failedTaskIds: string[] = [];
@@ -943,7 +957,7 @@ export function useTaskActions({
         );
 
         const succeededTaskIds: string[] = [];
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
 
         for (const taskId of tasksToUpdate) {
           try {
@@ -1078,7 +1092,7 @@ export function useTaskActions({
         );
 
         const succeededTaskIds: string[] = [];
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
 
         console.log('🔄 Executing sequential API updates:', {
           tasksToUpdate,
@@ -1244,7 +1258,7 @@ export function useTaskActions({
         );
 
         const succeededIds: string[] = [];
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
 
         for (const taskId of tasksToUpdate) {
           try {
@@ -1387,7 +1401,7 @@ export function useTaskActions({
             }
           );
 
-          const workspaceId = getWorkspaceId();
+          const workspaceId = await getWorkspaceId();
           await updateWorkspaceTask(workspaceId, task.id, {
             end_date: newDate,
           });
@@ -1586,7 +1600,7 @@ export function useTaskActions({
         const succeededTaskIds: string[] = [];
         const targetTasks = active ? tasksToRemoveFrom : tasksNeedingAssignee;
 
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
 
         for (const tid of targetTasks) {
           const current = getTaskState(tid);

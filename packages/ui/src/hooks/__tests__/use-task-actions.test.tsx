@@ -24,6 +24,7 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   updateWorkspaceTask: vi.fn(() => Promise.resolve({ task: { id: 'task-1' } })),
+  resolveTaskProjectWorkspaceId: vi.fn(() => Promise.resolve('resolved-ws')),
 }));
 
 vi.mock('@tuturuuu/utils/task-helper', () => ({
@@ -36,6 +37,8 @@ describe('useTaskActions', () => {
   let mockSupabase: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockUpdateWorkspaceTask: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockResolveTaskProjectWorkspaceId: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockUpdateTaskMutation: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,11 +125,16 @@ describe('useTaskActions', () => {
     const { updateWorkspaceTask } = await import(
       '@tuturuuu/internal-api/tasks'
     );
+    const { resolveTaskProjectWorkspaceId } = await import(
+      '@tuturuuu/internal-api/tasks'
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockUpdateWorkspaceTask = updateWorkspaceTask as any;
     mockUpdateWorkspaceTask.mockResolvedValue({ task: { id: 'task-1' } });
+    mockResolveTaskProjectWorkspaceId = resolveTaskProjectWorkspaceId as any;
+    mockResolveTaskProjectWorkspaceId.mockResolvedValue('resolved-ws');
 
     mockUpdateTaskMutation = {
       mutate: vi.fn(),
@@ -209,6 +217,138 @@ describe('useTaskActions', () => {
       expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         closed_at: expect.any(String),
       });
+    });
+
+    it('prefers task.ws_id over a fallback workspace prop when archiving', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: mockTask,
+            boardId: 'board-1',
+            workspaceId: '00000000-0000-0000-0000-000000000000',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleArchiveToggle();
+      });
+
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'completion-list',
+      });
+    });
+
+    it('falls back to nested task list workspace metadata before a bad workspace prop', async () => {
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [
+          {
+            ...mockTask,
+            ws_id: undefined,
+            task_lists: {
+              workspace_boards: {
+                ws_id: 'ws-from-list',
+              },
+            },
+          },
+        ]
+      );
+
+      const nestedWorkspaceTask = {
+        ...mockTask,
+        ws_id: undefined,
+        task_lists: {
+          workspace_boards: {
+            ws_id: 'ws-from-list',
+          },
+        },
+      } as Task;
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: nestedWorkspaceTask,
+            boardId: 'board-1',
+            workspaceId: '00000000-0000-0000-0000-000000000000',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleArchiveToggle();
+      });
+
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+        'ws-from-list',
+        'task-1',
+        {
+          list_id: 'completion-list',
+        }
+      );
+    });
+
+    it('resolves the board workspace before using a bad workspace prop', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [
+        {
+          ...mockTask,
+          ws_id: undefined,
+          task_lists: undefined,
+        },
+      ]);
+
+      const boardOnlyTask = {
+        ...mockTask,
+        ws_id: undefined,
+        task_lists: undefined,
+      } as Task;
+
+      mockResolveTaskProjectWorkspaceId.mockResolvedValueOnce('resolved-from-board');
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: boardOnlyTask,
+            boardId: 'board-1',
+            workspaceId: '00000000-0000-0000-0000-000000000000',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleArchiveToggle();
+      });
+
+      expect(mockResolveTaskProjectWorkspaceId).toHaveBeenCalledWith({
+        boardId: 'board-1',
+      });
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+        'resolved-from-board',
+        'task-1',
+        {
+          list_id: 'completion-list',
+        }
+      );
     });
 
     it('should rollback on error', async () => {

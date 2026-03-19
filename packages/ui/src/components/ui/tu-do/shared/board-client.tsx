@@ -105,7 +105,7 @@ export function BoardClient({
   const progressiveLoader = useProgressiveBoardLoader(workspace.id, boardId);
 
   // Fetch workspace labels once at the board level
-  const { data: workspaceLabels = [] } = useWorkspaceLabels(board?.ws_id);
+  const { data: workspaceLabels = [] } = useWorkspaceLabels(workspace.id);
 
   const { broadcast } = useBoardRealtime(boardId, {
     enabled: !workspace.personal,

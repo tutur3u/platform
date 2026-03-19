@@ -141,4 +141,12 @@ describe('web proxy api handling', () => {
 
     expect(response).toBeInstanceOf(NextResponse);
   });
+
+  it('excludes audio assets from the proxy matcher so public media is served directly', async () => {
+    const { config } = await import('../proxy');
+
+    expect(config.matcher).toContain(
+      '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)'
+    );
+  });
 });

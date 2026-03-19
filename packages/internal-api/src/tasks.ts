@@ -25,6 +25,14 @@ export interface InternalApiTaskProjectSummary {
   status: string | null;
 }
 
+export interface InternalApiWorkspaceLabel {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+  ws_id: string;
+}
+
 export interface WorkspaceTaskUpdatePayload {
   name?: string;
   description?: string | null;
@@ -251,6 +259,23 @@ export async function listWorkspaceTaskProjects(
         },
       ];
     }
+  );
+}
+
+export async function listWorkspaceLabels(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const labels = await client.json<InternalApiWorkspaceLabel[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels`,
+    {
+      cache: 'no-store',
+    }
+  );
+
+  return (labels ?? []).sort((a, b) =>
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
   );
 }
 

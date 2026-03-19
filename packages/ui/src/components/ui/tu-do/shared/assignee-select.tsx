@@ -19,7 +19,13 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from 'react';
 import { useBoardBroadcast } from './board-broadcast-context';
 
 interface Member {
@@ -65,21 +71,36 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     const broadcast = useBoardBroadcast();
 
     // Deduplicate assignees by ID using O(n) Map approach
-    const uniqueAssignees = Array.from(
-      assignees
-        .reduce((map, assignee) => {
-          if (assignee?.id) {
-            map.set(assignee.id, assignee);
-          }
-          return map;
-        }, new Map<string, Member>())
-        .values()
+    const uniqueAssignees = useMemo(
+      () =>
+        Array.from(
+          assignees
+            .reduce((map, assignee) => {
+              if (assignee?.id) {
+                map.set(assignee.id, assignee);
+              }
+              return map;
+            }, new Map<string, Member>())
+            .values()
+        ),
+      [assignees]
     );
     const [localAssigneesState, setLocalAssigneesState] =
       useState<Member[]>(uniqueAssignees);
 
     useEffect(() => {
-      setLocalAssigneesState(uniqueAssignees);
+      setLocalAssigneesState((previousAssignees) => {
+        if (
+          previousAssignees.length === uniqueAssignees.length &&
+          previousAssignees.every(
+            (assignee, index) => assignee.id === uniqueAssignees[index]?.id
+          )
+        ) {
+          return previousAssignees;
+        }
+
+        return uniqueAssignees;
+      });
     }, [uniqueAssignees]);
 
     // Fetch workspace members with React Query

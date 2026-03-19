@@ -16,6 +16,7 @@ import {
   deleteWorkspaceTask,
   deleteWorkspaceTaskRelationship,
   getWorkspaceTaskBoard as getWorkspaceTaskBoardFromApi,
+  listWorkspaceLabels,
   listWorkspaceTasks,
   moveWorkspaceTask,
   resolveTaskProjectWorkspaceId,
@@ -2143,19 +2144,8 @@ export function useWorkspaceLabels(wsId: string | null | undefined) {
     queryFn: async () => {
       if (!wsId) return [];
 
-      const supabase = createClient();
-      const { data: labels, error } = await supabase
-        .from('workspace_task_labels')
-        .select('id, name, color, created_at, ws_id')
-        .eq('ws_id', wsId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Sort alphabetically by name
-      return (labels || []).sort((a, b) =>
-        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-      ) as WorkspaceLabel[];
+      const labels = await listWorkspaceLabels(wsId);
+      return labels as WorkspaceLabel[];
     },
     enabled: Boolean(wsId),
     staleTime: 5 * 60 * 1000, // 5 minutes - labels don't change often
