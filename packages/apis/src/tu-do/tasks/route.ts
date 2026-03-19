@@ -3,7 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Database } from '@tuturuuu/types';
+import type { Database, TaskActorRpcArgs } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_TASK_DESCRIPTION_LENGTH,
@@ -172,6 +172,7 @@ export async function GET(
         description,
         priority,
         completed,
+        completed_at,
         start_date,
         end_date,
         estimation_points,
@@ -514,6 +515,7 @@ export async function POST(
     const taskInsert: TaskInsert = {
       name: name.trim(),
       description: description?.trim() || null,
+      creator_id: user.id,
       list_id: listId,
       priority: priority ?? null,
       start_date: start_date ?? null,
@@ -570,51 +572,34 @@ export async function POST(
       );
     }
 
-    const labelIdsToInsert = normalizedLabelIds ?? [];
-    if (labelIdsToInsert.length > 0) {
-      const labelInserts = labelIdsToInsert.map((labelId) => ({
-        task_id: data.id,
-        label_id: labelId,
-      }));
+    if (
+      normalizedLabelIds !== undefined ||
+      normalizedProjectIds !== undefined ||
+      normalizedAssigneeIds !== undefined
+    ) {
+      const relationPayload: TaskActorRpcArgs<'update_task_with_relations'> = {
+        p_task_id: data.id,
+        p_task_updates: {},
+        p_assignee_ids: normalizedAssigneeIds,
+        p_replace_assignees: normalizedAssigneeIds !== undefined,
+        p_label_ids: normalizedLabelIds,
+        p_replace_labels: normalizedLabelIds !== undefined,
+        p_project_ids: normalizedProjectIds,
+        p_replace_projects: normalizedProjectIds !== undefined,
+        p_actor_user_id: user.id,
+      };
+      const { error: relationError } = await sbAdmin.rpc(
+        'update_task_with_relations',
+        relationPayload
+      );
 
-      const { error: labelError } = await sbAdmin
-        .from('task_labels')
-        .insert(labelInserts);
-
-      if (labelError) {
-        console.error('Failed to insert task labels:', labelError);
-      }
-    }
-
-    const projectIdsToInsert = normalizedProjectIds ?? [];
-    if (projectIdsToInsert.length > 0) {
-      const projectInserts = projectIdsToInsert.map((projectId) => ({
-        task_id: data.id,
-        project_id: projectId,
-      }));
-
-      const { error: projectError } = await sbAdmin
-        .from('task_project_tasks')
-        .insert(projectInserts);
-
-      if (projectError) {
-        console.error('Failed to insert task projects:', projectError);
-      }
-    }
-
-    const assigneeIdsToInsert = normalizedAssigneeIds ?? [];
-    if (assigneeIdsToInsert.length > 0) {
-      const assigneeInserts = assigneeIdsToInsert.map((assigneeId) => ({
-        task_id: data.id,
-        user_id: assigneeId,
-      }));
-
-      const { error: assigneeError } = await sbAdmin
-        .from('task_assignees')
-        .insert(assigneeInserts);
-
-      if (assigneeError) {
-        console.error('Failed to insert task assignees:', assigneeError);
+      if (relationError) {
+        console.error('Failed to attach task relationships:', relationError);
+        await cleanupCreatedTask(sbAdmin, data.id);
+        return NextResponse.json(
+          { error: 'Failed to attach task relationships' },
+          { status: 500 }
+        );
       }
     }
 

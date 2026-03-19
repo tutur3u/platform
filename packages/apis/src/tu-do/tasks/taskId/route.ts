@@ -3,13 +3,13 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import {
   paramsSchema,
   restoreTaskSchema,
-  type TaskMutationResult,
   type TaskPriority,
   type TaskRecord,
   updateTaskSchema,
@@ -62,7 +62,7 @@ async function requireWorkspaceAccess(
     };
   }
 
-  return { supabase, wsId, taskId };
+  return { supabase, user, wsId, taskId };
 }
 
 async function getWorkspaceTask(
@@ -371,7 +371,7 @@ export async function PUT(
     const access = await requireWorkspaceAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { supabase, wsId, taskId } = access;
+    const { supabase, user, wsId, taskId } = access;
     const sbAdmin = await createAdminClient();
     const body = updateTaskSchema.parse(await request.json());
     const { task, error } = await getWorkspaceTask(sbAdmin, wsId, taskId);
@@ -517,7 +517,7 @@ export async function PUT(
       }
     }
 
-    const updatePayload = {
+    const baseUpdatePayload = {
       ...(body.name != null ? { name: body.name.trim() } : {}),
       ...(body.description !== undefined
         ? { description: body.description?.trim() || null }
@@ -539,38 +539,6 @@ export async function PUT(
     };
     const expectedListId =
       body.list_id !== undefined ? body.list_id : task.list_id;
-
-    const { data: updatedTaskRow, error: updateError } = (await sbAdmin
-      .rpc('update_task_with_relations', {
-        p_task_id: taskId,
-        p_task_updates: updatePayload,
-        p_assignee_ids: normalizedAssigneeIds,
-        p_replace_assignees: body.assignee_ids !== undefined,
-        p_label_ids: normalizedLabelIds,
-        p_replace_labels: body.label_ids !== undefined,
-        p_project_ids: normalizedProjectIds,
-        p_replace_projects: body.project_ids !== undefined,
-      })
-      .maybeSingle()) as {
-      data: TaskMutationResult | null;
-      error: Error | null;
-    };
-
-    if (updateError) {
-      console.error('Error updating task:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to update task' },
-        { status: 500 }
-      );
-    }
-
-    if (
-      !updatedTaskRow ||
-      updatedTaskRow.id !== task.id ||
-      updatedTaskRow.list_id !== expectedListId
-    ) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
 
     const listChanged =
       body.list_id !== undefined && body.list_id !== task.list_id;
@@ -637,23 +605,43 @@ export async function PUT(
         nextCompleted !== currentCompletedState;
     }
 
-    if (shouldUpdateCompletion) {
-      const { error: completionError } = await sbAdmin
-        .from('tasks')
-        .update({
-          closed_at: nextClosedAt,
-          completed_at: nextCompletedAt,
-          completed: nextCompleted,
-        })
-        .eq('id', taskId);
+    const updatePayload = {
+      ...baseUpdatePayload,
+      ...(shouldUpdateCompletion ? { closed_at: nextClosedAt } : {}),
+      ...(shouldUpdateCompletion ? { completed_at: nextCompletedAt } : {}),
+      ...(shouldUpdateCompletion ? { completed: nextCompleted } : {}),
+    };
 
-      if (completionError) {
-        console.error('Error syncing completion status:', completionError);
-        return NextResponse.json(
-          { error: 'Failed to update task status' },
-          { status: 500 }
-        );
-      }
+    const updateTaskRelationsPayload: TaskActorRpcArgs<'update_task_with_relations'> =
+      {
+        p_task_id: taskId,
+        p_task_updates: updatePayload,
+        p_assignee_ids: normalizedAssigneeIds,
+        p_replace_assignees: body.assignee_ids !== undefined,
+        p_label_ids: normalizedLabelIds,
+        p_replace_labels: body.label_ids !== undefined,
+        p_project_ids: normalizedProjectIds,
+        p_replace_projects: body.project_ids !== undefined,
+        p_actor_user_id: user.id,
+      };
+    const { data: updatedTaskRow, error: updateError } = await sbAdmin
+      .rpc('update_task_with_relations', updateTaskRelationsPayload)
+      .maybeSingle();
+
+    if (updateError) {
+      console.error('Error updating task:', updateError);
+      return NextResponse.json(
+        { error: 'Failed to update task' },
+        { status: 500 }
+      );
+    }
+
+    if (
+      !updatedTaskRow ||
+      updatedTaskRow.id !== task.id ||
+      updatedTaskRow.list_id !== expectedListId
+    ) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     if (body.deleted === true) {
@@ -785,7 +773,7 @@ export async function PATCH(
     const access = await requireWorkspaceAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { wsId, taskId } = access;
+    const { user, wsId, taskId } = access;
     const sbAdmin = await createAdminClient();
     restoreTaskSchema.parse(await request.json());
 
@@ -810,11 +798,14 @@ export async function PATCH(
       );
     }
 
+    const restoreTaskPayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =
+      {
+        p_task_id: taskId,
+        p_task_updates: { deleted_at: null },
+        p_actor_user_id: user.id,
+      };
     const { data: restoredTaskRow, error: restoreError } = await sbAdmin
-      .from('tasks')
-      .update({ deleted_at: null })
-      .eq('id', taskId)
-      .select('id, list_id')
+      .rpc('update_task_fields_with_actor', restoreTaskPayload)
       .maybeSingle();
 
     if (restoreError) {

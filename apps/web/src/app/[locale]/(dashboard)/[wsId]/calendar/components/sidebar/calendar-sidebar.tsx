@@ -17,9 +17,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import HabitFormDialog from '@tuturuuu/ui/tu-do/habits/habit-form-dialog';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import HabitFormDialog from '../../../tasks/habits/habit-form-dialog';
 import type { ExtendedWorkspaceTask } from '../../../time-tracker/types';
 import { useE2EE } from '../../hooks/use-e2ee';
 import CalendarConnectionsUnified from '../calendar-connections-unified';

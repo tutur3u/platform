@@ -114,6 +114,7 @@ export function getColumns({
       header: t('columns.user', { defaultValue: 'User' }),
       cell: ({ row }) => {
         const user = row.original.user;
+
         if (!user) {
           return (
             <span className="text-muted-foreground text-sm">

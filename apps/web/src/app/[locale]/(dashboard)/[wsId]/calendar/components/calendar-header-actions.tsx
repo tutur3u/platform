@@ -8,9 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import HabitFormDialog from '@tuturuuu/ui/tu-do/habits/habit-form-dialog';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import HabitFormDialog from '../../tasks/habits/habit-form-dialog';
 import { QuickTaskDialog } from './quick-task-dialog';
 import { SmartScheduleButton } from './smart-schedule-button';
 

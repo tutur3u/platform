@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
@@ -87,7 +88,7 @@ async function requireWorkspaceTaskAccess(
     };
   }
 
-  return { sbAdmin, taskId };
+  return { sbAdmin, taskId, user };
 }
 
 export async function GET(
@@ -145,7 +146,7 @@ export async function PATCH(
     const access = await requireWorkspaceTaskAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { sbAdmin, taskId } = access;
+    const { sbAdmin, taskId, user } = access;
     const body = updateTaskDescriptionSchema.parse(await request.json());
     const updatePayload = {
       ...(body.description !== undefined
@@ -156,11 +157,14 @@ export async function PATCH(
         : {}),
     };
 
+    const updateTaskPayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =
+      {
+        p_task_id: taskId,
+        p_task_updates: updatePayload,
+        p_actor_user_id: user.id,
+      };
     const { data, error } = await sbAdmin
-      .from('tasks')
-      .update(updatePayload)
-      .eq('id', taskId)
-      .select('id, description, description_yjs_state')
+      .rpc('update_task_fields_with_actor', updateTaskPayload)
       .maybeSingle();
 
     if (error) {

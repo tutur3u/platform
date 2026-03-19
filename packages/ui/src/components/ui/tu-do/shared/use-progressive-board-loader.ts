@@ -98,9 +98,18 @@ export function useProgressiveBoardLoader(
           ['tasks', boardId],
           (old: Task[] | undefined) => {
             const existing = old ?? [];
-            const existingIds = new Set(existing.map((t) => t.id));
-            const newTasks = result.tasks.filter((t) => !existingIds.has(t.id));
-            return [...existing, ...newTasks];
+            const incomingById = new Map(
+              result.tasks.map((task) => [task.id, task] as const)
+            );
+
+            const mergedExisting = existing.map((task) => {
+              const incomingTask = incomingById.get(task.id);
+              if (!incomingTask) return task;
+              incomingById.delete(task.id);
+              return { ...task, ...incomingTask };
+            });
+
+            return [...mergedExisting, ...incomingById.values()];
           }
         );
 

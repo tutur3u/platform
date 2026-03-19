@@ -1,8 +1,9 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -186,10 +187,15 @@ export async function POST(
       );
     }
 
-    const { error: insertError } = await sbAdmin.from('task_labels').insert({
-      task_id: parsedParams.data.taskId,
-      label_id: body.data.labelId,
-    });
+    const addLabelPayload: TaskActorRpcArgs<'add_task_label_with_actor'> = {
+      p_task_id: parsedParams.data.taskId,
+      p_label_id: body.data.labelId,
+      p_actor_user_id: user.id,
+    };
+    const { error: insertError } = await sbAdmin.rpc(
+      'add_task_label_with_actor',
+      addLabelPayload
+    );
 
     if (insertError && insertError.code !== '23505') {
       console.error('Failed to add task label:', insertError);
@@ -286,11 +292,16 @@ export async function DELETE(
       );
     }
 
-    const { error: deleteError } = await sbAdmin
-      .from('task_labels')
-      .delete()
-      .eq('task_id', parsedParams.data.taskId)
-      .eq('label_id', body.data.labelId);
+    const removeLabelPayload: TaskActorRpcArgs<'remove_task_label_with_actor'> =
+      {
+        p_task_id: parsedParams.data.taskId,
+        p_label_id: body.data.labelId,
+        p_actor_user_id: user.id,
+      };
+    const { error: deleteError } = await sbAdmin.rpc(
+      'remove_task_label_with_actor',
+      removeLabelPayload
+    );
 
     if (deleteError) {
       console.error('Failed to remove task label:', deleteError);
