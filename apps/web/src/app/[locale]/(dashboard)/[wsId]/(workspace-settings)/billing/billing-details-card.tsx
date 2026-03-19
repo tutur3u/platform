@@ -8,7 +8,7 @@ import {
   Loader2,
   RefreshCw,
 } from '@tuturuuu/icons';
-import type { AddressInput, CountryAlpha2Input } from '@tuturuuu/payment/polar';
+import type { AddressInput } from '@tuturuuu/payment/polar';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -51,6 +51,21 @@ const COUNTRY_OPTIONS: Array<{
     label,
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
+
+const COUNTRY_CODES = new Set(
+  COUNTRY_OPTIONS.map((option) => option.code).filter(
+    (code): code is NonNullable<AddressInput['country']> =>
+      typeof code === 'string'
+  )
+);
+
+function toCountryInput(
+  country: string
+): NonNullable<AddressInput['country']> | undefined {
+  return COUNTRY_CODES.has(country as NonNullable<AddressInput['country']>)
+    ? (country as NonNullable<AddressInput['country']>)
+    : 'US';
+}
 
 export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
   const t = useTranslations('billing');
@@ -100,7 +115,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
         line2: billingDetails.billingAddress.line2,
         postalCode: billingDetails.billingAddress.postalCode,
         city: billingDetails.billingAddress.city,
-        country: billingDetails.billingAddress.country as CountryAlpha2Input,
+        country: toCountryInput(billingDetails.billingAddress.country),
       },
       taxId: billingDetails.taxId,
     });
@@ -123,7 +138,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
           line2: result.data.billingAddress.line2,
           postalCode: result.data.billingAddress.postalCode,
           city: result.data.billingAddress.city,
-          country: result.data.billingAddress.country as CountryAlpha2Input,
+          country: toCountryInput(result.data.billingAddress.country),
         },
         taxId: result.data.taxId,
       });

@@ -1,3 +1,4 @@
+import type { Order, Product, Subscription } from '@tuturuuu/payment/polar';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -47,7 +48,7 @@ export const POST = Webhooks({
   onProductCreated: async (payload) => {
     try {
       const sbAdmin = await createAdminClient();
-      await syncProductToDatabase(sbAdmin, payload.data);
+      await syncProductToDatabase(sbAdmin, payload.data as Product);
 
       console.log(`Webhook: Product created successfully: ${payload.data.id}`);
     } catch (e) {
@@ -63,7 +64,7 @@ export const POST = Webhooks({
   onProductUpdated: async (payload) => {
     try {
       const sbAdmin = await createAdminClient();
-      await syncProductToDatabase(sbAdmin, payload.data);
+      await syncProductToDatabase(sbAdmin, payload.data as Product);
 
       console.log(`Webhook: Product updated successfully: ${payload.data.id}`);
     } catch (e) {
@@ -82,7 +83,7 @@ export const POST = Webhooks({
       const sbAdmin = await createAdminClient();
       const syncResult = await syncSubscriptionToDatabase(
         sbAdmin,
-        payload.data
+        payload.data as Subscription
       );
       if ('purchaseData' in syncResult) return;
       const { subscriptionData, isSeatBased } = syncResult;
@@ -137,7 +138,7 @@ export const POST = Webhooks({
       const sbAdmin = await createAdminClient();
       const syncResult = await syncSubscriptionToDatabase(
         sbAdmin,
-        payload.data
+        payload.data as Subscription
       );
       if ('purchaseData' in syncResult) return;
       const { subscriptionData, isSeatBased } = syncResult;
@@ -246,7 +247,7 @@ export const POST = Webhooks({
       const sbAdmin = await createAdminClient();
       const syncResult = await syncSubscriptionToDatabase(
         sbAdmin,
-        payload.data
+        payload.data as Subscription
       );
       if ('purchaseData' in syncResult) return;
       const { subscriptionData } = syncResult;
@@ -309,7 +310,7 @@ export const POST = Webhooks({
   onOrderCreated: async (payload) => {
     try {
       const sbAdmin = await createAdminClient();
-      await syncOrderToDatabase(sbAdmin, payload.data);
+      await syncOrderToDatabase(sbAdmin, payload.data as Order);
 
       console.log(`Webhook: Order created: ${payload.data.id}`);
     } catch (e) {
@@ -323,7 +324,7 @@ export const POST = Webhooks({
   onOrderUpdated: async (payload) => {
     try {
       const sbAdmin = await createAdminClient();
-      await syncOrderToDatabase(sbAdmin, payload.data);
+      await syncOrderToDatabase(sbAdmin, payload.data as Order);
 
       console.log(`Webhook: Order updated: ${payload.data.id}`);
     } catch (e) {

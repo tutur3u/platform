@@ -1,9 +1,8 @@
 'use server';
 
 import type {
+  Address,
   AddressInput,
-  CountryAlpha2,
-  CountryAlpha2Input,
   CustomerPaymentMethod,
 } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
@@ -20,6 +19,9 @@ interface ActionResult<T = void> {
   error?: string;
 }
 
+type BillingCountry = NonNullable<Address['country']>;
+type BillingCountryInput = NonNullable<AddressInput['country']>;
+
 export interface WorkspaceBillingDetails {
   email: string;
   name: string;
@@ -28,7 +30,7 @@ export interface WorkspaceBillingDetails {
     line2: string;
     postalCode: string;
     city: string;
-    country: CountryAlpha2;
+    country: BillingCountry;
   };
   taxId: string;
 }
@@ -41,7 +43,7 @@ export interface UpdateWorkspaceBillingDetailsInput {
     line2: string;
     postalCode: string;
     city: string;
-    country: CountryAlpha2Input;
+    country: BillingCountryInput;
   };
   taxId: string;
 }
@@ -189,7 +191,7 @@ export async function updateWorkspaceBillingDetails(
     });
 
     const normalizedBillingAddress: AddressInput = {
-      country: payload.billingAddress.country ?? undefined,
+      country: payload.billingAddress.country as AddressInput['country'],
       line1: payload.billingAddress.line1.trim() || null,
       line2: payload.billingAddress.line2.trim() || null,
       postalCode: payload.billingAddress.postalCode.trim() || null,

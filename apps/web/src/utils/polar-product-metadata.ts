@@ -1,6 +1,8 @@
 import type { Product } from '@tuturuuu/payment/polar';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
 
+type PolarMetadata = Product['metadata'];
+
 const VALID_TIERS: WorkspaceProductTier[] = [
   'FREE',
   'PLUS',
@@ -25,7 +27,7 @@ function parsePositiveInteger(value: unknown): number | null {
 }
 
 export function parseWorkspaceProductTier(
-  metadata: Product['metadata']
+  metadata: PolarMetadata
 ): WorkspaceProductTier | null {
   const tierRaw = metadata?.product_tier;
 
@@ -39,7 +41,7 @@ export function parseWorkspaceProductTier(
     : null;
 }
 
-export function isAiCreditPackProduct(metadata: Product['metadata']): boolean {
+export function isAiCreditPackProduct(metadata: PolarMetadata): boolean {
   const productType = metadata?.product_type;
   return (
     typeof productType === 'string' &&
@@ -47,8 +49,6 @@ export function isAiCreditPackProduct(metadata: Product['metadata']): boolean {
   );
 }
 
-export function parseCreditPackTokens(
-  metadata: Product['metadata']
-): number | null {
+export function parseCreditPackTokens(metadata: PolarMetadata): number | null {
   return parsePositiveInteger(metadata?.tokens);
 }

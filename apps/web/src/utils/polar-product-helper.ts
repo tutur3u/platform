@@ -12,7 +12,11 @@ type PolarPrice = Product['prices'][number];
 
 function isPolarPrice(value: unknown): value is PolarPrice {
   if (!value || typeof value !== 'object') return false;
-  return 'amountType' in value && 'priceAmount' in value;
+  return (
+    'amountType' in value &&
+    typeof value.amountType === 'string' &&
+    'priceAmount' in value
+  );
 }
 
 export type WorkspaceOrderProductKind =
@@ -110,6 +114,7 @@ async function upsertSubscriptionProduct(
     : null;
   const minSeats = isSeatBased ? firstPrice.seatTiers?.minimumSeats : null;
   const maxSeats = isSeatBased ? firstPrice.seatTiers?.maximumSeats : null;
+  const pricingModel = firstPrice.amountType ?? undefined;
 
   const productData = {
     id: product.id,
@@ -119,7 +124,7 @@ async function upsertSubscriptionProduct(
     recurring_interval: product.recurringInterval ?? 'month',
     tier,
     archived: product.isArchived ?? false,
-    pricing_model: firstPrice.amountType,
+    pricing_model: pricingModel,
     price_per_seat: pricePerSeat,
     min_seats: minSeats,
     max_seats: maxSeats,
@@ -127,7 +132,7 @@ async function upsertSubscriptionProduct(
 
   const { error: upsertError } = await supabase
     .from('workspace_subscription_products')
-    .upsert(productData, {
+    .upsert([productData], {
       onConflict: 'id',
       ignoreDuplicates: false,
     });
@@ -157,7 +162,7 @@ async function upsertCreditPackProduct(
       `Credit pack ${product.id} is missing a fixed price configuration`
     );
   }
-  const price = firstPrice.priceAmount;
+  const price = firstPrice.priceAmount ?? 0;
   const currency = firstPrice.priceCurrency
     ? firstPrice.priceCurrency.toLowerCase()
     : 'usd';
