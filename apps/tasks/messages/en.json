@@ -12019,6 +12019,8 @@
       "syncing_in_progress": "Syncing...",
       "task_deleted": "Task deleted",
       "task_deleted_description": "\"{name}\" was deleted due to redo operation",
+      "task_move_to_trash_failed": "Failed to move task to trash",
+      "task_moved_to_trash": "Task moved to trash",
       "task_name_placeholder": "What needs to be done?",
       "task_restored": "Task restored",
       "task_restored_description": "\"{name}\" was restored due to undo operation",
