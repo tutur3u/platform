@@ -8,9 +8,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import HabitFormDialog from '@tuturuuu/ui/tu-do/habits/habit-form-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-import HabitFormDialog from '../../tasks/habits/habit-form-dialog';
 
 interface HabitWithStreak extends Habit {
   streak?: HabitStreak;

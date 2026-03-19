@@ -130,6 +130,7 @@ export async function GET(
         description,
         priority,
         completed,
+        completed_at,
         start_date,
         end_date,
         estimation_points,
