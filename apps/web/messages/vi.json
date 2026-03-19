@@ -13277,6 +13277,8 @@
       "syncing_in_progress": "Đang đồng bộ...",
       "task_deleted": "Đã xóa công việc",
       "task_deleted_description": "\"{name}\" đã bị xóa do thao tác làm lại",
+      "task_move_to_trash_failed": "Không thể chuyển công việc vào thùng rác",
+      "task_moved_to_trash": "Đã chuyển công việc vào thùng rác",
       "task_name_placeholder": "Cần làm gì?",
       "task_restored": "Đã khôi phục công việc",
       "task_restored_description": "\"{name}\" đã được khôi phục do thao tác hoàn tác",

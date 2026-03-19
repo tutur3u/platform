@@ -1,10 +1,25 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockCreateWorkspaceTask } = vi.hoisted(() => ({
+  mockCreateWorkspaceTask: vi.fn(),
+}));
 
 vi.mock('@tuturuuu/supabase/next/client', () => ({
   createClient: vi.fn(() => ({})),
 }));
+
+vi.mock('@tuturuuu/internal-api/tasks', async () => {
+  const actual = await vi.importActual<
+    typeof import('@tuturuuu/internal-api/tasks')
+  >('@tuturuuu/internal-api/tasks');
+
+  return {
+    ...actual,
+    createWorkspaceTask: mockCreateWorkspaceTask,
+  };
+});
 
 import { createTask } from '../task-helper';
 
@@ -17,66 +32,20 @@ type TaskCreateInputWithScheduling = Partial<Task> & {
   auto_schedule?: boolean | null;
 };
 
-type InsertedTaskRecord = {
-  id: string;
-  name: string;
-  list_id: string;
-  created_at: string;
-};
-
-type ListQuery = {
-  eq: (column: 'id', value: string) => ListQuery;
-  single: () => Promise<{ data: { id: string; name: string } | null }>;
-};
-
-type TaskSortQuery = {
-  eq: (column: 'list_id', value: string) => TaskSortQuery;
-  is: (column: 'deleted_at', value: null) => TaskSortQuery;
-  order: (column: 'sort_key', options: { ascending: boolean }) => TaskSortQuery;
-  limit: (
-    count: number
-  ) => Promise<{ data: Array<{ sort_key: string | null }>; error: null }>;
-};
-
 function createSupabaseMock() {
-  const schedulingUpsert = vi.fn(async () => ({ error: null }));
-
-  const listQuery: ListQuery = {
+  const listQuery = {
     eq: vi.fn(() => listQuery),
-    single: vi.fn(async () => ({ data: { id: 'list-1', name: 'Backlog' } })),
+    single: vi.fn(async () => ({
+      data: {
+        id: 'list-1',
+        name: 'Backlog',
+        board_id: 'board-1',
+        status: 'not_started',
+        workspace_boards: { ws_id: 'ws-1' },
+      },
+      error: null,
+    })),
   };
-
-  const taskSortQuery: TaskSortQuery = {
-    eq: vi.fn(() => taskSortQuery),
-    is: vi.fn(() => taskSortQuery),
-    order: vi.fn(() => taskSortQuery),
-    limit: vi.fn(async () => ({ data: [], error: null })),
-  };
-
-  const insertedTask: InsertedTaskRecord = {
-    id: 'task-1',
-    name: 'Task title',
-    list_id: 'list-1',
-    created_at: '2026-01-01T00:00:00.000Z',
-  };
-
-  const taskInsertSingle = vi.fn(async () => ({
-    data: insertedTask,
-    error: null,
-  }));
-
-  const taskInsertSelect = vi.fn(() => ({
-    single: taskInsertSingle,
-  }));
-
-  const taskInsert = vi.fn(() => ({
-    select: taskInsertSelect,
-  }));
-
-  const taskSelect = vi.fn((columns: string) => {
-    if (columns === 'sort_key') return taskSortQuery;
-    throw new Error(`Unexpected tasks.select columns: ${columns}`);
-  });
 
   const from = vi.fn((table: string) => {
     if (table === 'task_lists') {
@@ -85,55 +54,79 @@ function createSupabaseMock() {
       };
     }
 
-    if (table === 'tasks') {
-      return {
-        select: taskSelect,
-        insert: taskInsert,
-      };
-    }
-
-    if (table === 'task_user_scheduling_settings') {
-      return {
-        upsert: schedulingUpsert,
-      };
-    }
-
     throw new Error(`Unexpected table: ${table}`);
   });
 
-  const supabase = {
-    auth: {
-      getUser: vi.fn(async () => ({
-        data: {
-          user: {
-            id: 'user-1',
-          },
-        },
-        error: null,
-      })),
-    },
-    from,
-  };
-
   return {
-    supabase: supabase as unknown as TypedSupabaseClient,
-    schedulingUpsert,
+    supabase: {
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: {
+            user: {
+              id: 'user-1',
+            },
+          },
+          error: null,
+        })),
+        getSession: vi.fn(async () => ({
+          data: {
+            session: {
+              access_token: 'token-1',
+            },
+          },
+          error: null,
+        })),
+      },
+      from,
+    } as unknown as TypedSupabaseClient,
   };
 }
 
 describe('createTask scheduling persistence', () => {
-  it('does not upsert scheduling when no scheduling fields are provided', async () => {
-    const { supabase, schedulingUpsert } = createSupabaseMock();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCreateWorkspaceTask.mockResolvedValue({
+      task: {
+        id: 'task-1',
+        name: 'Task title',
+        list_id: 'list-1',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    });
+  });
+
+  it('sends null scheduling fields when none are provided', async () => {
+    const { supabase } = createSupabaseMock();
 
     await createTask(supabase, 'list-1', {
       name: 'Task title',
     });
 
-    expect(schedulingUpsert).not.toHaveBeenCalled();
+    expect(mockCreateWorkspaceTask).toHaveBeenCalledTimes(1);
+    expect(mockCreateWorkspaceTask).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({
+        name: 'Task title',
+        listId: 'list-1',
+      }),
+      expect.any(Object)
+    );
+
+    const payload = mockCreateWorkspaceTask.mock.calls[0]?.[1] as Record<
+      string,
+      unknown
+    >;
+
+    expect(payload.total_duration).toBeNull();
+    expect(payload.is_splittable).toBeNull();
+    expect(payload.min_split_duration_minutes).toBeNull();
+    expect(payload.max_split_duration_minutes).toBeNull();
+    expect(payload.calendar_hours).toBeNull();
+    expect(payload.auto_schedule).toBeNull();
   });
 
-  it('upserts scheduling when scheduling fields are provided', async () => {
-    const { supabase, schedulingUpsert } = createSupabaseMock();
+  it('forwards scheduling fields when they are provided', async () => {
+    const { supabase } = createSupabaseMock();
 
     const taskInput: TaskCreateInputWithScheduling = {
       name: 'Task title',
@@ -147,11 +140,10 @@ describe('createTask scheduling persistence', () => {
 
     await createTask(supabase, 'list-1', taskInput);
 
-    expect(schedulingUpsert).toHaveBeenCalledTimes(1);
-    expect(schedulingUpsert).toHaveBeenCalledWith(
+    expect(mockCreateWorkspaceTask).toHaveBeenCalledTimes(1);
+    expect(mockCreateWorkspaceTask).toHaveBeenCalledWith(
+      'ws-1',
       expect.objectContaining({
-        task_id: 'task-1',
-        user_id: 'user-1',
         total_duration: 2,
         is_splittable: true,
         min_split_duration_minutes: 30,
@@ -159,12 +151,12 @@ describe('createTask scheduling persistence', () => {
         calendar_hours: 'work_hours',
         auto_schedule: true,
       }),
-      { onConflict: 'task_id,user_id' }
+      expect.any(Object)
     );
   });
 
-  it('keeps explicit false/null scheduling values instead of forcing true defaults', async () => {
-    const { supabase, schedulingUpsert } = createSupabaseMock();
+  it('keeps explicit false/null scheduling values instead of forcing defaults', async () => {
+    const { supabase } = createSupabaseMock();
 
     const taskInput: TaskCreateInputWithScheduling = {
       name: 'Task title',
@@ -178,15 +170,16 @@ describe('createTask scheduling persistence', () => {
 
     await createTask(supabase, 'list-1', taskInput);
 
-    expect(schedulingUpsert).toHaveBeenCalledTimes(1);
-    expect(schedulingUpsert).toHaveBeenCalledWith(
+    expect(mockCreateWorkspaceTask).toHaveBeenCalledTimes(1);
+    expect(mockCreateWorkspaceTask).toHaveBeenCalledWith(
+      'ws-1',
       expect.objectContaining({
         is_splittable: false,
         auto_schedule: false,
         total_duration: null,
         calendar_hours: null,
       }),
-      { onConflict: 'task_id,user_id' }
+      expect.any(Object)
     );
   });
 });

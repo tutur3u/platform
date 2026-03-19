@@ -1,6 +1,8 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { Trash } from '@tuturuuu/icons';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -9,13 +11,13 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useDeleteTask } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 
 interface TaskDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   taskId?: string;
-  boardId: string;
+  workspaceId?: string;
   isLoading: boolean;
   onSuccess: () => void;
   onClose: () => void;
@@ -25,22 +27,37 @@ export function TaskDeleteDialog({
   open,
   onOpenChange,
   taskId,
-  boardId,
+  workspaceId,
   isLoading,
   onSuccess,
   onClose,
 }: TaskDeleteDialogProps) {
-  const deleteTaskMutation = useDeleteTask(boardId);
+  const t = useTranslations('ws-task-boards.dialog');
+  const deleteTaskMutation = useMutation({
+    mutationFn: async () => {
+      if (!taskId) {
+        throw new Error('Task ID is required');
+      }
+      if (!workspaceId) {
+        throw new Error('Workspace ID is required');
+      }
+
+      return updateWorkspaceTask(workspaceId, taskId, { deleted: true });
+    },
+  });
 
   const handleDelete = async () => {
     if (!taskId) return;
-    deleteTaskMutation.mutate(taskId);
 
-    if (deleteTaskMutation.isSuccess) {
-      toast.success('Task moved to trash');
+    try {
+      await deleteTaskMutation.mutateAsync();
+      toast.success(t('task_moved_to_trash'));
       onOpenChange(false);
       onSuccess();
       onClose();
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      toast.error(t('task_move_to_trash_failed'));
     }
   };
 

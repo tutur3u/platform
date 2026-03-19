@@ -181,9 +181,10 @@ function TaskCardInner({
 
   // Use React Query hooks for shared data (cached across all task cards)
   const { data: boardConfig } = useBoardConfig(boardId);
-  const taskShareWsId = boardConfig?.ws_id ?? wsId;
+  const effectiveWorkspaceId = boardConfig?.ws_id ?? wsId;
+  const taskShareWsId = effectiveWorkspaceId;
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
-    useWorkspaceLabels(boardConfig?.ws_id);
+    useWorkspaceLabels(effectiveWorkspaceId);
 
   // Local state for UI interactions
   const [estimationSaving, setEstimationSaving] = useState(false);
@@ -201,7 +202,7 @@ function TaskCardInner({
     task,
     boardId,
     workspaceLabels,
-    workspaceId: boardConfig?.ws_id,
+    workspaceId: effectiveWorkspaceId,
     selectedTasks,
     isMultiSelectMode,
     onClearSelection,
@@ -210,12 +211,12 @@ function TaskCardInner({
   // Fetch workspace projects
   const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
     {
-      queryKey: ['task_projects', boardConfig?.ws_id],
+      queryKey: ['task_projects', effectiveWorkspaceId],
       queryFn: async () => {
-        if (!boardConfig?.ws_id) return [];
-        return listWorkspaceTaskProjects(boardConfig.ws_id);
+        if (!effectiveWorkspaceId) return [];
+        return listWorkspaceTaskProjects(effectiveWorkspaceId);
       },
-      enabled: !!boardConfig?.ws_id,
+      enabled: !!effectiveWorkspaceId,
       staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
     }
   );
@@ -231,7 +232,7 @@ function TaskCardInner({
     task,
     boardId,
     workspaceProjects,
-    workspaceId: boardConfig?.ws_id,
+    workspaceId: effectiveWorkspaceId,
     selectedTasks,
     isMultiSelectMode,
     onClearSelection,
@@ -261,7 +262,7 @@ function TaskCardInner({
   } = useTaskCardRelationships({
     taskId: task.id,
     boardId,
-    wsId: boardConfig?.ws_id,
+    wsId: effectiveWorkspaceId,
   });
 
   // Fetch available task lists using React Query (same key as other components)
@@ -386,7 +387,7 @@ function TaskCardInner({
   } = useTaskActions({
     task,
     boardId,
-    workspaceId: boardConfig?.ws_id,
+    workspaceId: effectiveWorkspaceId,
     targetCompletionList,
     targetClosedList,
     availableLists,
@@ -1348,11 +1349,11 @@ function TaskCardInner({
                   <DropdownMenuSeparator />
 
                   {/* Task Relationships Section */}
-                  {boardConfig?.ws_id && (
+                  {effectiveWorkspaceId && (
                     <>
                       {/* Parent Task Menu */}
                       <TaskParentMenu
-                        wsId={boardConfig.ws_id}
+                        wsId={effectiveWorkspaceId}
                         taskId={task.id}
                         parentTask={parentTask}
                         childTaskIds={childTasks.map((t) => t.id)}
@@ -1371,7 +1372,7 @@ function TaskCardInner({
 
                       {/* Blocking/Blocked By Menu */}
                       <TaskBlockingMenu
-                        wsId={boardConfig.ws_id}
+                        wsId={effectiveWorkspaceId}
                         taskId={task.id}
                         blockingTasks={blockingTasks}
                         blockedByTasks={blockedByTasks}
@@ -1398,7 +1399,7 @@ function TaskCardInner({
 
                       {/* Related Tasks Menu */}
                       <TaskRelatedMenu
-                        wsId={boardConfig.ws_id}
+                        wsId={effectiveWorkspaceId}
                         taskId={task.id}
                         relatedTasks={relatedTasks}
                         isSaving={relationshipSaving}

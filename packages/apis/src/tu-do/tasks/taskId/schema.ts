@@ -74,26 +74,20 @@ type TaskListContext = Pick<
   > | null;
 };
 
-type TaskAssigneeContext = {
-  user: Pick<
-    Database['public']['Tables']['users']['Row'],
-    'id' | 'display_name' | 'avatar_url'
-  > | null;
-};
+type TaskAssigneeContext = Pick<
+  Database['public']['Tables']['users']['Row'],
+  'id' | 'display_name' | 'avatar_url'
+> | null;
 
-type TaskLabelContext = {
-  label: Pick<
-    Database['public']['Tables']['workspace_task_labels']['Row'],
-    'id' | 'name' | 'color' | 'created_at'
-  > | null;
-};
+type TaskLabelContext = Pick<
+  Database['public']['Tables']['workspace_task_labels']['Row'],
+  'id' | 'name' | 'color' | 'created_at'
+> | null;
 
-type TaskProjectContext = {
-  project: Pick<
-    Database['public']['Tables']['task_projects']['Row'],
-    'id' | 'name' | 'status'
-  > | null;
-};
+type TaskProjectContext = Pick<
+  Database['public']['Tables']['task_projects']['Row'],
+  'id' | 'name' | 'status'
+> | null;
 
 export type TaskRecord = TaskBaseRow & {
   task_lists: TaskListContext | null;

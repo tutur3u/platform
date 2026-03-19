@@ -1676,7 +1676,7 @@ export function TaskEditDialog({
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         taskId={task?.id}
-        boardId={boardId}
+        workspaceId={taskWsId ?? wsId}
         isLoading={isLoading}
         onSuccess={onUpdate}
         onClose={onClose}

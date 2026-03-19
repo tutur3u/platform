@@ -31,8 +31,11 @@ export {
 export {
   createWorkspaceTask,
   createWorkspaceTaskBoard,
+  createWorkspaceTaskList,
   createWorkspaceTaskProject,
   createWorkspaceTaskRelationship,
+  createWorkspaceTaskWithRelationship,
+  deleteWorkspaceTask,
   deleteWorkspaceTaskBoard,
   deleteWorkspaceTaskRelationship,
   getWorkspaceBoardsData,
@@ -45,9 +48,11 @@ export {
   listWorkspaceTaskBoards,
   listWorkspaceTaskProjects,
   listWorkspaceTasks,
+  moveWorkspaceTask,
   resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
   updateWorkspaceTaskBoard,
+  updateWorkspaceTaskList,
 } from './tasks';
 export {
   type TaskSchedulingUpdatePayload,
