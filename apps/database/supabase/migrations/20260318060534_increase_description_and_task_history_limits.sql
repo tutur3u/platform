@@ -20,6 +20,10 @@ ALTER TABLE public.task_history DROP CONSTRAINT IF EXISTS new_value_strict_paylo
 ALTER TABLE public.task_history DROP CONSTRAINT IF EXISTS old_value_strict_payload_size_check;
 ALTER TABLE public.task_history DROP CONSTRAINT IF EXISTS metadata_strict_payload_size_check;
 
+ALTER TABLE public.task_history DROP CONSTRAINT IF EXISTS task_history_new_value_bytes_check;
+ALTER TABLE public.task_history DROP CONSTRAINT IF EXISTS task_history_old_value_bytes_check;
+ALTER TABLE public.task_history DROP CONSTRAINT IF EXISTS task_history_metadata_bytes_check;
+
 ALTER TABLE public.task_history 
 ADD CONSTRAINT task_history_new_value_bytes_check 
 CHECK ((new_value IS NULL) OR (octet_length(new_value::text) <= 400000));

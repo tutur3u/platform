@@ -25091,6 +25091,14 @@ export type Database = {
         };
         Returns: undefined;
       };
+      update_workspace_configs_with_approval_transitions: {
+        Args: {
+          p_actor_virtual_user_id?: string;
+          p_updates: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       upsert_calendar_events_and_count: {
         Args: { events: Json };
         Returns: Json;
