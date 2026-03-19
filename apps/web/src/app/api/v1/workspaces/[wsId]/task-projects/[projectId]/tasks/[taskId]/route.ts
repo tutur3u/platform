@@ -74,12 +74,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    const { data: deletedLinks, error } = await sbAdmin
-      .from('task_project_tasks')
-      .delete()
-      .eq('project_id', projectId)
-      .eq('task_id', taskId)
-      .select('project_id,task_id');
+    const { data: deletedLinks, error } = await sbAdmin.rpc(
+      'unlink_task_project_with_actor',
+      {
+        p_task_id: taskId,
+        p_project_id: projectId,
+        p_actor_user_id: user.id,
+      }
+    );
 
     if (error) {
       console.error('Error unlinking task from project:', error);

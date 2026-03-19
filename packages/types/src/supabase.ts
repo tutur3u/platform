@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.1';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -20127,36 +20132,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -21945,16 +21921,28 @@ export type Database = {
         Args: { p_balance_id: string };
         Returns: undefined;
       };
-      _resolve_table_associated_ws_id: {
-        Args: { p_new_record: Json; p_target_table: string };
-        Returns: {
-          user_id: string;
-          ws_id: string;
-        }[];
-      };
+      _resolve_table_associated_ws_id:
+        | {
+            Args: { p_target_table: string };
+            Returns: {
+              user_id: string;
+              ws_id: string;
+            }[];
+          }
+        | {
+            Args: { p_new_record: Json; p_target_table: string };
+            Returns: {
+              user_id: string;
+              ws_id: string;
+            }[];
+          };
       _resolve_user_personal_workspace_id: {
         Args: { p_user_id: string };
         Returns: string;
+      };
+      _resolve_user_personal_workspace_tier: {
+        Args: { p_user_id: string };
+        Returns: Database['public']['Enums']['workspace_product_tier'];
       };
       _resolve_workspace_tier: {
         Args: { p_ws_id: string };
@@ -21971,6 +21959,23 @@ export type Database = {
           p_updated_by?: string;
         };
         Returns: undefined;
+      };
+      add_task_label_with_actor: {
+        Args: {
+          p_actor_user_id?: string;
+          p_label_id: string;
+          p_task_id: string;
+        };
+        Returns: {
+          label_id: string;
+          task_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'task_labels';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       admin_get_ai_credit_entity_detail: {
         Args: { p_user_id?: string; p_ws_id?: string };
@@ -23582,6 +23587,10 @@ export type Database = {
           unique_users_count: number;
         }[];
       };
+      get_task_actor_display_name: {
+        Args: { p_actor_user_id: string };
+        Returns: string;
+      };
       get_task_children: {
         Args: { p_task_id: string };
         Returns: {
@@ -24382,17 +24391,30 @@ export type Database = {
         Args: { chat_id: string; message: string; source: string };
         Returns: undefined;
       };
-      insert_task_history: {
-        Args: {
-          p_change_type: string;
-          p_field_name?: string;
-          p_metadata?: Json;
-          p_new_value?: Json;
-          p_old_value?: Json;
-          p_task_id: string;
-        };
-        Returns: string;
-      };
+      insert_task_history:
+        | {
+            Args: {
+              p_change_type: string;
+              p_field_name?: string;
+              p_metadata?: Json;
+              p_new_value?: Json;
+              p_old_value?: Json;
+              p_task_id: string;
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
+              p_change_type: string;
+              p_created_by?: string;
+              p_field_name?: string;
+              p_metadata?: Json;
+              p_new_value?: Json;
+              p_old_value?: Json;
+              p_task_id: string;
+            };
+            Returns: string;
+          };
       insert_time_tracking_session_bypassed: {
         Args: {
           p_category_id?: string;
@@ -24500,6 +24522,24 @@ export type Database = {
       is_workspace_owner: {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: boolean;
+      };
+      link_task_project_with_actor: {
+        Args: {
+          p_actor_user_id?: string;
+          p_project_id: string;
+          p_task_id: string;
+        };
+        Returns: {
+          created_at: string | null;
+          project_id: string;
+          task_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'task_project_tasks';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       match_memories: {
         Args: {
@@ -24765,6 +24805,23 @@ export type Database = {
           success: boolean;
         }[];
       };
+      remove_task_label_with_actor: {
+        Args: {
+          p_actor_user_id?: string;
+          p_label_id: string;
+          p_task_id: string;
+        };
+        Returns: {
+          label_id: string;
+          task_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'task_labels';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       reserve_fixed_ai_credits: {
         Args: {
           p_amount: number;
@@ -24927,6 +24984,24 @@ export type Database = {
             Args: { input_date: string; week_start_day?: number };
             Returns: string;
           };
+      unlink_task_project_with_actor: {
+        Args: {
+          p_actor_user_id?: string;
+          p_project_id: string;
+          p_task_id: string;
+        };
+        Returns: {
+          created_at: string | null;
+          project_id: string;
+          task_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'task_project_tasks';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       update_expired_sessions: { Args: never; Returns: undefined };
       update_many_tasks: { Args: { updates: Json }; Returns: number };
       update_platform_entity_creation_limit_metadata: {
@@ -24993,8 +25068,44 @@ export type Database = {
         Args: { challenge_id_param: string; user_id_param: string };
         Returns: undefined;
       };
+      update_task_fields_with_actor: {
+        Args: {
+          p_actor_user_id?: string;
+          p_task_id: string;
+          p_task_updates: Json;
+        };
+        Returns: {
+          board_id: string | null;
+          closed_at: string | null;
+          completed: boolean | null;
+          completed_at: string | null;
+          created_at: string | null;
+          creator_id: string | null;
+          deleted_at: string | null;
+          description: string | null;
+          description_yjs_state: number[] | null;
+          display_number: number | null;
+          embedding: string | null;
+          end_date: string | null;
+          estimation_points: number | null;
+          fts: unknown;
+          id: string;
+          list_id: string | null;
+          name: string;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          sort_key: number | null;
+          start_date: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'tasks';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       update_task_with_relations: {
         Args: {
+          p_actor_user_id?: string;
           p_assignee_ids?: string[];
           p_label_ids?: string[];
           p_project_ids?: string[];
@@ -25002,7 +25113,7 @@ export type Database = {
           p_replace_labels?: boolean;
           p_replace_projects?: boolean;
           p_task_id: string;
-          p_task_updates?: Json;
+          p_task_updates: Json;
         };
         Returns: {
           board_id: string | null;

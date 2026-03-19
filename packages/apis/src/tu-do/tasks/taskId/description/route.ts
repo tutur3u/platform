@@ -87,7 +87,7 @@ async function requireWorkspaceTaskAccess(
     };
   }
 
-  return { sbAdmin, taskId };
+  return { sbAdmin, taskId, user };
 }
 
 export async function GET(
@@ -145,7 +145,7 @@ export async function PATCH(
     const access = await requireWorkspaceTaskAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { sbAdmin, taskId } = access;
+    const { sbAdmin, taskId, user } = access;
     const body = updateTaskDescriptionSchema.parse(await request.json());
     const updatePayload = {
       ...(body.description !== undefined
@@ -157,10 +157,11 @@ export async function PATCH(
     };
 
     const { data, error } = await sbAdmin
-      .from('tasks')
-      .update(updatePayload)
-      .eq('id', taskId)
-      .select('id, description, description_yjs_state')
+      .rpc('update_task_fields_with_actor', {
+        p_task_id: taskId,
+        p_task_updates: updatePayload,
+        p_actor_user_id: user.id,
+      })
       .maybeSingle();
 
     if (error) {

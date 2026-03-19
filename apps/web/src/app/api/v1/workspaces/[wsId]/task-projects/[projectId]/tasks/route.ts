@@ -338,12 +338,14 @@ export async function POST(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const { error: linkError } = await sbAdmin
-      .from('task_project_tasks')
-      .insert({
-        project_id: projectId,
-        task_id: taskId,
-      });
+    const { error: linkError } = await sbAdmin.rpc(
+      'link_task_project_with_actor',
+      {
+        p_task_id: taskId,
+        p_project_id: projectId,
+        p_actor_user_id: user.id,
+      }
+    );
 
     if (linkError) {
       if ('code' in linkError && linkError.code === '23505') {
