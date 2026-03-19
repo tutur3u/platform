@@ -304,6 +304,7 @@
     "taskBoardDetailTaskTitleRequired": "Task title is required",
     "taskBoardDetailTaskDescriptionLabel": "Description",
     "taskBoardDetailTaskDescriptionHint": "Add description",
+    "taskBoardDetailTaskDescriptionComingSoon": "Description editing is coming soon on mobile.",
     "taskBoardDetailTaskListLabel": "List",
     "taskBoardDetailTaskListSelect": "Choose list",
     "taskBoardDetailPriority": "Priority",

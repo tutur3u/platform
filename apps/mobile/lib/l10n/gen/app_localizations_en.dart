@@ -761,6 +761,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionHint => 'Add description';
 
   @override
+  String get taskBoardDetailTaskDescriptionComingSoon => 'Description editing is coming soon on mobile.';
+
+  @override
   String get taskBoardDetailTaskListLabel => 'List';
 
   @override

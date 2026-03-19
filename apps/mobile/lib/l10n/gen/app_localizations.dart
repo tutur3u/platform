@@ -1531,6 +1531,12 @@ abstract class AppLocalizations {
   /// **'Add description'**
   String get taskBoardDetailTaskDescriptionHint;
 
+  /// No description provided for @taskBoardDetailTaskDescriptionComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Description editing is coming soon on mobile.'**
+  String get taskBoardDetailTaskDescriptionComingSoon;
+
   /// No description provided for @taskBoardDetailTaskListLabel.
   ///
   /// In en, this message translates to:
