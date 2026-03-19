@@ -97,6 +97,10 @@ describe('Supabase Server Client', () => {
       expect(() => client.from('mira_accessories')).toThrow(
         getProxyOnlyPublicTableError('mira_accessories')
       );
+      expect(client.from('workspace_boards')).toEqual({
+        client: 'user',
+        table: 'workspace_boards',
+      });
     });
 
     it('should create a Bearer-token client when request has Authorization header', async () => {
@@ -144,6 +148,10 @@ describe('Supabase Server Client', () => {
         client: 'admin',
         table: 'workspace_calendars',
       });
+      expect(client.from('workspace_boards')).toEqual({
+        client: 'user',
+        table: 'workspace_boards',
+      });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
       expect(client.schema('public').from('mira_accessories')).toEqual({
         client: 'admin',
@@ -175,6 +183,10 @@ describe('Supabase Server Client', () => {
       expect(client.from('mira_accessories')).toEqual({
         client: 'admin',
         table: 'mira_accessories',
+      });
+      expect(client.from('workspace_boards')).toEqual({
+        client: 'user',
+        table: 'workspace_boards',
       });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
       expect(client.schema('public').from('mira_accessories')).toEqual({
@@ -231,6 +243,10 @@ describe('Supabase Server Client', () => {
       expect(() => client.from('workspace_calendars')).toThrow(
         getProxyOnlyPublicTableError('workspace_calendars')
       );
+      expect(client.from('workspace_boards')).toEqual({
+        client: 'user',
+        table: 'workspace_boards',
+      });
       expect(() => client.from('mira_accessories')).toThrow(
         getProxyOnlyPublicTableError('mira_accessories')
       );

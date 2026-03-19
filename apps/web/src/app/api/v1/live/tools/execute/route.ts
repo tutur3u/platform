@@ -1,5 +1,8 @@
 import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
@@ -457,6 +460,7 @@ async function createTask(
   args: Record<string, unknown>
 ) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const name = args.name as string;
   const description = args.description as string | undefined;
   const priorityArg = args.priority as string | undefined;
@@ -470,7 +474,7 @@ async function createTask(
       : null;
 
   // First, get the default board and list for the workspace
-  const { data: board, error: boardError } = await supabase
+  const { data: board, error: boardError } = await sbAdmin
     .from('workspace_boards')
     .select('id')
     .eq('ws_id', normalizedWsId)

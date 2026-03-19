@@ -43,6 +43,11 @@
       "import": "./dist/primitives/*.js",
       "require": "./dist/primitives/*.js"
     },
+    "./db": {
+      "types": "./dist/db.d.ts",
+      "import": "./dist/db.js",
+      "require": "./dist/db.js"
+    },
     "./tiptap": {
       "types": "./dist/tiptap.d.ts",
       "import": "./dist/tiptap.js",

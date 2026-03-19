@@ -84,7 +84,7 @@ export async function GET(req: Request, { params }: Params) {
     const page = searchParams.page;
     const pageSize = searchParams.pageSize;
 
-    const boardsQuery = supabase
+    const boardsQuery = sbAdmin
       .from('workspace_boards')
       .select('*', { count: 'exact' })
       .eq('ws_id', wsId)
@@ -115,7 +115,7 @@ export async function GET(req: Request, { params }: Params) {
 
     for (let i = 0; i < boardIds.length; i += BOARD_IDS_BATCH_SIZE) {
       const boardIdBatch = boardIds.slice(i, i + BOARD_IDS_BATCH_SIZE);
-      const { data: batchTaskLists, error: listsError } = await supabase
+      const { data: batchTaskLists, error: listsError } = await sbAdmin
         .from('task_lists')
         .select('id, board_id')
         .in('board_id', boardIdBatch)
@@ -259,7 +259,9 @@ export async function POST(req: Request, { params }: Params) {
         creator_id: user.id,
       };
 
-    const { data, error } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data, error } = await sbAdmin
       .from('workspace_boards')
       .insert(insertPayload)
       .select('*')

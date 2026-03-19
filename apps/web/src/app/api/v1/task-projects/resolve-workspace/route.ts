@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -14,6 +17,7 @@ const requestSchema = z
 export async function POST(request: Request) {
   try {
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     const {
       data: { user },
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
     const candidateWorkspaceIds = new Set<string>();
 
     if (body.data.boardId) {
-      const { data: board, error: boardError } = await supabase
+      const { data: board, error: boardError } = await sbAdmin
         .from('workspace_boards')
         .select('ws_id')
         .eq('id', body.data.boardId)

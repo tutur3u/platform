@@ -1,8 +1,10 @@
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { BoardClient } from '@tuturuuu/ui/tu-do/shared/board-client';
 import { getTaskBoard, getTaskLists } from '@tuturuuu/utils/task-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
@@ -38,7 +40,12 @@ export default async function TaskBoardServerPage({
 
   // Fetch board and lists in parallel (fast ~100ms)
   const [board, lists] = await Promise.all([
-    getTaskBoard(supabase, boardId),
+    getTaskBoard(
+      supabase,
+      boardId,
+      workspace.id,
+      withForwardedInternalApiAuth(await headers())
+    ),
     getTaskLists(supabase, boardId),
   ]);
 

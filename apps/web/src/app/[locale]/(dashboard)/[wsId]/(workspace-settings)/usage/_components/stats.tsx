@@ -1,9 +1,14 @@
 import {
+  listWorkspaceTaskBoards,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { formatBytes } from '@tuturuuu/utils/format';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import StatisticCard from '@/components/cards/StatisticCard';
 
@@ -279,7 +284,6 @@ export async function InventoryUsageStats({ wsId }: { wsId: string }) {
 // ============================================================================
 
 export async function TaskBoardsStats({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
   const permissions = await getPermissions({ wsId });
   if (!permissions) notFound();
   const { containsPermission } = permissions;
@@ -288,12 +292,13 @@ export async function TaskBoardsStats({ wsId }: { wsId: string }) {
     return <StatisticCard title="Boards" value="***" className="opacity-50" />;
   }
 
-  const { count } = await supabase
-    .from('workspace_boards')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId);
+  const payload = await listWorkspaceTaskBoards(
+    wsId,
+    { page: 1, pageSize: 1 },
+    withForwardedInternalApiAuth(await headers())
+  );
 
-  return <StatisticCard title="Boards" value={count || 0} />;
+  return <StatisticCard title="Boards" value={payload.count || 0} />;
 }
 
 export async function TaskProjectsStats({ wsId }: { wsId: string }) {

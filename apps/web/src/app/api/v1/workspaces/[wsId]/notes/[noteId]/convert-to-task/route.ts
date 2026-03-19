@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -15,6 +18,7 @@ export async function POST(
   try {
     const { wsId, noteId } = await params;
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get current user
     const {
@@ -81,7 +85,7 @@ export async function POST(
     }
 
     // Verify the list belongs to a board in this workspace
-    const { data: board, error: boardError } = await supabase
+    const { data: board, error: boardError } = await sbAdmin
       .from('workspace_boards')
       .select('id, ws_id')
       .eq('id', list.board_id)

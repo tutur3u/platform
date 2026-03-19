@@ -13,7 +13,7 @@ import {
   Tags,
   Users,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -74,17 +74,10 @@ export default function TemplatesClient({
   const { data: availableBoards = [], isLoading: isBoardsLoading } = useQuery({
     queryKey: ['template-source-boards', wsId],
     queryFn: async (): Promise<TemplateSourceBoard[]> => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_boards')
-        .select('id, name, ws_id')
-        .eq('ws_id', wsId)
-        .is('deleted_at', null)
-        .is('archived_at', null)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
+      const payload = await listWorkspaceTaskBoards(wsId);
+      return payload.boards
+        .filter((board) => !board.deleted_at && !board.archived_at)
+        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
     },
     enabled: pickerOpen,
   });
