@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
@@ -33,6 +34,41 @@ function calculateEndSortKey(prevSortKey: number | null | undefined) {
   }
 
   return prevSortKey + SORT_KEY_BASE_UNIT + uniqueSuffix;
+}
+
+async function cleanupCreatedTask(
+  sbAdmin: TypedSupabaseClient,
+  taskId: string
+) {
+  const cleanupOperations = [
+    sbAdmin
+      .from('task_user_scheduling_settings')
+      .delete()
+      .eq('task_id', taskId),
+    sbAdmin.from('task_assignees').delete().eq('task_id', taskId),
+    sbAdmin.from('task_project_tasks').delete().eq('task_id', taskId),
+    sbAdmin.from('task_labels').delete().eq('task_id', taskId),
+  ];
+
+  const cleanupResults = await Promise.all(cleanupOperations);
+
+  for (const result of cleanupResults) {
+    if (result.error) {
+      console.error(
+        'Failed to clean up task relation during rollback:',
+        result.error
+      );
+    }
+  }
+
+  const { error: taskCleanupError } = await sbAdmin
+    .from('tasks')
+    .delete()
+    .eq('id', taskId);
+
+  if (taskCleanupError) {
+    console.error('Failed to roll back created task:', taskCleanupError);
+  }
 }
 
 const CreateTaskSchema = z.object({
@@ -620,6 +656,7 @@ export async function POST(
           'Failed to persist task scheduling settings:',
           schedulingError
         );
+        await cleanupCreatedTask(sbAdmin, data.id);
         return NextResponse.json(
           { error: 'Failed to create task scheduling settings' },
           { status: 500 }

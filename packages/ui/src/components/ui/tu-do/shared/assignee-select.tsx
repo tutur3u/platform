@@ -19,7 +19,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { forwardRef, useImperativeHandle, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { useBoardBroadcast } from './board-broadcast-context';
 
 interface Member {
@@ -75,6 +75,12 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         }, new Map<string, Member>())
         .values()
     );
+    const [localAssigneesState, setLocalAssigneesState] =
+      useState<Member[]>(uniqueAssignees);
+
+    useEffect(() => {
+      setLocalAssigneesState(uniqueAssignees);
+    }, [uniqueAssignees]);
 
     // Fetch workspace members with React Query
     const {
@@ -123,13 +129,12 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
 
         const boardTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
         const currentTask = boardTasks?.find((task) => task.id === taskId);
-        const existingIds = currentTask?.assignees
-          ?.map((assignee) => assignee.id)
-          .filter(Boolean);
-
-        if (!existingIds) {
-          throw new Error(t('please_try_again_later'));
-        }
+        const existingIds =
+          currentTask?.assignees
+            ?.map((assignee) => assignee.id)
+            .filter(Boolean) ??
+          assignees?.map((assignee) => assignee.id).filter(Boolean) ??
+          localAssigneesState.map((assignee) => assignee.id).filter(Boolean);
 
         const nextIds =
           action === 'remove'
@@ -182,12 +187,31 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           }
         );
 
-        return { previousTasks };
+        const previousLocalAssignees = localAssigneesState;
+
+        setLocalAssigneesState((old) => {
+          if (action === 'add') {
+            const member = members.find((m) => m.id === memberId);
+            if (!member || old.some((assignee) => assignee.id === memberId)) {
+              return old;
+            }
+
+            return [...old, member];
+          }
+
+          return old.filter((assignee) => assignee.id !== memberId);
+        });
+
+        return { previousTasks, previousLocalAssignees };
       },
       onError: (err, _, context) => {
         // Rollback optimistic update on error
         if (context?.previousTasks) {
           queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+        }
+
+        if (context?.previousLocalAssignees) {
+          setLocalAssigneesState(context.previousLocalAssignees);
         }
 
         const errorMessage =

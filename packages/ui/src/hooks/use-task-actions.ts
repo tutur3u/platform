@@ -61,6 +61,72 @@ export function useTaskActions({
     return resolvedWorkspaceId;
   }, [task, workspaceId]);
 
+  const rollbackTaskIds = useCallback(
+    (previousTasks: Task[] | undefined, failedTaskIds: string[]) => {
+      if (!previousTasks || failedTaskIds.length === 0) {
+        return;
+      }
+
+      const previousTaskMap = new Map(
+        previousTasks.map((item) => [item.id, item])
+      );
+
+      queryClient.setQueryData<Task[]>(['tasks', boardId], (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return current.map((item) =>
+          failedTaskIds.includes(item.id)
+            ? previousTaskMap.get(item.id) || item
+            : item
+        );
+      });
+    },
+    [boardId, queryClient]
+  );
+
+  const restoreDeletedTaskIds = useCallback(
+    (
+      previousTasks: Task[] | undefined,
+      previousDeletedTasks: Task[] | undefined,
+      failedTaskIds: string[]
+    ) => {
+      if (!previousTasks || failedTaskIds.length === 0) {
+        return;
+      }
+
+      const failedTaskIdSet = new Set(failedTaskIds);
+      const failedTasks = previousTasks.filter((item) =>
+        failedTaskIdSet.has(item.id)
+      );
+
+      queryClient.setQueryData<Task[]>(['tasks', boardId], (current) => {
+        if (!current) {
+          return failedTasks;
+        }
+
+        const currentIds = new Set(current.map((item) => item.id));
+        const restoredTasks = failedTasks.filter(
+          (item) => !currentIds.has(item.id)
+        );
+        return [...restoredTasks, ...current];
+      });
+
+      queryClient.setQueryData<Task[]>(
+        ['deleted-tasks', boardId],
+        (current) => {
+          if (!current) {
+            return previousDeletedTasks;
+          }
+
+          return current.filter((item) => !failedTaskIdSet.has(item.id));
+        }
+      );
+    },
+    [boardId, queryClient]
+  );
+
   const handleArchiveToggle = useCallback(async () => {
     if (!task || !onUpdate) return;
     setIsLoading(true);
@@ -231,6 +297,10 @@ export function useTaskActions({
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
       const workspaceId = getWorkspaceId();
+      const failedTaskIds: string[] = [];
+      const previousTaskMap = new Map(
+        previousTasks?.map((item) => [item.id, item]) ?? []
+      );
 
       for (const taskId of tasksToMove) {
         try {
@@ -251,10 +321,23 @@ export function useTaskActions({
           });
           successCount++;
         } catch (error) {
+          failedTaskIds.push(taskId);
+          rollbackTaskIds(previousTasks, [taskId]);
+          const previousTask = previousTaskMap.get(taskId);
+          if (previousTask) {
+            broadcast?.('task:upsert', { task: previousTask });
+          }
           console.error(`Failed to move task ${taskId}:`, error);
         }
       }
       if (successCount === 0) throw new Error('Failed to move any tasks');
+
+      if (failedTaskIds.length > 0) {
+        toast.warning('Partial completion update', {
+          description: `${successCount}/${tasksToMove.length} tasks updated`,
+        });
+        return;
+      }
 
       const taskCount = successCount;
       toast.success(
@@ -292,6 +375,7 @@ export function useTaskActions({
     task,
     broadcast,
     getWorkspaceId,
+    rollbackTaskIds,
   ]);
 
   const handleMoveToClose = useCallback(async () => {
@@ -332,6 +416,10 @@ export function useTaskActions({
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
       const workspaceId = getWorkspaceId();
+      const failedTaskIds: string[] = [];
+      const previousTaskMap = new Map(
+        previousTasks?.map((item) => [item.id, item]) ?? []
+      );
 
       for (const taskId of tasksToMove) {
         try {
@@ -352,10 +440,23 @@ export function useTaskActions({
           });
           successCount++;
         } catch (error) {
+          failedTaskIds.push(taskId);
+          rollbackTaskIds(previousTasks, [taskId]);
+          const previousTask = previousTaskMap.get(taskId);
+          if (previousTask) {
+            broadcast?.('task:upsert', { task: previousTask });
+          }
           console.error(`Failed to move task ${taskId}:`, error);
         }
       }
       if (successCount === 0) throw new Error('Failed to move any tasks');
+
+      if (failedTaskIds.length > 0) {
+        toast.warning('Partial close update', {
+          description: `${successCount}/${tasksToMove.length} tasks updated`,
+        });
+        return;
+      }
 
       const taskCount = successCount;
       toast.success('Success', {
@@ -390,6 +491,7 @@ export function useTaskActions({
     task,
     broadcast,
     getWorkspaceId,
+    rollbackTaskIds,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -446,6 +548,10 @@ export function useTaskActions({
     try {
       let successCount = 0;
       const workspaceId = getWorkspaceId();
+      const failedTaskIds: string[] = [];
+      const previousTaskMap = new Map(
+        previousTasks?.map((item) => [item.id, item]) ?? []
+      );
 
       for (const tid of tasksToDelete) {
         try {
@@ -455,11 +561,24 @@ export function useTaskActions({
           broadcast?.('task:delete', { taskId: tid });
           successCount++;
         } catch (error) {
+          failedTaskIds.push(tid);
+          restoreDeletedTaskIds(previousTasks, previousDeletedTasks, [tid]);
+          const previousTask = previousTaskMap.get(tid);
+          if (previousTask) {
+            broadcast?.('task:upsert', { task: previousTask });
+          }
           console.error(`Failed to delete task ${tid}:`, error);
         }
       }
 
       if (successCount === 0) throw new Error('Failed to delete any tasks');
+
+      if (failedTaskIds.length > 0) {
+        toast.warning('Partial delete update', {
+          description: `${successCount}/${tasksToDelete.length} tasks deleted`,
+        });
+        return;
+      }
 
       const taskCount = tasksToDelete.length;
       toast.success('Success', {
@@ -499,6 +618,7 @@ export function useTaskActions({
     task,
     broadcast,
     getWorkspaceId,
+    restoreDeletedTaskIds,
   ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
@@ -703,6 +823,10 @@ export function useTaskActions({
         const workspaceId = getWorkspaceId();
 
         let successCount = 0;
+        const failedTaskIds: string[] = [];
+        const previousTaskMap = new Map(
+          previousTasks?.map((item) => [item.id, item]) ?? []
+        );
         for (const taskId of tasksToMove) {
           try {
             const { task: movedTask } = await updateWorkspaceTask(
@@ -722,10 +846,23 @@ export function useTaskActions({
             });
             successCount++;
           } catch (error) {
+            failedTaskIds.push(taskId);
+            rollbackTaskIds(previousTasks, [taskId]);
+            const previousTask = previousTaskMap.get(taskId);
+            if (previousTask) {
+              broadcast?.('task:upsert', { task: previousTask });
+            }
             console.error(`Failed to move task ${taskId}:`, error);
           }
         }
         if (successCount === 0) throw new Error('Failed to move any tasks');
+
+        if (failedTaskIds.length > 0) {
+          toast.warning('Partial move update', {
+            description: `${successCount}/${tasksToMove.length} tasks updated`,
+          });
+          return;
+        }
 
         const taskCount = successCount;
         toast.success('Success', {
@@ -761,6 +898,7 @@ export function useTaskActions({
       task,
       broadcast,
       getWorkspaceId,
+      rollbackTaskIds,
     ]
   );
 
@@ -1230,10 +1368,32 @@ export function useTaskActions({
         }
       } else {
         // Single task update via workspace API
+        const previousTasks = queryClient.getQueryData<Task[]>([
+          'tasks',
+          boardId,
+        ]);
+
         try {
+          queryClient.setQueryData(
+            ['tasks', boardId],
+            (old: Task[] | undefined) => {
+              if (!old) {
+                return old;
+              }
+
+              return old.map((item) =>
+                item.id === task.id ? { ...item, end_date: newDate } : item
+              );
+            }
+          );
+
           const workspaceId = getWorkspaceId();
           await updateWorkspaceTask(workspaceId, task.id, {
             end_date: newDate,
+          });
+
+          broadcast?.('task:upsert', {
+            task: { id: task.id, end_date: newDate },
           });
 
           toast.success('Due date updated', {
@@ -1242,6 +1402,9 @@ export function useTaskActions({
               : 'Due date removed',
           });
         } catch (error) {
+          if (previousTasks) {
+            queryClient.setQueryData(['tasks', boardId], previousTasks);
+          }
           console.error('Failed to update due date:', error);
           toast.error('Failed to update due date. Please try again.');
         } finally {
@@ -1258,6 +1421,9 @@ export function useTaskActions({
       selectedTasks,
       bulkUpdateCustomDueDate,
       task,
+      queryClient,
+      boardId,
+      broadcast,
     ]
   );
 

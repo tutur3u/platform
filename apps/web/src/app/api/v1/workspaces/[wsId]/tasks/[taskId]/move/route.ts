@@ -186,6 +186,8 @@ export async function POST(
         `
         id,
         list_id,
+        completed,
+        completed_at,
         closed_at,
         task_lists!inner(
           status,
@@ -252,29 +254,52 @@ export async function POST(
     const sourceListStatus = currentTask.task_lists.status;
     const targetListStatus = targetList.status;
     const currentlyArchived = !!currentTask.closed_at;
+    const isSourceCompletionList =
+      sourceListStatus === 'done' || sourceListStatus === 'closed';
+    const isTargetCompletionList =
+      targetListStatus === 'done' || targetListStatus === 'closed';
+    const completionTimestamp = new Date().toISOString();
 
     let closedAt: string | null;
-    if (targetListStatus === 'done' || targetListStatus === 'closed') {
-      closedAt = new Date().toISOString();
-    } else if (sourceListStatus === 'done' || sourceListStatus === 'closed') {
+    if (isTargetCompletionList) {
+      closedAt = completionTimestamp;
+    } else if (isSourceCompletionList) {
       closedAt = null;
     } else {
       closedAt = currentlyArchived ? currentTask.closed_at : null;
     }
 
+    let completed: boolean | null;
+    let completedAt: string | null;
+
+    if (isTargetCompletionList) {
+      completed = true;
+      completedAt = completionTimestamp;
+    } else if (isSourceCompletionList) {
+      completed = false;
+      completedAt = null;
+    } else {
+      completed = currentTask.completed;
+      completedAt = currentTask.completed_at;
+    }
+
     const updatePayload: Database['public']['Tables']['tasks']['Update'] = {
       list_id: body.list_id,
       closed_at: closedAt,
+      completed,
+      completed_at: completedAt,
     };
 
     if (movedToDifferentBoard) {
       updatePayload.display_number = null;
     }
 
-    const { error: updateError } = await sbAdmin
+    const { data: updatedTask, error: updateError } = await sbAdmin
       .from('tasks')
       .update(updatePayload)
-      .eq('id', taskId);
+      .eq('id', taskId)
+      .select('id, list_id')
+      .maybeSingle();
 
     if (updateError) {
       return NextResponse.json(
@@ -283,7 +308,11 @@ export async function POST(
       );
     }
 
-    const { data: updatedTask, error: updatedTaskError } = await sbAdmin
+    if (!updatedTask || updatedTask.list_id !== body.list_id) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    const { data: reloadedTask, error: updatedTaskError } = await sbAdmin
       .from('tasks')
       .select(
         `
@@ -334,14 +363,14 @@ export async function POST(
       );
     }
 
-    if (!updatedTask) {
+    if (!reloadedTask) {
       return NextResponse.json(
         { error: 'Task not found after move' },
         { status: 404 }
       );
     }
 
-    const rawTask = updatedTask as unknown as {
+    const rawTask = reloadedTask as unknown as {
       assignees?: Array<{
         users?: TaskMoveRow['assignees'] extends Array<infer U> ? U : never;
       }>;

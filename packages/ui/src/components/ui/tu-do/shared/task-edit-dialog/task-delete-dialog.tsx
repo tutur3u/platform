@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 
 interface TaskDeleteDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function TaskDeleteDialog({
   onSuccess,
   onClose,
 }: TaskDeleteDialogProps) {
+  const t = useTranslations('ws-task-boards.dialog');
   const deleteTaskMutation = useMutation({
     mutationFn: async () => {
       if (!taskId) {
@@ -49,13 +51,13 @@ export function TaskDeleteDialog({
 
     try {
       await deleteTaskMutation.mutateAsync();
-      toast.success('Task moved to trash');
+      toast.success(t('task_moved_to_trash'));
       onOpenChange(false);
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Failed to delete task:', error);
-      toast.error('Failed to move task to trash');
+      toast.error(t('task_move_to_trash_failed'));
     }
   };
 

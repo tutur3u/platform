@@ -160,14 +160,10 @@ export interface CreateWorkspaceTaskPayload {
 }
 
 export interface WorkspaceTaskBoardResponse {
-  board: {
-    id: string;
-    ws_id: string;
-    name: string;
-    icon: string | null;
-    template_id?: string | null;
-    created_at: string;
-  };
+  board: Pick<
+    WorkspaceTaskBoardRow,
+    'id' | 'ws_id' | 'name' | 'icon' | 'template_id' | 'created_at'
+  >;
 }
 
 export interface CreateWorkspaceTaskListPayload {

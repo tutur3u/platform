@@ -15,6 +15,153 @@ const bodySchema = z.object({
   currentTaskIsSource: z.boolean(),
 });
 
+type RpcUser = {
+  id?: string | null;
+  display_name?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  handle?: string | null;
+};
+
+type RpcLabel = {
+  id?: string | null;
+  name?: string | null;
+  color?: string | null;
+  created_at?: string | null;
+};
+
+type RpcProject = {
+  id?: string | null;
+  name?: string | null;
+  status?: string | null;
+};
+
+type RelationshipRpcTask = Omit<
+  CreateTaskWithRelationshipResult['task'],
+  'assignees' | 'labels' | 'projects'
+> & {
+  board_id?: string | null;
+  completed?: boolean | null;
+  assignees?: Array<{ user?: RpcUser | null } | RpcUser | null>;
+  labels?: Array<{ label?: RpcLabel | null } | RpcLabel | null>;
+  projects?: Array<{ project?: RpcProject | null } | RpcProject | null>;
+};
+
+function unwrapRpcUser(
+  entry: { user?: RpcUser | null } | RpcUser | null | undefined
+): RpcUser | null {
+  if (!entry) {
+    return null;
+  }
+
+  if ('user' in entry) {
+    return entry.user ?? null;
+  }
+
+  return entry as RpcUser;
+}
+
+function unwrapRpcLabel(
+  entry: { label?: RpcLabel | null } | RpcLabel | null | undefined
+): RpcLabel | null {
+  if (!entry) {
+    return null;
+  }
+
+  if ('label' in entry) {
+    return entry.label ?? null;
+  }
+
+  return entry as RpcLabel;
+}
+
+function unwrapRpcProject(
+  entry: { project?: RpcProject | null } | RpcProject | null | undefined
+): RpcProject | null {
+  if (!entry) {
+    return null;
+  }
+
+  if ('project' in entry) {
+    return entry.project ?? null;
+  }
+
+  return entry as RpcProject;
+}
+
+function normalizeCreatedTask(
+  task: RelationshipRpcTask,
+  listContext: {
+    id: string;
+    name: string | null;
+    status: string | null;
+    workspace_boards: {
+      id: string;
+      name: string | null;
+      ws_id: string;
+    } | null;
+  }
+) {
+  const assignees = (task.assignees ?? []).flatMap((entry) => {
+    const user = unwrapRpcUser(entry);
+    if (!user?.id) {
+      return [];
+    }
+
+    return [
+      {
+        id: user.id,
+        display_name: user.display_name ?? null,
+        email: user.email ?? null,
+        avatar_url: user.avatar_url ?? null,
+        handle: user.handle ?? null,
+      },
+    ];
+  });
+
+  const labels = (task.labels ?? []).flatMap((entry) => {
+    const label = unwrapRpcLabel(entry);
+    if (!label?.id || !label.name || !label.color || !label.created_at) {
+      return [];
+    }
+
+    return [
+      {
+        id: label.id,
+        name: label.name,
+        color: label.color,
+        created_at: label.created_at,
+      },
+    ];
+  });
+
+  const projects = (task.projects ?? []).flatMap((entry) => {
+    const project = unwrapRpcProject(entry);
+    if (!project?.id || !project.name) {
+      return [];
+    }
+
+    return [
+      {
+        id: project.id,
+        name: project.name,
+        status: project.status ?? null,
+      },
+    ];
+  });
+
+  return {
+    ...task,
+    board_id: task.board_id ?? listContext.workspace_boards?.id ?? null,
+    board_name: listContext.workspace_boards?.name ?? null,
+    list_name: listContext.name,
+    list_status: listContext.status,
+    assignees,
+    labels,
+    projects,
+  };
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -22,7 +169,6 @@ export async function POST(
   try {
     const { wsId: rawWsId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -32,6 +178,8 @@ export async function POST(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
@@ -59,7 +207,9 @@ export async function POST(
 
     const { data: listCheck, error: listError } = await sbAdmin
       .from('task_lists')
-      .select('id, deleted, workspace_boards!inner(ws_id)')
+      .select(
+        'id, name, status, deleted, workspace_boards!inner(id, name, ws_id)'
+      )
       .eq('id', body.listId)
       .maybeSingle();
 
@@ -133,13 +283,21 @@ export async function POST(
         );
       }
 
-      return NextResponse.json({ error: message }, { status: 500 });
+      console.error('create_task_with_relationship RPC failed:', error);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
     }
 
     const result = data as unknown as CreateTaskWithRelationshipResult;
+    const normalizedTask = normalizeCreatedTask(
+      result.task as RelationshipRpcTask,
+      listCheck
+    );
 
     return NextResponse.json({
-      task: result.task,
+      task: normalizedTask,
       relationship: result.relationship,
     });
   } catch (error) {
