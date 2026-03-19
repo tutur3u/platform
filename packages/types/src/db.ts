@@ -69,7 +69,8 @@ export type WorkspaceFormShareLink = Tables<'form_share_links'>;
 export type WorkspaceFormSession = Tables<'form_sessions'>;
 export type WorkspaceFormResponse = Tables<'form_responses'>;
 export type WorkspaceFormResponseAnswer = Tables<'form_response_answers'>;
-export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
+export type WorkspaceTaskBoardRow = Tables<'workspace_boards'>;
+export type WorkspaceTaskBoard = WorkspaceTaskBoardRow & {
   href?: string;
   lists?: Partial<WorkspaceTaskList>[];
 };

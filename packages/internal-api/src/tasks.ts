@@ -1,7 +1,7 @@
 import type {
   Database,
-  Tables,
   TaskProjectWithRelations,
+  WorkspaceTaskBoardRow,
 } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -69,9 +69,7 @@ export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
 }
 
-type WorkspaceTaskBoardRow = Tables<'workspace_boards'>;
-
-export type WorkspaceTaskBoardSummary = Pick<
+export type WorkspaceTaskBoardListItem = Pick<
   WorkspaceTaskBoardRow,
   | 'id'
   | 'ws_id'
@@ -90,6 +88,26 @@ export type WorkspaceTaskBoardSummary = Pick<
   task_count?: number;
 };
 
+export interface WorkspaceTaskListSummary {
+  id: string;
+  name: string | null;
+  status: string | null;
+  color: string | null;
+  position: number | null;
+  deleted?: boolean;
+}
+
+export type WorkspaceTaskBoardDetail = WorkspaceTaskBoardRow & {
+  task_lists?: WorkspaceTaskListSummary[];
+};
+
+export type WorkspaceTaskBoardWithLists = Pick<
+  WorkspaceTaskBoardRow,
+  'id' | 'name' | 'created_at'
+> & {
+  task_lists: WorkspaceTaskListSummary[];
+};
+
 export interface ListWorkspaceTaskBoardsOptions {
   q?: string;
   page?: number;
@@ -97,12 +115,12 @@ export interface ListWorkspaceTaskBoardsOptions {
 }
 
 export interface ListWorkspaceTaskBoardsResponse {
-  boards: WorkspaceTaskBoardSummary[];
+  boards: WorkspaceTaskBoardListItem[];
   count: number;
 }
 
 export interface WorkspaceBoardsDataResponse {
-  data: WorkspaceTaskBoardSummary[];
+  data: WorkspaceTaskBoardDetail[];
   count: number;
 }
 
@@ -215,7 +233,7 @@ export async function listWorkspaceBoardsWithLists(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ boards: WorkspaceTaskBoardSummary[] }>(
+  return client.json<{ boards: WorkspaceTaskBoardWithLists[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards-with-lists`,
     {
       cache: 'no-store',
@@ -229,7 +247,7 @@ export async function createWorkspaceTaskBoard(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ board: WorkspaceTaskBoardSummary }>(
+  return client.json<{ board: WorkspaceTaskBoardDetail }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards`,
     {
       method: 'POST',
@@ -248,7 +266,7 @@ export async function getWorkspaceTaskBoard(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ board: WorkspaceTaskBoardSummary }>(
+  return client.json<{ board: WorkspaceTaskBoardDetail }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
     {
       cache: 'no-store',

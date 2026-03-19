@@ -80,17 +80,20 @@ describe('task-helper workspace board API routing', () => {
     });
 
     const result = await createBoardWithTemplate(
-      {} as TypedSupabaseClient,
       'ws-1',
       'Board 1',
       'template-1'
     );
 
-    expect(createWorkspaceTaskBoardMock).toHaveBeenCalledWith('ws-1', {
-      name: 'Board 1',
-      template_id: 'template-1',
-      icon: null,
-    });
+    expect(createWorkspaceTaskBoardMock).toHaveBeenCalledWith(
+      'ws-1',
+      {
+        name: 'Board 1',
+        template_id: 'template-1',
+        icon: null,
+      },
+      undefined
+    );
     expect(result).toEqual(
       expect.objectContaining({
         id: 'board-1',

@@ -58,7 +58,10 @@ export function DraftConvertDialog({
   const { data: boards = [] } = useQuery({
     queryKey: ['workspace-boards', wsId],
     queryFn: async () => {
-      const payload = await listWorkspaceTaskBoards(wsId);
+      const payload = await listWorkspaceTaskBoards(wsId, {
+        page: 1,
+        pageSize: 200,
+      });
       return payload.boards
         .filter((board) => !board.deleted_at)
         .map((board) => ({ id: board.id, name: board.name ?? '' }));

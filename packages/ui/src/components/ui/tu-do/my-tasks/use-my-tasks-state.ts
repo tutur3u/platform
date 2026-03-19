@@ -206,12 +206,37 @@ export function useMyTasksState({
       const workspaceIds = workspaces.map((workspace) => workspace.id);
       if (workspaceIds.length === 0) return [];
 
-      const boardPayloads = await Promise.all(
-        workspaceIds.map((workspaceId) => listWorkspaceTaskBoards(workspaceId))
+      const fetchAllWorkspaceBoards = async (workspaceId: string) => {
+        const pageSize = 200;
+        const boards: Awaited<
+          ReturnType<typeof listWorkspaceTaskBoards>
+        >['boards'] = [];
+        let page = 1;
+
+        while (true) {
+          const payload = await listWorkspaceTaskBoards(workspaceId, {
+            page,
+            pageSize,
+          });
+          const pageBoards = payload.boards ?? [];
+          boards.push(...pageBoards);
+
+          if (pageBoards.length < pageSize) {
+            break;
+          }
+
+          page += 1;
+        }
+
+        return boards;
+      };
+
+      const boardGroups = await Promise.all(
+        workspaceIds.map((workspaceId) => fetchAllWorkspaceBoards(workspaceId))
       );
 
-      return boardPayloads
-        .flatMap((payload) => payload.boards)
+      return boardGroups
+        .flatMap((boards) => boards)
         .filter((board) => !board.deleted_at)
         .map((board) => ({
           id: board.id,
