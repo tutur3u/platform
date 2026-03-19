@@ -435,7 +435,6 @@ export function TaskDescriptionEditor({
               id={storagePopoverId}
               role="dialog"
               aria-label={storageStatusText}
-              tabIndex={0}
               className={cn(
                 'absolute right-0 bottom-12 w-[min(70vw,20rem)] rounded-lg border bg-background/95 p-2 shadow-md backdrop-blur-sm transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 isStoragePopoverOpen
