@@ -104,6 +104,10 @@ vi.mock('@tuturuuu/utils/email/server', () => ({
   validateOtp: vi.fn(),
 }));
 
+vi.mock('@/constants/common', () => ({
+  DEV_MODE: true,
+}));
+
 describe('sendOtpAction', () => {
   beforeEach(() => {
     vi.resetModules();

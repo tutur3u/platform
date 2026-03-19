@@ -98,6 +98,10 @@ vi.mock('@tuturuuu/utils/email/server', () => ({
     mocks.validateEmail(...args),
 }));
 
+vi.mock('@/constants/common', () => ({
+  DEV_MODE: true,
+}));
+
 describe('mobile send-otp route', () => {
   beforeEach(() => {
     vi.resetModules();

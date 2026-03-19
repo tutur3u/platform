@@ -25,7 +25,6 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -39,12 +38,21 @@ const COOLDOWN_DURATION = 60;
 const MAX_OTP_LENGTH = 6;
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 
-export default function LoginForm({ isExternal }: { isExternal: boolean }) {
+export default function LoginForm({
+  isExternal,
+  allowOtp,
+}: {
+  isExternal: boolean;
+  allowOtp: boolean;
+}) {
   const supabase = createClient();
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const showOtpLogin = allowOtp;
+  const showSocialLogin = true;
+  const showPasswordLogin = true;
 
   // Helper function to process email input
   const processEmailInput = (value: string): string => {
@@ -129,16 +137,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     },
   });
 
-  // State Management
-  const passwordless =
-    searchParams.get('passwordless') !== 'false' && !DEV_MODE;
   const [initialized, setInitialized] = useState(false);
   const [readyForAuth, setReadyForAuth] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [requiresMFA, setRequiresMFA] = useState(false);
-  const [loginMethod, setLoginMethod] = useState<'passwordless' | 'password'>(
-    passwordless ? 'passwordless' : 'password'
-  );
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -732,14 +734,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   };
 
   useEffect(() => {
-    if (passwordless) {
-      setLoginMethod('passwordless');
-    } else {
-      setLoginMethod('password');
-    }
-  }, [passwordless]);
-
-  useEffect(() => {
     async function checkUser() {
       const {
         data: { user },
@@ -785,13 +779,13 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
   useEffect(() => {
     if (DEV_MODE) {
-      if (loginMethod === 'passwordless') {
+      if (showOtpLogin) {
         otpForm.setFocus('email');
-      } else {
+      } else if (showPasswordLogin) {
         passwordForm.setFocus('email');
       }
     }
-  }, [loginMethod, otpForm, passwordForm]);
+  }, [showOtpLogin, otpForm, passwordForm]);
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -884,6 +878,40 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     );
   }
 
+  const socialLoginButtons = showSocialLogin ? (
+    <div className="space-y-3">
+      <Button
+        variant="outline"
+        onClick={handleGoogleLogin}
+        disabled={_isLoading}
+        className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+      >
+        <div className="absolute left-4">
+          <Image
+            src="/media/google-logo.png"
+            alt="Google"
+            width={20}
+            height={20}
+            className="object-contain transition-transform duration-200 group-hover:scale-110"
+          />
+        </div>
+        <span className="font-medium">{t('login.continue_with_google')}</span>
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={handleGitHubLogin}
+        disabled={_isLoading}
+        className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+      >
+        <div className="absolute left-4">
+          <Github className="size-5 transition-transform duration-200 group-hover:scale-110" />
+        </div>
+        <span className="font-medium">{t('login.continue_with_github')}</span>
+      </Button>
+    </div>
+  ) : null;
+
   // Main Login Form
   return (
     <Card className="overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl">
@@ -898,32 +926,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
             {t('login.choose_sign_in_method')}
           </p>
         </div>
-
-        <Tabs
-          className="w-full"
-          value={loginMethod}
-          defaultValue={loginMethod}
-          onValueChange={(value) =>
-            setLoginMethod(value as 'passwordless' | 'password')
-          }
-        >
-          <TabsList className="grid w-full grid-cols-2 rounded-xl bg-gray-100/50 p-1 backdrop-blur-sm dark:bg-gray-800/50">
-            <TabsTrigger
-              value="passwordless"
-              className="rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-md dark:data-[state=active]:bg-gray-700"
-            >
-              {t('login.passwordless')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="password"
-              className="rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-md dark:data-[state=active]:bg-gray-700"
-            >
-              {t('login.with_password')}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Passwordless (OTP) Login */}
-          <TabsContent value="passwordless" className="mt-6 space-y-4">
+        {showOtpLogin && (
+          <div className="space-y-4">
             <Form {...otpForm}>
               <form
                 onSubmit={otpForm.handleSubmit(onOtpSubmit)}
@@ -1132,59 +1136,35 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                 )}
               </form>
             </Form>
+          </div>
+        )}
 
-            {!otpSent && (
-              <>
-                <div className="relative my-6">
-                  <Separator className="bg-gray-200/50 dark:bg-gray-700/50" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="rounded-full border bg-white/80 px-3 py-1 font-medium text-muted-foreground text-xs backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80">
-                      {t('login.or')}
-                    </span>
-                  </div>
-                </div>
+        {showOtpLogin && !otpSent && (
+          <div className="relative">
+            <Separator className="bg-gray-200/50 dark:bg-gray-700/50" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="rounded-full border bg-white/80 px-3 py-1 font-medium text-muted-foreground text-xs backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80">
+                {t('login.or')}
+              </span>
+            </div>
+          </div>
+        )}
 
-                <div className="space-y-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleGoogleLogin}
-                    disabled={_isLoading}
-                    className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
-                  >
-                    <div className="absolute left-4">
-                      <Image
-                        src="/media/google-logo.png"
-                        alt="Google"
-                        width={20}
-                        height={20}
-                        className="object-contain transition-transform duration-200 group-hover:scale-110"
-                      />
-                    </div>
-                    <span className="font-medium">
-                      {t('login.continue_with_google')}
-                    </span>
-                  </Button>
+        {showSocialLogin && !otpSent && socialLoginButtons}
 
-                  <Button
-                    variant="outline"
-                    onClick={handleGitHubLogin}
-                    disabled={_isLoading}
-                    className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
-                  >
-                    <div className="absolute left-4">
-                      <Github className="size-5 transition-transform duration-200 group-hover:scale-110" />
-                    </div>
-                    <span className="font-medium">
-                      {t('login.continue_with_github')}
-                    </span>
-                  </Button>
-                </div>
-              </>
-            )}
-          </TabsContent>
+        {showSocialLogin && showPasswordLogin && (
+          <div className="relative">
+            <Separator className="bg-gray-200/50 dark:bg-gray-700/50" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="rounded-full border bg-white/80 px-3 py-1 font-medium text-muted-foreground text-xs backdrop-blur-sm dark:border-gray-700/50 dark:bg-gray-900/80">
+                {t('login.or')}
+              </span>
+            </div>
+          </div>
+        )}
 
-          {/* Password Login */}
-          <TabsContent value="password" className="mt-6 space-y-4">
+        {showPasswordLogin && (
+          <div className="space-y-4">
             <Form {...passwordForm}>
               <form
                 onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
@@ -1335,24 +1315,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     t('login.sign_in')
                   )}
                 </Button>
-
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="text-primary text-sm transition-colors duration-200 hover:text-primary/80"
-                    onClick={() => {
-                      setLoginMethod('passwordless');
-                      passwordForm.reset();
-                    }}
-                  >
-                    {t('login.forgot_password')}
-                  </Button>
-                </div>
               </form>
             </Form>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

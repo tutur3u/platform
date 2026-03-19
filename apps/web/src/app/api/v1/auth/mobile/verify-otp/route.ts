@@ -17,6 +17,7 @@ import { validateEmail, validateOtp } from '@tuturuuu/utils/email/server';
 import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { DEV_MODE } from '@/constants/common';
 import { jsonWithCors, optionsWithCors } from '../shared';
 
 const VerifyOtpSchema = z.object({
@@ -32,6 +33,13 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!DEV_MODE) {
+      return jsonWithCors(
+        { error: 'OTP login is only available in development mode.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json().catch(() => null);
     const parsed = VerifyOtpSchema.safeParse(body);
 

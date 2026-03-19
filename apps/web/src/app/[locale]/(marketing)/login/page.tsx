@@ -233,7 +233,10 @@ export default function Login({ searchParams }: LoginProps) {
                 </div>
               }
             >
-              <LoginForm isExternal={currentDomain !== DOMAINS.TUTURUUU} />
+              <LoginForm
+                isExternal={currentDomain !== DOMAINS.TUTURUUU}
+                allowOtp={DEV_MODE}
+              />
             </Suspense>
           </motion.div>
 

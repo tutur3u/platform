@@ -28,6 +28,7 @@ import {
   validateOtp,
 } from '@tuturuuu/utils/email/server';
 import { headers } from 'next/headers';
+import { DEV_MODE } from '@/constants/common';
 
 export interface SendOtpInput {
   email: string;
@@ -65,6 +66,12 @@ export async function sendOtpAction(
   let validatedEmail: string | undefined;
 
   try {
+    if (!DEV_MODE) {
+      return {
+        error: 'OTP login is only available in development mode.',
+      };
+    }
+
     const { email, locale, captchaToken } = input;
 
     // Get IP address for abuse tracking
@@ -218,6 +225,12 @@ export async function verifyOtpAction(
   input: VerifyOtpInput
 ): Promise<VerifyOtpResult> {
   try {
+    if (!DEV_MODE) {
+      return {
+        error: 'OTP login is only available in development mode.',
+      };
+    }
+
     const { email, otp, locale } = input;
 
     // Get IP address for abuse tracking

@@ -25,6 +25,7 @@ import {
 import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { DEV_MODE } from '@/constants/common';
 
 import { jsonWithCors, optionsWithCors } from '../shared';
 
@@ -44,6 +45,13 @@ export async function POST(request: NextRequest) {
   let validatedEmail: string | undefined;
 
   try {
+    if (!DEV_MODE) {
+      return jsonWithCors(
+        { error: 'OTP login is only available in development mode.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json().catch(() => null);
     const parsed = SendOtpSchema.safeParse(body);
 
