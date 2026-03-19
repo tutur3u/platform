@@ -31,9 +31,15 @@ export default async function WalletsStatistics({
 
   const requestHeaders = await headers();
   const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
-  const walletsCount = enabled
-    ? (await listWallets(wsId, internalApiOptions)).length
-    : 0;
+  let walletsCount = 0;
+
+  if (enabled) {
+    try {
+      walletsCount = (await listWallets(wsId, internalApiOptions)).length;
+    } catch (error) {
+      console.error('Failed to load wallet statistics:', error);
+    }
+  }
 
   return (
     <StatisticCard
