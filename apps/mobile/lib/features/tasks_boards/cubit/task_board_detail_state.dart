@@ -69,6 +69,7 @@ class TaskBoardDetailState extends Equatable {
     this.currentView = TaskBoardDetailView.list,
     this.searchQuery = '',
     this.filters = const TaskBoardDetailFilters(),
+    this.taskDescriptionSearchIndex = const <String, String>{},
     this.selectedTaskId,
     this.isMutating = false,
     this.mutationError,
@@ -82,6 +83,7 @@ class TaskBoardDetailState extends Equatable {
   final TaskBoardDetailView currentView;
   final String searchQuery;
   final TaskBoardDetailFilters filters;
+  final Map<String, String> taskDescriptionSearchIndex;
   final String? selectedTaskId;
   final bool isMutating;
   final String? mutationError;
@@ -123,11 +125,7 @@ class TaskBoardDetailState extends Equatable {
         .where((task) {
           if (hasSearchQuery) {
             final name = task.name?.toLowerCase() ?? '';
-            final description =
-                parseTipTapTaskDescription(
-                  task.description,
-                )?.plainText.toLowerCase() ??
-                '';
+            final description = taskDescriptionSearchIndex[task.id] ?? '';
             final matchesSearch =
                 name.contains(query) || description.contains(query);
             if (!matchesSearch) return false;
@@ -204,6 +202,7 @@ class TaskBoardDetailState extends Equatable {
     TaskBoardDetailView? currentView,
     String? searchQuery,
     TaskBoardDetailFilters? filters,
+    Map<String, String>? taskDescriptionSearchIndex,
     Object? selectedTaskId = _taskBoardDetailSentinel,
     bool? isMutating,
     Object? mutationError = _taskBoardDetailSentinel,
@@ -225,6 +224,8 @@ class TaskBoardDetailState extends Equatable {
       currentView: currentView ?? this.currentView,
       searchQuery: searchQuery ?? this.searchQuery,
       filters: filters ?? this.filters,
+      taskDescriptionSearchIndex:
+          taskDescriptionSearchIndex ?? this.taskDescriptionSearchIndex,
       selectedTaskId: selectedTaskId == _taskBoardDetailSentinel
           ? this.selectedTaskId
           : selectedTaskId as String?,
@@ -251,6 +252,7 @@ class TaskBoardDetailState extends Equatable {
     currentView,
     searchQuery,
     filters,
+    taskDescriptionSearchIndex,
     selectedTaskId,
     isMutating,
     mutationError,

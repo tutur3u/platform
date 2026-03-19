@@ -32,6 +32,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         boardId: boardId,
         board: targetChanged ? null : state.board,
         filters: targetChanged ? const TaskBoardDetailFilters() : state.filters,
+        taskDescriptionSearchIndex: targetChanged
+            ? const <String, String>{}
+            : state.taskDescriptionSearchIndex,
         selectedTaskId: targetChanged ? null : state.selectedTaskId,
         clearError: true,
       ),
@@ -47,6 +50,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           workspaceId: wsId,
           boardId: boardId,
           board: detail,
+          taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
+            detail.tasks,
+          ),
           clearError: true,
         ),
       );
@@ -218,6 +224,25 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     emit(state.copyWith(board: board.copyWith(tasks: nextTasks)));
+  }
+
+  Map<String, String> _buildTaskDescriptionSearchIndex(
+    Iterable<TaskBoardTask> tasks,
+  ) {
+    final index = <String, String>{};
+
+    for (final task in tasks) {
+      final description = parseTipTapTaskDescription(
+        task.description,
+      )?.plainText;
+      if (description == null) continue;
+
+      final normalized = description.trim().toLowerCase();
+      if (normalized.isEmpty) continue;
+      index[task.id] = normalized;
+    }
+
+    return Map.unmodifiable(index);
   }
 
   Future<void> createTaskRelationship({

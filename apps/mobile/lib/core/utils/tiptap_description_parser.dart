@@ -59,6 +59,10 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
 
   try {
     final decoded = jsonDecode(trimmed);
+    if (_isEmptyTipTapDocument(decoded)) {
+      return null;
+    }
+
     final context = _ParseContext();
     final markdown = _collapseWhitespace(
       _extractMarkdown(decoded, context).trim(),
@@ -66,17 +70,27 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
     final plainText = _collapseWhitespace(_extractPlainText(decoded).trim());
 
     if (markdown.isEmpty && plainText.isEmpty) {
-      return ParsedTipTapDescription(markdown: trimmed, plainText: trimmed);
+      return null;
     }
 
+    final resolvedMarkdown = markdown.isEmpty ? plainText : markdown;
+    final resolvedPlainText = plainText.isEmpty ? resolvedMarkdown : plainText;
+
     return ParsedTipTapDescription(
-      markdown: markdown.isEmpty ? plainText : markdown,
-      plainText: plainText.isEmpty ? trimmed : plainText,
+      markdown: resolvedMarkdown,
+      plainText: resolvedPlainText,
       mentions: List.unmodifiable(context.mentions),
     );
   } on Object {
     return ParsedTipTapDescription(markdown: trimmed, plainText: trimmed);
   }
+}
+
+bool _isEmptyTipTapDocument(Object? decoded) {
+  if (decoded is! Map) return false;
+  if (decoded['type'] != 'doc') return false;
+  final content = decoded['content'];
+  return content is List && content.isEmpty;
 }
 
 String _collapseWhitespace(String value) {
@@ -242,7 +256,6 @@ String _extractTableMarkdown(Object? content) {
   if (content is! List || content.isEmpty) return '';
 
   final rows = <List<String>>[];
-  var hasHeader = false;
 
   for (final row in content) {
     if (row is! Map || row['type'] != 'tableRow') continue;
@@ -250,11 +263,9 @@ String _extractTableMarkdown(Object? content) {
     if (cells is! List) continue;
 
     final parsedCells = <String>[];
-    var rowHasHeader = false;
 
     for (final cell in cells) {
       if (cell is! Map) continue;
-      if (cell['type'] == 'tableHeader') rowHasHeader = true;
       final text = _collapseWhitespace(
         _extractPlainText(cell).replaceAll('|', r'\|').trim(),
       );
@@ -263,7 +274,6 @@ String _extractTableMarkdown(Object? content) {
 
     if (parsedCells.isEmpty) continue;
     rows.add(parsedCells);
-    hasHeader = hasHeader || rowHasHeader;
   }
 
   if (rows.isEmpty) return '';
@@ -283,8 +293,7 @@ String _extractTableMarkdown(Object? content) {
     ..writeln('| ${rows.first.join(' | ')} |')
     ..writeln('| ${List.filled(width, '---').join(' | ')} |');
 
-  final start = hasHeader ? 1 : 0;
-  for (final row in rows.skip(start)) {
+  for (final row in rows.skip(1)) {
     buffer.writeln('| ${row.join(' | ')} |');
   }
 
