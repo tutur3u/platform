@@ -123,7 +123,11 @@ class TaskBoardDetailState extends Equatable {
         .where((task) {
           if (hasSearchQuery) {
             final name = task.name?.toLowerCase() ?? '';
-            final description = task.description?.toLowerCase() ?? '';
+            final description =
+                parseTipTapTaskDescription(
+                  task.description,
+                )?.plainText.toLowerCase() ??
+                '';
             final matchesSearch =
                 name.contains(query) || description.contains(query);
             if (!matchesSearch) return false;
