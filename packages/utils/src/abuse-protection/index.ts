@@ -192,6 +192,44 @@ async function getCounter(key: string): Promise<number> {
   return existing.count;
 }
 
+async function getCounterWithTTL(
+  key: string
+): Promise<{ count: number; ttl: number }> {
+  const redis = await getRedisClient();
+
+  if (redis) {
+    try {
+      const [count, ttl] = await Promise.all([
+        redis.get<number>(key),
+        redis.ttl(key),
+      ]);
+
+      return {
+        count: count || 0,
+        ttl: ttl > 0 ? ttl : 0,
+      };
+    } catch {
+      // Fall through to memory
+    }
+  }
+
+  const existing = memoryStore.get(key);
+  if (!existing) {
+    return { count: 0, ttl: 0 };
+  }
+
+  const now = Date.now();
+  if (now > existing.expiresAt) {
+    memoryStore.delete(key);
+    return { count: 0, ttl: 0 };
+  }
+
+  return {
+    count: existing.count,
+    ttl: Math.ceil((existing.expiresAt - now) / 1000),
+  };
+}
+
 /**
  * Delete keys from Redis or memory
  */
@@ -485,7 +523,7 @@ export async function logAbuseEvent(
 /**
  * Check and track OTP send attempts
  */
-export async function checkOTPSendLimit(
+export async function checkOTPSendAllowed(
   ipAddress: string,
   email?: string
 ): Promise<AbuseCheckResult> {
@@ -503,18 +541,25 @@ export async function checkOTPSendLimit(
     };
   }
 
-  // Check per-minute limit
   const minuteKey = REDIS_KEYS.OTP_SEND(ipAddress);
-  const { count: minuteCount, ttl: minuteTTL } = await incrementCounter(
-    minuteKey,
-    WINDOW_MS.ONE_MINUTE
-  );
+  const hourlyKey = REDIS_KEYS.OTP_SEND_HOURLY(ipAddress);
+  const dailyKey = REDIS_KEYS.OTP_SEND_DAILY(ipAddress);
 
-  if (minuteCount > ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE) {
+  const [minuteState, hourlyState, dailyState] = await Promise.all([
+    getCounterWithTTL(minuteKey),
+    getCounterWithTTL(hourlyKey),
+    getCounterWithTTL(dailyKey),
+  ]);
+
+  if (minuteState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE) {
     // Log and potentially block
-    void logAbuseEvent(ipAddress, 'otp_send', { email, success: false });
+    void logAbuseEvent(ipAddress, 'otp_send', {
+      email,
+      success: false,
+      metadata: { trigger: 'minute_limit' },
+    });
 
-    if (minuteCount > ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE * 2) {
+    if (minuteState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE * 2) {
       // Aggressive abuse - block IP
       void blockIP(ipAddress, 'otp_send', { trigger: 'rate_limit_exceeded' });
     }
@@ -522,38 +567,29 @@ export async function checkOTPSendLimit(
     return {
       allowed: false,
       reason: 'Too many OTP requests. Please try again later.',
-      retryAfter: minuteTTL,
+      retryAfter: minuteState.ttl,
       remainingAttempts: 0,
     };
   }
 
-  // Check hourly limit
-  const hourlyKey = REDIS_KEYS.OTP_SEND_HOURLY(ipAddress);
-  const { count: hourlyCount, ttl: hourlyTTL } = await incrementCounter(
-    hourlyKey,
-    WINDOW_MS.ONE_HOUR
-  );
-
-  if (hourlyCount > ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR) {
-    void logAbuseEvent(ipAddress, 'otp_send', { email, success: false });
+  if (hourlyState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR) {
+    void logAbuseEvent(ipAddress, 'otp_send', {
+      email,
+      success: false,
+      metadata: { trigger: 'hourly_rate_limit' },
+    });
 
     void blockIP(ipAddress, 'otp_send', { trigger: 'hourly_rate_limit' });
 
     return {
       allowed: false,
       reason: 'Hourly OTP limit reached. Please try again later.',
-      retryAfter: hourlyTTL,
+      retryAfter: hourlyState.ttl,
       remainingAttempts: 0,
     };
   }
 
-  const dailyKey = REDIS_KEYS.OTP_SEND_DAILY(ipAddress);
-  const { count: dailyCount, ttl: dailyTTL } = await incrementCounter(
-    dailyKey,
-    WINDOW_MS.TWENTY_FOUR_HOURS
-  );
-
-  if (dailyCount > ABUSE_THRESHOLDS.OTP_SEND_PER_DAY) {
+  if (dailyState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_DAY) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
@@ -564,7 +600,7 @@ export async function checkOTPSendLimit(
     return {
       allowed: false,
       reason: 'OTP limit reached. Please try again later.',
-      retryAfter: dailyTTL,
+      retryAfter: dailyState.ttl,
       remainingAttempts: 0,
     };
   }
@@ -573,12 +609,17 @@ export async function checkOTPSendLimit(
     const emailHash = hashEmail(email);
 
     const cooldownKey = REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(emailHash);
-    const { count: cooldownCount, ttl: cooldownTTL } = await incrementCounter(
-      cooldownKey,
-      ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
-    );
+    const hourlyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash);
+    const dailyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash);
 
-    if (cooldownCount > 1) {
+    const [cooldownState, hourlyEmailState, dailyEmailState] =
+      await Promise.all([
+        getCounterWithTTL(cooldownKey),
+        getCounterWithTTL(hourlyEmailKey),
+        getCounterWithTTL(dailyEmailKey),
+      ]);
+
+    if (cooldownState.count >= 1) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -588,16 +629,12 @@ export async function checkOTPSendLimit(
       return {
         allowed: false,
         reason: 'Too many OTP requests. Please try again later.',
-        retryAfter: cooldownTTL,
+        retryAfter: cooldownState.ttl,
         remainingAttempts: 0,
       };
     }
 
-    const hourlyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash);
-    const { count: hourlyEmailCount, ttl: hourlyEmailTTL } =
-      await incrementCounter(hourlyEmailKey, WINDOW_MS.ONE_HOUR);
-
-    if (hourlyEmailCount > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
+    if (hourlyEmailState.count >= ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -607,16 +644,12 @@ export async function checkOTPSendLimit(
       return {
         allowed: false,
         reason: 'Hourly OTP limit reached. Please try again later.',
-        retryAfter: hourlyEmailTTL,
+        retryAfter: hourlyEmailState.ttl,
         remainingAttempts: 0,
       };
     }
 
-    const dailyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash);
-    const { count: dailyEmailCount, ttl: dailyEmailTTL } =
-      await incrementCounter(dailyEmailKey, WINDOW_MS.TWENTY_FOUR_HOURS);
-
-    if (dailyEmailCount > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
+    if (dailyEmailState.count >= ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -626,19 +659,59 @@ export async function checkOTPSendLimit(
       return {
         allowed: false,
         reason: 'OTP limit reached. Please try again later.',
-        retryAfter: dailyEmailTTL,
+        retryAfter: dailyEmailState.ttl,
         remainingAttempts: 0,
       };
     }
   }
 
-  // Log successful attempt
-  void logAbuseEvent(ipAddress, 'otp_send', { email, success: true });
-
   return {
     allowed: true,
-    remainingAttempts: ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE - minuteCount,
+    remainingAttempts: Math.max(
+      0,
+      ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE - (minuteState.count + 1)
+    ),
   };
+}
+
+export async function recordOTPSendSuccess(
+  ipAddress: string,
+  email?: string
+): Promise<void> {
+  await Promise.all([
+    incrementCounter(REDIS_KEYS.OTP_SEND(ipAddress), WINDOW_MS.ONE_MINUTE),
+    incrementCounter(REDIS_KEYS.OTP_SEND_HOURLY(ipAddress), WINDOW_MS.ONE_HOUR),
+    incrementCounter(
+      REDIS_KEYS.OTP_SEND_DAILY(ipAddress),
+      WINDOW_MS.TWENTY_FOUR_HOURS
+    ),
+    ...(email
+      ? [
+          incrementCounter(
+            REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(hashEmail(email)),
+            ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
+          ),
+          incrementCounter(
+            REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(hashEmail(email)),
+            WINDOW_MS.ONE_HOUR
+          ),
+          incrementCounter(
+            REDIS_KEYS.OTP_SEND_EMAIL_DAILY(hashEmail(email)),
+            WINDOW_MS.TWENTY_FOUR_HOURS
+          ),
+        ]
+      : []),
+  ]);
+
+  void logAbuseEvent(ipAddress, 'otp_send', { email, success: true });
+}
+
+// Backward-compatible alias for call sites that still import the old helper.
+export async function checkOTPSendLimit(
+  ipAddress: string,
+  email?: string
+): Promise<AbuseCheckResult> {
+  return checkOTPSendAllowed(ipAddress, email);
 }
 
 /**

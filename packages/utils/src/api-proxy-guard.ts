@@ -75,15 +75,6 @@ const AUTH_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
-const OTP_SEND_RATE_LIMITS: RateLimitProfile = {
-  get: NO_READ_RATE_LIMITS,
-  mutate: [
-    { window: 'minute', limit: 1, duration: '1 m' },
-    { window: 'hour', limit: 3, duration: '1 h' },
-    { window: 'day', limit: 6, duration: '1 d' },
-  ],
-};
-
 const HIGH_FANOUT_RATE_LIMITS: RateLimitProfile = {
   get: NO_READ_RATE_LIMITS,
   mutate: [
@@ -112,12 +103,6 @@ const FORM_SUBMISSION_RATE_LIMITS: RateLimitProfile = {
 };
 
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
-  {
-    key: 'otp-send',
-    matches: (req) =>
-      /^\/api\/v1\/auth\/mobile\/send-otp(?:\/|$)/.test(req.nextUrl.pathname),
-    rateLimits: OTP_SEND_RATE_LIMITS,
-  },
   {
     key: 'auth',
     matches: (req) =>
