@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -13,6 +13,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { DEV_MODE, PORT } from '@/constants/common';
+import { apiFetch, HttpError } from '@/lib/api-fetch';
 import ReauthenticateForm, {
   type ReauthenticateFormData,
 } from './reauthenticate-form';
@@ -24,59 +25,32 @@ export default function ResetPasswordDialog() {
   const t = useTranslations();
 
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [needsReauth, setNeedsReauth] = useState(false);
   const [passwordData, setPasswordData] =
     useState<ResetPasswordFormData | null>(null);
 
+  const updatePasswordMutation = useMutation({
+    mutationFn: (payload: { password: string; nonce?: string }) =>
+      apiFetch('/api/v1/users/me/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+  });
+
+  const resendReauthMutation = useMutation({
+    mutationFn: () =>
+      apiFetch('/api/v1/users/me/password/reauth', {
+        method: 'POST',
+      }),
+  });
+
+  const loading =
+    updatePasswordMutation.isPending || resendReauthMutation.isPending;
+
   const onSubmit = async (data: ResetPasswordFormData) => {
-    setLoading(true);
     try {
-      const supabase = createClient();
-
-      const { error } = await supabase.auth.updateUser({
-        password: data.password,
-      });
-
-      if (error) {
-        // Check if reauthentication is needed
-        if (
-          error.message.includes('reauthentication_needed') ||
-          error.message.includes('reauthentication') ||
-          error.code === 'reauthentication_needed'
-        ) {
-          // Store password data and trigger reauthentication flow
-          setPasswordData(data);
-
-          // Send reauthentication OTP
-          const { error: reauthError } = await supabase.auth.reauthenticate();
-
-          if (reauthError) {
-            throw reauthError;
-          }
-
-          setNeedsReauth(true);
-
-          // if on DEV_MODE, auto-open inbucket
-          if (DEV_MODE) {
-            window.open(
-              window.location.origin.replace(PORT.toString(), '8004'),
-              '_blank'
-            );
-          }
-
-          toast({
-            title: 'Verification Required',
-            description:
-              "For security, we've sent a verification code to your email. Please enter it to continue.",
-          });
-
-          setLoading(false);
-          return;
-        }
-
-        throw error;
-      }
+      await updatePasswordMutation.mutateAsync({ password: data.password });
 
       toast({
         title: t('common.success'),
@@ -86,6 +60,26 @@ export default function ResetPasswordDialog() {
       // Close the dialog
       setOpen(false);
     } catch (error) {
+      if (error instanceof HttpError && error.status === 409) {
+        setPasswordData(data);
+        await resendReauthMutation.mutateAsync();
+        setNeedsReauth(true);
+
+        if (DEV_MODE) {
+          window.open(
+            window.location.origin.replace(PORT.toString(), '8004'),
+            '_blank'
+          );
+        }
+
+        toast({
+          title: 'Verification Required',
+          description:
+            "For security, we've sent a verification code to your email. Please enter it to continue.",
+        });
+        return;
+      }
+
       console.error('Error resetting password:', error);
       toast({
         title: t('common.error'),
@@ -93,26 +87,17 @@ export default function ResetPasswordDialog() {
           'An error occurred while resetting your password. Please try again later.',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const onReauthSubmit = async (data: ReauthenticateFormData) => {
     if (!passwordData) return;
 
-    setLoading(true);
     try {
-      const supabase = createClient();
-
-      const { error } = await supabase.auth.updateUser({
+      await updatePasswordMutation.mutateAsync({
         password: passwordData.password,
         nonce: data.otp,
       });
-
-      if (error) {
-        throw error;
-      }
 
       toast({
         title: t('common.success'),
@@ -131,20 +116,12 @@ export default function ResetPasswordDialog() {
           'Invalid verification code or an error occurred. Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const onResendReauth = async () => {
     try {
-      const supabase = createClient();
-
-      const { error } = await supabase.auth.reauthenticate();
-
-      if (error) {
-        throw error;
-      }
+      await resendReauthMutation.mutateAsync();
 
       toast({
         title: t('common.success'),

@@ -75,9 +75,9 @@ export default function TemplatesClient({
     queryKey: ['template-source-boards', wsId],
     queryFn: async (): Promise<TemplateSourceBoard[]> => {
       const payload = await listWorkspaceTaskBoards(wsId);
-      return payload.boards.filter(
-        (board) => !board.deleted_at && !board.archived_at
-      );
+      return payload.boards
+        .filter((board) => !board.deleted_at && !board.archived_at)
+        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
     },
     enabled: pickerOpen,
   });

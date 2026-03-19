@@ -33,6 +33,7 @@ export default function WorkspaceSettingsCard({
             <Suspense fallback={<Skeleton className="h-10 w-full" />}>
               <DefaultWorkspaceSetting
                 defaultWorkspaceId={user?.default_workspace_id}
+                user={user}
               />
             </Suspense>
             <p className="text-muted-foreground text-xs">

@@ -10,7 +10,6 @@ import {
   Loader2,
   RefreshCw,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   CalendarConnection,
   WorkspaceCalendarGoogleToken,
@@ -31,6 +30,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { apiFetch } from '@/lib/api-fetch';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
@@ -116,11 +116,13 @@ export function GoogleCalendarSettings({
   const { data: isTuturuuuUser = false } = useQuery({
     queryKey: ['is-tuturuuu-user'],
     queryFn: async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      return user?.email?.includes('@tuturuuu.com') || false;
+      const payload = await apiFetch<{ user?: { email?: string | null } }>(
+        '/api/auth/me',
+        {
+          cache: 'no-store',
+        }
+      );
+      return payload.user?.email?.includes('@tuturuuu.com') || false;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes - this rarely changes
   });

@@ -58,8 +58,29 @@ export function DraftConvertDialog({
   const { data: boards = [] } = useQuery({
     queryKey: ['workspace-boards', wsId],
     queryFn: async () => {
-      const payload = await listWorkspaceTaskBoards(wsId);
-      return payload.boards
+      const pageSize = 200;
+      const allBoards: Awaited<
+        ReturnType<typeof listWorkspaceTaskBoards>
+      >['boards'] = [];
+      let page = 1;
+
+      while (true) {
+        const payload = await listWorkspaceTaskBoards(wsId, {
+          page,
+          pageSize,
+        });
+
+        const pageBoards = payload.boards ?? [];
+        allBoards.push(...pageBoards);
+
+        if (pageBoards.length < pageSize) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      return allBoards
         .filter((board) => !board.deleted_at)
         .map((board) => ({ id: board.id, name: board.name ?? '' }));
     },

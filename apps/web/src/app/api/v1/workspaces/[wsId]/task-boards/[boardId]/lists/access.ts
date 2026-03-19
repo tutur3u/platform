@@ -81,12 +81,11 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
     return { supabase, wsId, boardId, user, board };
   }
 
-  const { data: list, error: listError } = await supabase
+  const { data: list, error: listError } = await sbAdmin
     .from('task_lists')
-    .select('id, board_id, workspace_boards!inner(ws_id)')
+    .select('id, board_id')
     .eq('id', listId)
     .eq('board_id', boardId)
-    .eq('workspace_boards.ws_id', wsId)
     .maybeSingle();
 
   if (listError) {

@@ -1770,17 +1770,21 @@ export async function getStatusTemplates(supabase: TypedSupabaseClient) {
 }
 
 export async function createBoardWithTemplate(
-  _supabase: TypedSupabaseClient,
   wsId: string,
   name: string,
   templateId?: string,
-  icon?: Database['public']['Enums']['platform_icon'] | null
+  icon?: Database['public']['Enums']['platform_icon'] | null,
+  options?: InternalApiClientOptions
 ) {
-  const payload = await createWorkspaceTaskBoard(wsId, {
-    name,
-    template_id: templateId,
-    icon: icon ?? null,
-  });
+  const payload = await createWorkspaceTaskBoard(
+    wsId,
+    {
+      name,
+      template_id: templateId,
+      icon: icon ?? null,
+    },
+    options
+  );
 
   return payload.board as WorkspaceTaskBoard;
 }
@@ -1900,8 +1904,11 @@ export function useCreateBoardWithTemplate(wsId: string) {
       templateId?: string;
       icon?: Database['public']['Enums']['platform_icon'] | null;
     }) => {
-      const supabase = createClient();
-      return createBoardWithTemplate(supabase, wsId, name, templateId, icon);
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : undefined;
+      return createBoardWithTemplate(wsId, name, templateId, icon, {
+        baseUrl: baseUrl ?? undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });

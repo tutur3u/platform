@@ -1,10 +1,10 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { FileText, KeyRound, Phone, Smartphone } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import TOTPDialog from './totp-dialog';
 
 type MFAStatus = 'enabled' | 'disabled' | 'coming-soon';
@@ -19,88 +19,78 @@ interface MFAMethod {
   dialog: React.ReactNode;
 }
 
+const DEFAULT_MFA_METHODS: MFAMethod[] = [
+  {
+    id: 'authenticator',
+    titleKey: 'authenticator-app',
+    descriptionKey: 'authenticator-app-description',
+    icon: Smartphone,
+    status: 'disabled',
+    dialog: <TOTPDialog />,
+  },
+  {
+    id: 'phone',
+    titleKey: 'phone-number',
+    descriptionKey: 'phone-number-description',
+    icon: Phone,
+    status: 'coming-soon',
+    dialog: null,
+  },
+  {
+    id: 'security-keys',
+    titleKey: 'security-keys',
+    descriptionKey: 'security-keys-description',
+    icon: KeyRound,
+    status: 'coming-soon',
+    dialog: null,
+  },
+  {
+    id: 'recovery-codes',
+    titleKey: 'recovery-codes',
+    descriptionKey: 'recovery-codes-description',
+    icon: FileText,
+    status: 'coming-soon',
+    dialog: null,
+  },
+];
+
 export default function MFAMethodList() {
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
   const t = useTranslations('settings-account');
   const tCommon = useTranslations('common');
 
-  const defaultMfaMethods: MFAMethod[] = [
-    {
-      id: 'authenticator',
-      titleKey: 'authenticator-app',
-      descriptionKey: 'authenticator-app-description',
-      icon: Smartphone,
-      status: 'disabled',
-      dialog: <TOTPDialog />,
-    },
-    {
-      id: 'phone',
-      titleKey: 'phone-number',
-      descriptionKey: 'phone-number-description',
-      icon: Phone,
-      status: 'coming-soon',
-      dialog: null,
-    },
-    {
-      id: 'security-keys',
-      titleKey: 'security-keys',
-      descriptionKey: 'security-keys-description',
-      icon: KeyRound,
-      status: 'coming-soon',
-      dialog: null,
-    },
-    {
-      id: 'recovery-codes',
-      titleKey: 'recovery-codes',
-      descriptionKey: 'recovery-codes-description',
-      icon: FileText,
-      status: 'coming-soon',
-      dialog: null,
-    },
-  ];
+  const { data: factorsData, isLoading } = useQuery({
+    queryKey: ['mfa-totp-factors'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/mfa/totp/factors', {
+        cache: 'no-store',
+      });
 
-  const [mfaMethods, setMfaMethods] = useState<MFAMethod[]>(defaultMfaMethods);
-
-  useEffect(() => {
-    const fetchMFAFactors = async () => {
-      try {
-        const { data: factorsData, error } =
-          await supabase.auth.mfa.listFactors();
-
-        if (error) {
-          console.error('Error fetching MFA factors:', error);
-          setLoading(false);
-          return;
-        }
-
-        // Update the authenticator method status based on enrolled factors
-        const totpFactor = factorsData?.totp?.find(
-          (factor) => factor.status === 'verified'
-        );
-
-        setMfaMethods((prev) =>
-          prev.map((method) => {
-            if (method.id === 'authenticator') {
-              return {
-                ...method,
-                status: totpFactor ? 'enabled' : ('disabled' as MFAStatus),
-              };
-            }
-            return method;
-          })
-        );
-      } catch (error) {
-        console.error('Error fetching MFA factors:', error);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch MFA factors');
       }
-    };
 
-    fetchMFAFactors();
-  }, [supabase.auth]);
+      return (await response.json()) as {
+        totp?: Array<{ status: 'unverified' | 'verified' }>;
+      };
+    },
+  });
 
-  if (loading) {
+  const mfaMethods = useMemo(() => {
+    const totpFactor = factorsData?.totp?.find(
+      (factor) => factor.status === 'verified'
+    );
+
+    return DEFAULT_MFA_METHODS.map((method) =>
+      method.id === 'authenticator'
+        ? {
+            ...method,
+            status: totpFactor ? ('enabled' as MFAStatus) : 'disabled',
+          }
+        : method
+    );
+  }, [factorsData?.totp]);
+
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
         {Array.from({ length: 4 }).map((_, index) => (

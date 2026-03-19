@@ -5,7 +5,6 @@ import {
 import {
   isTurnstileError,
   resolveTurnstileToken,
-  verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendAllowed,
@@ -109,9 +108,6 @@ export async function POST(request: NextRequest) {
     const turnstile = resolveTurnstileToken({
       token: captchaToken,
       requireConfiguration: true,
-    });
-    await verifyTurnstileToken(request, turnstile.captchaToken, {
-      remoteIp: ipAddress !== 'unknown' ? ipAddress : undefined,
     });
     const useAdminAuth = turnstile.shouldBypassForDev;
     const supabase = useAdminAuth ? sbAdmin : await createClient();
