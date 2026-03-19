@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,7 +23,10 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useCreateBoardWithTemplate } from '@tuturuuu/utils/task-helper';
+import {
+  useCreateBoardWithTemplate,
+  useUpdateBoardWithTemplate,
+} from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 import * as z from 'zod';
@@ -45,13 +48,13 @@ const FormSchema = z.object({
   icon: z.string().nullable().optional(),
 });
 
-const getErrorMessage = (error: unknown): string => {
+const getErrorMessage = (error: unknown): string | null => {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
   if (error && typeof error === 'object' && 'message' in error) {
     return String(error.message);
   }
-  return 'An unexpected error occurred';
+  return null;
 };
 
 export function TaskBoardForm({
@@ -66,37 +69,7 @@ export function TaskBoardForm({
   const queryClient = useQueryClient();
   const [open, setOpen] = React.useState(false);
   const createBoardMutation = useCreateBoardWithTemplate(wsId);
-  const updateBoardMutation = useMutation({
-    mutationFn: async ({
-      boardId,
-      name,
-      icon,
-    }: {
-      boardId: string;
-      name: string;
-      icon: string | null;
-    }) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/task-boards/${boardId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name, icon }),
-        }
-      );
-
-      if (!res.ok) {
-        const errorData = await res
-          .json()
-          .catch(() => ({ message: 'Unknown error occurred' }));
-        throw new Error(errorData.message || 'Failed to update board');
-      }
-
-      return res.json();
-    },
-  });
+  const updateBoardMutation = useUpdateBoardWithTemplate(wsId);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -118,10 +91,6 @@ export function TaskBoardForm({
 
   const refreshBoardsList = async () => {
     await queryClient.invalidateQueries({ queryKey: ['boards', wsId] });
-    await queryClient.refetchQueries({
-      queryKey: ['boards', wsId],
-      type: 'active',
-    });
   };
 
   // For new boards, only check if valid and not submitting
@@ -131,7 +100,8 @@ export function TaskBoardForm({
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     try {
       // Use "Untitled Board" as default if name is empty or only whitespace
-      const boardName = formData.name?.trim() || 'Untitled Board';
+      const boardName =
+        formData.name?.trim() || t('ws-task-boards.unnamed_board');
       const icon = formData.icon ?? null;
 
       if (formData.id) {
@@ -141,8 +111,8 @@ export function TaskBoardForm({
           icon,
         });
 
-        toast.success('Board updated');
-        onFinish?.(formData);
+        toast.success(t('ws-task-boards.toast.update_success'));
+        onFinish?.({ ...formData, name: boardName, icon });
         setOpen(false);
         await refreshBoardsList();
       } else {
@@ -155,10 +125,10 @@ export function TaskBoardForm({
           icon: icon as any,
         });
 
-        toast.success('Board created');
+        toast.success(t('ws-task-boards.toast.create_success'));
 
         // Pass the created board data (with id) to onFinish
-        onFinish?.({ ...formData, id: newBoard.id });
+        onFinish?.({ ...formData, id: newBoard.id, name: boardName, icon });
         setOpen(false);
         await refreshBoardsList();
         form.reset();
@@ -166,7 +136,9 @@ export function TaskBoardForm({
     } catch (error) {
       console.error('Error submitting form:', error);
 
-      toast.error(getErrorMessage(error));
+      toast.error(
+        getErrorMessage(error) ?? t('ws-task-boards.errors.unexpected')
+      );
     }
   };
 
@@ -230,7 +202,7 @@ export function TaskBoardForm({
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Untitled board"
+                        placeholder={t('ws-task-boards.unnamed_board')}
                         autoComplete="off"
                         autoFocus
                         {...field}

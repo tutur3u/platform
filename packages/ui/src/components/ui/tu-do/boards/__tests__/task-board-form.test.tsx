@@ -32,6 +32,10 @@ vi.mock('@tuturuuu/utils/task-helper', () => ({
     mutateAsync,
     isPending: false,
   }),
+  useUpdateBoardWithTemplate: () => ({
+    mutateAsync,
+    isPending: false,
+  }),
 }));
 
 describe('TaskBoardForm', () => {
@@ -64,7 +68,7 @@ describe('TaskBoardForm', () => {
 
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith({
-        name: 'Untitled Board',
+        name: 'ws-task-boards.unnamed_board',
         icon: null,
       });
     });

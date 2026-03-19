@@ -13275,6 +13275,9 @@
       "description": "Tạo bảng đầu tiên để bắt đầu sắp xếp công việc.",
       "title": "Không tìm thấy bảng"
     },
+    "errors": {
+      "unexpected": "Đã xảy ra lỗi không mong muốn"
+    },
     "filters": {
       "search_label": "Tìm kiếm",
       "search_placeholder": "Tìm bảng...",
@@ -13419,6 +13422,11 @@
       "lists": "cột",
       "tasks": "công việc"
     },
+    "toast": {
+      "create_success": "Đã tạo bảng",
+      "update_success": "Đã cập nhật bảng"
+    },
+    "unnamed_board": "Bảng chưa đặt tên",
     "views": {
       "cards": "Thẻ",
       "kanban": "Kanban",

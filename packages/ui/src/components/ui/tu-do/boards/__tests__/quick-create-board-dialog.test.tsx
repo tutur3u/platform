@@ -22,6 +22,10 @@ vi.mock('@tuturuuu/utils/task-helper', () => ({
     mutateAsync: vi.fn().mockResolvedValue({ id: 'board-1' }),
     isPending: false,
   }),
+  useUpdateBoardWithTemplate: () => ({
+    mutateAsync: vi.fn().mockResolvedValue({ id: 'board-1' }),
+    isPending: false,
+  }),
 }));
 
 describe('QuickCreateBoardDialog', () => {

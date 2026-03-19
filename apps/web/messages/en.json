@@ -13275,6 +13275,9 @@
       "description": "Create your first board to start organizing tasks.",
       "title": "No boards found"
     },
+    "errors": {
+      "unexpected": "An unexpected error occurred"
+    },
     "filters": {
       "search_label": "Search",
       "search_placeholder": "Search boards...",
@@ -13419,6 +13422,11 @@
       "lists": "columns",
       "tasks": "tasks"
     },
+    "toast": {
+      "create_success": "Board created",
+      "update_success": "Board updated"
+    },
+    "unnamed_board": "Untitled Board",
     "views": {
       "cards": "Cards",
       "kanban": "Kanban",
