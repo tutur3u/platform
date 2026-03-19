@@ -18,6 +18,28 @@ function normalizeListParam(value: string | string[]) {
     .filter(Boolean);
 }
 
+function normalizePositiveIntegerParam(
+  value: string | string[] | undefined,
+  {
+    fallback,
+    min,
+    max,
+  }: {
+    fallback: number;
+    min: number;
+    max: number;
+  }
+) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const parsedValue = rawValue ? Number.parseInt(rawValue, 10) : fallback;
+
+  if (!Number.isFinite(parsedValue)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(parsedValue, min), max);
+}
+
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),
   page: z.coerce.number().int().min(1).default(1),
@@ -93,6 +115,21 @@ export async function GET(request: Request, { params }: Params) {
         params_obj[key] = value;
       }
     });
+
+    params_obj.page = String(
+      normalizePositiveIntegerParam(params_obj.page, {
+        fallback: 1,
+        min: 1,
+        max: Number.MAX_SAFE_INTEGER,
+      })
+    );
+    params_obj.pageSize = String(
+      normalizePositiveIntegerParam(params_obj.pageSize, {
+        fallback: 10,
+        min: 1,
+        max: MAX_SHORT_TEXT_LENGTH,
+      })
+    );
 
     const sp = SearchParamsSchema.parse(params_obj);
 
@@ -283,6 +320,13 @@ export async function GET(request: Request, { params }: Params) {
       },
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { message: 'Invalid query parameters', issues: error.issues },
+        { status: 400 }
+      );
+    }
+
     console.error('Error in workspace users API:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

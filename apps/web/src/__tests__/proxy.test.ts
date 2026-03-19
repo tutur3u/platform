@@ -126,4 +126,19 @@ describe('web proxy api handling', () => {
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
+
+  it('falls back to the default locale when accept-language contains invalid values', async () => {
+    mocks.authProxy.mockResolvedValue(NextResponse.next());
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/login', {
+        headers: {
+          'accept-language': '*,not-a_locale,en;q=0.8',
+        },
+      })
+    );
+
+    expect(response).toBeInstanceOf(NextResponse);
+  });
 });

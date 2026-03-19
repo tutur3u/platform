@@ -28,7 +28,6 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   CalendarConnection,
   Workspace,
@@ -41,6 +40,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
+import { apiFetch } from '@/lib/api-fetch';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 import AccountManagementSettings from './account/account-management-settings';
@@ -88,6 +88,7 @@ interface SettingsDialogProps {
   user: WorkspaceUser | null;
   defaultTab?: string;
   workspace?: Workspace | null;
+  linkedProvider?: string;
 }
 
 export function SettingsDialog({
@@ -95,6 +96,7 @@ export function SettingsDialog({
   user,
   defaultTab = 'profile',
   workspace: workspaceProp,
+  linkedProvider,
 }: SettingsDialogProps) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -112,55 +114,11 @@ export function SettingsDialog({
     error: workspaceError,
   } = useQuery({
     queryKey: ['workspace', wsId],
-    queryFn: async () => {
+    queryFn: () => {
       if (!wsId) throw new Error('No workspace ID provided');
-
-      const supabase = createClient();
-
-      // Get current user
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (!currentUser) {
-        throw new Error('Not authenticated');
-      }
-
-      // Resolve workspace ID (handles "personal", "internal", etc.)
-      const resolveResponse = await fetch(
-        '/api/v1/infrastructure/resolve-workspace-id',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wsId }),
-        }
-      );
-
-      if (!resolveResponse.ok) {
-        throw new Error('Failed to resolve workspace ID');
-      }
-
-      const { workspaceId: resolvedWsId } = await resolveResponse.json();
-
-      // Fetch workspace with resolved ID
-      const { data, error } = await supabase
-        .from('workspaces')
-        .select('*, workspace_members!inner(user_id)')
-        .eq('id', resolvedWsId)
-        .eq('workspace_members.user_id', currentUser.id)
-        .single();
-
-      if (error) {
-        throw new Error(
-          error.code === 'PGRST116'
-            ? t('settings.workspace_not_found_or_no_access')
-            : error.message || t('settings.failed_to_load_workspace')
-        );
-      }
-
-      // Remove the joined data before returning
-      const { workspace_members: _, ...workspaceData } = data;
-      return workspaceData as Workspace;
+      return apiFetch<Workspace>(`/api/workspaces/${wsId}`, {
+        cache: 'no-store',
+      });
     },
     enabled: !workspaceProp && !!wsId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -169,39 +127,28 @@ export function SettingsDialog({
   // Use provided workspace or fetched workspace
   const workspace = workspaceProp || fetchedWorkspace || null;
 
-  const {
-    data: hasBillingPermission,
-    isLoading: isBillingPermissionLoading,
-    isFetching: isBillingPermissionFetching,
-  } = useQuery({
-    queryKey: ['workspace-billing-permission', workspace?.id],
-    queryFn: async () => {
-      if (!workspace?.id) return false;
+  const { data: workspacePermissions, isLoading: isBillingPermissionLoading } =
+    useQuery({
+      queryKey: ['workspace-settings-permissions', wsId],
+      queryFn: () =>
+        apiFetch<{
+          manage_subscription: boolean;
+          manage_workspace_settings: boolean;
+        }>(`/api/v1/workspaces/${wsId}/settings/permissions`, {
+          cache: 'no-store',
+        }),
+      enabled: !!wsId,
+      staleTime: 5 * 60 * 1000,
+    });
 
-      const supabase = createClient();
+  const hasBillingPermission =
+    workspacePermissions?.manage_subscription ?? false;
+  const canManageWorkspaceSettings =
+    workspacePermissions?.manage_workspace_settings ?? false;
 
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (!currentUser) return false;
-
-      const { data, error } = await supabase.rpc('has_workspace_permission', {
-        p_ws_id: workspace.id,
-        p_user_id: currentUser.id,
-        p_permission: 'manage_subscription',
-      });
-
-      if (error) {
-        console.error('Error checking manage_subscription permission:', error);
-        return false;
-      }
-
-      return data ?? false;
-    },
-    enabled: !!workspace?.id,
-    staleTime: 5 * 60 * 1000,
-  });
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   // Reset activeTab if billing permission is revoked or not available
   useEffect(() => {
@@ -462,9 +409,7 @@ export function SettingsDialog({
                       icon: CreditCard,
                       description: t('settings-account.billing-description'),
                       keywords: ['Billing', 'Plan', 'Subscription'],
-                      disabled:
-                        isBillingPermissionLoading ||
-                        isBillingPermissionFetching,
+                      disabled: isBillingPermissionLoading,
                     },
                   ]
                 : []),
@@ -695,7 +640,7 @@ export function SettingsDialog({
 
         {activeTab === 'security' && user && (
           <div className="h-full">
-            <SecuritySettings user={user} />
+            <SecuritySettings user={user} linkedProvider={linkedProvider} />
           </div>
         )}
 
@@ -784,12 +729,13 @@ export function SettingsDialog({
               <>
                 <BasicInfo
                   workspace={workspace}
-                  allowEdit={true}
+                  allowEdit={!workspace.personal && canManageWorkspaceSettings}
                   isPersonal={workspace.personal}
                 />
                 <WorkspaceAvatarSettings
+                  user={user}
                   workspace={workspace}
-                  allowEdit={true}
+                  allowEdit={!workspace.personal && canManageWorkspaceSettings}
                 />
               </>
             ) : (

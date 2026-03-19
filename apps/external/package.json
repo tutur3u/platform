@@ -24,21 +24,21 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-query": "^5.91.0",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/masonry": "^0.4.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.1.6",
+    "next": "^16.2.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tuturuuu": "^0.1.4",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.1",
+    "@tailwindcss/postcss": "^4.2.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
@@ -47,5 +47,5 @@
     "postcss": "^8.5.8",
     "typescript": "^5.9.3"
   },
-  "packageManager": "bun@1.3.10"
+  "packageManager": "bun@1.3.11"
 }

@@ -27,6 +27,17 @@ describe('extractTurnstileRemoteIp', () => {
 
     expect(extractTurnstileRemoteIp(request)).toBe('198.51.100.11');
   });
+
+  it('prefers x-forwarded-for over x-real-ip when cloud proxy headers are absent', () => {
+    const request = {
+      headers: new Headers({
+        'x-forwarded-for': '198.51.100.12, 203.0.113.5',
+        'x-real-ip': '10.0.0.8',
+      }),
+    };
+
+    expect(extractTurnstileRemoteIp(request)).toBe('198.51.100.12');
+  });
 });
 
 describe('resolveTurnstileToken', () => {

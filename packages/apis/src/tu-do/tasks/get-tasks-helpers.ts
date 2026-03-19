@@ -48,6 +48,30 @@ function chunkArray<T>(values: T[], chunkSize: number): T[][] {
   return chunks;
 }
 
+async function loadRelationshipEdgesByTaskColumn(
+  sbAdmin: TypedSupabaseClient,
+  column: 'source_task_id' | 'target_task_id',
+  taskIds: string[]
+) {
+  const taskIdChunks = chunkArray(taskIds, 200);
+  const relationshipEdges: TaskRelationshipEdge[] = [];
+
+  for (const taskIdChunk of taskIdChunks) {
+    const { data, error } = await sbAdmin
+      .from('task_relationships')
+      .select('id, source_task_id, target_task_id, type')
+      .in(column, taskIdChunk);
+
+    if (error) {
+      throw new Error('TASK_RELATIONSHIP_QUERY_FAILED');
+    }
+
+    relationshipEdges.push(...((data ?? []) as TaskRelationshipEdge[]));
+  }
+
+  return relationshipEdges;
+}
+
 export function normalizeTask<T extends TaskRecord>(task: T) {
   const normalizedAssignees = (task.assignees ?? []).flatMap(
     (entry: TaskAssigneeRelation) => {
@@ -129,26 +153,15 @@ export async function buildTaskRelationshipSummary(
     return relationshipSummaryByTaskId;
   }
 
-  const [sourceEdgesResult, targetEdgesResult] = await Promise.all([
-    sbAdmin
-      .from('task_relationships')
-      .select('id, source_task_id, target_task_id, type')
-      .in('source_task_id', taskIds),
-    sbAdmin
-      .from('task_relationships')
-      .select('id, source_task_id, target_task_id, type')
-      .in('target_task_id', taskIds),
+  const [sourceRelationshipEdges, targetRelationshipEdges] = await Promise.all([
+    loadRelationshipEdgesByTaskColumn(sbAdmin, 'source_task_id', taskIds),
+    loadRelationshipEdgesByTaskColumn(sbAdmin, 'target_task_id', taskIds),
   ]);
 
-  const relationshipError = sourceEdgesResult.error ?? targetEdgesResult.error;
-  if (relationshipError) {
-    throw new Error('TASK_RELATIONSHIP_QUERY_FAILED');
-  }
-
   const relationshipEdges = [
-    ...(sourceEdgesResult.data ?? []),
-    ...(targetEdgesResult.data ?? []),
-  ] as TaskRelationshipEdge[];
+    ...sourceRelationshipEdges,
+    ...targetRelationshipEdges,
+  ];
 
   const counterpartTaskIds = Array.from(
     new Set(

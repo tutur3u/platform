@@ -356,6 +356,7 @@
     "type_manual": "Chặn thủ công",
     "type_mfa_challenge": "Thử thách MFA",
     "type_mfa_verify_failed": "Xác minh MFA thất bại",
+    "type_otp_limit_reset": "Đặt lại giới hạn OTP",
     "type_otp_send": "Gửi OTP",
     "type_otp_verify_failed": "Xác minh OTP thất bại",
     "type_password_login_failed": "Đăng nhập mật khẩu thất bại",
@@ -3693,6 +3694,67 @@
     "template_props": "Thuộc tính Mẫu",
     "title": "Mẫu Email"
   },
+  "entity-creation-limits": {
+    "actions": {
+      "add_table": "Thêm bảng",
+      "cancel": "Hủy bỏ",
+      "edit": "Chỉnh sửa",
+      "reattach_trigger": "Gắn lại trình kích hoạt",
+      "save_metadata": "Lưu siêu dữ liệu",
+      "save_tier": "Lưu cấu hình gói"
+    },
+    "add_table": {
+      "description": "Chọn một bảng public từ danh sách bảng khả dụng, rồi cấu hình giới hạn theo từng gói cho các lần chèn do người dùng đã xác thực thực hiện.",
+      "requirements_hint": "Với bảng workspaces, giới hạn được tính theo gói của personal workspace của người tạo. Với các bảng khác, giới hạn được tính theo workspace liên kết được suy ra từ source view của bảng đó.",
+      "select_placeholder": "Chọn một bảng",
+      "submit": "Thêm bảng",
+      "title": "Chọn bảng để cấu hình"
+    },
+    "configured_table": {
+      "updated_at": "Cập nhật lần cuối {updatedAt}",
+      "updated_label": "Cập nhật"
+    },
+    "description": "Cho phép đăng ký các bảng vào cơ chế giới hạn chèn dùng chung dựa trên bảng khả dụng. Bảng workspaces dùng gói của personal workspace của người tạo, còn các bảng khác dùng gói của workspace liên kết với bảng đó.",
+    "empty_state": "Chưa có bảng nào được cấu hình.",
+    "feedback": {
+      "error_prefix": "Cập nhật thất bại"
+    },
+    "fields": {
+      "enabled": "Bật",
+      "notes": "Ghi chú",
+      "notes_placeholder": "Ghi chú các trường hợp đặc biệt hoặc hướng dẫn vận hành.",
+      "table_name": "Tên bảng"
+    },
+    "limits": {
+      "per_day": "Mỗi ngày",
+      "per_hour": "Mỗi giờ",
+      "per_month": "Mỗi 30 ngày",
+      "per_week": "Mỗi 7 ngày",
+      "total_limit": "Tổng"
+    },
+    "metadata": {
+      "requirements_hint": "Suy ra gói theo phạm vi: workspaces dùng gói personal workspace của người tạo; các bảng khác dùng workspace liên kết được suy ra cho bảng đó. Các phép đếm lấy từ bảng khả dụng thay vì audit log."
+    },
+    "notes": {
+      "empty": "Không có ghi chú"
+    },
+    "section": {
+      "configured_tables": "Bảng đã cấu hình",
+      "metadata": "Thiết lập bảng",
+      "tier_limits": "Giới hạn theo gói"
+    },
+    "summary": {
+      "available_tables": "Bảng khả dụng",
+      "configured_tables": "Bảng đã cấu hình"
+    },
+    "tiers": {
+      "ENTERPRISE": "Enterprise",
+      "FREE": "Miễn phí",
+      "PLUS": "Plus",
+      "PRO": "Pro"
+    },
+    "title": "Giới hạn tạo thực thể"
+  },
   "experimental-notice": {
     "experimental_feature": "Tính năng thử nghiệm",
     "experimental_notice": "Đây là một tính năng thử nghiệm đang trong quá trình phát triển. Nó có thể không hoạt động như mong đợi và có thể thay đổi trong tương lai."
@@ -4574,11 +4636,13 @@
     "email_audit": "Nhật ký email",
     "email_blacklist": "Danh sách đen email",
     "email_templates": "Mẫu Email",
+    "entity_creation_limits": "Giới hạn tạo thực thể",
     "features": "Tính năng",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",
     "mobile_versions": "Phiên bản di động",
     "monitoring": "Giám sát",
+    "otp_limits": "Giới hạn OTP",
     "overview": "Tổng quan",
     "realtime": "Thời gian thực",
     "storage": "Lưu trữ",
@@ -6803,6 +6867,40 @@
     "type": "Loại",
     "zoom_in": "Phóng to",
     "zoom_out": "Thu nhỏ"
+  },
+  "otp-limit-resets": {
+    "clear_email_scoped": "Xóa giới hạn theo email",
+    "clear_email_scoped_description": "Xóa bộ đếm gửi OTP và thất bại xác minh OTP gắn trực tiếp với email này.",
+    "clear_related_ip_blocks": "Bỏ chặn các IP liên quan",
+    "clear_related_ip_blocks_description": "Xóa các lệnh chặn IP đang hoạt động dựa trên OTP cho các IP gần đây liên kết với email này.",
+    "clear_related_ip_counters": "Xóa bộ đếm IP liên quan",
+    "clear_related_ip_counters_description": "Xóa bộ đếm gửi OTP và thất bại xác minh cho các IP gần đây liên kết với email này.",
+    "create": "Đặt lại giới hạn OTP",
+    "create_description": "Xóa trạng thái OTP hiện tại cho một email cụ thể và các IP gần đây gắn với email đó.",
+    "description": "Đặt lại giới hạn OTP theo email và các IP liên quan khi người dùng bị giới hạn nhầm.",
+    "email": "Email",
+    "email_description": "Nhập địa chỉ email cần được xóa giới hạn OTP.",
+    "plural": "Lần đặt lại giới hạn OTP",
+    "reason": "Lý do",
+    "reason_description": "Ghi chú quản trị viên tùy chọn cho nhật ký kiểm tra.",
+    "reason_placeholder": "Mô tả lý do cần đặt lại",
+    "reset_failed": "Không thể đặt lại giới hạn OTP",
+    "reset_success": "Đã đặt lại giới hạn OTP",
+    "reset_success_description": "Đã xóa IP liên quan: {relatedIpCount}. Đã bỏ chặn IP: {unblockedIpCount}.",
+    "singular": "Đặt lại giới hạn OTP",
+    "submit": "Đặt lại giới hạn",
+    "submitting": "Đang đặt lại..."
+  },
+  "otp-limit-resets-data-table": {
+    "admin": "Quản trị viên",
+    "admin_ip": "IP quản trị viên",
+    "created_at": "Thời gian",
+    "email": "Email",
+    "metadata": "Dữ liệu bổ sung",
+    "reason": "Lý do",
+    "related_ip_count": "IP liên quan",
+    "scope": "Phạm vi",
+    "unblocked_ip_count": "IP đã bỏ chặn"
   },
   "pending-invoice-data-table": {
     "actions": "Hành động",

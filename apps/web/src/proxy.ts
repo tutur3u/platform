@@ -576,8 +576,32 @@ const getDefaultLocale = (
     'accept-language': req.headers.get('accept-language') ?? 'en-US,en;q=0.5',
   };
 
-  const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, supportedLocales, defaultLocale);
+  const languages = new Negotiator({ headers })
+    .languages()
+    .flatMap((language) => {
+      if (!language || language === '*') {
+        return [];
+      }
+
+      try {
+        const [canonicalLocale] = Intl.getCanonicalLocales(language);
+        return canonicalLocale ? [canonicalLocale] : [];
+      } catch {
+        return [];
+      }
+    });
+
+  let detectedLocale: string = defaultLocale;
+
+  try {
+    detectedLocale = match(
+      languages.length > 0 ? languages : [defaultLocale],
+      supportedLocales,
+      defaultLocale
+    );
+  } catch {
+    detectedLocale = defaultLocale;
+  }
 
   return {
     locale: supportedLocales.includes(detectedLocale as Locale)

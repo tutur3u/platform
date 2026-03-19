@@ -225,9 +225,16 @@ async function getRecentTransactions(
 
   // Fetch wallet names
   const walletMap = new Map<string, string>();
-  const wallets = walletIds.length
-    ? await listWallets(wsId, internalApiOptions)
-    : [];
+  let wallets: Awaited<ReturnType<typeof listWallets>> = [];
+
+  if (walletIds.length > 0) {
+    try {
+      wallets = await listWallets(wsId, internalApiOptions);
+    } catch (error) {
+      console.error('Failed to load wallets for recent transactions:', error);
+    }
+  }
+
   wallets.forEach((wallet) => {
     if (wallet.id && wallet.name) {
       walletMap.set(wallet.id, wallet.name);

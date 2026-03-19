@@ -1,16 +1,15 @@
 'use client';
 
-import { Check, Loader2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Check, Loader2, Trash2 } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { v4 as UUIDv4 } from 'uuid';
-import { downloadPrivateObject, uploadObject } from '@/lib/storage-helper';
+import { useState } from 'react';
+import { apiFetch, uploadToStorageUrl } from '@/lib/api-fetch';
 
 interface Props {
   workspace: Workspace;
@@ -19,64 +18,86 @@ interface Props {
 }
 
 export default function LogoInput({ workspace, disabled }: Props) {
-  const bucket = 'workspaces';
-
   const router = useRouter();
-  const supabase = createClient();
-
   const [file, setFile] = useState<File | null>(null);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const { data: logoData } = useQuery({
+    queryKey: ['workspace-logo', workspace.id, workspace.logo_url],
+    queryFn: () =>
+      apiFetch<{ url: string | null }>(
+        `/api/v1/workspaces/${workspace.id}/logo`,
+        {
+          cache: 'no-store',
+        }
+      ),
+    enabled: !!workspace.logo_url,
+  });
 
-  const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    if (workspace.logo_url)
-      downloadPrivateObject({
-        supabase,
-        bucket,
-        path: workspace.logo_url,
-        onSuccess: setLogoUrl,
+  const uploadLogoMutation = useMutation({
+    mutationFn: async (selectedFile: File) => {
+      const payload = await apiFetch<{
+        signedUrl: string;
+        token: string;
+        filePath: string;
+      }>(`/api/v1/workspaces/${workspace.id}/logo/upload-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: selectedFile.name }),
       });
-  }, [workspace.logo_url, supabase]);
+
+      await uploadToStorageUrl(payload.signedUrl, selectedFile, payload.token);
+
+      await apiFetch(`/api/v1/workspaces/${workspace.id}/logo`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath: payload.filePath }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Workspace updated',
+        description: 'Workspace logo updated successfully.',
+      });
+      setFile(null);
+      router.refresh();
+    },
+    onError: (error) => {
+      console.error('Error uploading logo:', error);
+      toast({
+        title: 'Error uploading logo',
+        description: 'There was an error uploading the logo.',
+      });
+    },
+  });
+
+  const deleteLogoMutation = useMutation({
+    mutationFn: () =>
+      apiFetch(`/api/v1/workspaces/${workspace.id}/logo`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      toast({
+        title: 'Workspace updated',
+        description: 'Workspace logo updated successfully.',
+      });
+      router.refresh();
+    },
+    onError: (error) => {
+      console.error('Error removing logo:', error);
+      toast({
+        title: 'Error uploading logo',
+        description: 'There was an error uploading the logo.',
+      });
+    },
+  });
 
   const uploadLogo = async () => {
-    await uploadObject({
-      supabase,
-      bucket,
-      file,
-      path: `${workspace.id}/${UUIDv4()}`,
-      beforeStart: () => setUploading(true),
-      onComplete: () => setUploading(false),
-      onSuccess: async (url) => {
-        const { error: updateError } = await supabase
-          .from('workspaces')
-          .update({ logo_url: url })
-          .eq('id', workspace.id);
-
-        if (updateError) {
-          toast({
-            title: 'Error uploading logo',
-            description: 'There was an error uploading the logo.',
-          });
-          return;
-        }
-
-        toast({
-          title: 'Workspace updated',
-          description: 'Workspace logo updated successfully.',
-        });
-
-        setFile(null);
-        router.refresh();
-      },
-      onError: () => {
-        toast({
-          title: 'Error uploading logo',
-          description: 'There was an error uploading the logo.',
-        });
-      },
-    });
+    if (!file) return;
+    await uploadLogoMutation.mutateAsync(file);
   };
+
+  const uploading =
+    uploadLogoMutation.isPending || deleteLogoMutation.isPending;
+  const logoUrl = logoData?.url ?? null;
 
   return (
     <>
@@ -113,6 +134,21 @@ export default function LogoInput({ workspace, disabled }: Props) {
             <Check className="h-5 w-5" />
           )}
         </Button>
+        {workspace.logo_url && (
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            onClick={() => void deleteLogoMutation.mutateAsync()}
+            disabled={uploading}
+          >
+            {deleteLogoMutation.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Trash2 className="h-5 w-5" />
+            )}
+          </Button>
+        )}
       </div>
     </>
   );

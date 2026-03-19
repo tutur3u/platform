@@ -6,6 +6,7 @@ import type { UpstashRestRedisClient } from '../upstash-rest';
 
 export type AbuseEventType =
   | 'otp_send'
+  | 'otp_limit_reset'
   | 'otp_verify_failed'
   | 'mfa_challenge'
   | 'mfa_verify_failed'

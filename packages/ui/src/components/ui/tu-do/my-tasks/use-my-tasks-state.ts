@@ -1,6 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  createWorkspaceTaskBoard,
+  listWorkspaceBoardsWithLists,
+  listWorkspaces,
+  listWorkspaceTaskBoards,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { AI_CREDITS_QUERY_KEY } from '@tuturuuu/ui/hooks/use-ai-credits';
@@ -188,23 +194,7 @@ export function useMyTasksState({
   const { data: workspacesData } = useQuery({
     queryKey: ['user-workspaces'],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data: memberData, error: memberError } = await supabase
-        .from('workspace_members')
-        .select('ws_id');
-      if (memberError) throw memberError;
-
-      const workspaceIds = memberData?.map((m) => m.ws_id) || [];
-      if (workspaceIds.length === 0) return [];
-
-      const { data, error } = await supabase
-        .from('workspaces')
-        .select('id, name, personal')
-        .in('id', workspaceIds)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
+      return listWorkspaces();
     },
     enabled: isPersonal,
   });
@@ -212,23 +202,47 @@ export function useMyTasksState({
   const { data: allBoardsData = [] } = useQuery({
     queryKey: ['all-user-boards'],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data: memberData, error: memberError } = await supabase
-        .from('workspace_members')
-        .select('ws_id');
-      if (memberError) throw memberError;
-
-      const workspaceIds = memberData?.map((m) => m.ws_id) || [];
+      const workspaces = await listWorkspaces();
+      const workspaceIds = workspaces.map((workspace) => workspace.id);
       if (workspaceIds.length === 0) return [];
 
-      const { data, error } = await supabase
-        .from('workspace_boards')
-        .select('id, name, ws_id')
-        .in('ws_id', workspaceIds)
-        .is('deleted_at', null);
+      const fetchAllWorkspaceBoards = async (workspaceId: string) => {
+        const pageSize = 200;
+        const boards: Awaited<
+          ReturnType<typeof listWorkspaceTaskBoards>
+        >['boards'] = [];
+        let page = 1;
 
-      if (error) throw error;
-      return data || [];
+        while (true) {
+          const payload = await listWorkspaceTaskBoards(workspaceId, {
+            page,
+            pageSize,
+          });
+          const pageBoards = payload.boards ?? [];
+          boards.push(...pageBoards);
+
+          if (pageBoards.length < pageSize) {
+            break;
+          }
+
+          page += 1;
+        }
+
+        return boards;
+      };
+
+      const boardGroups = await Promise.all(
+        workspaceIds.map((workspaceId) => fetchAllWorkspaceBoards(workspaceId))
+      );
+
+      return boardGroups
+        .flat()
+        .filter((board) => !board.deleted_at)
+        .map((board) => ({
+          id: board.id,
+          name: board.name,
+          ws_id: board.ws_id,
+        }));
     },
     enabled: isPersonal,
   });
@@ -237,14 +251,11 @@ export function useMyTasksState({
   const { data: wsBoardCount, isLoading: wsBoardCountLoading } = useQuery({
     queryKey: ['workspace', wsId, 'board-count'],
     queryFn: async () => {
-      const supabase = createClient();
-      const { count, error } = await supabase
-        .from('workspace_boards')
-        .select('id', { count: 'exact', head: true })
-        .eq('ws_id', wsId)
-        .is('deleted_at', null);
-      if (error) throw error;
-      return count ?? 0;
+      const payload = await listWorkspaceTaskBoards(wsId, {
+        page: 1,
+        pageSize: 1,
+      });
+      return payload.count ?? 0;
     },
   });
 
@@ -272,13 +283,9 @@ export function useMyTasksState({
     const autoCreateBoard = async () => {
       try {
         const supabase = createClient();
-        const { data: newBoard, error } = await supabase
-          .from('workspace_boards')
-          .insert({ ws_id: wsId, name: defaultBoardName })
-          .select('id')
-          .single();
-
-        if (error) throw error;
+        const { board: newBoard } = await createWorkspaceTaskBoard(wsId, {
+          name: defaultBoardName,
+        });
         if (!newBoard) return;
 
         // Rename trigger-created default lists to translated names
@@ -333,16 +340,8 @@ export function useMyTasksState({
   const { data: boardsDataRaw, isLoading: boardsLoading } = useQuery({
     queryKey: ['workspace', selectedWorkspaceId, 'boards-with-lists'],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_boards')
-        .select(`id, name, task_lists(id, name, status, position, deleted)`)
-        .eq('ws_id', selectedWorkspaceId)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
+      const payload = await listWorkspaceBoardsWithLists(selectedWorkspaceId);
+      return payload.boards || [];
     },
     enabled: boardSelectorOpen && !!selectedWorkspaceId,
   });

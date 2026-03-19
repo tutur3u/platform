@@ -118,7 +118,9 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         )}
 
         {id !== 'personal' && enableSecurity && <Security workspace={ws} />}
-        {id !== 'personal' && <RemoveYourself workspace={ws} />}
+        {id !== 'personal' && (
+          <RemoveYourself workspace={ws} currentUserId={user?.id} />
+        )}
         {isRootWorkspace && <AdminTaskEmbeddings />}
       </div>
     </>

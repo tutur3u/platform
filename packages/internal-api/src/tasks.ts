@@ -1,4 +1,8 @@
-import type { TaskProjectWithRelations } from '@tuturuuu/types';
+import type {
+  Database,
+  TaskProjectWithRelations,
+  WorkspaceTaskBoardRow,
+} from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -65,6 +69,75 @@ export interface ListWorkspaceTasksOptions {
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
 }
+
+export type WorkspaceTaskBoardListItem = Pick<
+  WorkspaceTaskBoardRow,
+  | 'id'
+  | 'ws_id'
+  | 'name'
+  | 'icon'
+  | 'archived_at'
+  | 'deleted_at'
+  | 'created_at'
+  | 'ticket_prefix'
+  | 'estimation_type'
+  | 'extended_estimation'
+  | 'allow_zero_estimates'
+  | 'count_unestimated_issues'
+> & {
+  list_count?: number;
+  task_count?: number;
+};
+
+export interface WorkspaceTaskListSummary {
+  id: string;
+  name: string | null;
+  status: string | null;
+  color: string | null;
+  position: number | null;
+  deleted?: boolean;
+}
+
+export type WorkspaceTaskBoardDetail = WorkspaceTaskBoardRow & {
+  task_lists?: WorkspaceTaskListSummary[];
+};
+
+export type WorkspaceTaskBoardWithLists = Pick<
+  WorkspaceTaskBoardRow,
+  'id' | 'name' | 'created_at'
+> & {
+  task_lists: WorkspaceTaskListSummary[];
+};
+
+export interface ListWorkspaceTaskBoardsOptions {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ListWorkspaceTaskBoardsResponse {
+  boards: WorkspaceTaskBoardListItem[];
+  count: number;
+}
+
+export interface WorkspaceBoardsDataResponse {
+  data: WorkspaceTaskBoardDetail[];
+  count: number;
+}
+
+export type CreateWorkspaceTaskBoardPayload = Pick<
+  Database['public']['Tables']['workspace_boards']['Insert'],
+  'name' | 'icon' | 'template_id'
+>;
+
+export type UpdateWorkspaceTaskBoardPayload = Pick<
+  Database['public']['Tables']['workspace_boards']['Update'],
+  'name' | 'icon' | 'ticket_prefix'
+> & {
+  color?: string;
+  archived?: boolean;
+  group_ids?: string[];
+};
 
 export interface CreateWorkspaceTaskPayload {
   name: string;
@@ -180,6 +253,125 @@ export async function listWorkspaceTaskProjects(
           status: project.status ?? null,
         },
       ];
+    }
+  );
+}
+
+export async function listWorkspaceTaskBoards(
+  workspaceId: string,
+  options?: ListWorkspaceTaskBoardsOptions,
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  return client.json<ListWorkspaceTaskBoardsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards`,
+    {
+      query: {
+        q: options?.q,
+        page: options?.page,
+        pageSize: options?.pageSize,
+      },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceBoardsData(
+  workspaceId: string,
+  options?: ListWorkspaceTaskBoardsOptions,
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  return client.json<WorkspaceBoardsDataResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards-data`,
+    {
+      query: {
+        q: options?.q,
+        page: options?.page,
+        pageSize: options?.pageSize,
+      },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceBoardsWithLists(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ boards: WorkspaceTaskBoardWithLists[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards-with-lists`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceTaskBoard(
+  workspaceId: string,
+  payload: CreateWorkspaceTaskBoardPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ board: WorkspaceTaskBoardDetail }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceTaskBoard(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ board: WorkspaceTaskBoardDetail }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceTaskBoard(
+  workspaceId: string,
+  boardId: string,
+  payload: UpdateWorkspaceTaskBoardPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceTaskBoard(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
     }
   );
 }

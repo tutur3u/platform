@@ -5,11 +5,12 @@ import {
 import {
   isTurnstileError,
   resolveTurnstileToken,
-  verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import {
-  checkOTPSendLimit,
+  checkOTPSendAllowed,
   extractIPFromHeaders,
+  logAbuseEvent,
+  recordOTPSendSuccess,
 } from '@tuturuuu/utils/abuse-protection';
 import {
   MAX_CODE_LENGTH,
@@ -39,6 +40,9 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
+  let ipAddress = 'unknown';
+  let validatedEmail: string | undefined;
+
   try {
     const body = await request.json().catch(() => null);
     const parsed = SendOtpSchema.safeParse(body);
@@ -57,9 +61,7 @@ export async function POST(request: NextRequest) {
     });
 
     const headersList = await headers();
-    const ipAddress = extractIPFromHeaders(headersList);
-
-    let validatedEmail: string;
+    ipAddress = extractIPFromHeaders(headersList);
 
     try {
       validatedEmail = await validateEmail(email);
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
       return jsonWithCors({ error: message }, { status: 400 });
     }
 
-    const abuseCheck = await checkOTPSendLimit(ipAddress, validatedEmail);
+    const abuseCheck = await checkOTPSendAllowed(ipAddress, validatedEmail);
     if (!abuseCheck.allowed) {
       return jsonWithCors(
         {
@@ -86,6 +88,14 @@ export async function POST(request: NextRequest) {
     const infrastructureCheck =
       await checkEmailInfrastructureBlocked(validatedEmail);
     if (infrastructureCheck.isBlocked) {
+      void logAbuseEvent(ipAddress, 'otp_send', {
+        email: validatedEmail,
+        success: false,
+        metadata: {
+          stage: 'infrastructure_block',
+          blockType: infrastructureCheck.blockType,
+        },
+      });
       return jsonWithCors(
         { error: 'Unable to send verification code to this email address.' },
         { status: 400 }
@@ -98,9 +108,6 @@ export async function POST(request: NextRequest) {
     const turnstile = resolveTurnstileToken({
       token: captchaToken,
       requireConfiguration: true,
-    });
-    await verifyTurnstileToken(request, turnstile.captchaToken, {
-      remoteIp: ipAddress !== 'unknown' ? ipAddress : undefined,
     });
     const useAdminAuth = turnstile.shouldBypassForDev;
     const supabase = useAdminAuth ? sbAdmin : await createClient();
@@ -121,6 +128,14 @@ export async function POST(request: NextRequest) {
       );
 
       if (updateError) {
+        void logAbuseEvent(ipAddress, 'otp_send', {
+          email: validatedEmail,
+          success: false,
+          metadata: {
+            stage: 'update_user',
+            message: updateError.message,
+          },
+        });
         console.error('[mobile/send-otp] updateUserById error:', updateError);
         return jsonWithCors({ error: updateError.message }, { status: 500 });
       }
@@ -131,6 +146,16 @@ export async function POST(request: NextRequest) {
       });
 
       if (error) {
+        void logAbuseEvent(ipAddress, 'otp_send', {
+          email: validatedEmail,
+          success: false,
+          metadata: {
+            stage: 'sign_in_with_otp',
+            message: error.message,
+            code: error.code,
+            status: error.status,
+          },
+        });
         console.error(
           '[mobile/send-otp] signInWithOtp error:',
           JSON.stringify({
@@ -151,6 +176,16 @@ export async function POST(request: NextRequest) {
       });
 
       if (error) {
+        void logAbuseEvent(ipAddress, 'otp_send', {
+          email: validatedEmail,
+          success: false,
+          metadata: {
+            stage: 'sign_up',
+            message: error.message,
+            code: error.code,
+            status: error.status,
+          },
+        });
         console.error(
           '[mobile/send-otp] signUp error:',
           JSON.stringify({
@@ -163,9 +198,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    await recordOTPSendSuccess(ipAddress, validatedEmail);
     return jsonWithCors({ success: true });
   } catch (error) {
     if (isTurnstileError(error)) {
+      if (validatedEmail) {
+        void logAbuseEvent(ipAddress, 'otp_send', {
+          email: validatedEmail,
+          success: false,
+          metadata: {
+            stage: 'captcha',
+            message: error.message,
+          },
+        });
+      }
       return jsonWithCors({ error: error.message }, { status: 400 });
     }
 

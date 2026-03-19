@@ -18,45 +18,20 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-
-export type TimeBlock = {
-  startTime: string;
-  endTime: string;
-};
-
-export type DayTimeRange = {
-  enabled: boolean;
-  timeBlocks: TimeBlock[];
-};
-
-export type WeekTimeRanges = {
-  monday: DayTimeRange;
-  tuesday: DayTimeRange;
-  wednesday: DayTimeRange;
-  thursday: DayTimeRange;
-  friday: DayTimeRange;
-  saturday: DayTimeRange;
-  sunday: DayTimeRange;
-};
+import {
+  defaultWeekTimeRanges,
+  type TimeBlock,
+  type WeekTimeRanges,
+} from './hour-settings-shared';
 
 const defaultTimeBlock: TimeBlock = {
   startTime: '07:00',
   endTime: '23:00',
 };
 
-const defaultTimeRange: DayTimeRange = {
+const defaultTimeRange = {
   enabled: true,
   timeBlocks: [{ ...defaultTimeBlock }],
-};
-
-export const defaultWeekTimeRanges: WeekTimeRanges = {
-  monday: { ...defaultTimeRange },
-  tuesday: { ...defaultTimeRange },
-  wednesday: { ...defaultTimeRange },
-  thursday: { ...defaultTimeRange },
-  friday: { ...defaultTimeRange },
-  saturday: { ...defaultTimeRange },
-  sunday: { ...defaultTimeRange },
 };
 
 type TimeRangePickerProps = {

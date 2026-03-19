@@ -1,4 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 
@@ -7,20 +11,12 @@ interface WorkspaceParams {
 }
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<WorkspaceParams> }
 ) {
   try {
-    const { wsId } = await params;
-
-    if (!validate(wsId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID' },
-        { status: 400 }
-      );
-    }
-
-    const supabase = await createClient();
+    const { wsId: rawWsId } = await params;
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -34,13 +30,32 @@ export async function GET(
       );
     }
 
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+    if (!validate(wsId)) {
+      return NextResponse.json(
+        { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
+    }
+
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        {
+          error: 'Failed to verify workspace access',
+          details: memberCheckError.message,
+        },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -49,8 +64,10 @@ export async function GET(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch boards with their lists
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('workspace_boards')
       .select(
         `
@@ -62,7 +79,8 @@ export async function GET(
           name,
           status,
           color,
-          position
+          position,
+          deleted
         )
       `
       )

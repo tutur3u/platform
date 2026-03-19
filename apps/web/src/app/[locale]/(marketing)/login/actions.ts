@@ -7,15 +7,16 @@ import {
 import {
   isTurnstileError,
   resolveTurnstileToken,
-  verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import {
-  checkOTPSendLimit,
+  checkOTPSendAllowed,
   checkOTPVerifyLimit,
   checkPasswordLoginLimit,
   clearOTPVerifyFailures,
   clearPasswordLoginFailures,
   extractIPFromHeaders,
+  logAbuseEvent,
+  recordOTPSendSuccess,
   recordOTPVerifyFailure,
   recordPasswordLoginFailure,
 } from '@tuturuuu/utils/abuse-protection';
@@ -60,17 +61,20 @@ export interface VerifyOtpResult {
 export async function sendOtpAction(
   input: SendOtpInput
 ): Promise<SendOtpResult> {
+  let ipAddress = 'unknown';
+  let validatedEmail: string | undefined;
+
   try {
     const { email, locale, captchaToken } = input;
 
     // Get IP address for abuse tracking
     const headersList = await headers();
-    const ipAddress = extractIPFromHeaders(headersList);
+    ipAddress = extractIPFromHeaders(headersList);
 
-    const validatedEmail = await validateEmail(email);
+    validatedEmail = await validateEmail(email);
 
     // Check rate limits and IP blocks
-    const abuseCheck = await checkOTPSendLimit(ipAddress, validatedEmail);
+    const abuseCheck = await checkOTPSendAllowed(ipAddress, validatedEmail);
     if (!abuseCheck.allowed) {
       return {
         error:
@@ -83,6 +87,14 @@ export async function sendOtpAction(
     const infrastructureCheck =
       await checkEmailInfrastructureBlocked(validatedEmail);
     if (infrastructureCheck.isBlocked) {
+      void logAbuseEvent(ipAddress, 'otp_send', {
+        email: validatedEmail,
+        success: false,
+        metadata: {
+          stage: 'infrastructure_block',
+          blockType: infrastructureCheck.blockType,
+        },
+      });
       console.log(
         `[SendOTP] Email blocked by infrastructure: ${infrastructureCheck.blockType} - ${infrastructureCheck.reason}`
       );
@@ -97,13 +109,6 @@ export async function sendOtpAction(
       token: captchaToken,
       requireConfiguration: true,
     });
-    await verifyTurnstileToken(
-      { headers: headersList },
-      turnstile.captchaToken,
-      {
-        remoteIp: ipAddress !== 'unknown' ? ipAddress : undefined,
-      }
-    );
 
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();
@@ -118,6 +123,14 @@ export async function sendOtpAction(
       );
 
       if (updateError) {
+        void logAbuseEvent(ipAddress, 'otp_send', {
+          email: validatedEmail,
+          success: false,
+          metadata: {
+            stage: 'update_user',
+            message: updateError.message,
+          },
+        });
         return { error: updateError.message };
       }
 
@@ -131,6 +144,16 @@ export async function sendOtpAction(
       });
 
       if (error) {
+        void logAbuseEvent(ipAddress, 'otp_send', {
+          email: validatedEmail,
+          success: false,
+          metadata: {
+            stage: 'sign_in_with_otp',
+            message: error.message,
+            code: error.code,
+            status: error.status,
+          },
+        });
         return { error: error.message };
       }
     } else {
@@ -147,13 +170,34 @@ export async function sendOtpAction(
       });
 
       if (error) {
+        void logAbuseEvent(ipAddress, 'otp_send', {
+          email: validatedEmail,
+          success: false,
+          metadata: {
+            stage: 'sign_up',
+            message: error.message,
+            code: error.code,
+            status: error.status,
+          },
+        });
         return { error: error.message };
       }
     }
 
+    await recordOTPSendSuccess(ipAddress, validatedEmail);
     return { success: true };
   } catch (error) {
     if (isTurnstileError(error)) {
+      if (validatedEmail) {
+        void logAbuseEvent(ipAddress, 'otp_send', {
+          email: validatedEmail,
+          success: false,
+          metadata: {
+            stage: 'captcha',
+            message: error.message,
+          },
+        });
+      }
       return {
         error: 'Verification failed. Please try again.',
       };

@@ -195,7 +195,9 @@ export async function exportReportAsPdf({
   onAfterDownload,
 }: ExportReportPdfOptions): Promise<number> {
   const [{ jsPDF }, canvases] = await Promise.all([
-    import('jspdf'),
+    // Use the browser ESM bundle explicitly so client SSR does not resolve the
+    // Node entry (`jspdf.node.min.js`), which breaks Turbopack preview builds.
+    import('jspdf/dist/jspdf.es.min.js'),
     renderReportPageCanvases({
       elementId,
       isDarkPreview,

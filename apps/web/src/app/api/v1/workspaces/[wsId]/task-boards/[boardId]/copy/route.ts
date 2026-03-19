@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import {
   getPermissions,
@@ -49,6 +52,7 @@ export async function POST(req: Request, { params }: Params) {
     const { boardId: parsedBoardId } = parsedParams.data;
 
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     if (targetWorkspaceId !== wsId) {
@@ -75,7 +79,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { data: sourceBoard, error: fetchError } = await supabase
+    const { data: sourceBoard, error: fetchError } = await sbAdmin
       .from('workspace_boards')
       .select(
         `
@@ -126,7 +130,7 @@ export async function POST(req: Request, { params }: Params) {
         icon: sourceBoard.icon ?? null,
       };
 
-    const { data: createdBoard, error: boardError } = await supabase
+    const { data: createdBoard, error: boardError } = await sbAdmin
       .from('workspace_boards')
       .insert(newBoardPayload)
       .select('id, name')

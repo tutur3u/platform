@@ -6,11 +6,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
-  checkOTPSendLimit,
+  checkOTPSendAllowed,
   extractIPFromHeaders,
   hashEmail,
   MAX_BLOCK_LEVEL,
   REDIS_KEYS,
+  recordOTPSendSuccess,
   WINDOW_MS,
 } from '../index';
 
@@ -305,12 +306,23 @@ describe('abuse-protection', () => {
     });
   });
 
-  describe('checkOTPSendLimit', () => {
+  describe('checkOTPSendAllowed', () => {
+    it('does not consume quota during preflight checks', async () => {
+      const email = `preflight-${Date.now()}@example.com`;
+
+      const firstAttempt = await checkOTPSendAllowed('198.51.100.1', email);
+      const secondAttempt = await checkOTPSendAllowed('198.51.100.2', email);
+
+      expect(firstAttempt.allowed).toBe(true);
+      expect(secondAttempt.allowed).toBe(true);
+    });
+
     it('blocks repeated sends to the same email across different IPs during cooldown', async () => {
       const email = `cooldown-${Date.now()}@example.com`;
 
-      const firstAttempt = await checkOTPSendLimit('198.51.100.1', email);
-      const secondAttempt = await checkOTPSendLimit('198.51.100.2', email);
+      const firstAttempt = await checkOTPSendAllowed('198.51.100.1', email);
+      await recordOTPSendSuccess('198.51.100.1', email);
+      const secondAttempt = await checkOTPSendAllowed('198.51.100.2', email);
 
       expect(firstAttempt.allowed).toBe(true);
       expect(secondAttempt.allowed).toBe(false);
@@ -323,15 +335,17 @@ describe('abuse-protection', () => {
 
       const email = `hourly-${Date.now()}@example.com`;
 
-      const first = await checkOTPSendLimit('203.0.113.1', email);
+      const first = await checkOTPSendAllowed('203.0.113.1', email);
+      await recordOTPSendSuccess('203.0.113.1', email);
       vi.advanceTimersByTime(
         ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS + 1
       );
-      const second = await checkOTPSendLimit('203.0.113.2', email);
+      const second = await checkOTPSendAllowed('203.0.113.2', email);
+      await recordOTPSendSuccess('203.0.113.2', email);
       vi.advanceTimersByTime(
         ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS + 1
       );
-      const third = await checkOTPSendLimit('203.0.113.3', email);
+      const third = await checkOTPSendAllowed('203.0.113.3', email);
 
       expect(first.allowed).toBe(true);
       expect(second.allowed).toBe(true);
@@ -344,10 +358,11 @@ describe('abuse-protection', () => {
       vi.setSystemTime(new Date('2026-03-12T00:00:00.000Z'));
 
       const emailBase = `slow-ip-${Date.now()}`;
-      let lastAttempt = await checkOTPSendLimit(
+      let lastAttempt = await checkOTPSendAllowed(
         '198.51.100.20',
         `${emailBase}-0@example.com`
       );
+      await recordOTPSendSuccess('198.51.100.20', `${emailBase}-0@example.com`);
 
       for (
         let attempt = 1;
@@ -355,14 +370,31 @@ describe('abuse-protection', () => {
         attempt++
       ) {
         vi.advanceTimersByTime(90 * 60 * 1000);
-        lastAttempt = await checkOTPSendLimit(
+        lastAttempt = await checkOTPSendAllowed(
           '198.51.100.20',
           `${emailBase}-${attempt}@example.com`
         );
+        if (lastAttempt.allowed) {
+          await recordOTPSendSuccess(
+            '198.51.100.20',
+            `${emailBase}-${attempt}@example.com`
+          );
+        }
       }
 
       expect(lastAttempt.allowed).toBe(false);
       expect(lastAttempt.retryAfter).toBeGreaterThan(0);
+    });
+
+    it('reports remaining attempts based on the next accepted send', async () => {
+      const email = `remaining-${Date.now()}@example.com`;
+
+      const attempt = await checkOTPSendAllowed('198.51.100.50', email);
+
+      expect(attempt.allowed).toBe(true);
+      expect(attempt.remainingAttempts).toBe(
+        ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE - 1
+      );
     });
   });
 });

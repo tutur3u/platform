@@ -11,6 +11,7 @@ import { BlockedIPRowActions } from './row-actions';
 export type AbuseEventType =
   | 'otp_send'
   | 'otp_verify_failed'
+  | 'otp_limit_reset'
   | 'mfa_challenge'
   | 'mfa_verify_failed'
   | 'reauth_send'
@@ -97,6 +98,7 @@ const getReasonLabel = (reason: string) => {
   const labels: Record<string, string> = {
     otp_send: 'OTP Send Abuse',
     otp_verify_failed: 'OTP Verify Failures',
+    otp_limit_reset: 'OTP Limit Reset',
     mfa_challenge: 'MFA Challenge Abuse',
     mfa_verify_failed: 'MFA Verify Failures',
     reauth_send: 'Reauth Send Abuse',

@@ -9,32 +9,25 @@ import {
   Loader2,
   User,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useState } from 'react';
+import { apiFetch } from '@/lib/api-fetch';
+import type {
+  HoursSettingsData,
+  HourType,
+  WeekTimeRanges,
+} from './hour-settings-shared';
 import { HoursOverview } from './hours-overview';
-import {
-  defaultWeekTimeRanges,
-  TimeRangePicker,
-  type WeekTimeRanges,
-} from './time-range-picker';
-
-export type HoursSettingsData = {
-  personalHours: WeekTimeRanges;
-  workHours: WeekTimeRanges;
-  meetingHours: WeekTimeRanges;
-};
+import { TimeRangePicker } from './time-range-picker';
 
 type HoursSettingsProps = {
   wsId: string;
   workspace?: Workspace | null;
 };
-
-type HourType = 'PERSONAL' | 'WORK' | 'MEETING';
 
 const HOUR_TYPE_CONFIG = {
   work: {
@@ -63,108 +56,31 @@ const HOUR_TYPE_CONFIG = {
   },
 } as const;
 
-async function fetchHourSettings(
-  workspaceId: string
-): Promise<HoursSettingsData> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('workspace_calendar_hour_settings')
-    .select('*')
-    .eq('ws_id', workspaceId);
-
-  if (error) {
-    console.error('Error fetching hours:', {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    });
-    throw new Error('Failed to load hour settings');
-  }
-
-  // If no data exists, create default settings
-  if (!data || data.length === 0) {
-    const makeDefaultData = () => structuredClone(defaultWeekTimeRanges);
-    const defaultSettings = [
-      {
-        type: 'PERSONAL' as const,
-        data: JSON.stringify(makeDefaultData()),
-        ws_id: workspaceId,
-      },
-      {
-        type: 'WORK' as const,
-        data: JSON.stringify(makeDefaultData()),
-        ws_id: workspaceId,
-      },
-      {
-        type: 'MEETING' as const,
-        data: JSON.stringify(makeDefaultData()),
-        ws_id: workspaceId,
-      },
-    ];
-
-    const { error: insertError } = await supabase
-      .from('workspace_calendar_hour_settings')
-      .insert(defaultSettings)
-      .select();
-
-    if (insertError) {
-      console.error('Error creating default settings:', insertError);
-      throw new Error('Failed to create default settings');
+async function fetchHourSettings(wsId: string): Promise<HoursSettingsData> {
+  return apiFetch<HoursSettingsData>(
+    `/api/v1/workspaces/${wsId}/calendar-hours`,
+    {
+      cache: 'no-store',
     }
-
-    return {
-      personalHours: structuredClone(defaultWeekTimeRanges),
-      workHours: structuredClone(defaultWeekTimeRanges),
-      meetingHours: structuredClone(defaultWeekTimeRanges),
-    };
-  }
-
-  const personalData = safeParse(
-    data?.find((h) => h.type === 'PERSONAL')?.data
   );
-  const workData = safeParse(data?.find((h) => h.type === 'WORK')?.data);
-  const meetingData = safeParse(data?.find((h) => h.type === 'MEETING')?.data);
-
-  return {
-    personalHours: isValidWeekTimeRanges(personalData)
-      ? personalData
-      : structuredClone(defaultWeekTimeRanges),
-    workHours: isValidWeekTimeRanges(workData)
-      ? workData
-      : structuredClone(defaultWeekTimeRanges),
-    meetingHours: isValidWeekTimeRanges(meetingData)
-      ? meetingData
-      : structuredClone(defaultWeekTimeRanges),
-  };
 }
 
 async function updateHourSettings(params: {
-  workspaceId: string;
+  wsId: string;
   type: HourType;
   hours: WeekTimeRanges;
 }): Promise<void> {
-  const supabase = createClient();
-
-  const { error } = await supabase
-    .from('workspace_calendar_hour_settings')
-    .upsert(
-      {
-        data: JSON.stringify(params.hours),
-        type: params.type,
-        ws_id: params.workspaceId,
-      },
-      { onConflict: 'ws_id,type' }
-    );
-
-  if (error) {
-    console.error(`Error updating ${params.type} hours:`, error);
-    throw new Error(`Failed to update ${params.type.toLowerCase()} hours`);
-  }
+  await apiFetch(`/api/v1/workspaces/${params.wsId}/calendar-hours`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: params.type,
+      hours: params.hours,
+    }),
+  });
 }
 
-export function HoursSettings({ workspace }: HoursSettingsProps) {
+export function HoursSettings({ wsId }: HoursSettingsProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<
     'overview' | 'work' | 'meeting' | 'personal'
@@ -176,9 +92,9 @@ export function HoursSettings({ workspace }: HoursSettingsProps) {
     isError,
     error,
   } = useQuery({
-    queryKey: ['hour-settings', workspace?.id],
-    queryFn: () => fetchHourSettings(workspace!.id),
-    enabled: !!workspace?.id,
+    queryKey: ['hour-settings', wsId],
+    queryFn: () => fetchHourSettings(wsId),
+    enabled: !!wsId,
     staleTime: 30000,
   });
 
@@ -186,12 +102,12 @@ export function HoursSettings({ workspace }: HoursSettingsProps) {
     mutationFn: updateHourSettings,
     onMutate: async (variables) => {
       await queryClient.cancelQueries({
-        queryKey: ['hour-settings', workspace?.id],
+        queryKey: ['hour-settings', wsId],
       });
 
       const previousSettings = queryClient.getQueryData<HoursSettingsData>([
         'hour-settings',
-        workspace?.id,
+        wsId,
       ]);
 
       // Optimistic update
@@ -202,13 +118,10 @@ export function HoursSettings({ workspace }: HoursSettingsProps) {
           MEETING: 'meetingHours',
         };
 
-        queryClient.setQueryData<HoursSettingsData>(
-          ['hour-settings', workspace?.id],
-          {
-            ...previousSettings,
-            [fieldMap[variables.type]]: variables.hours,
-          }
-        );
+        queryClient.setQueryData<HoursSettingsData>(['hour-settings', wsId], {
+          ...previousSettings,
+          [fieldMap[variables.type]]: variables.hours,
+        });
       }
 
       return { previousSettings };
@@ -217,7 +130,7 @@ export function HoursSettings({ workspace }: HoursSettingsProps) {
       // Rollback on error
       if (context?.previousSettings) {
         queryClient.setQueryData(
-          ['hour-settings', workspace?.id],
+          ['hour-settings', wsId],
           context.previousSettings
         );
       }
@@ -236,13 +149,13 @@ export function HoursSettings({ workspace }: HoursSettingsProps) {
     type: HourType,
     newHours?: WeekTimeRanges | null
   ) => {
-    if (!newHours || !workspace?.id) {
+    if (!newHours || !wsId) {
       toast.error('No hours provided');
       return;
     }
 
     updateMutation.mutate({
-      workspaceId: workspace.id,
+      wsId,
       type,
       hours: newHours,
     });
@@ -312,7 +225,7 @@ export function HoursSettings({ workspace }: HoursSettingsProps) {
           type="button"
           onClick={() =>
             queryClient.invalidateQueries({
-              queryKey: ['hour-settings', workspace?.id],
+              queryKey: ['hour-settings', wsId],
             })
           }
           className="mt-4 text-primary text-sm underline hover:no-underline"
@@ -432,39 +345,4 @@ export function HoursSettings({ workspace }: HoursSettingsProps) {
       </Tabs>
     </div>
   );
-}
-
-function isValidWeekTimeRanges(obj: unknown): obj is WeekTimeRanges {
-  if (!obj || typeof obj !== 'object') return false;
-  const days = [
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-    'sunday',
-  ];
-  return days.every((day) => {
-    const dayObj = (obj as Record<string, unknown>)[day];
-    return (
-      dayObj &&
-      typeof dayObj === 'object' &&
-      'enabled' in dayObj &&
-      typeof (dayObj as { enabled: unknown }).enabled === 'boolean' &&
-      'timeBlocks' in dayObj &&
-      Array.isArray((dayObj as { timeBlocks: unknown }).timeBlocks)
-    );
-  });
-}
-
-function safeParse(data: unknown): unknown {
-  if (typeof data === 'string') {
-    try {
-      return JSON.parse(data);
-    } catch {
-      return undefined;
-    }
-  }
-  return data;
 }

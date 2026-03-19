@@ -192,6 +192,44 @@ async function getCounter(key: string): Promise<number> {
   return existing.count;
 }
 
+async function getCounterWithTTL(
+  key: string
+): Promise<{ count: number; ttl: number }> {
+  const redis = await getRedisClient();
+
+  if (redis) {
+    try {
+      const [count, ttl] = await Promise.all([
+        redis.get<number>(key),
+        redis.ttl(key),
+      ]);
+
+      return {
+        count: count || 0,
+        ttl: ttl > 0 ? ttl : 0,
+      };
+    } catch {
+      // Fall through to memory
+    }
+  }
+
+  const existing = memoryStore.get(key);
+  if (!existing) {
+    return { count: 0, ttl: 0 };
+  }
+
+  const now = Date.now();
+  if (now > existing.expiresAt) {
+    memoryStore.delete(key);
+    return { count: 0, ttl: 0 };
+  }
+
+  return {
+    count: existing.count,
+    ttl: Math.ceil((existing.expiresAt - now) / 1000),
+  };
+}
+
 /**
  * Delete keys from Redis or memory
  */
@@ -210,6 +248,32 @@ async function deleteKeys(...keys: string[]): Promise<void> {
   for (const key of keys) {
     memoryStore.delete(key);
   }
+}
+
+async function deleteKeysWithCount(...keys: string[]): Promise<number> {
+  if (keys.length === 0) {
+    return 0;
+  }
+
+  const redis = await getRedisClient();
+
+  if (redis) {
+    try {
+      const deleted = await redis.del(...keys);
+      return typeof deleted === 'number' ? deleted : 0;
+    } catch {
+      // Fall through to memory
+    }
+  }
+
+  let deleted = 0;
+  for (const key of keys) {
+    if (memoryStore.delete(key)) {
+      deleted++;
+    }
+  }
+
+  return deleted;
 }
 
 /**
@@ -361,7 +425,7 @@ export async function blockIP(
       .insert([
         {
           ip_address: ipAddress,
-          reason,
+          reason: reason as never,
           block_level: newLevel,
           expires_at: expiresAt.toISOString(),
           metadata: (metadata || {}) as Json,
@@ -468,7 +532,7 @@ export async function logAbuseEvent(
     await sbAdmin.from('abuse_events').insert([
       {
         ip_address: ipAddress,
-        event_type: eventType,
+        event_type: eventType as never,
         email: normalizedEmail,
         email_hash: normalizedEmail ? hashEmail(normalizedEmail) : null,
         user_agent: options?.userAgent?.substring(0, 500),
@@ -482,10 +546,188 @@ export async function logAbuseEvent(
   }
 }
 
+export interface ResetOtpLimitsForEmailOptions {
+  email: string;
+  clearEmailScoped: boolean;
+  clearRelatedIpCounters: boolean;
+  clearRelatedIpBlocks: boolean;
+  adminUserId: string;
+  reason?: string;
+  adminIpAddress?: string;
+}
+
+export interface ResetOtpLimitsForEmailResult {
+  relatedIps: string[];
+  clearedEmailKeys: number;
+  clearedIpCounterCount: number;
+  unblockedIpCount: number;
+}
+
+function normalizeOtpResetEmail(email: string): string {
+  const normalized = email.trim().toLowerCase();
+  const regex = /\S+@\S+\.\S+/;
+
+  if (!normalized || !regex.test(normalized)) {
+    throw new Error('Email is invalid');
+  }
+
+  return normalized;
+}
+
+function getOtpResetScopeKeys(ipAddress: string): string[] {
+  return [
+    REDIS_KEYS.OTP_SEND(ipAddress),
+    REDIS_KEYS.OTP_SEND_HOURLY(ipAddress),
+    REDIS_KEYS.OTP_SEND_DAILY(ipAddress),
+    REDIS_KEYS.OTP_VERIFY_FAILED(ipAddress),
+    REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress),
+  ];
+}
+
+export async function resetOtpLimitsForEmail({
+  email,
+  clearEmailScoped,
+  clearRelatedIpCounters,
+  clearRelatedIpBlocks,
+  adminUserId,
+  reason,
+  adminIpAddress,
+}: ResetOtpLimitsForEmailOptions): Promise<ResetOtpLimitsForEmailResult> {
+  if (!clearEmailScoped && !clearRelatedIpCounters && !clearRelatedIpBlocks) {
+    throw new Error('At least one OTP reset option is required');
+  }
+
+  const normalizedEmail = normalizeOtpResetEmail(email);
+  const emailHash = hashEmail(normalizedEmail);
+  const sbAdmin = await getSupabaseAdmin();
+
+  if (!sbAdmin) {
+    throw new Error('Failed to create Supabase client');
+  }
+
+  let relatedIps: string[] = [];
+  if (clearRelatedIpCounters || clearRelatedIpBlocks) {
+    const sinceIso = new Date(
+      Date.now() - WINDOW_MS.TWENTY_FOUR_HOURS
+    ).toISOString();
+    const { data: relatedEvents, error: relatedEventsError } = await sbAdmin
+      .from('abuse_events')
+      .select('ip_address')
+      .eq('email', normalizedEmail)
+      .in('event_type', ['otp_send', 'otp_verify_failed'])
+      .gte('created_at', sinceIso);
+
+    if (relatedEventsError) {
+      throw relatedEventsError;
+    }
+
+    relatedIps = Array.from(
+      new Set(
+        (relatedEvents ?? [])
+          .map((event: { ip_address: string | null }) => event.ip_address)
+          .filter((value: string | null): value is string => !!value)
+      )
+    );
+  }
+
+  let clearedEmailKeys = 0;
+  if (clearEmailScoped) {
+    clearedEmailKeys = await deleteKeysWithCount(
+      REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(emailHash),
+      REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash),
+      REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash),
+      REDIS_KEYS.OTP_VERIFY_FAILED_EMAIL(emailHash)
+    );
+  }
+
+  let clearedIpCounterCount = 0;
+  if (clearRelatedIpCounters && relatedIps.length > 0) {
+    const relatedIpKeys = relatedIps.flatMap((ipAddress) =>
+      getOtpResetScopeKeys(ipAddress)
+    );
+    clearedIpCounterCount = await deleteKeysWithCount(...relatedIpKeys);
+  }
+
+  let unblockedIpCount = 0;
+  let unblockedIps: string[] = [];
+  if (clearRelatedIpBlocks && relatedIps.length > 0) {
+    const { data: activeBlocks, error: activeBlocksError } = await sbAdmin
+      .from('blocked_ips')
+      .select('ip_address')
+      .in('ip_address', relatedIps)
+      .in('reason', ['otp_send', 'otp_verify_failed'])
+      .eq('status', 'active');
+
+    if (activeBlocksError) {
+      throw activeBlocksError;
+    }
+
+    unblockedIps = Array.from(
+      new Set(
+        (activeBlocks ?? [])
+          .map((block: { ip_address: string | null }) => block.ip_address)
+          .filter((value: string | null): value is string => !!value)
+      )
+    );
+
+    if (unblockedIps.length > 0) {
+      const { error: unblockError } = await sbAdmin
+        .from('blocked_ips')
+        .update({
+          status: 'manually_unblocked',
+          unblocked_at: new Date().toISOString(),
+          unblocked_by: adminUserId,
+          unblock_reason:
+            reason || 'Manual OTP limit reset unblock by infrastructure admin',
+        })
+        .in('ip_address', unblockedIps)
+        .in('reason', ['otp_send', 'otp_verify_failed'])
+        .eq('status', 'active');
+
+      if (unblockError) {
+        throw unblockError;
+      }
+
+      await deleteKeysWithCount(
+        ...unblockedIps.flatMap((ipAddress) => [
+          REDIS_KEYS.IP_BLOCKED(ipAddress),
+          REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress),
+        ])
+      );
+      unblockedIpCount = unblockedIps.length;
+    }
+  }
+
+  await logAbuseEvent(adminIpAddress || 'unknown', 'otp_limit_reset', {
+    email: normalizedEmail,
+    success: true,
+    metadata: {
+      admin_user_id: adminUserId,
+      reason: reason || null,
+      clearEmailScoped,
+      clearRelatedIpCounters,
+      clearRelatedIpBlocks,
+      related_ips: relatedIps,
+      related_ips_count: relatedIps.length,
+      cleared_email_keys: clearedEmailKeys,
+      cleared_ip_counter_count: clearedIpCounterCount,
+      unblocked_ips: unblockedIps,
+      unblocked_ip_count: unblockedIpCount,
+    },
+  });
+
+  return {
+    relatedIps,
+    clearedEmailKeys,
+    clearedIpCounterCount,
+    unblockedIpCount,
+  };
+}
+
 /**
  * Check and track OTP send attempts
  */
-export async function checkOTPSendLimit(
+export async function checkOTPSendAllowed(
   ipAddress: string,
   email?: string
 ): Promise<AbuseCheckResult> {
@@ -503,18 +745,25 @@ export async function checkOTPSendLimit(
     };
   }
 
-  // Check per-minute limit
   const minuteKey = REDIS_KEYS.OTP_SEND(ipAddress);
-  const { count: minuteCount, ttl: minuteTTL } = await incrementCounter(
-    minuteKey,
-    WINDOW_MS.ONE_MINUTE
-  );
+  const hourlyKey = REDIS_KEYS.OTP_SEND_HOURLY(ipAddress);
+  const dailyKey = REDIS_KEYS.OTP_SEND_DAILY(ipAddress);
 
-  if (minuteCount > ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE) {
+  const [minuteState, hourlyState, dailyState] = await Promise.all([
+    getCounterWithTTL(minuteKey),
+    getCounterWithTTL(hourlyKey),
+    getCounterWithTTL(dailyKey),
+  ]);
+
+  if (minuteState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE) {
     // Log and potentially block
-    void logAbuseEvent(ipAddress, 'otp_send', { email, success: false });
+    void logAbuseEvent(ipAddress, 'otp_send', {
+      email,
+      success: false,
+      metadata: { trigger: 'minute_limit' },
+    });
 
-    if (minuteCount > ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE * 2) {
+    if (minuteState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE * 2) {
       // Aggressive abuse - block IP
       void blockIP(ipAddress, 'otp_send', { trigger: 'rate_limit_exceeded' });
     }
@@ -522,38 +771,29 @@ export async function checkOTPSendLimit(
     return {
       allowed: false,
       reason: 'Too many OTP requests. Please try again later.',
-      retryAfter: minuteTTL,
+      retryAfter: minuteState.ttl,
       remainingAttempts: 0,
     };
   }
 
-  // Check hourly limit
-  const hourlyKey = REDIS_KEYS.OTP_SEND_HOURLY(ipAddress);
-  const { count: hourlyCount, ttl: hourlyTTL } = await incrementCounter(
-    hourlyKey,
-    WINDOW_MS.ONE_HOUR
-  );
-
-  if (hourlyCount > ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR) {
-    void logAbuseEvent(ipAddress, 'otp_send', { email, success: false });
+  if (hourlyState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR) {
+    void logAbuseEvent(ipAddress, 'otp_send', {
+      email,
+      success: false,
+      metadata: { trigger: 'hourly_rate_limit' },
+    });
 
     void blockIP(ipAddress, 'otp_send', { trigger: 'hourly_rate_limit' });
 
     return {
       allowed: false,
       reason: 'Hourly OTP limit reached. Please try again later.',
-      retryAfter: hourlyTTL,
+      retryAfter: hourlyState.ttl,
       remainingAttempts: 0,
     };
   }
 
-  const dailyKey = REDIS_KEYS.OTP_SEND_DAILY(ipAddress);
-  const { count: dailyCount, ttl: dailyTTL } = await incrementCounter(
-    dailyKey,
-    WINDOW_MS.TWENTY_FOUR_HOURS
-  );
-
-  if (dailyCount > ABUSE_THRESHOLDS.OTP_SEND_PER_DAY) {
+  if (dailyState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_DAY) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
@@ -564,7 +804,7 @@ export async function checkOTPSendLimit(
     return {
       allowed: false,
       reason: 'OTP limit reached. Please try again later.',
-      retryAfter: dailyTTL,
+      retryAfter: dailyState.ttl,
       remainingAttempts: 0,
     };
   }
@@ -573,12 +813,17 @@ export async function checkOTPSendLimit(
     const emailHash = hashEmail(email);
 
     const cooldownKey = REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(emailHash);
-    const { count: cooldownCount, ttl: cooldownTTL } = await incrementCounter(
-      cooldownKey,
-      ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
-    );
+    const hourlyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash);
+    const dailyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash);
 
-    if (cooldownCount > 1) {
+    const [cooldownState, hourlyEmailState, dailyEmailState] =
+      await Promise.all([
+        getCounterWithTTL(cooldownKey),
+        getCounterWithTTL(hourlyEmailKey),
+        getCounterWithTTL(dailyEmailKey),
+      ]);
+
+    if (cooldownState.count >= 1) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -588,16 +833,12 @@ export async function checkOTPSendLimit(
       return {
         allowed: false,
         reason: 'Too many OTP requests. Please try again later.',
-        retryAfter: cooldownTTL,
+        retryAfter: cooldownState.ttl,
         remainingAttempts: 0,
       };
     }
 
-    const hourlyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash);
-    const { count: hourlyEmailCount, ttl: hourlyEmailTTL } =
-      await incrementCounter(hourlyEmailKey, WINDOW_MS.ONE_HOUR);
-
-    if (hourlyEmailCount > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
+    if (hourlyEmailState.count >= ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -607,16 +848,12 @@ export async function checkOTPSendLimit(
       return {
         allowed: false,
         reason: 'Hourly OTP limit reached. Please try again later.',
-        retryAfter: hourlyEmailTTL,
+        retryAfter: hourlyEmailState.ttl,
         remainingAttempts: 0,
       };
     }
 
-    const dailyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash);
-    const { count: dailyEmailCount, ttl: dailyEmailTTL } =
-      await incrementCounter(dailyEmailKey, WINDOW_MS.TWENTY_FOUR_HOURS);
-
-    if (dailyEmailCount > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
+    if (dailyEmailState.count >= ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -626,19 +863,59 @@ export async function checkOTPSendLimit(
       return {
         allowed: false,
         reason: 'OTP limit reached. Please try again later.',
-        retryAfter: dailyEmailTTL,
+        retryAfter: dailyEmailState.ttl,
         remainingAttempts: 0,
       };
     }
   }
 
-  // Log successful attempt
-  void logAbuseEvent(ipAddress, 'otp_send', { email, success: true });
-
   return {
     allowed: true,
-    remainingAttempts: ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE - minuteCount,
+    remainingAttempts: Math.max(
+      0,
+      ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE - (minuteState.count + 1)
+    ),
   };
+}
+
+export async function recordOTPSendSuccess(
+  ipAddress: string,
+  email?: string
+): Promise<void> {
+  await Promise.all([
+    incrementCounter(REDIS_KEYS.OTP_SEND(ipAddress), WINDOW_MS.ONE_MINUTE),
+    incrementCounter(REDIS_KEYS.OTP_SEND_HOURLY(ipAddress), WINDOW_MS.ONE_HOUR),
+    incrementCounter(
+      REDIS_KEYS.OTP_SEND_DAILY(ipAddress),
+      WINDOW_MS.TWENTY_FOUR_HOURS
+    ),
+    ...(email
+      ? [
+          incrementCounter(
+            REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(hashEmail(email)),
+            ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
+          ),
+          incrementCounter(
+            REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(hashEmail(email)),
+            WINDOW_MS.ONE_HOUR
+          ),
+          incrementCounter(
+            REDIS_KEYS.OTP_SEND_EMAIL_DAILY(hashEmail(email)),
+            WINDOW_MS.TWENTY_FOUR_HOURS
+          ),
+        ]
+      : []),
+  ]);
+
+  void logAbuseEvent(ipAddress, 'otp_send', { email, success: true });
+}
+
+// Backward-compatible alias for call sites that still import the old helper.
+export async function checkOTPSendLimit(
+  ipAddress: string,
+  email?: string
+): Promise<AbuseCheckResult> {
+  return checkOTPSendAllowed(ipAddress, email);
 }
 
 /**

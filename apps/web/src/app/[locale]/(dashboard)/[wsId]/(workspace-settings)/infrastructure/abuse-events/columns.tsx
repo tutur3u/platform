@@ -11,6 +11,7 @@ import moment from 'moment';
 export type AbuseEventType =
   | 'otp_send'
   | 'otp_verify_failed'
+  | 'otp_limit_reset'
   | 'mfa_challenge'
   | 'mfa_verify_failed'
   | 'reauth_send'
@@ -39,6 +40,7 @@ const getEventTypeBadge = (eventType: string) => {
   const colors: Record<string, string> = {
     otp_send: 'bg-dynamic-blue/10 text-dynamic-blue',
     otp_verify_failed: 'bg-dynamic-red/10 text-dynamic-red',
+    otp_limit_reset: 'bg-dynamic-teal/10 text-dynamic-teal',
     mfa_challenge: 'bg-dynamic-purple/10 text-dynamic-purple',
     mfa_verify_failed: 'bg-dynamic-red/10 text-dynamic-red',
     reauth_send: 'bg-dynamic-blue/10 text-dynamic-blue',
@@ -52,6 +54,7 @@ const getEventTypeBadge = (eventType: string) => {
   const labels: Record<string, string> = {
     otp_send: 'OTP Send',
     otp_verify_failed: 'OTP Verify Failed',
+    otp_limit_reset: 'OTP Limit Reset',
     mfa_challenge: 'MFA Challenge',
     mfa_verify_failed: 'MFA Verify Failed',
     reauth_send: 'Reauth Send',

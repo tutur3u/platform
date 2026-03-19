@@ -178,7 +178,7 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('uses the dedicated otp-send bucket for mobile OTP sends', async () => {
+  it('keeps mobile OTP sends on the default mutate bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -187,7 +187,7 @@ describe('guardApiProxyRequest', () => {
     mocks.isBlocked.mockResolvedValue(null);
     mocks.limit.mockResolvedValueOnce({
       success: false,
-      limit: 1,
+      limit: 12,
       remaining: 0,
       reset: Date.now() + 15_000,
     });
@@ -202,8 +202,8 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('1');
-    expect(response?.headers.get('X-RateLimit-Policy')).toBe('otp-send');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('12');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
   });
 
   it('keeps verify-otp on the strict auth bucket', async () => {

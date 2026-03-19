@@ -103,7 +103,11 @@ export function ProductUnitForm({
             <FormItem>
               <FormLabel>{t('basic-data-table.name')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('basic-data-table.name')} {...field} />
+                <Input
+                  placeholder={t('basic-data-table.name')}
+                  autoFocus
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

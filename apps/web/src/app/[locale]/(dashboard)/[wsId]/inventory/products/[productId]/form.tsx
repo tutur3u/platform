@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown, Plus, Trash } from '@tuturuuu/icons';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
@@ -28,22 +29,17 @@ import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 import { ProductCategoryForm } from '../../categories/form';
+import { ProductUnitForm } from '../../units/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
 
 const InventorySchema = z.object({
@@ -113,10 +109,13 @@ export function ProductForm({
   canUpdateStockQuantity = false,
 }: Props) {
   const t = useTranslations();
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const [showCategoryDialog, setCategoryDialog] = useState(false);
   const [showWarehouseDialog, setWarehouseDialog] = useState(false);
+  const [showUnitDialog, setUnitDialog] = useState(false);
   const [hasUnlimitedStock, setHasUnlimitedStock] = useState(
     (data?.inventory || []).some((item) => item.amount === null)
   );
@@ -125,6 +124,8 @@ export function ProductForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       ...data,
+      name: data?.name ?? '',
+      category_id: data?.category_id ?? categories[0]?.id ?? '',
       manufacturer: data?.manufacturer ?? '',
       description: data?.description ?? '',
       usage: data?.usage ?? '',
@@ -136,8 +137,8 @@ export function ProductForm({
             }))
           : [
               {
-                unit_id: '',
-                warehouse_id: '',
+                unit_id: units[0]?.id ?? '',
+                warehouse_id: warehouses[0]?.id ?? '',
                 min_amount: 0,
                 amount: hasUnlimitedStock ? null : 0,
                 price: 0,
@@ -153,8 +154,8 @@ export function ProductForm({
 
   function addStock() {
     append({
-      unit_id: '',
-      warehouse_id: '',
+      unit_id: units[0]?.id ?? '',
+      warehouse_id: warehouses[0]?.id ?? '',
       min_amount: 0,
       amount: hasUnlimitedStock ? null : 0,
       price: 0,
@@ -180,8 +181,8 @@ export function ProductForm({
             }))
           : [
               {
-                unit_id: '',
-                warehouse_id: '',
+                unit_id: units[0]?.id ?? '',
+                warehouse_id: warehouses[0]?.id ?? '',
                 min_amount: 0,
                 amount: null,
                 price: 0,
@@ -198,8 +199,8 @@ export function ProductForm({
             }))
           : [
               {
-                unit_id: '',
-                warehouse_id: '',
+                unit_id: units[0]?.id ?? '',
+                warehouse_id: warehouses[0]?.id ?? '',
                 min_amount: 0,
                 amount: 0,
                 price: 0,
@@ -358,6 +359,15 @@ export function ProductForm({
       onFinish?.(formData);
       setLoading(false);
       toast.success(t('ws-inventory-products.product_saved_successfully'));
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-products', wsId],
+      });
+      if (data?.id) {
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-product', wsId, data.id],
+        });
+      }
+      router.refresh();
 
       // Clear form fields only for new products
       if (!data?.id) {
@@ -366,11 +376,11 @@ export function ProductForm({
           manufacturer: '',
           description: '',
           usage: '',
-          category_id: '',
+          category_id: categories[0]?.id ?? '',
           inventory: [
             {
-              unit_id: '',
-              warehouse_id: '',
+              unit_id: units[0]?.id ?? '',
+              warehouse_id: warehouses[0]?.id ?? '',
               min_amount: 0,
               amount: 0,
               price: 0,
@@ -379,8 +389,8 @@ export function ProductForm({
         });
         // Also reset the unlimited stock toggle for new products
         setHasUnlimitedStock(false);
+        router.push(`/${wsId}/inventory/products`);
       }
-      // router.push('../products');
     } catch (error) {
       setLoading(false);
       console.error('Error saving product:', error);
@@ -703,33 +713,69 @@ export function ProductForm({
                                 <FormLabel>
                                   {t('ws-inventory-units.singular')}
                                 </FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                  disabled={!canUpdateStockQuantity}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger
-                                      id="status"
-                                      aria-label={t(
-                                        'ws-inventory-units.placeholder'
-                                      )}
-                                    >
-                                      <SelectValue
-                                        placeholder={t(
-                                          'ws-inventory-units.placeholder'
-                                        )}
-                                      />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {units.map((unit) => (
-                                      <SelectItem value={unit.id} key={unit.id}>
-                                        {unit.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className="w-full justify-between"
+                                        disabled={!canUpdateStockQuantity}
+                                        aria-disabled={!canUpdateStockQuantity}
+                                      >
+                                        {field.value
+                                          ? units.find(
+                                              (unit) => unit.id === field.value
+                                            )?.name
+                                          : t('ws-inventory-units.placeholder')}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="p-0">
+                                    <Command>
+                                      <CommandInput placeholder="Search unit..." />
+                                      <CommandList>
+                                        <CommandEmpty>
+                                          Unit not found.
+                                        </CommandEmpty>
+                                        <CommandGroup>
+                                          <CommandItem
+                                            onSelect={() => setUnitDialog(true)}
+                                          >
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Create new unit
+                                          </CommandItem>
+                                        </CommandGroup>
+                                        <CommandSeparator />
+                                        <CommandGroup>
+                                          {units.map((unit) => (
+                                            <CommandItem
+                                              value={unit.name}
+                                              key={unit.id}
+                                              onSelect={() => {
+                                                form.setValue(
+                                                  `inventory.${i}.unit_id`,
+                                                  unit.id
+                                                );
+                                              }}
+                                            >
+                                              <Check
+                                                className={cn(
+                                                  'mr-2 h-4 w-4',
+                                                  unit.id === field.value
+                                                    ? 'opacity-100'
+                                                    : 'opacity-0'
+                                                )}
+                                              />
+                                              {unit.name}
+                                            </CommandItem>
+                                          ))}
+                                        </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -901,6 +947,21 @@ export function ProductForm({
         setOpen={setWarehouseDialog}
         form={
           <ProductWarehouseForm
+            wsId={wsId}
+            canCreateInventory={canCreateInventory}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
+      />
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showUnitDialog}
+        title={t('ws-inventory-units.create')}
+        editDescription={t('ws-inventory-units.create_description')}
+        setOpen={setUnitDialog}
+        form={
+          <ProductUnitForm
             wsId={wsId}
             canCreateInventory={canCreateInventory}
             canUpdateInventory={canUpdateInventory}

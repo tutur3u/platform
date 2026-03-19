@@ -1,31 +1,28 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle, Loader2, UserIcon } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace, WorkspaceUser } from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { useWorkspacePermission } from '@tuturuuu/ui/hooks/use-workspace-permission';
-import { useWorkspaceUser } from '@tuturuuu/ui/hooks/use-workspace-user';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
+import { apiFetch, uploadToStorageUrl } from '@/lib/api-fetch';
 
 interface Props {
   workspace: Workspace;
   defaultValue?: string | null;
   disabled?: boolean;
-  onPermissionCheckComplete?: (hasPermission: boolean) => void;
 }
 
 const FormSchema = z.object({
@@ -82,119 +79,107 @@ const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
   });
 };
 
-export default function AvatarInput({
-  workspace,
-  disabled,
-  onPermissionCheckComplete,
-}: Props) {
-  const bucket = 'avatars';
+export default function AvatarInput({ workspace, disabled }: Props) {
   const t = useTranslations();
   const router = useRouter();
-  const supabase = createClient();
-
-  // Fetch current workspace user
-  const { data: user, isLoading: isUserLoading } = useWorkspaceUser();
 
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isConverting, setIsConverting] = useState(false);
-
-  const [saving, setSaving] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(
     workspace?.avatar_url || null
   );
-
-  // Check if user has manage_workspace_settings permission
-  // Only check permission once user data is loaded
-  const { hasPermission, isLoading: isCheckingPermission } =
-    useWorkspacePermission({
-      wsId: workspace.id,
-      permission: 'manage_workspace_settings',
-      user: user ?? ({} as WorkspaceUser),
-      enabled: !!user, // Only run query when user is loaded
-    });
-
-  // Notify parent component when permission check completes
-  useEffect(() => {
-    if (!isCheckingPermission && onPermissionCheckComplete) {
-      onPermissionCheckComplete(hasPermission ?? false);
-    }
-  }, [hasPermission, isCheckingPermission, onPermissionCheckComplete]);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 
-  // Determine if upload should be disabled (including user loading state)
-  const isUploadDisabled =
-    disabled || !hasPermission || isCheckingPermission || isUserLoading;
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const payload = await apiFetch<{
+        signedUrl: string;
+        token: string;
+        filePath: string;
+        publicUrl: string;
+      }>(`/api/v1/workspaces/${workspace.id}/avatar/upload-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name }),
+      });
+
+      await uploadToStorageUrl(payload.signedUrl, file, payload.token);
+
+      const result = await apiFetch<{ avatarUrl: string }>(
+        `/api/v1/workspaces/${workspace.id}/avatar`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: payload.filePath }),
+        }
+      );
+
+      return result.avatarUrl;
+    },
+    onSuccess: (avatarUrl) => {
+      setPreviewSrc(avatarUrl);
+      toast.success(t('settings-account.avatar_updated_description'));
+      form.reset();
+      router.refresh();
+    },
+    onError: (error) => {
+      console.error('Error updating workspace avatar:', error);
+      toast.error(t('settings-account.avatar_update_error'));
+    },
+  });
+
+  const removeAvatarMutation = useMutation({
+    mutationFn: async () => {
+      await apiFetch(`/api/v1/workspaces/${workspace.id}/avatar`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      setPreviewSrc(null);
+      toast.success(t('settings-account.avatar_removed_description'));
+      router.refresh();
+    },
+    onError: (error) => {
+      console.error('Error removing workspace avatar:', error);
+      toast.error(t('settings-account.avatar_remove_error'));
+      setPreviewSrc(workspace?.avatar_url || null);
+    },
+  });
+
+  const saving =
+    uploadAvatarMutation.isPending || removeAvatarMutation.isPending;
+  const isUploadDisabled = !!disabled;
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     if (!data.file) return;
 
-    setSaving(true);
-
     try {
-      // The file from the form is already the cropped and compressed blob
       const finalFile = data.file;
 
       if (finalFile.size > MAX_FILE_SIZE) {
         throw new Error('File is too large (max 2MB)');
       }
 
-      const filePath = `${generateRandomUUID()}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, finalFile);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('workspaces')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', workspace.id);
-
-      if (updateError) throw updateError;
-
-      toast.success(t('settings-account.avatar_updated_description'));
-      router.refresh();
+      await uploadAvatarMutation.mutateAsync(finalFile);
     } catch (error) {
       console.error('Error:', error);
       toast.error(t('settings-account.avatar_update_error'));
-    } finally {
-      form.reset();
-      setSaving(false);
     }
   }
 
   const removeAvatar = async () => {
-    setSaving(true);
     setPreviewSrc(null);
 
     if (!workspace.avatar_url) {
-      setSaving(false);
       return;
     }
 
-    const { error: updateError } = await supabase
-      .from('workspaces')
-      .update({ avatar_url: null })
-      .eq('id', workspace.id);
-
-    if (updateError) {
-      toast.error(t('settings-account.avatar_remove_error'));
-    } else {
-      toast.success(t('settings-account.avatar_removed_description'));
-      router.refresh();
-    }
-
-    setSaving(false);
+    await removeAvatarMutation.mutateAsync();
   };
 
   const handleFileSelect = async (file: File) => {
@@ -289,8 +274,7 @@ export default function AvatarInput({
             </Avatar>
           </div>
 
-          {/* Permission denied message */}
-          {!isCheckingPermission && !hasPermission && !disabled && (
+          {disabled && (
             <div className="flex items-center gap-2 rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/10 p-3">
               <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
               <p className="text-dynamic-amber text-sm">

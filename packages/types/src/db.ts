@@ -1,5 +1,7 @@
 import type { Database, Tables } from './supabase';
 
+export type { Database } from './supabase';
+
 export type AIChat = Tables<'ai_chats'>;
 export type AIGatewayModel = Tables<'ai_gateway_models'>;
 
@@ -69,7 +71,8 @@ export type WorkspaceFormShareLink = Tables<'form_share_links'>;
 export type WorkspaceFormSession = Tables<'form_sessions'>;
 export type WorkspaceFormResponse = Tables<'form_responses'>;
 export type WorkspaceFormResponseAnswer = Tables<'form_response_answers'>;
-export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
+export type WorkspaceTaskBoardRow = Tables<'workspace_boards'>;
+export type WorkspaceTaskBoard = WorkspaceTaskBoardRow & {
   href?: string;
   lists?: Partial<WorkspaceTaskList>[];
 };
@@ -648,3 +651,5 @@ export type WorkforceUserProfile = WorkspaceUser & {
   contracts?: WorkforceContractWithCompensation[];
   current_contract?: WorkforceContract | null;
 };
+
+export type LimitRow = Tables<'platform_entity_creation_limits'>;

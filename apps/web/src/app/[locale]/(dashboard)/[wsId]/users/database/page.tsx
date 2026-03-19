@@ -31,6 +31,11 @@ function parseIntSearchParam(value?: string, fallback = 1) {
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 
+function clampPageSize(value?: string, fallback = 10) {
+  const parsed = parseIntSearchParam(value, fallback);
+  return Math.min(Math.max(parsed, 1), 100);
+}
+
 function resolveDatabaseTab(tab?: string): 'users' | 'audit-log' {
   return tab === 'audit-log' ? 'audit-log' : 'users';
 }
@@ -113,7 +118,7 @@ export default async function WorkspaceUsersPage({
           {
             q: sp.q,
             page: sp.page ? parseInt(sp.page, 10) : 1,
-            pageSize: sp.pageSize ? parseInt(sp.pageSize, 10) : 10,
+            pageSize: clampPageSize(sp.pageSize, 10),
             includedGroups: Array.isArray(sp.includedGroups)
               ? sp.includedGroups
               : sp.includedGroups
@@ -179,7 +184,7 @@ export default async function WorkspaceUsersPage({
         year={sp.logYear}
         status={sp.logStatus}
         page={parseIntSearchParam(sp.logPage, 1)}
-        pageSize={parseIntSearchParam(sp.logPageSize, 10)}
+        pageSize={clampPageSize(sp.logPageSize, 10)}
         canExport={canExportUsers}
       />
     );

@@ -15,11 +15,14 @@ import {
   createWorkspaceTaskWithRelationship,
   deleteWorkspaceTask,
   deleteWorkspaceTaskRelationship,
+  getWorkspaceTaskBoard as getWorkspaceTaskBoardFromApi,
   listWorkspaceTasks,
   moveWorkspaceTask,
+  resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
   updateWorkspaceTaskList,
 } from '@tuturuuu/internal-api/tasks';
+
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
@@ -65,17 +68,25 @@ export function getTicketIdentifier(
 }
 
 export async function getTaskBoard(
-  supabase: TypedSupabaseClient,
-  boardId: string
+  _supabase: TypedSupabaseClient,
+  boardId: string,
+  workspaceId?: string,
+  options?: InternalApiClientOptions
 ) {
-  const { data, error } = await supabase
-    .from('workspace_boards')
-    .select('*')
-    .eq('id', boardId)
-    .maybeSingle(); // Use maybeSingle instead of single to return null if no rows
+  const resolvedWorkspaceId =
+    workspaceId ?? (await resolveTaskProjectWorkspaceId({ boardId }, options));
 
-  if (error) throw error;
-  return data as WorkspaceTaskBoard | null;
+  if (!resolvedWorkspaceId) {
+    return null;
+  }
+
+  const payload = await getWorkspaceTaskBoardFromApi(
+    resolvedWorkspaceId,
+    boardId,
+    options
+  );
+
+  return (payload.board ?? null) as WorkspaceTaskBoard | null;
 }
 
 export async function getTaskLists(
@@ -1660,14 +1671,13 @@ export async function getStatusTemplates(supabase: TypedSupabaseClient) {
 }
 
 export async function createBoardWithTemplate(
-  supabase: TypedSupabaseClient,
   wsId: string,
   name: string,
   templateId?: string,
-  icon?: Database['public']['Enums']['platform_icon'] | null
+  icon?: Database['public']['Enums']['platform_icon'] | null,
+  options?: InternalApiClientOptions
 ) {
-  const options = await getMutationApiOptions(supabase);
-  const { board } = await createWorkspaceTaskBoard(
+  const payload = await createWorkspaceTaskBoard(
     wsId,
     {
       name,
@@ -1677,7 +1687,7 @@ export async function createBoardWithTemplate(
     options
   );
 
-  return board as WorkspaceTaskBoard;
+  return payload.board as WorkspaceTaskBoard;
 }
 
 export async function updateTaskListStatus(
@@ -1774,8 +1784,11 @@ export function useCreateBoardWithTemplate(wsId: string) {
       templateId?: string;
       icon?: Database['public']['Enums']['platform_icon'] | null;
     }) => {
-      const supabase = createClient();
-      return createBoardWithTemplate(supabase, wsId, name, templateId, icon);
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : undefined;
+      return createBoardWithTemplate(wsId, name, templateId, icon, {
+        baseUrl: baseUrl ?? undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });
@@ -2126,17 +2139,23 @@ export function useBoardConfig(boardId: string | null | undefined) {
     queryFn: async () => {
       if (!boardId) return null;
 
-      const supabase = createClient();
-      const { data: board, error } = await supabase
-        .from('workspace_boards')
-        .select(
-          'id, estimation_type, extended_estimation, allow_zero_estimates, ws_id, ticket_prefix'
-        )
-        .eq('id', boardId)
-        .single();
+      const workspaceId = await resolveTaskProjectWorkspaceId({ boardId });
 
-      if (error) throw error;
-      return board as BoardConfig;
+      if (!workspaceId) {
+        return null;
+      }
+
+      const payload = await getWorkspaceTaskBoardFromApi(workspaceId, boardId);
+      const board = payload.board;
+
+      return {
+        id: board.id,
+        estimation_type: board.estimation_type ?? null,
+        extended_estimation: board.extended_estimation ?? false,
+        allow_zero_estimates: board.allow_zero_estimates ?? false,
+        ws_id: board.ws_id,
+        ticket_prefix: board.ticket_prefix ?? null,
+      } as BoardConfig;
     },
     enabled: Boolean(boardId),
     staleTime: 10 * 60 * 1000, // 10 minutes - board config rarely changes

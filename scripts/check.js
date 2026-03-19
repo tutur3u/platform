@@ -266,7 +266,6 @@ function runCheck(check, options = {}) {
 
     const proc = spawn(check.command, check.args, {
       cwd: process.cwd(),
-      shell: true,
       env: {
         ...process.env,
         FORCE_COLOR: '1',
@@ -487,10 +486,17 @@ async function main() {
   let failingCheckName = null;
 
   for (const check of checks) {
-    console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
+    const hasVisibleOutput = showDetails || false;
+    if (hasVisibleOutput) {
+      console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
+    } else {
+      console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}`);
+    }
     const result = await runCheck(check);
     results.push(result);
-    console.log('\n');
+    if (hasVisibleOutput || !result.success) {
+      console.log('');
+    }
 
     if (failFast && !result.success && failFastRequiredChecks.has(check.name)) {
       failureSeen = true;

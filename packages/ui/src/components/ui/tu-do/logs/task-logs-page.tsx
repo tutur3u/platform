@@ -1,7 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  listWorkspaceTaskBoards,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
 import LogsClient from '@tuturuuu/ui/tu-do/logs/logs-client';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
@@ -31,19 +35,18 @@ export default async function TaskLogsPage({ params }: Props) {
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const supabase = await createClient();
+  const boardsPayload = await listWorkspaceTaskBoards(
+    wsId,
+    undefined,
+    withForwardedInternalApiAuth(await headers())
+  );
 
-  const { data: boards } = await supabase
-    .from('workspace_boards')
-    .select('id, name, estimation_type')
-    .eq('ws_id', wsId)
-    .is('deleted_at', null)
-    .order('name', { ascending: true });
+  const boards = boardsPayload.boards.filter((board) => !board.deleted_at);
 
   const boardList = (boards || []).map((b) => ({ id: b.id, name: b.name }));
   const estimationTypes: Record<string, string | null> = {};
   (boards || []).forEach((b) => {
-    estimationTypes[b.id] = b.estimation_type;
+    estimationTypes[b.id] = b.estimation_type ?? null;
   });
 
   return (

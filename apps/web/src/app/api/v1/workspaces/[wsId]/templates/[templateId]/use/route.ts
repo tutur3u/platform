@@ -1,4 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -73,7 +80,7 @@ function isValidListStatus(status: string): status is ListStatus {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const { wsId, templateId } = await params;
+    const { wsId: rawWsId, templateId } = await params;
     const body: UseTemplateRequest = await req.json();
 
     const { boardName } = body;
@@ -85,6 +92,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
+    const supabase = await createClient(req);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
     if (!validate(wsId) || !validate(templateId)) {
       return NextResponse.json(
         { error: 'Invalid workspace ID or template ID' },
@@ -92,7 +102,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -108,16 +118,31 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     // Verify user has access to the target workspace
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({ wsId, request: req });
+    if (!permissions?.containsPermission('manage_projects')) {
+      return NextResponse.json(
+        { error: "You don't have permission to create boards" },
         { status: 403 }
       );
     }
@@ -155,7 +180,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         : null;
 
     // Create the new board in the target workspace
-    const { data: createdBoard, error: boardError } = await supabase
+    const { data: createdBoard, error: boardError } = await sbAdmin
       .from('workspace_boards')
       .insert({
         name: boardName.trim(),

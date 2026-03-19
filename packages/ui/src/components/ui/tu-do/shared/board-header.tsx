@@ -30,7 +30,10 @@ import {
   X,
   Zap,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  deleteWorkspaceTaskBoard,
+  updateWorkspaceTaskBoard,
+} from '@tuturuuu/internal-api';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
@@ -221,8 +224,7 @@ export function BoardHeader({
   async function handleDelete() {
     try {
       setIsLoading(true);
-      const supabase = createClient();
-      await supabase.from('workspace_boards').delete().eq('id', board.id);
+      await deleteWorkspaceTaskBoard(board.ws_id, board.id);
       router.push(`/${board.ws_id}${tasksHref('/boards')}`);
     } catch (error) {
       console.error('Failed to delete board:', error);
@@ -234,15 +236,13 @@ export function BoardHeader({
   async function handleSaveTicketPrefix() {
     try {
       setIsLoading(true);
-      const supabase = createClient();
 
       // Validate and clean the prefix
       const cleanedPrefix = ticketPrefix.trim().toUpperCase();
 
-      await supabase
-        .from('workspace_boards')
-        .update({ ticket_prefix: cleanedPrefix || null })
-        .eq('id', board.id);
+      await updateWorkspaceTaskBoard(board.ws_id, board.id, {
+        ticket_prefix: cleanedPrefix || null,
+      });
 
       setBoardSettingsOpen(false);
 
