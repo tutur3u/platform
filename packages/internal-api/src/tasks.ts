@@ -159,12 +159,6 @@ export interface CreateWorkspaceTaskPayload {
   auto_schedule?: boolean | null;
 }
 
-export interface CreateWorkspaceTaskBoardPayload {
-  name?: string;
-  icon?: string | null;
-  template_id?: string;
-}
-
 export interface WorkspaceTaskBoardResponse {
   board: {
     id: string;
@@ -511,25 +505,6 @@ export async function createWorkspaceTask(
   const client = getInternalApiClient(options);
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-    }
-  );
-}
-
-export async function createWorkspaceTaskBoard(
-  workspaceId: string,
-  payload: CreateWorkspaceTaskBoardPayload,
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(options);
-  return client.json<WorkspaceTaskBoardResponse>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards`,
     {
       method: 'POST',
       headers: {

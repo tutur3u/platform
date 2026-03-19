@@ -33,8 +33,6 @@ export {
   createWorkspaceTaskBoard,
   createWorkspaceTaskList,
   createWorkspaceTaskProject,
-  createWorkspaceTaskProject,
-  createWorkspaceTaskRelationship,
   createWorkspaceTaskRelationship,
   createWorkspaceTaskWithRelationship,
   deleteWorkspaceTask,
