@@ -854,10 +854,9 @@ describe('useTaskActions', () => {
       });
 
       expect(setCustomDateDialogOpen).toHaveBeenCalledWith(false);
-      expect(mockUpdateTaskMutation.mutate).toHaveBeenCalledWith(
-        { taskId: 'task-1', updates: { end_date: expect.any(String) } },
-        expect.any(Object)
-      );
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        end_date: expect.any(String),
+      });
     });
   });
 
@@ -869,8 +868,6 @@ describe('useTaskActions', () => {
       } as unknown as Task;
 
       queryClient.setQueryData(['tasks', 'board-1'], [taskNoWorkspace]);
-      // Configure the .insert() call to resolve to a success response
-      mockSupabase.insert = vi.fn(() => Promise.resolve({ error: null }));
 
       const setIsLoading = vi.fn();
 
@@ -879,6 +876,7 @@ describe('useTaskActions', () => {
           useTaskActions({
             task: taskNoWorkspace,
             boardId: 'board-1',
+            workspaceId: 'ws-1',
             targetCompletionList: mockCompletionList,
             targetClosedList: mockClosedList,
             availableLists: mockAvailableLists,
@@ -893,12 +891,9 @@ describe('useTaskActions', () => {
         await result.current.handleToggleAssignee('user-1');
       });
 
-      // Verify the Supabase call was made
       await waitFor(() => {
-        expect(mockSupabase.from).toHaveBeenCalledWith('task_assignees');
-        expect(mockSupabase.insert).toHaveBeenCalledWith({
-          task_id: 'task-1',
-          user_id: 'user-1',
+        expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+          assignee_ids: ['user-1'],
         });
       });
     });
@@ -912,9 +907,6 @@ describe('useTaskActions', () => {
         ],
       } as unknown as Task;
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
-      mockSupabase.delete = vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ error: null })),
-      }));
 
       const setIsLoading = vi.fn();
 
@@ -923,6 +915,7 @@ describe('useTaskActions', () => {
           useTaskActions({
             task: taskWithAssignee,
             boardId: 'board-1',
+            workspaceId: 'ws-1',
             targetCompletionList: mockCompletionList,
             targetClosedList: mockClosedList,
             availableLists: mockAvailableLists,
@@ -937,9 +930,10 @@ describe('useTaskActions', () => {
         await result.current.handleToggleAssignee('user-1');
       });
 
-      // Verify the Supabase delete was called
       await waitFor(() => {
-        expect(mockSupabase.delete).toHaveBeenCalled();
+        expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+          assignee_ids: [],
+        });
       });
     });
 
@@ -950,12 +944,8 @@ describe('useTaskActions', () => {
       } as unknown as Task;
       queryClient.setQueryData(['tasks', 'board-1'], [taskNoWorkspace]);
 
-      // Mock insert to fail (simulating add assignee flow)
-      mockSupabase.insert = vi.fn(() =>
-        Promise.resolve({
-          error: new Error('Database write failed'),
-          data: null,
-        })
+      mockUpdateWorkspaceTask.mockRejectedValueOnce(
+        new Error('Database write failed')
       );
 
       const setIsLoading = vi.fn();
@@ -967,6 +957,7 @@ describe('useTaskActions', () => {
           useTaskActions({
             task: taskNoWorkspace,
             boardId: 'board-1',
+            workspaceId: 'ws-1',
             targetCompletionList: mockCompletionList,
             targetClosedList: mockClosedList,
             availableLists: mockAvailableLists,
@@ -1011,18 +1002,9 @@ describe('useTaskActions', () => {
       } as unknown as Task;
       queryClient.setQueryData(['tasks', 'board-1'], [taskWithAssignee]);
 
-      // Mock delete to fail (simulating remove assignee flow)
-      // The implementation uses .delete().eq().eq() pattern
-      mockSupabase.delete = vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(() =>
-            Promise.resolve({
-              error: new Error('Database delete failed'),
-              data: null,
-            })
-          ),
-        })),
-      }));
+      mockUpdateWorkspaceTask.mockRejectedValueOnce(
+        new Error('Database delete failed')
+      );
 
       const setIsLoading = vi.fn();
       const setMenuOpen = vi.fn();
@@ -1033,6 +1015,7 @@ describe('useTaskActions', () => {
           useTaskActions({
             task: taskWithAssignee,
             boardId: 'board-1',
+            workspaceId: 'ws-1',
             targetCompletionList: mockCompletionList,
             targetClosedList: mockClosedList,
             availableLists: mockAvailableLists,

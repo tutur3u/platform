@@ -8,14 +8,21 @@ import {
 } from '@tanstack/react-query';
 import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
 import {
+  createWorkspaceTask,
   createWorkspaceTaskBoard,
+  createWorkspaceTaskList,
   createWorkspaceTaskRelationship,
+  createWorkspaceTaskWithRelationship,
+  deleteWorkspaceTask,
   deleteWorkspaceTaskRelationship,
   getWorkspaceTaskBoard as getWorkspaceTaskBoardFromApi,
   listWorkspaceTasks,
+  moveWorkspaceTask,
   resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
+  updateWorkspaceTaskList,
 } from '@tuturuuu/internal-api/tasks';
+
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
@@ -39,7 +46,6 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type {
   CreateTaskRelationshipInput,
   CreateTaskWithRelationshipInput,
-  CreateTaskWithRelationshipResult,
   RelatedTaskInfo,
   TaskRelationship,
   TaskRelationshipsResponse,
@@ -229,19 +235,131 @@ export async function getTaskAssignees(
   return data as TaskAssignee[];
 }
 
+async function getMutationApiOptions(
+  supabase: TypedSupabaseClient
+): Promise<InternalApiClientOptions | undefined> {
+  if (typeof window !== 'undefined') {
+    return { baseUrl: window.location.origin };
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return undefined;
+  }
+
+  return {
+    defaultHeaders: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  };
+}
+
+async function resolveBoardWorkspaceId(
+  supabase: TypedSupabaseClient,
+  boardId: string
+) {
+  const { data, error } = await supabase
+    .from('workspace_boards')
+    .select('ws_id')
+    .eq('id', boardId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data?.ws_id) throw new Error('Board not found');
+  return data.ws_id;
+}
+
+async function resolveListContext(
+  supabase: TypedSupabaseClient,
+  listId: string
+): Promise<{ wsId: string; boardId: string; status: TaskBoardStatus | null }> {
+  const { data, error } = await supabase
+    .from('task_lists')
+    .select('id, board_id, status, workspace_boards!inner(ws_id)')
+    .eq('id', listId)
+    .single();
+
+  if (error) throw error;
+
+  const wsId = data.workspace_boards?.ws_id;
+  if (!wsId) throw new Error('List not found');
+
+  return {
+    wsId,
+    boardId: data.board_id,
+    status: (data.status as TaskBoardStatus | null) ?? null,
+  };
+}
+
+async function resolveTaskContext(
+  supabase: TypedSupabaseClient,
+  taskId: string
+): Promise<{ wsId: string; boardId: string; listId: string }> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(
+      'id, list_id, task_lists!inner(board_id, workspace_boards!inner(ws_id))'
+    )
+    .eq('id', taskId)
+    .single();
+
+  if (error) throw error;
+
+  const wsId = data.task_lists?.workspace_boards?.ws_id;
+  const boardId = data.task_lists?.board_id;
+  if (!wsId || !boardId || !data.list_id) throw new Error('Task not found');
+
+  return {
+    wsId,
+    boardId,
+    listId: data.list_id,
+  };
+}
+
+function toWorkspaceTaskUpdatePayload(
+  task: Partial<Task> & { completed?: boolean }
+) {
+  return {
+    ...(task.name !== undefined ? { name: task.name } : {}),
+    ...(task.description !== undefined
+      ? { description: task.description }
+      : {}),
+    ...(task.priority !== undefined ? { priority: task.priority } : {}),
+    ...(task.start_date !== undefined ? { start_date: task.start_date } : {}),
+    ...(task.end_date !== undefined ? { end_date: task.end_date } : {}),
+    ...(task.closed_at !== undefined ? { closed_at: task.closed_at } : {}),
+    ...(task.completed_at !== undefined
+      ? { completed_at: task.completed_at }
+      : {}),
+    ...(task.list_id !== undefined ? { list_id: task.list_id } : {}),
+    ...(task.estimation_points !== undefined
+      ? { estimation_points: task.estimation_points }
+      : {}),
+    ...(task.completed !== undefined ? { completed: task.completed } : {}),
+    ...(task.sort_key !== undefined && task.sort_key !== null
+      ? { sort_key: task.sort_key }
+      : {}),
+  };
+}
+
 export async function createTaskList(
   supabase: TypedSupabaseClient,
   boardId: string,
   name: string
 ) {
-  const { data, error } = await supabase
-    .from('task_lists')
-    .insert({ board_id: boardId, name })
-    .select()
-    .single();
+  const wsId = await resolveBoardWorkspaceId(supabase, boardId);
+  const options = await getMutationApiOptions(supabase);
+  const { list } = await createWorkspaceTaskList(
+    wsId,
+    boardId,
+    { name },
+    options
+  );
 
-  if (error) throw error;
-  return data as TaskList;
+  return list;
 }
 
 export async function createTask(
@@ -265,10 +383,10 @@ export async function createTask(
 
   // First, check if user is authenticated
   const {
-    data: { user },
+    data: { user: currentUser },
     error: authError,
   } = await supabase.auth.getUser();
-  if (authError || !user) {
+  if (authError || !currentUser) {
     console.error('Authentication error:', authError);
     throw new Error('User not authenticated');
   }
@@ -290,143 +408,7 @@ export async function createTask(
     throw new Error('List not found');
   }
 
-  const listWorkspaceId =
-    typeof window !== 'undefined'
-      ? await (async () => {
-          const { data, error } = await supabase
-            .from('task_lists')
-            .select('workspace_boards!inner(ws_id)')
-            .eq('id', listId)
-            .single();
-
-          if (error) {
-            throw new Error(
-              `List not found or access denied: ${error.message || 'Unknown error'}`
-            );
-          }
-
-          return data?.workspace_boards?.ws_id ?? null;
-        })()
-      : null;
-
-  if (typeof window !== 'undefined' && listWorkspaceId) {
-    const response = await fetch(
-      `/api/v1/workspaces/${listWorkspaceId}/tasks`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: task.name.trim(),
-          description: task.description || null,
-          description_yjs_state: task.description_yjs_state ?? null,
-          listId,
-          priority: task.priority || null,
-          start_date: task.start_date || null,
-          end_date: task.end_date || null,
-          estimation_points: task.estimation_points ?? null,
-          label_ids: task.label_ids ?? [],
-          assignee_ids: task.assignee_ids ?? [],
-          project_ids: task.project_ids ?? [],
-        }),
-        cache: 'no-store',
-      }
-    );
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      const errorMessage = errorBody?.error || 'Failed to create task';
-      const enhancedError = new Error(errorMessage);
-      enhancedError.name = 'TaskCreationError';
-      throw enhancedError;
-    }
-
-    const result = (await response.json()) as { task: Task };
-    return result.task;
-  }
-
-  // Get the highest sort_key in the list to place new task at the end
-  const { data: existingTasks, error: tasksError } = await supabase
-    .from('tasks')
-    .select('sort_key')
-    .eq('list_id', listId)
-    .is('deleted_at', null)
-    .order('sort_key', { ascending: false })
-    .limit(1);
-
-  if (tasksError) {
-    console.error('Error fetching existing tasks for sort key:', tasksError);
-  }
-
-  // Calculate the sort key for the new task (placed at the end of the list)
-  const highestSortKey = existingTasks?.[0]?.sort_key ?? null;
-  const newSortKey = calculateSortKey(highestSortKey, null);
-
-  // Prepare task data with only the fields that exist in the database.
-  // Note: legacy scheduling fields were moved to `task_user_scheduling_settings`.
-  // Note: display_number and board_id are auto-assigned by database trigger
-  const taskData = {
-    name: task.name.trim(),
-    description: task.description || null,
-    description_yjs_state: task.description_yjs_state ?? null,
-    list_id: listId,
-    priority: task.priority || null,
-    start_date: task.start_date || null,
-    end_date: task.end_date || null,
-    estimation_points: task.estimation_points ?? null,
-    sort_key: newSortKey,
-    created_at: new Date().toISOString(),
-  };
-
-  // Now try the normal insert with the fixed database
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert(taskData)
-    .select()
-    .single();
-
-  if (error) {
-    // Create a more descriptive error message
-    let errorMessage = 'Failed to create task';
-
-    // Try to extract error information from various possible structures
-    const errorObj = error as {
-      message?: string;
-      details?: string;
-      hint?: string;
-      code?: string;
-      error?: string;
-    };
-
-    if (errorObj?.message) {
-      errorMessage = errorObj.message;
-    } else if (errorObj?.details) {
-      errorMessage = errorObj.details;
-    } else if (errorObj?.hint) {
-      errorMessage = errorObj.hint;
-    } else if (errorObj?.code) {
-      errorMessage = `Database error (${errorObj.code}): ${errorObj.message || 'Unknown database error'}`;
-    } else if (errorObj?.error) {
-      errorMessage = errorObj.error;
-    } else if (typeof errorObj === 'string') {
-      errorMessage = errorObj;
-    } else {
-      // If we can't extract a meaningful message, create one based on the error structure
-      errorMessage = `Database operation failed: ${JSON.stringify(errorObj)}`;
-    }
-
-    // Create a new Error object with the descriptive message
-    const enhancedError = new Error(errorMessage);
-    enhancedError.name = 'TaskCreationError';
-    (enhancedError as { originalError?: unknown }).originalError = error;
-
-    throw enhancedError;
-  }
-
-  // Scheduling settings are now per-user (task_user_scheduling_settings).
-  // Only persist scheduling when the caller explicitly provides at least one
-  // scheduling field. This avoids creating implicit rows with surprising defaults.
+  const listContext = await resolveListContext(supabase, listId);
   const schedulingInput = task as Partial<{
     total_duration: number | null;
     is_splittable: boolean | null;
@@ -435,42 +417,37 @@ export async function createTask(
     calendar_hours: Task['calendar_hours'];
     auto_schedule: boolean | null;
   }>;
-  const hasSchedulingInput =
-    schedulingInput.total_duration !== undefined ||
-    schedulingInput.is_splittable !== undefined ||
-    schedulingInput.min_split_duration_minutes !== undefined ||
-    schedulingInput.max_split_duration_minutes !== undefined ||
-    schedulingInput.calendar_hours !== undefined ||
-    schedulingInput.auto_schedule !== undefined;
 
-  if (data?.id && hasSchedulingInput) {
-    const schedulingPayload = {
-      task_id: data.id,
-      user_id: user.id,
+  const options = await getMutationApiOptions(supabase);
+  const { task: createdTask } = await createWorkspaceTask(
+    listContext.wsId,
+    {
+      name: task.name.trim(),
+      description: task.description || null,
+      description_yjs_state: task.description_yjs_state ?? null,
+      listId,
+      priority: task.priority || null,
+      start_date: task.start_date || null,
+      end_date: task.end_date || null,
+      estimation_points: task.estimation_points ?? null,
+      label_ids: task.label_ids ?? [],
+      assignee_ids: task.assignee_ids ?? [],
+      project_ids: task.project_ids ?? [],
       total_duration: schedulingInput.total_duration ?? null,
-      is_splittable: schedulingInput.is_splittable ?? false,
+      is_splittable: schedulingInput.is_splittable ?? null,
       min_split_duration_minutes:
         schedulingInput.min_split_duration_minutes ?? null,
       max_split_duration_minutes:
         schedulingInput.max_split_duration_minutes ?? null,
       calendar_hours: schedulingInput.calendar_hours ?? null,
-      auto_schedule: schedulingInput.auto_schedule ?? false,
-    };
-
-    const { error: schedulingError } = await supabase
-      .from('task_user_scheduling_settings')
-      .upsert(schedulingPayload, {
-        onConflict: 'task_id,user_id',
-      });
-
-    if (schedulingError) {
-      throw schedulingError;
-    }
-  }
+      auto_schedule: schedulingInput.auto_schedule ?? null,
+    },
+    options
+  );
 
   // Generate embedding in development mode (client-side)
   // Note: We always call the endpoint - it will check DEV_MODE and API key availability server-side
-  if (typeof window !== 'undefined' && data) {
+  if (typeof window !== 'undefined' && createdTask) {
     // Get workspace ID from URL (format: /[locale]/[wsId]/...)
     const pathParts = window.location.pathname.split('/');
     const wsId = pathParts[2]; // Assuming format /[locale]/[wsId]/...
@@ -478,7 +455,7 @@ export async function createTask(
     if (wsId) {
       // Call the embedding generation endpoint asynchronously (non-blocking)
       // The endpoint will only generate embeddings if in dev mode with API key
-      fetch(`/api/v1/workspaces/${wsId}/tasks/${data.id}/embedding`, {
+      fetch(`/api/v1/workspaces/${wsId}/tasks/${createdTask.id}/embedding`, {
         method: 'POST',
       }).catch((err) => {
         console.error('Failed to generate embedding:', err);
@@ -486,24 +463,22 @@ export async function createTask(
     }
   }
 
-  return data as Task;
+  return createdTask as Task;
 }
 
 export async function updateTask(
   supabase: TypedSupabaseClient,
   taskId: string,
-  task: Partial<Task>
+  task: Partial<Task> & { completed?: boolean }
 ) {
-  const { data, error } = await supabase
-    .from('tasks')
-    .update(task)
-    .eq('id', taskId)
-    .select()
-    .single();
-
-  if (error) {
-    throw error;
-  }
+  const { wsId } = await resolveTaskContext(supabase, taskId);
+  const options = await getMutationApiOptions(supabase);
+  const { task: data } = await updateWorkspaceTask(
+    wsId,
+    taskId,
+    toWorkspaceTaskUpdatePayload(task),
+    options
+  );
 
   // If name or description was updated, regenerate embedding
   // Note: We always call the endpoint - it will check DEV_MODE and API key availability server-side
@@ -592,12 +567,16 @@ export async function syncTaskArchivedStatus(
 
   // Only update if there's a mismatch
   if (!!task.closed_at !== shouldArchive) {
-    const { error: updateError } = await supabase
-      .from('tasks')
-      .update({ closed_at: shouldArchive ? new Date().toISOString() : null })
-      .eq('id', taskId);
-
-    if (updateError) {
+    try {
+      const { wsId } = await resolveTaskContext(supabase, taskId);
+      const options = await getMutationApiOptions(supabase);
+      await updateWorkspaceTask(
+        wsId,
+        taskId,
+        { closed_at: shouldArchive ? new Date().toISOString() : null },
+        options
+      );
+    } catch (updateError) {
       console.error('Error syncing task archived status:', updateError);
     }
   }
@@ -627,149 +606,21 @@ export async function moveTaskToBoard(
   newListId: string,
   targetBoardId?: string
 ) {
-  console.log('🗄️ moveTaskToBoard function called');
-  console.log('📋 Task ID:', taskId);
-  console.log('🎯 New List ID:', newListId);
-  console.log('📊 Target Board ID:', targetBoardId);
-
-  // First, get the current task details including its current archived status and source list
-  console.log('🔍 Fetching current task details...');
-  const { data: currentTask, error: taskError } = await supabase
-    .from('tasks')
-    .select(`
-      id,
-      list_id,
-      closed_at,
-      task_lists!inner(status, name, board_id)
-    `)
-    .eq('id', taskId)
-    .single();
-
-  if (taskError) {
-    console.log('❌ Error fetching current task:', taskError);
-    throw taskError;
-  }
-
-  console.log('📊 Current task details:', currentTask);
-
-  // Get the target list to check its status and board
-  console.log('🔍 Fetching target list details...');
-  const { data: targetList, error: listError } = await supabase
-    .from('task_lists')
-    .select('status, name, board_id')
-    .eq('id', newListId)
-    .single();
-
-  if (listError) {
-    console.log('❌ Error fetching target list:', listError);
-    throw listError;
-  }
-
-  console.log('📊 Target list details:', targetList);
-
-  // Check if we're moving to a different board
-  const currentBoardId = currentTask.task_lists.board_id;
-  const isMovingToNewBoard = targetList.board_id !== currentBoardId;
-
-  console.log('🏠 Current board ID:', currentBoardId);
-  console.log('🏠 Target board ID:', targetList.board_id);
-  console.log('🔄 Moving to new board:', isMovingToNewBoard);
-
-  // Determine task completion status based on improved logic:
-  // 1. If moving TO a "done"/"closed" list: archive the task
-  // 2. If moving FROM a "done"/"closed" list to any other list: unarchive the task
-  // 3. If moving between non-done lists: preserve current archived status
-  const sourceListStatus = currentTask.task_lists.status;
-  const targetListStatus = targetList.status;
-  const currentlyArchived = !!currentTask.closed_at;
-
-  let shouldArchive: boolean;
-
-  if (targetListStatus === 'done' || targetListStatus === 'closed') {
-    // Moving TO a completion list - always archive
-    shouldArchive = true;
-    console.log('📦 Moving to completion list, will archive task');
-  } else if (sourceListStatus === 'done' || sourceListStatus === 'closed') {
-    // Moving FROM a completion list to a non-completion list - always unarchive
-    shouldArchive = false;
-    console.log('📦 Moving from completion list, will unarchive task');
-  } else {
-    // Moving between non-completion lists - preserve current status
-    shouldArchive = currentlyArchived || false;
-    console.log(
-      '📦 Moving between non-completion lists, preserving current status:',
-      currentlyArchived
-    );
-  }
-
-  console.log('📊 Source list status:', sourceListStatus);
-  console.log('📊 Target list status:', targetListStatus);
-  console.log('📊 Currently archived:', currentlyArchived);
-  console.log('📦 Will archive:', shouldArchive);
-
-  console.log('🔄 Updating task in database...');
-
-  const updates: any = {
-    list_id: newListId,
-    closed_at: shouldArchive ? new Date().toISOString() : null,
-  };
-
-  if (isMovingToNewBoard) {
-    updates.display_number = null;
-  }
-
-  const { data, error } = await supabase
-    .from('tasks')
-    .update(updates)
-    .eq('id', taskId)
-    .select(
-      `
-        *,
-        assignees:task_assignees(
-          user:users(
-            id,
-            display_name,
-            avatar_url
-          )
-        ),
-        labels:task_labels(
-          label:workspace_task_labels(
-            id,
-            name,
-            color,
-            created_at
-          )
-        ),
-        projects:task_project_tasks(
-          project:task_projects(
-            id,
-            name,
-            status
-          )
-        )
-      `
-    )
-    .single();
-
-  if (error) {
-    console.log('❌ Error updating task:', error);
-    throw error;
-  }
-
-  console.log('✅ Task updated successfully in database');
-  console.log('📊 Updated task data:', data);
-
-  // Transform the nested assignees data
-  const transformedTask = transformTaskRecord(data);
-
-  console.log('🔄 Task data transformed');
-  console.log('📊 Final transformed task:', transformedTask);
+  const { wsId } = await resolveTaskContext(supabase, taskId);
+  const options = await getMutationApiOptions(supabase);
+  const result = await moveWorkspaceTask(
+    wsId,
+    taskId,
+    {
+      list_id: newListId,
+      target_board_id: targetBoardId,
+    },
+    options
+  );
 
   return {
-    task: transformedTask as Task,
-    movedToDifferentBoard: isMovingToNewBoard,
-    sourceBoardId: currentBoardId,
-    targetBoardId: targetList.board_id,
+    ...result,
+    task: result.task as Task,
   };
 }
 
@@ -778,11 +629,19 @@ export async function assignTask(
   taskId: string,
   userId: string
 ) {
-  const { error } = await supabase
-    .from('task_assignees')
-    .insert({ task_id: taskId, user_id: userId });
+  const { wsId } = await resolveTaskContext(supabase, taskId);
+  const options = await getMutationApiOptions(supabase);
+  const currentAssignees = await getTaskAssignees(supabase, taskId);
+  const assigneeIds = Array.from(
+    new Set([...currentAssignees.map((assignee) => assignee.user_id), userId])
+  );
 
-  if (error) throw error;
+  await updateWorkspaceTask(
+    wsId,
+    taskId,
+    { assignee_ids: assigneeIds },
+    options
+  );
 }
 
 export async function unassignTask(
@@ -790,43 +649,52 @@ export async function unassignTask(
   taskId: string,
   userId: string
 ) {
-  const { error } = await supabase
-    .from('task_assignees')
-    .delete()
-    .eq('task_id', taskId)
-    .eq('user_id', userId);
+  const { wsId } = await resolveTaskContext(supabase, taskId);
+  const options = await getMutationApiOptions(supabase);
+  const currentAssignees = await getTaskAssignees(supabase, taskId);
+  const assigneeIds = currentAssignees
+    .map((assignee) => assignee.user_id)
+    .filter((id) => id !== userId);
 
-  if (error) throw error;
+  await updateWorkspaceTask(
+    wsId,
+    taskId,
+    { assignee_ids: assigneeIds },
+    options
+  );
 }
 
 export async function deleteTask(
   supabase: TypedSupabaseClient,
   taskId: string
 ) {
-  const { data, error } = await supabase
-    .from('tasks')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', taskId)
-    .select()
-    .single();
+  const { wsId } = await resolveTaskContext(supabase, taskId);
+  const options = await getMutationApiOptions(supabase);
+  const { task } = await updateWorkspaceTask(
+    wsId,
+    taskId,
+    { deleted: true },
+    options
+  );
 
-  if (error) throw error;
-  return data as Task;
+  return task as Task;
 }
 
 export async function deleteTaskList(
   supabase: TypedSupabaseClient,
   listId: string
 ) {
-  const { data, error } = await supabase
-    .from('task_lists')
-    .update({ deleted: true })
-    .eq('id', listId)
-    .select()
-    .single();
+  const { wsId, boardId } = await resolveListContext(supabase, listId);
+  const options = await getMutationApiOptions(supabase);
+  const { list } = await updateWorkspaceTaskList(
+    wsId,
+    boardId,
+    listId,
+    { deleted: true },
+    options
+  );
 
-  if (error) throw error;
-  return data as TaskList;
+  return list;
 }
 
 // React Query Hooks with Optimistic Updates
@@ -1191,7 +1059,7 @@ export async function restoreTasks(
   // First, verify which tasks have valid lists
   const { data: tasks, error: fetchError } = await supabase
     .from('tasks')
-    .select('id, list_id')
+    .select('id, list_id, task_lists(board_id, workspace_boards(ws_id))')
     .in('id', taskIds);
 
   if (fetchError) throw fetchError;
@@ -1208,55 +1076,70 @@ export async function restoreTasks(
   ];
   const { data: validLists } = await supabase
     .from('task_lists')
-    .select('id')
+    .select('id, board_id, workspace_boards!inner(ws_id)')
     .in('id', listIds)
     .eq('deleted', false);
 
-  const validListIds = new Set((validLists ?? []).map((list) => list.id));
+  const validListsById = new Map(
+    (validLists ?? []).map((list) => [
+      list.id,
+      {
+        boardId: list.board_id,
+        wsId: list.workspace_boards?.ws_id,
+      },
+    ])
+  );
 
   // Separate tasks into those with valid lists and those needing fallback
   const tasksWithValidLists = fetchedTasks.filter(
     (task): task is RestorableTaskRow & { list_id: string } =>
-      task.list_id !== null && validListIds.has(task.list_id)
+      task.list_id !== null && validListsById.has(task.list_id)
   );
   const tasksNeedingFallback = fetchedTasks.filter(
-    (task) => !task.list_id || !validListIds.has(task.list_id)
+    (task) => !task.list_id || !validListsById.has(task.list_id)
   );
 
   const results: Task[] = [];
+  const options = await getMutationApiOptions(supabase);
+  const fallbackContext = fallbackListId
+    ? await resolveListContext(supabase, fallbackListId)
+    : null;
 
   // Restore tasks with valid lists - one by one to ensure triggers fire correctly
   for (const task of tasksWithValidLists) {
-    const { data, error } = await supabase
-      .from('tasks')
-      .update({ deleted_at: null })
-      .eq('id', task.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(`Failed to restore task ${task.id}:`, error);
-      continue; // Continue with other tasks even if one fails
+    const listContext = validListsById.get(task.list_id);
+    if (!listContext?.wsId) {
+      continue;
     }
-    if (data) results.push(data as Task);
+
+    try {
+      const { task: restoredTask } = await updateWorkspaceTask(
+        listContext.wsId,
+        task.id,
+        { deleted: false },
+        options
+      );
+      results.push(restoredTask as Task);
+    } catch (error) {
+      console.error(`Failed to restore task ${task.id}:`, error);
+    }
   }
 
   // Restore tasks needing fallback to first list - one by one
   for (const task of tasksNeedingFallback) {
-    if (!fallbackListId) continue;
+    if (!fallbackListId || !fallbackContext) continue;
 
-    const { data, error } = await supabase
-      .from('tasks')
-      .update({ deleted_at: null, list_id: fallbackListId })
-      .eq('id', task.id)
-      .select()
-      .single();
-
-    if (error) {
+    try {
+      const { task: restoredTask } = await updateWorkspaceTask(
+        fallbackContext.wsId,
+        task.id,
+        { deleted: false, list_id: fallbackListId },
+        options
+      );
+      results.push(restoredTask as Task);
+    } catch (error) {
       console.error(`Failed to restore task ${task.id}:`, error);
-      continue; // Continue with other tasks even if one fails
     }
-    if (data) results.push(data as Task);
   }
 
   return results;
@@ -1358,15 +1241,33 @@ export async function permanentlyDeleteTasks(
   taskIds: string[]
 ) {
   let successCount = 0;
+  const { data: tasks, error } = await supabase
+    .from('tasks')
+    .select('id, task_lists!inner(workspace_boards!inner(ws_id))')
+    .in('id', taskIds);
+
+  if (error) throw error;
+
+  const taskWorkspaceIds = new Map(
+    (tasks ?? []).map((task) => [
+      task.id,
+      task.task_lists?.workspace_boards?.ws_id,
+    ])
+  );
+  const options = await getMutationApiOptions(supabase);
 
   for (const taskId of taskIds) {
-    const { error } = await supabase.from('tasks').delete().eq('id', taskId);
-
-    if (error) {
-      console.error(`Failed to permanently delete task ${taskId}:`, error);
-      continue; // Continue with other tasks even if one fails
+    const wsId = taskWorkspaceIds.get(taskId);
+    if (!wsId) {
+      continue;
     }
-    successCount++;
+
+    try {
+      await deleteWorkspaceTask(wsId, taskId, options);
+      successCount++;
+    } catch (error) {
+      console.error(`Failed to permanently delete task ${taskId}:`, error);
+    }
   }
 
   return { count: successCount };
@@ -1795,42 +1696,17 @@ export async function updateTaskListStatus(
   status: TaskBoardStatus,
   color: SupportedColor
 ) {
-  // Check if trying to set status to closed
-  if (status === 'closed') {
-    // Get the board_id first
-    const { data: listData, error: listError } = await supabase
-      .from('task_lists')
-      .select('board_id')
-      .eq('id', listId)
-      .single();
+  const { wsId, boardId } = await resolveListContext(supabase, listId);
+  const options = await getMutationApiOptions(supabase);
+  const { list } = await updateWorkspaceTaskList(
+    wsId,
+    boardId,
+    listId,
+    { status, color },
+    options
+  );
 
-    if (listError) throw listError;
-
-    // Check if there's already a closed list
-    const { data: existingClosed, error: checkError } = await supabase
-      .from('task_lists')
-      .select('id')
-      .eq('board_id', listData.board_id)
-      .eq('status', 'closed')
-      .eq('deleted', false)
-      .neq('id', listId);
-
-    if (checkError) throw checkError;
-
-    if (existingClosed && existingClosed.length > 0) {
-      throw new Error('Only one closed list is allowed per board');
-    }
-  }
-
-  const { data, error } = await supabase
-    .from('task_lists')
-    .update({ status, color })
-    .eq('id', listId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as TaskList;
+  return list;
 }
 
 export async function reorderTaskLists(
@@ -1838,16 +1714,20 @@ export async function reorderTaskLists(
   boardId: string,
   listIds: string[]
 ) {
-  const updates = listIds.map((listId, index) => ({
-    id: listId,
-    position: index,
-  }));
+  const wsId = await resolveBoardWorkspaceId(supabase, boardId);
+  const options = await getMutationApiOptions(supabase);
 
-  const { error } = await supabase
-    .from('task_lists')
-    .upsert(updates.map((update) => ({ ...update, board_id: boardId })));
-
-  if (error) throw error;
+  await Promise.all(
+    listIds.map((listId, index) =>
+      updateWorkspaceTaskList(
+        wsId,
+        boardId,
+        listId,
+        { position: index },
+        options
+      )
+    )
+  );
 }
 
 export async function getTaskListsByStatus(
@@ -2651,24 +2531,19 @@ export async function normalizeListSortKeys(
     sort_key: (index + 1) * SORT_KEY_BASE_UNIT,
   }));
 
-  // Update all tasks with new sort keys
-  // Use update instead of upsert to avoid requiring full row data
-  const updatePromises = updates.map((update) =>
-    supabase
-      .from('tasks')
-      .update({ sort_key: update.sort_key })
-      .eq('id', update.id)
+  const { wsId } = await resolveListContext(supabase, listId);
+  const options = await getMutationApiOptions(supabase);
+
+  await Promise.all(
+    updates.map((update) =>
+      updateWorkspaceTask(
+        wsId,
+        update.id,
+        { sort_key: update.sort_key },
+        options
+      )
+    )
   );
-
-  const results = await Promise.all(updatePromises);
-  const updateError = results.find((result: (typeof results)[number]) =>
-    Boolean(result.error)
-  )?.error;
-
-  if (updateError) {
-    console.error('Failed to update sort keys:', updateError);
-    throw updateError;
-  }
 
   console.log('✅ Sort keys normalized successfully');
 }
@@ -2856,33 +2731,36 @@ export async function createTaskRelationship(
   supabase: TypedSupabaseClient,
   input: CreateTaskRelationshipInput
 ): Promise<TaskRelationship> {
-  const { data, error } = await supabase
-    .from('task_relationships')
-    .insert({
-      source_task_id: input.source_task_id,
-      target_task_id: input.target_task_id,
-      type: input.type,
-    })
-    .select()
-    .single();
+  const { wsId } = await resolveTaskContext(supabase, input.source_task_id);
+  const options = await getMutationApiOptions(supabase);
 
-  if (error) {
+  try {
+    const { relationship } = await createWorkspaceTaskRelationship(
+      wsId,
+      input.source_task_id,
+      input,
+      options
+    );
+    return relationship;
+  } catch (error) {
+    const typedError = error as Error & { code?: string };
     // Handle specific error cases with user-friendly messages
-    if (error.code === '23505') {
+    if (
+      typedError.code === '23505' ||
+      typedError.message?.includes('already exists')
+    ) {
       throw new Error('This relationship already exists.');
     }
-    if (error.message?.includes('single parent')) {
+    if (typedError.message?.includes('single parent')) {
       throw new Error('A task can only have one parent.');
     }
-    if (error.message?.includes('circular')) {
+    if (typedError.message?.includes('circular')) {
       throw new Error(
         'This would create a circular relationship, which is not allowed.'
       );
     }
     throw error;
   }
-
-  return data as TaskRelationship;
 }
 
 /**
@@ -2892,12 +2770,21 @@ export async function deleteTaskRelationship(
   supabase: TypedSupabaseClient,
   relationshipId: string
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('task_relationships')
-    .delete()
-    .eq('id', relationshipId);
+    .select('source_task_id, target_task_id, type')
+    .eq('id', relationshipId)
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) return;
+
+  await deleteTaskRelationshipByDetails(
+    supabase,
+    data.source_task_id,
+    data.target_task_id,
+    data.type
+  );
 }
 
 /**
@@ -2909,14 +2796,18 @@ export async function deleteTaskRelationshipByDetails(
   targetTaskId: string,
   type: TaskRelationshipType
 ): Promise<void> {
-  const { error } = await supabase
-    .from('task_relationships')
-    .delete()
-    .eq('source_task_id', sourceTaskId)
-    .eq('target_task_id', targetTaskId)
-    .eq('type', type);
-
-  if (error) throw error;
+  const { wsId } = await resolveTaskContext(supabase, sourceTaskId);
+  const options = await getMutationApiOptions(supabase);
+  await deleteWorkspaceTaskRelationship(
+    wsId,
+    sourceTaskId,
+    {
+      source_task_id: sourceTaskId,
+      target_task_id: targetTaskId,
+      type,
+    },
+    options
+  );
 }
 
 /**
@@ -3057,8 +2948,7 @@ export async function getWorkspaceTasks(
       completed: !!task.closed_at || !!task.completed_at,
       priority: isTaskPriority(task.priority) ? task.priority : null,
       board_id: task.board_id ?? null,
-      board_name:
-        typeof task.board_name === 'string' ? task.board_name : undefined,
+      board_name: task.board_name,
     });
 
     if (collected.length >= targetLimit) {
@@ -3106,53 +2996,44 @@ export async function createTaskWithRelationship(
   supabase: TypedSupabaseClient,
   input: CreateTaskWithRelationshipInput
 ): Promise<{ task: Task; relationship: TaskRelationship }> {
-  const { name, listId, currentTaskId, relationshipType, currentTaskIsSource } =
-    input;
+  const { wsId } = await resolveListContext(supabase, input.listId);
+  const options = await getMutationApiOptions(supabase);
 
-  // Call the RPC for atomic transaction
-  const { data, error } = await supabase.rpc('create_task_with_relationship', {
-    p_name: name,
-    p_list_id: listId,
-    p_current_task_id: currentTaskId,
-    p_relationship_type: relationshipType,
-    p_current_task_is_source: currentTaskIsSource,
-  });
-
-  if (error) {
+  try {
+    const result = await createWorkspaceTaskWithRelationship(
+      wsId,
+      input,
+      options
+    );
+    return {
+      task: result.task as Task,
+      relationship: result.relationship,
+    };
+  } catch (error) {
+    const typedError = error as Error;
     // Handle specific error cases with user-friendly messages
-    if (error.message?.includes('already exists')) {
+    if (typedError.message?.includes('already exists')) {
       throw new Error('This relationship already exists.');
     }
-    if (error.message?.includes('single parent')) {
+    if (typedError.message?.includes('single parent')) {
       throw new Error('A task can only have one parent.');
     }
-    if (error.message?.includes('circular')) {
+    if (typedError.message?.includes('circular')) {
       throw new Error(
         'This would create a circular relationship, which is not allowed.'
       );
     }
-    if (error.message?.includes('not authenticated')) {
+    if (typedError.message?.includes('not authenticated')) {
       throw new Error('User not authenticated');
     }
-    if (error.message?.includes('List not found')) {
+    if (typedError.message?.includes('List not found')) {
       throw new Error('List not found or access denied');
     }
-    if (error.message?.includes('Current task not found')) {
+    if (typedError.message?.includes('Current task not found')) {
       throw new Error('The task you are trying to relate to was not found');
     }
     throw error;
   }
-
-  // Strongly typed response from RPC
-  const result = data as unknown as CreateTaskWithRelationshipResult;
-
-  // Transform task record to match Task type
-  const task = transformTaskRecord(result.task) as Task;
-
-  // Relationship is already strongly typed, use directly
-  const relationship: TaskRelationship = result.relationship;
-
-  return { task, relationship };
 }
 
 /**
@@ -3198,6 +3079,7 @@ export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
     },
   });
 }
+
 // Bulk clear activities from a list (sequential processing for auditing)
 export async function clearAllAssigneesFromList(
   supabase: TypedSupabaseClient,
@@ -3212,13 +3094,16 @@ export async function clearAllAssigneesFromList(
   if (fetchError) throw fetchError;
   if (!tasks || tasks.length === 0) return { count: 0 };
 
+  const { wsId } = await resolveListContext(supabase, listId);
+  const options = await getMutationApiOptions(supabase);
   let count = 0;
   for (const task of tasks) {
-    const { error } = await supabase
-      .from('task_assignees')
-      .delete()
-      .eq('task_id', task.id);
-    if (!error) count++;
+    try {
+      await updateWorkspaceTask(wsId, task.id, { assignee_ids: [] }, options);
+      count++;
+    } catch (error) {
+      console.error(`Failed to clear assignees for task ${task.id}:`, error);
+    }
   }
 
   return { count };
@@ -3237,13 +3122,16 @@ export async function clearAllLabelsFromList(
   if (fetchError) throw fetchError;
   if (!tasks || tasks.length === 0) return { count: 0 };
 
+  const { wsId } = await resolveListContext(supabase, listId);
+  const options = await getMutationApiOptions(supabase);
   let count = 0;
   for (const task of tasks) {
-    const { error } = await supabase
-      .from('task_labels')
-      .delete()
-      .eq('task_id', task.id);
-    if (!error) count++;
+    try {
+      await updateWorkspaceTask(wsId, task.id, { label_ids: [] }, options);
+      count++;
+    } catch (error) {
+      console.error(`Failed to clear labels for task ${task.id}:`, error);
+    }
   }
 
   return { count };
@@ -3262,13 +3150,16 @@ export async function clearAllProjectsFromList(
   if (fetchError) throw fetchError;
   if (!tasks || tasks.length === 0) return { count: 0 };
 
+  const { wsId } = await resolveListContext(supabase, listId);
+  const options = await getMutationApiOptions(supabase);
   let count = 0;
   for (const task of tasks) {
-    const { error } = await supabase
-      .from('task_project_tasks')
-      .delete()
-      .eq('task_id', task.id);
-    if (!error) count++;
+    try {
+      await updateWorkspaceTask(wsId, task.id, { project_ids: [] }, options);
+      count++;
+    } catch (error) {
+      console.error(`Failed to clear projects for task ${task.id}:`, error);
+    }
   }
 
   return { count };

@@ -43,12 +43,13 @@ export interface WorkspaceTaskUpdatePayload {
   sort_key?: number;
 }
 
-export interface WorkspaceTaskApiTask extends Task, Record<string, unknown> {
+export interface WorkspaceTaskApiTask extends Task {
   assignee_ids?: string[];
   label_ids?: string[];
   project_ids?: string[];
   description_yjs_state?: number[] | null;
   board_id?: string | null;
+  board_name?: string;
   deleted_at?: string;
   list_deleted?: boolean;
 }
@@ -150,6 +151,62 @@ export interface CreateWorkspaceTaskPayload {
   label_ids?: string[];
   project_ids?: string[];
   assignee_ids?: string[];
+  total_duration?: number | null;
+  is_splittable?: boolean | null;
+  min_split_duration_minutes?: number | null;
+  max_split_duration_minutes?: number | null;
+  calendar_hours?: Task['calendar_hours'];
+  auto_schedule?: boolean | null;
+}
+
+export interface WorkspaceTaskBoardResponse {
+  board: Pick<
+    WorkspaceTaskBoardRow,
+    'id' | 'ws_id' | 'name' | 'icon' | 'template_id' | 'created_at'
+  >;
+}
+
+export interface CreateWorkspaceTaskListPayload {
+  name: string;
+  status?: string;
+  color?: string;
+}
+
+export interface UpdateWorkspaceTaskListPayload {
+  name?: string;
+  status?: string;
+  color?: string;
+  position?: number;
+  deleted?: boolean;
+}
+
+export interface WorkspaceTaskListResponse {
+  list: TaskList;
+}
+
+export interface MoveWorkspaceTaskPayload {
+  list_id: string;
+  target_board_id?: string;
+}
+
+export interface MoveWorkspaceTaskResponse {
+  task: WorkspaceTaskApiTask;
+  movedToDifferentBoard: boolean;
+  sourceBoardId: string;
+  targetBoardId: string;
+}
+
+export interface CreateWorkspaceTaskWithRelationshipPayload {
+  name: string;
+  listId: string;
+  currentTaskId: string;
+  relationshipType: TaskRelationshipType;
+  currentTaskIsSource: boolean;
+}
+
+export interface CreateWorkspaceTaskWithRelationshipResponse {
+  task: WorkspaceTaskApiTask;
+  relationship: TaskRelationship;
 }
 
 interface TaskProjectApiRow {
@@ -455,6 +512,47 @@ export async function createWorkspaceTask(
   );
 }
 
+export async function createWorkspaceTaskList(
+  workspaceId: string,
+  boardId: string,
+  payload: CreateWorkspaceTaskListPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskListResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/lists`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceTaskList(
+  workspaceId: string,
+  boardId: string,
+  listId: string,
+  payload: UpdateWorkspaceTaskListPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskListResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/lists/${encodePathSegment(listId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function updateWorkspaceTask(
   workspaceId: string,
   taskId: string,
@@ -466,6 +564,41 @@ export async function updateWorkspaceTask(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
     {
       method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceTask(
+  workspaceId: string,
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true; message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function moveWorkspaceTask(
+  workspaceId: string,
+  taskId: string,
+  payload: MoveWorkspaceTaskPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MoveWorkspaceTaskResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/move`,
+    {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -531,6 +664,25 @@ export async function createWorkspaceTaskProject(
   const client = getInternalApiClient(options);
   return client.json<{ id: string; name: string; status?: string | null }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceTaskWithRelationship(
+  workspaceId: string,
+  payload: CreateWorkspaceTaskWithRelationshipPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CreateWorkspaceTaskWithRelationshipResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/with-relationship`,
     {
       method: 'POST',
       headers: {

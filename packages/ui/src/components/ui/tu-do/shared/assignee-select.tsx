@@ -9,7 +9,7 @@ import {
   UserX,
   X,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
@@ -19,7 +19,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { forwardRef, useImperativeHandle, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { useBoardBroadcast } from './board-broadcast-context';
 
 interface Member {
@@ -58,7 +58,8 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     }));
     const [searchQuery, setSearchQuery] = useState('');
     const params = useParams();
-    const wsId = params.wsId as string;
+    const rawWsId = params.wsId;
+    const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
     const boardId = params.boardId as string;
     const queryClient = useQueryClient();
     const broadcast = useBoardBroadcast();
@@ -74,6 +75,12 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         }, new Map<string, Member>())
         .values()
     );
+    const [localAssigneesState, setLocalAssigneesState] =
+      useState<Member[]>(uniqueAssignees);
+
+    useEffect(() => {
+      setLocalAssigneesState(uniqueAssignees);
+    }, [uniqueAssignees]);
 
     // Fetch workspace members with React Query
     const {
@@ -116,36 +123,27 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         memberId: string;
         action: 'add' | 'remove';
       }) => {
-        const supabase = createClient();
-
-        if (action === 'remove') {
-          const { error } = await supabase
-            .from('task_assignees')
-            .delete()
-            .eq('task_id', taskId)
-            .eq('user_id', memberId);
-
-          if (error) {
-            console.error('Remove assignee error:', error);
-            throw new Error(error.message || t('please_try_again_later'));
-          }
-        } else {
-          const { error } = await supabase.from('task_assignees').upsert(
-            {
-              task_id: taskId,
-              user_id: memberId,
-            },
-            {
-              onConflict: 'task_id,user_id',
-              ignoreDuplicates: true,
-            }
-          );
-
-          if (error) {
-            console.error('Add assignee error:', error);
-            throw new Error(error.message || t('please_try_again_later'));
-          }
+        if (!wsId) {
+          throw new Error(t('please_try_again_later'));
         }
+
+        const boardTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+        const currentTask = boardTasks?.find((task) => task.id === taskId);
+        const existingIds =
+          currentTask?.assignees
+            ?.map((assignee) => assignee.id)
+            .filter(Boolean) ??
+          assignees?.map((assignee) => assignee.id).filter(Boolean) ??
+          localAssigneesState.map((assignee) => assignee.id).filter(Boolean);
+
+        const nextIds =
+          action === 'remove'
+            ? existingIds.filter((id) => id !== memberId)
+            : Array.from(new Set([...existingIds, memberId]));
+
+        await updateWorkspaceTask(wsId, taskId, {
+          assignee_ids: nextIds,
+        });
 
         return { memberId, action };
       },
@@ -189,12 +187,31 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           }
         );
 
-        return { previousTasks };
+        const previousLocalAssignees = localAssigneesState;
+
+        setLocalAssigneesState((old) => {
+          if (action === 'add') {
+            const member = members.find((m) => m.id === memberId);
+            if (!member || old.some((assignee) => assignee.id === memberId)) {
+              return old;
+            }
+
+            return [...old, member];
+          }
+
+          return old.filter((assignee) => assignee.id !== memberId);
+        });
+
+        return { previousTasks, previousLocalAssignees };
       },
       onError: (err, _, context) => {
         // Rollback optimistic update on error
         if (context?.previousTasks) {
           queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+        }
+
+        if (context?.previousLocalAssignees) {
+          setLocalAssigneesState(context.previousLocalAssignees);
         }
 
         const errorMessage =

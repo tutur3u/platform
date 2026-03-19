@@ -44,6 +44,7 @@ const hasContent = (node: JSONContent): boolean => {
 interface RichTextEditorProps {
   content: JSONContent | null;
   onChange?: (content: JSONContent | null) => void;
+  onImmediateChange?: (content: JSONContent | null) => void;
   readOnly?: boolean;
   titlePlaceholder?: string;
   writePlaceholder?: string;
@@ -92,6 +93,7 @@ interface RichTextEditorProps {
 export function RichTextEditor({
   content,
   onChange,
+  onImmediateChange,
   readOnly = false,
   titlePlaceholder = 'What is the title?',
   writePlaceholder = 'Write something...',
@@ -119,6 +121,7 @@ export function RichTextEditor({
   const onImageUploadRef = useRef(onImageUpload);
   const workspaceIdRef = useRef(workspaceId);
   const onChangeRef = useRef(onChange);
+  const onImmediateChangeRef = useRef(onImmediateChange);
   const onArrowUpRef = useRef(onArrowUp);
   const onArrowLeftRef = useRef(onArrowLeft);
   const debouncedOnChangeRef = useRef<ReturnType<typeof debounce> | null>(null);
@@ -129,9 +132,17 @@ export function RichTextEditor({
     onImageUploadRef.current = onImageUpload;
     workspaceIdRef.current = workspaceId;
     onChangeRef.current = onChange;
+    onImmediateChangeRef.current = onImmediateChange;
     onArrowUpRef.current = onArrowUp;
     onArrowLeftRef.current = onArrowLeft;
-  }, [onImageUpload, workspaceId, onChange, onArrowUp, onArrowLeft]);
+  }, [
+    onImageUpload,
+    workspaceId,
+    onChange,
+    onImmediateChange,
+    onArrowUp,
+    onArrowLeft,
+  ]);
 
   const debouncedOnChange = useMemo(
     () =>
@@ -463,9 +474,16 @@ export function RichTextEditor({
       onEditorReady?.(editor);
     },
     onUpdate: ({ editor }) => {
+      const currentJson = editor.getJSON();
+      const normalizedContent = hasContent(currentJson) ? currentJson : null;
+
+      if (!readOnly) {
+        onImmediateChangeRef.current?.(normalizedContent);
+      }
+
       // Don't call onChange when using collaboration - Yjs doc is the source of truth
       if (!readOnly && !allowCollaboration) {
-        debouncedOnChange(editor.getJSON());
+        debouncedOnChange(currentJson);
       }
     },
   });

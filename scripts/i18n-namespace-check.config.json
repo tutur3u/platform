@@ -51,8 +51,19 @@
   "keyExceptions": {
     "apps/web": ["settings.calendar.*", "ws-polls.*"],
     "apps/tasks": ["settings.calendar.*", "ws-polls.*"],
-    "apps/calendar": ["settings.tasks.*", "ws-polls.*", "ws-tasks.*"],
-    "apps/finance": ["calendar.*", "settings.*", "ws-polls.*", "ws-tasks.*"],
+    "apps/calendar": [
+      "settings.tasks.*",
+      "ws-polls.*",
+      "ws-task-boards.*",
+      "ws-tasks.*"
+    ],
+    "apps/finance": [
+      "calendar.*",
+      "settings.*",
+      "ws-polls.*",
+      "ws-task-boards.*",
+      "ws-tasks.*"
+    ],
     "apps/meet": [
       "calendar.*",
       "common.*",
@@ -65,7 +76,13 @@
       "ws-task-boards.*",
       "ws-tasks.*"
     ],
-    "apps/track": ["calendar.*", "settings.*", "ws-polls.*", "ws-tasks.*"],
+    "apps/track": [
+      "calendar.*",
+      "settings.*",
+      "ws-polls.*",
+      "ws-task-boards.*",
+      "ws-tasks.*"
+    ],
     "apps/nova": [
       "calendar.*",
       "common.*",
@@ -78,6 +95,12 @@
       "ws-courses.*",
       "ws-task-boards.*"
     ],
-    "apps/rewise": ["calendar.*", "settings.*", "ws-polls.*", "ws-tasks.*"]
+    "apps/rewise": [
+      "calendar.*",
+      "settings.*",
+      "ws-polls.*",
+      "ws-task-boards.*",
+      "ws-tasks.*"
+    ]
   }
 }
