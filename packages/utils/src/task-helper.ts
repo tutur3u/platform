@@ -1919,6 +1919,46 @@ export function useCreateBoardWithTemplate(wsId: string) {
   });
 }
 
+export function useUpdateBoardWithTemplate(wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      boardId,
+      name,
+      icon,
+    }: {
+      boardId: string;
+      name: string;
+      icon: string | null;
+    }) => {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/task-boards/${boardId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, icon }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.message ?? 'Failed to update board');
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boards', wsId] });
+    },
+    onError: (error) => {
+      console.error('Error updating board:', error);
+    },
+  });
+}
+
 export function useUpdateTaskListStatus(boardId: string) {
   const queryClient = useQueryClient();
 
