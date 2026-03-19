@@ -777,7 +777,7 @@ export const dashboardCatalog = defineCatalog(schema, {
           .describe('Amount (positive=income, negative=expense)'),
         description: z.string().nullable().describe('What was this for?'),
         walletId: z
-          .uuid()
+          .guid()
           .nullable()
           .describe('Wallet UUID. If null, uses the first wallet.'),
       }),
@@ -789,7 +789,7 @@ export const dashboardCatalog = defineCatalog(schema, {
         .object({
           wsId: z.string().describe('Workspace ID slug or UUID'),
           requestId: z
-            .uuid()
+            .guid()
             .optional()
             .describe('Request UUID used for storage prefix'),
           title: z.string().describe('Request title'),
@@ -798,11 +798,11 @@ export const dashboardCatalog = defineCatalog(schema, {
             .optional()
             .describe('Optional request details'),
           categoryId: z
-            .uuid()
+            .guid()
             .nullable()
             .optional()
             .describe('Category UUID or null'),
-          taskId: z.uuid().nullable().optional().describe('Task UUID or null'),
+          taskId: z.guid().nullable().optional().describe('Task UUID or null'),
           date: z
             .string()
             .optional()

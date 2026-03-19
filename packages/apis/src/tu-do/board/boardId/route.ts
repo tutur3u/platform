@@ -15,7 +15,7 @@ interface Params {
 }
 
 const paramsSchema = z.object({
-  boardId: z.uuid(),
+  boardId: z.guid(),
 });
 
 export async function PUT(req: Request, { params }: Params) {

@@ -15,8 +15,8 @@ import {
 } from '@/features/reports/report-limits';
 
 const CreateReportSchema = z.object({
-  user_id: z.uuid(),
-  group_id: z.uuid(),
+  user_id: z.guid(),
+  group_id: z.guid(),
   title: z.string().min(1).max(MAX_MONTHLY_REPORT_TITLE_LENGTH),
   content: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),
   feedback: z.string().max(MAX_MONTHLY_REPORT_TEXT_LENGTH),

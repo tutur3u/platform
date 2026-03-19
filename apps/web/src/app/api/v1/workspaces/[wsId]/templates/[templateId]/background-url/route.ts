@@ -15,7 +15,7 @@ interface Params {
   }>;
 }
 
-const templateIdSchema = z.uuid();
+const templateIdSchema = z.guid();
 
 export async function GET(req: NextRequest, { params }: Params) {
   try {

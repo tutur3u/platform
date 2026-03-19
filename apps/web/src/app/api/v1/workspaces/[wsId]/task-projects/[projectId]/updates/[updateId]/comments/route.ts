@@ -10,7 +10,7 @@ const createCommentSchema = z.object({
     .max(MAX_LONG_TEXT_LENGTH)
     .trim()
     .min(1, { message: 'Content cannot be empty' }), // Plain text (TipTap handles JSONContent conversion)
-  parent_id: z.uuid().nullable().optional(),
+  parent_id: z.guid().nullable().optional(),
 });
 
 export async function POST(

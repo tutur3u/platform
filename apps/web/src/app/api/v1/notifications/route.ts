@@ -12,7 +12,7 @@ import {
 const querySchema = z.object({
   wsId: z
     .string()
-    .uuid()
+    .guid()
     .nullable()
     .optional()
     .transform((val) => val || undefined),
@@ -211,7 +211,7 @@ export async function GET(req: Request) {
 const bulkUpdateSchema = z.object({
   wsId: z
     .string()
-    .uuid()
+    .guid()
     .nullable()
     .optional()
     .transform((val) => val || undefined),

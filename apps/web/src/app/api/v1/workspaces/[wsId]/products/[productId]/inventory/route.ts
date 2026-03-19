@@ -12,8 +12,8 @@ import { z } from 'zod';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
 const InventoryItemSchema = z.object({
-  warehouse_id: z.uuid(),
-  unit_id: z.uuid(),
+  warehouse_id: z.guid(),
+  unit_id: z.guid(),
   amount: z.number().nonnegative().nullable(),
   min_amount: z.number().nonnegative().optional(),
   price: z.number().nonnegative(),

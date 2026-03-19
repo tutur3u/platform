@@ -17,8 +17,8 @@ import { z } from 'zod';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
 const InventoryItemSchema = z.object({
-  unit_id: z.uuid(),
-  warehouse_id: z.uuid(),
+  unit_id: z.guid(),
+  warehouse_id: z.guid(),
   amount: z.number().nonnegative().nullable(),
   min_amount: z.number().nonnegative(),
   price: z.number().nonnegative(),
@@ -29,7 +29,7 @@ export const ProductCreateSchema = z.object({
   manufacturer: z.string().max(MAX_NAME_LENGTH).optional(),
   description: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   usage: z.string().max(MAX_MEDIUM_TEXT_LENGTH).optional(),
-  category_id: z.uuid(),
+  category_id: z.guid(),
   inventory: z.array(InventoryItemSchema).default([]),
 });
 

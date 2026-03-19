@@ -80,8 +80,8 @@ export async function POST(
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     if (
-      !z.uuid().safeParse(groupId).success ||
-      !z.uuid().safeParse(postId).success
+      !z.guid().safeParse(groupId).success ||
+      !z.guid().safeParse(postId).success
     ) {
       return NextResponse.json(
         { message: 'Invalid groupId or postId' },

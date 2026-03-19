@@ -19,8 +19,8 @@ interface Params {
 }
 
 const MergeItemSchema = z.object({
-  sourceId: z.uuid(),
-  targetId: z.uuid(),
+  sourceId: z.guid(),
+  targetId: z.guid(),
 });
 
 const BulkMergeRequestSchema = z.object({

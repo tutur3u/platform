@@ -46,14 +46,14 @@ const CreateTaskSchema = z.object({
     .array(z.number().int().min(0).max(255))
     .nullable()
     .optional(),
-  listId: z.uuid(),
+  listId: z.guid(),
   priority: z.enum(['low', 'normal', 'high', 'critical']).nullable().optional(),
   start_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
   end_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
   estimation_points: z.number().nullable().optional(),
-  label_ids: z.array(z.uuid()).optional(),
-  project_ids: z.array(z.uuid()).optional(),
-  assignee_ids: z.array(z.uuid()).optional(),
+  label_ids: z.array(z.guid()).optional(),
+  project_ids: z.array(z.guid()).optional(),
+  assignee_ids: z.array(z.guid()).optional(),
 });
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 

@@ -16,7 +16,7 @@ import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).optional(),
-  userId: z.uuid().optional(),
+  userId: z.guid().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(10),
 });

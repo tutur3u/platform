@@ -11,11 +11,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const paramsSchema = z.object({
-  boardId: z.uuid(),
+  boardId: z.guid(),
 });
 
 const copySchema = z.object({
-  targetWorkspaceId: z.uuid(),
+  targetWorkspaceId: z.guid(),
   newBoardName: z.string().trim().min(1).max(255).optional(),
 });
 

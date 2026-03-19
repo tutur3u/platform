@@ -11,7 +11,7 @@ export async function GET(
   context: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   const { wsId, sessionId } = await context.params;
-  const sessionIdValidation = z.uuid().safeParse(sessionId);
+  const sessionIdValidation = z.guid().safeParse(sessionId);
   if (!sessionIdValidation.success) {
     return NextResponse.json(
       { error: 'Invalid session ID format' },

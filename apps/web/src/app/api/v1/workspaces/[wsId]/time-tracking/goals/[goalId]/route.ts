@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 const RouteParamsSchema = z.object({
   wsId: z.string().min(1),
-  goalId: z.uuid(),
+  goalId: z.guid(),
 });
 
 const PositiveIntSchema = z.coerce.number().int().positive();
@@ -19,7 +19,7 @@ const GoalPatchBodySchema = z
     categoryId: z
       .preprocess(
         (value) => (value === 'general' ? null : value),
-        z.uuid().nullable()
+        z.guid().nullable()
       )
       .optional(),
     dailyGoalMinutes: PositiveIntSchema.optional(),

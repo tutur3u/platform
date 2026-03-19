@@ -12,7 +12,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const updateContractSchema = z.object({
-  contract_id: z.uuid(),
+  contract_id: z.guid(),
   contract_type: z
     .enum(['full_time', 'part_time', 'contractor', 'intern', 'temporary'])
     .optional(),

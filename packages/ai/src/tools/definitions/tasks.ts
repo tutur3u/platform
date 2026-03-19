@@ -46,13 +46,13 @@ export const taskToolDefinitions = {
         .nullish()
         .describe('Task priority level, or null/omit for no priority'),
       boardId: z
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'UUID of the board to create the task in. Use list_boards to discover. If omitted, uses the first workspace board or creates a default one.'
         ),
       listId: z
-        .uuid()
+        .guid()
         .optional()
         .describe(
           'UUID of the task list to place the task in. Use list_task_lists to discover lists within a board. If omitted, uses the first list in the board or creates a default one.'
@@ -67,7 +67,7 @@ export const taskToolDefinitions = {
   complete_task: tool({
     description: 'Mark a task as completed by its ID.',
     inputSchema: z.object({
-      taskId: z.uuid().describe('UUID of the task to complete'),
+      taskId: z.guid().describe('UUID of the task to complete'),
     }),
   }),
 
@@ -76,9 +76,9 @@ export const taskToolDefinitions = {
       'Update fields on an existing task. Use taskId (or id) for the task UUID and endDate (or dueDate) for due date (ISO). Only pass fields that need changing.',
     inputSchema: z
       .object({
-        taskId: z.uuid().optional().describe('UUID of the task'),
+        taskId: z.guid().optional().describe('UUID of the task'),
         id: z
-          .uuid()
+          .guid()
           .optional()
           .describe('Alias for taskId. Use either taskId or id.'),
         name: z.string().optional().describe('New task name'),
@@ -117,7 +117,7 @@ export const taskToolDefinitions = {
           .max(7)
           .optional()
           .describe('Estimation point index (0-7)'),
-        listId: z.uuid().optional().describe('Move to a different list'),
+        listId: z.guid().optional().describe('Move to a different list'),
       })
       .refine(
         (data) =>
@@ -154,7 +154,7 @@ export const taskToolDefinitions = {
   delete_task: tool({
     description: 'Soft-delete a task by ID.',
     inputSchema: z.object({
-      taskId: z.uuid().describe('UUID of the task to delete'),
+      taskId: z.guid().describe('UUID of the task to delete'),
     }),
   }),
 
@@ -173,7 +173,7 @@ export const taskToolDefinitions = {
   update_board: tool({
     description: 'Update a board name.',
     inputSchema: z.object({
-      boardId: z.uuid().describe('Board UUID'),
+      boardId: z.guid().describe('Board UUID'),
       name: z.string().describe('New board name'),
     }),
   }),
@@ -181,21 +181,21 @@ export const taskToolDefinitions = {
   delete_board: tool({
     description: 'Delete a task board.',
     inputSchema: z.object({
-      boardId: z.uuid().describe('Board UUID'),
+      boardId: z.guid().describe('Board UUID'),
     }),
   }),
 
   list_task_lists: tool({
     description: 'List columns/lists within a specific board.',
     inputSchema: z.object({
-      boardId: z.uuid().describe('Board UUID'),
+      boardId: z.guid().describe('Board UUID'),
     }),
   }),
 
   create_task_list: tool({
     description: 'Create a new list/column in a board.',
     inputSchema: z.object({
-      boardId: z.uuid().describe('Board UUID'),
+      boardId: z.guid().describe('Board UUID'),
       name: z.string().describe('List name'),
       color: z
         .string()
@@ -208,7 +208,7 @@ export const taskToolDefinitions = {
   update_task_list: tool({
     description: 'Update a task list.',
     inputSchema: z.object({
-      listId: z.uuid().describe('List UUID'),
+      listId: z.guid().describe('List UUID'),
       name: z.string().optional().describe('New name'),
       color: z
         .string()
@@ -222,7 +222,7 @@ export const taskToolDefinitions = {
   delete_task_list: tool({
     description: 'Delete a task list.',
     inputSchema: z.object({
-      listId: z.uuid().describe('List UUID'),
+      listId: z.guid().describe('List UUID'),
     }),
   }),
 
@@ -246,7 +246,7 @@ export const taskToolDefinitions = {
   update_task_label: tool({
     description: 'Update a task label.',
     inputSchema: z.object({
-      labelId: z.uuid().describe('Label UUID'),
+      labelId: z.guid().describe('Label UUID'),
       name: z.string().optional().describe('New name'),
       color: z
         .string()
@@ -259,23 +259,23 @@ export const taskToolDefinitions = {
   delete_task_label: tool({
     description: 'Delete a task label.',
     inputSchema: z.object({
-      labelId: z.uuid().describe('Label UUID'),
+      labelId: z.guid().describe('Label UUID'),
     }),
   }),
 
   add_task_labels: tool({
     description: 'Assign one or more labels to a task.',
     inputSchema: z.object({
-      taskId: z.uuid().describe('Task UUID'),
-      labelIds: z.array(z.uuid()).min(1).describe('Label UUIDs to add'),
+      taskId: z.guid().describe('Task UUID'),
+      labelIds: z.array(z.guid()).min(1).describe('Label UUIDs to add'),
     }),
   }),
 
   remove_task_labels: tool({
     description: 'Remove one or more labels from a task.',
     inputSchema: z.object({
-      taskId: z.uuid().describe('Task UUID'),
-      labelIds: z.array(z.uuid()).min(1).describe('Label UUIDs to remove'),
+      taskId: z.guid().describe('Task UUID'),
+      labelIds: z.array(z.guid()).min(1).describe('Label UUIDs to remove'),
     }),
   }),
 
@@ -295,7 +295,7 @@ export const taskToolDefinitions = {
   update_project: tool({
     description: 'Update a project.',
     inputSchema: z.object({
-      projectId: z.uuid().describe('Project UUID'),
+      projectId: z.guid().describe('Project UUID'),
       name: z.string().optional().describe('New name'),
       description: z.string().optional().describe('New description'),
     }),
@@ -304,23 +304,23 @@ export const taskToolDefinitions = {
   delete_project: tool({
     description: 'Delete a project.',
     inputSchema: z.object({
-      projectId: z.uuid().describe('Project UUID'),
+      projectId: z.guid().describe('Project UUID'),
     }),
   }),
 
   add_task_to_project: tool({
     description: 'Link a task to a project.',
     inputSchema: z.object({
-      taskId: z.uuid().describe('Task UUID'),
-      projectId: z.uuid().describe('Project UUID'),
+      taskId: z.guid().describe('Task UUID'),
+      projectId: z.guid().describe('Project UUID'),
     }),
   }),
 
   remove_task_from_project: tool({
     description: 'Unlink a task from a project.',
     inputSchema: z.object({
-      taskId: z.uuid().describe('Task UUID'),
-      projectId: z.uuid().describe('Project UUID'),
+      taskId: z.guid().describe('Task UUID'),
+      projectId: z.guid().describe('Project UUID'),
     }),
   }),
 
@@ -328,16 +328,16 @@ export const taskToolDefinitions = {
     description:
       'Assign a user to a task. Use list_workspace_members to find user IDs.',
     inputSchema: z.object({
-      taskId: z.uuid().describe('Task UUID'),
-      userId: z.uuid().describe('User UUID to assign'),
+      taskId: z.guid().describe('Task UUID'),
+      userId: z.guid().describe('User UUID to assign'),
     }),
   }),
 
   remove_task_assignee: tool({
     description: 'Remove a user from a task.',
     inputSchema: z.object({
-      taskId: z.uuid().describe('Task UUID'),
-      userId: z.uuid().describe('User UUID to remove'),
+      taskId: z.guid().describe('Task UUID'),
+      userId: z.guid().describe('User UUID to remove'),
     }),
   }),
 } as const;

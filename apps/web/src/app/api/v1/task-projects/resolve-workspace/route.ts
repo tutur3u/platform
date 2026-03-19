@@ -7,8 +7,8 @@ import { z } from 'zod';
 
 const requestSchema = z
   .object({
-    boardId: z.uuid().optional(),
-    projectIds: z.array(z.uuid()).default([]),
+    boardId: z.guid().optional(),
+    projectIds: z.array(z.guid()).default([]),
   })
   .refine((value) => !!value.boardId || value.projectIds.length > 0, {
     message: 'boardId or projectIds is required',

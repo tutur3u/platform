@@ -12,7 +12,7 @@ import {
 const querySchema = z.object({
   wsId: z
     .string()
-    .uuid()
+    .guid()
     .nullable()
     .optional()
     .transform((val) => val || undefined),

@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const linkProjectSchema = z.object({
-  projectId: z.uuid('Project id must be a valid UUID'),
+  projectId: z.guid('Project id must be a valid UUID'),
 });
 
 export async function POST(

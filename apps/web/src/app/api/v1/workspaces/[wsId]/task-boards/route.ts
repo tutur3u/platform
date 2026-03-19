@@ -13,7 +13,7 @@ import { z } from 'zod';
 const createBoardSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
   icon: z.string().nullable().optional(),
-  template_id: z.uuid().optional(),
+  template_id: z.guid().optional(),
 });
 
 const listBoardsSearchSchema = z.object({

@@ -5,7 +5,7 @@ import {
 import { z } from 'zod';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
-const uuidSchema = z.uuid();
+const uuidSchema = z.guid();
 const canonicalUuidSchema = z
   .string()
   .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);

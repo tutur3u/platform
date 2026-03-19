@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const completeFocusSchema = z.object({
-  session_id: z.uuid(),
+  session_id: z.guid(),
   notes: z.string().max(MAX_URL_LENGTH).optional(),
 });
 

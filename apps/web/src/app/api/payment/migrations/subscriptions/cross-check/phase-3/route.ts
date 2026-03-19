@@ -19,7 +19,7 @@ function delay(ms: number) {
 }
 
 const bodySchema = z.object({
-  wsIds: z.array(z.uuid()).min(1),
+  wsIds: z.array(z.guid()).min(1),
 });
 
 /**

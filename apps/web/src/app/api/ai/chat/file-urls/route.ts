@@ -6,7 +6,7 @@ import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const FileUrlsRequestSchema = z.object({
   wsId: z.string().min(1),
-  chatId: z.uuid(),
+  chatId: z.guid(),
 });
 
 /** Signed read URL validity: 1 hour */

@@ -13,7 +13,7 @@ interface Params {
 const UpdateInvoiceSchema = z.object({
   notice: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
-  wallet_id: z.uuid().nullable().optional(),
+  wallet_id: z.guid().nullable().optional(),
 });
 
 export async function PUT(req: Request, { params }: Params) {

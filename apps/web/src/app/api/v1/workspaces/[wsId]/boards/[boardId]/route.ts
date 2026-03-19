@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const paramsSchema = z.object({
-  wsId: z.uuid(),
-  boardId: z.uuid(),
+  wsId: z.guid(),
+  boardId: z.guid(),
 });
 
 interface BoardParams {
