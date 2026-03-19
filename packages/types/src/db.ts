@@ -1,5 +1,7 @@
 import type { Database, Tables } from './supabase';
 
+export type { Database } from './supabase';
+
 export type AIChat = Tables<'ai_chats'>;
 export type AIGatewayModel = Tables<'ai_gateway_models'>;
 
