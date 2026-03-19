@@ -7232,6 +7232,7 @@
   },
   "settings": {
     "approvals": {
+      "auto_approved_pending_toast": "{count, plural, one {Auto-approved # pending item} other {Auto-approved # pending items}} ({posts, plural, one {# post} other {# posts}}, {reports, plural, one {# report} other {# reports}}).",
       "description": "Configure approval workflows for posts and reports",
       "enable_post_approval": "Enable Post Approval",
       "enable_post_approval_description": "When enabled, all posts in user groups will require approval from a person with adequate permissions.",
@@ -7241,6 +7242,14 @@
       "enable_report_export_only_approved_description": "When enabled, report export actions are disabled until a report is approved.",
       "enable_report_pending_watermark": "Show pending watermark on reports",
       "enable_report_pending_watermark_description": "When enabled, pending reports display a visible watermark on the report preview page.",
+      "insufficient_permissions": "You do not have permission to manage approval settings.",
+      "pending_auto_approve_posts_count": "{count, plural, one {# pending post will be approved.} other {# pending posts will be approved.}}",
+      "pending_auto_approve_reports_count": "{count, plural, one {# pending report will be approved.} other {# pending reports will be approved.}}",
+      "pending_auto_approve_warning_description": "Turning off approval will immediately approve all currently pending items.",
+      "pending_auto_approve_warning_title": "Warning: pending items will be auto-approved",
+      "pending_auto_approve_warning_unknown": "Pending counts could not be loaded, but disabling approval may still auto-approve pending items.",
+      "permissions_load_error": "Failed to load approval settings permissions. Try again.",
+      "requires_report_approval_enabled": "This setting applies only when report approval is enabled.",
       "save": "Save Changes",
       "saving": "Saving...",
       "title": "Approvals",
