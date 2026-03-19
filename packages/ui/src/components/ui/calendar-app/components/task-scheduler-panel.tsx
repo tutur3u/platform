@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarClock,
   CheckCircle,
@@ -8,7 +8,10 @@ import {
   Search,
   Sparkles,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  applyWorkspaceCalendarSchedule,
+  listWorkspaceSchedulableTasks,
+} from '@tuturuuu/internal-api';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
@@ -17,6 +20,7 @@ import { Button } from '../../button';
 import { Input } from '../../input';
 import { Progress } from '../../progress';
 import { ScrollArea } from '../../scroll-area';
+import { toast } from '../../sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
 
 type TaskSchedulerPanelProps = {
@@ -31,6 +35,8 @@ type TaskSchedulerPanelProps = {
   isPersonalWorkspace?: boolean;
 };
 
+type TaskScheduleState = 'unscheduled' | 'partial' | 'scheduled';
+
 function formatDuration(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -39,175 +45,41 @@ function formatDuration(totalMinutes: number): string {
   return `${hours}h ${minutes}m`;
 }
 
+function getTaskScheduleState(task: TaskWithScheduling): TaskScheduleState {
+  const totalMinutes = Math.max(0, (task.total_duration ?? 0) * 60);
+  const scheduledMinutes = Math.max(0, task.scheduled_minutes ?? 0);
+
+  if (totalMinutes > 0 && scheduledMinutes >= totalMinutes) {
+    return 'scheduled';
+  }
+
+  if (scheduledMinutes > 0) {
+    return 'partial';
+  }
+
+  return 'unscheduled';
+}
+
 async function fetchSchedulableTasks(
-  userId: string,
+  _userId: string,
   calendarWsId: string,
-  // kept for backward compatibility; progress is always scoped to calendarWsId now
   _isPersonalWorkspace: boolean,
   searchQuery?: string
 ): Promise<TaskWithScheduling[]> {
-  const supabase = createClient();
+  try {
+    const result = await listWorkspaceSchedulableTasks(
+      calendarWsId,
+      searchQuery?.trim() ? { q: searchQuery.trim() } : undefined,
+      {
+        fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+      }
+    );
 
-  // Scheduling settings are per-user: load tasks via task_user_scheduling_settings
-  // then join the task (and its workspace via list -> board).
-  let settingsQuery = (supabase as any)
-    .from('task_user_scheduling_settings')
-    .select(
-      `
-      total_duration,
-      is_splittable,
-      min_split_duration_minutes,
-      max_split_duration_minutes,
-      calendar_hours,
-      auto_schedule,
-      tasks!inner(
-        *,
-        task_lists!inner(
-          workspace_boards!inner(
-            ws_id
-          )
-        )
-      )
-    `
-    )
-    .eq('user_id', userId)
-    .gt('total_duration', 0);
-
-  if (searchQuery?.trim()) {
-    settingsQuery = settingsQuery.ilike('tasks.name', `%${searchQuery}%`);
-  }
-
-  const { data: rows, error } = await settingsQuery;
-  if (error) {
+    return result.tasks ?? [];
+  } catch (error) {
     console.error('Error fetching schedulable tasks:', error);
     return [];
   }
-
-  // Fetch scheduled events for these tasks
-  const taskIds =
-    (rows as any[] | null)?.map((r) => r.tasks?.id).filter(Boolean) || [];
-
-  if (taskIds.length === 0) {
-    return [];
-  }
-
-  // Query scheduled minutes from both sources:
-  // 1. task_calendar_events junction table (for detailed tracking)
-  // 2. workspace_calendar_events with task_id (for direct reference)
-
-  // First, try the junction table
-  let junctionQuery = (supabase as any)
-    .from('task_calendar_events')
-    .select(
-      `
-      task_id,
-      scheduled_minutes,
-      completed,
-      workspace_calendar_events!inner(ws_id)
-    `
-    )
-    .in('task_id', taskIds);
-
-  // Always scope progress to the current calendar workspace.
-  junctionQuery = junctionQuery.eq(
-    'workspace_calendar_events.ws_id',
-    calendarWsId
-  );
-
-  const { data: junctionEvents } = await junctionQuery;
-
-  // Also query directly from calendar events with task_id
-  let directQuery = supabase
-    .from('workspace_calendar_events')
-    .select('task_id, start_at, end_at')
-    .in('task_id', taskIds)
-    .not('task_id', 'is', null);
-
-  directQuery = directQuery.eq('ws_id', calendarWsId);
-
-  const { data: directEvents } = await directQuery;
-
-  // Calculate scheduled and completed minutes per task
-  const taskSchedulingMap = new Map<
-    string,
-    { scheduled_minutes: number; completed_minutes: number }
-  >();
-
-  type TaskEventRow = {
-    task_id: string;
-    scheduled_minutes: number;
-    completed: boolean;
-  };
-
-  // Process junction table events
-  (junctionEvents as TaskEventRow[] | null)?.forEach((event) => {
-    const current = taskSchedulingMap.get(event.task_id) || {
-      scheduled_minutes: 0,
-      completed_minutes: 0,
-    };
-    current.scheduled_minutes += event.scheduled_minutes || 0;
-    if (event.completed) {
-      current.completed_minutes += event.scheduled_minutes || 0;
-    }
-    taskSchedulingMap.set(event.task_id, current);
-  });
-
-  // Process direct calendar events (fallback for when junction insert fails)
-  type DirectEventRow = {
-    task_id: string;
-    start_at: string;
-    end_at: string;
-  };
-
-  (directEvents as DirectEventRow[] | null)?.forEach((event) => {
-    const taskId = event.task_id;
-    if (!taskId) return;
-
-    // Calculate duration from event times
-    const startAt = new Date(event.start_at);
-    const endAt = new Date(event.end_at);
-    const scheduledMinutes = Math.round(
-      (endAt.getTime() - startAt.getTime()) / 60000
-    );
-
-    // Check if already counted from junction table
-    const current = taskSchedulingMap.get(taskId);
-    if (!current || current.scheduled_minutes === 0) {
-      // Only add if not already tracked via junction
-      taskSchedulingMap.set(taskId, {
-        scheduled_minutes: scheduledMinutes,
-        completed_minutes: 0,
-      });
-    }
-  });
-
-  // Merge per-user settings + scheduling info into tasks and extract workspace ID
-  return ((rows as any[]) || [])
-    .map((row: any) => {
-      const task = row.tasks;
-      if (!task?.id) return null;
-
-      const scheduling = taskSchedulingMap.get(task.id) || {
-        scheduled_minutes: 0,
-        completed_minutes: 0,
-      };
-      // Extract ws_id from nested relation and remove the nested objects
-      const wsId = task.task_lists?.workspace_boards?.ws_id;
-      const { task_lists: _task_lists, ...taskWithoutLists } = task;
-      return {
-        ...taskWithoutLists,
-        ws_id: wsId,
-        total_duration: row.total_duration,
-        is_splittable: row.is_splittable,
-        min_split_duration_minutes: row.min_split_duration_minutes,
-        max_split_duration_minutes: row.max_split_duration_minutes,
-        calendar_hours: row.calendar_hours,
-        auto_schedule: row.auto_schedule,
-        scheduled_minutes: scheduling.scheduled_minutes,
-        completed_minutes: scheduling.completed_minutes,
-      };
-    })
-    .filter(Boolean);
 }
 
 export function TaskSchedulerPanel({
@@ -216,8 +88,10 @@ export function TaskSchedulerPanel({
   onEventCreated,
   isPersonalWorkspace = false,
 }: TaskSchedulerPanelProps) {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [schedulingTaskId, setSchedulingTaskId] = useState<string | null>(null);
+  const [isSchedulingAll, setIsSchedulingAll] = useState(false);
 
   const {
     data: tasks = [],
@@ -236,6 +110,36 @@ export function TaskSchedulerPanel({
     staleTime: 30000,
   });
 
+  const actionableTasks = tasks
+    .filter((task) => getTaskScheduleState(task) !== 'scheduled')
+    .sort((left, right) => {
+      const leftState = getTaskScheduleState(left);
+      const rightState = getTaskScheduleState(right);
+      const stateWeight: Record<TaskScheduleState, number> = {
+        partial: 0,
+        unscheduled: 1,
+        scheduled: 2,
+      };
+
+      if (stateWeight[leftState] !== stateWeight[rightState]) {
+        return stateWeight[leftState] - stateWeight[rightState];
+      }
+
+      return (left.name || '').localeCompare(right.name || '');
+    });
+
+  const refreshSchedulingViews = async () => {
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] }),
+      queryClient.invalidateQueries({ queryKey: ['scheduled-events-batch'] }),
+      queryClient.invalidateQueries({ queryKey: ['task-schedule-batch'] }),
+      queryClient.invalidateQueries({
+        queryKey: ['databaseCalendarEvents', wsId],
+      }),
+    ]);
+  };
+
   const handleScheduleTask = async (task: TaskWithScheduling) => {
     if (schedulingTaskId) return;
 
@@ -245,7 +149,7 @@ export function TaskSchedulerPanel({
       const response = await fetch(
         isPersonalWorkspace
           ? `/api/v1/users/me/tasks/${task.id}/schedule`
-          : `/api/v1/workspaces/${task.ws_id || wsId}/tasks/${task.id}/schedule`,
+          : `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -257,12 +161,47 @@ export function TaskSchedulerPanel({
         throw new Error(error.message || 'Failed to schedule task');
       }
 
-      await refetch();
+      await refreshSchedulingViews();
       onEventCreated?.();
     } catch (error) {
       console.error('Error scheduling task:', error);
     } finally {
       setSchedulingTaskId(null);
+    }
+  };
+
+  const handleScheduleAll = async () => {
+    if (isSchedulingAll || schedulingTaskId) return;
+
+    const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setIsSchedulingAll(true);
+
+    try {
+      const result = await applyWorkspaceCalendarSchedule<{
+        summary?: { eventsCreated?: number };
+        events?: Array<{ id: string }>;
+      }>(
+        wsId,
+        {
+          windowDays: 30,
+          clientTimezone,
+          mode: 'full-apply',
+          scope: 'impacted-only',
+        },
+        {
+          fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+        }
+      );
+
+      toast.success(`Scheduled ${result.summary?.eventsCreated ?? 0} events`);
+      await refreshSchedulingViews();
+      onEventCreated?.();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to schedule tasks'
+      );
+    } finally {
+      setIsSchedulingAll(false);
     }
   };
 
@@ -297,6 +236,9 @@ export function TaskSchedulerPanel({
             {totalTasks} tasks
           </Badge>
         </div>
+        <p className="text-muted-foreground text-xs">
+          Showing only tasks that still need time on the calendar.
+        </p>
 
         {/* Search */}
         <div className="relative">
@@ -362,8 +304,15 @@ export function TaskSchedulerPanel({
                 ? 'No tasks match your search'
                 : 'No tasks with duration set'}
             </div>
+          ) : actionableTasks.length === 0 ? (
+            <div className="space-y-1 py-8 text-center">
+              <p className="font-medium text-sm">Everything is scheduled</p>
+              <p className="text-muted-foreground text-xs">
+                Smart Queue will show tasks here when they need more time.
+              </p>
+            </div>
           ) : (
-            tasks.map((task) => (
+            actionableTasks.map((task) => (
               <TaskSchedulerItem
                 key={task.id}
                 task={task}
@@ -382,9 +331,14 @@ export function TaskSchedulerPanel({
             variant="default"
             size="sm"
             className="w-full"
-            disabled={schedulingTaskId !== null}
+            disabled={schedulingTaskId !== null || isSchedulingAll}
+            onClick={handleScheduleAll}
           >
-            <Sparkles className="mr-1.5 h-4 w-4" />
+            {isSchedulingAll ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-1.5 h-4 w-4" />
+            )}
             Schedule All ({unscheduledTasks})
           </Button>
         </div>
@@ -414,6 +368,7 @@ function TaskSchedulerItem({
       : 0;
   const isFullyScheduled = scheduledMinutes >= rawTotalMinutes;
   const hasScheduled = scheduledMinutes > 0;
+  const status = getTaskScheduleState(task);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     // Set drag data for calendar drop zone
@@ -465,6 +420,17 @@ function TaskSchedulerItem({
               <Clock className="h-3 w-3" />
               {formatDuration(displayTotalMinutes)}
             </span>
+            <Badge
+              variant="secondary"
+              className={cn(
+                'h-4 shrink-0 px-1 text-[10px]',
+                status === 'partial' &&
+                  'bg-dynamic-yellow/10 text-dynamic-yellow',
+                status === 'unscheduled' && 'bg-muted text-muted-foreground'
+              )}
+            >
+              {status === 'partial' ? 'Partially scheduled' : 'Needs time'}
+            </Badge>
             {task.is_splittable && (
               <Badge
                 variant="outline"

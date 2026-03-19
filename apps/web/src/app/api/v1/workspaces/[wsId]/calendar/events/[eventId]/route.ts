@@ -11,6 +11,7 @@ import {
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
 import {
   decryptEventFromStorage,
   encryptEventForStorage,
@@ -80,6 +81,7 @@ async function authorizeWorkspaceCalendarEventAccess(
   return {
     sbAdmin: await createAdminClient(),
     wsId,
+    userId: user.id,
   };
 }
 
@@ -344,9 +346,35 @@ export async function DELETE(request: Request, { params }: Params) {
   const { wsId: rawWsId, eventId } = await params;
   const access = await authorizeWorkspaceCalendarEventAccess(request, rawWsId);
   if ('error' in access) return access.error;
-  const { sbAdmin, wsId } = access;
+  const { sbAdmin, wsId, userId } = access;
 
   try {
+    const [linkedHabitResult, linkedTaskResult] = await Promise.all([
+      sbAdmin
+        .from('habit_calendar_events')
+        .select('habit_id, occurrence_date')
+        .eq('event_id', eventId)
+        .maybeSingle(),
+      sbAdmin
+        .from('task_calendar_events')
+        .select('task_id')
+        .eq('event_id', eventId)
+        .maybeSingle(),
+    ]);
+
+    if (
+      linkedHabitResult.data?.habit_id &&
+      linkedHabitResult.data?.occurrence_date
+    ) {
+      await upsertHabitSkip(sbAdmin as any, {
+        wsId,
+        habitId: linkedHabitResult.data.habit_id,
+        occurrenceDate: linkedHabitResult.data.occurrence_date,
+        createdBy: userId,
+        sourceEventId: eventId,
+      });
+    }
+
     const { error } = await sbAdmin
       .from('workspace_calendar_events')
       .delete()
@@ -355,7 +383,12 @@ export async function DELETE(request: Request, { params }: Params) {
 
     if (error) throw error;
 
-    return NextResponse.json({ message: 'Event deleted successfully' });
+    return NextResponse.json({
+      message: 'Event deleted successfully',
+      linkedTaskId: linkedTaskResult.data?.task_id ?? null,
+      skippedHabitDate: linkedHabitResult.data?.occurrence_date ?? null,
+      skippedHabitId: linkedHabitResult.data?.habit_id ?? null,
+    });
   } catch (error) {
     console.error('Calendar event API error:', error);
     return NextResponse.json(

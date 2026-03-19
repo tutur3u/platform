@@ -9,13 +9,21 @@
  * 3. Applied to the calendar if user confirms
  */
 
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { TaskWithScheduling } from '@tuturuuu/types';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { listActiveHabitSkipDates } from '@/lib/calendar/habit-skips';
+import { fetchSchedulableTasksForWorkspace } from '@/lib/calendar/schedulable-tasks';
+import {
+  getHabitEffectivePriority,
+  getTaskEffectivePriority,
+} from '@/lib/calendar/scheduling-priority';
 import { fetchHourSettings } from '@/lib/calendar/task-scheduler';
 import {
   generatePreview,
@@ -25,16 +33,6 @@ import {
 interface RouteParams {
   wsId: string;
 }
-
-type PersonalTaskSchedulingRow = {
-  total_duration: number | null;
-  is_splittable: boolean | null;
-  min_split_duration_minutes: number | null;
-  max_split_duration_minutes: number | null;
-  calendar_hours: string | null;
-  auto_schedule: boolean | null;
-  tasks: any;
-};
 
 export async function POST(
   request: NextRequest,
@@ -51,6 +49,7 @@ export async function POST(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -107,7 +106,6 @@ export async function POST(
     const [
       hourSettingsResult,
       habitsResult,
-      tasksResult,
       eventsResult,
       workspaceResult,
       habitEventsResult,
@@ -117,7 +115,7 @@ export async function POST(
       fetchHourSettings(supabase as any, wsId),
 
       // Active habits with auto_schedule enabled AND visible in calendar
-      supabase
+      sbAdmin
         .from('workspace_habits')
         .select('*')
         .eq('ws_id', wsId)
@@ -126,111 +124,8 @@ export async function POST(
         .eq('is_visible_in_calendar', true)
         .is('deleted_at', null),
 
-      // Tasks (workspace mode) OR per-user task settings (personal mode)
-      // NOTE: personal mode uses task_user_scheduling_settings so each user can have different estimates.
-      (supabase as any)
-        .from('workspaces')
-        .select('personal')
-        .eq('id', wsId)
-        .single()
-        .then(async (wsRow: any) => {
-          if (wsRow?.data?.personal) {
-            const { data } = await (supabase as any)
-              .from('task_user_scheduling_settings')
-              .select(
-                `
-                total_duration,
-                is_splittable,
-                min_split_duration_minutes,
-                max_split_duration_minutes,
-                calendar_hours,
-                auto_schedule,
-                tasks!inner(
-                  *,
-                  task_lists!inner(
-                    workspace_boards!inner(ws_id)
-                  )
-                )
-              `
-              )
-              .eq('user_id', user.id)
-              .eq('auto_schedule', true)
-              .gt('total_duration', 0);
-
-            const rows = (data as PersonalTaskSchedulingRow[] | null) ?? [];
-            const mapped = rows
-              .map((r) => {
-                const task = r.tasks;
-                const resolvedTaskWsId =
-                  task?.task_lists?.workspace_boards?.ws_id ?? undefined;
-                return {
-                  ...task,
-                  ws_id: resolvedTaskWsId,
-                  total_duration: r.total_duration ?? null,
-                  is_splittable: r.is_splittable ?? false,
-                  min_split_duration_minutes:
-                    r.min_split_duration_minutes ?? null,
-                  max_split_duration_minutes:
-                    r.max_split_duration_minutes ?? null,
-                  calendar_hours: r.calendar_hours ?? null,
-                  auto_schedule: r.auto_schedule ?? false,
-                } satisfies TaskWithScheduling;
-              })
-              .filter(Boolean);
-
-            return { data: mapped, error: null };
-          }
-
-          // Workspace mode: tasks are also per-user (requires signed-in user).
-          const { data } = await (supabase as any)
-            .from('task_user_scheduling_settings')
-            .select(
-              `
-              total_duration,
-              is_splittable,
-              min_split_duration_minutes,
-              max_split_duration_minutes,
-              calendar_hours,
-              auto_schedule,
-              tasks!inner(
-                *,
-                task_lists!inner(
-                  workspace_boards!inner(ws_id)
-                )
-              )
-            `
-            )
-            .eq('user_id', user.id)
-            .eq('tasks.task_lists.workspace_boards.ws_id', wsId)
-            .eq('auto_schedule', true)
-            .gt('total_duration', 0);
-
-          const rows = (data as PersonalTaskSchedulingRow[] | null) ?? [];
-          const mapped = rows
-            .map((r) => {
-              const task = r.tasks;
-              const resolvedTaskWsId =
-                task?.task_lists?.workspace_boards?.ws_id ?? undefined;
-              return {
-                ...task,
-                ws_id: resolvedTaskWsId,
-                total_duration: r.total_duration ?? null,
-                is_splittable: r.is_splittable ?? false,
-                min_split_duration_minutes:
-                  r.min_split_duration_minutes ?? null,
-                max_split_duration_minutes:
-                  r.max_split_duration_minutes ?? null,
-                calendar_hours: r.calendar_hours ?? null,
-                auto_schedule: r.auto_schedule ?? false,
-              } satisfies TaskWithScheduling;
-            })
-            .filter(Boolean);
-
-          return { data: mapped, error: null };
-        }),
-
       // All existing calendar events in the window (including locked ones)
-      supabase
+      sbAdmin
         .from('workspace_calendar_events')
         .select('id, title, start_at, end_at, color, locked')
         .eq('ws_id', wsId)
@@ -238,20 +133,20 @@ export async function POST(
         .lt('start_at', endDate.toISOString()),
 
       // Workspace timezone + mode
-      supabase
+      sbAdmin
         .from('workspaces')
         .select('timezone, personal')
         .eq('id', wsId)
         .single(),
 
       // Existing habit events via junction table - used to skip days that already have events
-      supabase
+      sbAdmin
         .from('habit_calendar_events')
         .select(
           `
           habit_id,
           occurrence_date,
-          workspace_calendar_events!inner(id, start_at, ws_id)
+          workspace_calendar_events!inner(id, start_at, end_at, locked, ws_id)
         `
         )
         .eq('workspace_calendar_events.ws_id', wsId)
@@ -265,7 +160,7 @@ export async function POST(
       (() => {
         const historicalStart = new Date(now);
         historicalStart.setDate(historicalStart.getDate() - 90);
-        return supabase
+        return sbAdmin
           .from('task_calendar_events')
           .select(
             `
@@ -285,15 +180,24 @@ export async function POST(
     if (habitsResult.error) {
       console.error('Error fetching habits:', habitsResult.error);
     }
-    if (tasksResult.error) {
-      console.error('Error fetching tasks:', tasksResult.error);
-    }
     if (eventsResult.error) {
       console.error('Error fetching events:', eventsResult.error);
     }
 
     const habits = (habitsResult.data as Habit[]) || [];
-    const tasks = (tasksResult.data as TaskWithScheduling[]) || [];
+    const habitSkipsResult = await listActiveHabitSkipDates(
+      sbAdmin as any,
+      wsId,
+      habits.map((habit) => habit.id),
+      startOfToday.toISOString().split('T')[0] ?? '',
+      endDate.toISOString().split('T')[0] ?? ''
+    );
+    const tasks = await fetchSchedulableTasksForWorkspace({
+      sbAdmin,
+      wsId,
+      userId: user.id,
+      isPersonalWorkspace: Boolean(workspaceResult.data?.personal),
+    });
     const existingEvents = (eventsResult.data || []).map((e) => ({
       id: e.id,
       title: e.title,
@@ -336,32 +240,76 @@ export async function POST(
           return clientTimezone;
         })();
 
-    // Build Set of existing habit+day combinations to skip (e.g., "habitId:2025-12-14")
-    // This prevents scheduling a new habit event on a day that already has one
-    // Use the event's start_at date converted to local date string with timezone for consistent matching
-    const existingHabitDays = new Set<string>();
+    // Build counts of existing habit instances by local occurrence date.
+    // Skipped days are tracked separately and passed as existingHabitDays below.
+    const existingHabitInstanceCounts = new Map<string, number>();
+    const existingHabitScheduledMinutes = new Map<string, number>();
+    const existingHabitDependencyAnchors = new Map<
+      string,
+      Array<{ start_at: string; end_at: string }>
+    >();
+    let movableHabitEventsCount = 0;
     if (habitEventsResult?.data) {
       for (const he of habitEventsResult.data as any[]) {
         const habitId = he.habit_id;
         const eventStartAt = he.workspace_calendar_events?.start_at;
+        const eventEndAt = he.workspace_calendar_events?.end_at;
+        const isLocked = he.workspace_calendar_events?.locked === true;
         if (habitId && eventStartAt) {
+          if (!isLocked) {
+            movableHabitEventsCount++;
+            continue;
+          }
           // Convert start_at to local date string using resolved timezone
           const eventDate = new Date(eventStartAt);
           const localDateStr = eventDate.toLocaleDateString('en-CA', {
             timeZone: resolvedTimezone || undefined,
           });
-          existingHabitDays.add(`${habitId}:${localDateStr}`);
+          const habitDayKey = `${habitId}:${localDateStr}`;
+          existingHabitInstanceCounts.set(
+            habitDayKey,
+            (existingHabitInstanceCounts.get(habitDayKey) ?? 0) + 1
+          );
+          const dependencyAnchors =
+            existingHabitDependencyAnchors.get(habitDayKey) ?? [];
+          if (eventEndAt) {
+            dependencyAnchors.push({
+              start_at: eventStartAt,
+              end_at: eventEndAt,
+            });
+          }
+          existingHabitDependencyAnchors.set(habitDayKey, dependencyAnchors);
+          if (eventEndAt) {
+            const durationMinutes = Math.max(
+              0,
+              Math.round(
+                (new Date(eventEndAt).getTime() -
+                  new Date(eventStartAt).getTime()) /
+                  60000
+              )
+            );
+            existingHabitScheduledMinutes.set(
+              habitDayKey,
+              (existingHabitScheduledMinutes.get(habitDayKey) ?? 0) +
+                durationMinutes
+            );
+          }
         }
       }
     }
 
-    // Build set of habit event IDs that should stay in place (not be replaced)
-    // These need to block their time slots during scheduling
+    const skippedHabitDays = new Set<string>();
+    for (const skipped of habitSkipsResult) {
+      skippedHabitDays.add(`${skipped.habit_id}:${skipped.occurrence_date}`);
+    }
+
+    // Build set of locked habit event IDs that should stay in place and block scheduling.
     const habitEventIdsToKeep = new Set<string>();
     if (habitEventsResult?.data) {
       for (const he of habitEventsResult.data as any[]) {
         const eventId = he.workspace_calendar_events?.id;
-        if (eventId) {
+        const isLocked = he.workspace_calendar_events?.locked === true;
+        if (eventId && isLocked) {
           habitEventIdsToKeep.add(eventId);
         }
       }
@@ -370,6 +318,7 @@ export async function POST(
     // Calculate already-scheduled minutes per task from PAST events
     // This prevents double-scheduling tasks that already have completed events
     const taskScheduledMinutes = new Map<string, number>();
+    let movableTaskEventsCount = 0;
     if (taskEventsResult?.data) {
       for (const te of taskEventsResult.data as any[]) {
         const taskId = te.task_id;
@@ -387,6 +336,8 @@ export async function POST(
               (new Date(endAt).getTime() - new Date(startAt).getTime()) / 60000; // minutes
             const current = taskScheduledMinutes.get(taskId) || 0;
             taskScheduledMinutes.set(taskId, current + duration);
+          } else {
+            movableTaskEventsCount++;
           }
         }
       }
@@ -407,7 +358,10 @@ export async function POST(
       {
         windowDays,
         timezone: resolvedTimezone,
-        existingHabitDays, // Pass existing habit+day combinations to skip
+        existingHabitDays: skippedHabitDays,
+        existingHabitInstanceCounts,
+        existingHabitScheduledMinutes,
+        existingHabitDependencyAnchors,
         habitEventIds: habitEventIdsToKeep, // Pass habit event IDs that should remain blocked
       }
     );
@@ -445,6 +399,8 @@ export async function POST(
       existingEventsCount: existingEvents.length,
       lockedEventsCount: lockedEvents.length,
       unlockedEventsCount: unlockedEvents.length,
+      movableFutureUnlockedHabitEventsCount: movableHabitEventsCount,
+      movableFutureUnlockedTaskEventsCount: movableTaskEventsCount,
       allDayEventsCount,
       hourSettings: {
         working_hours: formatHourRanges(hourSettingsResult?.workHours),
@@ -460,8 +416,16 @@ export async function POST(
         name: h.name,
         frequency: h.frequency,
         duration_minutes: h.duration_minutes,
+        is_splittable: h.is_splittable,
+        min_instances_per_day: h.min_instances_per_day,
+        ideal_instances_per_day: h.ideal_instances_per_day,
+        max_instances_per_day: h.max_instances_per_day,
+        dependency_habit_id: h.dependency_habit_id,
+        dependency_type: h.dependency_type,
         calendar_hours: h.calendar_hours,
         priority: h.priority,
+        base_priority: getHabitEffectivePriority(h).basePriority,
+        effective_priority: getHabitEffectivePriority(h).effectivePriority,
         auto_schedule: h.auto_schedule,
         is_visible_in_calendar: h.is_visible_in_calendar,
         ideal_time: h.ideal_time,
@@ -474,6 +438,10 @@ export async function POST(
         total_duration: t.total_duration,
         calendar_hours: t.calendar_hours,
         priority: t.priority,
+        base_priority: getTaskEffectivePriority(t, now).basePriority,
+        effective_priority: getTaskEffectivePriority(t, now).effectivePriority,
+        deadline_urgency_score: getTaskEffectivePriority(t, now)
+          .deadlineUrgencyScore,
         auto_schedule: t.auto_schedule,
         is_splittable: t.is_splittable,
         start_date: t.start_date,

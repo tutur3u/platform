@@ -20,6 +20,10 @@ export interface GoogleCalendar {
   accountEmail: string | null;
 }
 
+export interface ProviderCalendar extends GoogleCalendar {
+  provider: 'google' | 'microsoft';
+}
+
 export interface AuthResponse {
   authUrl: string;
 }
@@ -30,4 +34,13 @@ export interface CalendarAuthToken {
   refresh_token: string | null;
   account_email: string | null;
   account_name: string | null;
+}
+
+export interface CalendarSyncHealth {
+  state: 'disconnected' | 'syncing' | 'healthy' | 'degraded';
+  reason: string;
+  lastSuccessAt: string | null;
+  lastFailureAt: string | null;
+  currentlyRunning: boolean;
+  retryAfterSeconds: number | null;
 }

@@ -21,6 +21,7 @@ import {
   getMasterKey,
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
+import { clampWorkspaceCalendarPlaintextForEncryptedStorage } from '@/lib/calendar/sync-field-limits';
 
 // Type for events with optional is_encrypted field (backward compatible)
 interface CalendarEventMaybeEncrypted {
@@ -153,27 +154,30 @@ export async function encryptEventForStorage<
     return { ...event, is_encrypted: false };
   }
 
+  const clampedEvent =
+    clampWorkspaceCalendarPlaintextForEncryptedStorage(event);
+
   // Manually encrypt fields that are present
   // We use encryptField directly instead of encryptCalendarEventFields
   // to support partial updates (encryptCalendarEventFields requires all fields)
   // We also check for null because LooseEncryptedCalendarEventFields allows nulls
   const encryptedTitle =
-    event.title !== undefined && event.title !== null
-      ? encryptField(event.title, key)
+    clampedEvent.title !== undefined && clampedEvent.title !== null
+      ? encryptField(clampedEvent.title, key)
       : undefined;
 
   const encryptedDescription =
-    event.description !== undefined && event.description !== null
-      ? encryptField(event.description, key)
+    clampedEvent.description !== undefined && clampedEvent.description !== null
+      ? encryptField(clampedEvent.description, key)
       : undefined;
 
   const encryptedLocation =
-    event.location !== undefined && event.location !== null
-      ? encryptField(event.location, key)
-      : event.location; // undefined or null is preserved
+    clampedEvent.location !== undefined && clampedEvent.location !== null
+      ? encryptField(clampedEvent.location, key)
+      : clampedEvent.location; // undefined or null is preserved
 
   return {
-    ...event,
+    ...clampedEvent,
     ...(encryptedTitle !== undefined ? { title: encryptedTitle } : {}),
     ...(encryptedDescription !== undefined
       ? { description: encryptedDescription }
@@ -258,17 +262,19 @@ function encryptSingleEvent<
     location?: string | null;
   },
 >(event: T, key: Buffer): T & { is_encrypted: boolean } {
+  const clampedEvent =
+    clampWorkspaceCalendarPlaintextForEncryptedStorage(event);
   const encrypted = encryptCalendarEventFields(
     {
-      title: event.title || '',
-      description: event.description || '',
-      location: event.location || undefined,
+      title: clampedEvent.title || '',
+      description: clampedEvent.description || '',
+      location: clampedEvent.location || undefined,
     },
     key
   );
 
   return {
-    ...event,
+    ...clampedEvent,
     title: encrypted.title,
     description: encrypted.description,
     location: encrypted.location ?? null,

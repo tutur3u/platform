@@ -332,7 +332,11 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
         // Schedule the task as a calendar event
         if (scheduleTaskAsEvent) {
-          await scheduleTaskAsEvent(data.taskId, startAt, endAt);
+          await scheduleTaskAsEvent(data.taskId, startAt, endAt, {
+            name: data.taskName,
+            priority: data.priority,
+            totalDuration: data.totalDuration,
+          });
         }
       } catch (err) {
         console.error('Failed to drop task:', err);

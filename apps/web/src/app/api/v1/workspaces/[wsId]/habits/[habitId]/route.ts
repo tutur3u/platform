@@ -15,6 +15,10 @@ import type { Habit, HabitInput } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import {
+  normalizeHabitDependencyType,
+  validateHabitDependencyGraph,
+} from '@/lib/calendar/habit-dependencies';
+import {
   deleteFutureHabitEvents,
   fetchHabitStreak,
 } from '@/lib/calendar/habit-scheduler';
@@ -204,6 +208,164 @@ export async function PUT(
     // Parse request body
     const body: Partial<HabitInput> = await request.json();
 
+    const nextMinInstancesPerDay =
+      body.min_instances_per_day !== undefined
+        ? body.min_instances_per_day
+        : existingHabit.min_instances_per_day;
+    const nextIdealInstancesPerDay =
+      body.ideal_instances_per_day !== undefined
+        ? body.ideal_instances_per_day
+        : existingHabit.ideal_instances_per_day;
+    const nextMaxInstancesPerDay =
+      body.max_instances_per_day !== undefined
+        ? body.max_instances_per_day
+        : existingHabit.max_instances_per_day;
+    const nextDependencyHabitId =
+      body.dependency_habit_id !== undefined
+        ? body.dependency_habit_id
+        : existingHabit.dependency_habit_id;
+    const dependencyTypeFromBody =
+      body.dependency_type !== undefined
+        ? normalizeHabitDependencyType(body.dependency_type)
+        : undefined;
+    const nextDependencyType =
+      body.dependency_type !== undefined
+        ? dependencyTypeFromBody
+        : existingHabit.dependency_type;
+
+    if (body.dependency_type !== undefined && dependencyTypeFromBody === null) {
+      return NextResponse.json(
+        { error: 'Habit dependency type must be before or after' },
+        { status: 400 }
+      );
+    }
+
+    if (!!nextDependencyHabitId !== !!nextDependencyType) {
+      return NextResponse.json(
+        { error: 'Choose both a dependency mode and a dependency habit' },
+        { status: 400 }
+      );
+    }
+
+    if (nextDependencyHabitId === habitId) {
+      return NextResponse.json(
+        { error: 'A habit cannot depend on itself' },
+        { status: 400 }
+      );
+    }
+
+    for (const value of [
+      nextMinInstancesPerDay,
+      nextIdealInstancesPerDay,
+      nextMaxInstancesPerDay,
+    ]) {
+      if (value !== null && value !== undefined) {
+        if (!Number.isInteger(value) || value < 1) {
+          return NextResponse.json(
+            {
+              error:
+                'Habit instances per day must be whole numbers greater than 0',
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    if (
+      nextMinInstancesPerDay != null &&
+      nextIdealInstancesPerDay != null &&
+      nextMinInstancesPerDay > nextIdealInstancesPerDay
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Min instances per day cannot exceed ideal instances per day',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      nextIdealInstancesPerDay != null &&
+      nextMaxInstancesPerDay != null &&
+      nextIdealInstancesPerDay > nextMaxInstancesPerDay
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Ideal instances per day cannot exceed max instances per day',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      nextMinInstancesPerDay != null &&
+      nextMaxInstancesPerDay != null &&
+      nextMinInstancesPerDay > nextMaxInstancesPerDay
+    ) {
+      return NextResponse.json(
+        { error: 'Min instances per day cannot exceed max instances per day' },
+        { status: 400 }
+      );
+    }
+
+    const { data: workspaceHabits, error: workspaceHabitsError } = await sbAdmin
+      .from('workspace_habits')
+      .select('id, name, dependency_habit_id, dependency_type')
+      .eq('ws_id', wsId)
+      .is('deleted_at', null);
+
+    if (workspaceHabitsError) {
+      return NextResponse.json(
+        { error: 'Failed to validate habit dependency graph' },
+        { status: 500 }
+      );
+    }
+
+    if (nextDependencyHabitId) {
+      const dependencyTarget = workspaceHabits?.find(
+        (habit) => habit.id === nextDependencyHabitId
+      );
+
+      if (!dependencyTarget) {
+        return NextResponse.json(
+          { error: 'Selected dependency habit was not found' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const dependencyValidationError = validateHabitDependencyGraph(
+      (workspaceHabits ?? []).map((habit) => ({
+        id: habit.id,
+        name: habit.name,
+        dependency_habit_id: habit.dependency_habit_id,
+        dependency_type: habit.dependency_type as
+          | 'after'
+          | 'before'
+          | null
+          | undefined,
+      })),
+      {
+        id: habitId,
+        name:
+          typeof body.name === 'string' ? body.name.trim() : existingHabit.name,
+        dependency_habit_id: nextDependencyHabitId,
+        dependency_type: nextDependencyType as
+          | 'after'
+          | 'before'
+          | null
+          | undefined,
+      }
+    );
+
+    if (dependencyValidationError) {
+      return NextResponse.json(
+        { error: dependencyValidationError },
+        { status: 400 }
+      );
+    }
+
     // Check if scheduling settings changed
     const schedulingChanged =
       body.frequency !== undefined ||
@@ -214,6 +376,12 @@ export async function PUT(
       body.week_of_month !== undefined ||
       body.day_of_week_monthly !== undefined ||
       body.duration_minutes !== undefined ||
+      body.is_splittable !== undefined ||
+      body.min_instances_per_day !== undefined ||
+      body.ideal_instances_per_day !== undefined ||
+      body.max_instances_per_day !== undefined ||
+      body.dependency_habit_id !== undefined ||
+      body.dependency_type !== undefined ||
       body.ideal_time !== undefined ||
       body.time_preference !== undefined ||
       body.calendar_hours !== undefined ||
@@ -238,6 +406,18 @@ export async function PUT(
       updateData.min_duration_minutes = body.min_duration_minutes;
     if (body.max_duration_minutes !== undefined)
       updateData.max_duration_minutes = body.max_duration_minutes;
+    if (body.is_splittable !== undefined)
+      updateData.is_splittable = body.is_splittable;
+    if (body.min_instances_per_day !== undefined)
+      updateData.min_instances_per_day = body.min_instances_per_day;
+    if (body.ideal_instances_per_day !== undefined)
+      updateData.ideal_instances_per_day = body.ideal_instances_per_day;
+    if (body.max_instances_per_day !== undefined)
+      updateData.max_instances_per_day = body.max_instances_per_day;
+    if (body.dependency_habit_id !== undefined)
+      updateData.dependency_habit_id = body.dependency_habit_id;
+    if (body.dependency_type !== undefined)
+      updateData.dependency_type = dependencyTypeFromBody;
     if (body.ideal_time !== undefined) updateData.ideal_time = body.ideal_time;
     if (body.time_preference !== undefined)
       updateData.time_preference = body.time_preference;

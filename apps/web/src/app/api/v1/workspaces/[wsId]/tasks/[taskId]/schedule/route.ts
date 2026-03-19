@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -24,6 +27,55 @@ type TaskCalendarEventRow = {
     color: string;
   };
 };
+
+async function hasWorkspaceAccess(supabase: any, wsId: string, userId: string) {
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
+}
+
+async function fetchTaskWithWorkspace(taskId: string) {
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
+    .from('tasks')
+    .select(
+      `
+      *,
+      task_lists!inner (
+        id,
+        workspace_boards!inner (
+          ws_id
+        )
+      )
+    `
+    )
+    .eq('id', taskId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as
+    | (Record<string, unknown> & {
+        task_lists?: {
+          id?: string;
+          workspace_boards?: {
+            ws_id?: string | null;
+          } | null;
+        } | null;
+      })
+    | null;
+}
 
 export async function POST(
   _: NextRequest,
@@ -55,50 +107,43 @@ export async function POST(
       );
     }
 
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const hasCalendarWorkspaceAccess = await hasWorkspaceAccess(
+      supabase,
+      wsId,
+      user.id
+    );
 
-    if (!memberCheck) {
+    if (!hasCalendarWorkspaceAccess) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }
       );
     }
 
-    // Fetch the task base fields (scheduling settings are per-user)
-    const { data: task, error: taskError } = await supabase
-      .from('tasks')
-      .select(
-        `
-        *,
-        task_lists!inner (
-          id,
-          workspace_boards!inner (
-            ws_id
-          )
-        )
-      `
-      )
-      .eq('id', taskId)
-      .single();
+    const taskWithLists = await fetchTaskWithWorkspace(taskId);
 
-    if (taskError || !task) {
+    if (!taskWithLists) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    // Verify task belongs to the specified workspace
-    // Using type assertion due to nested relation types
-    const taskWithLists = task as any;
-    if (taskWithLists.task_lists?.workspace_boards?.ws_id !== wsId) {
+    const taskWorkspaceId = taskWithLists.task_lists?.workspace_boards?.ws_id;
+    if (!taskWorkspaceId) {
       return NextResponse.json(
-        { error: 'Task does not belong to this workspace' },
-        { status: 403 }
+        { error: 'Task workspace not found' },
+        { status: 404 }
       );
+    }
+
+    if (taskWorkspaceId !== wsId) {
+      const hasTaskWorkspaceAccess = await hasWorkspaceAccess(
+        supabase,
+        taskWorkspaceId,
+        user.id
+      );
+
+      if (!hasTaskWorkspaceAccess) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
     }
 
     // Load per-user scheduling settings
@@ -142,7 +187,7 @@ export async function POST(
 
     // Prepare task for scheduling
     // scheduleTask() handles re-optimization internally (removes future events, keeps past)
-    const taskWithScheduling: TaskWithScheduling = {
+    const taskWithScheduling = {
       ...taskWithLists,
       total_duration: settings.total_duration,
       is_splittable: settings.is_splittable ?? false,
@@ -150,7 +195,7 @@ export async function POST(
       max_split_duration_minutes: settings.max_split_duration_minutes ?? null,
       calendar_hours: settings.calendar_hours,
       auto_schedule: settings.auto_schedule ?? false,
-    };
+    } as TaskWithScheduling;
 
     // Schedule the task
     const result = await scheduleTask(
@@ -196,6 +241,7 @@ export async function GET(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -210,51 +256,44 @@ export async function GET(
       );
     }
 
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    const hasCalendarWorkspaceAccess = await hasWorkspaceAccess(
+      supabase,
+      wsId,
+      user.id
+    );
 
-    if (!memberCheck) {
+    if (!hasCalendarWorkspaceAccess) {
       return NextResponse.json(
         { error: "You don't have access to this workspace" },
         { status: 403 }
       );
     }
 
-    // Fetch task base fields and verify it belongs to the specified workspace
-    const { data: task, error: taskError } = await supabase
-      .from('tasks')
-      .select(
-        `
-        id,
-        name,
-        task_lists!inner (
-          workspace_boards!inner (
-            ws_id
-          )
-        )
-      `
-      )
-      .eq('id', taskId)
-      .single();
+    const taskWithRelations = await fetchTaskWithWorkspace(taskId);
 
-    if (taskError || !task) {
+    if (!taskWithRelations) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    // Using type assertion for nested relations
-    const taskWithRelations = task as any;
-
-    // Verify task belongs to the specified workspace
-    if (taskWithRelations.task_lists?.workspace_boards?.ws_id !== wsId) {
+    const taskWorkspaceId =
+      taskWithRelations.task_lists?.workspace_boards?.ws_id;
+    if (!taskWorkspaceId) {
       return NextResponse.json(
-        { error: 'Task does not belong to this workspace' },
-        { status: 403 }
+        { error: 'Task workspace not found' },
+        { status: 404 }
       );
+    }
+
+    if (taskWorkspaceId !== wsId) {
+      const hasTaskWorkspaceAccess = await hasWorkspaceAccess(
+        supabase,
+        taskWorkspaceId,
+        user.id
+      );
+
+      if (!hasTaskWorkspaceAccess) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
     }
 
     // Fetch per-user scheduling settings for this task
@@ -276,47 +315,71 @@ export async function GET(
 
     const settings = settingsRow as any;
 
-    // Fetch scheduled events for this task
-    // Note: task_calendar_events table requires migration to be applied
-    const { data: taskEvents } = await (supabase as any)
-      .from('task_calendar_events')
-      .select(
-        `
-        id,
-        scheduled_minutes,
-        completed,
-        created_at,
-        workspace_calendar_events (
+    const [{ data: taskEvents }, { data: directEvents }] = await Promise.all([
+      (sbAdmin as any)
+        .from('task_calendar_events')
+        .select(
+          `
           id,
-          title,
-          start_at,
-          end_at,
-          color
+          scheduled_minutes,
+          completed,
+          created_at,
+          workspace_calendar_events (
+            id,
+            title,
+            start_at,
+            end_at,
+            color
+          )
+        `
         )
-      `
-      )
-      .eq('task_id', taskId);
+        .eq('task_id', taskId),
+      sbAdmin
+        .from('workspace_calendar_events')
+        .select('id, title, start_at, end_at, color')
+        .eq('task_id', taskId)
+        .eq('ws_id', wsId),
+    ]);
 
-    const typedEvents = taskEvents as TaskCalendarEventRow[] | null;
+    const typedEvents = (taskEvents as TaskCalendarEventRow[] | null) ?? [];
 
     // Calculate real duration based on event times to ensure accuracy
-    const eventsWithRealDuration =
-      typedEvents?.map((te) => {
-        const ev = te.workspace_calendar_events;
-        if (ev?.start_at && ev.end_at) {
-          const start = new Date(ev.start_at).getTime();
-          const end = new Date(ev.end_at).getTime();
-          const duration = Math.round((end - start) / 60000);
-          return { ...te, scheduled_minutes: duration };
-        }
-        return { ...te, scheduled_minutes: 0 };
-      }) ?? [];
+    const eventsWithRealDuration = typedEvents.map((te) => {
+      const ev = te.workspace_calendar_events;
+      if (ev?.start_at && ev.end_at) {
+        const start = new Date(ev.start_at).getTime();
+        const end = new Date(ev.end_at).getTime();
+        const duration = Math.round((end - start) / 60000);
+        return { ...te, scheduled_minutes: duration };
+      }
+      return { ...te, scheduled_minutes: 0 };
+    });
 
-    const scheduledMinutes = eventsWithRealDuration.reduce(
+    const existingEventIds = new Set(
+      eventsWithRealDuration
+        .map((event) => event.workspace_calendar_events?.id)
+        .filter(Boolean)
+    );
+
+    const fallbackEvents = (directEvents || [])
+      .filter((event) => !existingEventIds.has(event.id))
+      .map((event) => ({
+        workspace_calendar_events: event,
+        scheduled_minutes: Math.round(
+          (new Date(event.end_at).getTime() -
+            new Date(event.start_at).getTime()) /
+            60000
+        ),
+        completed: false,
+      }));
+
+    const combinedEvents = [...eventsWithRealDuration, ...fallbackEvents];
+
+    const scheduledMinutes = combinedEvents.reduce(
       (sum, e) => sum + e.scheduled_minutes,
       0
     );
-    const completedMinutes = eventsWithRealDuration.reduce(
+    const completedMinutes = combinedEvents.reduce(
       (sum, e) => sum + (e.completed ? e.scheduled_minutes : 0),
       0
     );
@@ -345,7 +408,7 @@ export async function GET(
         isFullyScheduled: scheduledMinutes >= totalMinutes,
       },
       events:
-        eventsWithRealDuration.map((te) => ({
+        combinedEvents.map((te) => ({
           id: te.workspace_calendar_events?.id,
           title: te.workspace_calendar_events?.title,
           start_at: te.workspace_calendar_events?.start_at,

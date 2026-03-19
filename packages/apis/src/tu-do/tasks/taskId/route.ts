@@ -15,6 +15,8 @@ import {
   updateTaskSchema,
 } from './schema';
 
+const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+
 async function requireWorkspaceAccess(
   request: NextRequest,
   rawParams: unknown
@@ -182,6 +184,142 @@ function serializeTask(task: TaskRecord) {
     label_ids: uniqueLabelIds,
     project_ids: uniqueProjectIds,
   };
+}
+
+type LinkedCalendarEvent = {
+  id: string;
+  start_at: string;
+  end_at: string;
+  ws_id?: string | null;
+};
+
+function floorToQuarterHour(date: Date) {
+  return new Date(
+    Math.floor(date.getTime() / FIFTEEN_MINUTES_MS) * FIFTEEN_MINUTES_MS
+  );
+}
+
+async function getLinkedTaskCalendarEvents(sbAdmin: any, taskId: string) {
+  const [{ data: directEvents }, { data: legacyLinks }] = await Promise.all([
+    sbAdmin
+      .from('workspace_calendar_events')
+      .select('id, start_at, end_at, ws_id')
+      .eq('task_id', taskId),
+    sbAdmin
+      .from('task_calendar_events')
+      .select(
+        `
+        event_id,
+        workspace_calendar_events (
+          id,
+          start_at,
+          end_at,
+          ws_id
+        )
+      `
+      )
+      .eq('task_id', taskId),
+  ]);
+
+  const eventsById = new Map<string, LinkedCalendarEvent>();
+
+  for (const event of (directEvents as LinkedCalendarEvent[] | null) ?? []) {
+    if (!event?.id) continue;
+    eventsById.set(event.id, event);
+  }
+
+  for (const link of (legacyLinks as Array<{
+    workspace_calendar_events?: LinkedCalendarEvent | null;
+  }> | null) ?? []) {
+    const event = link.workspace_calendar_events;
+    if (!event?.id) continue;
+    eventsById.set(event.id, event);
+  }
+
+  return [...eventsById.values()];
+}
+
+async function deleteCalendarEventsByIds(sbAdmin: any, eventIds: string[]) {
+  if (eventIds.length === 0) {
+    return;
+  }
+
+  await sbAdmin.from('task_calendar_events').delete().in('event_id', eventIds);
+  await sbAdmin
+    .from('workspace_calendar_events')
+    .delete()
+    .in('id', [...new Set(eventIds)]);
+}
+
+async function removeAllLinkedTaskCalendarEvents(sbAdmin: any, taskId: string) {
+  const linkedEvents = await getLinkedTaskCalendarEvents(sbAdmin, taskId);
+  const eventIds = linkedEvents.map((event) => event.id);
+
+  await deleteCalendarEventsByIds(sbAdmin, eventIds);
+  await sbAdmin.from('task_calendar_events').delete().eq('task_id', taskId);
+}
+
+async function removeTaskSchedulingSettings(sbAdmin: any, taskId: string) {
+  await sbAdmin
+    .from('task_user_scheduling_settings')
+    .delete()
+    .eq('task_id', taskId);
+}
+
+async function clampTaskScheduleToCompletedWork(sbAdmin: any, taskId: string) {
+  const now = new Date();
+  const roundedNow = floorToQuarterHour(now);
+  const linkedEvents = await getLinkedTaskCalendarEvents(sbAdmin, taskId);
+  const eventIdsToDelete: string[] = [];
+  let completedMinutes = 0;
+
+  for (const event of linkedEvents) {
+    const startAt = new Date(event.start_at);
+    const endAt = new Date(event.end_at);
+
+    if (endAt <= roundedNow) {
+      completedMinutes += Math.max(
+        0,
+        Math.round((endAt.getTime() - startAt.getTime()) / 60000)
+      );
+      continue;
+    }
+
+    if (startAt >= roundedNow) {
+      eventIdsToDelete.push(event.id);
+      continue;
+    }
+
+    if (roundedNow <= startAt) {
+      eventIdsToDelete.push(event.id);
+      continue;
+    }
+
+    completedMinutes += Math.max(
+      0,
+      Math.round((roundedNow.getTime() - startAt.getTime()) / 60000)
+    );
+
+    if (roundedNow.getTime() <= startAt.getTime()) {
+      eventIdsToDelete.push(event.id);
+      continue;
+    }
+
+    await sbAdmin
+      .from('workspace_calendar_events')
+      .update({ end_at: roundedNow.toISOString(), locked: true })
+      .eq('id', event.id);
+  }
+
+  await deleteCalendarEventsByIds(sbAdmin, eventIdsToDelete);
+
+  await sbAdmin
+    .from('task_user_scheduling_settings')
+    .update({
+      total_duration: completedMinutes / 60,
+      auto_schedule: false,
+    })
+    .eq('task_id', taskId);
 }
 
 export async function GET(
@@ -518,6 +656,13 @@ export async function PUT(
       }
     }
 
+    if (body.deleted === true) {
+      await removeAllLinkedTaskCalendarEvents(sbAdmin, taskId);
+      await removeTaskSchedulingSettings(sbAdmin, taskId);
+    } else if (nextCompleted || nextClosedAt) {
+      await clampTaskScheduleToCompletedWork(sbAdmin, taskId);
+    }
+
     const updatedTaskResult = await getWorkspaceTask(sbAdmin, wsId, taskId);
 
     if (updatedTaskResult.error) {
@@ -585,6 +730,9 @@ export async function DELETE(
         { status: 400 }
       );
     }
+
+    await removeAllLinkedTaskCalendarEvents(sbAdmin, taskId);
+    await removeTaskSchedulingSettings(sbAdmin, taskId);
 
     const { data: deletedTaskRow, error: deleteError } = await sbAdmin
       .from('tasks')

@@ -38,6 +38,13 @@ export const isMonthlyRecurrenceType = (
   typeof v === 'string' &&
   (MonthlyRecurrenceTypes as readonly string[]).includes(v);
 
+export const HabitDependencyTypes = ['after', 'before'] as const;
+export type HabitDependencyType = (typeof HabitDependencyTypes)[number];
+
+export const isHabitDependencyType = (v: unknown): v is HabitDependencyType =>
+  typeof v === 'string' &&
+  (HabitDependencyTypes as readonly string[]).includes(v);
+
 // ============================================================================
 // INTERFACES
 // ============================================================================
@@ -63,6 +70,12 @@ export interface Habit {
   duration_minutes: number;
   min_duration_minutes?: number | null;
   max_duration_minutes?: number | null;
+  is_splittable?: boolean | null;
+  min_instances_per_day?: number | null;
+  ideal_instances_per_day?: number | null;
+  max_instances_per_day?: number | null;
+  dependency_habit_id?: string | null;
+  dependency_type?: HabitDependencyType | null;
 
   // Time preferences
   ideal_time?: string | null; // TIME as string "HH:MM"
@@ -174,6 +187,12 @@ export interface HabitInput {
   duration_minutes: number;
   min_duration_minutes?: number | null;
   max_duration_minutes?: number | null;
+  is_splittable?: boolean | null;
+  min_instances_per_day?: number | null;
+  ideal_instances_per_day?: number | null;
+  max_instances_per_day?: number | null;
+  dependency_habit_id?: string | null;
+  dependency_type?: HabitDependencyType | null;
 
   ideal_time?: string | null;
   time_preference?: TimeOfDayPreference | null;

@@ -58,6 +58,13 @@ export interface WorkspaceTaskResponse {
   task: WorkspaceTaskApiTask;
 }
 
+export interface CurrentUserTaskDialogResponse {
+  task: WorkspaceTaskApiTask;
+  availableLists: TaskList[];
+  taskWsId: string;
+  taskWorkspacePersonal: boolean;
+}
+
 export interface ListWorkspaceTasksOptions {
   boardId?: string;
   listId?: string;
@@ -487,6 +494,19 @@ export async function getWorkspaceTask(
   const client = getInternalApiClient(options);
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getCurrentUserTask(
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserTaskDialogResponse>(
+    `/api/v1/users/me/tasks/${encodePathSegment(taskId)}`,
     {
       cache: 'no-store',
     }

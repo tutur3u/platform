@@ -15,8 +15,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import {
   deleteFutureHabitEvents,
+  deleteFutureUnlockedHabitEvents,
   scheduleHabit,
 } from '@/lib/calendar/habit-scheduler';
+import { listHabitSkipHistory } from '@/lib/calendar/habit-skips';
 
 interface RouteParams {
   wsId: string;
@@ -89,17 +91,26 @@ export async function POST(
 
     // Parse optional body for window days
     let windowDays = 30;
+    let rebuildUnlockedFutureInstances = true;
     try {
       const body = await request.json();
       if (body.windowDays && typeof body.windowDays === 'number') {
         windowDays = Math.min(Math.max(body.windowDays, 7), 90); // Limit 7-90 days
       }
-      // If reschedule flag is set, delete future events first
+      if (typeof body.rebuildUnlockedFutureInstances === 'boolean') {
+        rebuildUnlockedFutureInstances = body.rebuildUnlockedFutureInstances;
+      }
+      // Backward-compatible: explicit reschedule means clear all future instances.
       if (body.reschedule) {
         await deleteFutureHabitEvents(sbAdmin as any, habitId);
+        rebuildUnlockedFutureInstances = false;
       }
     } catch {
       // No body or invalid JSON, use defaults
+    }
+
+    if (rebuildUnlockedFutureInstances) {
+      await deleteFutureUnlockedHabitEvents(sbAdmin as any, habitId);
     }
 
     // Schedule the habit
@@ -202,32 +213,49 @@ export async function GET(
       rangeEnd
     );
 
-    // Fetch scheduled events for these occurrences
-    const { data: scheduledEvents } = await sbAdmin
-      .from('habit_calendar_events')
-      .select(`
-        occurrence_date,
-        completed,
-        workspace_calendar_events (
-          id,
-          title,
-          start_at,
-          end_at
-        )
-      `)
-      .eq('habit_id', habitId)
-      .gte('occurrence_date', now.toISOString().split('T')[0])
-      .lte('occurrence_date', rangeEnd.toISOString().split('T')[0])
-      .order('occurrence_date', { ascending: true });
+    const rangeStartDate = now.toISOString().split('T')[0] ?? '';
+    const rangeEndDate = rangeEnd.toISOString().split('T')[0] ?? '';
+    const [scheduledEventsResult, skippedHistory] = await Promise.all([
+      sbAdmin
+        .from('habit_calendar_events')
+        .select(`
+          occurrence_date,
+          completed,
+          workspace_calendar_events (
+            id,
+            title,
+            start_at,
+            end_at
+          )
+        `)
+        .eq('habit_id', habitId)
+        .gte('occurrence_date', rangeStartDate)
+        .lte('occurrence_date', rangeEndDate)
+        .order('occurrence_date', { ascending: true }),
+      listHabitSkipHistory(
+        sbAdmin as any,
+        wsId,
+        habitId,
+        rangeStartDate,
+        rangeEndDate
+      ),
+    ]);
 
+    const scheduledEvents = scheduledEventsResult.data ?? [];
     const scheduledDates = new Set(
-      scheduledEvents?.map((e) => e.occurrence_date) || []
+      scheduledEvents.map((event) => event.occurrence_date)
+    );
+    const skippedDates = new Set(
+      skippedHistory
+        .filter((skip) => !skip.revoked_at)
+        .map((skip) => skip.occurrence_date)
     );
 
     // Build schedule status
     const schedule = upcomingOccurrences.map((occ) => {
       const dateStr = occ.toISOString().split('T')[0] ?? '';
       const scheduled = scheduledDates.has(dateStr);
+      const skipped = skippedDates.has(dateStr);
       const event = scheduledEvents?.find(
         (e) => e.occurrence_date === dateStr
       ) as any;
@@ -236,6 +264,14 @@ export async function GET(
         occurrence_date: dateStr,
         scheduled,
         completed: event?.completed ?? false,
+        skipped,
+        status: event?.completed
+          ? 'completed'
+          : scheduled
+            ? 'scheduled'
+            : skipped
+              ? 'skipped'
+              : 'to_be_scheduled',
         event: scheduled
           ? {
               id: event?.workspace_calendar_events?.id,
@@ -248,7 +284,10 @@ export async function GET(
     });
 
     const scheduledCount = schedule.filter((s) => s.scheduled).length;
-    const unscheduledCount = schedule.filter((s) => !s.scheduled).length;
+    const skippedCount = schedule.filter((s) => s.skipped).length;
+    const unscheduledCount = schedule.filter(
+      (s) => !s.scheduled && !s.skipped
+    ).length;
 
     return NextResponse.json({
       habit: {
@@ -262,6 +301,7 @@ export async function GET(
       scheduling: {
         totalOccurrences: schedule.length,
         scheduledCount,
+        skippedCount,
         unscheduledCount,
         isFullyScheduled: unscheduledCount === 0,
       },

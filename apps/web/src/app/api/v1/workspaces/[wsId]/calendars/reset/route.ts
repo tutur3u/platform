@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -18,6 +21,7 @@ interface Params {
  */
 export async function POST(_request: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const { wsId } = await params;
 
   try {
@@ -62,7 +66,7 @@ export async function POST(_request: Request, { params }: Params) {
     };
 
     // 1. Soft delete all calendar auth tokens (mark as inactive)
-    const { data: deactivatedTokens, error: tokensError } = await supabase
+    const { data: deactivatedTokens, error: tokensError } = await sbAdmin
       .from('calendar_auth_tokens')
       .update({ is_active: false })
       .eq('ws_id', wsId)
@@ -75,7 +79,7 @@ export async function POST(_request: Request, { params }: Params) {
     }
 
     // 2. Delete all calendar connections
-    const { data: deletedConnections, error: connectionsError } = await supabase
+    const { data: deletedConnections, error: connectionsError } = await sbAdmin
       .from('calendar_connections')
       .delete()
       .eq('ws_id', wsId)
@@ -88,7 +92,7 @@ export async function POST(_request: Request, { params }: Params) {
     }
 
     // 3. Delete all calendar events in the workspace
-    const { data: deletedEvents, error: eventsError } = await supabase
+    const { data: deletedEvents, error: eventsError } = await sbAdmin
       .from('workspace_calendar_events')
       .delete()
       .eq('ws_id', wsId)
@@ -101,7 +105,7 @@ export async function POST(_request: Request, { params }: Params) {
     }
 
     // 4. Reset custom calendars (delete them, keep system calendars)
-    const { error: customCalendarsError } = await supabase
+    const { error: customCalendarsError } = await sbAdmin
       .from('workspace_calendars')
       .delete()
       .eq('ws_id', wsId)

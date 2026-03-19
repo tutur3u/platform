@@ -92,6 +92,19 @@ interface WorkspaceCalendarsResponse {
 
 export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
   const t = useTranslations('calendar');
+  const renderSyncStatusMessage = (message?: string | null) => {
+    if (!message) return t('synced');
+
+    if (/^[a-z0-9_.-]+$/i.test(message)) {
+      try {
+        return t(message as any);
+      } catch {
+        return message;
+      }
+    }
+
+    return message;
+  };
   const router = useRouter();
   const queryClient = useQueryClient();
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
@@ -1229,9 +1242,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                 {syncStatus.state === 'syncing' && (
                   <Loader2 className="mr-1 inline h-3 w-3 animate-spin" />
                 )}
-                {syncStatus.message
-                  ? t(syncStatus.message as any) || syncStatus.message
-                  : t('synced')}
+                {renderSyncStatusMessage(syncStatus.message)}
               </div>
               <div className="flex gap-1">
                 <Button

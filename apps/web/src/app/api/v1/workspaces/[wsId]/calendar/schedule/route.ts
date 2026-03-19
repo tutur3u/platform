@@ -12,12 +12,20 @@
  * All scheduling uses the same algorithm as the preview panel.
  */
 
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { TaskWithScheduling } from '@tuturuuu/types';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import {
+  listActiveHabitSkipDates,
+  revokeHabitSkip,
+} from '@/lib/calendar/habit-skips';
+import { fetchSchedulableTasksForWorkspace } from '@/lib/calendar/schedulable-tasks';
+import { shouldBlockSafeApply } from '@/lib/calendar/schedule-apply-policy';
 import { fetchHourSettings } from '@/lib/calendar/task-scheduler';
 import {
   generatePreview,
@@ -34,16 +42,6 @@ interface RouteParams {
   wsId: string;
 }
 
-type PersonalTaskSchedulingRow = {
-  total_duration: number | null;
-  is_splittable: boolean | null;
-  min_split_duration_minutes: number | null;
-  max_split_duration_minutes: number | null;
-  calendar_hours: string | null;
-  auto_schedule: boolean | null;
-  tasks: any;
-};
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<RouteParams> }
@@ -59,6 +57,7 @@ export async function POST(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Check for cron secret authorization (for background jobs)
     const cronSecret =
@@ -117,6 +116,18 @@ export async function POST(
     let windowDays = 30;
     let previewEvents: PreviewEvent[] | undefined;
     let clientTimezone: string | undefined;
+    let applyMode: 'safe-apply' | 'full-apply' = 'full-apply';
+    let applyScope: 'impacted-only' | 'full-window' = 'impacted-only';
+    let previewWarnings: string[] = [];
+    let previewSummary:
+      | {
+          totalEvents: number;
+          habitsScheduled: number;
+          tasksScheduled: number;
+          partiallyScheduledTasks: number;
+          unscheduledTasks: number;
+        }
+      | undefined;
     try {
       const body = await request.json();
       if (body.windowDays && typeof body.windowDays === 'number') {
@@ -141,6 +152,20 @@ export async function POST(
           `[Schedule] No preview events in body, will generate fresh`
         );
       }
+      if (body.mode === 'safe-apply' || body.mode === 'full-apply') {
+        applyMode = body.mode;
+      }
+      if (body.scope === 'impacted-only' || body.scope === 'full-window') {
+        applyScope = body.scope;
+      }
+      if (Array.isArray(body.warnings)) {
+        previewWarnings = body.warnings.filter(
+          (warning: unknown): warning is string => typeof warning === 'string'
+        );
+      }
+      if (body.summary) {
+        previewSummary = body.summary;
+      }
     } catch (parseError) {
       console.log(`[Schedule] Body parse error:`, parseError);
       // No body or invalid JSON, use defaults
@@ -153,136 +178,69 @@ export async function POST(
       const now = new Date();
       const endDate = new Date(now);
       endDate.setDate(endDate.getDate() + windowDays);
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
 
-      const [hourSettingsResult, habitsResult, eventsResult, timezoneResult] =
-        await Promise.all([
-          fetchHourSettings(supabase as any, wsId),
+      const [
+        hourSettingsResult,
+        habitsResult,
+        eventsResult,
+        timezoneResult,
+        habitEventsResult,
+      ] = await Promise.all([
+        fetchHourSettings(supabase as any, wsId),
 
-          // Active habits with auto_schedule enabled AND visible in calendar
-          supabase
-            .from('workspace_habits')
-            .select('*')
-            .eq('ws_id', wsId)
-            .eq('is_active', true)
-            .eq('auto_schedule', true)
-            .eq('is_visible_in_calendar', true)
-            .is('deleted_at', null),
+        // Active habits with auto_schedule enabled AND visible in calendar
+        sbAdmin
+          .from('workspace_habits')
+          .select('*')
+          .eq('ws_id', wsId)
+          .eq('is_active', true)
+          .eq('auto_schedule', true)
+          .eq('is_visible_in_calendar', true)
+          .is('deleted_at', null),
 
-          // All existing calendar events in the window (including locked ones)
-          supabase
-            .from('workspace_calendar_events')
-            .select('id, title, start_at, end_at, color, locked')
-            .eq('ws_id', wsId)
-            .gt('end_at', now.toISOString())
-            .lt('start_at', endDate.toISOString()),
+        // All existing calendar events in the window (including locked ones)
+        sbAdmin
+          .from('workspace_calendar_events')
+          .select('id, title, start_at, end_at, color, locked')
+          .eq('ws_id', wsId)
+          .gt('end_at', now.toISOString())
+          .lt('start_at', endDate.toISOString()),
 
-          // Workspace timezone
-          supabase
-            .from('workspaces')
-            .select('timezone')
-            .eq('id', wsId)
-            .single(),
-        ]);
+        // Workspace timezone
+        sbAdmin.from('workspaces').select('timezone').eq('id', wsId).single(),
 
-      const tasksResult = isPersonalWorkspace
-        ? await (async () => {
-            if (!currentUserId) return { data: [], error: null };
-            const { data } = await (supabase as any)
-              .from('task_user_scheduling_settings')
-              .select(
-                `
-                total_duration,
-                is_splittable,
-                min_split_duration_minutes,
-                max_split_duration_minutes,
-                calendar_hours,
-                auto_schedule,
-                tasks!inner(
-                  *,
-                  task_lists!inner(
-                    workspace_boards!inner(ws_id)
-                  )
-                )
-              `
-              )
-              .eq('user_id', currentUserId)
-              .eq('auto_schedule', true)
-              .gt('total_duration', 0);
-
-            const rows = (data as PersonalTaskSchedulingRow[] | null) ?? [];
-            const mapped = rows
-              .map((r) => {
-                const task = r.tasks;
-                const resolvedTaskWsId =
-                  task?.task_lists?.workspace_boards?.ws_id ?? undefined;
-                return {
-                  ...task,
-                  ws_id: resolvedTaskWsId,
-                  total_duration: r.total_duration ?? null,
-                  is_splittable: r.is_splittable ?? false,
-                  min_split_duration_minutes:
-                    r.min_split_duration_minutes ?? null,
-                  max_split_duration_minutes:
-                    r.max_split_duration_minutes ?? null,
-                  calendar_hours: r.calendar_hours ?? null,
-                  auto_schedule: r.auto_schedule ?? false,
-                } satisfies TaskWithScheduling;
-              })
-              .filter(Boolean);
-
-            return { data: mapped, error: null };
-          })()
-        : await (async () => {
-            if (!currentUserId) return { data: [], error: null };
-            const { data } = await (supabase as any)
-              .from('task_user_scheduling_settings')
-              .select(
-                `
-                total_duration,
-                is_splittable,
-                min_split_duration_minutes,
-                max_split_duration_minutes,
-                calendar_hours,
-                auto_schedule,
-                tasks!inner(
-                  *,
-                  task_lists!inner(
-                    workspace_boards!inner(ws_id)
-                  )
-                )
-              `
-              )
-              .eq('user_id', currentUserId)
-              .eq('tasks.task_lists.workspace_boards.ws_id', wsId)
-              .eq('auto_schedule', true)
-              .gt('total_duration', 0);
-
-            const rows = (data as PersonalTaskSchedulingRow[] | null) ?? [];
-            const mapped = rows
-              .map((r) => {
-                const task = r.tasks;
-                const resolvedTaskWsId =
-                  task?.task_lists?.workspace_boards?.ws_id ?? undefined;
-                return {
-                  ...task,
-                  ws_id: resolvedTaskWsId,
-                  total_duration: r.total_duration ?? null,
-                  is_splittable: r.is_splittable ?? false,
-                  min_split_duration_minutes:
-                    r.min_split_duration_minutes ?? null,
-                  max_split_duration_minutes:
-                    r.max_split_duration_minutes ?? null,
-                  calendar_hours: r.calendar_hours ?? null,
-                  auto_schedule: r.auto_schedule ?? false,
-                } satisfies TaskWithScheduling;
-              })
-              .filter(Boolean);
-
-            return { data: mapped, error: null };
-          })();
+        sbAdmin
+          .from('habit_calendar_events')
+          .select(
+            `
+              habit_id,
+              occurrence_date,
+              workspace_calendar_events!inner(id, start_at, end_at, locked, ws_id)
+            `
+          )
+          .eq('workspace_calendar_events.ws_id', wsId)
+          .gte('workspace_calendar_events.start_at', startOfToday.toISOString())
+          .lte('workspace_calendar_events.start_at', endDate.toISOString()),
+      ]);
 
       const habits = (habitsResult.data as Habit[]) || [];
-      const tasks = (tasksResult.data as TaskWithScheduling[]) || [];
+      const habitSkips = await listActiveHabitSkipDates(
+        sbAdmin as any,
+        wsId,
+        habits.map((habit) => habit.id),
+        now.toISOString().split('T')[0] ?? '',
+        endDate.toISOString().split('T')[0] ?? ''
+      );
+      const tasks = currentUserId
+        ? await fetchSchedulableTasksForWorkspace({
+            sbAdmin,
+            wsId,
+            userId: currentUserId,
+            isPersonalWorkspace,
+          })
+        : [];
       const existingEvents = (eventsResult.data || []).map((e) => ({
         id: e.id,
         title: e.title,
@@ -326,6 +284,56 @@ export async function POST(
             return clientTimezone;
           })();
 
+      const skippedHabitDays = new Set(
+        habitSkips.map((skip) => `${skip.habit_id}:${skip.occurrence_date}`)
+      );
+      const existingHabitInstanceCounts = new Map<string, number>();
+      const existingHabitScheduledMinutes = new Map<string, number>();
+      const existingHabitDependencyAnchors = new Map<
+        string,
+        Array<{ start_at: string; end_at: string }>
+      >();
+      if (habitEventsResult?.data) {
+        for (const event of habitEventsResult.data as any[]) {
+          const habitId = event.habit_id;
+          const occurrenceDate = event.occurrence_date;
+          const eventStartAt = event.workspace_calendar_events?.start_at;
+          const eventEndAt = event.workspace_calendar_events?.end_at;
+          const isLocked = event.workspace_calendar_events?.locked === true;
+          if (!habitId || !occurrenceDate) continue;
+          if (!isLocked) continue;
+          const habitDayKey = `${habitId}:${occurrenceDate}`;
+          existingHabitInstanceCounts.set(
+            habitDayKey,
+            (existingHabitInstanceCounts.get(habitDayKey) ?? 0) + 1
+          );
+          if (eventStartAt && eventEndAt) {
+            const dependencyAnchors =
+              existingHabitDependencyAnchors.get(habitDayKey) ?? [];
+            dependencyAnchors.push({
+              start_at: eventStartAt,
+              end_at: eventEndAt,
+            });
+            existingHabitDependencyAnchors.set(habitDayKey, dependencyAnchors);
+          }
+          if (eventStartAt && eventEndAt) {
+            const durationMinutes = Math.max(
+              0,
+              Math.round(
+                (new Date(eventEndAt).getTime() -
+                  new Date(eventStartAt).getTime()) /
+                  60000
+              )
+            );
+            existingHabitScheduledMinutes.set(
+              habitDayKey,
+              (existingHabitScheduledMinutes.get(habitDayKey) ?? 0) +
+                durationMinutes
+            );
+          }
+        }
+      }
+
       // Generate preview using the centralized algorithm
       const preview = generatePreview(
         habits,
@@ -335,24 +343,56 @@ export async function POST(
         {
           windowDays,
           timezone: resolvedTimezone,
+          existingHabitDays: skippedHabitDays,
+          existingHabitInstanceCounts,
+          existingHabitScheduledMinutes,
+          existingHabitDependencyAnchors,
         }
       );
 
       previewEvents = preview.events;
+      previewWarnings = preview.warnings;
+      previewSummary = preview.summary;
+    }
+
+    if (applyMode === 'safe-apply' && previewSummary) {
+      const blockReason = shouldBlockSafeApply({
+        warnings: previewWarnings,
+        summary: previewSummary,
+      });
+
+      if (blockReason) {
+        return NextResponse.json(
+          {
+            error:
+              'Safe apply blocked because the schedule still has unresolved warnings.',
+            code: 'safe_apply_blocked',
+            details: blockReason,
+          },
+          { status: 409 }
+        );
+      }
     }
 
     // Log for debugging
     console.log(
-      `[Schedule] Processing ${previewEvents.length} preview events for ws ${wsId}`
+      `[Schedule] Processing ${previewEvents.length} preview events for ws ${wsId} (${applyMode}, ${applyScope})`
     );
 
     // Now persist the preview events (whether provided or generated)
-    return await createEventsFromPreview(
-      supabase as any,
+    const response = await createEventsFromPreview(
+      sbAdmin as any,
       wsId,
       previewEvents,
       windowDays
     );
+
+    const payload = await response.json();
+    return NextResponse.json({
+      ...payload,
+      applyMode,
+      applyScope,
+    });
   } catch (error) {
     console.error('Error in unified schedule POST:', error);
     if (
@@ -384,6 +424,7 @@ export async function GET(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -413,7 +454,7 @@ export async function GET(
       );
     }
 
-    const { data: wsInfo } = await supabase
+    const { data: wsInfo } = await sbAdmin
       .from('workspaces')
       .select('personal')
       .eq('id', wsId)
@@ -421,39 +462,27 @@ export async function GET(
     const isPersonalWorkspace = !!wsInfo?.personal;
 
     // Fetch scheduling metadata
-    const { data: metadata } = await supabase
+    const { data: metadata } = await sbAdmin
       .from('workspace_scheduling_metadata')
       .select('*')
       .eq('ws_id', wsId)
       .single();
 
     // Fetch counts of schedulable items
-    const [habitsResult, tasksResult] = await Promise.all([
-      supabase
+    const [habitsResult, schedulableTasks] = await Promise.all([
+      sbAdmin
         .from('workspace_habits')
         .select('id', { count: 'exact' })
         .eq('ws_id', wsId)
         .eq('is_active', true)
         .eq('auto_schedule', true)
         .is('deleted_at', null),
-      // Tasks are always per-user via `task_user_scheduling_settings`.
-      (supabase as any)
-        .from('task_user_scheduling_settings')
-        .select(
-          `
-          task_id,
-          tasks!inner(
-            task_lists!inner(
-              workspace_boards!inner(ws_id)
-            )
-          )
-        `,
-          { count: 'exact' }
-        )
-        .eq('user_id', user.id)
-        .eq('tasks.task_lists.workspace_boards.ws_id', wsId)
-        .eq('auto_schedule', true)
-        .gt('total_duration', 0),
+      fetchSchedulableTasksForWorkspace({
+        sbAdmin,
+        wsId,
+        userId: user.id,
+        isPersonalWorkspace,
+      }),
     ]);
 
     return NextResponse.json({
@@ -469,7 +498,7 @@ export async function GET(
       },
       schedulableItems: {
         activeHabits: habitsResult.count ?? 0,
-        autoScheduleTasks: tasksResult.count ?? 0,
+        autoScheduleTasks: schedulableTasks.length,
       },
       mode: isPersonalWorkspace ? 'personal' : 'workspace',
     });
@@ -506,6 +535,7 @@ async function createEventsFromPreview(
     created: 0,
     deleted: 0,
     reused: 0,
+    clearedHabitEvents: 0,
   };
 
   // Get workspace encryption key (if encryption is enabled)
@@ -636,8 +666,11 @@ async function createEventsFromPreview(
     id: string;
     type: 'habit' | 'task' | 'break';
     source_id: string;
+    title: string;
     start_at: string;
     end_at: string;
+    color: string;
+    locked: boolean;
     action: 'updated' | 'created';
   }> = [];
 
@@ -769,6 +802,7 @@ async function createEventsFromPreview(
           },
           { onConflict: 'event_id' }
         );
+        await revokeHabitSkip(supabase, wsId, sourceId, occurrenceDate || '');
       }
 
       if (isTask) {
@@ -792,8 +826,11 @@ async function createEventsFromPreview(
         id: existingEvent.id,
         type: previewEvent.type,
         source_id: sourceId,
+        title: previewEvent.title,
         start_at: previewEvent.start_at,
         end_at: previewEvent.end_at,
+        color: previewEvent.color || 'BLUE',
+        locked: false,
         action: needsUpdate ? 'updated' : 'updated', // Mark as updated even if reused
       });
 
@@ -857,6 +894,7 @@ async function createEventsFromPreview(
           event_id: newEvent.id,
           occurrence_date: occurrenceDate,
         });
+        await revokeHabitSkip(supabase, wsId, sourceId, occurrenceDate || '');
       }
 
       if (isTask) {
@@ -876,8 +914,11 @@ async function createEventsFromPreview(
         id: newEvent.id,
         type: previewEvent.type,
         source_id: sourceId,
+        title: previewEvent.title,
         start_at: newEvent.start_at,
         end_at: newEvent.end_at,
+        color: previewEvent.color || 'BLUE',
+        locked: false,
         action: 'created',
       });
 
@@ -900,8 +941,6 @@ async function createEventsFromPreview(
 
   const orphanedEventIds = existingEvents
     .filter((e) => !usedEventIds.has(e.id))
-    // Only delete TASK events, not habit events - habits should be preserved
-    .filter((e) => e.junction_type !== 'habit')
     .map((e) => e.id);
 
   // Safety check: only delete orphans if we actually processed some events
@@ -929,6 +968,10 @@ async function createEventsFromPreview(
       warnings.push('Failed to clean up orphaned events');
     } else {
       stats.deleted = orphanedEventIds.length;
+      stats.clearedHabitEvents = existingEvents.filter(
+        (event) =>
+          orphanedEventIds.includes(event.id) && event.junction_type === 'habit'
+      ).length;
     }
   } else if (orphanedEventIds.length > 0 && resultEvents.length === 0) {
     console.warn(
@@ -976,9 +1019,11 @@ async function createEventsFromPreview(
       eventsCreated: stats.created,
       eventsDeleted: stats.deleted,
       eventsReused: stats.reused,
+      clearedHabitEvents: stats.clearedHabitEvents,
       windowDays,
     },
     events: resultEvents,
+    deletedEventIds: orphanedEventIds,
     warnings,
   });
 }

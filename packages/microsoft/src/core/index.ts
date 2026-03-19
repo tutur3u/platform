@@ -30,9 +30,10 @@ export interface MicrosoftOAuthConfig {
   redirectUri: string;
 }
 
-// Microsoft calendar scopes (read-only to avoid requiring admin approval)
+// Microsoft calendar scopes for 2-way calendar sync.
 export const MICROSOFT_CALENDAR_SCOPES = [
-  // 'https://graph.microsoft.com/Calendars.Read',
+  'https://graph.microsoft.com/Calendars.Read',
+  'https://graph.microsoft.com/Calendars.ReadWrite',
   'https://graph.microsoft.com/User.Read',
   'offline_access',
 ];

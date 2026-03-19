@@ -27,6 +27,7 @@ import { E2EEStatusBadge } from '../e2ee-status-badge';
 import { HabitsPanel } from '../habits-panel';
 import PriorityView from '../priority-view';
 import { QuickTaskDialog } from '../quick-task-dialog';
+import { TaskSchedulerPanel } from '../task-scheduler-panel';
 
 const SIDEBAR_COLLAPSED_KEY = 'calendar-sidebar-collapsed';
 
@@ -137,12 +138,12 @@ export function CalendarSidebar({
       <div className="min-h-0 flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-2 pt-1">
-            {/* Tasks Section */}
+            {/* Planning Section */}
             <div className="mb-1">
               <div className="mb-1.5 flex items-center gap-1.5 px-1">
                 <LayoutDashboard className="h-3 w-3 text-muted-foreground/70" />
                 <span className="font-medium text-[11px] text-muted-foreground/70 uppercase tracking-wider">
-                  Tasks
+                  Planning
                 </span>
                 {tasks.length > 0 && (
                   <span className="rounded-full bg-foreground/8 px-1.5 py-px font-medium text-[10px] text-foreground/50">
@@ -159,6 +160,24 @@ export function CalendarSidebar({
             </div>
 
             {/* Section Divider */}
+            <div className="my-2 h-px bg-border/40" />
+
+            {/* Scheduler Section */}
+            <div className="mb-2">
+              <div className="mb-1.5 flex items-center gap-1.5 px-1">
+                <CheckSquare className="h-3 w-3 text-muted-foreground/70" />
+                <span className="font-medium text-[11px] text-muted-foreground/70 uppercase tracking-wider">
+                  Smart Queue
+                </span>
+              </div>
+              <TaskSchedulerPanel
+                wsId={wsId}
+                userId={assigneeId}
+                onEventCreated={onEventCreated}
+                isPersonalWorkspace={isPersonalWorkspace}
+              />
+            </div>
+
             <div className="my-2 h-px bg-border/40" />
 
             {/* Habits Section */}

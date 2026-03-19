@@ -16,9 +16,7 @@ import type {
 } from '@tuturuuu/ai/scheduling';
 import {
   calculateIdealStartTimeForHabit,
-  calculatePriorityScore,
   comparePriority,
-  getEffectivePriority,
   getOccurrencesInRange,
 } from '@tuturuuu/ai/scheduling';
 import {
@@ -29,6 +27,15 @@ import type { TaskWithScheduling } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import {
+  buildHabitPrerequisiteMap,
+  topologicallySortHabits,
+} from '../habit-dependencies';
+import {
+  compareEffectivePriorityScores,
+  getHabitEffectivePriority,
+  getTaskEffectivePriority,
+} from '../scheduling-priority';
 import {
   addZonedDaysUtc,
   getZonedDateParts,
@@ -141,6 +148,17 @@ interface OccupiedSlot {
   type: 'habit' | 'task' | 'locked';
   id: string;
   priority?: TaskPriority;
+}
+
+function parseTimeParts(time: string): { hour: number; minute: number } {
+  const [rawHour, rawMinute] = time.split(':');
+  const hour = Number.parseInt(rawHour ?? '0', 10);
+  const minute = Number.parseInt(rawMinute ?? '0', 10);
+
+  return {
+    hour: Number.isFinite(hour) ? hour : 0,
+    minute: Number.isFinite(minute) ? minute : 0,
+  };
 }
 
 // ============================================================================
@@ -394,6 +412,65 @@ function getColorForHourType(hourType?: string | null): string {
   return 'GREEN';
 }
 
+function clampSlotEnd(
+  slot: { start: Date; end: Date; maxAvailable: number },
+  hardEnd: Date | null
+): { start: Date; end: Date; maxAvailable: number } | null {
+  if (!hardEnd) return slot;
+  if (slot.start >= hardEnd) return null;
+
+  const end = slot.end > hardEnd ? hardEnd : slot.end;
+  const maxAvailable = (end.getTime() - slot.start.getTime()) / 60000;
+  if (maxAvailable <= 0) return null;
+
+  return {
+    start: slot.start,
+    end,
+    maxAvailable,
+  };
+}
+
+function isSameLocalDay(
+  left: Date,
+  right: Date,
+  timezone: string | null | undefined
+): boolean {
+  return (
+    getLocalDateString(left, timezone) === getLocalDateString(right, timezone)
+  );
+}
+
+function pickTaskSlot(
+  slots: Array<{ start: Date; end: Date; maxAvailable: number }>,
+  desiredDuration: number,
+  minDuration: number
+): { start: Date; end: Date; maxAvailable: number } | undefined {
+  return (
+    slots.find((slot) => slot.maxAvailable >= desiredDuration) ??
+    slots.find((slot) => slot.maxAvailable >= minDuration)
+  );
+}
+
+function clampPreviewEventStart(
+  proposedStart: Date,
+  slot: { start: Date; end: Date },
+  durationMinutes: number
+): Date {
+  const latestStart = new Date(
+    slot.end.getTime() - durationMinutes * 60 * 1000
+  );
+
+  if (proposedStart < slot.start) {
+    return new Date(slot.start);
+  }
+
+  if (proposedStart > latestStart) {
+    return latestStart;
+  }
+
+  return proposedStart;
+}
+
 function getDayTimeBlocks(
   hourSettings: HourSettings,
   calendarHours: 'personal_hours' | 'work_hours' | 'meeting_hours' | null,
@@ -448,23 +525,25 @@ function findAvailableSlotsInDay(
   for (const block of timeBlocks) {
     if (!block.startTime || !block.endTime) continue;
 
-    const [startHour, startMin] = block.startTime.split(':').map(Number);
-    const [endHour, endMin] = block.endTime.split(':').map(Number);
+    const { hour: startHour, minute: startMin } = parseTimeParts(
+      block.startTime
+    );
+    const { hour: endHour, minute: endMin } = parseTimeParts(block.endTime);
 
     const blockStart =
       timezone && timezone !== 'auto' && ymd
         ? zonedDateTimeToUtc(
             {
               ...ymd,
-              hour: startHour || 0,
-              minute: startMin || 0,
+              hour: startHour,
+              minute: startMin,
               second: 0,
             },
             timezone
           )
         : (() => {
             const d = new Date(date);
-            d.setHours(startHour || 0, startMin || 0, 0, 0);
+            d.setHours(startHour, startMin, 0, 0);
             return d;
           })();
 
@@ -473,15 +552,15 @@ function findAvailableSlotsInDay(
         ? zonedDateTimeToUtc(
             {
               ...ymd,
-              hour: endHour || 23,
-              minute: endMin || 59,
+              hour: endHour,
+              minute: endMin,
               second: 0,
             },
             timezone
           )
         : (() => {
             const d = new Date(date);
-            d.setHours(endHour || 23, endMin || 59, 0, 0);
+            d.setHours(endHour, endMin, 0, 0);
             return d;
           })();
 
@@ -570,7 +649,7 @@ function filterSlotsByTimePreference(
   slots: Array<{ start: Date; end: Date; maxAvailable: number }>,
   idealTime: string | null | undefined,
   timePreference: string | null | undefined,
-  _duration: number,
+  duration: number,
   timezone: string | null | undefined
 ): Array<{ start: Date; end: Date; maxAvailable: number }> {
   if (!idealTime && !timePreference) {
@@ -584,28 +663,39 @@ function filterSlotsByTimePreference(
     ? parseInt(idealTime.split(':')[1] || '0', 10)
     : null;
 
-  const getDistanceFromIdealTime = (slot: { start: Date; end: Date }) => {
+  const getFeasibleStartWindow = (slot: { start: Date; end: Date }) => {
+    const latestStart = new Date(slot.end.getTime() - duration * 60 * 1000);
+    const windowEnd = latestStart > slot.start ? latestStart : slot.start;
     const slotStartHour = getLocalHour(slot.start, timezone);
     const slotStartMin = getLocalMinute(slot.start, timezone);
-    const slotEndHour = getLocalHour(slot.end, timezone);
-    const slotEndMin = getLocalMinute(slot.end, timezone);
-    const slotStartMinutes = slotStartHour * 60 + slotStartMin;
-    const slotEndMinutes = slotEndHour * 60 + slotEndMin;
+    const windowEndHour = getLocalHour(windowEnd, timezone);
+    const windowEndMin = getLocalMinute(windowEnd, timezone);
+
+    return {
+      windowStartMinutes: slotStartHour * 60 + slotStartMin,
+      windowEndMinutes: windowEndHour * 60 + windowEndMin,
+    };
+  };
+
+  const getDistanceFromIdealTime = (slot: { start: Date; end: Date }) => {
+    const { windowStartMinutes, windowEndMinutes } =
+      getFeasibleStartWindow(slot);
 
     if (idealHour !== null) {
       const idealTimeInMinutes = idealHour * 60 + (idealMin ?? 0);
 
-      // If ideal time is WITHIN the slot, distance is 0 (perfect fit)
+      // If the habit can START at the ideal time inside the feasible start window,
+      // distance is 0. This avoids treating a long slot as ideal when the ideal
+      // time is too close to the slot end to fit the full duration.
       if (
-        idealTimeInMinutes >= slotStartMinutes &&
-        idealTimeInMinutes < slotEndMinutes
+        idealTimeInMinutes >= windowStartMinutes &&
+        idealTimeInMinutes <= windowEndMinutes
       ) {
         return 0;
       }
 
-      // Otherwise, calculate distance to nearest slot edge
-      const distToStart = Math.abs(idealTimeInMinutes - slotStartMinutes);
-      const distToEnd = Math.abs(idealTimeInMinutes - slotEndMinutes);
+      const distToStart = Math.abs(idealTimeInMinutes - windowStartMinutes);
+      const distToEnd = Math.abs(idealTimeInMinutes - windowEndMinutes);
       return Math.min(distToStart, distToEnd);
     }
 
@@ -619,15 +709,16 @@ function filterSlotsByTimePreference(
       const range = preferenceRanges[timePreference.toLowerCase()];
       if (range) {
         const centerMinutes = ((range.start + range.end) / 2) * 60;
-        // Check if center of preference range is within slot
+        const { windowStartMinutes, windowEndMinutes } =
+          getFeasibleStartWindow(slot);
         if (
-          centerMinutes >= slotStartMinutes &&
-          centerMinutes < slotEndMinutes
+          centerMinutes >= windowStartMinutes &&
+          centerMinutes <= windowEndMinutes
         ) {
           return 0;
         }
-        const distToStart = Math.abs(centerMinutes - slotStartMinutes);
-        const distToEnd = Math.abs(centerMinutes - slotEndMinutes);
+        const distToStart = Math.abs(centerMinutes - windowStartMinutes);
+        const distToEnd = Math.abs(centerMinutes - windowEndMinutes);
         return Math.min(distToStart, distToEnd);
       }
     }
@@ -647,8 +738,15 @@ function filterSlotsByTimePreference(
     const range = preferenceRanges[timePreference.toLowerCase()];
     if (range) {
       const filteredSlots = slots.filter((slot) => {
-        const slotHour = getLocalHour(slot.start, timezone);
-        return slotHour >= range.start && slotHour < range.end;
+        const { windowStartMinutes, windowEndMinutes } =
+          getFeasibleStartWindow(slot);
+        const preferenceStartMinutes = range.start * 60;
+        const preferenceEndMinutes = range.end * 60;
+
+        return (
+          windowEndMinutes >= preferenceStartMinutes &&
+          windowStartMinutes < preferenceEndMinutes
+        );
       });
 
       if (filteredSlots.length > 0) {
@@ -683,12 +781,171 @@ export interface GeneratePreviewOptions {
   windowDays?: number;
   timezone?: string | null;
   now?: Date;
-  /** Set of 'habitId:YYYY-MM-DD' strings for existing habit events - skip these */
+  /** Set of 'habitId:YYYY-MM-DD' strings for skipped habit occurrences. */
   existingHabitDays?: Set<string>;
+  /** Count of already scheduled habit instances keyed by 'habitId:YYYY-MM-DD'. */
+  existingHabitInstanceCounts?: Map<string, number>;
+  /** Minutes already scheduled for habit instances keyed by 'habitId:YYYY-MM-DD'. */
+  existingHabitScheduledMinutes?: Map<string, number>;
   /** Set of event IDs that are habit events and should remain blocked (not replaced) */
   habitEventIds?: Set<string>;
+  /** Existing dependency anchor events keyed by 'habitId:YYYY-MM-DD'. */
+  existingHabitDependencyAnchors?: Map<
+    string,
+    Array<{ start_at: string; end_at: string }>
+  >;
   /** Optional weights for scoring */
   weights?: SchedulingWeights;
+}
+
+function getTargetHabitInstances(habit: Habit): {
+  min: number;
+  ideal: number;
+  max: number;
+} {
+  if (!habit.is_splittable) {
+    return { min: 1, ideal: 1, max: 1 };
+  }
+
+  const min = Math.max(1, habit.min_instances_per_day ?? 1);
+  const max = Math.max(min, habit.max_instances_per_day ?? min);
+  const ideal = Math.min(
+    max,
+    Math.max(min, habit.ideal_instances_per_day ?? min)
+  );
+
+  return { min, ideal, max };
+}
+
+function roundDurationTo15(minutes: number): number {
+  return Math.max(15, Math.round(minutes / 15) * 15);
+}
+
+function clampMinutes(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function buildHabitOccurrenceKey(
+  habitId: string,
+  occurrenceDate: string
+): string {
+  return `${habitId}:${occurrenceDate}`;
+}
+
+function getHabitDependencyEarliestStart(
+  habitId: string,
+  occurrenceDate: string,
+  prerequisiteMap: Map<string, Set<string>>,
+  dependencyAnchors: Map<string, Array<{ start_at: string; end_at: string }>>
+): Date | null {
+  const prerequisites = prerequisiteMap.get(habitId);
+  if (!prerequisites || prerequisites.size === 0) {
+    return null;
+  }
+
+  let earliestStart: Date | null = null;
+
+  for (const prerequisiteHabitId of prerequisites) {
+    const anchors =
+      dependencyAnchors.get(
+        buildHabitOccurrenceKey(prerequisiteHabitId, occurrenceDate)
+      ) ?? [];
+
+    for (const anchor of anchors) {
+      const anchorEnd = new Date(anchor.end_at);
+      if (!earliestStart || anchorEnd > earliestStart) {
+        earliestStart = anchorEnd;
+      }
+    }
+  }
+
+  return earliestStart;
+}
+
+function relabelSplitHabitPreviewEvents(
+  habitResults: PreviewHabitResult[],
+  existingHabitInstanceCounts: Map<string, number>
+): void {
+  const groupedResults = new Map<string, PreviewHabitResult[]>();
+
+  for (const result of habitResults) {
+    const occurrenceDate = result.event.occurrence_date;
+    if (!occurrenceDate || !result.habit.is_splittable) {
+      continue;
+    }
+
+    const key = buildHabitOccurrenceKey(result.habit.id, occurrenceDate);
+    const group = groupedResults.get(key) ?? [];
+    group.push(result);
+    groupedResults.set(key, group);
+  }
+
+  for (const [key, group] of groupedResults) {
+    group.sort(
+      (left, right) =>
+        new Date(left.event.start_at).getTime() -
+        new Date(right.event.start_at).getTime()
+    );
+
+    const existingCount = existingHabitInstanceCounts.get(key) ?? 0;
+    const totalInstances = existingCount + group.length;
+
+    group.forEach((result, index) => {
+      result.event.title = `${result.habit.name} (${existingCount + index + 1}/${totalInstances})`;
+    });
+  }
+}
+
+function getHabitDurationTargets(
+  habit: Habit,
+  instanceTargets: { min: number; ideal: number; max: number }
+): {
+  totalPerDay: number;
+  minInstance: number;
+  preferredInstance: number;
+  maxInstance: number;
+} {
+  const totalPerDay = roundDurationTo15(Math.max(15, habit.duration_minutes));
+
+  if (!habit.is_splittable) {
+    const {
+      min: minDuration,
+      preferred,
+      max,
+    } = getEffectiveDurationBounds({
+      duration_minutes: totalPerDay,
+      min_duration_minutes: habit.min_duration_minutes,
+      max_duration_minutes: habit.max_duration_minutes,
+    });
+
+    return {
+      totalPerDay,
+      minInstance: minDuration || 15,
+      preferredInstance: preferred || totalPerDay,
+      maxInstance: max || totalPerDay,
+    };
+  }
+
+  const minInstance = roundDurationTo15(
+    Math.min(totalPerDay, Math.max(15, habit.min_duration_minutes ?? 15))
+  );
+  const maxInstance = roundDurationTo15(
+    Math.min(
+      totalPerDay,
+      Math.max(minInstance, habit.max_duration_minutes ?? totalPerDay)
+    )
+  );
+
+  return {
+    totalPerDay,
+    minInstance,
+    preferredInstance: clampMinutes(
+      roundDurationTo15(totalPerDay / instanceTargets.ideal),
+      minInstance,
+      maxInstance
+    ),
+    maxInstance,
+  };
 }
 
 /**
@@ -706,7 +963,13 @@ export function generatePreview(
     timezone = null,
     now: nowOption,
     existingHabitDays = new Set<string>(),
+    existingHabitInstanceCounts = new Map<string, number>(),
+    existingHabitScheduledMinutes = new Map<string, number>(),
     habitEventIds = new Set<string>(),
+    existingHabitDependencyAnchors = new Map<
+      string,
+      Array<{ start_at: string; end_at: string }>
+    >(),
     weights,
   } = options;
   const resolvedTimezone =
@@ -722,7 +985,7 @@ export function generatePreview(
   const taskWarnings: string[] = [];
 
   let stepCounter = 0;
-  const bumpedHabitsCount = 0;
+  let bumpedHabitsCount = 0;
   const breaksCount = 0;
   let partiallyScheduledTasks = 0;
   let unscheduledTasks = 0;
@@ -767,9 +1030,101 @@ export function generatePreview(
     string,
     { habit: Habit; occurrence: Date; event: PreviewEvent }
   >();
+  const habitDependencyAnchors = new Map(existingHabitDependencyAnchors);
+  const habitPrerequisiteMap = buildHabitPrerequisiteMap(habits);
 
   const blockedEventsCount = blockedEvents.length;
   const lockedEventsCount = existingEvents.filter((e) => e.locked).length;
+
+  const bumpHabitEventsForTaskDay = (
+    task: TaskWithScheduling,
+    taskPriority: TaskPriority,
+    searchDate: Date,
+    deadline: Date | null
+  ): Array<{ habit: Habit; occurrence: Date }> => {
+    const bumpable = occupiedSlots
+      .findBumpableHabitEvents(
+        taskPriority,
+        deadline && deadline > now ? deadline : rangeEnd,
+        now
+      )
+      .filter((slot) =>
+        isSameLocalDay(slot.start, searchDate, resolvedTimezone)
+      );
+
+    if (bumpable.length === 0) return [];
+
+    bumpable.sort((a, b) => {
+      const aHabitInfo = habitEventMap.get(a.id);
+      const bHabitInfo = habitEventMap.get(b.id);
+      const aHasPreference =
+        aHabitInfo?.habit.ideal_time || aHabitInfo?.habit.time_preference;
+      const bHasPreference =
+        bHabitInfo?.habit.ideal_time || bHabitInfo?.habit.time_preference;
+
+      if (!aHasPreference && bHasPreference) return -1;
+      if (aHasPreference && !bHasPreference) return 1;
+
+      return a.start.getTime() - b.start.getTime();
+    });
+
+    const bumpedOccurrences = new Map<
+      string,
+      { habit: Habit; occurrence: Date }
+    >();
+
+    for (const bumpableSlot of bumpable) {
+      const habitInfo = habitEventMap.get(bumpableSlot.id);
+      if (!habitInfo) continue;
+
+      occupiedSlots.remove(bumpableSlot.id);
+      habitEventMap.delete(bumpableSlot.id);
+
+      const previewEventIndex = allPreviewEvents.findIndex(
+        (event) => event.id === bumpableSlot.id
+      );
+      if (previewEventIndex >= 0) {
+        allPreviewEvents.splice(previewEventIndex, 1);
+      }
+
+      const habitResultIndex = habitResults.findIndex(
+        (entry) => entry.event.id === bumpableSlot.id
+      );
+      if (habitResultIndex >= 0) {
+        habitResults.splice(habitResultIndex, 1);
+      }
+
+      steps.push({
+        step: stepCounter++,
+        type: 'bump',
+        action: 'bump-habit',
+        description: `Bumping habit "${habitInfo.habit.name}" on ${getLocalDateString(
+          bumpableSlot.start,
+          resolvedTimezone
+        )} to make room for task "${task.name}"`,
+        relatedId: task.id,
+        relatedName: task.name ?? 'Task',
+        timestamp: Date.now(),
+        debug: {
+          reason: `Task effective priority ${taskPriority} displaced lower-priority habit`,
+        },
+      });
+
+      bumpedHabitsCount++;
+      bumpedOccurrences.set(
+        buildHabitOccurrenceKey(
+          habitInfo.habit.id,
+          getLocalDateString(habitInfo.occurrence, resolvedTimezone)
+        ),
+        {
+          habit: habitInfo.habit,
+          occurrence: habitInfo.occurrence,
+        }
+      );
+    }
+
+    return [...bumpedOccurrences.values()];
+  };
 
   steps.push({
     step: stepCounter++,
@@ -787,7 +1142,7 @@ export function generatePreview(
   // PHASE 1: Schedule Habits
   // ============================================================================
 
-  const sortedHabits = [...habits].sort((a, b) => {
+  const compareHabits = (a: Habit, b: Habit) => {
     const aHasIdealTime = !!a.ideal_time;
     const bHasIdealTime = !!b.ideal_time;
     if (aHasIdealTime && !bHasIdealTime) return -1;
@@ -798,71 +1153,153 @@ export function generatePreview(
     if (aHasTimePref && !bHasTimePref) return -1;
     if (bHasTimePref && !aHasTimePref) return 1;
 
-    const aScore = calculatePriorityScore({ priority: a.priority });
-    const bScore = calculatePriorityScore({ priority: b.priority });
-    return bScore - aScore;
-  });
+    return compareEffectivePriorityScores(
+      getHabitEffectivePriority(a),
+      getHabitEffectivePriority(b)
+    );
+  };
 
-  for (const habit of sortedHabits) {
-    const occurrences = getOccurrencesInRange(habit, now, rangeEnd);
+  const { sorted: sortedHabits } = topologicallySortHabits(
+    habits,
+    compareHabits
+  );
 
-    for (const occurrence of occurrences) {
-      // Use local date string to avoid UTC/local date mismatch
-      const occurrenceDate = getLocalDateString(occurrence, resolvedTimezone);
+  const getCurrentHabitDayProgress = (
+    habitId: string,
+    occurrenceDate: string
+  ) => {
+    const key = buildHabitOccurrenceKey(habitId, occurrenceDate);
+    const previewResultsForDay = habitResults.filter(
+      (result) =>
+        result.habit.id === habitId &&
+        result.event.occurrence_date === occurrenceDate
+    );
 
-      // Skip if this habit already has an event for this day
-      // Habits are strictly once per day - don't create duplicates
-      const habitDayKey = `${habit.id}:${occurrenceDate}`;
-      if (existingHabitDays.has(habitDayKey)) {
-        // Silently skip - this is expected behavior, not a warning
-        continue;
+    return {
+      key,
+      scheduledInstances:
+        (existingHabitInstanceCounts.get(key) ?? 0) +
+        previewResultsForDay.length,
+      scheduledMinutes:
+        (existingHabitScheduledMinutes.get(key) ?? 0) +
+        previewResultsForDay.reduce((sum, result) => sum + result.duration, 0),
+    };
+  };
+
+  const scheduleHabitOccurrence = (
+    habit: Habit,
+    occurrence: Date,
+    mode: 'initial' | 'rebuild' = 'initial'
+  ) => {
+    const occurrenceDate = getLocalDateString(occurrence, resolvedTimezone);
+    const { key: habitDayKey } = getCurrentHabitDayProgress(
+      habit.id,
+      occurrenceDate
+    );
+    const instanceTargets = getTargetHabitInstances(habit);
+    const durationTargets = getHabitDurationTargets(habit, instanceTargets);
+
+    if (existingHabitDays.has(habitDayKey)) {
+      return 0;
+    }
+
+    let { scheduledInstances, scheduledMinutes } = getCurrentHabitDayProgress(
+      habit.id,
+      occurrenceDate
+    );
+    const earliestDependencyStart = getHabitDependencyEarliestStart(
+      habit.id,
+      occurrenceDate,
+      habitPrerequisiteMap,
+      habitDependencyAnchors
+    );
+
+    if (scheduledMinutes >= durationTargets.totalPerDay) {
+      return 0;
+    }
+
+    let createdInstances = 0;
+
+    while (
+      scheduledInstances < instanceTargets.max &&
+      scheduledMinutes < durationTargets.totalPerDay
+    ) {
+      const remainingMinutes = durationTargets.totalPerDay - scheduledMinutes;
+      const targetInstancesLeft =
+        scheduledInstances < instanceTargets.ideal
+          ? instanceTargets.ideal - scheduledInstances
+          : 1;
+      const minMinutesReservedForRest =
+        durationTargets.minInstance * Math.max(0, targetInstancesLeft - 1);
+      let maxAllowedThisInstance = Math.min(
+        durationTargets.maxInstance,
+        remainingMinutes - minMinutesReservedForRest
+      );
+
+      if (maxAllowedThisInstance < durationTargets.minInstance) {
+        maxAllowedThisInstance = Math.min(
+          durationTargets.maxInstance,
+          remainingMinutes
+        );
       }
 
-      const { min: minDuration } = getEffectiveDurationBounds({
-        duration_minutes: habit.duration_minutes,
-        min_duration_minutes: habit.min_duration_minutes,
-        max_duration_minutes: habit.max_duration_minutes,
-      });
+      if (maxAllowedThisInstance < durationTargets.minInstance) {
+        break;
+      }
+
+      const targetDuration = clampMinutes(
+        roundDurationTo15(
+          scheduledInstances < instanceTargets.ideal
+            ? remainingMinutes / targetInstancesLeft
+            : Math.min(durationTargets.preferredInstance, remainingMinutes)
+        ),
+        durationTargets.minInstance,
+        maxAllowedThisInstance
+      );
 
       const slots = findAvailableSlotsInDay(
         occurrence,
         hourSettings,
         habit.calendar_hours,
         occupiedSlots,
-        minDuration || 15,
+        durationTargets.minInstance,
         resolvedTimezone
       );
 
       if (slots.length === 0) {
-        habitWarnings.push(
-          `No available slot for habit "${habit.name}" on ${occurrenceDate}`
-        );
-        continue;
+        break;
       }
 
-      const futureSlots = filterFutureSlots(slots, now);
+      const futureSlots = filterFutureSlots(slots, now).filter((slot) => {
+        if (!earliestDependencyStart) {
+          return true;
+        }
 
-      // Skip occurrences if the available slots are in the past (day has already passed)
+        return slot.end > earliestDependencyStart;
+      });
       if (futureSlots.length === 0) {
-        // This is normal for today if we're past all available time blocks
-        // Don't add a warning, just skip silently to the next occurrence
-        continue;
+        break;
       }
 
       const preferredSlots = filterSlotsByTimePreference(
         futureSlots,
         habit.ideal_time,
         habit.time_preference,
-        habit.duration_minutes || minDuration || 30,
+        targetDuration,
         resolvedTimezone
       );
-      const habitConfig = convertHabitToConfig(habit);
+      const habitConfig = convertHabitToConfig({
+        ...habit,
+        duration_minutes: targetDuration,
+        min_duration_minutes: durationTargets.minInstance,
+        max_duration_minutes: maxAllowedThisInstance,
+      });
       let bestSlot:
         | { start: Date; end: Date; maxAvailable: number }
         | undefined;
       if (habit.ideal_time || habit.time_preference) {
         bestSlot = preferredSlots.find(
-          (slot) => slot.maxAvailable >= (minDuration || 15)
+          (slot) => slot.maxAvailable >= durationTargets.minInstance
         );
       } else {
         bestSlot =
@@ -875,26 +1312,16 @@ export function generatePreview(
       }
 
       if (!bestSlot) {
-        habitWarnings.push(
-          `No suitable slot for habit "${habit.name}" on ${occurrenceDate}`
-        );
-        continue;
+        break;
       }
 
-      // Use preferred duration directly instead of calculateOptimalDuration to avoid expansion
-      // The habit's duration_minutes is what the user wants, not an "optimal" expanded duration
-      const preferredDuration = habit.duration_minutes || minDuration || 30;
-      const maxDuration = habit.max_duration_minutes || preferredDuration;
       const duration = Math.min(
-        Math.max(preferredDuration, minDuration || 15),
-        Math.min(maxDuration, bestSlot.maxAvailable)
+        Math.max(targetDuration, durationTargets.minInstance),
+        Math.min(maxAllowedThisInstance, bestSlot.maxAvailable)
       );
 
-      if (duration < (minDuration || 15)) {
-        habitWarnings.push(
-          `Cannot fit habit "${habit.name}" on ${occurrenceDate}`
-        );
-        continue;
+      if (duration < durationTargets.minInstance) {
+        break;
       }
 
       const rawIdealStartTime = calculateIdealStartTimeForHabit(
@@ -905,35 +1332,41 @@ export function generatePreview(
         resolvedTimezone
       );
 
-      const idealStartTime = roundTo15Minutes(rawIdealStartTime);
+      let idealStartTime = roundTo15Minutes(rawIdealStartTime);
+      if (earliestDependencyStart && idealStartTime < earliestDependencyStart) {
+        idealStartTime = roundTo15Minutes(earliestDependencyStart);
+      }
+      idealStartTime = roundTo15Minutes(
+        clampPreviewEventStart(idealStartTime, bestSlot, duration)
+      );
       const eventEnd = roundTo15Minutes(
         new Date(idealStartTime.getTime() + duration * 60 * 1000)
       );
 
-      // Check deviation from preferred time AFTER calculating actual scheduled time
-      // If deviation is too large (> 4x duration), skip this instance
+      if (eventEnd > bestSlot.end) {
+        break;
+      }
+
       const actualDeviationMinutes = calculateDeviationMinutes(
-        idealStartTime, // Use the ACTUAL scheduled time, not slot start
+        idealStartTime,
         habit.ideal_time,
         habit.time_preference,
         resolvedTimezone
       );
       const skipCheck = shouldSkipHabitInstance(actualDeviationMinutes, habit);
       if (skipCheck.skip) {
-        habitWarnings.push(
-          `Skipping "${habit.name}" on ${occurrenceDate}: ${skipCheck.reason}`
-        );
-        continue;
+        if (createdInstances === 0) {
+          habitWarnings.push(
+            `Skipping "${habit.name}" on ${occurrenceDate}: ${skipCheck.reason}`
+          );
+        }
+        break;
       }
 
       if (occupiedSlots.hasConflict(idealStartTime, eventEnd)) {
-        habitWarnings.push(
-          `Conflict for habit "${habit.name}" on ${occurrenceDate}`
-        );
-        continue;
+        break;
       }
 
-      // Use the actual scheduled time's date for occurrence_date (in local timezone)
       const actualOccurrenceDate = getLocalDateString(
         idealStartTime,
         resolvedTimezone
@@ -941,7 +1374,10 @@ export function generatePreview(
 
       const previewEvent: PreviewEvent = {
         id: generatePreviewId(),
-        title: habit.name,
+        title:
+          instanceTargets.ideal > 1
+            ? `${habit.name} (${scheduledInstances + 1}/${instanceTargets.ideal})`
+            : habit.name,
         start_at: idealStartTime.toISOString(),
         end_at: eventEnd.toISOString(),
         type: 'habit',
@@ -958,9 +1394,12 @@ export function generatePreview(
 
       steps.push({
         step: stepCounter++,
-        type: 'habit',
-        action: 'schedule',
-        description: `Scheduling habit "${habit.name}" on ${actualOccurrenceDate} at ${startTimeFormatted}-${endTimeFormatted} (${duration}min)`,
+        type: mode === 'rebuild' ? 'reschedule' : 'habit',
+        action: mode === 'rebuild' ? 'rebuild-habit' : 'schedule',
+        description:
+          mode === 'rebuild'
+            ? `Rebuilding habit "${habit.name}" on ${actualOccurrenceDate} at ${startTimeFormatted}-${endTimeFormatted} (${duration}min)`
+            : `Scheduling habit "${habit.name}" on ${actualOccurrenceDate} at ${startTimeFormatted}-${endTimeFormatted} (${duration}min)`,
         event: previewEvent,
         relatedId: habit.id,
         relatedName: habit.name,
@@ -971,11 +1410,14 @@ export function generatePreview(
             .slice(0, 3)
             .map((s) => formatSlotForDebug(s, resolvedTimezone)),
           slotChosen: slotChosenDebug,
-          reason: habit.ideal_time
-            ? `Preferred slot closest to ideal time ${habit.ideal_time}`
-            : habit.time_preference
-              ? `Preferred slot in ${habit.time_preference} period`
-              : 'First available slot with optimal duration',
+          reason:
+            mode === 'rebuild'
+              ? 'Rescheduled after a higher-priority task displaced this day'
+              : habit.ideal_time
+                ? `Preferred slot closest to ideal time ${habit.ideal_time}`
+                : habit.time_preference
+                  ? `Preferred slot in ${habit.time_preference} period`
+                  : 'First available slot with optimal duration',
         },
       });
 
@@ -993,9 +1435,16 @@ export function generatePreview(
       });
       allPreviewEvents.push(previewEvent);
       habitResults.push({ habit, occurrence, event: previewEvent, duration });
+      const dependencyAnchors = habitDependencyAnchors.get(habitDayKey) ?? [];
+      dependencyAnchors.push({
+        start_at: previewEvent.start_at,
+        end_at: previewEvent.end_at,
+      });
+      habitDependencyAnchors.set(habitDayKey, dependencyAnchors);
+      scheduledInstances++;
+      scheduledMinutes += duration;
+      createdInstances++;
 
-      // Only warn if deviation is significant but not enough to skip (> 1 hour)
-      // (actualDeviationMinutes was calculated earlier for skip check)
       if (actualDeviationMinutes > 60) {
         const deviationHours =
           Math.round((actualDeviationMinutes / 60) * 10) / 10;
@@ -1007,30 +1456,54 @@ export function generatePreview(
         );
       }
     }
+
+    if (mode === 'initial') {
+      if (scheduledInstances < instanceTargets.min) {
+        habitWarnings.push(
+          `Habit "${habit.name}" on ${occurrenceDate} only reached ${scheduledInstances}/${instanceTargets.min} required instances`
+        );
+      }
+
+      if (scheduledMinutes < durationTargets.totalPerDay) {
+        habitWarnings.push(
+          `Habit "${habit.name}" on ${occurrenceDate} is ${durationTargets.totalPerDay - scheduledMinutes} minutes short of its daily target`
+        );
+      }
+    }
+
+    return createdInstances;
+  };
+
+  for (const habit of sortedHabits) {
+    const occurrences = getOccurrencesInRange(habit, now, rangeEnd);
+
+    for (const occurrence of occurrences) {
+      scheduleHabitOccurrence(habit, occurrence, 'initial');
+    }
   }
+
+  relabelSplitHabitPreviewEvents(habitResults, existingHabitInstanceCounts);
+  allPreviewEvents.sort(
+    (left, right) =>
+      new Date(left.start_at).getTime() - new Date(right.start_at).getTime()
+  );
 
   // ============================================================================
   // PHASE 2: Schedule Tasks
   // ============================================================================
 
   const sortedTasks = [...tasks].sort((a, b) => {
+    const aPriority = getTaskEffectivePriority(a, now);
+    const bPriority = getTaskEffectivePriority(b, now);
+    const priorityDiff = compareEffectivePriorityScores(aPriority, bPriority);
+    if (priorityDiff !== 0) return priorityDiff;
+
     if (a.end_date && b.end_date) {
       const deadlineDiff =
         new Date(a.end_date).getTime() - new Date(b.end_date).getTime();
       if (deadlineDiff !== 0) return deadlineDiff;
     } else if (a.end_date) return -1;
     else if (b.end_date) return 1;
-
-    const aPriority = getEffectivePriority({
-      priority: a.priority,
-      end_date: a.end_date,
-    });
-    const bPriority = getEffectivePriority({
-      priority: b.priority,
-      end_date: b.end_date,
-    });
-    const priorityDiff = comparePriority(aPriority, bPriority);
-    if (priorityDiff !== 0) return priorityDiff;
 
     if (a.created_at && b.created_at) {
       return (
@@ -1065,22 +1538,34 @@ export function generatePreview(
       continue;
     }
 
-    const taskPriority = getEffectivePriority({
-      priority: task.priority,
-      end_date: task.end_date,
-    });
+    const taskPriorityMeta = getTaskEffectivePriority(task, now);
+    const taskPriority = taskPriorityMeta.effectivePriority;
     const taskEvents: PreviewEvent[] = [];
     let scheduledSoFar = 0;
     let scheduledAfterDeadline = false;
 
-    const minDuration = task.min_split_duration_minutes ?? 30;
-    const maxDuration = task.max_split_duration_minutes ?? 120;
+    const isSplittable = task.is_splittable ?? false;
+    const minDuration = isSplittable
+      ? (task.min_split_duration_minutes ?? 30)
+      : remainingMinutes;
+    const maxDuration = isSplittable
+      ? (task.max_split_duration_minutes ?? 120)
+      : remainingMinutes;
+    const deadline = task.end_date ? new Date(task.end_date) : null;
+    const hardDeadline = deadline && deadline > now ? deadline : null;
+    const canBumpHabits =
+      taskPriority === 'critical' ||
+      (taskPriorityMeta.deadlineUrgencyScore ?? 0) > 0;
 
     for (
       let dayOffset = 0;
       dayOffset < windowDays && remainingMinutes > 0;
       dayOffset++
     ) {
+      const bumpedHabitsToRebuild = new Map<
+        string,
+        { habit: Habit; occurrence: Date }
+      >();
       const searchDate =
         resolvedTimezone && resolvedTimezone !== 'auto'
           ? addZonedDaysUtc(zonedWindowStart, resolvedTimezone, dayOffset)
@@ -1091,11 +1576,15 @@ export function generatePreview(
               return d;
             })();
 
+      if (hardDeadline && searchDate >= hardDeadline) {
+        break;
+      }
+
       if (task.start_date && searchDate < new Date(task.start_date)) {
         continue;
       }
 
-      const slots = findAvailableSlotsInDay(
+      let slots = findAvailableSlotsInDay(
         searchDate,
         hourSettings,
         task.calendar_hours ?? null,
@@ -1104,15 +1593,111 @@ export function generatePreview(
         resolvedTimezone
       );
 
-      const futureSlots = filterFutureSlots(slots, now);
+      let futureSlots = filterFutureSlots(slots, now);
+      let boundedSlots = futureSlots
+        .map((slot) => clampSlotEnd(slot, hardDeadline))
+        .filter(
+          (slot): slot is { start: Date; end: Date; maxAvailable: number } =>
+            slot !== null
+        );
+
+      const shouldPreemptHabitsForUrgentTask =
+        canBumpHabits &&
+        ((taskPriorityMeta.deadlineUrgencyScore ?? 0) >= 2 ||
+          taskPriority === 'critical');
+
+      if (shouldPreemptHabitsForUrgentTask) {
+        const bumped = bumpHabitEventsForTaskDay(
+          task,
+          taskPriority,
+          searchDate,
+          deadline
+        );
+
+        for (const bumpedHabit of bumped) {
+          bumpedHabitsToRebuild.set(
+            buildHabitOccurrenceKey(
+              bumpedHabit.habit.id,
+              getLocalDateString(bumpedHabit.occurrence, resolvedTimezone)
+            ),
+            bumpedHabit
+          );
+        }
+
+        if (bumped.length > 0) {
+          slots = findAvailableSlotsInDay(
+            searchDate,
+            hourSettings,
+            task.calendar_hours ?? null,
+            occupiedSlots,
+            minDuration,
+            resolvedTimezone
+          );
+          futureSlots = filterFutureSlots(slots, now);
+          boundedSlots = futureSlots
+            .map((slot) => clampSlotEnd(slot, hardDeadline))
+            .filter(
+              (
+                slot
+              ): slot is { start: Date; end: Date; maxAvailable: number } =>
+                slot !== null
+            );
+        }
+      } else if (boundedSlots.length === 0 && canBumpHabits) {
+        const bumped = bumpHabitEventsForTaskDay(
+          task,
+          taskPriority,
+          searchDate,
+          deadline
+        );
+
+        for (const bumpedHabit of bumped) {
+          bumpedHabitsToRebuild.set(
+            buildHabitOccurrenceKey(
+              bumpedHabit.habit.id,
+              getLocalDateString(bumpedHabit.occurrence, resolvedTimezone)
+            ),
+            bumpedHabit
+          );
+        }
+
+        if (bumped.length > 0) {
+          slots = findAvailableSlotsInDay(
+            searchDate,
+            hourSettings,
+            task.calendar_hours ?? null,
+            occupiedSlots,
+            minDuration,
+            resolvedTimezone
+          );
+          futureSlots = filterFutureSlots(slots, now);
+          boundedSlots = futureSlots
+            .map((slot) => clampSlotEnd(slot, hardDeadline))
+            .filter(
+              (
+                slot
+              ): slot is { start: Date; end: Date; maxAvailable: number } =>
+                slot !== null
+            );
+        }
+      }
 
       // Sort slots by start time to enable back-to-back scheduling
-      futureSlots.sort((a, b) => a.start.getTime() - b.start.getTime());
+      boundedSlots.sort((a, b) => a.start.getTime() - b.start.getTime());
+      let dayCursor: Date | null = null;
 
-      while (futureSlots.length > 0 && remainingMinutes > 0) {
-        // For back-to-back scheduling, always use the earliest available slot
-        const bestSlot = futureSlots.find(
-          (slot) => slot.maxAvailable >= minDuration
+      while (boundedSlots.length > 0 && remainingMinutes > 0) {
+        const cursor = dayCursor;
+        const candidateSlots = cursor
+          ? boundedSlots.filter((slot) => slot.start >= cursor)
+          : boundedSlots;
+        if (candidateSlots.length === 0) break;
+
+        const desiredDuration = Math.min(remainingMinutes, maxDuration);
+        const bestSlot = pickTaskSlot(
+          candidateSlots,
+          desiredDuration,
+          minDuration
         );
         if (!bestSlot) break;
 
@@ -1121,7 +1706,6 @@ export function generatePreview(
         // - Don't exceed max split duration
         // - Don't exceed slot availability
         // - Enforce minimum duration ONLY if we have more than minDuration remaining
-        const desiredDuration = Math.min(remainingMinutes, maxDuration);
         const eventDuration = Math.min(
           remainingMinutes <= minDuration
             ? remainingMinutes
@@ -1131,8 +1715,8 @@ export function generatePreview(
 
         // Skip if slot is too small for a meaningful chunk (unless it's the final piece)
         if (eventDuration < minDuration && eventDuration < remainingMinutes) {
-          const slotIndex = futureSlots.indexOf(bestSlot);
-          if (slotIndex > -1) futureSlots.splice(slotIndex, 1);
+          const slotIndex = boundedSlots.indexOf(bestSlot);
+          if (slotIndex > -1) boundedSlots.splice(slotIndex, 1);
           continue; // Try next slot instead of breaking
         }
 
@@ -1143,13 +1727,16 @@ export function generatePreview(
         );
 
         if (occupiedSlots.hasConflict(startTime, eventEnd)) {
-          const slotIndex = futureSlots.indexOf(bestSlot);
-          if (slotIndex > -1) futureSlots.splice(slotIndex, 1);
+          const slotIndex = boundedSlots.indexOf(bestSlot);
+          if (slotIndex > -1) boundedSlots.splice(slotIndex, 1);
           continue;
         }
 
-        if (task.end_date && eventEnd > new Date(task.end_date)) {
+        if (hardDeadline && eventEnd > hardDeadline) {
           scheduledAfterDeadline = true;
+          const slotIndex = boundedSlots.indexOf(bestSlot);
+          if (slotIndex > -1) boundedSlots.splice(slotIndex, 1);
+          continue;
         }
 
         const previewEvent: PreviewEvent = {
@@ -1180,12 +1767,15 @@ export function generatePreview(
           relatedName: task.name ?? 'Task',
           timestamp: Date.now(),
           debug: {
-            slotsAvailable: futureSlots.length,
-            slotsConsidered: futureSlots
+            slotsAvailable: candidateSlots.length,
+            slotsConsidered: candidateSlots
               .slice(0, 5)
               .map((s) => formatSlotForDebug(s, resolvedTimezone)),
             slotChosen: formatSlotForDebug(bestSlot, resolvedTimezone),
-            reason: `Earliest slot with ${Math.round(bestSlot.maxAvailable)}min available (back-to-back scheduling)`,
+            reason:
+              bestSlot.maxAvailable >= desiredDuration
+                ? `Earliest slot that fits the preferred ${desiredDuration}min chunk`
+                : `Earliest slot with ${Math.round(bestSlot.maxAvailable)}min available`,
             remainingMinutes: remainingMinutes - eventDuration,
             dayOffset,
           },
@@ -1203,22 +1793,43 @@ export function generatePreview(
         scheduledSoFar += eventDuration;
         remainingMinutes -= eventDuration;
 
-        const slotIndex = futureSlots.indexOf(bestSlot);
+        const slotIndex = boundedSlots.indexOf(bestSlot);
         if (slotIndex > -1) {
-          futureSlots.splice(slotIndex, 1);
+          boundedSlots.splice(slotIndex, 1);
           const remainingSlotDuration =
             (bestSlot.end.getTime() - eventEnd.getTime()) / 60000;
           if (remainingSlotDuration >= minDuration) {
-            futureSlots.push({
+            boundedSlots.push({
               start: new Date(eventEnd),
               end: bestSlot.end,
               maxAvailable: remainingSlotDuration,
             });
             // Re-sort to maintain chronological order for back-to-back scheduling
-            futureSlots.sort((a, b) => a.start.getTime() - b.start.getTime());
+            boundedSlots.sort((a, b) => a.start.getTime() - b.start.getTime());
           }
         }
+        dayCursor = eventEnd;
       }
+
+      if (bumpedHabitsToRebuild.size > 0) {
+        const searchDayKey = getLocalDateString(searchDate, resolvedTimezone);
+        for (const habit of sortedHabits) {
+          const bumpedHabit = bumpedHabitsToRebuild.get(
+            buildHabitOccurrenceKey(habit.id, searchDayKey)
+          );
+          if (!bumpedHabit) continue;
+
+          scheduleHabitOccurrence(
+            bumpedHabit.habit,
+            bumpedHabit.occurrence,
+            'rebuild'
+          );
+        }
+      }
+    }
+
+    if (deadline && deadline <= now && scheduledSoFar > 0) {
+      scheduledAfterDeadline = true;
     }
 
     const finalScheduledMinutes = scheduledMinutes + scheduledSoFar;
@@ -1254,6 +1865,12 @@ export function generatePreview(
       taskWarnings.push(`Task "${task.name}": ${warning}`);
     }
   }
+
+  relabelSplitHabitPreviewEvents(habitResults, existingHabitInstanceCounts);
+  allPreviewEvents.sort(
+    (left, right) =>
+      new Date(left.start_at).getTime() - new Date(right.start_at).getTime()
+  );
 
   // ============================================================================
   // FINAL SUMMARY

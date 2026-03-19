@@ -15,6 +15,10 @@ import {
   Sparkles,
   X,
 } from '@tuturuuu/icons';
+import {
+  applyWorkspaceCalendarSchedule,
+  previewWorkspaceCalendarSchedule,
+} from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
@@ -26,6 +30,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  invalidatePlanningQueries,
+  patchCalendarEvents,
+} from '@/lib/calendar/planning-query-client';
 import type { PreviewEvent } from '@/lib/calendar/unified-scheduler/preview-engine';
 
 interface SmartSchedulePreviewPanelProps {
@@ -86,6 +94,8 @@ interface PreviewData {
     existingEventsCount: number;
     lockedEventsCount?: number;
     unlockedEventsCount?: number;
+    movableFutureUnlockedHabitEventsCount?: number;
+    movableFutureUnlockedTaskEventsCount?: number;
     hourSettings?: {
       working_hours?: { start: string; end: string } | null;
       personal_hours?: { start: string; end: string } | null;
@@ -98,8 +108,14 @@ interface PreviewData {
       name: string;
       frequency: string;
       duration_minutes: number;
+      is_splittable?: boolean;
+      min_instances_per_day?: number | null;
+      ideal_instances_per_day?: number | null;
+      max_instances_per_day?: number | null;
       calendar_hours: string;
       priority: string;
+      base_priority?: string;
+      effective_priority?: string;
       auto_schedule: boolean;
       is_visible_in_calendar: boolean;
       ideal_time?: string | null;
@@ -111,6 +127,9 @@ interface PreviewData {
       total_duration: number;
       calendar_hours: string;
       priority: string;
+      base_priority?: string;
+      effective_priority?: string;
+      deadline_urgency_score?: number;
       auto_schedule: boolean;
       is_splittable: boolean;
       start_date?: string | null;
@@ -138,7 +157,7 @@ export function SmartSchedulePreviewPanel({
     setAffectedEventIds,
     setHideNonPreviewEvents,
   } = useCalendar();
-  const { refresh } = useCalendarSync();
+  const { patchVisibleEvents } = useCalendarSync();
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -184,28 +203,22 @@ export function SmartSchedulePreviewPanel({
     queryKey: ['smart-schedule-preview', wsId, 30, clientTimezone],
     enabled: isOpen,
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendar/schedule/preview`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ windowDays: 30, clientTimezone }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate preview');
-      }
-
-      return result as {
+      return previewWorkspaceCalendarSchedule<{
         preview: PreviewData;
         tasks?: PreviewData['tasks'];
         habits?: PreviewData['habits'];
         debug?: PreviewData['debug'];
         affectedEventIds?: string[];
-      };
+      }>(
+        wsId,
+        {
+          windowDays: 30,
+          clientTimezone,
+        },
+        {
+          fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+        }
+      );
     },
     staleTime: 0,
     refetchOnMount: 'always',
@@ -342,27 +355,33 @@ export function SmartSchedulePreviewPanel({
     toast.loading('Applying schedule...', { id: 'apply-schedule' });
 
     try {
-      // Send preview events directly to avoid regeneration mismatch
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendar/schedule`,
+      const result = await applyWorkspaceCalendarSchedule<{
+        summary: {
+          eventsTotal: number;
+          eventsCreated: number;
+          eventsUpdated: number;
+        };
+        events?: Array<{
+          id: string;
+          title: string;
+          start_at: string;
+          end_at: string;
+          color?: string | null;
+          locked?: boolean;
+        }>;
+        deletedEventIds?: string[];
+      }>(
+        wsId,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            windowDays: 30,
-            forceReschedule: true,
-            // Pass preview events directly to create exact same schedule
-            previewEvents: previewData.events,
-            clientTimezone,
-          }),
+          windowDays: 30,
+          forceReschedule: true,
+          previewEvents: previewData.events,
+          clientTimezone,
+        },
+        {
+          fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
         }
       );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Scheduling failed');
-      }
 
       // Clear all preview state FIRST before refreshing
       clearPreviewEvents();
@@ -371,19 +390,27 @@ export function SmartSchedulePreviewPanel({
       setCurrentStep(0);
       setIsPlaying(false);
       queryClient.removeQueries({ queryKey: ['smart-schedule-preview', wsId] });
-      // Invalidate scheduled events query to refresh sidebar task duration counters
-      queryClient.invalidateQueries({
-        queryKey: ['scheduled-events-batch'],
+      const optimisticEvents = (result.events ?? []).map((event) => ({
+        id: event.id,
+        title: event.title,
+        start_at: event.start_at,
+        end_at: event.end_at,
+        color: event.color ?? 'BLUE',
+        locked: event.locked ?? false,
+      }));
+      patchVisibleEvents(optimisticEvents, {
+        removeIds: result.deletedEventIds ?? [],
       });
-      queryClient.invalidateQueries({
-        queryKey: ['task-schedule-batch'],
+      patchCalendarEvents(queryClient as any, wsId, optimisticEvents, {
+        removeIds: result.deletedEventIds ?? [],
+      });
+      await invalidatePlanningQueries(queryClient as any, wsId, {
+        includeCalendarEvents: false,
       });
 
       // Close panel immediately so user sees actual calendar
       onClose();
 
-      // Then refresh to fetch actual data from database
-      refresh();
       // Also refresh SSR data for sidebar task durations
       router.refresh();
 
@@ -528,8 +555,11 @@ Meeting Hours: ${formatHours(hourSettings.meeting_hours)}`
             `- "${h.name}" (ID: ${h.id})
     Frequency: ${h.frequency}
     Duration: ${h.duration_minutes} mins
+    Splittable: ${h.is_splittable ? 'yes' : 'no'}
+    Min/Ideal/Max instances: ${h.min_instances_per_day || 1}/${h.ideal_instances_per_day || 1}/${h.max_instances_per_day || 1}
     Calendar: ${h.calendar_hours}
     Priority: ${h.priority}
+    Effective priority: ${h.effective_priority || h.priority}
     Auto-schedule: ${h.auto_schedule}
     Visible: ${h.is_visible_in_calendar}
     Ideal time: ${h.ideal_time || 'Any'}
@@ -546,6 +576,8 @@ Meeting Hours: ${formatHours(hourSettings.meeting_hours)}`
     Duration: ${t.total_duration}h (${(t.total_duration * 60).toFixed(0)} mins)
     Calendar: ${t.calendar_hours}
     Priority: ${t.priority}
+    Effective priority: ${t.effective_priority || t.priority}
+    Deadline urgency score: ${t.deadline_urgency_score?.toFixed(3) || '0.000'}
     Auto-schedule: ${t.auto_schedule}
     Splittable: ${t.is_splittable}
     Start date: ${t.start_date || 'Not set'}
@@ -575,6 +607,8 @@ Auto-schedule tasks: ${previewData.debug?.tasksWithAutoSchedule ?? 'N/A'}
 Existing events: ${previewData.debug?.existingEventsCount ?? 'N/A'}
   - Locked: ${previewData.debug?.lockedEventsCount ?? 'N/A'}
   - Unlocked: ${previewData.debug?.unlockedEventsCount ?? 'N/A'}
+  - Movable habit events: ${previewData.debug?.movableFutureUnlockedHabitEventsCount ?? 'N/A'}
+  - Movable task events: ${previewData.debug?.movableFutureUnlockedTaskEventsCount ?? 'N/A'}
 
 === LOCKED EVENTS (Blocking) ===
 ${

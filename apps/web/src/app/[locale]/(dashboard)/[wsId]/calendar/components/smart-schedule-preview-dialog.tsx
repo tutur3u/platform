@@ -15,6 +15,10 @@ import {
   Sparkles,
   X,
 } from '@tuturuuu/icons';
+import {
+  applyWorkspaceCalendarSchedule,
+  previewWorkspaceCalendarSchedule,
+} from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -33,6 +37,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  invalidatePlanningQueries,
+  patchCalendarEvents,
+} from '@/lib/calendar/planning-query-client';
 import type { PreviewEvent } from '@/lib/calendar/unified-scheduler/preview-engine';
 
 interface SmartSchedulePreviewDialogProps {
@@ -88,7 +96,7 @@ export function SmartSchedulePreviewDialog({
   initialMode = 'instant',
 }: SmartSchedulePreviewDialogProps) {
   const { setPreviewEvents, clearPreviewEvents } = useCalendar();
-  const { refresh } = useCalendarSync();
+  const { patchVisibleEvents } = useCalendarSync();
   const queryClient = useQueryClient();
 
   const [isApplying, setIsApplying] = useState(false);
@@ -128,22 +136,7 @@ export function SmartSchedulePreviewDialog({
     queryKey: ['smart-schedule-preview-dialog', wsId, 30, clientTimezone],
     enabled: open,
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendar/schedule/preview`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ windowDays: 30, clientTimezone }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate preview');
-      }
-
-      return result as {
+      return previewWorkspaceCalendarSchedule<{
         preview: PreviewData;
         lockedEvents?: Array<{
           id: string;
@@ -156,7 +149,16 @@ export function SmartSchedulePreviewDialog({
         tasks?: PreviewData['tasks'];
         habits?: PreviewData['habits'];
         debug?: PreviewData['debug'];
-      };
+      }>(
+        wsId,
+        {
+          windowDays: 30,
+          clientTimezone,
+        },
+        {
+          fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+        }
+      );
     },
     staleTime: 0,
     refetchOnMount: 'always',
@@ -280,26 +282,50 @@ export function SmartSchedulePreviewDialog({
     toast.loading('Applying schedule...', { id: 'apply-schedule' });
 
     try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendar/schedule`,
+      const result = await applyWorkspaceCalendarSchedule<{
+        summary: {
+          eventsCreated: number;
+          habitsScheduled: number;
+          tasksScheduled: number;
+        };
+        events?: Array<{
+          id: string;
+          title: string;
+          start_at: string;
+          end_at: string;
+          color?: string | null;
+          locked?: boolean;
+        }>;
+        deletedEventIds?: string[];
+      }>(
+        wsId,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            windowDays: 30,
-            forceReschedule: true,
-            clientTimezone,
-          }),
+          windowDays: 30,
+          forceReschedule: true,
+          clientTimezone,
+        },
+        {
+          fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
         }
       );
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Scheduling failed');
-      }
-
-      refresh();
+      const optimisticEvents = (result.events ?? []).map((event) => ({
+        id: event.id,
+        title: event.title,
+        start_at: event.start_at,
+        end_at: event.end_at,
+        color: event.color ?? 'BLUE',
+        locked: event.locked ?? false,
+      }));
+      patchVisibleEvents(optimisticEvents, {
+        removeIds: result.deletedEventIds ?? [],
+      });
+      patchCalendarEvents(queryClient as any, wsId, optimisticEvents, {
+        removeIds: result.deletedEventIds ?? [],
+      });
+      await invalidatePlanningQueries(queryClient as any, wsId, {
+        includeCalendarEvents: false,
+      });
       clearPreviewEvents();
 
       toast.success(

@@ -20,6 +20,14 @@
       "schedule": "*/10 * * * *"
     },
     {
+      "path": "/api/cron/calendar/provider-sync",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/calendar/smart-schedule",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/tasks/deadline-reminders",
       "schedule": "*/5 * * * *"
     }

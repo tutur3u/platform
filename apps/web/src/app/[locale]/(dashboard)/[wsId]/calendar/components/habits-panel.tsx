@@ -10,6 +10,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { invalidatePlanningQueries } from '@/lib/calendar/planning-query-client';
 import HabitFormDialog from '../../tasks/habits/habit-form-dialog';
 
 interface HabitWithStreak extends Habit {
@@ -228,9 +229,10 @@ export function HabitsPanel({ wsId }: HabitsPanelProps) {
         onOpenChange={handleDialogClose}
         wsId={wsId}
         habit={editingHabit ?? undefined}
-        onSuccess={() => {
+        onSuccess={async () => {
           setIsHabitDialogOpen(false);
           setEditingHabit(null);
+          await invalidatePlanningQueries(queryClient as any, wsId);
           refetch();
         }}
       />

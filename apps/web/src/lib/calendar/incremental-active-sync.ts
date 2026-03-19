@@ -1,5 +1,5 @@
 import { type calendar_v3, google } from '@tuturuuu/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   clearSyncToken,
   formatEventForDb,
@@ -8,6 +8,7 @@ import {
   storeSyncToken,
 } from '@tuturuuu/trigger/google-calendar-sync';
 import { NextResponse } from 'next/server';
+import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
 import { encryptGoogleSyncEvents } from '@/lib/workspace-encryption';
 
 /**
@@ -99,7 +100,7 @@ export async function performIncrementalActiveSync(
 
   const tokenOpStart = Date.now();
   console.log('🔍 [DEBUG] Creating Supabase client...');
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   console.log('✅ [DEBUG] Supabase client created successfully');
 
   // Build token query based on whether we have a specific authTokenId
@@ -428,7 +429,7 @@ async function incrementalActiveSync(
   globalEncryptedIds?: Set<string>
 ) {
   const processingStart = Date.now();
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   // Convert string dates to Date objects if needed
   const startDateObj =
@@ -451,9 +452,11 @@ async function incrementalActiveSync(
     eventsToDeleteCount: eventsToDelete.length,
   });
 
-  const formattedEventsToUpsert = eventsToUpsert.map((event) => {
-    return formatEventForDb(event, wsId, calendarId);
-  });
+  const formattedEventsToUpsert = eventsToUpsert.map((event) =>
+    sanitizeWorkspaceCalendarEventFields(
+      formatEventForDb(event, wsId, calendarId)
+    )
+  );
 
   const formattedEventsToDelete = eventsToDelete.map((event) => {
     return formatEventForDb(event, wsId, calendarId);

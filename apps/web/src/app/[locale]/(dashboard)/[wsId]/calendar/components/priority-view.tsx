@@ -229,9 +229,9 @@ export default function PriorityView({
   } = useQuery({
     queryKey: [
       'task-schedule-batch',
-      // Include workspace context because personal workspace can include cross-workspace tasks.
+      wsId,
       tasksToFetchSchedule
-        .map((t) => `${t.ws_id ?? wsId}:${t.id}`)
+        .map((task) => task.id)
         .sort()
         .join(','),
       isPersonalWorkspace ? 'personal' : 'workspace',
@@ -249,7 +249,7 @@ export default function PriorityView({
           const response = await fetch(
             isPersonalWorkspace
               ? `/api/v1/users/me/tasks/${task.id}/schedule`
-              : `/api/v1/workspaces/${task.ws_id ?? wsId}/tasks/${task.id}/schedule`,
+              : `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`,
             { cache: 'no-store' }
           );
           if (!response.ok) {
@@ -352,21 +352,19 @@ export default function PriorityView({
   }, 500);
 
   const handlePriorityChange = async (taskId: string, newPriority: string) => {
-    const task = combinedTasks.find((t) => t.id === taskId);
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
     const taskWsId = task?.ws_id ?? wsId;
 
-    const response = await fetch(`/api/${taskWsId}/task/${taskId}/edit`, {
-      method: 'PATCH',
-      body: JSON.stringify({ priority: newPriority }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update task priority');
+    try {
+      await updateWorkspaceTask(taskWsId, taskId, {
+        priority: newPriority as TaskPriority,
+      });
+      toast.success('Task priority updated');
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to update task priority:', error);
+      toast.error('Failed to update task priority');
     }
-
-    toast.success('Task priority updated');
-
-    router.refresh();
   };
 
   const handleEdit = async (taskId: string) => {
@@ -394,15 +392,13 @@ export default function PriorityView({
   // Date handlers with optimistic updates
   const handleStartDateChange = async (taskId: string, date: Date | null) => {
     const dateString = date?.toISOString() || null;
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ start_date: dateString })
-        .eq('id', taskId);
-
-      if (error) throw error;
+      await updateWorkspaceTask(taskWsId, taskId, {
+        start_date: dateString,
+      });
       toast.success(date ? 'Start date set' : 'Start date cleared');
       router.refresh();
     } catch (error) {
@@ -413,15 +409,13 @@ export default function PriorityView({
 
   const handleDueDateChange = async (taskId: string, date: Date | null) => {
     const dateString = date?.toISOString() || null;
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ end_date: dateString })
-        .eq('id', taskId);
-
-      if (error) throw error;
+      await updateWorkspaceTask(taskWsId, taskId, {
+        end_date: dateString,
+      });
       toast.success(date ? 'Due date set' : 'Due date cleared');
       router.refresh();
     } catch (error) {
@@ -438,6 +432,7 @@ export default function PriorityView({
     }
 
     const taskWsId = task.ws_id ?? wsId;
+    const completionTimestamp = new Date().toISOString();
 
     try {
       const supabase = createClient();
@@ -445,7 +440,9 @@ export default function PriorityView({
       // If task has no list_id, just update closed_at directly
       if (!task.list_id) {
         await updateWorkspaceTask(taskWsId, taskId, {
-          closed_at: new Date().toISOString(),
+          completed: true,
+          completed_at: completionTimestamp,
+          closed_at: completionTimestamp,
         });
         toast.success('Task marked as done');
         router.refresh();
@@ -480,13 +477,20 @@ export default function PriorityView({
         // Move to the done list (this also sets closed_at via the moveTask helper)
         const taskHelper = await import('@tuturuuu/utils/task-helper');
         await taskHelper.moveTask(taskWsId, taskId, targetList.id);
+        await updateWorkspaceTask(taskWsId, taskId, {
+          completed: true,
+          completed_at: completionTimestamp,
+          closed_at: completionTimestamp,
+        });
         toast.success('Task completed', {
           description: `Moved to ${targetList.name}`,
         });
       } else {
         // No done list or already in done list, just set closed_at
         await updateWorkspaceTask(taskWsId, taskId, {
-          closed_at: new Date().toISOString(),
+          completed: true,
+          completed_at: completionTimestamp,
+          closed_at: completionTimestamp,
         });
         toast.success('Task marked as done');
       }
@@ -499,15 +503,13 @@ export default function PriorityView({
   };
 
   const handleDelete = async (taskId: string) => {
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
+
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', taskId);
-
-      if (error) throw error;
-
+      await updateWorkspaceTask(taskWsId, taskId, {
+        deleted: true,
+      });
       toast.success('Task moved to trash');
       router.refresh();
     } catch (error) {

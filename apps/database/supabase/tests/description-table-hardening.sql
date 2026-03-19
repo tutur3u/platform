@@ -332,8 +332,14 @@ select is(
 
 select is(
   strict_text_field_char_limit('workspace_calendar_events', 'description'),
-  512,
-  'generic descriptions are capped at 512 characters'
+  10000,
+  'workspace calendar event descriptions allow provider-sized payloads'
+);
+
+select is(
+  strict_text_field_char_limit('workspace_calendar_events', 'title'),
+  255,
+  'workspace calendar event titles allow provider-sized payloads'
 );
 
 select is(

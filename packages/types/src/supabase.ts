@@ -4692,6 +4692,85 @@ export type Database = {
           },
         ];
       };
+      habit_skipped_occurrences: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          habit_id: string;
+          id: string;
+          occurrence_date: string;
+          revoked_at: string | null;
+          source_event_id: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          habit_id: string;
+          id?: string;
+          occurrence_date: string;
+          revoked_at?: string | null;
+          source_event_id?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          habit_id?: string;
+          id?: string;
+          occurrence_date?: string;
+          revoked_at?: string | null;
+          source_event_id?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'habit_skipped_occurrences_habit_id_fkey';
+            columns: ['habit_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habits';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'habit_skipped_occurrences_source_event_id_fkey';
+            columns: ['source_event_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendar_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'habit_skipped_occurrences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'habit_skipped_occurrences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'habit_skipped_occurrences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'habit_skipped_occurrences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       handles: {
         Row: {
           created_at: string | null;
@@ -16949,16 +17028,22 @@ export type Database = {
           day_of_week_monthly: number | null;
           days_of_week: number[] | null;
           deleted_at: string | null;
+          dependency_habit_id: string | null;
+          dependency_type: string | null;
           description: string | null;
           duration_minutes: number;
           end_date: string | null;
           frequency: Database['public']['Enums']['habit_frequency'];
           id: string;
+          ideal_instances_per_day: number | null;
           ideal_time: string | null;
           is_active: boolean | null;
+          is_splittable: boolean;
           is_visible_in_calendar: boolean | null;
           max_duration_minutes: number | null;
+          max_instances_per_day: number | null;
           min_duration_minutes: number | null;
+          min_instances_per_day: number | null;
           monthly_type:
             | Database['public']['Enums']['monthly_recurrence_type']
             | null;
@@ -16983,16 +17068,22 @@ export type Database = {
           day_of_week_monthly?: number | null;
           days_of_week?: number[] | null;
           deleted_at?: string | null;
+          dependency_habit_id?: string | null;
+          dependency_type?: string | null;
           description?: string | null;
           duration_minutes?: number;
           end_date?: string | null;
           frequency?: Database['public']['Enums']['habit_frequency'];
           id?: string;
+          ideal_instances_per_day?: number | null;
           ideal_time?: string | null;
           is_active?: boolean | null;
+          is_splittable?: boolean;
           is_visible_in_calendar?: boolean | null;
           max_duration_minutes?: number | null;
+          max_instances_per_day?: number | null;
           min_duration_minutes?: number | null;
+          min_instances_per_day?: number | null;
           monthly_type?:
             | Database['public']['Enums']['monthly_recurrence_type']
             | null;
@@ -17017,16 +17108,22 @@ export type Database = {
           day_of_week_monthly?: number | null;
           days_of_week?: number[] | null;
           deleted_at?: string | null;
+          dependency_habit_id?: string | null;
+          dependency_type?: string | null;
           description?: string | null;
           duration_minutes?: number;
           end_date?: string | null;
           frequency?: Database['public']['Enums']['habit_frequency'];
           id?: string;
+          ideal_instances_per_day?: number | null;
           ideal_time?: string | null;
           is_active?: boolean | null;
+          is_splittable?: boolean;
           is_visible_in_calendar?: boolean | null;
           max_duration_minutes?: number | null;
+          max_instances_per_day?: number | null;
           min_duration_minutes?: number | null;
+          min_instances_per_day?: number | null;
           monthly_type?:
             | Database['public']['Enums']['monthly_recurrence_type']
             | null;
@@ -17068,6 +17165,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habits_dependency_habit_id_fkey';
+            columns: ['dependency_habit_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habits';
             referencedColumns: ['id'];
           },
           {

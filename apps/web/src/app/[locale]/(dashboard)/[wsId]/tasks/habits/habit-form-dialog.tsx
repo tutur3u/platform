@@ -1,9 +1,11 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import type { CalendarHoursType } from '@tuturuuu/types';
 import type {
   Habit,
+  HabitDependencyType,
   HabitFrequency,
   HabitInput,
   MonthlyRecurrenceType,
@@ -35,13 +37,18 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useEffect, useState } from 'react';
+import { HabitScheduleHistoryPanel } from '@/components/calendar/habit-schedule-history-panel';
+import {
+  invalidatePlanningQueries,
+  upsertOptimisticHabit,
+} from '@/lib/calendar/planning-query-client';
 
 interface HabitFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   wsId: string;
   habit?: Habit;
-  onSuccess: () => void;
+  onSuccess: (habit?: Habit) => void;
 }
 
 const COLORS = [
@@ -101,6 +108,7 @@ export default function HabitFormDialog({
   onSuccess,
 }: HabitFormDialogProps) {
   const isEditing = !!habit;
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
@@ -123,6 +131,24 @@ export default function HabitFormDialog({
   );
   const [maxDuration, setMaxDuration] = useState<number | undefined>(
     habit?.max_duration_minutes ?? undefined
+  );
+  const [isSplittable, setIsSplittable] = useState(
+    habit?.is_splittable === true
+  );
+  const [minInstancesPerDay, setMinInstancesPerDay] = useState<
+    number | undefined
+  >(habit?.min_instances_per_day ?? undefined);
+  const [idealInstancesPerDay, setIdealInstancesPerDay] = useState<
+    number | undefined
+  >(habit?.ideal_instances_per_day ?? undefined);
+  const [maxInstancesPerDay, setMaxInstancesPerDay] = useState<
+    number | undefined
+  >(habit?.max_instances_per_day ?? undefined);
+  const [dependencyType, setDependencyType] = useState<
+    HabitDependencyType | ''
+  >(habit?.dependency_type || '');
+  const [dependencyHabitId, setDependencyHabitId] = useState(
+    habit?.dependency_habit_id || ''
   );
 
   // Time preference
@@ -162,6 +188,29 @@ export default function HabitFormDialog({
     habit?.auto_schedule !== false
   );
 
+  const { data: dependencyHabitsData } = useQuery({
+    queryKey: ['habit-dependency-options', wsId],
+    enabled: open,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/habits?active=false`,
+        {
+          cache: 'no-store',
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to load habits');
+      }
+
+      return (await response.json()) as { habits: Habit[] };
+    },
+  });
+
+  const dependencyOptions = (dependencyHabitsData?.habits ?? []).filter(
+    (candidate) => candidate.id !== habit?.id && !candidate.deleted_at
+  );
+
   // Reset form state when habit prop changes (for edit mode)
   useEffect(() => {
     if (open) {
@@ -173,6 +222,12 @@ export default function HabitFormDialog({
       setDurationMinutes(habit?.duration_minutes || 30);
       setMinDuration(habit?.min_duration_minutes ?? undefined);
       setMaxDuration(habit?.max_duration_minutes ?? undefined);
+      setIsSplittable(habit?.is_splittable === true);
+      setMinInstancesPerDay(habit?.min_instances_per_day ?? undefined);
+      setIdealInstancesPerDay(habit?.ideal_instances_per_day ?? undefined);
+      setMaxInstancesPerDay(habit?.max_instances_per_day ?? undefined);
+      setDependencyType(habit?.dependency_type || '');
+      setDependencyHabitId(habit?.dependency_habit_id || '');
       setIdealTime(habit?.ideal_time || '');
       setTimePreference(habit?.time_preference || '');
       setFrequency(habit?.frequency || 'daily');
@@ -204,6 +259,32 @@ export default function HabitFormDialog({
       return;
     }
 
+    if (isSplittable) {
+      const minInstances = minInstancesPerDay ?? 1;
+      const idealInstances = idealInstancesPerDay ?? minInstances;
+      const maxInstances = maxInstancesPerDay ?? idealInstances;
+
+      if (minInstances < 1 || idealInstances < 1 || maxInstances < 1) {
+        toast.error('Habit instances per day must be greater than 0');
+        return;
+      }
+
+      if (minInstances > idealInstances) {
+        toast.error('Min instances per day cannot exceed ideal instances');
+        return;
+      }
+
+      if (idealInstances > maxInstances) {
+        toast.error('Ideal instances per day cannot exceed max instances');
+        return;
+      }
+    }
+
+    if (!!dependencyType !== !!dependencyHabitId) {
+      toast.error('Choose both a dependency mode and a dependency habit');
+      return;
+    }
+
     setIsSubmitting(true);
 
     const habitData: HabitInput = {
@@ -215,6 +296,14 @@ export default function HabitFormDialog({
       duration_minutes: durationMinutes,
       min_duration_minutes: minDuration || null,
       max_duration_minutes: maxDuration || null,
+      is_splittable: isSplittable,
+      min_instances_per_day: isSplittable ? minInstancesPerDay || null : null,
+      ideal_instances_per_day: isSplittable
+        ? idealInstancesPerDay || null
+        : null,
+      max_instances_per_day: isSplittable ? maxInstancesPerDay || null : null,
+      dependency_habit_id: dependencyHabitId || null,
+      dependency_type: dependencyType || null,
       ideal_time: idealTime || null,
       time_preference: timePreference || null,
       frequency,
@@ -255,7 +344,20 @@ export default function HabitFormDialog({
         throw new Error(error.error || 'Failed to save habit');
       }
 
-      onSuccess();
+      const payload = (await response.json()) as { habit?: Habit };
+      if (payload.habit) {
+        upsertOptimisticHabit(queryClient as any, wsId, {
+          id: payload.habit.id,
+          name: payload.habit.name,
+          is_active: payload.habit.is_active !== false,
+          auto_schedule: payload.habit.auto_schedule !== false,
+          is_visible_in_calendar:
+            payload.habit.is_visible_in_calendar !== false,
+          color: payload.habit.color,
+        });
+      }
+      await invalidatePlanningQueries(queryClient as any, wsId);
+      onSuccess(payload.habit);
     } catch (error: any) {
       toast.error(error.message || 'Failed to save habit');
     } finally {
@@ -285,11 +387,14 @@ export default function HabitFormDialog({
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList
+              className={`grid w-full ${isEditing ? 'grid-cols-5' : 'grid-cols-4'}`}
+            >
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="schedule">Schedule</TabsTrigger>
               <TabsTrigger value="recurrence">Recurrence</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
+              {isEditing && <TabsTrigger value="history">History</TabsTrigger>}
             </TabsList>
 
             {/* Basic Tab */}
@@ -357,7 +462,11 @@ export default function HabitFormDialog({
             {/* Schedule Tab */}
             <TabsContent value="schedule" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="duration">Preferred Duration (minutes) *</Label>
+                <Label htmlFor="duration">
+                  {isSplittable
+                    ? 'Total Daily Duration (minutes) *'
+                    : 'Preferred Duration (minutes) *'}
+                </Label>
                 <Input
                   id="duration"
                   type="number"
@@ -366,13 +475,19 @@ export default function HabitFormDialog({
                   onChange={(e) => setDurationMinutes(Number(e.target.value))}
                 />
                 <p className="text-muted-foreground text-xs">
-                  The scheduler will use this duration in most time slots
+                  {isSplittable
+                    ? 'Smart Schedule will split this total daily time across multiple instances'
+                    : 'The scheduler will use this duration in most time slots'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="minDuration">Min Duration (optional)</Label>
+                  <Label htmlFor="minDuration">
+                    {isSplittable
+                      ? 'Min Split Duration (optional)'
+                      : 'Min Duration (optional)'}
+                  </Label>
                   <Input
                     id="minDuration"
                     type="number"
@@ -386,11 +501,17 @@ export default function HabitFormDialog({
                     placeholder={`~${Math.max(15, Math.floor(durationMinutes * 0.5))} min`}
                   />
                   <p className="text-muted-foreground text-xs">
-                    Used when time is limited
+                    {isSplittable
+                      ? 'Smallest allowed instance when this habit is split'
+                      : 'Used when time is limited'}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="maxDuration">Max Duration (optional)</Label>
+                  <Label htmlFor="maxDuration">
+                    {isSplittable
+                      ? 'Max Split Duration (optional)'
+                      : 'Max Duration (optional)'}
+                  </Label>
                   <Input
                     id="maxDuration"
                     type="number"
@@ -404,10 +525,85 @@ export default function HabitFormDialog({
                     placeholder={`~${Math.min(180, Math.ceil(durationMinutes * 1.5))} min`}
                   />
                   <p className="text-muted-foreground text-xs">
-                    Used at ideal times to maximize benefit
+                    {isSplittable
+                      ? 'Largest allowed instance when this habit is split'
+                      : 'Used at ideal times to maximize benefit'}
                   </p>
                 </div>
               </div>
+
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div className="space-y-1">
+                  <Label htmlFor="habit-splittable">
+                    Split Into Multiple Daily Instances
+                  </Label>
+                  <p className="text-muted-foreground text-xs">
+                    Treat the duration above as the total daily target and let
+                    Smart Schedule divide it across multiple instances
+                  </p>
+                </div>
+                <Switch
+                  id="habit-splittable"
+                  checked={isSplittable}
+                  onCheckedChange={(checked) => setIsSplittable(checked)}
+                />
+              </div>
+
+              {isSplittable && (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="minInstancesPerDay">
+                      Min Instances / Day
+                    </Label>
+                    <Input
+                      id="minInstancesPerDay"
+                      type="number"
+                      min={1}
+                      value={minInstancesPerDay || ''}
+                      onChange={(e) =>
+                        setMinInstancesPerDay(
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                      placeholder="1"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="idealInstancesPerDay">
+                      Ideal Instances / Day
+                    </Label>
+                    <Input
+                      id="idealInstancesPerDay"
+                      type="number"
+                      min={1}
+                      value={idealInstancesPerDay || ''}
+                      onChange={(e) =>
+                        setIdealInstancesPerDay(
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                      placeholder="2"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxInstancesPerDay">
+                      Max Instances / Day
+                    </Label>
+                    <Input
+                      id="maxInstancesPerDay"
+                      type="number"
+                      min={1}
+                      value={maxInstancesPerDay || ''}
+                      onChange={(e) =>
+                        setMaxInstancesPerDay(
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                      placeholder="3"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="calendarHours">Calendar Category</Label>
@@ -467,6 +663,67 @@ export default function HabitFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3 rounded-lg border border-border/50 bg-muted/20 p-4">
+                <div className="space-y-1">
+                  <Label>Habit Dependency</Label>
+                  <p className="text-muted-foreground text-xs">
+                    Make this habit start before or after another habit on the
+                    same day. Circular chains are blocked automatically.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Dependency Mode</Label>
+                    <Select
+                      value={dependencyType || 'none'}
+                      onValueChange={(value) =>
+                        setDependencyType(
+                          value === 'none' ? '' : (value as HabitDependencyType)
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="No dependency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No dependency</SelectItem>
+                        <SelectItem value="after">
+                          Start after another habit
+                        </SelectItem>
+                        <SelectItem value="before">
+                          Finish before another habit
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Related Habit</Label>
+                    <Select
+                      value={dependencyHabitId || 'none'}
+                      onValueChange={(value) =>
+                        setDependencyHabitId(value === 'none' ? '' : value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a habit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {dependencyOptions.map((candidate) => (
+                          <SelectItem key={candidate.id} value={candidate.id}>
+                            {candidate.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
@@ -676,6 +933,12 @@ export default function HabitFormDialog({
                 />
               </div>
             </TabsContent>
+
+            {isEditing && habit && (
+              <TabsContent value="history" className="pt-4">
+                <HabitScheduleHistoryPanel wsId={wsId} habitId={habit.id} />
+              </TabsContent>
+            )}
           </Tabs>
 
           <DialogFooter className="mt-6">

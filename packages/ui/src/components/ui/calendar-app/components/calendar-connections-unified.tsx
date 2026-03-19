@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   ChevronDown,
+  ExternalLink,
   Eye,
   EyeOff,
   Loader2,
@@ -20,7 +21,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import {
   AlertDialog,
@@ -56,8 +57,9 @@ import { toast } from '../../sonner';
 import { Switch } from '../../switch';
 import type {
   AuthResponse,
+  CalendarSyncHealth,
   ConnectedAccount,
-  GoogleCalendar,
+  ProviderCalendar,
 } from './calendar-types';
 
 interface AccountsResponse {
@@ -90,6 +92,14 @@ interface WorkspaceCalendarsResponse {
   total: number;
 }
 
+interface ManualSyncResponse {
+  ok: boolean;
+  alreadyRunning?: boolean;
+  code?: string;
+  error?: string;
+  retryAfterSeconds?: number | null;
+}
+
 export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
   const t = useTranslations('calendar');
   const router = useRouter();
@@ -115,10 +125,47 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
     calendarConnections,
     updateCalendarConnection,
     setCalendarConnections,
-    syncStatus,
     syncToTuturuuu,
     isSyncing,
   } = useCalendarSync();
+
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/calendar/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction: 'inbound', source: 'manual' }),
+      });
+
+      const result = (await response.json()) as ManualSyncResponse &
+        Record<string, unknown>;
+      if (!response.ok) {
+        throw new Error(
+          typeof result.error === 'string'
+            ? result.error
+            : 'Failed to sync calendars'
+        );
+      }
+
+      return result;
+    },
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['calendar-sync-status', wsId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['databaseCalendarEvents', wsId],
+        exact: false,
+      });
+
+      if (!result.alreadyRunning) {
+        toast.success(t('calendar_sync_started') || 'Calendar sync started');
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
 
   // Fetch connected accounts
   const { data: accountsData, isLoading: isLoadingAccounts } = useQuery({
@@ -141,6 +188,23 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
 
   const accounts = accountsData?.accounts || [];
   const hasConnectedAccounts = accounts.length > 0;
+
+  const { data: syncStatusData } = useQuery({
+    queryKey: ['calendar-sync-status', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/calendar/sync-status`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) return null;
+      return response.json() as Promise<{
+        health: CalendarSyncHealth;
+        accountsSummary: { total: number; google: number; microsoft: number };
+        connectionsSummary: { total: number; enabled: number };
+      }>;
+    },
+    staleTime: 15_000,
+  });
 
   // Fetch current user's email
   const { data: userEmail } = useQuery({
@@ -427,7 +491,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
               // Update local state immediately
               updateCalendarConnection(calendarId, true);
               queryClient.invalidateQueries({
-                queryKey: ['google-calendar-list', wsId],
+                queryKey: ['provider-calendar-list', wsId],
               });
               queryClient.invalidateQueries({
                 queryKey: ['calendar-connections', wsId],
@@ -450,7 +514,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
           updateCalendarConnection(calendarId, true);
           // Invalidate queries to refresh the list
           queryClient.invalidateQueries({
-            queryKey: ['google-calendar-list', wsId],
+            queryKey: ['provider-calendar-list', wsId],
           });
           queryClient.invalidateQueries({
             queryKey: ['calendar-connections', wsId],
@@ -498,26 +562,51 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
   const enabledCount =
     calendarConnections.filter((c) => c.is_enabled).length +
     tuturuuuEnabledCount;
+  const syncHealth = syncStatusData?.health;
+  const manualSyncDisabled = useMemo(() => {
+    if (syncMutation.isPending || isSyncing) {
+      return true;
+    }
+
+    if (syncHealth?.currentlyRunning) {
+      return true;
+    }
+
+    if ((syncHealth?.retryAfterSeconds ?? 0) > 0) {
+      return true;
+    }
+
+    return false;
+  }, [
+    isSyncing,
+    syncHealth?.currentlyRunning,
+    syncHealth?.retryAfterSeconds,
+    syncMutation.isPending,
+  ]);
   const syncStatusStyles =
-    syncStatus.state === 'syncing'
+    syncHealth?.state === 'syncing'
       ? 'bg-dynamic-blue/10 text-dynamic-blue'
-      : syncStatus.state === 'success'
+      : syncHealth?.state === 'healthy'
         ? 'bg-dynamic-green/10 text-dynamic-green'
-        : 'bg-dynamic-red/10 text-dynamic-red';
+        : syncHealth?.state === 'disconnected'
+          ? 'bg-muted text-muted-foreground'
+          : syncHealth?.state === 'degraded'
+            ? 'bg-dynamic-orange/10 text-dynamic-orange'
+            : 'bg-dynamic-red/10 text-dynamic-red';
 
   // Fetch Google calendars from API (must be before any conditional returns)
   const { data: googleCalendarsData } = useQuery({
-    queryKey: ['google-calendar-list', wsId],
+    queryKey: ['provider-calendar-list', wsId],
     enabled: hasConnectedAccounts,
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/calendar/auth/list-calendars?wsId=${wsId}`,
+        `/api/v1/calendar/auth/provider-calendars?wsId=${wsId}`,
         { cache: 'no-store' }
       );
       if (!response.ok) return { calendars: [], byAccount: {} };
       return response.json() as Promise<{
-        calendars: GoogleCalendar[];
-        byAccount: Record<string, GoogleCalendar[]>;
+        calendars: ProviderCalendar[];
+        byAccount: Record<string, ProviderCalendar[]>;
       }>;
     },
     staleTime: 30_000,
@@ -1036,6 +1125,61 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
               </Dialog>
             </div>
 
+            {!hasConnectedAccounts && (
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                <div className="space-y-1">
+                  <p className="font-medium text-sm">
+                    {t('connect_calendar_accounts') ||
+                      'Connect calendar accounts'}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {t('connect_calendar_accounts_desc') ||
+                      'Link Google or Outlook to keep external calendars visible and continuously synchronized.'}
+                  </p>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => googleAuthMutation.mutate()}
+                    disabled={googleAuthMutation.isPending}
+                  >
+                    {googleAuthMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Image
+                        src="/media/logos/google.svg"
+                        alt="Google"
+                        width={16}
+                        height={16}
+                      />
+                    )}
+                    {t('google')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => microsoftAuthMutation.mutate()}
+                    disabled={microsoftAuthMutation.isPending}
+                  >
+                    {microsoftAuthMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Image
+                        src="/media/logos/microsoft.svg"
+                        alt="Microsoft"
+                        width={16}
+                        height={16}
+                      />
+                    )}
+                    {t('outlook')}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Separator />
 
             {/* Calendar list grouped by source */}
@@ -1214,9 +1358,15 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
 
                   {calendarConnections.length === 0 &&
                     workspaceCalendars.length === 0 && (
-                      <p className="py-4 text-center text-muted-foreground text-sm">
-                        {t('no_calendars_synced')}
-                      </p>
+                      <div className="rounded-lg border border-dashed p-4 text-center">
+                        <p className="font-medium text-sm">
+                          {t('no_calendars_synced')}
+                        </p>
+                        <p className="mt-1 text-muted-foreground text-xs">
+                          {t('choose_calendars_to_show') ||
+                            'Connect an account, then choose which calendars should appear here.'}
+                        </p>
+                      </div>
                     )}
                 </>
               )}
@@ -1229,28 +1379,52 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
               <div
                 className={`rounded-full px-2 py-0.5 text-xs ${syncStatusStyles}`}
               >
-                {syncStatus.state === 'syncing' && (
+                {syncHealth?.state === 'syncing' && (
                   <Loader2 className="mr-1 inline h-3 w-3 animate-spin" />
                 )}
-                {syncStatus.message
-                  ? t(syncStatus.message as any) || syncStatus.message
-                  : t('synced')}
+                {syncHealth?.state === 'degraded'
+                  ? t('degraded') || 'Degraded'
+                  : syncHealth?.state === 'healthy'
+                    ? t('healthy') || 'Healthy'
+                    : syncHealth?.state === 'disconnected'
+                      ? t('connect_accounts') || 'Connect accounts'
+                      : t('syncing_calendars') || 'Syncing calendars'}
               </div>
               <div className="flex gap-1">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
+                  onClick={() => syncMutation.mutate()}
+                  disabled={manualSyncDisabled}
+                  title={t('sync_now') || 'Sync now'}
+                >
+                  <ExternalLink
+                    className={`h-3.5 w-3.5 ${
+                      manualSyncDisabled ? 'animate-pulse' : ''
+                    }`}
+                  />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
                   onClick={() => syncToTuturuuu()}
-                  disabled={isSyncing}
+                  disabled={manualSyncDisabled}
                   title={t('sync_from_google')}
                 >
                   <RefreshCw
-                    className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`}
+                    className={`h-3.5 w-3.5 ${manualSyncDisabled ? 'animate-spin' : ''}`}
                   />
                 </Button>
               </div>
             </div>
+            {syncHealth?.lastSuccessAt && (
+              <p className="text-muted-foreground text-xs">
+                {t('last_synced_at') || 'Last synced'}:{' '}
+                {new Date(syncHealth.lastSuccessAt).toLocaleString()}
+              </p>
+            )}
           </div>
         </PopoverContent>
       </Popover>

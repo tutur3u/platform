@@ -1,3 +1,4 @@
+import { createWorkspaceCalendarEvent } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
@@ -39,6 +40,49 @@ const roundToNearest15Minutes = (date: Date): Date => {
 const createEventSignature = (event: CalendarEvent): string => {
   return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
 };
+
+type TaskDragData = {
+  name?: string;
+  priority?: string | null;
+  totalDuration?: number;
+};
+
+function patchWorkspaceCalendarEventCache(
+  queryClient: any,
+  wsId: string,
+  updater: (events: CalendarEvent[]) => CalendarEvent[]
+) {
+  queryClient.setQueriesData(
+    { queryKey: ['databaseCalendarEvents', wsId], exact: false },
+    (existing: CalendarEvent[] | null | undefined) =>
+      updater(Array.isArray(existing) ? existing : [])
+  );
+}
+
+function invalidateTaskSchedulingQueries(queryClient: any, wsId?: string) {
+  queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+  queryClient.invalidateQueries({ queryKey: ['scheduled-events-batch'] });
+  queryClient.invalidateQueries({ queryKey: ['task-schedule-batch'] });
+  queryClient.invalidateQueries({
+    queryKey: ['task-schedule-history'],
+    exact: false,
+  });
+  queryClient.invalidateQueries({
+    queryKey: ['habit-schedule-history'],
+    exact: false,
+  });
+
+  if (wsId) {
+    queryClient.invalidateQueries({
+      queryKey: ['databaseCalendarEvents', wsId],
+      exact: false,
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['habits', wsId],
+      exact: false,
+    });
+  }
+}
 
 // Updated context with improved type definitions
 const CalendarContext = createContext<{
@@ -93,7 +137,8 @@ const CalendarContext = createContext<{
   scheduleTaskAsEvent?: (
     taskId: string,
     startAt: Date,
-    endAt: Date
+    endAt: Date,
+    taskData?: TaskDragData
   ) => Promise<void>;
   // Callback when a task is scheduled (for UI refresh)
   onTaskScheduled?: () => void;
@@ -174,11 +219,11 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
 
 /**
  * Syncs task total_duration after a calendar event is resized or moved.
- * - Updates the junction table's scheduled_minutes for this event
+ * - Uses canonical workspace calendar events as the source of truth
  * - If total scheduled time exceeds task's total_duration, auto-increase it
  */
 async function syncTaskDurationAfterEventChange(
-  supabase: any, // Using any to avoid Supabase type issues with task_calendar_events
+  supabase: any,
   eventId: string,
   eventData: { start_at: string; end_at: string; task_id?: string | null },
   options?: { calendarWsId?: string; isPersonalCalendar?: boolean }
@@ -202,53 +247,42 @@ async function syncTaskDurationAfterEventChange(
       taskId = junction.task_id;
     }
 
-    // Calculate new scheduled minutes for this event
-    const startTime = new Date(eventData.start_at).getTime();
-    const endTime = new Date(eventData.end_at).getTime();
-    const newScheduledMinutes = Math.round((endTime - startTime) / 60000);
-
-    // Update or insert junction record with new scheduled_minutes
-    const { error: upsertError } = await supabase
-      .from('task_calendar_events')
-      .upsert(
-        {
-          task_id: taskId,
-          event_id: eventId,
-          scheduled_minutes: newScheduledMinutes,
-        },
-        {
-          onConflict: 'task_id,event_id',
-        }
-      );
-
-    if (upsertError) {
-      console.error('Failed to update task_calendar_events:', upsertError);
-      return;
-    }
-
-    // Get all scheduled events for this task *in the active calendar workspace* and sum their minutes
     const calendarWsId = options?.calendarWsId;
-    const { data: allEvents, error: eventsError } = await supabase
-      .from('task_calendar_events')
-      .select(
-        `
-        scheduled_minutes,
-        workspace_calendar_events!inner(ws_id)
-      `
-      )
-      .eq('task_id', taskId)
-      .eq('workspace_calendar_events.ws_id', calendarWsId);
-
-    if (eventsError) {
-      console.error('Failed to fetch task events:', eventsError);
+    if (!calendarWsId) {
       return;
     }
-
-    const totalScheduledMinutes = (allEvents || []).reduce(
-      (sum: number, e: { scheduled_minutes?: number }) =>
-        sum + (e.scheduled_minutes || 0),
-      0
+    const resizedEventMinutes = Math.round(
+      (new Date(eventData.end_at).getTime() -
+        new Date(eventData.start_at).getTime()) /
+        60000
     );
+
+    let totalScheduledMinutes = resizedEventMinutes;
+
+    const scheduleResponse = await fetch(
+      options?.isPersonalCalendar
+        ? `/api/v1/users/me/tasks/${taskId}/schedule`
+        : `/api/v1/workspaces/${calendarWsId}/tasks/${taskId}/schedule`,
+      {
+        cache: 'no-store',
+      }
+    );
+
+    if (scheduleResponse.ok) {
+      const schedulePayload = (await scheduleResponse.json()) as {
+        scheduling?: {
+          scheduledMinutes?: number;
+        };
+      };
+
+      if (
+        typeof schedulePayload.scheduling?.scheduledMinutes === 'number' &&
+        Number.isFinite(schedulePayload.scheduling.scheduledMinutes)
+      ) {
+        totalScheduledMinutes = schedulePayload.scheduling.scheduledMinutes;
+      }
+    }
+
     const totalScheduledHours = totalScheduledMinutes / 60;
 
     // Personal workspace calendars should not mutate shared task duration.
@@ -793,6 +827,16 @@ export const CalendarProvider = ({
         };
 
         // If event times changed, sync task's total_duration
+        if (data) {
+          patchWorkspaceCalendarEventCache(queryClient, wsId, (existing) =>
+            existing.map((event) =>
+              event.id === eventId
+                ? ({ ...event, ...data } as CalendarEvent)
+                : event
+            )
+          );
+        }
+
         if (data && (cleanUpdateData.start_at || cleanUpdateData.end_at)) {
           const supabase = createClient();
           await syncTaskDurationAfterEventChange(
@@ -805,11 +849,7 @@ export const CalendarProvider = ({
             },
             { calendarWsId: wsId, isPersonalCalendar: !!ws?.personal }
           );
-          // Invalidate task-related queries to refresh sidebar
-          queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
-          queryClient.invalidateQueries({
-            queryKey: ['scheduled-events-batch'],
-          });
+          invalidateTaskSchedulingQueries(queryClient, wsId);
           // Notify components to refresh server data
           onTaskScheduled?.();
         }
@@ -984,7 +1024,9 @@ export const CalendarProvider = ({
       if (!ws) throw new Error('No workspace selected');
 
       // Find the event first to get the Google Calendar ID
-      const eventToDelete = events.find((e: CalendarEvent) => e.id === eventId);
+      const eventToDelete = events.find(
+        (e: CalendarEvent) => e.id === eventId
+      ) as (CalendarEvent & { task_id?: string | null }) | undefined;
       const googleCalendarEventId = eventToDelete?.google_event_id;
 
       // --- Google Calendar Sync (Delete) ---
@@ -1039,25 +1081,6 @@ export const CalendarProvider = ({
         // Event has no Google Calendar ID, skipping delete sync
       }
 
-      const supabase = createClient();
-
-      // Check if this event is linked to a task via junction table
-      const { data: junction } = await (supabase as any)
-        .from('task_calendar_events')
-        .select('task_id')
-        .eq('event_id', eventId)
-        .maybeSingle();
-
-      const hasLinkedTask = !!junction?.task_id;
-
-      // Delete the junction record if it exists
-      if (hasLinkedTask) {
-        await (supabase as any)
-          .from('task_calendar_events')
-          .delete()
-          .eq('event_id', eventId);
-      }
-
       if (!ws?.id) {
         throw new Error('No workspace selected');
       }
@@ -1074,14 +1097,26 @@ export const CalendarProvider = ({
         throw new Error(errorData?.error || 'Failed to delete event');
       }
 
+      const deleteResult = (await deleteResponse.json()) as {
+        linkedTaskId?: string | null;
+        skippedHabitId?: string | null;
+      };
+
+      const hasLinkedTask =
+        !!deleteResult.linkedTaskId || !!eventToDelete?.task_id;
+      const hasLinkedHabit = !!deleteResult.skippedHabitId;
+
+      patchWorkspaceCalendarEventCache(queryClient, ws.id, (existing) =>
+        existing.filter((event) => event.id !== eventId)
+      );
+
       // Refresh the query cache after deleting an event
       refresh();
       setActiveEventId(null);
 
       // If this was a task-linked event, refresh task queries
-      if (hasLinkedTask) {
-        queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
-        queryClient.invalidateQueries({ queryKey: ['scheduled-events-batch'] });
+      if (hasLinkedTask || hasLinkedHabit) {
+        invalidateTaskSchedulingQueries(queryClient, ws.id);
         onTaskScheduled?.();
       }
     },
@@ -1693,24 +1728,17 @@ export const CalendarProvider = ({
 
   // Schedule a task as a calendar event (for drag-and-drop from sidebar)
   const scheduleTaskAsEvent = useCallback(
-    async (taskId: string, startAt: Date, endAt: Date) => {
+    async (
+      taskId: string,
+      startAt: Date,
+      endAt: Date,
+      taskData?: TaskDragData
+    ) => {
       if (!ws?.id) {
         throw new Error('No workspace selected');
       }
 
       const supabase = createClient();
-
-      // Fetch task base details (scheduling is per-user)
-      const { data: task, error: taskError } = await supabase
-        .from('tasks')
-        .select('name, priority')
-        .eq('id', taskId)
-        .single();
-
-      if (taskError) {
-        console.error('Failed to fetch task:', taskError);
-        throw taskError;
-      }
 
       // Calculate scheduled duration in hours
       const scheduledHours =
@@ -1769,75 +1797,56 @@ export const CalendarProvider = ({
         normal: 'YELLOW',
         low: 'BLUE',
       };
-      const priority = String(task?.priority ?? 'normal');
+      const priority = String(taskData?.priority ?? 'normal');
       const eventColor = priorityColorMap[priority] || 'BLUE';
 
-      const eventResponse = await fetch(
-        `/api/v1/workspaces/${ws.id}/calendar/events`,
+      const event = await createWorkspaceCalendarEvent(
+        ws.id,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: task?.name || 'Task',
-            start_at: startAt.toISOString(),
-            end_at: endAt.toISOString(),
-            color: eventColor,
-            locked: true,
-            task_id: taskId,
-          }),
+          title: taskData?.name || 'Task',
+          start_at: startAt.toISOString(),
+          end_at: endAt.toISOString(),
+          color: eventColor,
+          locked: true,
+          task_id: taskId,
+        },
+        {
+          fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
         }
       );
 
-      if (!eventResponse.ok) {
-        const errorData = await eventResponse.json().catch(() => null);
-        console.error('Failed to create calendar event:', errorData);
-        throw new Error(errorData?.error || 'Failed to create calendar event');
-      }
-
-      const event = (await eventResponse.json()) as CalendarEvent;
-
-      // Create junction record to link task and event
-      if (event) {
-        const scheduledMinutes = Math.round(
-          (endAt.getTime() - startAt.getTime()) / 60000
-        );
-
-        // Note: task_calendar_events table requires migration
-        // Using type assertion until bun sb:push and bun sb:typegen are run
-        const { error: junctionError } = await (supabase as any)
-          .from('task_calendar_events')
-          .insert({
-            task_id: taskId,
-            event_id: event.id,
-            scheduled_minutes: scheduledMinutes,
-            completed: false,
-          });
-
-        if (junctionError) {
-          console.error('Failed to create task-event junction:', junctionError);
-          // Don't throw - the event was still created successfully
+      patchWorkspaceCalendarEventCache(queryClient, ws.id, (existing) => {
+        if (existing.some((item) => item.id === event.id)) {
+          return existing;
         }
 
+        return [...existing, event].sort(
+          (a, b) =>
+            new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+        );
+      });
+
+      if (event) {
         // Sync total_duration if total scheduled exceeds current duration
         // Use the new duration if we just set defaults, otherwise use existing
         const currentDuration = hasSchedulingConfigured
           ? existingSettings?.total_duration || 0
           : scheduledHours;
 
-        const { data: allJunctions } = await (supabase as any)
-          .from('task_calendar_events')
-          .select(
-            `
-            scheduled_minutes,
-            workspace_calendar_events!inner(ws_id)
-          `
-          )
+        const { data: scheduledEvents } = await supabase
+          .from('workspace_calendar_events')
+          .select('start_at, end_at')
           .eq('task_id', taskId)
-          .eq('workspace_calendar_events.ws_id', ws.id);
+          .eq('ws_id', ws.id);
 
-        const totalScheduledMinutes = (allJunctions || []).reduce(
-          (sum: number, j: { scheduled_minutes?: number }) =>
-            sum + (j.scheduled_minutes || 0),
+        const totalScheduledMinutes = (scheduledEvents || []).reduce(
+          (sum: number, scheduledEvent: { start_at: string; end_at: string }) =>
+            sum +
+            Math.round(
+              (new Date(scheduledEvent.end_at).getTime() -
+                new Date(scheduledEvent.start_at).getTime()) /
+                60000
+            ),
           0
         );
         const totalScheduledHours = totalScheduledMinutes / 60;
@@ -1868,8 +1877,7 @@ export const CalendarProvider = ({
       // Refresh queries
       refresh();
       // Invalidate all task-related queries to ensure UI updates
-      queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduled-events-batch'] });
+      invalidateTaskSchedulingQueries(queryClient, ws.id);
 
       // Call the callback to notify components (e.g., for server data refresh)
       onTaskScheduled?.();

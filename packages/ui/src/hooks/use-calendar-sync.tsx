@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { canProceedWithSync } from '@tuturuuu/trigger/calendar-sync-coordination';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
@@ -47,6 +46,15 @@ type SyncStatus = {
   direction?: 'google-to-tuturuuu' | 'tuturuuu-to-google' | 'both';
 };
 
+type OptimisticCalendarSyncEvent = {
+  id: string;
+  title: string;
+  start_at: string;
+  end_at: string;
+  color?: string | null;
+  locked?: boolean;
+};
+
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;
   googleData: WorkspaceCalendarEvent[] | null;
@@ -63,7 +71,8 @@ const CalendarSyncContext = createContext<{
       percentage: number;
       statusMessage: string;
       changesMade: boolean;
-    }) => void
+    }) => void,
+    options?: { skipCooldown?: boolean }
   ) => Promise<void>;
 
   isActiveSyncOn: boolean;
@@ -75,6 +84,10 @@ const CalendarSyncContext = createContext<{
   eventsWithoutAllDays: CalendarEvent[];
   allDayEvents: CalendarEvent[];
   refresh: () => void;
+  patchVisibleEvents: (
+    events: OptimisticCalendarSyncEvent[],
+    options?: { removeIds?: string[] }
+  ) => void;
 
   syncToGoogle: () => Promise<void>;
 
@@ -108,6 +121,7 @@ const CalendarSyncContext = createContext<{
   eventsWithoutAllDays: [],
   allDayEvents: [],
   refresh: () => {},
+  patchVisibleEvents: () => {},
 
   // Sync to Google
   syncToGoogle: async () => {},
@@ -291,6 +305,74 @@ export const CalendarSyncProvider = ({
       };
     });
   }, []);
+
+  const patchVisibleEvents = useCallback(
+    (
+      incomingEvents: OptimisticCalendarSyncEvent[],
+      options?: { removeIds?: string[] }
+    ) => {
+      const cacheKey = getCacheKey(dates);
+      if (!cacheKey) return;
+
+      const firstDate = dates[0];
+      const lastDate = dates[dates.length - 1];
+      if (!firstDate || !lastDate) return;
+
+      const rangeStart = dayjs(firstDate).startOf('day').valueOf();
+      const rangeEnd = dayjs(lastDate).endOf('day').valueOf();
+      const removeIds = new Set(options?.removeIds ?? []);
+
+      const isVisibleInRange = (event: {
+        start_at?: string;
+        end_at?: string;
+      }) => {
+        const startAt = event.start_at ? dayjs(event.start_at).valueOf() : NaN;
+        const endAt = event.end_at ? dayjs(event.end_at).valueOf() : startAt;
+
+        return !Number.isNaN(startAt) && !Number.isNaN(endAt)
+          ? startAt <= rangeEnd && endAt >= rangeStart
+          : false;
+      };
+
+      const mergeEvents = (existingData: WorkspaceCalendarEvent[] | null) => {
+        const existing = Array.isArray(existingData) ? existingData : [];
+        const byId = new Map(
+          existing
+            .filter((event) => !removeIds.has(event.id))
+            .map((event) => [event.id, event])
+        );
+
+        for (const event of incomingEvents) {
+          if (!event.id || !isVisibleInRange(event)) continue;
+          byId.set(event.id, {
+            ...(byId.get(event.id) ?? {}),
+            ...event,
+          } as WorkspaceCalendarEvent);
+        }
+
+        return [...byId.values()].sort(
+          (left, right) =>
+            new Date(left.start_at).getTime() -
+            new Date(right.start_at).getTime()
+        );
+      };
+
+      const nextDbEvents = mergeEvents(
+        calendarCache[cacheKey]?.dbEvents ?? data ?? []
+      );
+
+      updateCache(cacheKey, {
+        dbEvents: nextDbEvents,
+        dbLastUpdated: Date.now(),
+      });
+      setData(nextDbEvents);
+      queryClient.setQueryData(
+        ['databaseCalendarEvents', wsId, cacheKey],
+        nextDbEvents
+      );
+    },
+    [calendarCache, data, dates, getCacheKey, queryClient, updateCache, wsId]
+  );
 
   // Fetch database events with caching
   const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
@@ -540,43 +622,29 @@ export const CalendarSyncProvider = ({
       });
 
       try {
-        // Check if we can proceed with sync
-        const canProceed = await canProceedWithSync(wsId);
-        if (!canProceed) {
-          setSyncStatus({
-            state: 'error',
-            message: 'sync_in_progress', // Translation key
-          });
-          toast.error('Sync in progress', {
-            description:
-              'Another sync operation is already running. Please wait.',
-          });
-          return;
-        }
-
         // Use fixed date range for consistent incremental sync (60 days past, 90 days future)
         // This ensures sync tokens work properly instead of constantly changing ranges
         // Reduced from 270 days to 150 days for better performance
-        const now = new Date();
-        const startDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-        const endDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-
         const activeSyncResponse = await fetch(
-          `/api/v1/calendar/auth/active-sync`,
+          `/api/v1/workspaces/${wsId}/calendar/sync`,
           {
             method: 'POST',
             credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              wsId,
-              startDate: startDate.toISOString(),
-              endDate: endDate.toISOString(),
+              direction: 'inbound',
+              source: 'manual',
             }),
           }
         );
 
         if (!activeSyncResponse.ok) {
           const errorData = await activeSyncResponse.json();
-          const errorMessage = errorData.error || 'Failed to sync calendar';
+          const errorMessage =
+            errorData.error ||
+            (errorData.code === 'sync_already_running'
+              ? 'sync_in_progress'
+              : 'Failed to sync calendar');
 
           setError(new Error(errorMessage));
           setSyncStatus({
@@ -593,16 +661,7 @@ export const CalendarSyncProvider = ({
           return;
         }
 
-        const activeSyncData = await activeSyncResponse.json();
-        const dbData = activeSyncData?.dbData;
-        const googleData = activeSyncData?.googleData;
-
-        if (dbData) {
-          setData(dbData);
-        }
-        if (googleData) {
-          setGoogleData(googleData);
-        }
+        await activeSyncResponse.json();
 
         setError(null);
         setSyncStatus({
@@ -831,11 +890,13 @@ export const CalendarSyncProvider = ({
     [wsId, queryClient, createEventSignature]
   );
 
+  const visibleDatabaseEvents = data ?? fetchedData ?? null;
+
   useEffect(() => {
     const processEvents = async () => {
-      if (fetchedData) {
+      if (visibleDatabaseEvents) {
         const result = await removeDuplicateEvents(
-          fetchedData as CalendarEvent[]
+          visibleDatabaseEvents as CalendarEvent[]
         );
 
         // Filter events by enabled calendars
@@ -874,7 +935,7 @@ export const CalendarSyncProvider = ({
 
     processEvents();
   }, [
-    fetchedData,
+    visibleDatabaseEvents,
     removeDuplicateEvents,
     calendarConnections.length,
     enabledCalendarIds,
@@ -1087,6 +1148,7 @@ export const CalendarSyncProvider = ({
     eventsWithoutAllDays,
     allDayEvents,
     refresh,
+    patchVisibleEvents,
 
     // Calendar connections and filtering
     calendarConnections,

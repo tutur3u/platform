@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  getCurrentUserTask,
   listWorkspaceTaskProjectsByIds,
   resolveTaskProjectWorkspaceId,
 } from '@tuturuuu/internal-api/tasks';
@@ -24,36 +25,6 @@ import type {
 import { useOptionalWorkspacePresenceContext } from './workspace-presence-provider';
 
 export type { PendingRelationship, PendingRelationshipType };
-
-// Type definitions for Supabase join row responses
-// Note: Supabase uses null for optional fields, not undefined
-interface TaskAssigneeJoinRow {
-  user_id: string;
-  users?: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-  } | null;
-}
-
-interface TaskLabelJoinRow {
-  label_id: string;
-  workspace_task_labels?: {
-    id: string;
-    name: string;
-    color: string | null;
-    created_at: string | null;
-  } | null;
-}
-
-interface TaskProjectJoinRow {
-  project_id: string;
-  task_projects?: {
-    id: string;
-    name: string;
-    status: string | null;
-  } | null;
-}
 
 interface TaskDialogState {
   isOpen: boolean;
@@ -239,77 +210,104 @@ export function TaskDialogProvider({
   const openTaskById = useCallback(
     async (taskId: string) => {
       try {
-        const supabase = createClient();
+        let response:
+          | {
+              task: Task & {
+                list?: {
+                  board_id?: string | null;
+                } | null;
+              };
+              availableLists: TaskList[];
+              taskWsId: string;
+              taskWorkspacePersonal: boolean;
+            }
+          | undefined;
 
-        // Fetch task with all related data including board's workspace info
-        const { data: task, error } = await supabase
-          .from('tasks')
-          .select(
+        try {
+          response = await getCurrentUserTask(taskId, {
+            fetch: (input, init) =>
+              fetch(new URL(String(input), window.location.origin).toString(), {
+                ...init,
+                cache: 'no-store',
+              }),
+          });
+        } catch {
+          const supabase = createClient();
+          const { data: task, error } = await supabase
+            .from('tasks')
+            .select(
+              `
+              *,
+              list:task_lists!inner(
+                id,
+                name,
+                board_id,
+                board:workspace_boards(
+                  id,
+                  ws_id,
+                  workspace:workspaces(personal)
+                )
+              ),
+              assignees:task_assignees(
+                user_id,
+                users(id, display_name, avatar_url)
+              ),
+              labels:task_labels(
+                label_id,
+                workspace_task_labels(id, name, color, created_at)
+              ),
+              projects:task_project_tasks(
+                project_id,
+                task_projects(id, name, status)
+              )
             `
-          *,
-          list:task_lists!inner(
-            id,
-            name,
-            board_id,
-            board:workspace_boards(
-              id,
-              ws_id,
-              workspace:workspaces(personal)
             )
-          ),
-          assignees:task_assignees(
-            user_id,
-            users(id, display_name, avatar_url)
-          ),
-          labels:task_labels(
-            label_id,
-            workspace_task_labels(id, name, color, created_at)
-          ),
-          projects:task_project_tasks(
-            project_id,
-            task_projects(id, name, status)
-          )
-        `
-          )
-          .eq('id', taskId)
-          .single();
+            .eq('id', taskId)
+            .single();
 
-        if (error || !task) {
-          console.error('Failed to fetch task:', error);
+          if (error || !task) {
+            console.error('Failed to fetch task:', error);
+            return;
+          }
+
+          const { data: lists } = await supabase
+            .from('task_lists')
+            .select('*')
+            .eq('board_id', (task as any).list?.board_id)
+            .eq('deleted', false)
+            .order('position')
+            .order('created_at');
+
+          response = {
+            task: {
+              ...(task as unknown as Task),
+              assignees: (task as any).assignees?.map((assignee: any) => ({
+                id: assignee.users?.id || assignee.user_id,
+                user_id: assignee.user_id,
+                display_name: assignee.users?.display_name,
+                avatar_url: assignee.users?.avatar_url,
+              })),
+              labels: (task as any).labels
+                ?.map((label: any) => label.workspace_task_labels)
+                .filter(Boolean),
+              projects: (task as any).projects
+                ?.map((project: any) => project.task_projects)
+                .filter(Boolean),
+            },
+            availableLists: (lists as TaskList[]) || [],
+            taskWsId: (task as any).list?.board?.ws_id ?? '',
+            taskWorkspacePersonal:
+              (task as any).list?.board?.workspace?.personal ?? false,
+          };
+        }
+
+        if (!response) {
           return;
         }
 
-        // Fetch available lists for this board
-        const { data: lists } = await supabase
-          .from('task_lists')
-          .select('*')
-          .eq('board_id', task.list?.board_id)
-          .eq('deleted', false)
-          .order('position')
-          .order('created_at');
-
-        // Transform the data to match expected structure
-        // Type narrowing: Supabase returns join rows; extract nested data
-        const transformedTask = {
-          ...task,
-          assignees: task.assignees?.map((a: TaskAssigneeJoinRow) => ({
-            id: a.users?.id || a.user_id,
-            user_id: a.user_id,
-            display_name: a.users?.display_name,
-            avatar_url: a.users?.avatar_url,
-          })),
-          labels: task.labels
-            ?.map((l: TaskLabelJoinRow) => l.workspace_task_labels)
-            .filter(Boolean),
-          projects: task.projects
-            ?.map((p: TaskProjectJoinRow) => p.task_projects)
-            .filter(Boolean),
-        };
-
-        // Extract task's workspace info for proper realtime and routing
-        const taskWsId = (task.list?.board as any)?.ws_id as string | undefined;
-        const taskWorkspacePersonal =
-          ((task.list?.board as any)?.workspace?.personal as boolean) ?? false;
+        const transformedTask = response.task;
+        const taskWsId = response.taskWsId;
+        const taskWorkspacePersonal = response.taskWorkspacePersonal;
         const isTaskWorkspacePersonal =
           taskWorkspacePersonal ?? isPersonalWorkspace;
 
@@ -321,9 +319,9 @@ export function TaskDialogProvider({
         setState({
           isOpen: true,
           task: transformedTask as Task,
-          boardId: task.list?.board_id,
+          boardId: transformedTask.list?.board_id ?? undefined,
           mode: 'edit',
-          availableLists: (lists as TaskList[]) || undefined,
+          availableLists: response.availableLists || undefined,
           collaborationMode: shouldEnableCursors,
           realtimeEnabled: true,
           taskWsId,

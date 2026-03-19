@@ -26,9 +26,12 @@ import {
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { TaskScheduleHistoryPanel } from '@/components/calendar/task-schedule-history-panel';
+import { invalidatePlanningQueries } from '@/lib/calendar/planning-query-client';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 
 // Calendar hours type for task scheduling (matches database enum)
@@ -339,7 +342,7 @@ export function SchedulingDialog({
     },
     onSuccess: () => {
       toast.success('Scheduling settings updated');
-      queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+      invalidatePlanningQueries(queryClient as any, task?.ws_id ?? _wsId);
       queryClient.invalidateQueries({
         queryKey: ['task-personal-schedule', task?.id],
       });
@@ -440,194 +443,204 @@ export function SchedulingDialog({
             </span>
           </div>
         ) : (
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                Estimated Duration
-                <span className="text-dynamic-red">*</span>
-              </Label>
-              <div className="flex items-center gap-3">
-                <DurationInput
-                  value={durationHours}
-                  onChange={handleHoursChange}
-                  label="h"
-                  disabled={
-                    !isScheduleSettingsReady || updateMutation.isPending
-                  }
-                  canDecrement={durationHours * 60 + durationMinutes > 0}
-                />
-                <DurationInput
-                  value={durationMinutes}
-                  onChange={handleMinutesChange}
-                  step={15}
-                  label="m"
-                  disabled={
-                    !isScheduleSettingsReady || updateMutation.isPending
-                  }
-                  canDecrement={durationHours * 60 + durationMinutes > 0}
-                />
-              </div>
-            </div>
-
-            {/* Calendar Hours Type */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5 text-sm">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                Hour Type
-                <span className="text-dynamic-red">*</span>
-              </Label>
-              <div className="inline-flex rounded-md border p-0.5">
-                {CALENDAR_HOURS_OPTIONS.map((option) => {
-                  const Icon = option.icon;
-                  const isSelected = calendarHours === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setCalendarHours(option.value)}
-                      disabled={
-                        !isScheduleSettingsReady || updateMutation.isPending
-                      }
-                      className={cn(
-                        'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm transition-colors',
-                        isSelected
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{option.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Splittable */}
-            <div className="space-y-3 rounded-lg border p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0"
-                    onClick={() =>
-                      setIsSplitSettingsExpanded(!isSplitSettingsExpanded)
-                    }
+          <Tabs defaultValue="settings" className="py-2">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+            </TabsList>
+            <TabsContent value="settings" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Estimated Duration
+                  <span className="text-dynamic-red">*</span>
+                </Label>
+                <div className="flex items-center gap-3">
+                  <DurationInput
+                    value={durationHours}
+                    onChange={handleHoursChange}
+                    label="h"
                     disabled={
-                      !isSplittable ||
-                      !isScheduleSettingsReady ||
-                      updateMutation.isPending
+                      !isScheduleSettingsReady || updateMutation.isPending
                     }
-                  >
-                    {isSplitSettingsExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Label
-                    htmlFor="splittable"
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <Scissors className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="text-sm">Splittable</div>
-                      <div className="text-muted-foreground text-xs">
-                        Allow breaking into multiple sessions
-                      </div>
-                    </div>
-                  </Label>
+                    canDecrement={durationHours * 60 + durationMinutes > 0}
+                  />
+                  <DurationInput
+                    value={durationMinutes}
+                    onChange={handleMinutesChange}
+                    step={15}
+                    label="m"
+                    disabled={
+                      !isScheduleSettingsReady || updateMutation.isPending
+                    }
+                    canDecrement={durationHours * 60 + durationMinutes > 0}
+                  />
                 </div>
-                <Switch
-                  id="splittable"
-                  checked={isSplittable}
-                  onCheckedChange={(checked) => {
-                    setIsSplittable(checked);
-                    if (checked) {
-                      setIsSplitSettingsExpanded(true);
-                    } else {
-                      setIsSplitSettingsExpanded(false);
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  Hour Type
+                  <span className="text-dynamic-red">*</span>
+                </Label>
+                <div className="inline-flex rounded-md border p-0.5">
+                  {CALENDAR_HOURS_OPTIONS.map((option) => {
+                    const Icon = option.icon;
+                    const isSelected = calendarHours === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setCalendarHours(option.value)}
+                        disabled={
+                          !isScheduleSettingsReady || updateMutation.isPending
+                        }
+                        className={cn(
+                          'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm transition-colors',
+                          isSelected
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-lg border p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0"
+                      onClick={() =>
+                        setIsSplitSettingsExpanded(!isSplitSettingsExpanded)
+                      }
+                      disabled={
+                        !isSplittable ||
+                        !isScheduleSettingsReady ||
+                        updateMutation.isPending
+                      }
+                    >
+                      {isSplitSettingsExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Label
+                      htmlFor="splittable"
+                      className="flex cursor-pointer items-center gap-2"
+                    >
+                      <Scissors className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm">Splittable</div>
+                        <div className="text-muted-foreground text-xs">
+                          Allow breaking into multiple sessions
+                        </div>
+                      </div>
+                    </Label>
+                  </div>
+                  <Switch
+                    id="splittable"
+                    checked={isSplittable}
+                    onCheckedChange={(checked) => {
+                      setIsSplittable(checked);
+                      if (checked) {
+                        setIsSplitSettingsExpanded(true);
+                      } else {
+                        setIsSplitSettingsExpanded(false);
+                      }
+                    }}
+                    disabled={
+                      !isScheduleSettingsReady || updateMutation.isPending
                     }
-                  }}
+                  />
+                </div>
+
+                {isSplittable && isSplitSettingsExpanded && (
+                  <div className="ml-8 grid grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1.5">
+                      <Label className="text-muted-foreground text-xs">
+                        Min split
+                      </Label>
+                      <DurationInput
+                        value={minSplitMinutes}
+                        onChange={(value) =>
+                          setMinSplitMinutes(
+                            Math.max(15, Math.min(value, maxSplitMinutes))
+                          )
+                        }
+                        step={15}
+                        label="min"
+                        disabled={
+                          !isScheduleSettingsReady || updateMutation.isPending
+                        }
+                        min={15}
+                        max={maxSplitMinutes}
+                        canDecrement={minSplitMinutes > 15}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-muted-foreground text-xs">
+                        Max split
+                      </Label>
+                      <DurationInput
+                        value={maxSplitMinutes}
+                        onChange={(value) =>
+                          setMaxSplitMinutes(
+                            Math.min(480, Math.max(value, minSplitMinutes))
+                          )
+                        }
+                        step={15}
+                        label="min"
+                        disabled={
+                          !isScheduleSettingsReady || updateMutation.isPending
+                        }
+                        min={minSplitMinutes}
+                        max={480}
+                        canDecrement={maxSplitMinutes > minSplitMinutes}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <Label
+                  htmlFor="auto-schedule"
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <Zap className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm">Auto-schedule</div>
+                    <div className="text-muted-foreground text-xs">
+                      Automatically find time slots
+                    </div>
+                  </div>
+                </Label>
+                <Switch
+                  id="auto-schedule"
+                  checked={autoSchedule}
+                  onCheckedChange={setAutoSchedule}
                   disabled={
                     !isScheduleSettingsReady || updateMutation.isPending
                   }
                 />
               </div>
-
-              {/* Min/Max Split Duration */}
-              {isSplittable && isSplitSettingsExpanded && (
-                <div className="ml-8 grid grid-cols-2 gap-3 pt-1">
-                  <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs">
-                      Min split
-                    </Label>
-                    <DurationInput
-                      value={minSplitMinutes}
-                      onChange={(value) =>
-                        setMinSplitMinutes(
-                          Math.max(15, Math.min(value, maxSplitMinutes))
-                        )
-                      }
-                      step={15}
-                      label="min"
-                      disabled={
-                        !isScheduleSettingsReady || updateMutation.isPending
-                      }
-                      min={15}
-                      max={maxSplitMinutes}
-                      canDecrement={minSplitMinutes > 15}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-muted-foreground text-xs">
-                      Max split
-                    </Label>
-                    <DurationInput
-                      value={maxSplitMinutes}
-                      onChange={(value) =>
-                        setMaxSplitMinutes(
-                          Math.min(480, Math.max(value, minSplitMinutes))
-                        )
-                      }
-                      step={15}
-                      label="min"
-                      disabled={
-                        !isScheduleSettingsReady || updateMutation.isPending
-                      }
-                      min={minSplitMinutes}
-                      max={480}
-                      canDecrement={maxSplitMinutes > minSplitMinutes}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Auto-schedule */}
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <Label
-                htmlFor="auto-schedule"
-                className="flex cursor-pointer items-center gap-2"
-              >
-                <Zap className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-sm">Auto-schedule</div>
-                  <div className="text-muted-foreground text-xs">
-                    Automatically find time slots
-                  </div>
-                </div>
-              </Label>
-              <Switch
-                id="auto-schedule"
-                checked={autoSchedule}
-                onCheckedChange={setAutoSchedule}
-                disabled={!isScheduleSettingsReady || updateMutation.isPending}
+            </TabsContent>
+            <TabsContent value="history" className="pt-4">
+              <TaskScheduleHistoryPanel
+                wsId={task.ws_id ?? _wsId}
+                taskId={task.id}
               />
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         )}
 
         <DialogFooter>

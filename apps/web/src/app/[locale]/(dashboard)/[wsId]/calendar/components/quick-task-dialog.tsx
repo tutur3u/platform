@@ -9,7 +9,7 @@ import {
   Loader2,
   Plus,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createWorkspaceTask } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -31,9 +31,12 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { cn } from '@tuturuuu/utils/format';
-import { createTask } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  invalidatePlanningQueries,
+  upsertOptimisticSchedulableTask,
+} from '@/lib/calendar/planning-query-client';
 
 interface TaskList {
   id: string;
@@ -71,7 +74,6 @@ export function QuickTaskDialog({
 }: QuickTaskDialogProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   // Form state
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
@@ -157,19 +159,32 @@ export function QuickTaskDialog({
 
     setIsSubmitting(true);
     try {
-      const newTask = await createTask(supabase, selectedListId, {
-        name: taskName.trim(),
-      });
+      const response = await createWorkspaceTask(
+        wsId,
+        {
+          name: taskName.trim(),
+          listId: selectedListId,
+          assignee_ids: userId && !isPersonalWorkspace ? [userId] : undefined,
+        },
+        {
+          fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+        }
+      );
+      const newTask = response.task;
 
-      // Auto-assign the creator (unless personal workspace)
-      if (userId && !isPersonalWorkspace && newTask?.id) {
-        await supabase
-          .from('task_assignees')
-          .insert({ task_id: newTask.id, user_id: userId });
+      if (newTask?.id) {
+        upsertOptimisticSchedulableTask(queryClient as any, {
+          id: newTask.id,
+          name: newTask.name ?? taskName.trim(),
+          priority: newTask.priority ?? 'normal',
+          total_duration: 0,
+          auto_schedule: true,
+          ws_id: wsId,
+        });
       }
 
       toast.success('Task created successfully');
-      queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
+      await invalidatePlanningQueries(queryClient as any, wsId);
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {

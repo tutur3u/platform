@@ -156,46 +156,71 @@ export const GET = withSessionAuth<{ taskId: string }>(
         auto_schedule: userSettings?.auto_schedule ?? false,
       };
 
-      // Fetch scheduled events for this task in *personal workspace calendar only*
-      const { data: taskEvents } = await supabase
-        .from('task_calendar_events')
-        .select(
-          `
-        scheduled_minutes,
-        completed,
-        workspace_calendar_events (
-          id,
-          title,
-          start_at,
-          end_at,
-          color,
-          ws_id
-        )
-      `
-        )
-        .eq('task_id', taskId)
-        .eq('workspace_calendar_events.ws_id', personalWsId);
+      const [{ data: taskEvents }, { data: directEvents }] = await Promise.all([
+        sbAdmin
+          .from('task_calendar_events')
+          .select(
+            `
+          scheduled_minutes,
+          completed,
+          workspace_calendar_events (
+            id,
+            title,
+            start_at,
+            end_at,
+            color,
+            ws_id
+          )
+        `
+          )
+          .eq('task_id', taskId)
+          .eq('workspace_calendar_events.ws_id', personalWsId),
+        sbAdmin
+          .from('workspace_calendar_events')
+          .select('id, title, start_at, end_at, color')
+          .eq('task_id', taskId)
+          .eq('ws_id', personalWsId),
+      ]);
 
-      const typedEvents = taskEvents as TaskCalendarEventRow[] | null;
+      const typedEvents = (taskEvents as TaskCalendarEventRow[] | null) ?? [];
 
       // Calculate real duration based on event times to ensure accuracy
-      const eventsWithRealDuration =
-        typedEvents?.map((te) => {
-          const ev = te.workspace_calendar_events;
-          if (ev?.start_at && ev.end_at) {
-            const start = new Date(ev.start_at).getTime();
-            const end = new Date(ev.end_at).getTime();
-            const duration = Math.round((end - start) / 60000);
-            return { ...te, scheduled_minutes: duration };
-          }
-          return { ...te, scheduled_minutes: 0 };
-        }) ?? [];
+      const eventsWithRealDuration = typedEvents.map((te) => {
+        const ev = te.workspace_calendar_events;
+        if (ev?.start_at && ev.end_at) {
+          const start = new Date(ev.start_at).getTime();
+          const end = new Date(ev.end_at).getTime();
+          const duration = Math.round((end - start) / 60000);
+          return { ...te, scheduled_minutes: duration };
+        }
+        return { ...te, scheduled_minutes: 0 };
+      });
 
-      const scheduledMinutes = eventsWithRealDuration.reduce(
+      const existingEventIds = new Set(
+        eventsWithRealDuration
+          .map((event) => event.workspace_calendar_events?.id)
+          .filter(Boolean)
+      );
+
+      const fallbackEvents = (directEvents || [])
+        .filter((event) => !existingEventIds.has(event.id))
+        .map((event) => ({
+          workspace_calendar_events: event,
+          scheduled_minutes: Math.round(
+            (new Date(event.end_at).getTime() -
+              new Date(event.start_at).getTime()) /
+              60000
+          ),
+          completed: false,
+        }));
+
+      const combinedEvents = [...eventsWithRealDuration, ...fallbackEvents];
+
+      const scheduledMinutes = combinedEvents.reduce(
         (sum, e) => sum + e.scheduled_minutes,
         0
       );
-      const completedMinutes = eventsWithRealDuration.reduce(
+      const completedMinutes = combinedEvents.reduce(
         (sum, e) => sum + (e.completed ? e.scheduled_minutes : 0),
         0
       );
@@ -225,7 +250,7 @@ export const GET = withSessionAuth<{ taskId: string }>(
           isFullyScheduled: scheduledMinutes >= totalMinutes,
         },
         events:
-          eventsWithRealDuration.map((te) => ({
+          combinedEvents.map((te) => ({
             id: te.workspace_calendar_events?.id,
             title: te.workspace_calendar_events?.title,
             start_at: te.workspace_calendar_events?.start_at,

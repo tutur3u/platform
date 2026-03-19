@@ -52,6 +52,8 @@ import {
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
 import { looksLikeEncryptedData } from '../app/api/v1/workspaces/[wsId]/encryption/utils';
+import { WORKSPACE_CALENDAR_EVENT_LIMITS } from '../lib/calendar/sync-field-limits';
+import { encryptEventForStorage } from '../lib/workspace-encryption';
 
 describe('workspace-encryption', () => {
   let originalEnv: string | undefined;
@@ -358,6 +360,32 @@ describe('workspace-encryption', () => {
 
       const decrypted = decryptField(encrypted.description, workspaceKey);
       expect(decrypted).toBe(longDescription);
+    });
+
+    it('clamps encrypted descriptions to the stored calendar field limit', async () => {
+      const workspaceKey = generateWorkspaceKey();
+      const event = await encryptEventForStorage(
+        '00000000-0000-0000-0000-000000000000',
+        {
+          title: 'Long description test',
+          description: '🧠'.repeat(WORKSPACE_CALENDAR_EVENT_LIMITS.description),
+        },
+        workspaceKey
+      );
+
+      expect(event.is_encrypted).toBe(true);
+      expect((event.description ?? '').length).toBeLessThanOrEqual(
+        WORKSPACE_CALENDAR_EVENT_LIMITS.description
+      );
+
+      const decryptedDescription = decryptField(
+        event.description ?? '',
+        workspaceKey
+      );
+
+      expect(decryptedDescription.length).toBeLessThan(
+        WORKSPACE_CALENDAR_EVENT_LIMITS.description
+      );
     });
   });
 

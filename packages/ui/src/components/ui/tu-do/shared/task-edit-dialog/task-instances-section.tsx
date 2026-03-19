@@ -73,13 +73,16 @@ export function TaskInstancesSection({
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
               {scheduledEvents
                 .sort((a, b) => dayjs(a.start_at).diff(dayjs(b.start_at)))
-                .map((event) => {
+                .map((event, index) => {
                   const isLocked = event.locked ?? false;
                   const locking = isLocking === event.id;
+                  const eventKey =
+                    event.id ||
+                    `${event.start_at}-${event.end_at}-${event.title}-${index}`;
 
                   return (
                     <div
-                      key={event.id}
+                      key={eventKey}
                       className="group flex flex-col gap-2 rounded-lg border bg-background p-3 transition-all hover:border-primary/30 hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-4">

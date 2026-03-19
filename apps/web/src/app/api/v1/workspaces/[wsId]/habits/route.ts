@@ -12,6 +12,10 @@ import {
 import type { HabitInput } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import {
+  normalizeHabitDependencyType,
+  validateHabitDependencyGraph,
+} from '@/lib/calendar/habit-dependencies';
 
 interface RouteParams {
   wsId: string;
@@ -188,6 +192,128 @@ export async function POST(
       );
     }
 
+    const minInstancesPerDay = body.min_instances_per_day ?? null;
+    const idealInstancesPerDay = body.ideal_instances_per_day ?? null;
+    const maxInstancesPerDay = body.max_instances_per_day ?? null;
+    const dependencyHabitId = body.dependency_habit_id ?? null;
+    const dependencyType = normalizeHabitDependencyType(body.dependency_type);
+
+    if (body.dependency_type !== undefined && dependencyType === null) {
+      return NextResponse.json(
+        { error: 'Habit dependency type must be before or after' },
+        { status: 400 }
+      );
+    }
+
+    if (!!dependencyHabitId !== !!dependencyType) {
+      return NextResponse.json(
+        { error: 'Choose both a dependency mode and a dependency habit' },
+        { status: 400 }
+      );
+    }
+
+    for (const value of [
+      minInstancesPerDay,
+      idealInstancesPerDay,
+      maxInstancesPerDay,
+    ]) {
+      if (value !== null && (!Number.isInteger(value) || value < 1)) {
+        return NextResponse.json(
+          {
+            error:
+              'Habit instances per day must be whole numbers greater than 0',
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (dependencyHabitId) {
+      const { data: dependencyHabit, error: dependencyError } = await sbAdmin
+        .from('workspace_habits')
+        .select('id, name, dependency_habit_id, dependency_type')
+        .eq('ws_id', wsId)
+        .eq('id', dependencyHabitId)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (dependencyError) {
+        return NextResponse.json(
+          { error: 'Failed to validate habit dependency' },
+          { status: 500 }
+        );
+      }
+
+      if (!dependencyHabit) {
+        return NextResponse.json(
+          { error: 'Selected dependency habit was not found' },
+          { status: 400 }
+        );
+      }
+
+      const validationError = validateHabitDependencyGraph(
+        [
+          {
+            id: dependencyHabit.id,
+            name: dependencyHabit.name,
+            dependency_habit_id: dependencyHabit.dependency_habit_id,
+            dependency_type: dependencyHabit.dependency_type as
+              | 'after'
+              | 'before'
+              | null
+              | undefined,
+          },
+        ],
+        {
+          id: '__new_habit__',
+          name: body.name?.trim() || 'New habit',
+          dependency_habit_id: dependencyHabitId,
+          dependency_type: dependencyType as 'after' | 'before' | null,
+        }
+      );
+
+      if (validationError) {
+        return NextResponse.json({ error: validationError }, { status: 400 });
+      }
+    }
+
+    if (
+      minInstancesPerDay !== null &&
+      idealInstancesPerDay !== null &&
+      minInstancesPerDay > idealInstancesPerDay
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Min instances per day cannot exceed ideal instances per day',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      idealInstancesPerDay !== null &&
+      maxInstancesPerDay !== null &&
+      idealInstancesPerDay > maxInstancesPerDay
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Ideal instances per day cannot exceed max instances per day',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      minInstancesPerDay !== null &&
+      maxInstancesPerDay !== null &&
+      minInstancesPerDay > maxInstancesPerDay
+    ) {
+      return NextResponse.json(
+        { error: 'Min instances per day cannot exceed max instances per day' },
+        { status: 400 }
+      );
+    }
+
     // Validate weekly days_of_week
     if (body.frequency === 'weekly' && body.days_of_week) {
       const validDays = body.days_of_week.every(
@@ -248,6 +374,12 @@ export async function POST(
       duration_minutes: body.duration_minutes,
       min_duration_minutes: body.min_duration_minutes || null,
       max_duration_minutes: body.max_duration_minutes || null,
+      is_splittable: body.is_splittable ?? false,
+      min_instances_per_day: minInstancesPerDay,
+      ideal_instances_per_day: idealInstancesPerDay,
+      max_instances_per_day: maxInstancesPerDay,
+      dependency_habit_id: dependencyHabitId,
+      dependency_type: dependencyType,
       ideal_time: body.ideal_time || null,
       time_preference: body.time_preference || null,
       frequency: body.frequency,

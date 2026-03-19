@@ -28,6 +28,7 @@ import {
   encryptEventForStorage,
   getWorkspaceKey,
 } from '../workspace-encryption';
+import { listActiveHabitSkipDates, revokeHabitSkip } from './habit-skips';
 import { fetchHourSettings } from './task-scheduler';
 import { scheduleWorkspace } from './unified-scheduler';
 
@@ -54,6 +55,192 @@ type TimeSlot = {
   start: Date;
   end: Date;
 };
+
+type HabitDurationTargets = {
+  totalPerDay: number;
+  minInstance: number;
+  preferredInstance: number;
+  maxInstance: number;
+};
+
+type HabitDependencyAnchor = {
+  start_at: string;
+  end_at: string;
+};
+
+function roundDurationTo15(minutes: number): number {
+  return Math.max(15, Math.round(minutes / 15) * 15);
+}
+
+function clampMinutes(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function parseTimeParts(time: string): { hour: number; minute: number } {
+  const [rawHour, rawMinute] = time.split(':');
+  const hour = Number.parseInt(rawHour ?? '0', 10);
+  const minute = Number.parseInt(rawMinute ?? '0', 10);
+
+  return {
+    hour: Number.isFinite(hour) ? hour : 0,
+    minute: Number.isFinite(minute) ? minute : 0,
+  };
+}
+
+function buildHabitOccurrenceKey(
+  habitId: string,
+  occurrenceDate: string
+): string {
+  return `${habitId}:${occurrenceDate}`;
+}
+
+function getHabitDependencyWindow(
+  habit: Habit,
+  occurrenceDate: string,
+  dependencyAnchors: Map<string, HabitDependencyAnchor[]>
+): { earliestStart?: Date; latestEnd?: Date } {
+  if (!habit.dependency_habit_id || !habit.dependency_type) {
+    return {};
+  }
+
+  const anchors =
+    dependencyAnchors.get(
+      buildHabitOccurrenceKey(habit.dependency_habit_id, occurrenceDate)
+    ) ?? [];
+
+  if (anchors.length === 0) {
+    return {};
+  }
+
+  if (habit.dependency_type === 'after') {
+    let earliestStart: Date | undefined;
+    for (const anchor of anchors) {
+      const anchorEnd = new Date(anchor.end_at);
+      if (!earliestStart || anchorEnd > earliestStart) {
+        earliestStart = anchorEnd;
+      }
+    }
+    return { earliestStart };
+  }
+
+  let latestEnd: Date | undefined;
+  for (const anchor of anchors) {
+    const anchorStart = new Date(anchor.start_at);
+    if (!latestEnd || anchorStart < latestEnd) {
+      latestEnd = anchorStart;
+    }
+  }
+
+  return { latestEnd };
+}
+
+async function relabelCreatedHabitEvents(
+  supabase: SupabaseClient,
+  habit: Habit,
+  createdEvents: HabitScheduleResult['events'],
+  baseInstanceCounts: Map<string, number>
+) {
+  if (!habit.is_splittable || createdEvents.length === 0) {
+    return;
+  }
+
+  const groupedEvents = new Map<string, HabitScheduleResult['events']>();
+
+  for (const event of createdEvents) {
+    const group = groupedEvents.get(event.occurrence_date) ?? [];
+    group.push(event);
+    groupedEvents.set(event.occurrence_date, group);
+  }
+
+  for (const [occurrenceDate, events] of groupedEvents) {
+    if (events.length <= 1) continue;
+
+    events.sort(
+      (left, right) =>
+        new Date(left.start_at).getTime() - new Date(right.start_at).getTime()
+    );
+
+    const baseCount = baseInstanceCounts.get(occurrenceDate) ?? 0;
+    const totalCount = baseCount + events.length;
+
+    for (const [index, event] of events.entries()) {
+      const title = `${habit.name} (${baseCount + index + 1}/${totalCount})`;
+      if (event.title === title) continue;
+
+      event.title = title;
+      await supabase
+        .from('workspace_calendar_events')
+        .update({ title })
+        .eq('id', event.id);
+    }
+  }
+}
+
+function getTargetHabitInstances(habit: Habit): {
+  min: number;
+  ideal: number;
+  max: number;
+} {
+  if (!habit.is_splittable) {
+    return { min: 1, ideal: 1, max: 1 };
+  }
+
+  const min = Math.max(1, habit.min_instances_per_day ?? 1);
+  const max = Math.max(min, habit.max_instances_per_day ?? min);
+  const ideal = Math.min(
+    max,
+    Math.max(min, habit.ideal_instances_per_day ?? min)
+  );
+
+  return { min, ideal, max };
+}
+
+function getHabitDurationTargets(
+  habit: Habit,
+  instanceTargets: { min: number; ideal: number; max: number }
+): HabitDurationTargets {
+  const totalPerDay = roundDurationTo15(Math.max(15, habit.duration_minutes));
+
+  if (!habit.is_splittable) {
+    const {
+      min: minDuration,
+      preferred,
+      max,
+    } = getEffectiveDurationBounds({
+      duration_minutes: totalPerDay,
+      min_duration_minutes: habit.min_duration_minutes,
+      max_duration_minutes: habit.max_duration_minutes,
+    });
+
+    return {
+      totalPerDay,
+      minInstance: minDuration || 15,
+      preferredInstance: preferred || totalPerDay,
+      maxInstance: max || totalPerDay,
+    };
+  }
+
+  const minInstance = roundDurationTo15(
+    Math.min(totalPerDay, Math.max(15, habit.min_duration_minutes ?? 15))
+  );
+  const maxInstance = roundDurationTo15(
+    Math.min(
+      totalPerDay,
+      Math.max(minInstance, habit.max_duration_minutes ?? totalPerDay)
+    )
+  );
+
+  return {
+    totalPerDay,
+    minInstance,
+    preferredInstance: clampMinutes(
+      roundDurationTo15(totalPerDay / instanceTargets.ideal),
+      minInstance,
+      maxInstance
+    ),
+    maxInstance,
+  };
+}
 
 // ============================================================================
 // MAIN FUNCTIONS
@@ -88,31 +275,90 @@ export async function scheduleHabit(
     };
   }
 
-  // Get existing scheduled events for this habit to avoid duplicates
-  const { data: existingLinks } = await supabase
-    .from('habit_calendar_events')
-    .select('occurrence_date')
-    .eq('habit_id', habit.id);
+  const instanceTargets = getTargetHabitInstances(habit);
+  const durationTargets = getHabitDurationTargets(habit, instanceTargets);
 
-  const scheduledDates = new Set(
-    existingLinks?.map((l) => l.occurrence_date) || []
+  // Get existing scheduled events for this habit
+  const [existingLinksResult, skippedOccurrences, dependencyLinksResult] =
+    await Promise.all([
+      supabase
+        .from('habit_calendar_events')
+        .select(
+          'occurrence_date, workspace_calendar_events!inner(start_at, end_at)'
+        )
+        .eq('habit_id', habit.id),
+      listActiveHabitSkipDates(
+        supabase as any,
+        wsId,
+        [habit.id],
+        rangeStart.toISOString().split('T')[0] ?? '',
+        rangeEnd.toISOString().split('T')[0] ?? ''
+      ),
+      habit.dependency_habit_id
+        ? supabase
+            .from('habit_calendar_events')
+            .select(
+              'habit_id, occurrence_date, workspace_calendar_events!inner(start_at, end_at)'
+            )
+            .eq('habit_id', habit.dependency_habit_id)
+            .gte(
+              'occurrence_date',
+              rangeStart.toISOString().split('T')[0] ?? ''
+            )
+            .lte('occurrence_date', rangeEnd.toISOString().split('T')[0] ?? '')
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+  const scheduledInstanceCounts = new Map<string, number>();
+  const scheduledMinutesByDate = new Map<string, number>();
+  for (const link of existingLinksResult.data || []) {
+    const occurrenceDate = link.occurrence_date;
+    if (!occurrenceDate) continue;
+    scheduledInstanceCounts.set(
+      occurrenceDate,
+      (scheduledInstanceCounts.get(occurrenceDate) ?? 0) + 1
+    );
+
+    const eventStart = (link as any).workspace_calendar_events?.start_at;
+    const eventEnd = (link as any).workspace_calendar_events?.end_at;
+    if (eventStart && eventEnd) {
+      const durationMinutes = Math.max(
+        0,
+        Math.round(
+          (new Date(eventEnd).getTime() - new Date(eventStart).getTime()) /
+            60000
+        )
+      );
+      scheduledMinutesByDate.set(
+        occurrenceDate,
+        (scheduledMinutesByDate.get(occurrenceDate) ?? 0) + durationMinutes
+      );
+    }
+  }
+  const baseScheduledInstanceCounts = new Map(scheduledInstanceCounts);
+  const skippedDates = new Set(
+    skippedOccurrences.map((skip) => skip.occurrence_date)
   );
-
-  // Filter to only unscheduled occurrences
-  const unscheduledOccurrences = occurrences.filter((occ) => {
-    const dateStr = occ.toISOString().split('T')[0];
-    return !scheduledDates.has(dateStr);
-  });
-
-  if (unscheduledOccurrences.length === 0) {
-    return {
-      success: true,
-      eventsCreated: 0,
-      occurrencesScheduled: occurrences.length,
-      totalOccurrences: occurrences.length,
-      message: 'All occurrences are already scheduled',
-      events: [],
-    };
+  const dependencyAnchors = new Map<string, HabitDependencyAnchor[]>();
+  for (const link of (dependencyLinksResult.data as any[]) ?? []) {
+    const occurrenceDate = link.occurrence_date;
+    const eventStart = link.workspace_calendar_events?.start_at;
+    const eventEnd = link.workspace_calendar_events?.end_at;
+    if (
+      !habit.dependency_habit_id ||
+      !occurrenceDate ||
+      !eventStart ||
+      !eventEnd
+    ) {
+      continue;
+    }
+    const key = buildHabitOccurrenceKey(
+      habit.dependency_habit_id,
+      occurrenceDate
+    );
+    const anchors = dependencyAnchors.get(key) ?? [];
+    anchors.push({ start_at: eventStart, end_at: eventEnd });
+    dependencyAnchors.set(key, anchors);
   }
 
   // Fetch hour settings for the workspace
@@ -132,98 +378,200 @@ export async function scheduleHabit(
   // Get workspace encryption key
   const workspaceKey = await getWorkspaceKey(wsId);
 
-  // Schedule each unscheduled occurrence
-  for (const occurrence of unscheduledOccurrences) {
+  // Schedule each occurrence
+  for (const occurrence of occurrences) {
     const occurrenceDate = occurrence.toISOString().split('T')[0];
-
-    // Find a time slot for this occurrence
-    const slot = findSlotForOccurrence(
-      habit,
-      occurrence,
-      hourSettings,
-      existingEvents || []
-    );
-
-    if (!slot) {
-      // Could not find a slot for this occurrence, skip
+    if (!occurrenceDate || skippedDates.has(occurrenceDate)) {
       continue;
     }
 
-    // Create calendar event with encryption
-    const eventTitle = habit.name;
-    const eventData = await encryptEventForStorage(
-      wsId,
-      {
+    let scheduledInstances = scheduledInstanceCounts.get(occurrenceDate) ?? 0;
+    let scheduledMinutes = scheduledMinutesByDate.get(occurrenceDate) ?? 0;
+    const dependencyWindow = getHabitDependencyWindow(
+      habit,
+      occurrenceDate,
+      dependencyAnchors
+    );
+
+    if (scheduledMinutes >= durationTargets.totalPerDay) {
+      continue;
+    }
+
+    while (
+      scheduledInstances < instanceTargets.max &&
+      scheduledMinutes < durationTargets.totalPerDay
+    ) {
+      const remainingMinutes = durationTargets.totalPerDay - scheduledMinutes;
+      const targetInstancesLeft =
+        scheduledInstances < instanceTargets.ideal
+          ? instanceTargets.ideal - scheduledInstances
+          : 1;
+      const minMinutesReservedForRest =
+        durationTargets.minInstance * Math.max(0, targetInstancesLeft - 1);
+      let maxAllowedThisInstance = Math.min(
+        durationTargets.maxInstance,
+        remainingMinutes - minMinutesReservedForRest
+      );
+
+      if (maxAllowedThisInstance < durationTargets.minInstance) {
+        maxAllowedThisInstance = Math.min(
+          durationTargets.maxInstance,
+          remainingMinutes
+        );
+      }
+
+      if (maxAllowedThisInstance < durationTargets.minInstance) {
+        break;
+      }
+
+      const preferredDuration = clampMinutes(
+        roundDurationTo15(
+          scheduledInstances < instanceTargets.ideal
+            ? remainingMinutes / targetInstancesLeft
+            : Math.min(durationTargets.preferredInstance, remainingMinutes)
+        ),
+        durationTargets.minInstance,
+        maxAllowedThisInstance
+      );
+
+      const slot = findSlotForOccurrence(
+        habit,
+        occurrence,
+        hourSettings,
+        existingEvents || [],
+        {
+          minDurationMinutes: durationTargets.minInstance,
+          preferredDurationMinutes: preferredDuration,
+          maxDurationMinutes: maxAllowedThisInstance,
+        },
+        dependencyWindow
+      );
+
+      if (!slot) {
+        break;
+      }
+
+      const eventTitle =
+        instanceTargets.ideal > 1
+          ? `${habit.name} (${scheduledInstances + 1}/${instanceTargets.ideal})`
+          : habit.name;
+      const eventData = await encryptEventForStorage(
+        wsId,
+        {
+          title: eventTitle,
+          description: habit.description || '',
+          start_at: slot.start.toISOString(),
+          end_at: slot.end.toISOString(),
+          color: habit.color,
+        },
+        workspaceKey
+      );
+
+      const { data: event, error: eventError } = await supabase
+        .from('workspace_calendar_events')
+        .insert({
+          ws_id: wsId,
+          title: eventData.title,
+          description: eventData.description,
+          start_at: eventData.start_at,
+          end_at: eventData.end_at,
+          color: eventData.color,
+          is_encrypted: eventData.is_encrypted,
+        })
+        .select()
+        .single();
+
+      if (eventError || !event) {
+        console.error('Error creating habit event:', eventError);
+        break;
+      }
+
+      const { error: linkError } = await supabase
+        .from('habit_calendar_events')
+        .insert({
+          habit_id: habit.id,
+          event_id: event.id,
+          occurrence_date: occurrenceDate,
+          completed: false,
+        });
+
+      if (linkError) {
+        console.error('Error linking habit to event:', linkError);
+        await supabase
+          .from('workspace_calendar_events')
+          .delete()
+          .eq('id', event.id);
+        break;
+      }
+
+      createdEvents.push({
+        id: event.id,
         title: eventTitle,
-        description: habit.description || '',
         start_at: slot.start.toISOString(),
         end_at: slot.end.toISOString(),
-        color: habit.color,
-      },
-      workspaceKey
-    );
-
-    const { data: event, error: eventError } = await supabase
-      .from('workspace_calendar_events')
-      .insert({
-        ws_id: wsId,
-        title: eventData.title,
-        description: eventData.description,
-        start_at: eventData.start_at,
-        end_at: eventData.end_at,
-        color: eventData.color,
-        is_encrypted: eventData.is_encrypted,
-      })
-      .select()
-      .single();
-
-    if (eventError || !event) {
-      console.error('Error creating habit event:', eventError);
-      continue;
-    }
-
-    // Create junction table entry
-    const { error: linkError } = await supabase
-      .from('habit_calendar_events')
-      .insert({
-        habit_id: habit.id,
-        event_id: event.id,
         occurrence_date: occurrenceDate,
-        completed: false,
       });
 
-    if (linkError) {
-      console.error('Error linking habit to event:', linkError);
-      // Clean up the event we just created
-      await supabase
-        .from('workspace_calendar_events')
-        .delete()
-        .eq('id', event.id);
-      continue;
+      const slotDurationMinutes = Math.max(
+        0,
+        Math.round((slot.end.getTime() - slot.start.getTime()) / 60000)
+      );
+
+      eventsCreated++;
+      scheduledInstances += 1;
+      scheduledMinutes += slotDurationMinutes;
+      scheduledInstanceCounts.set(occurrenceDate, scheduledInstances);
+      scheduledMinutesByDate.set(occurrenceDate, scheduledMinutes);
+      const dependencyKey = buildHabitOccurrenceKey(habit.id, occurrenceDate);
+      const anchors = dependencyAnchors.get(dependencyKey) ?? [];
+      anchors.push({
+        start_at: slot.start.toISOString(),
+        end_at: slot.end.toISOString(),
+      });
+      dependencyAnchors.set(dependencyKey, anchors);
+
+      await revokeHabitSkip(supabase as any, wsId, habit.id, occurrenceDate);
+
+      existingEvents?.push({
+        start_at: slot.start.toISOString(),
+        end_at: slot.end.toISOString(),
+      });
     }
+  }
 
-    createdEvents.push({
-      id: event.id,
-      title: eventTitle,
-      start_at: slot.start.toISOString(),
-      end_at: slot.end.toISOString(),
-      occurrence_date: occurrenceDate || '',
-    });
+  await relabelCreatedHabitEvents(
+    supabase,
+    habit,
+    createdEvents,
+    baseScheduledInstanceCounts
+  );
 
-    eventsCreated++;
+  const occurrencesScheduled = occurrences.filter((occurrence) => {
+    const occurrenceDate = occurrence.toISOString().split('T')[0] ?? '';
+    if (!occurrenceDate || skippedDates.has(occurrenceDate)) {
+      return false;
+    }
+    return (
+      (scheduledMinutesByDate.get(occurrenceDate) ?? 0) >=
+      durationTargets.totalPerDay
+    );
+  }).length;
 
-    // Add to existing events to prevent overlapping when scheduling subsequent occurrences
-    existingEvents?.push({
-      start_at: slot.start.toISOString(),
-      end_at: slot.end.toISOString(),
-    });
+  if (eventsCreated === 0 && occurrencesScheduled === occurrences.length) {
+    return {
+      success: true,
+      eventsCreated: 0,
+      occurrencesScheduled,
+      totalOccurrences: occurrences.length,
+      message: 'All occurrences are already scheduled',
+      events: [],
+    };
   }
 
   return {
     success: eventsCreated > 0,
     eventsCreated,
-    occurrencesScheduled:
-      occurrences.length - unscheduledOccurrences.length + eventsCreated,
+    occurrencesScheduled,
     totalOccurrences: occurrences.length,
     message:
       eventsCreated > 0
@@ -327,6 +675,41 @@ export async function deleteFutureHabitEvents(
   const eventIds = futureLinks.map((l) => l.event_id);
 
   // Delete the calendar events (cascade will handle junction table)
+  const { error: deleteError } = await supabase
+    .from('workspace_calendar_events')
+    .delete()
+    .in('id', eventIds);
+
+  if (deleteError) {
+    return { deleted: 0, error: deleteError.message };
+  }
+
+  return { deleted: eventIds.length };
+}
+
+export async function deleteFutureUnlockedHabitEvents(
+  supabase: SupabaseClient,
+  habitId: string
+): Promise<{ deleted: number; error?: string }> {
+  const now = new Date();
+
+  const { data: futureLinks, error: fetchError } = await supabase
+    .from('habit_calendar_events')
+    .select('event_id, workspace_calendar_events!inner(start_at, locked)')
+    .eq('habit_id', habitId)
+    .gt('workspace_calendar_events.start_at', now.toISOString())
+    .eq('workspace_calendar_events.locked', false);
+
+  if (fetchError) {
+    return { deleted: 0, error: fetchError.message };
+  }
+
+  if (!futureLinks || futureLinks.length === 0) {
+    return { deleted: 0 };
+  }
+
+  const eventIds = futureLinks.map((link) => link.event_id);
+
   const { error: deleteError } = await supabase
     .from('workspace_calendar_events')
     .delete()
@@ -495,7 +878,16 @@ function findSlotForOccurrence(
       }
     >;
   },
-  existingEvents: Array<{ start_at: string; end_at: string }>
+  existingEvents: Array<{ start_at: string; end_at: string }>,
+  durationOverrides?: {
+    minDurationMinutes: number;
+    preferredDurationMinutes: number;
+    maxDurationMinutes: number;
+  },
+  dependencyWindow?: {
+    earliestStart?: Date;
+    latestEnd?: Date;
+  }
 ): SmartTimeSlot | null {
   const dayOfWeek = occurrenceDate.getDay();
   const dayNames = [
@@ -538,14 +930,20 @@ function findSlotForOccurrence(
 
   // Get effective duration bounds using smart defaults
   const {
-    min: minDuration,
-    preferred,
-    max: maxDuration,
+    min: computedMinDuration,
+    preferred: computedPreferredDuration,
+    max: computedMaxDuration,
   } = getEffectiveDurationBounds({
     duration_minutes: habit.duration_minutes,
     min_duration_minutes: habit.min_duration_minutes,
     max_duration_minutes: habit.max_duration_minutes,
   });
+  const minDuration =
+    durationOverrides?.minDurationMinutes ?? computedMinDuration;
+  const preferred =
+    durationOverrides?.preferredDurationMinutes ?? computedPreferredDuration;
+  const maxDuration =
+    durationOverrides?.maxDurationMinutes ?? computedMaxDuration;
 
   // Get events for this specific day
   const dayStart = new Date(occurrenceDate);
@@ -564,8 +962,22 @@ function findSlotForOccurrence(
     slotStart: Date,
     maxAvailable: number
   ): SmartTimeSlot | null => {
+    if (
+      dependencyWindow?.earliestStart &&
+      slotStart < dependencyWindow.earliestStart
+    ) {
+      return null;
+    }
+
     const slotEnd = new Date(slotStart);
     slotEnd.setMinutes(slotEnd.getMinutes() + maxAvailable);
+
+    if (
+      dependencyWindow?.latestEnd &&
+      slotStart >= dependencyWindow.latestEnd
+    ) {
+      return null;
+    }
 
     const slotInfo = {
       start: slotStart,
@@ -590,6 +1002,10 @@ function findSlotForOccurrence(
     const eventEnd = new Date(slotStart);
     eventEnd.setMinutes(eventEnd.getMinutes() + optimalDuration);
 
+    if (dependencyWindow?.latestEnd && eventEnd > dependencyWindow.latestEnd) {
+      return null;
+    }
+
     return {
       start: slotStart,
       end: eventEnd,
@@ -601,9 +1017,9 @@ function findSlotForOccurrence(
 
   // If habit has ideal_time, try that first with max duration
   if (habit.ideal_time) {
-    const [hours, minutes] = habit.ideal_time.split(':').map(Number);
+    const { hour: hours, minute: minutes } = parseTimeParts(habit.ideal_time);
     const idealStart = new Date(occurrenceDate);
-    idealStart.setHours(hours || 0, minutes || 0, 0, 0);
+    idealStart.setHours(hours, minutes, 0, 0);
 
     // Find available time at ideal slot
     const availableMinutes = findAvailableMinutesAt(
@@ -707,9 +1123,11 @@ function findAvailableMinutesAt(
   if (!containingBlock) return 0;
 
   // Calculate max available until block end
-  const [endHour, endMin] = containingBlock.endTime.split(':').map(Number);
+  const { hour: endHour, minute: endMin } = parseTimeParts(
+    containingBlock.endTime
+  );
   const blockEnd = new Date(start);
-  blockEnd.setHours(endHour || 23, endMin || 59, 0, 0);
+  blockEnd.setHours(endHour, endMin, 0, 0);
 
   let available = Math.min(
     (blockEnd.getTime() - start.getTime()) / 60000,
@@ -747,14 +1165,14 @@ function findAllSlotsInBlock(
   minDurationMinutes: number,
   existingEvents: Array<{ start_at: string; end_at: string }>
 ): Array<{ start: Date; maxAvailable: number }> {
-  const [startHour, startMin] = block.startTime.split(':').map(Number);
-  const [endHour, endMin] = block.endTime.split(':').map(Number);
+  const { hour: startHour, minute: startMin } = parseTimeParts(block.startTime);
+  const { hour: endHour, minute: endMin } = parseTimeParts(block.endTime);
 
   const blockStart = new Date(date);
-  blockStart.setHours(startHour || 0, startMin || 0, 0, 0);
+  blockStart.setHours(startHour, startMin, 0, 0);
 
   const blockEnd = new Date(date);
-  blockEnd.setHours(endHour || 23, endMin || 59, 0, 0);
+  blockEnd.setHours(endHour, endMin, 0, 0);
 
   const slots: Array<{ start: Date; maxAvailable: number }> = [];
 
