@@ -42,7 +42,7 @@ export function ClientProviders({ children }: { children: ReactNode }) {
       {!isSharedSurface ? <FadeSettingInitializer /> : null}
       {!isSharedSurface ? <AccountSwitcherKeyboardShortcut /> : null}
       <FetchInterceptorI18n />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition="top-right" />
     </>
   );
 

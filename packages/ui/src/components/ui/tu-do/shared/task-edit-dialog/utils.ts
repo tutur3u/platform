@@ -34,6 +34,17 @@ export function getTaskDescriptionStorageLength(
   return serializeTaskDescriptionContent(content)?.length ?? 0;
 }
 
+export function getTaskDescriptionPercentLeft(
+  storageLength: number,
+  descriptionLimit: number
+): number {
+  if (descriptionLimit <= 0) return 0;
+
+  const remaining =
+    ((descriptionLimit - storageLength) / descriptionLimit) * 100;
+  return Math.max(0, Math.min(100, Math.round(remaining)));
+}
+
 export function buildTaskDescriptionUpdatePayload({
   content,
   yjsState,
