@@ -7239,6 +7239,7 @@
       "pending_auto_approve_warning_description": "Turning off approval will immediately approve all currently pending items.",
       "pending_auto_approve_warning_title": "Warning: pending items will be auto-approved",
       "pending_auto_approve_warning_unknown": "Pending counts could not be loaded, but disabling approval may still auto-approve pending items.",
+      "permissions_load_error": "Failed to load approval settings permissions. Try again.",
       "requires_report_approval_enabled": "This setting applies only when report approval is enabled.",
       "save": "Save Changes",
       "saving": "Saving...",

@@ -9,16 +9,87 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
+  v_actor_user_id uuid := auth.uid();
   v_current_post_approval_enabled boolean := true;
   v_current_report_approval_enabled boolean := true;
   v_next_post_approval_enabled boolean := true;
   v_next_report_approval_enabled boolean := true;
+  v_normalized_post_approval text;
+  v_normalized_report_approval text;
+  v_sanitized_updates jsonb := p_updates;
   v_posts_auto_approved integer := 0;
   v_reports_auto_approved integer := 0;
   v_now timestamptz := now();
 BEGIN
   IF p_updates IS NULL OR jsonb_typeof(p_updates) <> 'object' THEN
     RAISE EXCEPTION 'p_updates must be a JSON object';
+  END IF;
+
+  IF v_actor_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  IF NOT public.has_workspace_permission(
+    p_ws_id,
+    v_actor_user_id,
+    'manage_workspace_settings'
+  ) THEN
+    RAISE EXCEPTION 'Insufficient permissions to manage workspace settings';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.workspace_members wm
+    WHERE wm.ws_id = p_ws_id
+      AND wm.user_id = v_actor_user_id
+  ) THEN
+    RAISE EXCEPTION 'Workspace access denied';
+  END IF;
+
+  IF p_actor_virtual_user_id IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1
+      FROM public.workspace_users wu
+      WHERE wu.id = p_actor_virtual_user_id
+        AND wu.ws_id = p_ws_id
+    )
+  THEN
+    RAISE EXCEPTION 'Actor virtual user must belong to the target workspace';
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(
+    hashtext('workspace_approval_config_transition'),
+    hashtext(p_ws_id::text)
+  );
+
+  IF p_updates ? 'ENABLE_POST_APPROVAL' THEN
+    v_normalized_post_approval :=
+      lower(trim(p_updates->>'ENABLE_POST_APPROVAL'));
+
+    IF v_normalized_post_approval NOT IN ('true', 'false') THEN
+      RAISE EXCEPTION 'ENABLE_POST_APPROVAL must be true or false';
+    END IF;
+
+    v_sanitized_updates := jsonb_set(
+      v_sanitized_updates,
+      '{ENABLE_POST_APPROVAL}',
+      to_jsonb(v_normalized_post_approval)
+    );
+  END IF;
+
+  IF p_updates ? 'ENABLE_REPORT_APPROVAL' THEN
+    v_normalized_report_approval :=
+      lower(trim(p_updates->>'ENABLE_REPORT_APPROVAL'));
+
+    IF v_normalized_report_approval NOT IN ('true', 'false') THEN
+      RAISE EXCEPTION 'ENABLE_REPORT_APPROVAL must be true or false';
+    END IF;
+
+    v_sanitized_updates := jsonb_set(
+      v_sanitized_updates,
+      '{ENABLE_REPORT_APPROVAL}',
+      to_jsonb(v_normalized_report_approval)
+    );
   END IF;
 
   SELECT COALESCE((
@@ -39,17 +110,28 @@ BEGIN
 
   v_next_post_approval_enabled :=
     CASE
-      WHEN p_updates ? 'ENABLE_POST_APPROVAL'
-        THEN lower(trim(p_updates->>'ENABLE_POST_APPROVAL')) = 'true'
+      WHEN v_sanitized_updates ? 'ENABLE_POST_APPROVAL'
+        THEN (v_sanitized_updates->>'ENABLE_POST_APPROVAL') = 'true'
       ELSE v_current_post_approval_enabled
     END;
 
   v_next_report_approval_enabled :=
     CASE
-      WHEN p_updates ? 'ENABLE_REPORT_APPROVAL'
-        THEN lower(trim(p_updates->>'ENABLE_REPORT_APPROVAL')) = 'true'
+      WHEN v_sanitized_updates ? 'ENABLE_REPORT_APPROVAL'
+        THEN (v_sanitized_updates->>'ENABLE_REPORT_APPROVAL') = 'true'
       ELSE v_current_report_approval_enabled
     END;
+
+  IF (
+    (v_current_post_approval_enabled AND NOT v_next_post_approval_enabled)
+    OR (
+      v_current_report_approval_enabled
+      AND NOT v_next_report_approval_enabled
+    )
+  ) AND p_actor_virtual_user_id IS NULL THEN
+    RAISE EXCEPTION
+      'Actor virtual user ID is required when auto-approving pending items';
+  END IF;
 
   IF v_current_report_approval_enabled AND NOT v_next_report_approval_enabled THEN
     UPDATE external_user_monthly_reports r
@@ -93,7 +175,7 @@ BEGIN
 
   INSERT INTO workspace_configs (id, ws_id, value, updated_at)
   SELECT cfg.key, p_ws_id, cfg.value, v_now
-  FROM jsonb_each_text(p_updates) AS cfg(key, value)
+  FROM jsonb_each_text(v_sanitized_updates) AS cfg(key, value)
   ON CONFLICT (ws_id, id)
   DO UPDATE
   SET

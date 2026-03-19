@@ -7239,6 +7239,7 @@
       "pending_auto_approve_warning_description": "Khi tắt phê duyệt, tất cả mục đang chờ hiện tại sẽ được phê duyệt ngay lập tức.",
       "pending_auto_approve_warning_title": "Cảnh báo: các mục đang chờ sẽ được tự động phê duyệt",
       "pending_auto_approve_warning_unknown": "Không thể tải số lượng mục đang chờ, nhưng việc tắt phê duyệt vẫn có thể tự động phê duyệt các mục đang chờ.",
+      "permissions_load_error": "Không thể tải quyền cho cài đặt phê duyệt. Vui lòng thử lại.",
       "requires_report_approval_enabled": "Cài đặt này chỉ áp dụng khi phê duyệt báo cáo được bật.",
       "save": "Lưu thay đổi",
       "saving": "Đang lưu...",

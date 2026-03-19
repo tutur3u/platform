@@ -39,28 +39,37 @@ export function ApprovalsSettings({ wsId }: Props) {
   const { data: enablePostApprovalConfig, isLoading: isLoadingPostApproval } =
     useWorkspaceConfig<string>(wsId, 'ENABLE_POST_APPROVAL', 'true');
 
-  const { data: workspacePermissions, isLoading: isLoadingPermissions } =
-    useQuery<{ manage_workspace_settings: boolean }>({
-      queryKey: ['workspace-settings-permissions', wsId],
-      queryFn: async () => {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/settings/permissions`,
-          {
-            cache: 'no-store',
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch workspace settings permissions');
+  const {
+    data: workspacePermissions,
+    isError: isPermissionsError,
+    isLoading: isLoadingPermissions,
+  } = useQuery<{ manage_workspace_settings: boolean }>({
+    queryKey: ['workspace-settings-permissions', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/settings/permissions`,
+        {
+          cache: 'no-store',
         }
+      );
 
-        return (await response.json()) as {
-          manage_workspace_settings: boolean;
+      if (response.status === 403) {
+        return {
+          manage_workspace_settings: false,
         };
-      },
-      enabled: !!wsId,
-      staleTime: 30_000,
-    });
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace settings permissions');
+      }
+
+      return (await response.json()) as {
+        manage_workspace_settings: boolean;
+      };
+    },
+    enabled: !!wsId,
+    staleTime: 30_000,
+  });
 
   const {
     data: enableReportApprovalConfig,
@@ -263,6 +272,14 @@ export function ApprovalsSettings({ wsId }: Props) {
     },
   });
 
+  if (isPermissionsError) {
+    return (
+      <Alert>
+        <AlertDescription>{t('permissions_load_error')}</AlertDescription>
+      </Alert>
+    );
+  }
+
   if (!isLoadingPermissions && !canManageWorkspaceSettings) {
     return (
       <Alert>
@@ -297,7 +314,22 @@ export function ApprovalsSettings({ wsId }: Props) {
                   ) : (
                     <Switch
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+
+                        if (!checked) {
+                          form.setValue(
+                            'enable_report_export_only_approved',
+                            false,
+                            { shouldDirty: true }
+                          );
+                          form.setValue(
+                            'enable_report_pending_watermark',
+                            false,
+                            { shouldDirty: true }
+                          );
+                        }
+                      }}
                     />
                   )}
                 </FormControl>
