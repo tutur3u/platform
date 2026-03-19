@@ -314,22 +314,7 @@ export function ApprovalsSettings({ wsId }: Props) {
                   ) : (
                     <Switch
                       checked={field.value}
-                      onCheckedChange={(checked) => {
-                        field.onChange(checked);
-
-                        if (!checked) {
-                          form.setValue(
-                            'enable_report_export_only_approved',
-                            false,
-                            { shouldDirty: true }
-                          );
-                          form.setValue(
-                            'enable_report_pending_watermark',
-                            false,
-                            { shouldDirty: true }
-                          );
-                        }
-                      }}
+                      onCheckedChange={field.onChange}
                     />
                   )}
                 </FormControl>
@@ -356,7 +341,22 @@ export function ApprovalsSettings({ wsId }: Props) {
                   ) : (
                     <Switch
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+
+                        if (!checked) {
+                          form.setValue(
+                            'enable_report_export_only_approved',
+                            false,
+                            { shouldDirty: true }
+                          );
+                          form.setValue(
+                            'enable_report_pending_watermark',
+                            false,
+                            { shouldDirty: true }
+                          );
+                        }
+                      }}
                     />
                   )}
                 </FormControl>

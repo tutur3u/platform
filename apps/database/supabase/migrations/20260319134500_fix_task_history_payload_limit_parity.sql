@@ -32,7 +32,7 @@ IMMUTABLE
 AS $function$
   select case
     when lower(_table_name) = 'workspace_whiteboards'
-      and lower(_column_name) = 'snapshot' then 65536
+      and lower(_column_name) = 'snapshot' then 16777216
     when lower(_table_name) = 'email_audit' and lower(_column_name) like '%content%' then 4194304
     when lower(_table_name) = 'sent_emails' and lower(_column_name) like '%content%' then 4194304
     when lower(_table_name) = 'task_history' and lower(_column_name) in ('new_value', 'old_value', 'metadata') then 400000
