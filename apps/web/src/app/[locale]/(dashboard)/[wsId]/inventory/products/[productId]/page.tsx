@@ -13,6 +13,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getWorkspaceConfig } from '@/lib/workspace-helper';
 import { ProductForm } from './form';
 
 export const metadata: Metadata = {
@@ -62,6 +63,8 @@ export default async function WorkspaceProductsPage({ params }: Props) {
         const canUpdateStockQuantity = containsPermission(
           'update_stock_quantity'
         );
+        const currency =
+          (await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY')) || 'USD';
 
         const data =
           productId === 'new'
@@ -93,6 +96,7 @@ export default async function WorkspaceProductsPage({ params }: Props) {
               canUpdateInventory={canUpdateInventory}
               canViewStockQuantity={canViewStockQuantity}
               canUpdateStockQuantity={canUpdateStockQuantity}
+              currency={currency}
             />
           </>
         );

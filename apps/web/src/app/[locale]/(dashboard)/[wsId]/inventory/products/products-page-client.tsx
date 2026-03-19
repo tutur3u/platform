@@ -22,6 +22,7 @@ interface Props {
     count: number;
   };
   wsId: string;
+  currency: string;
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
   canViewStockQuantity: boolean;
@@ -43,6 +44,7 @@ const sortOrderValues = ['asc', 'desc'] as const;
 export function ProductsPageClient({
   initialData,
   wsId,
+  currency,
   canUpdateInventory,
   canDeleteInventory,
   canViewStockQuantity,
@@ -200,6 +202,7 @@ export function ProductsPageClient({
           canUpdateInventory,
           canDeleteInventory,
           canViewStockQuantity,
+          currency,
         }}
         defaultVisibility={{
           id: false,
@@ -223,6 +226,7 @@ export function ProductsPageClient({
         canDeleteInventory={canDeleteInventory}
         canViewStockQuantity={canViewStockQuantity}
         canUpdateStockQuantity={canUpdateStockQuantity}
+        currency={currency}
       />
     </div>
   );

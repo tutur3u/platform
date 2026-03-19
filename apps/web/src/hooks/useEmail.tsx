@@ -3,6 +3,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { atom, useAtom } from 'jotai';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { getUserGroupPostEmailRoute } from '@/lib/user-group-post-email-route';
 
 interface EmailState {
   loading: boolean;
@@ -50,7 +51,7 @@ const useEmail = () => {
 
     try {
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email`,
+        getUserGroupPostEmailRoute({ wsId, groupId, postId }),
         {
           method: 'POST',
           headers: {
@@ -103,10 +104,15 @@ const useEmail = () => {
       }
 
       // Handle partial success / checking specific counts
-      const { successCount, failureCount, blockedCount, alreadySentCount } =
-        data;
+      const {
+        successCount,
+        failureCount,
+        blockedCount,
+        rateLimitedCount,
+        alreadySentCount,
+      } = data;
 
-      if (blockedCount > 0) {
+      if (rateLimitedCount > 0) {
         if (data?.rateLimitInfo) {
           toast.warning(
             t('email_service.rate_limit_exceeded_details', {
@@ -118,9 +124,13 @@ const useEmail = () => {
           );
         } else {
           toast.warning(
-            t('email_service.emails_blocked_count', { count: blockedCount })
+            t('email_service.rate_limit_blocked')
           );
         }
+      } else if (blockedCount > 0) {
+        toast.warning(
+          t('email_service.emails_blocked_count', { count: blockedCount })
+        );
       } else if (failureCount > 0) {
         toast.error(
           t('email_service.emails_send_failed_count', { count: failureCount })

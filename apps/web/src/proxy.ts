@@ -3,7 +3,10 @@ import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
@@ -37,6 +40,55 @@ const WEB_APP_URL = isDev ? `http://localhost:${PORT}` : 'https://tuturuuu.com';
 const OFFLINE_FALLBACK_PATH = '/~offline';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';
+const EMAIL_ROUTE_WORKSPACE_PATTERN =
+  /^\/api\/v1\/workspaces\/([^/]+)\/(?:mail\/send|users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
+const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
+  'EMAIL_RATE_LIMIT_MINUTE',
+  'EMAIL_RATE_LIMIT_HOUR',
+  'EMAIL_RATE_LIMIT_DAY',
+  'EMAIL_RATE_LIMIT_USER_MINUTE',
+  'EMAIL_RATE_LIMIT_USER_HOUR',
+  'EMAIL_RATE_LIMIT_RECIPIENT_HOUR',
+  'EMAIL_RATE_LIMIT_RECIPIENT_DAY',
+  'EMAIL_RATE_LIMIT_IP_MINUTE',
+  'EMAIL_RATE_LIMIT_IP_HOUR',
+] as const;
+
+async function hasWorkspaceEmailRateLimitOverrides(
+  pathname: string
+): Promise<boolean> {
+  const match = pathname.match(EMAIL_ROUTE_WORKSPACE_PATTERN);
+  const wsId = match?.[1];
+
+  if (!wsId || (await isPersonalWorkspace(wsId))) {
+    return false;
+  }
+
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { count, error } = await sbAdmin
+      .from('workspace_secrets')
+      .select('name', { count: 'exact', head: true })
+      .eq('ws_id', wsId)
+      .in('name', [...EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES]);
+
+    if (error) {
+      console.error(
+        'Error checking workspace email rate limit overrides in proxy:',
+        error
+      );
+      return false;
+    }
+
+    return (count ?? 0) > 0;
+  } catch (error) {
+    console.error(
+      'Failed to load workspace email rate limit overrides in proxy:',
+      error
+    );
+    return false;
+  }
+}
 
 /**
  * Check if a user's personal workspace is missing an active subscription.
@@ -188,6 +240,10 @@ const authProxy = createCentralizedAuthProxy({
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
+    if (await hasWorkspaceEmailRateLimitOverrides(req.nextUrl.pathname)) {
+      return NextResponse.next();
+    }
+
     const guardResponse = await guardApiProxyRequest(req, {
       prefixBase: 'proxy:web:api',
     });

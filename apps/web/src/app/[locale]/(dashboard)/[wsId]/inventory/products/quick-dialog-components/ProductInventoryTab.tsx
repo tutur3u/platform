@@ -23,12 +23,14 @@ import {
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
+import { InventoryPriceInput } from '../inventory-price-input';
 import type { EditProductFormValues } from './schema';
 
 interface Props {
   form: UseFormReturn<EditProductFormValues>;
   warehouses: ProductWarehouse[];
   units: ProductUnit[];
+  currency: string;
   isSaving: boolean;
   isLoading?: boolean;
   onSave: () => void;
@@ -41,6 +43,7 @@ export function ProductInventoryTab({
   form,
   warehouses,
   units,
+  currency,
   isSaving,
   isLoading,
   onSave,
@@ -157,25 +160,20 @@ export function ProductInventoryTab({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            {t('ws-inventory-products.labels.price_per_unit')}
+                            {t('ws-inventory-products.labels.price_per_unit')} (
+                            {currency})
                           </FormLabel>
                           <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
+                            <InventoryPriceInput
+                              currency={currency}
                               placeholder={t(
                                 'ws-inventory-products.placeholders.enter_price'
                               )}
-                              value={field.value ?? ''}
+                              value={Number(field.value) || 0}
                               disabled={!canUpdateStockQuantity}
                               aria-disabled={!canUpdateStockQuantity}
-                              onChange={(e) =>
-                                field.onChange(
-                                  e.target.value === ''
-                                    ? 0
-                                    : Number(e.target.value)
-                                )
-                              }
+                              onBlur={field.onBlur}
+                              onChange={field.onChange}
                             />
                           </FormControl>
                           <FormMessage />

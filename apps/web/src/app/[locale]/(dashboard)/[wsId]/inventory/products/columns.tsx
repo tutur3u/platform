@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import { ProductRowActions } from './row-actions';
 
@@ -35,8 +36,10 @@ export const productColumns = ({
     canUpdateInventory?: boolean;
     canDeleteInventory?: boolean;
     canViewStockQuantity?: boolean;
+    currency?: string;
   };
 }): ColumnDef<Product>[] => {
+  const currency = extraData?.currency || 'USD';
   const columns: ColumnDef<Product>[] = [
     {
       accessorKey: 'id',
@@ -288,7 +291,7 @@ export const productColumns = ({
             return (
               <div className="flex items-center gap-2">
                 <span className="line-clamp-1">
-                  {s.price?.toLocaleString() ?? '-'}
+                  {s.price == null ? '-' : formatCurrency(s.price, currency)}
                 </span>
               </div>
             );
@@ -332,7 +335,9 @@ export const productColumns = ({
                           {s.warehouse || t(`${namespace}.unknown_warehouse`)}
                         </span>
                         <span className="text-sm">
-                          {s.price?.toLocaleString() ?? '-'}
+                          {s.price == null
+                            ? '-'
+                            : formatCurrency(s.price, currency)}
                         </span>
                       </div>
                     ))}

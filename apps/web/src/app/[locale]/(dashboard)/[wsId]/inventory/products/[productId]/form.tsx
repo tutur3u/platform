@@ -41,6 +41,8 @@ import * as z from 'zod';
 import { ProductCategoryForm } from '../../categories/form';
 import { ProductUnitForm } from '../../units/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
+import { normalizeInventoryPrice } from '../currency';
+import { InventoryPriceInput } from '../inventory-price-input';
 
 const InventorySchema = z.object({
   unit_id: z.string().min(1, 'Unit is required'),
@@ -85,6 +87,7 @@ const FormSchema = z
 
 interface Props {
   wsId: string;
+  currency: string;
   data?: z.output<typeof FormSchema>;
   categories: ProductCategory[];
   warehouses: ProductWarehouse[];
@@ -98,6 +101,7 @@ interface Props {
 
 export function ProductForm({
   wsId,
+  currency,
   data,
   categories,
   warehouses,
@@ -134,6 +138,7 @@ export function ProductForm({
           ? data.inventory.map((item) => ({
               ...item,
               amount: item.amount ?? null,
+              price: normalizeInventoryPrice(item.price, currency),
             }))
           : [
               {
@@ -212,6 +217,10 @@ export function ProductForm({
 
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     setLoading(true);
+    const normalizedInventory = (formData.inventory || []).map((item) => ({
+      ...item,
+      price: normalizeInventoryPrice(item.price, currency),
+    }));
 
     // Check permissions before proceeding
     if (!data?.id && !canCreateInventory) {
@@ -236,7 +245,7 @@ export function ProductForm({
         category_id: formData.category_id,
       };
 
-      let inventoryPayload: any = formData.inventory || [];
+      let inventoryPayload: any = normalizedInventory;
       if (!canUpdateStockQuantity) {
         inventoryPayload = [];
       }
@@ -277,7 +286,7 @@ export function ProductForm({
         if (canUpdateStockQuantity) {
           // Compare inventory arrays and only send changed items
           const originalInventory = data.inventory || [];
-          const newInventory = formData.inventory || [];
+          const newInventory = normalizedInventory;
 
           // Find inventory items that have actually changed
           const changedInventoryItems = newInventory.filter(
@@ -291,7 +300,8 @@ export function ProductForm({
                 newItem.warehouse_id !== originalItem.warehouse_id ||
                 newItem.amount !== (originalItem.amount ?? null) ||
                 newItem.min_amount !== (originalItem.min_amount ?? null) ||
-                newItem.price !== originalItem.price
+                normalizeInventoryPrice(newItem.price, currency) !==
+                  normalizeInventoryPrice(originalItem.price, currency)
               );
             }
           );
@@ -606,21 +616,20 @@ export function ProductForm({
                           render={({ field }) => (
                             <FormItem className="flex-1">
                               <FormLabel>
-                                {t('ws-inventory-products.form.price')}
+                                {t('ws-inventory-products.form.price')} (
+                                {currency})
                               </FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
+                                <InventoryPriceInput
+                                  currency={currency}
                                   placeholder={t(
                                     'ws-inventory-products.form.price'
                                   )}
-                                  {...field}
-                                  value={String(field.value || '')}
+                                  value={Number(field.value) || 0}
                                   disabled={!canUpdateStockQuantity}
                                   aria-disabled={!canUpdateStockQuantity}
-                                  onChange={(e) =>
-                                    field.onChange(e.target.value)
-                                  }
+                                  onBlur={field.onBlur}
+                                  onChange={field.onChange}
                                 />
                               </FormControl>
                               <FormMessage />

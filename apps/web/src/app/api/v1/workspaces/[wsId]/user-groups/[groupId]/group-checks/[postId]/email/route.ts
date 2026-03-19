@@ -227,16 +227,7 @@ export async function POST(
     let sourceEmail = 'notifications@tuturuuu.com';
 
     try {
-      emailService = await EmailService.fromWorkspace(normalizedWsId, {
-        rateLimits: isWSIDAllowed
-          ? {
-              workspacePerMinute: 100, // Increased limit for allowed workspaces
-              workspacePerHour: 5000,
-              userPerMinute: 100, // Match workspace limit to avoid bottleneck
-              userPerHour: 5000,
-            }
-          : undefined,
-      });
+      emailService = await EmailService.fromWorkspace(normalizedWsId);
 
       // Get source info from credentials for backwards compatibility logging
       const { data: credentials } = await sbAdmin
@@ -371,9 +362,16 @@ export async function POST(
 
     const successCount = results.filter((r) => r.success).length;
     const failureCount = results.filter(
-      (r) => !r.success && r.reason !== 'already_sent'
+      (r) =>
+        !r.success &&
+        r.reason !== 'already_sent' &&
+        r.reason !== 'blocked' &&
+        r.reason !== 'rate_limited'
     ).length;
     const blockedCount = results.filter((r) => r.reason === 'blocked').length;
+    const rateLimitedCount = results.filter(
+      (r) => r.reason === 'rate_limited'
+    ).length;
     const alreadySentCount = results.filter(
       (r) => r.reason === 'already_sent'
     ).length;
@@ -388,20 +386,26 @@ export async function POST(
 
     return NextResponse.json(
       {
-        message: 'Emails processed',
+        message:
+          rateLimitedCount > 0 && successCount === 0 && failureCount === 0
+            ? 'Rate limit exceeded'
+            : 'Emails processed',
         successCount,
         failureCount,
         blockedCount,
+        rateLimitedCount,
         alreadySentCount,
         rateLimitInfo: rateLimitError?.rateLimitInfo,
       },
       {
         status:
-          failureCount === 0
-            ? 200 // All succeeded
-            : successCount > 0
-              ? 207 // Mixed success and failure
-              : 500, // All failed
+          rateLimitedCount > 0 && successCount === 0 && failureCount === 0
+            ? 429 // Entire request blocked by user/IP/workspace rate limits
+            : failureCount === 0
+              ? 200 // All succeeded or only blocked/already sent
+              : successCount > 0
+                ? 207 // Mixed success and failure
+                : 500, // All failed
       }
     );
   } catch (error) {

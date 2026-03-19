@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getWorkspaceConfig } from '@/lib/workspace-helper';
 import { ProductsPageClient } from './products-page-client';
 
 export const metadata: Metadata = {
@@ -73,6 +74,8 @@ export default async function WorkspaceProductsPage({
         const canUpdateStockQuantity = containsPermission(
           'update_stock_quantity'
         );
+        const currency =
+          (await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY')) || 'USD';
 
         const resolvedSearchParams = await searchParams;
         const initialData = await getInitialData(wsId, resolvedSearchParams, {
@@ -106,6 +109,7 @@ export default async function WorkspaceProductsPage({
               canDeleteInventory={canDeleteInventory}
               canViewStockQuantity={canViewStockQuantity}
               canUpdateStockQuantity={canUpdateStockQuantity}
+              currency={currency}
             />
           </>
         );

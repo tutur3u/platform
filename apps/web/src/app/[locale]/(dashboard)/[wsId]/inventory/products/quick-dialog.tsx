@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import { normalizeInventoryPrice } from './currency';
 import {
   useProductCategories,
   useProductUnits,
@@ -38,6 +39,7 @@ interface Props {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   wsId: string;
+  currency: string;
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
   canViewStockQuantity: boolean;
@@ -49,6 +51,7 @@ export function ProductQuickDialog({
   isOpen,
   onOpenChange,
   wsId,
+  currency,
   canUpdateInventory,
   canDeleteInventory,
   canViewStockQuantity,
@@ -100,7 +103,7 @@ export function ProductQuickDialog({
           warehouse_id: item.warehouse_id,
           amount: item.amount == null ? null : Number(item.amount),
           min_amount: Number(item.min_amount) || 0,
-          price: Number(item.price) || 0,
+          price: normalizeInventoryPrice(Number(item.price) || 0, currency),
         }));
       }
 
@@ -114,7 +117,7 @@ export function ProductQuickDialog({
         },
       ];
     },
-    []
+    [currency]
   );
 
   const editForm = useForm<EditProductFormValues>({
@@ -222,7 +225,10 @@ export function ProductQuickDialog({
 
       if (canUpdateStockQuantity) {
         const originalInventory = displayProduct.inventory || [];
-        newInventory = data.inventory || [];
+        newInventory = (data.inventory || []).map((item) => ({
+          ...item,
+          price: normalizeInventoryPrice(item.price, currency),
+        }));
 
         const originalIsUnlimited = computeUnlimitedStock(displayProduct);
         const newIsUnlimited = newInventory.some((item) => item.amount == null);
@@ -239,7 +245,8 @@ export function ProductQuickDialog({
             newItem.warehouse_id !== originalItem.warehouse_id ||
             Number(newItem.amount) !== Number(originalItem.amount) ||
             Number(newItem.min_amount) !== Number(originalItem.min_amount) ||
-            Number(newItem.price) !== Number(originalItem.price)
+            normalizeInventoryPrice(Number(newItem.price), currency) !==
+              normalizeInventoryPrice(Number(originalItem.price), currency)
           );
         });
 
@@ -385,6 +392,7 @@ export function ProductQuickDialog({
                   isSaving={isSaving}
                   isLoading={isProductLoading}
                   onSave={editForm.handleSubmit(handleEditSave)}
+                  currency={currency}
                   canUpdateStockQuantity={canUpdateStockQuantity}
                   hasUnlimitedStock={hasUnlimitedStock}
                   onToggleUnlimitedStock={toggleUnlimitedStock}
