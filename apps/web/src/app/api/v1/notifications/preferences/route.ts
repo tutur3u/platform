@@ -6,11 +6,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const querySchema = z.object({
-  wsId: z.string().uuid(),
+  wsId: z.guid(),
 });
 
 const updateSchema = z.object({
-  wsId: z.string().uuid(),
+  wsId: z.guid(),
   preferences: z.array(
     z.object({
       eventType: z.enum([

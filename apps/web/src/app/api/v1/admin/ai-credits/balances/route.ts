@@ -169,7 +169,7 @@ export async function GET(req: NextRequest) {
 }
 
 const bonusSchema = z.object({
-  balance_id: z.string().uuid(),
+  balance_id: z.guid(),
   amount: z.number().positive(),
   reason: z.string().max(MAX_SEARCH_LENGTH).optional(),
 });

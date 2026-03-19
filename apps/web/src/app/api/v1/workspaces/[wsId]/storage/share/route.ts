@@ -16,13 +16,13 @@ import { z } from 'zod';
 const shareSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
   expiresIn: z.number().int().min(60).max(31_536_000).optional(),
-  taskId: z.uuid().optional(),
+  taskId: z.guid().optional(),
 });
 
 const shareQuerySchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
   expiresIn: z.coerce.number().int().min(60).max(31_536_000).optional(),
-  taskId: z.uuid().optional(),
+  taskId: z.guid().optional(),
 });
 
 async function hasSharedTaskAccess({

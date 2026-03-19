@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
-  boardId: z.uuid(),
+  boardId: z.guid(),
 });
 
 export async function GET(

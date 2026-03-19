@@ -82,14 +82,14 @@ const CreateTaskSchema = z.object({
     .array(z.number().int().min(0).max(255))
     .nullable()
     .optional(),
-  listId: z.string().uuid(),
+  listId: z.guid(),
   priority: z.enum(['low', 'normal', 'high', 'critical']).nullable().optional(),
   start_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
   end_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
   estimation_points: z.number().nullable().optional(),
-  label_ids: z.array(z.string().uuid()).optional(),
-  project_ids: z.array(z.string().uuid()).optional(),
-  assignee_ids: z.array(z.string().uuid()).optional(),
+  label_ids: z.array(z.guid()).optional(),
+  project_ids: z.array(z.guid()).optional(),
+  assignee_ids: z.array(z.guid()).optional(),
   total_duration: z.number().nonnegative().nullable().optional(),
   is_splittable: z.boolean().nullable().optional(),
   min_split_duration_minutes: z.number().int().min(0).nullable().optional(),

@@ -12,8 +12,8 @@ import {
 } from '@/features/forms/response-copy-email';
 
 const responseCopyRequestSchema = z.object({
-  responseId: z.uuid(),
-  sessionId: z.uuid(),
+  responseId: z.guid(),
+  sessionId: z.guid(),
   turnstileToken: z.string().max(4096).optional(),
 });
 

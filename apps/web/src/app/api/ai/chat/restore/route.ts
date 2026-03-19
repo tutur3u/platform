@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const RestoreChatRequestSchema = z.object({
-  chatId: z.string().uuid(),
+  chatId: z.guid(),
 });
 
 export const POST = withSessionAuth(

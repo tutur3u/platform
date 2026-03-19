@@ -16,8 +16,8 @@ const updateUpdateSchema = z.object({
     .min(1, 'Content cannot be empty'), // Plain text (TipTap handles JSONContent conversion)
 });
 
-const projectIdParamSchema = z.uuid('Project ID must be a valid UUID');
-const updateIdParamSchema = z.uuid('Update ID must be a valid UUID');
+const projectIdParamSchema = z.guid('Project ID must be a valid UUID');
+const updateIdParamSchema = z.guid('Update ID must be a valid UUID');
 
 export async function PATCH(
   request: NextRequest,

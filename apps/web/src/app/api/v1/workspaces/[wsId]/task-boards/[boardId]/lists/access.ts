@@ -8,8 +8,8 @@ import { z } from 'zod';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
-  boardId: z.uuid(),
-  listId: z.uuid().optional(),
+  boardId: z.guid(),
+  listId: z.guid().optional(),
 });
 
 export async function requireBoardAccess(request: Request, rawParams: unknown) {

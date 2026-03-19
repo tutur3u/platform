@@ -23,7 +23,7 @@ const estimationBodySchema = z.object({
   allow_zero_estimates: z.boolean().optional(),
   count_unestimated_issues: z.boolean().optional(),
 });
-const boardIdSchema = z.uuid();
+const boardIdSchema = z.guid();
 
 // PATCH - Update board estimation type
 export async function PATCH(request: NextRequest, { params }: RouteParams) {

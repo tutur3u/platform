@@ -79,7 +79,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const body = await req.json();
   const schema = z.object({
-    promoId: z.string().uuid(),
+    promoId: z.string().guid(),
   });
 
   const parsed = schema.safeParse(body);

@@ -26,7 +26,7 @@ const TagUpdateSchema = z.object({
   description: z.string().nullable().optional(),
 });
 
-const TagIdSchema = z.string().uuid();
+const TagIdSchema = z.guid();
 
 type AuthorizedTagRequest = {
   normalizedWsId: string;

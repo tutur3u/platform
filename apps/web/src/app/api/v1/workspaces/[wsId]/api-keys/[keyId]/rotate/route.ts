@@ -6,8 +6,8 @@ import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
 // Schema for validating route params
 const paramsSchema = z.object({
-  wsId: z.string().uuid(),
-  keyId: z.string().uuid(),
+  wsId: z.guid(),
+  keyId: z.guid(),
 });
 
 export const POST = withApiAuth(

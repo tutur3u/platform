@@ -114,7 +114,7 @@ export async function GET() {
 }
 
 const updateSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   monthly_credits: z.number().optional(),
   credits_per_seat: z.number().nullable().optional(),
   default_image_model: z.string().min(1).optional(),

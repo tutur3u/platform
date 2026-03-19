@@ -9,7 +9,7 @@ import { extractWhiteboardImageFileIds } from '@/lib/whiteboards';
 import { requireWhiteboardAccess } from '../access';
 
 const paramsSchema = z.object({
-  boardId: z.string().uuid(),
+  boardId: z.guid(),
   wsId: z.string().min(1),
 });
 

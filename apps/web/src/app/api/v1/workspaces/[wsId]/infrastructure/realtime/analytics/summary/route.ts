@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const QueryParamsSchema = z.object({
-  workspaceId: z.uuid().optional(),
+  workspaceId: z.guid().optional(),
   channelId: z.string().max(MAX_NAME_LENGTH).optional(),
   startDate: z.iso.datetime(),
   endDate: z.iso.datetime(),

@@ -55,7 +55,7 @@ export const calendarToolDefinitions = {
       'Update an existing calendar event. Updated fields are encrypted automatically if E2EE is enabled.',
     inputSchema: z
       .object({
-        eventId: z.uuid().describe('Event UUID'),
+        eventId: z.guid().describe('Event UUID'),
         title: z.string().optional().describe('Updated event title'),
         startAt: z.iso
           .datetime({ offset: true })
@@ -88,7 +88,7 @@ export const calendarToolDefinitions = {
   delete_event: tool({
     description: 'Delete a calendar event by ID.',
     inputSchema: z.object({
-      eventId: z.uuid().describe('Event UUID'),
+      eventId: z.guid().describe('Event UUID'),
     }),
   }),
 

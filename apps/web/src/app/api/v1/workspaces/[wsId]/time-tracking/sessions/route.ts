@@ -26,14 +26,14 @@ dayjs.extend(timezone);
 
 const cursorSchema = z.object({
   lastStartTime: z.iso.datetime({ offset: true }),
-  lastId: z.uuid().or(z.string().regex(/^\d+$/)),
+  lastId: z.guid().or(z.string().regex(/^\d+$/)),
 });
 
 const sessionCreateSchema = z.object({
   title: z.string().optional(),
   description: z.string().nullable().optional(),
-  categoryId: z.uuid().nullable().optional(),
-  taskId: z.uuid().nullable().optional(),
+  categoryId: z.guid().nullable().optional(),
+  taskId: z.guid().nullable().optional(),
   startTime: z.iso.datetime({ offset: true }).optional(),
   endTime: z.iso.datetime({ offset: true }).optional(),
 });

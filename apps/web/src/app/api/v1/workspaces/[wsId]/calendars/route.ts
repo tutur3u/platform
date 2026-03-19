@@ -32,7 +32,7 @@ const createCalendarSchema = z.object({
 });
 
 const updateCalendarSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   name: z.string().min(1).max(MAX_SHORT_TEXT_LENGTH).optional(),
   description: z.string().max(MAX_SEARCH_LENGTH).nullable().optional(),
   color: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),

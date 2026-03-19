@@ -59,7 +59,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Validate payload
   const SingleSchema = z.object({
-    user_id: z.uuid(),
+    user_id: z.guid(),
     is_completed: z.boolean(),
     notes: z.string().max(MAX_URL_LENGTH).nullable().optional(),
     // created_at is server-managed; do not accept from client

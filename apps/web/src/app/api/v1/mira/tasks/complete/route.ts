@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const completeTaskSchema = z.object({
-  task_id: z.string().uuid(),
+  task_id: z.guid(),
 });
 
 // XP calculation constants

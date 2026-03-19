@@ -29,7 +29,7 @@ const REVERTIBLE_RELATIONSHIP_FIELDS = [
 ] as const;
 
 const revertSchema = z.object({
-  historyId: z.string().uuid('Invalid history ID'),
+  historyId: z.guid('Invalid history ID'),
   fields: z
     .array(
       z.enum([...REVERTIBLE_CORE_FIELDS, ...REVERTIBLE_RELATIONSHIP_FIELDS])

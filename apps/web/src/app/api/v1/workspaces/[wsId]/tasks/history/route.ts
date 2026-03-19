@@ -41,7 +41,7 @@ const querySchema = z.object({
       'deleted_at',
     ])
     .nullish(),
-  board_id: z.string().uuid().nullish(),
+  board_id: z.guid().nullish(),
   from: z.string().max(MAX_COLOR_LENGTH).nullish(),
   to: z.string().max(MAX_COLOR_LENGTH).nullish(),
   search: z.string().max(MAX_SEARCH_LENGTH).nullish(),

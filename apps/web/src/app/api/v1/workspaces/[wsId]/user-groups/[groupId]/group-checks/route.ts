@@ -16,8 +16,8 @@ interface Params {
 
 // Validate payload
 const SingleSchema = z.object({
-  post_id: z.uuid(),
-  user_id: z.uuid(),
+  post_id: z.guid(),
+  user_id: z.guid(),
   is_completed: z.boolean(),
   notes: z.string().max(MAX_URL_LENGTH).nullable().optional(),
 });

@@ -7,7 +7,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const routeParamsSchema = z.object({
-  sessionId: z.uuid(),
+  sessionId: z.guid(),
 });
 
 const routeBodySchema = z.object({

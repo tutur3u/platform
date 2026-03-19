@@ -15,12 +15,12 @@ import { z } from 'zod';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
-  taskId: z.uuid(),
+  taskId: z.guid(),
 });
 
 const relationshipMutationSchema = z.object({
-  source_task_id: z.uuid(),
-  target_task_id: z.uuid(),
+  source_task_id: z.guid(),
+  target_task_id: z.guid(),
   type: z.enum(['parent_child', 'blocks', 'related']),
 });
 
