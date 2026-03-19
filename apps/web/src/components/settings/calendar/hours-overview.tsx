@@ -3,7 +3,7 @@
 import { Briefcase, Calendar, User } from '@tuturuuu/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import type { DayTimeRange, WeekTimeRanges } from './time-range-picker';
+import type { DayTimeRange, WeekTimeRanges } from './hour-settings-shared';
 
 type HoursOverviewProps = {
   workHours?: WeekTimeRanges | null;

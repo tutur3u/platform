@@ -2,35 +2,41 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Database } from '@tuturuuu/types';
+import { apiFetch } from '@/lib/api-fetch';
 import WorkspaceSettingsForm from '../../../app/[locale]/(dashboard)/[wsId]/inventory/promotions/settings-form';
 
-export default function ReferralSettings({ wsId }: { wsId: string }) {
-  const supabase = createClient();
+type WorkspaceSettingsRow =
+  Database['public']['Tables']['workspace_settings']['Row'];
 
+export default function ReferralSettings({ wsId }: { wsId: string }) {
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['workspace-settings', wsId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspace_settings')
-        .select('*')
-        .eq('ws_id', wsId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () =>
+      apiFetch<WorkspaceSettingsRow>(`/api/v1/workspaces/${wsId}/settings`, {
+        cache: 'no-store',
+      }),
   });
 
   const { data: regularPromotions, isLoading: isLoadingPromotions } = useQuery({
     queryKey: ['workspace-promotions', wsId, 'regular'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspace_promotions')
-        .select('id, name, code, value, use_ratio')
-        .eq('ws_id', wsId)
-        .neq('promo_type', 'REFERRAL');
-      if (error) throw error;
-      return data;
+      const promotions = await apiFetch<
+        Array<{
+          id: string;
+          name: string;
+          code: string;
+          value: number;
+          use_ratio: boolean | null;
+          promo_type?: string | null;
+        }>
+      >(`/api/v1/workspaces/${wsId}/promotions`, {
+        cache: 'no-store',
+      });
+
+      return promotions.filter(
+        (promotion) => promotion.promo_type !== 'REFERRAL'
+      );
     },
   });
 
@@ -46,7 +52,10 @@ export default function ReferralSettings({ wsId }: { wsId: string }) {
     <WorkspaceSettingsForm
       wsId={wsId}
       data={settings}
-      regularPromotions={regularPromotions || []}
+      regularPromotions={(regularPromotions || []).map((promotion) => ({
+        ...promotion,
+        use_ratio: promotion.use_ratio ?? false,
+      }))}
     />
   );
 }

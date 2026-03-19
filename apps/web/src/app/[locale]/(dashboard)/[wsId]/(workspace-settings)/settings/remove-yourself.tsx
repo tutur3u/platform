@@ -18,41 +18,22 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface Props {
   workspace?: (Workspace & { joined: boolean }) | null;
+  currentUserId?: string | null;
 }
 
-export default function RemoveYourself({ workspace }: Props) {
+export default function RemoveYourself({ workspace, currentUserId }: Props) {
   const isSystemWs = workspace?.id === ROOT_WORKSPACE_ID;
 
   const t = useTranslations('ws-settings');
   const router = useRouter();
 
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [confirmationInput, setConfirmationInput] = useState('');
-
-  // Get current user ID on component mount
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const { createClient } = await import('@tuturuuu/supabase/next/client');
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setCurrentUserId(user?.id || null);
-      } catch (error) {
-        console.error('Error getting current user:', error);
-        setCurrentUserId(null);
-      }
-    };
-
-    getUser();
-  }, []);
 
   const handleLeaveClick = () => {
     if (isSystemWs || !workspace || !currentUserId) return;
