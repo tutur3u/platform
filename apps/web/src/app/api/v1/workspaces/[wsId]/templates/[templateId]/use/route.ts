@@ -123,14 +123,11 @@ export async function POST(req: NextRequest, { params }: Params) {
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (memberCheckError) {
       return NextResponse.json(
-        {
-          error: 'Failed to verify workspace access',
-          details: memberCheckError.message,
-        },
+        { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }

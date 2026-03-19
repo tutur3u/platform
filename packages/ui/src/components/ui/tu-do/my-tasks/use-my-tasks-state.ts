@@ -236,7 +236,7 @@ export function useMyTasksState({
       );
 
       return boardGroups
-        .flatMap((boards) => boards)
+        .flat()
         .filter((board) => !board.deleted_at)
         .map((board) => ({
           id: board.id,

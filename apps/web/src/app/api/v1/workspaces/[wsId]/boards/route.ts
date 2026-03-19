@@ -48,11 +48,9 @@ export async function GET(
       .maybeSingle();
 
     if (memberCheckError) {
+      console.error('Membership check error:', memberCheckError);
       return NextResponse.json(
-        {
-          error: 'Failed to verify workspace access',
-          details: memberCheckError.message,
-        },
+        { error: 'Failed to verify workspace access' },
         { status: 500 }
       );
     }
