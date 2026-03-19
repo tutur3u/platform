@@ -73,7 +73,7 @@ export function useTaskActions({
     }
 
     return resolvedWorkspaceId;
-  }, [task, workspaceId]);
+  }, [boardId, task, workspaceId]);
 
   const rollbackTaskIds = useCallback(
     (previousTasks: Task[] | undefined, failedTaskIds: string[]) => {

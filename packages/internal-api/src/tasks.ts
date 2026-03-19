@@ -199,6 +199,10 @@ export interface WorkspaceTaskListResponse {
   list: TaskList;
 }
 
+export interface WorkspaceTaskListsResponse {
+  lists: TaskList[];
+}
+
 export interface MoveWorkspaceTaskPayload {
   list_id: string;
   target_board_id?: string;
@@ -572,6 +576,20 @@ export async function createWorkspaceTaskList(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceTaskLists(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskListsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/lists`,
+    {
       cache: 'no-store',
     }
   );

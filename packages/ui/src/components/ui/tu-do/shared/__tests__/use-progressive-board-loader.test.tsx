@@ -4,10 +4,15 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useProgressiveBoardLoader } from '../use-progressive-board-loader';
+
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  listWorkspaceTasks: vi.fn(),
+}));
 
 describe('useProgressiveBoardLoader', () => {
   let queryClient: QueryClient;
@@ -24,10 +29,7 @@ describe('useProgressiveBoardLoader', () => {
       },
     });
 
-    vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => ({ tasks: [] }),
-    } as Response);
+    vi.mocked(listWorkspaceTasks).mockResolvedValue({ tasks: [] });
   });
 
   afterEach(() => {
@@ -45,17 +47,14 @@ describe('useProgressiveBoardLoader', () => {
 
     queryClient.setQueryData(['tasks', 'board-1'], [cachedTask]);
 
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        tasks: [
-          {
-            ...cachedTask,
-            completed_at: '2026-03-19T01:00:00.000Z',
-          },
-        ],
-      }),
-    } as Response);
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [
+        {
+          ...cachedTask,
+          completed_at: '2026-03-19T01:00:00.000Z',
+        },
+      ],
+    });
 
     const { result } = renderHook(
       () => useProgressiveBoardLoader('ws-1', 'board-1'),
@@ -66,6 +65,11 @@ describe('useProgressiveBoardLoader', () => {
       await result.current.loadListPage('list-1', 0);
     });
 
+    expect(listWorkspaceTasks).toHaveBeenCalledWith('ws-1', {
+      listId: 'list-1',
+      limit: 50,
+      offset: 0,
+    });
     expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
       {
         ...cachedTask,
@@ -85,24 +89,21 @@ describe('useProgressiveBoardLoader', () => {
 
     queryClient.setQueryData(['tasks', 'board-1'], [cachedTask]);
 
-    vi.mocked(global.fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        tasks: [
-          {
-            ...cachedTask,
-            completed_at: '2026-03-19T01:00:00.000Z',
-          },
-          {
-            id: 'task-2',
-            display_number: 2,
-            name: 'New task',
-            list_id: 'list-1',
-            created_at: '2026-03-19T02:00:00.000Z',
-          },
-        ],
-      }),
-    } as Response);
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [
+        {
+          ...cachedTask,
+          completed_at: '2026-03-19T01:00:00.000Z',
+        },
+        {
+          id: 'task-2',
+          display_number: 2,
+          name: 'New task',
+          list_id: 'list-1',
+          created_at: '2026-03-19T02:00:00.000Z',
+        },
+      ],
+    });
 
     const { result } = renderHook(
       () => useProgressiveBoardLoader('ws-1', 'board-1'),

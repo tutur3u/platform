@@ -58,6 +58,7 @@ interface BoardColumnProps {
   optimisticUpdateInProgress?: Set<string>;
   filters?: TaskFilters;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+  workspaceId?: string;
   wsId: string;
 }
 
@@ -79,6 +80,7 @@ export function BoardColumn({
   optimisticUpdateInProgress,
   filters,
   bulkUpdateCustomDueDate,
+  workspaceId,
   wsId,
 }: BoardColumnProps) {
   const t = useTranslations('common');
@@ -310,7 +312,7 @@ export function BoardColumn({
           tasks={tasks}
           column={column}
           boardId={boardId}
-          workspaceId={wsId}
+          workspaceId={workspaceId ?? wsId}
           onUpdate={handleUpdate}
           isMultiSelectMode={isMultiSelectMode}
           selectedTasks={selectedTasks}

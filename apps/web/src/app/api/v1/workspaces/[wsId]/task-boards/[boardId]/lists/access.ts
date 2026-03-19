@@ -27,13 +27,42 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
     };
   }
 
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
   const sbAdmin = await createAdminClient();
+  const normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+  const { data: board, error: boardError } = await sbAdmin
+    .from('workspace_boards')
+    .select('id, ws_id')
+    .eq('id', boardId)
+    .maybeSingle();
+
+  if (boardError) {
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to load task board' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!board) {
+    return {
+      error: NextResponse.json({ error: 'Board not found' }, { status: 404 }),
+    };
+  }
+
+  if (normalizedWsId !== board.ws_id) {
+    console.warn('Board workspace did not match route workspace', {
+      boardId,
+      boardWsId: board.ws_id,
+      routeWsId: normalizedWsId,
+    });
+  }
 
   const { data: memberCheck, error: memberError } = await supabase
     .from('workspace_members')
     .select('user_id')
-    .eq('ws_id', wsId)
+    .eq('ws_id', board.ws_id)
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -55,30 +84,8 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
     };
   }
 
-  const { data: board, error: boardError } = await sbAdmin
-    .from('workspace_boards')
-    .select('id, ws_id')
-    .eq('id', boardId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
-
-  if (boardError) {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to load task board' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!board) {
-    return {
-      error: NextResponse.json({ error: 'Board not found' }, { status: 404 }),
-    };
-  }
-
   if (!listId) {
-    return { supabase, wsId, boardId, user, board };
+    return { supabase, wsId: board.ws_id, boardId, user, board };
   }
 
   const { data: list, error: listError } = await sbAdmin
@@ -106,5 +113,5 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
     };
   }
 
-  return { supabase, wsId, boardId, listId, user, board, list };
+  return { supabase, wsId: board.ws_id, boardId, listId, user, board, list };
 }

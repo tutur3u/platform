@@ -242,7 +242,9 @@ function TaskCardInner({
 
   // Fetch workspace members
   const { data: workspaceMembers = [], isLoading: membersLoading } =
-    useWorkspaceMembers(wsId, { enabled: !!wsId && !isPersonalWorkspace });
+    useWorkspaceMembers(effectiveWorkspaceId, {
+      enabled: !!effectiveWorkspaceId && !isPersonalWorkspace,
+    });
 
   // Use task relationships hook for managing parent/child/blocking/related tasks
   const {
@@ -1875,6 +1877,7 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
   if (prev.isSelected !== next.isSelected) return false;
   if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
   if (prev.boardId !== next.boardId) return false;
+  if (prev.workspaceId !== next.workspaceId) return false;
   // Shallow compare task critical fields
   const a = prev.task;
   const b = next.task;

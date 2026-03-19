@@ -33,11 +33,39 @@ export async function GET(
     }
 
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    const sbAdmin = await createAdminClient();
+
+    const { data: board, error } = await sbAdmin
+      .from('workspace_boards')
+      .select(
+        'id, ws_id, name, icon, ticket_prefix, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)'
+      )
+      .eq('id', boardId)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to load task board' },
+        { status: 500 }
+      );
+    }
+
+    if (!board) {
+      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+    }
+
+    if (wsId !== board.ws_id) {
+      console.warn('Board workspace did not match route workspace', {
+        boardId,
+        boardWsId: board.ws_id,
+        routeWsId: wsId,
+      });
+    }
 
     const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', board.ws_id)
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -55,29 +83,19 @@ export async function GET(
       );
     }
 
-    const sbAdmin = await createAdminClient();
+    const normalizedBoard = {
+      ...board,
+      task_lists: (board.task_lists ?? []).sort((a, b) => {
+        const positionDelta = (a.position ?? 0) - (b.position ?? 0);
+        if (positionDelta !== 0) return positionDelta;
+        return (
+          new Date(a.created_at ?? 0).getTime() -
+          new Date(b.created_at ?? 0).getTime()
+        );
+      }),
+    };
 
-    const { data: board, error } = await sbAdmin
-      .from('workspace_boards')
-      .select(
-        'id, ws_id, name, icon, ticket_prefix, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues'
-      )
-      .eq('ws_id', wsId)
-      .eq('id', boardId)
-      .maybeSingle();
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to load task board' },
-        { status: 500 }
-      );
-    }
-
-    if (!board) {
-      return NextResponse.json({ error: 'Board not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ board });
+    return NextResponse.json({ board: normalizedBoard });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

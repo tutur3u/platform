@@ -162,6 +162,7 @@ export function KanbanColumns({
                   optimisticUpdateInProgress={optimisticUpdateInProgress}
                   filters={filters}
                   bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+                  workspaceId={workspaceId}
                   wsId={workspaceId}
                 />
               );

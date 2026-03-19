@@ -1,6 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  getWorkspaceTaskBoard,
+  listWorkspaceTasks,
+} from '@tuturuuu/internal-api/tasks';
 import type {
   Workspace,
   WorkspaceProductTier,
@@ -9,7 +13,8 @@ import type {
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
-import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
 import {
   BoardBroadcastProvider,
   setActiveBroadcast,
@@ -20,92 +25,68 @@ import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 interface Props {
+  boardId: string;
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
-  initialBoard: WorkspaceTaskBoard;
-  initialLists: TaskList[];
   currentUserId?: string;
+  routePrefix?: string;
 }
 
 export function BoardClient({
+  boardId,
   workspace,
   workspaceTier,
-  initialBoard,
-  initialLists,
   currentUserId,
+  routePrefix = '/tasks',
 }: Props) {
-  const boardId = initialBoard.id;
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
-  // Use React Query with initial data from SSR
-  const { data: board = initialBoard } = useQuery({
-    queryKey: ['task-board', boardId],
+  const {
+    data: board,
+    error: boardError,
+    isLoading: boardLoading,
+  } = useQuery({
+    queryKey: ['task-board', workspace.id, boardId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${workspace.id}/task-boards/${boardId}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch task board');
-      }
-
-      const result = (await response.json()) as { board: WorkspaceTaskBoard };
-      return result.board;
+      const result = await getWorkspaceTaskBoard(workspace.id, boardId);
+      return result.board as WorkspaceTaskBoard;
     },
-    initialData: initialBoard,
     staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
   });
+  const boardWorkspaceId = board?.ws_id ?? workspace.id;
+  const lists = useMemo(
+    () =>
+      (board as (WorkspaceTaskBoard & { task_lists?: TaskList[] }) | undefined)
+        ?.task_lists ?? [],
+    [board]
+  );
 
   // Tasks start empty — populated progressively per-list by useProgressiveBoardLoader.
   // Full reconciliation happens on window focus via queryFn.
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${workspace.id}/tasks?boardId=${boardId}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch board tasks');
-      }
-
-      const result = (await response.json()) as { tasks: any[] };
+      const result = await listWorkspaceTasks(boardWorkspaceId, {
+        boardId,
+      });
       return result.tasks;
     },
     initialData: [],
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: 'always',
-  });
-
-  const { data: lists = initialLists } = useQuery({
-    queryKey: ['task_lists', boardId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${workspace.id}/task-boards/${boardId}/lists`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch task lists');
-      }
-
-      const result = (await response.json()) as { lists: TaskList[] };
-      return result.lists;
-    },
-    initialData: initialLists,
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: 'always',
+    enabled: !!boardWorkspaceId,
   });
 
   // Progressive per-list loading
-  const progressiveLoader = useProgressiveBoardLoader(workspace.id, boardId);
+  const progressiveLoader = useProgressiveBoardLoader(
+    boardWorkspaceId,
+    boardId
+  );
 
   // Fetch workspace labels once at the board level
-  const { data: workspaceLabels = [] } = useWorkspaceLabels(workspace.id);
+  const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
 
   const { broadcast } = useBoardRealtime(boardId, {
     enabled: !workspace.personal,
@@ -117,6 +98,15 @@ export function BoardClient({
     setActiveBroadcast(broadcast);
     return () => setActiveBroadcast(null);
   }, [broadcast]);
+
+  useEffect(() => {
+    queryClient.setQueryData(['task_lists', boardId], lists);
+  }, [boardId, lists, queryClient]);
+
+  useEffect(() => {
+    if (!boardError) return;
+    router.replace(`/${workspace.id}${routePrefix}/boards`);
+  }, [boardError, routePrefix, router, workspace.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !board?.id) return;
@@ -151,7 +141,16 @@ export function BoardClient({
     workspace.id,
   ]);
 
-  // Ensure board is not null and has required properties before rendering
+  if (boardLoading && !board) {
+    return (
+      <div className="flex flex-col">
+        <div className="p-4 text-center text-muted-foreground">
+          Loading board...
+        </div>
+      </div>
+    );
+  }
+
   if (!board || !board.id) {
     return (
       <div className="flex flex-col">

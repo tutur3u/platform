@@ -6,7 +6,7 @@ import {
   useHotkeySequence,
 } from '@tanstack/react-hotkeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type {
   Workspace,
   WorkspaceProductTier,
@@ -15,7 +15,7 @@ import type {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useSemanticTaskSearch } from '@tuturuuu/ui/hooks/use-semantic-task-search';
-import { getTasks, type WorkspaceLabel } from '@tuturuuu/utils/task-helper';
+import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import {
   useCallback,
@@ -96,9 +96,11 @@ export function BoardViews({
   const shouldEagerLoadTasks =
     currentView === 'list' || currentView === 'timeline';
   const fetchBoardTasks = useCallback(async () => {
-    const supabase = createClient();
-    return getTasks(supabase, board.id);
-  }, [board.id]);
+    const result = await listWorkspaceTasks(board.ws_id ?? workspace.id, {
+      boardId: board.id,
+    });
+    return result.tasks;
+  }, [board.id, board.ws_id, workspace.id]);
 
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
@@ -525,6 +527,7 @@ export function BoardViews({
           <KanbanBoard
             workspace={workspace}
             workspaceTier={workspaceTier}
+            workspaceId={board.ws_id ?? workspace.id}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
@@ -539,6 +542,7 @@ export function BoardViews({
       case 'list':
         return (
           <ListView
+            workspaceId={board.ws_id ?? workspace.id}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
@@ -560,6 +564,7 @@ export function BoardViews({
           <KanbanBoard
             workspace={workspace}
             workspaceTier={workspaceTier}
+            workspaceId={board.ws_id ?? workspace.id}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}

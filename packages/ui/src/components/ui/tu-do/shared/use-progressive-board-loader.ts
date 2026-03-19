@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useMemo, useState } from 'react';
 import type {
@@ -43,47 +44,11 @@ export function useProgressiveBoardLoader(
       });
 
       try {
-        const searchParams = new URLSearchParams({
+        const payload = await listWorkspaceTasks(wsId, {
           listId,
-          limit: PAGE_SIZE.toString(),
-          offset: String(page * PAGE_SIZE),
+          limit: PAGE_SIZE,
+          offset: page * PAGE_SIZE,
         });
-
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/tasks?${searchParams.toString()}`,
-          { cache: 'no-store' }
-        );
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            const emptyResult = {
-              tasks: [] as Task[],
-              hasMore: false,
-              totalCount: 0,
-            };
-
-            setPagination((prev) => ({
-              ...prev,
-              [listId]: {
-                page,
-                hasMore: false,
-                totalCount: 0,
-                isLoading: false,
-                isInitialLoad: false,
-              },
-            }));
-
-            return emptyResult;
-          }
-
-          const errorBody = await response.json().catch(() => null);
-          throw new Error(
-            errorBody?.error ||
-              `Failed to fetch list tasks (${response.status})`
-          );
-        }
-
-        const payload = (await response.json()) as { tasks?: Task[] };
         const tasks = payload.tasks ?? [];
         const hasMore = tasks.length === PAGE_SIZE;
         const totalCount = page * PAGE_SIZE + tasks.length + (hasMore ? 1 : 0);

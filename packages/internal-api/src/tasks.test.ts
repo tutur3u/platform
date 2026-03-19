@@ -7,6 +7,7 @@ import {
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceTaskBoards,
+  listWorkspaceTaskLists,
   updateWorkspaceTaskBoard,
 } from './tasks';
 
@@ -144,6 +145,24 @@ describe('workspace board internal-api helpers', () => {
       3,
       'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1',
       expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
+  it('lists workspace task lists through the board lists route', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ lists: [] }));
+
+    await listWorkspaceTaskLists('ws-1', 'board-1', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/lists',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
     );
   });
 

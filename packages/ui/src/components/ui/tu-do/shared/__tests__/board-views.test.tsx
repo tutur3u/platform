@@ -8,6 +8,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
@@ -18,7 +19,6 @@ import { BoardViews } from '../board-views';
 
 const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
-const getTasksMock = vi.fn();
 let boardHeaderProps:
   | React.ComponentProps<typeof import('../board-header')['BoardHeader']>
   | undefined;
@@ -41,12 +41,8 @@ vi.mock('../../hooks/useTaskDialog', () => ({
   }),
 }));
 
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => ({}),
-}));
-
-vi.mock('@tuturuuu/utils/task-helper', () => ({
-  getTasks: (...args: unknown[]) => getTasksMock(...args),
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  listWorkspaceTasks: vi.fn(),
 }));
 
 vi.mock('../progressive-loader-context', () => ({
@@ -171,8 +167,8 @@ describe('BoardViews', () => {
     boardHeaderProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
-    getTasksMock.mockReset();
-    getTasksMock.mockResolvedValue(mockTasks);
+    vi.mocked(listWorkspaceTasks).mockReset();
+    vi.mocked(listWorkspaceTasks).mockResolvedValue({ tasks: mockTasks });
     window.localStorage.clear();
   });
 
@@ -239,14 +235,14 @@ describe('BoardViews', () => {
   it('eagerly fetches the full board task set when switching to list view', async () => {
     renderBoardViews();
 
-    expect(getTasksMock).not.toHaveBeenCalled();
+    expect(listWorkspaceTasks).not.toHaveBeenCalled();
 
     await act(async () => {
       boardHeaderProps?.onViewChange('list');
     });
 
     await waitFor(() => {
-      expect(getTasksMock).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -258,7 +254,7 @@ describe('BoardViews', () => {
     });
 
     await waitFor(() => {
-      expect(getTasksMock).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -288,7 +284,7 @@ describe('BoardViews', () => {
     });
 
     await waitFor(() => {
-      expect(getTasksMock).toHaveBeenCalledTimes(1);
+      expect(listWorkspaceTasks).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -16,6 +16,7 @@ import {
   unicornHead,
   X,
 } from '@tuturuuu/icons';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -55,7 +56,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
+import { priorityCompare } from '@tuturuuu/utils/task-helper';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Image from 'next/image';
@@ -68,6 +69,7 @@ import { computeAccessibleLabelStyles } from '../utils/label-colors';
 import { useBoardBroadcast } from './board-broadcast-context';
 
 interface Props {
+  workspaceId: string;
   boardId: string;
   tasks: Task[];
   lists: TaskList[];
@@ -99,6 +101,7 @@ interface ColumnVisibility {
 const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
 
 export function ListView({
+  workspaceId,
   boardId,
   tasks,
   lists,
@@ -185,8 +188,11 @@ export function ListView({
         }
       }
       // Refresh the task list and invalidate cache
-      const updatedTasks = await getTasks(supabase, boardId);
+      const { tasks: updatedTasks } = await listWorkspaceTasks(workspaceId, {
+        boardId,
+      });
       setLocalTasks(updatedTasks);
+      queryClient.setQueryData(['tasks', boardId], updatedTasks);
       queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       setSelectedTasks(new Set());
       setShowBulkDeleteDialog(false);

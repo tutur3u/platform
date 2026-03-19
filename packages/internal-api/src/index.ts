@@ -65,6 +65,7 @@ export {
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceTaskBoards,
+  listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
   listWorkspaceTasks,
   moveWorkspaceTask,

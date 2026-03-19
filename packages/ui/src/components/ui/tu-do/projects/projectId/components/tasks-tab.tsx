@@ -108,7 +108,7 @@ export function TasksTab({
   > = {
     id: projectId,
     name: projectName,
-    ws_id: wsId,
+    ws_id: workspace.id,
     ticket_prefix: null,
     archived_at: null,
   };
@@ -119,6 +119,7 @@ export function TasksTab({
         return (
           <KanbanBoard
             workspace={workspace}
+            workspaceId={workspace.id}
             boardId={projectBoardId}
             tasks={tasks}
             lists={lists}
@@ -130,6 +131,7 @@ export function TasksTab({
       case 'list':
         return (
           <ListView
+            workspaceId={workspace.id}
             boardId={projectBoardId}
             tasks={tasks}
             lists={lists}
@@ -149,6 +151,7 @@ export function TasksTab({
         return (
           <KanbanBoard
             workspace={workspace}
+            workspaceId={workspace.id}
             boardId={projectBoardId}
             tasks={tasks}
             lists={lists}

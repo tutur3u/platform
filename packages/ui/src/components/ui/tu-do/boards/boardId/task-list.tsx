@@ -471,12 +471,12 @@ function VirtualizedTaskListInner({
           items={tasks.map((t) => t.id)}
           strategy={verticalListSortingStrategy}
         >
-            <TaskListContent
-              tasks={tasks}
-              column={column}
-              boardId={boardId}
-              workspaceId={workspaceId}
-              onUpdate={onUpdate}
+          <TaskListContent
+            tasks={tasks}
+            column={column}
+            boardId={boardId}
+            workspaceId={workspaceId}
+            onUpdate={onUpdate}
             isMultiSelectMode={isMultiSelectMode}
             selectedTasks={selectedTasks}
             isPersonalWorkspace={isPersonalWorkspace}

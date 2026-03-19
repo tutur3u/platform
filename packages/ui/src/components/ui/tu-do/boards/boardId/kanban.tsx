@@ -57,6 +57,7 @@ const kanbanCollisionDetection: CollisionDetection = (args) => {
 interface Props {
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
+  workspaceId: string;
   boardId: string | null;
   tasks: Task[];
   lists: TaskList[];
@@ -71,6 +72,7 @@ interface Props {
 export function KanbanBoard({
   workspace,
   workspaceTier,
+  workspaceId,
   boardId,
   tasks,
   lists,
@@ -100,7 +102,7 @@ export function KanbanBoard({
   const queryClient = useQueryClient();
   const supabase = createClient();
 
-  const reorderTaskMutation = useReorderTask(boardId ?? '', workspace.id);
+  const reorderTaskMutation = useReorderTask(boardId ?? '', workspaceId);
   const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
 
@@ -404,7 +406,7 @@ export function KanbanBoard({
       <BoardSelector
         open={boardSelectorOpen}
         onOpenChange={setBoardSelectorOpen}
-        wsId={workspace.id}
+        wsId={workspaceId}
         currentBoardId={boardId ?? ''}
         taskCount={selectedTasks.size}
         onMove={handleBoardMove}

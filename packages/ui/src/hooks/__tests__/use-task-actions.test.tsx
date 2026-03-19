@@ -303,13 +303,16 @@ describe('useTaskActions', () => {
     });
 
     it('resolves the board workspace before using a bad workspace prop', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [
-        {
-          ...mockTask,
-          ws_id: undefined,
-          task_lists: undefined,
-        },
-      ]);
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [
+          {
+            ...mockTask,
+            ws_id: undefined,
+            task_lists: undefined,
+          },
+        ]
+      );
 
       const boardOnlyTask = {
         ...mockTask,
@@ -317,7 +320,9 @@ describe('useTaskActions', () => {
         task_lists: undefined,
       } as Task;
 
-      mockResolveTaskProjectWorkspaceId.mockResolvedValueOnce('resolved-from-board');
+      mockResolveTaskProjectWorkspaceId.mockResolvedValueOnce(
+        'resolved-from-board'
+      );
 
       const { result } = renderHook(
         () =>
@@ -1032,9 +1037,13 @@ describe('useTaskActions', () => {
       });
 
       await waitFor(() => {
-        expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
-          assignee_ids: ['user-1'],
-        });
+        expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+          'resolved-ws',
+          'task-1',
+          {
+            assignee_ids: ['user-1'],
+          }
+        );
       });
     });
 
@@ -1071,9 +1080,13 @@ describe('useTaskActions', () => {
       });
 
       await waitFor(() => {
-        expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
-          assignee_ids: [],
-        });
+        expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+          'resolved-ws',
+          'task-1',
+          {
+            assignee_ids: [],
+          }
+        );
       });
     });
 
