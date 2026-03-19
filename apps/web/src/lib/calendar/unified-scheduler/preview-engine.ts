@@ -763,6 +763,43 @@ function filterSlotsByTimePreference(
   );
 }
 
+function choosePreviewHabitStartTime(
+  habit: Habit,
+  slot: { start: Date; end: Date; maxAvailable: number },
+  duration: number,
+  now: Date,
+  timezone: string | null | undefined
+): Date {
+  const calculated = calculateIdealStartTimeForHabit(
+    convertHabitToConfig(habit),
+    slot,
+    duration,
+    now,
+    timezone
+  );
+
+  if (!habit.ideal_time) {
+    return calculated;
+  }
+
+  const { hour: idealHour, minute: idealMinute } = parseTimeParts(
+    habit.ideal_time
+  );
+  const slotStartMinutes =
+    getLocalHour(slot.start, timezone) * 60 +
+    getLocalMinute(slot.start, timezone);
+  const idealMinutes = idealHour * 60 + idealMinute;
+
+  if (slotStartMinutes <= idealMinutes) {
+    return calculated;
+  }
+
+  // When the chosen slot begins after the ideal time, keep the habit as late
+  // as possible inside that slot so long sessions stay anchored to the same
+  // preferred part of the day instead of snapping to the slot boundary.
+  return roundTo15Minutes(new Date(slot.end.getTime() - duration * 60 * 1000));
+}
+
 function convertHabitToConfig(habit: Habit): HabitDurationConfig {
   return {
     duration_minutes: habit.duration_minutes,
@@ -1324,8 +1361,8 @@ export function generatePreview(
         break;
       }
 
-      const rawIdealStartTime = calculateIdealStartTimeForHabit(
-        convertHabitToConfig(habit),
+      const rawIdealStartTime = choosePreviewHabitStartTime(
+        habit,
         bestSlot,
         duration,
         now,
@@ -1475,7 +1512,12 @@ export function generatePreview(
   };
 
   for (const habit of sortedHabits) {
-    const occurrences = getOccurrencesInRange(habit, now, rangeEnd);
+    const occurrences = getOccurrencesInRange(
+      habit,
+      now,
+      new Date(rangeEnd.getTime() - 1),
+      resolvedTimezone
+    );
 
     for (const occurrence of occurrences) {
       scheduleHabitOccurrence(habit, occurrence, 'initial');

@@ -143,6 +143,17 @@ interface OccupiedSlot {
   priority?: TaskPriority;
 }
 
+function parseTimeParts(time: string): { hour: number; minute: number } {
+  const [rawHour, rawMinute] = time.split(':');
+  const hour = Number.parseInt(rawHour ?? '0', 10);
+  const minute = Number.parseInt(rawMinute ?? '0', 10);
+
+  return {
+    hour: Number.isFinite(hour) ? hour : 0,
+    minute: Number.isFinite(minute) ? minute : 0,
+  };
+}
+
 // ============================================================================
 // HELPER CLASSES
 // ============================================================================
@@ -665,6 +676,40 @@ function filterSlotsByTimePreference(
   );
 }
 
+function choosePreviewHabitStartTime(
+  habit: Habit,
+  slot: { start: Date; end: Date; maxAvailable: number },
+  duration: number,
+  now: Date,
+  timezone: string | null | undefined
+): Date {
+  const calculated = calculateIdealStartTimeForHabit(
+    convertHabitToConfig(habit),
+    slot,
+    duration,
+    now,
+    timezone
+  );
+
+  if (!habit.ideal_time) {
+    return calculated;
+  }
+
+  const { hour: idealHour, minute: idealMinute } = parseTimeParts(
+    habit.ideal_time
+  );
+  const slotStartMinutes =
+    getLocalHour(slot.start, timezone) * 60 +
+    getLocalMinute(slot.start, timezone);
+  const idealMinutes = idealHour * 60 + idealMinute;
+
+  if (slotStartMinutes <= idealMinutes) {
+    return calculated;
+  }
+
+  return roundTo15Minutes(new Date(slot.end.getTime() - duration * 60 * 1000));
+}
+
 function convertHabitToConfig(habit: Habit): HabitDurationConfig {
   return {
     duration_minutes: habit.duration_minutes,
@@ -804,7 +849,12 @@ export function generatePreview(
   });
 
   for (const habit of sortedHabits) {
-    const occurrences = getOccurrencesInRange(habit, now, rangeEnd);
+    const occurrences = getOccurrencesInRange(
+      habit,
+      now,
+      new Date(rangeEnd.getTime() - 1),
+      resolvedTimezone
+    );
 
     for (const occurrence of occurrences) {
       // Use local date string to avoid UTC/local date mismatch
@@ -897,8 +947,8 @@ export function generatePreview(
         continue;
       }
 
-      const rawIdealStartTime = calculateIdealStartTimeForHabit(
-        convertHabitToConfig(habit),
+      const rawIdealStartTime = choosePreviewHabitStartTime(
+        habit,
         bestSlot,
         duration,
         now,

@@ -45,15 +45,8 @@ export async function GET(req: Request, { params }: Params) {
 
     const wsId = await normalizeWorkspaceId(id, supabase);
 
-    const permissions = await getPermissions({ wsId, request: req });
-    if (!permissions?.containsPermission('manage_projects')) {
-      return NextResponse.json(
-        { error: "You don't have permission to perform this operation" },
-        { status: 403 }
-      );
-    }
-
-    // Verify membership before proceeding with data fetching
+    // Read access is membership-gated so board viewers can still enumerate
+    // boards for navigation and selection even without manage_projects.
     const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
       .select('user_id')

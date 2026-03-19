@@ -8,8 +8,150 @@
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(isoWeek);
+dayjs.extend(utc);
+
+type ZonedDateTimeParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second?: number;
+};
+
+const DEFAULT_LOCALE = 'en-US';
+
+function isValidTimeZone(tz: string): boolean {
+  if (!tz) return false;
+
+  try {
+    // eslint-disable-next-line no-new
+    new Intl.DateTimeFormat(DEFAULT_LOCALE, { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function toUtcMinutes(parts: ZonedDateTimeParts): number {
+  return Math.floor(
+    Date.UTC(
+      parts.year,
+      parts.month - 1,
+      parts.day,
+      parts.hour,
+      parts.minute,
+      parts.second ?? 0
+    ) / 60000
+  );
+}
+
+function getZonedDateTimeParts(date: Date, tz: string): ZonedDateTimeParts {
+  const formatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes): number => {
+    const value = parts.find((part) => part.type === type)?.value;
+    return Number.parseInt(value ?? '0', 10);
+  };
+
+  return {
+    year: get('year'),
+    month: get('month'),
+    day: get('day'),
+    hour: get('hour'),
+    minute: get('minute'),
+    second: get('second'),
+  };
+}
+
+function zonedDateTimeToUtc(parts: ZonedDateTimeParts, tz: string): Date {
+  let guessMs = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second ?? 0,
+    0
+  );
+
+  for (let i = 0; i < 3; i++) {
+    const actual = getZonedDateTimeParts(new Date(guessMs), tz);
+    const diffMinutes = toUtcMinutes(parts) - toUtcMinutes(actual);
+    if (diffMinutes === 0) break;
+    guessMs += diffMinutes * 60_000;
+  }
+
+  return new Date(guessMs);
+}
+
+function getTimezoneSafeYmd(
+  value: Date | string,
+  timezone?: string | null
+): { year: number; month: number; day: number } {
+  if (typeof value === 'string') {
+    const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnlyMatch) {
+      return {
+        year: Number.parseInt(dateOnlyMatch[1] ?? '0', 10),
+        month: Number.parseInt(dateOnlyMatch[2] ?? '0', 10),
+        day: Number.parseInt(dateOnlyMatch[3] ?? '0', 10),
+      };
+    }
+  }
+
+  if (timezone && timezone !== 'auto' && isValidTimeZone(timezone)) {
+    const zoned = getZonedDateTimeParts(new Date(value), timezone);
+    return {
+      year: zoned.year,
+      month: zoned.month,
+      day: zoned.day,
+    };
+  }
+
+  const parsed = dayjs(value).startOf('day');
+  return {
+    year: parsed.year(),
+    month: parsed.month() + 1,
+    day: parsed.date(),
+  };
+}
+
+function toDayjsDate(
+  value: Date | string,
+  timezone?: string | null
+): dayjs.Dayjs {
+  const ymd = getTimezoneSafeYmd(value, timezone);
+  return dayjs.utc(Date.UTC(ymd.year, ymd.month - 1, ymd.day, 0, 0, 0, 0));
+}
+
+function fromDayjsDate(date: dayjs.Dayjs, timezone?: string | null): Date {
+  const year = date.year();
+  const month = date.month() + 1;
+  const day = date.date();
+
+  if (timezone && timezone !== 'auto' && isValidTimeZone(timezone)) {
+    return zonedDateTimeToUtc(
+      { year, month, day, hour: 0, minute: 0, second: 0 },
+      timezone
+    );
+  }
+
+  return date.toDate();
+}
 
 /**
  * Calculate the next N occurrences of a habit from a given date
@@ -17,12 +159,13 @@ dayjs.extend(isoWeek);
 export function calculateOccurrences(
   habit: Habit,
   fromDate: Date,
-  count: number
+  count: number,
+  timezone?: string | null
 ): Date[] {
   const occurrences: Date[] = [];
-  const startDate = dayjs(habit.start_date);
-  const endDate = habit.end_date ? dayjs(habit.end_date) : null;
-  let current = dayjs(fromDate).startOf('day');
+  const startDate = toDayjsDate(habit.start_date, timezone);
+  const endDate = habit.end_date ? toDayjsDate(habit.end_date, timezone) : null;
+  let current = toDayjsDate(fromDate, timezone);
 
   // Ensure we start from the habit's start date if fromDate is before it
   if (current.isBefore(startDate)) {
@@ -30,10 +173,15 @@ export function calculateOccurrences(
   }
 
   // Find the first occurrence on or after current
-  const firstOccurrence = findNextOccurrence(habit, current.toDate(), true);
+  const firstOccurrence = findNextOccurrence(
+    habit,
+    current.toDate(),
+    true,
+    timezone
+  );
   if (!firstOccurrence) return occurrences;
 
-  let currentDayjs = dayjs(firstOccurrence);
+  let currentDayjs = toDayjsDate(firstOccurrence, timezone);
 
   while (occurrences.length < count) {
     // Check if we've passed the end date
@@ -41,13 +189,18 @@ export function calculateOccurrences(
       break;
     }
 
-    occurrences.push(currentDayjs.toDate());
+    occurrences.push(fromDayjsDate(currentDayjs, timezone));
 
     // Find next occurrence
-    const next = findNextOccurrence(habit, currentDayjs.toDate(), false);
+    const next = findNextOccurrence(
+      habit,
+      currentDayjs.toDate(),
+      false,
+      timezone
+    );
     if (!next) break;
 
-    currentDayjs = dayjs(next);
+    currentDayjs = toDayjsDate(next, timezone);
   }
 
   return occurrences;
@@ -59,14 +212,15 @@ export function calculateOccurrences(
 export function getOccurrencesInRange(
   habit: Habit,
   rangeStart: Date,
-  rangeEnd: Date
+  rangeEnd: Date,
+  timezone?: string | null
 ): Date[] {
   const occurrences: Date[] = [];
-  const startDate = dayjs(habit.start_date);
-  const endDate = habit.end_date ? dayjs(habit.end_date) : null;
-  const rangeEndDayjs = dayjs(rangeEnd);
+  const startDate = toDayjsDate(habit.start_date, timezone);
+  const endDate = habit.end_date ? toDayjsDate(habit.end_date, timezone) : null;
+  const rangeEndDayjs = toDayjsDate(rangeEnd, timezone);
 
-  let current = dayjs(rangeStart).startOf('day');
+  let current = toDayjsDate(rangeStart, timezone);
 
   // Ensure we start from the habit's start date if rangeStart is before it
   if (current.isBefore(startDate)) {
@@ -74,10 +228,10 @@ export function getOccurrencesInRange(
   }
 
   // Find the first occurrence on or after current
-  const first = findNextOccurrence(habit, current.toDate(), true);
+  const first = findNextOccurrence(habit, current.toDate(), true, timezone);
   if (!first) return occurrences;
 
-  let currentDayjs = dayjs(first);
+  let currentDayjs = toDayjsDate(first, timezone);
 
   while (
     currentDayjs.isBefore(rangeEndDayjs) ||
@@ -88,13 +242,18 @@ export function getOccurrencesInRange(
       break;
     }
 
-    occurrences.push(currentDayjs.toDate());
+    occurrences.push(fromDayjsDate(currentDayjs, timezone));
 
     // Find next occurrence
-    const next = findNextOccurrence(habit, currentDayjs.toDate(), false);
+    const next = findNextOccurrence(
+      habit,
+      currentDayjs.toDate(),
+      false,
+      timezone
+    );
     if (!next) break;
 
-    currentDayjs = dayjs(next);
+    currentDayjs = toDayjsDate(next, timezone);
 
     // Safety check to prevent infinite loops
     if (occurrences.length > 365) break;
@@ -106,10 +265,14 @@ export function getOccurrencesInRange(
 /**
  * Check if a specific date is an occurrence date for the habit
  */
-export function isOccurrenceDate(habit: Habit, date: Date): boolean {
-  const targetDate = dayjs(date).startOf('day');
-  const startDate = dayjs(habit.start_date).startOf('day');
-  const endDate = habit.end_date ? dayjs(habit.end_date).startOf('day') : null;
+export function isOccurrenceDate(
+  habit: Habit,
+  date: Date,
+  timezone?: string | null
+): boolean {
+  const targetDate = toDayjsDate(date, timezone);
+  const startDate = toDayjsDate(habit.start_date, timezone);
+  const endDate = habit.end_date ? toDayjsDate(habit.end_date, timezone) : null;
 
   // Check bounds
   if (targetDate.isBefore(startDate)) return false;
@@ -122,8 +285,12 @@ export function isOccurrenceDate(habit: Habit, date: Date): boolean {
  * Get the next occurrence after a given date
  * If inclusive is true, the given date is included in the search
  */
-export function getNextOccurrence(habit: Habit, afterDate: Date): Date | null {
-  return findNextOccurrence(habit, afterDate, false);
+export function getNextOccurrence(
+  habit: Habit,
+  afterDate: Date,
+  timezone?: string | null
+): Date | null {
+  return findNextOccurrence(habit, afterDate, false, timezone);
 }
 
 /**
@@ -132,11 +299,12 @@ export function getNextOccurrence(habit: Habit, afterDate: Date): Date | null {
 function findNextOccurrence(
   habit: Habit,
   fromDate: Date,
-  inclusive: boolean
+  inclusive: boolean,
+  timezone?: string | null
 ): Date | null {
-  const startDate = dayjs(habit.start_date).startOf('day');
-  const endDate = habit.end_date ? dayjs(habit.end_date).startOf('day') : null;
-  let current = dayjs(fromDate).startOf('day');
+  const startDate = toDayjsDate(habit.start_date, timezone);
+  const endDate = habit.end_date ? toDayjsDate(habit.end_date, timezone) : null;
+  let current = toDayjsDate(fromDate, timezone);
 
   // Start from the day after if not inclusive
   if (!inclusive) {
@@ -155,7 +323,13 @@ function findNextOccurrence(
 
   // For yearly patterns, use optimized search that handles leap years
   if (habit.frequency === 'yearly') {
-    return findNextYearlyOccurrence(habit, startDate, current, endDate);
+    return findNextYearlyOccurrence(
+      habit,
+      startDate,
+      current,
+      endDate,
+      timezone
+    );
   }
 
   // Search for up to 366 days (handles leap years for non-yearly patterns)
@@ -166,7 +340,7 @@ function findNextOccurrence(
       if (endDate && current.isAfter(endDate)) {
         return null;
       }
-      return current.toDate();
+      return fromDayjsDate(current, timezone);
     }
     current = current.add(1, 'day');
 
@@ -187,7 +361,8 @@ function findNextYearlyOccurrence(
   habit: Habit,
   startDate: dayjs.Dayjs,
   current: dayjs.Dayjs,
-  endDate: dayjs.Dayjs | null
+  endDate: dayjs.Dayjs | null,
+  timezone?: string | null
 ): Date | null {
   const interval = habit.recurrence_interval;
   const targetMonth = startDate.month();
@@ -198,11 +373,9 @@ function findNextYearlyOccurrence(
   let candidateYear = current.year();
 
   // If we're past the target date this year, start from next year
-  const thisYearTarget = dayjs()
-    .year(candidateYear)
-    .month(targetMonth)
-    .date(targetDay)
-    .startOf('day');
+  const thisYearTarget = dayjs.utc(
+    Date.UTC(candidateYear, targetMonth, targetDay, 0, 0, 0, 0)
+  );
 
   if (current.isAfter(thisYearTarget)) {
     candidateYear++;
@@ -229,11 +402,9 @@ function findNextYearlyOccurrence(
       }
     }
 
-    const candidate = dayjs()
-      .year(candidateYear)
-      .month(targetMonth)
-      .date(targetDay)
-      .startOf('day');
+    const candidate = dayjs.utc(
+      Date.UTC(candidateYear, targetMonth, targetDay, 0, 0, 0, 0)
+    );
 
     // Verify the date is valid (handles edge cases)
     if (
@@ -244,7 +415,7 @@ function findNextYearlyOccurrence(
       if (endDate && candidate.isAfter(endDate)) {
         return null;
       }
-      return candidate.toDate();
+      return fromDayjsDate(candidate, timezone);
     }
 
     candidateYear += interval;
@@ -433,13 +604,14 @@ function matchesNthWeekday(
  */
 export function getNextOccurrenceDescription(
   habit: Habit,
-  fromDate: Date = new Date()
+  fromDate: Date = new Date(),
+  timezone?: string | null
 ): string {
-  const next = getNextOccurrence(habit, fromDate);
+  const next = getNextOccurrence(habit, fromDate, timezone);
   if (!next) return 'No more occurrences';
 
-  const nextDayjs = dayjs(next);
-  const today = dayjs(fromDate).startOf('day');
+  const nextDayjs = toDayjsDate(next, timezone);
+  const today = toDayjsDate(fromDate, timezone);
   const diff = nextDayjs.diff(today, 'day');
 
   if (diff === 0) return 'Today';

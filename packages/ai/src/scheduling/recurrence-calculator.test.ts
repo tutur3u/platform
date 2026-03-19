@@ -426,5 +426,26 @@ describe('Recurrence Calculator', () => {
 
       expect(occurrences).toHaveLength(5); // Jan 1-5
     });
+
+    it('uses the provided timezone when normalizing range boundaries', () => {
+      const habit = createTestHabit({
+        frequency: 'daily',
+        recurrence_interval: 1,
+        start_date: '2025-12-15',
+      });
+
+      const occurrences = getOccurrencesInRange(
+        habit,
+        new Date('2025-12-15T08:00:00.000Z'),
+        new Date('2025-12-16T00:00:00.000Z'),
+        'UTC'
+      );
+
+      expect(occurrences).toHaveLength(2);
+      expect(occurrences.map((date) => date.toISOString())).toEqual([
+        '2025-12-15T00:00:00.000Z',
+        '2025-12-16T00:00:00.000Z',
+      ]);
+    });
   });
 });

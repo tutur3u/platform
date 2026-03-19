@@ -123,9 +123,7 @@ const useEmail = () => {
             })
           );
         } else {
-          toast.warning(
-            t('email_service.rate_limit_blocked')
-          );
+          toast.warning(t('email_service.rate_limit_blocked'));
         }
       } else if (blockedCount > 0) {
         toast.warning(

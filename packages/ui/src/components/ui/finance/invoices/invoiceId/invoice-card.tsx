@@ -113,14 +113,6 @@ export default function InvoiceCard({
         </head>
         <body>
           ${printableArea.outerHTML}
-          <script>
-            window.onload = function() {
-              setTimeout(() => {
-                window.print();
-                window.onafterprint = function() { window.close(); };
-              }, 500);
-            };
-          </script>
         </body>
       </html>
     `;
@@ -129,6 +121,16 @@ export default function InvoiceCard({
     const url = URL.createObjectURL(blob);
     const printWindow = window.open(url, '_blank', 'noopener,noreferrer');
     if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.onafterprint = () => {
+          printWindow.close();
+        };
+
+        window.setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      };
+
       const revoke = () => {
         try {
           URL.revokeObjectURL(url);
