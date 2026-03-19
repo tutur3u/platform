@@ -27,7 +27,7 @@ const createMemorySchema = z.object({
 });
 
 const deleteMemorySchema = z.object({
-  memory_id: z.string().uuid(),
+  memory_id: z.uuid(),
 });
 
 export async function GET(request: Request) {

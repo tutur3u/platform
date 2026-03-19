@@ -23,8 +23,8 @@ interface Params {
 }
 
 const MergeRequestSchema = z.object({
-  sourceId: z.string().uuid(),
-  targetId: z.string().uuid(),
+  sourceId: z.uuid(),
+  targetId: z.uuid(),
   // startTableIndex allows resuming from a specific table if timeout occurs
   startTableIndex: z.number().int().min(0).optional(),
 });

@@ -11,7 +11,7 @@ interface Params {
 }
 
 const AttendanceSchema = z.object({
-  user_id: z.string().uuid(),
+  user_id: z.uuid(),
   status: z.enum(['PRESENT', 'ABSENT', 'LATE', 'NONE']),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   notes: z.string().optional(),
@@ -22,7 +22,7 @@ const BatchAttendanceSchema = z.array(AttendanceSchema);
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
 
-  if (!z.string().uuid().safeParse(groupId).success) {
+  if (!z.uuid().safeParse(groupId).success) {
     return NextResponse.json({ message: 'Invalid groupId' }, { status: 400 });
   }
   const { searchParams } = new URL(req.url);
@@ -67,7 +67,7 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
 
-  if (!z.string().uuid().safeParse(groupId).success) {
+  if (!z.uuid().safeParse(groupId).success) {
     return NextResponse.json({ message: 'Invalid groupId' }, { status: 400 });
   }
 

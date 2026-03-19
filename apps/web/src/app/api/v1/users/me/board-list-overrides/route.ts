@@ -6,8 +6,8 @@ import { withSessionAuth } from '@/lib/api-auth';
 
 const upsertSchema = z.object({
   scope_type: z.enum(['board', 'list']),
-  board_id: z.string().uuid().nullable().optional(),
-  list_id: z.string().uuid().nullable().optional(),
+  board_id: z.uuid().nullable().optional(),
+  list_id: z.uuid().nullable().optional(),
   personal_status: z.enum(['not_started', 'in_progress', 'done', 'closed']),
   notes: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable().optional(),
 });

@@ -15,7 +15,7 @@ const paramsSchema = z.object({
 });
 
 const copySchema = z.object({
-  targetWorkspaceId: z.string().uuid(),
+  targetWorkspaceId: z.uuid(),
   newBoardName: z.string().trim().min(1).max(255).optional(),
 });
 

@@ -10,12 +10,12 @@ interface ShareParams {
 
 const createShareSchema = z.object({
   email: z.string().email().optional(),
-  userId: z.string().uuid().optional(),
+  userId: z.uuid().optional(),
   permission: z.enum(['view', 'edit']).default('view'),
 });
 
 const updateShareSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   permission: z.enum(['view', 'edit']),
 });
 

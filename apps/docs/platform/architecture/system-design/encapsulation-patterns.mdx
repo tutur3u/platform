@@ -449,15 +449,15 @@ import { z } from 'zod';
 
 // Versioned event schemas
 export const WorkspaceCreatedEventV1 = z.object({
-  workspaceId: z.string().uuid(),
-  ownerId: z.string().uuid(),
+  workspaceId: z.uuid(),
+  ownerId: z.uuid(),
   name: z.string().min(1).max(100),
   createdAt: z.string().datetime()
 });
 
 export const WorkspaceCreatedEventV2 = z.object({
-  workspaceId: z.string().uuid(),
-  ownerId: z.string().uuid(),
+  workspaceId: z.uuid(),
+  ownerId: z.uuid(),
   name: z.string().min(1).max(100),
   createdAt: z.string().datetime(),
   // New optional fields (backward compatible)

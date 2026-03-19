@@ -65,7 +65,7 @@ export const tasksRouter = router({
   get: protectedProcedure
     .input(
       z.object({
-        taskId: z.string().uuid(),
+        taskId: z.uuid(),
       })
     )
     .query(async ({ input, ctx }) => {
@@ -148,7 +148,7 @@ export const tasksRouter = router({
   update: protectedProcedure
     .input(
       z.object({
-        taskId: z.string().uuid(),
+        taskId: z.uuid(),
         name: z.string().min(1).max(255).optional(),
         description: z.string().optional(),
         completed: z.boolean().optional(),
@@ -175,7 +175,7 @@ export const tasksRouter = router({
   delete: protectedProcedure
     .input(
       z.object({
-        taskId: z.string().uuid(),
+        taskId: z.uuid(),
       })
     )
     .mutation(async ({ input }) => {
@@ -374,7 +374,7 @@ export const tasksRouter = router({
 
 ```typescript
 // UUID validation
-z.string().uuid()
+z.uuid()
 
 // Email validation
 z.email()
@@ -394,7 +394,7 @@ z.string().default('default-value')
 // Nested objects
 z.object({
   user: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     name: z.string(),
   }),
 })
@@ -423,7 +423,7 @@ import { TRPCError } from '@trpc/server';
 
 export const tasksRouter = router({
   get: protectedProcedure
-    .input(z.object({ taskId: z.string().uuid() }))
+    .input(z.object({ taskId: z.uuid() }))
     .query(async ({ input }) => {
       const supabase = createClient();
       const { data, error } = await supabase

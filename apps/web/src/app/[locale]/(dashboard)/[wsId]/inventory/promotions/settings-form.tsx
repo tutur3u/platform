@@ -48,7 +48,7 @@ interface Props {
 const FormSchema = z.object({
   referral_count_cap: z.coerce.number().int().min(0),
   referral_increment_percent: z.coerce.number().min(0),
-  referral_promotion_id: z.string().uuid().nullable().optional(),
+  referral_promotion_id: z.uuid().nullable().optional(),
   referral_reward_type: z.enum(['REFERRER', 'RECEIVER', 'BOTH']),
 });
 

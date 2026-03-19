@@ -483,7 +483,7 @@ export async function PATCH(
         .optional(),
       start_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
       end_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
-      list_id: z.string().uuid().optional(),
+      list_id: z.uuid().optional(),
       estimation_points: z.number().nullable().optional(),
     });
 

@@ -7,20 +7,20 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const createConnectionSchema = z.object({
-  wsId: z.string().uuid(),
+  wsId: z.uuid(),
   calendarId: z.string().max(MAX_LONG_TEXT_LENGTH).min(1),
   calendarName: z.string().max(MAX_LONG_TEXT_LENGTH).min(1),
   color: z.string().max(MAX_COLOR_LENGTH).optional(),
   isEnabled: z.boolean().default(true),
-  authTokenId: z.string().uuid().optional(),
+  authTokenId: z.uuid().optional(),
 });
 
 const updateConnectionSchema = z
   .object({
     // Either id OR (calendarId + wsId) to identify the connection
-    id: z.string().uuid().optional(),
+    id: z.uuid().optional(),
     calendarId: z.string().max(MAX_LONG_TEXT_LENGTH).min(1).optional(),
-    wsId: z.string().uuid().optional(),
+    wsId: z.uuid().optional(),
     isEnabled: z.boolean().optional(),
     calendarName: z.string().max(MAX_LONG_TEXT_LENGTH).min(1).optional(),
     color: z.string().max(MAX_COLOR_LENGTH).optional(),

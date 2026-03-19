@@ -24,11 +24,11 @@ const UploadUrlFileSchema = z.object({
 
 const SingleUploadUrlRequestSchema = z.object({
   ...UploadUrlFileSchema.shape,
-  requestId: z.string().uuid(),
+  requestId: z.uuid(),
 });
 
 const BatchUploadUrlRequestSchema = z.object({
-  requestId: z.string().uuid(),
+  requestId: z.uuid(),
   files: z.array(UploadUrlFileSchema).min(1).max(MAX_FILES_PER_REQUEST),
 });
 

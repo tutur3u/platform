@@ -8,7 +8,7 @@ interface WorkspaceParams {
 }
 
 const workspaceParamsSchema = z.object({
-  wsId: z.string().uuid(),
+  wsId: z.uuid(),
 });
 
 export const GET = withApiAuth<WorkspaceParams>(

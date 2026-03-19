@@ -624,10 +624,10 @@ import { z } from 'zod';
 export const WorkspaceContract = {
   getWorkspace: {
     input: z.object({
-      id: z.string().uuid()
+      id: z.uuid()
     }),
     output: z.object({
-      id: z.string().uuid(),
+      id: z.uuid(),
       name: z.string(),
       status: z.enum(['active', 'archived']),
       memberCount: z.number(),
@@ -641,7 +641,7 @@ export const WorkspaceContract = {
       memberLimit: z.number().optional()
     }),
     output: z.object({
-      id: z.string().uuid(),
+      id: z.uuid(),
       name: z.string(),
       status: z.literal('active'),
       memberLimit: z.number()
@@ -705,15 +705,15 @@ describe('WorkspaceAPI - Consumer Contract', () => {
 // Event schema contract
 export const WorkspaceEvents = {
   'workspace.created': z.object({
-    workspaceId: z.string().uuid(),
+    workspaceId: z.uuid(),
     name: z.string(),
-    ownerId: z.string().uuid(),
+    ownerId: z.uuid(),
     createdAt: z.string().datetime()
   }),
 
   'workspace.member.added': z.object({
-    workspaceId: z.string().uuid(),
-    userId: z.string().uuid(),
+    workspaceId: z.uuid(),
+    userId: z.uuid(),
     role: z.enum(['owner', 'admin', 'member']),
     addedAt: z.string().datetime()
   })

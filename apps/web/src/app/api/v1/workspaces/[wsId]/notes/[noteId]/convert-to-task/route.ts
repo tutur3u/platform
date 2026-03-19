@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const convertToTaskSchema = z.object({
-  listId: z.string().uuid('Invalid list ID'),
+  listId: z.uuid('Invalid list ID'),
 });
 
 export async function POST(

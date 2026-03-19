@@ -10,7 +10,7 @@ const ApiKeyUpdateSchema = z
   .object({
     name: z.string().max(MAX_NAME_LENGTH).min(1).optional(),
     description: z.string().max(MAX_LONG_TEXT_LENGTH).min(1).optional(),
-    role_id: z.string().uuid().nullable().optional(),
+    role_id: z.uuid().nullable().optional(),
     expires_at: z
       .string()
       .refine(

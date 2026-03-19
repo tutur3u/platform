@@ -44,7 +44,7 @@ export const GET = withSessionAuth(
 );
 
 const SuspendSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.uuid(),
   reason: z.string().min(1).max(MAX_SEARCH_LENGTH),
   expiresAt: z.string().datetime().optional(),
 });

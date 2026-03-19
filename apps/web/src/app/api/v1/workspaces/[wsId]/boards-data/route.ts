@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const paramsSchema = z.object({
-  wsId: z.string().uuid(),
+  wsId: z.uuid(),
 });
 
 const searchParamsSchema = z.object({
