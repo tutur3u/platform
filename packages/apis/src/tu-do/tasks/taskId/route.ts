@@ -269,9 +269,8 @@ export async function PUT(
     if (body.list_id) {
       const { data: listCheck, error: listError } = await supabase
         .from('task_lists')
-        .select('id, status, workspace_boards!inner(ws_id)')
+        .select('id, status')
         .eq('id', body.list_id)
-        .eq('workspace_boards.ws_id', wsId)
         .maybeSingle();
 
       if (listError) {
