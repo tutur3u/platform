@@ -1,4 +1,4 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export interface Identity {
   id: string;

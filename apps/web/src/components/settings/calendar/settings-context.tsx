@@ -9,6 +9,10 @@ import {
   type AppearanceData,
   defaultAppearanceData,
 } from './appearance-settings';
+import {
+  defaultWeekTimeRanges,
+  type WeekTimeRanges,
+} from './hour-settings-shared';
 // categoryColors is now managed independently via TanStack Query
 // in use-calendar-categories.ts hook
 import {
@@ -20,10 +24,6 @@ import {
   type SmartSchedulingData,
 } from './smart-scheduling-settings';
 import { defaultTaskSettings, type TaskSettingsData } from './task-settings';
-import {
-  defaultWeekTimeRanges,
-  type WeekTimeRanges,
-} from './time-range-picker';
 import { defaultTimezoneData, type TimezoneData } from './timezone-settings';
 
 export type CalendarSettings = {

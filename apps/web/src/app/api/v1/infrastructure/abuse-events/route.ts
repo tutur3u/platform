@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { AbuseEventType } from '@tuturuuu/utils/abuse-protection';
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
@@ -46,7 +45,7 @@ export async function GET(req: Request) {
   }
 
   if (eventType) {
-    query = query.eq('event_type', eventType as AbuseEventType);
+    query = query.eq('event_type', eventType as never);
   }
 
   if (successFilter !== null && successFilter !== undefined) {

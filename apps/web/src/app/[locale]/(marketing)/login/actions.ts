@@ -7,7 +7,6 @@ import {
 import {
   isTurnstileError,
   resolveTurnstileToken,
-  verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendAllowed,
@@ -110,13 +109,6 @@ export async function sendOtpAction(
       token: captchaToken,
       requireConfiguration: true,
     });
-    await verifyTurnstileToken(
-      { headers: headersList },
-      turnstile.captchaToken,
-      {
-        remoteIp: ipAddress !== 'unknown' ? ipAddress : undefined,
-      }
-    );
 
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();

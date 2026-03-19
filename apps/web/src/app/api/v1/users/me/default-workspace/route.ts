@@ -26,7 +26,7 @@ export const GET = withSessionAuth(
 export const PATCH = withSessionAuth(async (req, { user, supabase }) => {
   try {
     const bodySchema = z.object({
-      workspaceId: z.uuid(),
+      workspaceId: z.union([z.uuid(), z.null()]),
     });
     const parsedBody = bodySchema.safeParse(await req.json());
 

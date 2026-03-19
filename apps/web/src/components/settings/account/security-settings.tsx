@@ -7,14 +7,18 @@ import SecuritySettingsCard from './security-settings-card';
 
 interface SecuritySettingsProps {
   user: WorkspaceUser;
+  linkedProvider?: string;
 }
 
-export default function SecuritySettings({ user }: SecuritySettingsProps) {
+export default function SecuritySettings({
+  user,
+  linkedProvider,
+}: SecuritySettingsProps) {
   return (
     <div className="space-y-8">
       <SecuritySettingsCard user={user} />
       <Separator />
-      <LinkedIdentitiesCard />
+      <LinkedIdentitiesCard linkedProvider={linkedProvider} />
     </div>
   );
 }

@@ -25180,7 +25180,8 @@ export type Database = {
         | 'manual'
         | 'api_auth_failed'
         | 'api_rate_limited'
-        | 'api_abuse';
+        | 'api_abuse'
+        | 'otp_limit_reset';
       ai_message_type:
         | 'message'
         | 'file'
@@ -27268,6 +27269,7 @@ export const Constants = {
         'api_auth_failed',
         'api_rate_limited',
         'api_abuse',
+        'otp_limit_reset',
       ],
       ai_message_type: [
         'message',

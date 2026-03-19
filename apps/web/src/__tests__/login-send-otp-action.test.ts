@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
   const signInWithOtp = vi.fn();
   const signUp = vi.fn();
   const headers = vi.fn();
+  const resolveTurnstileToken = vi.fn();
   const verifyTurnstileToken = vi.fn();
   const isTurnstileError = vi.fn();
   const checkOTPSendAllowed = vi.fn();
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => {
     signInWithOtp,
     signUp,
     headers,
+    resolveTurnstileToken,
     verifyTurnstileToken,
     isTurnstileError,
     checkOTPSendAllowed,
@@ -60,10 +62,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/turnstile/server', () => ({
   isTurnstileError: (...args: Parameters<typeof mocks.isTurnstileError>) =>
     mocks.isTurnstileError(...args),
-  resolveTurnstileToken: vi.fn(() => ({
-    captchaToken: 'captcha-token',
-    captchaOptions: {},
-  })),
+  resolveTurnstileToken: (
+    ...args: Parameters<typeof mocks.resolveTurnstileToken>
+  ) => mocks.resolveTurnstileToken(...args),
   verifyTurnstileToken: (
     ...args: Parameters<typeof mocks.verifyTurnstileToken>
   ) => mocks.verifyTurnstileToken(...args),
@@ -110,6 +111,10 @@ describe('sendOtpAction', () => {
 
     mocks.headers.mockResolvedValue(new Headers());
     mocks.extractIPFromHeaders.mockReturnValue('203.0.113.10');
+    mocks.resolveTurnstileToken.mockReturnValue({
+      captchaToken: 'captcha-token',
+      captchaOptions: { captchaToken: 'captcha-token' },
+    });
     mocks.validateEmail.mockResolvedValue('person@example.com');
     mocks.checkOTPSendAllowed.mockResolvedValue({ allowed: true });
     mocks.checkEmailInfrastructureBlocked.mockResolvedValue({
@@ -141,11 +146,21 @@ describe('sendOtpAction', () => {
       '203.0.113.10',
       'person@example.com'
     );
+    expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
+    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
+      email: 'person@example.com',
+      options: {
+        data: { locale: 'en', origin: 'TUTURUUU' },
+        captchaToken: 'captcha-token',
+      },
+    });
   });
 
-  it('does not consume quota when captcha verification fails', async () => {
+  it('does not consume quota when captcha token resolution fails', async () => {
     const captchaError = new Error('captcha failed');
-    mocks.verifyTurnstileToken.mockRejectedValue(captchaError);
+    mocks.resolveTurnstileToken.mockImplementation(() => {
+      throw captchaError;
+    });
     mocks.isTurnstileError.mockImplementation(
       (error) => error === captchaError
     );
