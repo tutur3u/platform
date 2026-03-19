@@ -46,6 +46,7 @@ describe('task edit dialog utils', () => {
 
   it('returns zero when description limit is invalid', () => {
     expect(getTaskDescriptionPercentLeft(0, 0)).toBe(0);
+    expect(getTaskDescriptionPercentLeft(0, -10)).toBe(0);
   });
 
   it('keeps description in the update payload when within the cap', () => {

@@ -384,7 +384,9 @@ export function TaskEditDialog({
   // Editor state
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(true);
-  const [descriptionStorageLength, setDescriptionStorageLength] = useState(0);
+  const [descriptionStorageLength, setDescriptionStorageLength] = useState(() =>
+    getTaskDescriptionStorageLength(formState.description)
+  );
 
   // Dialog states
   const [showNewLabelDialog, setShowNewLabelDialog] = useState(false);

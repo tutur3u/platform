@@ -7,7 +7,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type * as Y from 'yjs';
 import { RichTextEditor } from '../../../../text-editor/editor';
 import { fetchWorkspaceTask, updateWorkspaceTask } from '../hooks/task-api';
@@ -133,10 +133,26 @@ export function TaskDescriptionEditor({
   // Yjs sync is enabled for all tiers (realtimeEnabled), but cursor labels only for paid tiers (collaborationMode)
   const allowYjsSync = isOpen && !isCreateMode && realtimeEnabled;
   const showCollaborationCursors = isOpen && !isCreateMode && collaborationMode;
+  const storagePopoverId = useId();
+  const [isStoragePopoverOpen, setIsStoragePopoverOpen] = useState(false);
 
   // Track mention changes to detect undo/redo operations and sync with database
   const previousMentionedTaskIdsRef = useRef<Set<string>>(new Set());
   const editorInstanceRef = useRef<Editor | null>(null);
+  const storageIndicatorRef = useRef<HTMLDivElement | null>(null);
+  const storageStatusText = isDescriptionOverLimit
+    ? t('description_storage_over_limit', {
+        max: descriptionLimit,
+      })
+    : descriptionStorageLength >= descriptionLimit * 0.85
+      ? t('description_storage_warning', {
+          percent: descriptionPercentLeft,
+        })
+      : t('description_storage_helper');
+  const storageCounterText = t('description_storage_counter', {
+    percent: descriptionPercentLeft,
+  });
+  const storageLiveMessage = `${storageStatusText} ${storageCounterText} (${descriptionStorageLength}/${descriptionLimit})`;
 
   // Store editor instance when it becomes available
   const handleEditorReady = (editor: Editor) => {
@@ -338,6 +354,15 @@ export function TaskDescriptionEditor({
 
         <div className="fixed right-4 bottom-20 z-20 md:right-8 md:bottom-6">
           <div
+            ref={storageIndicatorRef}
+            onMouseEnter={() => setIsStoragePopoverOpen(true)}
+            onMouseLeave={() => setIsStoragePopoverOpen(false)}
+            onFocusCapture={() => setIsStoragePopoverOpen(true)}
+            onBlurCapture={(event) => {
+              const nextTarget = event.relatedTarget as Node | null;
+              if (storageIndicatorRef.current?.contains(nextTarget)) return;
+              setIsStoragePopoverOpen(false);
+            }}
             className={cn(
               'group relative rounded-full border bg-background/90 p-1 shadow-lg backdrop-blur-sm transition-colors',
               isDescriptionOverLimit
@@ -347,7 +372,24 @@ export function TaskDescriptionEditor({
                   : 'border-border/70'
             )}
           >
-            <div className="relative flex h-10 w-10 items-center justify-center">
+            <button
+              type="button"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              aria-haspopup="dialog"
+              aria-expanded={isStoragePopoverOpen}
+              aria-controls={storagePopoverId}
+              onFocus={() => setIsStoragePopoverOpen(true)}
+              onBlur={(event) => {
+                const nextTarget = event.relatedTarget as Node | null;
+                if (storageIndicatorRef.current?.contains(nextTarget)) return;
+                setIsStoragePopoverOpen(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  setIsStoragePopoverOpen(false);
+                }
+              }}
+            >
               <svg
                 className="h-10 w-10 -rotate-90"
                 viewBox="0 0 36 36"
@@ -384,11 +426,21 @@ export function TaskDescriptionEditor({
               >
                 {descriptionPercentLeft}%
               </span>
-            </div>
+            </button>
+            <p className="sr-only" aria-live="polite" aria-atomic="true">
+              {storageLiveMessage}
+            </p>
 
             <div
+              id={storagePopoverId}
+              role="dialog"
+              aria-label={storageStatusText}
+              tabIndex={0}
               className={cn(
-                'pointer-events-none absolute right-0 bottom-12 w-[min(70vw,20rem)] translate-y-1 rounded-lg border bg-background/95 p-2 opacity-0 shadow-md backdrop-blur-sm transition-all duration-150 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100',
+                'absolute right-0 bottom-12 w-[min(70vw,20rem)] rounded-lg border bg-background/95 p-2 shadow-md backdrop-blur-sm transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                isStoragePopoverOpen
+                  ? 'pointer-events-auto translate-y-0 opacity-100'
+                  : 'pointer-events-none translate-y-1 opacity-0',
                 isDescriptionOverLimit
                   ? 'border-destructive/40'
                   : descriptionStorageLength >= descriptionLimit * 0.85
@@ -406,15 +458,7 @@ export function TaskDescriptionEditor({
                       : 'text-muted-foreground'
                 )}
               >
-                {isDescriptionOverLimit
-                  ? t('description_storage_over_limit', {
-                      max: descriptionLimit,
-                    })
-                  : descriptionStorageLength >= descriptionLimit * 0.85
-                    ? t('description_storage_warning', {
-                        percent: descriptionPercentLeft,
-                      })
-                    : t('description_storage_helper')}
+                {storageStatusText}
               </p>
               <p
                 className={cn(
@@ -422,9 +466,7 @@ export function TaskDescriptionEditor({
                   indicatorToneClass
                 )}
               >
-                {t('description_storage_counter', {
-                  percent: descriptionPercentLeft,
-                })}
+                {storageCounterText}
               </p>
             </div>
           </div>
