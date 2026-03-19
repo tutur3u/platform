@@ -13,7 +13,7 @@
     "type-check": "node ../../scripts/run-tsgo-build.js --build"
   },
   "dependencies": {
-    "@azure/msal-node": "^5.1.0",
+    "@azure/msal-node": "^3.8.10",
     "@microsoft/microsoft-graph-client": "^3.0.7"
   },
   "devDependencies": {

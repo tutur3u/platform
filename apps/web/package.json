@@ -101,7 +101,7 @@
     "cmdk": "^1.1.1",
     "cookies-next": "^6.1.1",
     "cron-parser": "^5.5.0",
-    "cronstrue": "^3.13.0",
+    "cronstrue": "^3.14.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.20",
     "dompurify": "^3.3.3",
