@@ -11,7 +11,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const querySchema = z.object({
-  userId: process.env.NODE_ENV === 'development' ? z.string() : z.uuid(),
+  userId: process.env.NODE_ENV === 'development' ? z.string() : z.guid(),
   isPersonal: z.enum(['true', 'false']).transform((val) => val === 'true'),
   timezone: z.string().max(MAX_SHORT_TEXT_LENGTH).default('UTC'),
   summaryOnly: z

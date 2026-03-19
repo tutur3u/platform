@@ -380,43 +380,12 @@ _TaskPriorityStyle _taskPriorityStyle(BuildContext context, String? priority) {
   };
 }
 
+ParsedTipTapDescription? _taskDescriptionParsed(String? rawDescription) {
+  return parseTipTapTaskDescription(rawDescription);
+}
+
 String? _taskDescriptionPreview(String? rawDescription) {
-  final trimmed = rawDescription?.trim();
-  if (trimmed == null || trimmed.isEmpty) return null;
-
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-    return trimmed;
-  }
-
-  try {
-    final decoded = jsonDecode(trimmed);
-    final segments = <String>[];
-
-    void walk(Object? value) {
-      if (value is Map<String, dynamic>) {
-        final text = value['text'];
-        if (text is String && text.trim().isNotEmpty) {
-          segments.add(text.trim());
-        }
-
-        final content = value['content'];
-        if (content is List) {
-          content.forEach(walk);
-        }
-        return;
-      }
-
-      if (value is List) {
-        value.forEach(walk);
-      }
-    }
-
-    walk(decoded);
-    if (segments.isEmpty) return trimmed;
-    return segments.join(' ');
-  } on Object {
-    return trimmed;
-  }
+  return _taskDescriptionParsed(rawDescription)?.plainText;
 }
 
 bool _taskHasDescription(String? rawDescription) {

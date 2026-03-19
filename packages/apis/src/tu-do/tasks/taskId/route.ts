@@ -98,14 +98,14 @@ async function getWorkspaceTask(
         )
       ),
       assignees:task_assignees(
-        user:users(
+        ...users(
           id,
           display_name,
           avatar_url
         )
       ),
       labels:task_labels(
-        label:workspace_task_labels(
+        ...workspace_task_labels(
           id,
           name,
           color,
@@ -113,7 +113,7 @@ async function getWorkspaceTask(
         )
       ),
       projects:task_project_tasks(
-        project:task_projects(
+        ...task_projects(
           id,
           name,
           status
@@ -138,20 +138,16 @@ async function getWorkspaceTask(
 function serializeTask(task: TaskRecord) {
   const assigneeIds = Array.isArray(task.assignees)
     ? task.assignees
-        .map((entry) => entry.user?.id)
+        .map((entry) => entry?.id)
         .filter((id): id is string => !!id)
     : [];
 
   const labelIds = Array.isArray(task.labels)
-    ? task.labels
-        .map((entry) => entry.label?.id)
-        .filter((id): id is string => !!id)
+    ? task.labels.map((entry) => entry?.id).filter((id): id is string => !!id)
     : [];
 
   const projectIds = Array.isArray(task.projects)
-    ? task.projects
-        .map((entry) => entry.project?.id)
-        .filter((id): id is string => !!id)
+    ? task.projects.map((entry) => entry?.id).filter((id): id is string => !!id)
     : [];
 
   const uniqueAssigneeIds = [...new Set(assigneeIds)];

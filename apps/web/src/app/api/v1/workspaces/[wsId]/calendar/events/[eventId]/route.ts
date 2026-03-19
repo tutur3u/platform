@@ -126,8 +126,8 @@ export async function PUT(request: Request, { params }: Params) {
   try {
     // Validate UUIDs
     try {
-      z.string().uuid().parse(wsId);
-      z.string().uuid().parse(eventId);
+      z.guid().parse(wsId);
+      z.guid().parse(eventId);
     } catch {
       return NextResponse.json(
         { error: 'Invalid workspace or event ID' },

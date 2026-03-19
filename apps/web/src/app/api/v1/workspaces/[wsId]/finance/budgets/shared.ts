@@ -17,8 +17,8 @@ export const budgetPayloadSchema = z.object({
   start_date: z.string().date(),
   end_date: z.string().date().nullable().optional(),
   alert_threshold: z.number().min(0).max(100).nullable().optional(),
-  category_id: z.uuid().nullable().optional(),
-  wallet_id: z.uuid().nullable().optional(),
+  category_id: z.guid().nullable().optional(),
+  wallet_id: z.guid().nullable().optional(),
 });
 
 export type BudgetPayload = z.infer<typeof budgetPayloadSchema>;

@@ -6,13 +6,13 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const ConnectDiscordSchema = z.object({
-  wsId: z.uuid(),
+  wsId: z.guid(),
   discordGuildId: z.string().max(MAX_SHORT_TEXT_LENGTH).min(1),
 });
 
 const DisconnectDiscordSchema = z.object({
-  wsId: z.uuid(),
-  integrationId: z.uuid(),
+  wsId: z.guid(),
+  integrationId: z.guid(),
 });
 
 export async function POST(request: NextRequest) {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { generateRandomUUID, generateUUID } from '../uuid-helper';
 
 describe('UUID Helper', () => {
@@ -73,6 +74,60 @@ describe('UUID Helper', () => {
         uuids.add(generateRandomUUID());
       }
       expect(uuids.size).toBe(100);
+    });
+  });
+
+  describe('Zod uuid parsing', () => {
+    it('accept full 0s', () => {
+      const result = z.uuid().safeParse('00000000-0000-0000-0000-000000000000');
+      expect(result.success).toBe(true);
+    });
+
+    it('accept full Fs', () => {
+      const result = z.uuid().safeParse('ffffffff-ffff-ffff-ffff-ffffffffffff');
+      expect(result.success).toBe(true);
+    });
+
+    it('reject full 0s with ending 1', () => {
+      const result = z.uuid().safeParse('00000000-0000-0000-0000-000000000001');
+      expect(result.success).toBe(false);
+    });
+
+    it('accept version 4 UUID', () => {
+      const result = z.uuid().safeParse('01234567-89ab-4cde-8f01-234567890abc');
+      expect(result.success).toBe(true);
+    });
+
+    it('reject invalid UUID format', () => {
+      const result = z.uuid().safeParse('invalid-uuid-format');
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('Zod guid parsing', () => {
+    it('accept full 0s', () => {
+      const result = z.guid().safeParse('00000000-0000-0000-0000-000000000000');
+      expect(result.success).toBe(true);
+    });
+
+    it('accept full Fs', () => {
+      const result = z.guid().safeParse('ffffffff-ffff-ffff-ffff-ffffffffffff');
+      expect(result.success).toBe(true);
+    });
+
+    it('accept full 0s with ending 1', () => {
+      const result = z.guid().safeParse('00000000-0000-0000-0000-000000000001');
+      expect(result.success).toBe(true);
+    });
+
+    it('accept version 4 GUID', () => {
+      const result = z.guid().safeParse('01234567-89ab-4cde-8f01-234567890abc');
+      expect(result.success).toBe(true);
+    });
+
+    it('reject invalid GUID format', () => {
+      const result = z.guid().safeParse('invalid-guid-format');
+      expect(result.success).toBe(false);
     });
   });
 });

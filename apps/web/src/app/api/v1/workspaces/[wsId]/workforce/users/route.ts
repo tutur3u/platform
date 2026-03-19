@@ -30,7 +30,7 @@ const querySchema = z.object({
 });
 
 const createContractSchema = z.object({
-  user_id: z.string().uuid(),
+  user_id: z.guid(),
   contract_type: z
     .enum(['full_time', 'part_time', 'contractor', 'intern', 'temporary'])
     .optional()

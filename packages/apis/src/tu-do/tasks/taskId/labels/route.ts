@@ -10,11 +10,11 @@ import { z } from 'zod';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
-  taskId: z.uuid(),
+  taskId: z.guid(),
 });
 
 const payloadSchema = z.object({
-  labelId: z.uuid(),
+  labelId: z.guid(),
 });
 
 async function parseJsonBody(request: NextRequest) {

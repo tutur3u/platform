@@ -47,14 +47,14 @@ function notifyTransferIntegrityIncident(incident: TransferIntegrityIncident) {
 
 const TransferSchema = z
   .object({
-    origin_wallet_id: z.string().uuid(),
-    destination_wallet_id: z.string().uuid(),
+    origin_wallet_id: z.guid(),
+    destination_wallet_id: z.guid(),
     amount: z.number().positive(),
     destination_amount: z.number().positive().optional(),
     description: z.string().optional(),
     taken_at: z.union([z.string(), z.date()]),
     report_opt_in: z.boolean().optional(),
-    tag_ids: z.array(z.string().uuid()).optional(),
+    tag_ids: z.array(z.guid()).optional(),
   })
   .refine((data) => data.origin_wallet_id !== data.destination_wallet_id, {
     message: 'Source and destination wallets must be different',
@@ -63,16 +63,16 @@ const TransferSchema = z
 
 const UpdateTransferSchema = z
   .object({
-    origin_transaction_id: z.string().uuid(),
-    destination_transaction_id: z.string().uuid(),
-    origin_wallet_id: z.string().uuid(),
-    destination_wallet_id: z.string().uuid(),
+    origin_transaction_id: z.guid(),
+    destination_transaction_id: z.guid(),
+    origin_wallet_id: z.guid(),
+    destination_wallet_id: z.guid(),
     amount: z.number().positive(),
     destination_amount: z.number().positive().optional(),
     description: z.string().optional(),
     taken_at: z.union([z.string(), z.date()]),
     report_opt_in: z.boolean().optional(),
-    tag_ids: z.array(z.string().uuid()).optional(),
+    tag_ids: z.array(z.guid()).optional(),
   })
   .refine(
     (data) => data.origin_transaction_id !== data.destination_transaction_id,

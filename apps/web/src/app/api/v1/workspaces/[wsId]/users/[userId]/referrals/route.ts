@@ -80,7 +80,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const body = await req.json();
   const schema = z.object({
-    referredUserId: z.string().uuid(),
+    referredUserId: z.guid(),
   });
 
   const parsed = schema.safeParse(body);

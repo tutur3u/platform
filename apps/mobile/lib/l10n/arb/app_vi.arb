@@ -304,6 +304,7 @@
     "taskBoardDetailTaskTitleRequired": "Tiêu đề công việc là bắt buộc",
     "taskBoardDetailTaskDescriptionLabel": "Mô tả",
     "taskBoardDetailTaskDescriptionHint": "Thêm mô tả",
+    "taskBoardDetailTaskDescriptionComingSoon": "Tính năng chỉnh sửa mô tả sẽ sớm có trên mobile.",
     "taskBoardDetailTaskListLabel": "Danh sách",
     "taskBoardDetailTaskListSelect": "Chọn danh sách",
     "taskBoardDetailPriority": "Độ ưu tiên",

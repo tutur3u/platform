@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 export const paramsSchema = z.object({
   wsId: z.string().min(1),
-  taskId: z.uuid(),
+  taskId: z.guid(),
 });
 
 export const updateTaskSchema = z
@@ -25,13 +25,13 @@ export const updateTaskSchema = z
     start_date: z.string().datetime().nullable().optional(),
     end_date: z.string().datetime().nullable().optional(),
     completed: z.boolean().optional(),
-    list_id: z.uuid().optional(),
+    list_id: z.guid().optional(),
     sort_key: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
     deleted: z.boolean().optional(),
     estimation_points: z.number().int().min(0).max(8).nullable().optional(),
-    label_ids: z.array(z.uuid()).optional(),
-    project_ids: z.array(z.uuid()).optional(),
-    assignee_ids: z.array(z.uuid()).optional(),
+    label_ids: z.array(z.guid()).optional(),
+    project_ids: z.array(z.guid()).optional(),
+    assignee_ids: z.array(z.guid()).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'At least one task field is required',

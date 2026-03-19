@@ -38,7 +38,7 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  wsId: z.string().uuid(),
+  wsId: z.guid(),
   email: z.email(),
 });
 

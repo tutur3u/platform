@@ -560,7 +560,9 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
   }
 
   final toastContext = Navigator.of(state.context, rootNavigator: true).context;
-  final description = _normalizeTaskText(state._descriptionController.text);
+  final description = state._isTaskDescriptionEditingEnabled
+      ? _normalizeTaskText(state._descriptionController.text)
+      : null;
 
   state._updateState(() => state._isSaving = true);
   try {
@@ -592,6 +594,7 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         labelIds: state._selectedLabelIds.toList(growable: false),
         projectIds: state._selectedProjectIds.toList(growable: false),
         clearDescription:
+            state._isTaskDescriptionEditingEnabled &&
             description == null &&
             (currentTask.description?.trim().isNotEmpty ?? false),
         clearStartDate:

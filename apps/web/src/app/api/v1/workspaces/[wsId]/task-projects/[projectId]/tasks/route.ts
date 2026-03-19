@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const linkTaskSchema = z.object({
-  taskId: z.uuid('Task id must be a valid UUID'),
+  taskId: z.guid('Task id must be a valid UUID'),
 });
 
 interface TaskLabelEntry {

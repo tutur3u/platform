@@ -22,7 +22,7 @@ const CreateGroupPostSchema = z.object({
 });
 
 const GroupUuidSchema = z.object({
-  groupId: z.uuid(),
+  groupId: z.guid(),
 });
 
 interface Params {

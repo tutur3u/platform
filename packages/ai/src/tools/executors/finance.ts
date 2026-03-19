@@ -13,7 +13,7 @@ const createWalletArgsSchema = z.object({
 
 const updateWalletArgsSchema = z
   .object({
-    walletId: z.uuid(),
+    walletId: z.guid(),
     name: z.string().trim().min(1).optional(),
     currency: z.string().trim().min(1).optional(),
     balance: z.coerce.number().optional(),
@@ -39,7 +39,7 @@ const createTransactionTagArgsSchema = z.object({
 
 const updateTransactionTagArgsSchema = z
   .object({
-    tagId: z.uuid(),
+    tagId: z.guid(),
     name: z.string().trim().min(1).optional(),
     color: z
       .string()

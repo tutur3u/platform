@@ -14,7 +14,7 @@ interface Params {
 }
 
 const budgetIdSchema = z.object({
-  budgetId: z.uuid(),
+  budgetId: z.guid(),
 });
 
 export async function PATCH(request: Request, { params }: Params) {

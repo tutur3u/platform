@@ -74,7 +74,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    const boardIdValidation = z.uuid().safeParse(boardId);
+    const boardIdValidation = z.guid().safeParse(boardId);
     if (!boardIdValidation.success) {
       return NextResponse.json({ error: 'Invalid board ID' }, { status: 400 });
     }

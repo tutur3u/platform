@@ -4,6 +4,8 @@ import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/sources/secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+var _supabaseInitialized = false;
+
 /// Initializes the Supabase client with secure token storage.
 ///
 /// Must be called once in `bootstrap()` before the app starts.
@@ -22,7 +24,12 @@ Future<void> initSupabase() async {
       localStorage: SupabaseSecureStorage(),
     ),
   );
+  _supabaseInitialized = true;
 }
 
 /// Shorthand accessor for the Supabase client singleton.
 SupabaseClient get supabase => Supabase.instance.client;
+
+/// Nullable accessor for contexts where Supabase may not be initialized yet.
+SupabaseClient? get maybeSupabase =>
+    _supabaseInitialized ? Supabase.instance.client : null;

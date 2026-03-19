@@ -48,19 +48,19 @@ interface Params {
 const TransactionUpdateSchema = z.object({
   description: z.string().optional(),
   amount: z.number().optional(),
-  origin_wallet_id: z.uuid().optional(),
-  category_id: z.uuid().optional(),
+  origin_wallet_id: z.guid().optional(),
+  category_id: z.guid().optional(),
   taken_at: z.string().or(z.date()).optional(),
   report_opt_in: z.boolean().optional(),
-  tag_ids: z.array(z.uuid()).optional(),
+  tag_ids: z.array(z.guid()).optional(),
   is_amount_confidential: z.boolean().optional(),
   is_description_confidential: z.boolean().optional(),
   is_category_confidential: z.boolean().optional(),
 });
 
 const TransactionRouteParamsSchema = z.object({
-  transactionId: z.uuid(),
-  wsId: z.uuid(),
+  transactionId: z.guid(),
+  wsId: z.guid(),
 });
 
 export async function GET(req: Request, { params }: Params) {

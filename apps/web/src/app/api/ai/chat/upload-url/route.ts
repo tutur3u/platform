@@ -30,7 +30,7 @@ const MAX_FILENAME_LENGTH = 255;
 const UploadUrlRequestSchema = z.object({
   filename: z.string().min(1).max(MAX_FILENAME_LENGTH),
   wsId: z.string().min(1),
-  chatId: z.string().uuid().optional(),
+  chatId: z.guid().optional(),
 });
 
 /**

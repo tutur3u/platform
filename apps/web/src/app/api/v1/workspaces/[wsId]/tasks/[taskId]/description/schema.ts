@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const paramsSchema = z.object({
   wsId: z.string().min(1),
-  taskId: z.uuid(),
+  taskId: z.guid(),
 });
 
 export const updateTaskDescriptionSchema = z

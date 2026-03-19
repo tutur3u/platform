@@ -51,7 +51,7 @@ export async function GET(
 
     if (uniqueRequestedIds.length > 0) {
       const invalidId = uniqueRequestedIds.find(
-        (projectId) => !z.uuid().safeParse(projectId).success
+        (projectId) => !z.guid().safeParse(projectId).success
       );
 
       if (invalidId) {

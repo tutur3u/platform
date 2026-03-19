@@ -66,6 +66,10 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
   bool get _isCreate => widget.task == null;
 
+  bool get _isTaskDescriptionEditingEnabled {
+    return Env.isTaskDescriptionEditingEnabled;
+  }
+
   bool get _isBusy {
     return _isSaving || _isMoving || _isMutatingRelationships;
   }
@@ -79,11 +83,13 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       return true;
     }
 
-    final description = FormDirtyUtils.normalizeOptionalText(
-      _descriptionController.text,
-    );
-    if (description != _initialDescription) {
-      return true;
+    if (_isTaskDescriptionEditingEnabled) {
+      final description = FormDirtyUtils.normalizeOptionalText(
+        _descriptionController.text,
+      );
+      if (description != _initialDescription) {
+        return true;
+      }
     }
 
     if (_priority != _initialPriority) {
@@ -342,12 +348,22 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                 autofocus: _isCreate,
                 onSubmitted: (_) => unawaited(_saveTask()),
               ),
-              const shad.Gap(10),
-              shad.TextField(
-                controller: _descriptionController,
-                maxLines: 3,
-                hintText: context.l10n.taskBoardDetailTaskDescriptionHint,
-              ),
+              if (_isTaskDescriptionEditingEnabled) ...[
+                const shad.Gap(10),
+                shad.TextField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  hintText: context.l10n.taskBoardDetailTaskDescriptionHint,
+                ),
+              ] else ...[
+                const shad.Gap(10),
+                Text(
+                  context.l10n.taskBoardDetailTaskDescriptionComingSoon,
+                  style: shad.Theme.of(context).typography.small.copyWith(
+                    color: shad.Theme.of(context).colorScheme.mutedForeground,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

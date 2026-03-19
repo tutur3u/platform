@@ -29,7 +29,7 @@ const CreateEventSchema = z.object({
   end_at: z.string().datetime(),
   color: z.string().max(MAX_COLOR_LENGTH).optional(),
   locked: z.boolean().optional(),
-  task_id: z.string().uuid().nullable().optional(),
+  task_id: z.guid().nullable().optional(),
 });
 
 interface Params {

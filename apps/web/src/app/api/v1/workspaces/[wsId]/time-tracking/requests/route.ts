@@ -13,16 +13,16 @@ import {
 } from '@/lib/workspace-helper';
 
 const TimeTrackingRequestSchema = z.object({
-  requestId: z.string().uuid().optional(),
+  requestId: z.guid().optional(),
   title: z.string().max(MAX_NAME_LENGTH).min(1),
   description: z.string().optional().default(''),
   categoryId: z.string().optional().default(''),
   taskId: z.string().optional().default(''),
   startTime: z.string().datetime(),
   endTime: z.string().datetime(),
-  breakTypeId: z.string().uuid().nullable().optional(),
+  breakTypeId: z.guid().nullable().optional(),
   breakTypeName: z.string().nullable().optional(),
-  linkedSessionId: z.string().uuid().nullable().optional(),
+  linkedSessionId: z.guid().nullable().optional(),
   imagePaths: z.array(z.string().min(1)).max(5).optional().default([]),
 });
 

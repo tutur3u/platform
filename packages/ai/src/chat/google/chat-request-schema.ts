@@ -35,7 +35,7 @@ export const ChatRequestBodySchema = z.object({
   timezone: z.string().optional(),
   thinkingMode: z.enum(['thinking', 'fast']).optional(),
   creditSource: z.enum(['personal', 'workspace']).optional(),
-  creditWsId: z.string().uuid().optional(),
+  creditWsId: z.guid().optional(),
 });
 
 export type ChatRequestBody = z.infer<typeof ChatRequestBodySchema>;

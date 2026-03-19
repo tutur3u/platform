@@ -28,7 +28,7 @@ const LabelSchema = z.object({
     }),
 });
 
-const LabelIdSchema = z.uuid();
+const LabelIdSchema = z.guid();
 
 // PATCH - Update a label
 export async function PATCH(request: NextRequest, { params }: RouteParams) {

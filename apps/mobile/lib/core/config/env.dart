@@ -44,6 +44,10 @@ class Env {
         'slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
   );
 
+  static const isTaskDescriptionEditingEnabled = bool.fromEnvironment(
+    'MOBILE_TASK_DESCRIPTION_EDITING_ENABLED',
+  );
+
   static bool get isTurnstileConfigured =>
       turnstileSiteKey.isNotEmpty && turnstileBaseUrl.isNotEmpty;
 

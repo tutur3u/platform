@@ -114,11 +114,11 @@ export const emailSourceSchema = z.object({
 // =============================================================================
 
 export const emailMetadataSchema = z.object({
-  wsId: z.string().uuid('Invalid workspace ID'),
-  userId: z.string().uuid('Invalid user ID').optional(),
+  wsId: z.guid('Invalid workspace ID'),
+  userId: z.guid('Invalid user ID').optional(),
   templateType: z.string().max(64).optional(),
   entityType: z.string().max(64).optional(),
-  entityId: z.string().uuid('Invalid entity ID').optional(),
+  entityId: z.guid('Invalid entity ID').optional(),
   ipAddress: z.string().max(45).optional(), // IPv6 max length
   userAgent: z.string().max(512).optional(),
   priority: z.enum(['high', 'normal', 'low']).optional(),

@@ -68,7 +68,7 @@ export async function GET() {
 }
 
 const updateSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   enabled: z.boolean().optional(),
   max_requests_per_day: z.number().nullable().optional(),
 });

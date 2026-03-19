@@ -36,14 +36,14 @@ const querySchema = z
       .default('UTC'),
     targetUserId: DEV_MODE
       ? z.string().max(MAX_SEARCH_LENGTH).optional()
-      : z.uuid().optional(),
+      : z.guid().optional(),
     searchQuery: z.string().max(MAX_SEARCH_LENGTH).optional(),
     categoryId: DEV_MODE
       ? z.string().max(MAX_SEARCH_LENGTH).optional()
-      : z.literal('all').or(z.uuid()).optional(),
+      : z.literal('all').or(z.guid()).optional(),
     taskId: DEV_MODE
       ? z.string().max(MAX_SEARCH_LENGTH).optional()
-      : z.uuid().optional(),
+      : z.guid().optional(),
     duration: z.enum(['all', 'short', 'medium', 'long']).optional(),
     timeOfDay: z
       .enum(['all', 'morning', 'afternoon', 'evening', 'night'])

@@ -35,6 +35,7 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.11.0
   lucide_icons: ^0.257.0
+  markdown: ^7.3.1
   mime: ^2.0.0
   package_info_plus: ^9.0.0
   path_provider: ^2.1.5
