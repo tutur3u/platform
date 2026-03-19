@@ -2,12 +2,13 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const linkTaskSchema = z.object({
   taskId: z.guid('Task id must be a valid UUID'),
@@ -338,13 +339,15 @@ export async function POST(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const { error: linkError } = await sbAdmin.rpc(
-      'link_task_project_with_actor',
+    const linkProjectPayload: TaskActorRpcArgs<'link_task_project_with_actor'> =
       {
         p_task_id: taskId,
         p_project_id: projectId,
         p_actor_user_id: user.id,
-      }
+      };
+    const { error: linkError } = await sbAdmin.rpc(
+      'link_task_project_with_actor',
+      linkProjectPayload
     );
 
     if (linkError) {

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
@@ -156,12 +157,14 @@ export async function PATCH(
         : {}),
     };
 
-    const { data, error } = await sbAdmin
-      .rpc('update_task_fields_with_actor', {
+    const updateTaskPayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =
+      {
         p_task_id: taskId,
         p_task_updates: updatePayload,
         p_actor_user_id: user.id,
-      })
+      };
+    const { data, error } = await sbAdmin
+      .rpc('update_task_fields_with_actor', updateTaskPayload)
       .maybeSingle();
 
     if (error) {

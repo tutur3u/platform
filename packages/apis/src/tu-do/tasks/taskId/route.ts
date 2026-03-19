@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
@@ -472,8 +473,8 @@ export async function PUT(
       ...(shouldUpdateCompletion ? { completed: nextCompleted } : {}),
     };
 
-    const { data: updatedTaskRow, error: updateError } = await sbAdmin
-      .rpc('update_task_with_relations', {
+    const updateTaskRelationsPayload: TaskActorRpcArgs<'update_task_with_relations'> =
+      {
         p_task_id: taskId,
         p_task_updates: updatePayload,
         p_assignee_ids: normalizedAssigneeIds,
@@ -483,7 +484,9 @@ export async function PUT(
         p_project_ids: normalizedProjectIds,
         p_replace_projects: body.project_ids !== undefined,
         p_actor_user_id: user.id,
-      })
+      };
+    const { data: updatedTaskRow, error: updateError } = await sbAdmin
+      .rpc('update_task_with_relations', updateTaskRelationsPayload)
       .maybeSingle();
 
     if (updateError) {
@@ -646,12 +649,14 @@ export async function PATCH(
       );
     }
 
-    const { data: restoredTaskRow, error: restoreError } = await sbAdmin
-      .rpc('update_task_fields_with_actor', {
+    const restoreTaskPayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =
+      {
         p_task_id: taskId,
         p_task_updates: { deleted_at: null },
         p_actor_user_id: user.id,
-      })
+      };
+    const { data: restoredTaskRow, error: restoreError } = await sbAdmin
+      .rpc('update_task_fields_with_actor', restoreTaskPayload)
       .maybeSingle();
 
     if (restoreError) {

@@ -54,12 +54,15 @@ LANGUAGE sql
 STABLE
 AS $$
   SELECT COALESCE(
-    (SELECT u.display_name FROM public.users u WHERE u.id = p_actor_user_id),
-    (SELECT u.handle FROM public.users u WHERE u.id = p_actor_user_id),
-    (SELECT upd.full_name FROM public.user_private_details upd WHERE upd.user_id = p_actor_user_id),
-    (SELECT upd.email FROM public.user_private_details upd WHERE upd.user_id = p_actor_user_id),
+    u.display_name,
+    u.handle,
+    upd.full_name,
+    upd.email,
     'System'
   )
+  FROM (SELECT 1) AS ignored
+  LEFT JOIN public.users u ON u.id = p_actor_user_id
+  LEFT JOIN public.user_private_details upd ON upd.user_id = p_actor_user_id
 $$;
 
 COMMENT ON FUNCTION public.get_task_actor_display_name(UUID) IS
@@ -143,10 +146,6 @@ BEGIN
      NEW.closed_at IS NOT DISTINCT FROM OLD.closed_at AND
      NEW.sort_key IS NOT DISTINCT FROM OLD.sort_key THEN
     RETURN NEW;
-  END IF;
-
-  IF v_actor_id IS NULL THEN
-    RAISE LOG 'notify_task_updated: actor is NULL for task %, logging with anonymous user', NEW.id;
   END IF;
 
   SELECT * INTO v_task_details FROM public.get_task_details(NEW.id);
@@ -868,6 +867,9 @@ DECLARE
   v_new_list_name TEXT;
   v_notification_data JSONB;
   v_assignee_id UUID;
+  v_label_id UUID;
+  v_project_id UUID;
+  v_notify_user_id UUID;
   v_old_label_ids UUID[] := ARRAY[]::UUID[];
   v_new_label_ids UUID[] := ARRAY[]::UUID[];
   v_old_project_ids UUID[] := ARRAY[]::UUID[];
@@ -1178,7 +1180,7 @@ BEGIN
           );
         END IF;
 
-        FOR v_assignee_id IN
+        FOR v_notify_user_id IN
           SELECT user_id
           FROM public.task_assignees
           WHERE task_id = p_task_id
@@ -1187,7 +1189,7 @@ BEGIN
         LOOP
           PERFORM public.create_notification(
             p_ws_id := v_task_details.ws_id,
-            p_user_id := v_assignee_id,
+            p_user_id := v_notify_user_id,
             p_type := 'task_assignee_added',
             p_title := 'New assignee added to task',
             p_description := v_updater_name || ' assigned ' || COALESCE(v_assigned_user.display_name, v_assigned_user.handle, 'Unknown') || ' to "' || updated_task.name || '"',
@@ -1222,34 +1224,34 @@ BEGIN
       FROM public.task_labels
       WHERE task_id = p_task_id;
 
-      FOR v_assignee_id IN
+      FOR v_label_id IN
         SELECT label_id FROM unnest(v_old_label_ids) AS label_id
         EXCEPT
         SELECT label_id FROM unnest(v_new_label_ids) AS label_id
       LOOP
         SELECT id, name, color INTO v_label
         FROM public.workspace_task_labels
-        WHERE id = v_assignee_id;
+        WHERE id = v_label_id;
 
         PERFORM public.insert_task_history(
           p_task_id,
           'label_removed',
           NULL,
-          jsonb_build_object('id', v_assignee_id, 'name', COALESCE(v_label.name, 'Unknown label'), 'color', v_label.color),
+          jsonb_build_object('id', v_label_id, 'name', COALESCE(v_label.name, 'Unknown label'), 'color', v_label.color),
           NULL,
           jsonb_build_object('ws_id', v_task_details.ws_id, 'board_id', v_task_details.board_id, 'label_name', COALESCE(v_label.name, 'Unknown label'), 'label_color', v_label.color),
           v_actor_id
         );
       END LOOP;
 
-      FOR v_assignee_id IN
+      FOR v_label_id IN
         SELECT label_id FROM unnest(v_new_label_ids) AS label_id
         EXCEPT
         SELECT label_id FROM unnest(v_old_label_ids) AS label_id
       LOOP
         SELECT * INTO v_label
         FROM public.workspace_task_labels
-        WHERE id = v_assignee_id;
+        WHERE id = v_label_id;
 
         PERFORM public.insert_task_history(
           p_task_id,
@@ -1261,7 +1263,7 @@ BEGIN
           v_actor_id
         );
 
-        FOR v_assignee_id IN
+        FOR v_notify_user_id IN
           SELECT user_id
           FROM public.task_assignees
           WHERE task_id = p_task_id
@@ -1269,7 +1271,7 @@ BEGIN
         LOOP
           PERFORM public.create_notification(
             p_ws_id := v_task_details.ws_id,
-            p_user_id := v_assignee_id,
+            p_user_id := v_notify_user_id,
             p_type := 'task_label_added',
             p_title := 'Label added to task',
             p_description := v_updater_name || ' added label "' || v_label.name || '" to "' || updated_task.name || '"',
@@ -1304,46 +1306,46 @@ BEGIN
       FROM public.task_project_tasks
       WHERE task_id = p_task_id;
 
-      FOR v_assignee_id IN
+      FOR v_project_id IN
         SELECT project_id FROM unnest(v_old_project_ids) AS project_id
         EXCEPT
         SELECT project_id FROM unnest(v_new_project_ids) AS project_id
       LOOP
         SELECT id, name INTO v_project
         FROM public.task_projects
-        WHERE id = v_assignee_id;
+        WHERE id = v_project_id;
 
         PERFORM public.insert_task_history(
           p_task_id,
           'project_unlinked',
           NULL,
-          jsonb_build_object('project_id', v_assignee_id, 'project_name', COALESCE(v_project.name, 'Unknown project')),
+          jsonb_build_object('project_id', v_project_id, 'project_name', COALESCE(v_project.name, 'Unknown project')),
           NULL,
           jsonb_build_object('ws_id', v_task_details.ws_id, 'board_id', v_task_details.board_id, 'project_name', COALESCE(v_project.name, 'Unknown project')),
           v_actor_id
         );
       END LOOP;
 
-      FOR v_assignee_id IN
+      FOR v_project_id IN
         SELECT project_id FROM unnest(v_new_project_ids) AS project_id
         EXCEPT
         SELECT project_id FROM unnest(v_old_project_ids) AS project_id
       LOOP
         SELECT id, name INTO v_project
         FROM public.task_projects
-        WHERE id = v_assignee_id;
+        WHERE id = v_project_id;
 
         PERFORM public.insert_task_history(
           p_task_id,
           'project_linked',
           NULL,
           NULL,
-          jsonb_build_object('project_id', v_assignee_id, 'project_name', COALESCE(v_project.name, 'Unknown project')),
+          jsonb_build_object('project_id', v_project_id, 'project_name', COALESCE(v_project.name, 'Unknown project')),
           jsonb_build_object('ws_id', v_task_details.ws_id, 'board_id', v_task_details.board_id, 'project_name', COALESCE(v_project.name, 'Unknown project')),
           v_actor_id
         );
 
-        FOR v_assignee_id IN
+        FOR v_notify_user_id IN
           SELECT user_id
           FROM public.task_assignees
           WHERE task_id = p_task_id
@@ -1351,7 +1353,7 @@ BEGIN
         LOOP
           PERFORM public.create_notification(
             p_ws_id := v_task_details.ws_id,
-            p_user_id := v_assignee_id,
+            p_user_id := v_notify_user_id,
             p_type := 'task_project_linked',
             p_title := 'Project linked to task',
             p_description := v_updater_name || ' linked project "' || COALESCE(v_project.name, 'Unknown project') || '" to "' || updated_task.name || '"',
@@ -1400,6 +1402,9 @@ BEGIN
   RETURN;
 END;
 $$;
+
+REVOKE EXECUTE ON FUNCTION public.insert_task_history(UUID, TEXT, TEXT, JSONB, JSONB, JSONB, UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.insert_task_history(UUID, TEXT, TEXT, JSONB, JSONB, JSONB, UUID) TO authenticated, service_role;
 
 GRANT EXECUTE ON FUNCTION public.update_task_with_relations(UUID, JSONB, UUID[], BOOLEAN, UUID[], BOOLEAN, UUID[], BOOLEAN, UUID) TO authenticated;
 

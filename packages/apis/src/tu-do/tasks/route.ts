@@ -3,7 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Database } from '@tuturuuu/types';
+import type { Database, TaskActorRpcArgs } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_TASK_DESCRIPTION_LENGTH,
@@ -577,23 +577,29 @@ export async function POST(
       normalizedProjectIds !== undefined ||
       normalizedAssigneeIds !== undefined
     ) {
+      const relationPayload: TaskActorRpcArgs<'update_task_with_relations'> = {
+        p_task_id: data.id,
+        p_task_updates: {},
+        p_assignee_ids: normalizedAssigneeIds,
+        p_replace_assignees: normalizedAssigneeIds !== undefined,
+        p_label_ids: normalizedLabelIds,
+        p_replace_labels: normalizedLabelIds !== undefined,
+        p_project_ids: normalizedProjectIds,
+        p_replace_projects: normalizedProjectIds !== undefined,
+        p_actor_user_id: user.id,
+      };
       const { error: relationError } = await sbAdmin.rpc(
         'update_task_with_relations',
-        {
-          p_task_id: data.id,
-          p_task_updates: {},
-          p_assignee_ids: normalizedAssigneeIds,
-          p_replace_assignees: normalizedAssigneeIds !== undefined,
-          p_label_ids: normalizedLabelIds,
-          p_replace_labels: normalizedLabelIds !== undefined,
-          p_project_ids: normalizedProjectIds,
-          p_replace_projects: normalizedProjectIds !== undefined,
-          p_actor_user_id: user.id,
-        }
+        relationPayload
       );
 
       if (relationError) {
         console.error('Failed to attach task relationships:', relationError);
+        await cleanupCreatedTask(sbAdmin, data.id);
+        return NextResponse.json(
+          { error: 'Failed to attach task relationships' },
+          { status: 500 }
+        );
       }
     }
 
