@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 
@@ -49,8 +52,10 @@ export async function GET(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch boards with their lists (exclude soft-deleted boards)
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('workspace_boards')
       .select(
         `

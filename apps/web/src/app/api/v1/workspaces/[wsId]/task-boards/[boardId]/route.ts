@@ -2,7 +2,10 @@ import {
   DELETE as deleteBoard,
   PUT as updateBoard,
 } from '@tuturuuu/apis/tu-do/board/boardId/route';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -52,7 +55,9 @@ export async function GET(
       );
     }
 
-    const { data: board, error } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: board, error } = await sbAdmin
       .from('workspace_boards')
       .select(
         'id, ws_id, name, icon, ticket_prefix, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues'

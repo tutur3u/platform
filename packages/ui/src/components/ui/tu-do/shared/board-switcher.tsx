@@ -7,7 +7,7 @@ import {
   Loader2,
   Trash2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -94,18 +94,8 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   const { data: boards = [], isLoading: isFetchingBoards } = useQuery({
     queryKey: ['other-boards', board.ws_id, board.id],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_boards')
-        .select('id, name, icon, archived_at, deleted_at, created_at')
-        .eq('ws_id', board.ws_id)
-        .order('name');
-
-      if (error) {
-        console.error('Failed to fetch other boards:', error);
-        throw error;
-      }
-      return (data || []) as BoardWithStatus[];
+      const payload = await listWorkspaceTaskBoards(board.ws_id);
+      return (payload.boards || []) as BoardWithStatus[];
     },
     enabled: !!board.ws_id,
   });

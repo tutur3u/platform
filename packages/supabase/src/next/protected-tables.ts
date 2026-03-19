@@ -31,6 +31,7 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'user_linked_promotions',
   'workspace_calendar_sync_log',
   'workspace_calendars',
+  'workspace_boards',
   'workspace_credit_packs',
   'workspace_debt_loans',
   'workspace_education_access_requests',

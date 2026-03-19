@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -8,7 +8,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const { wsId } = await params;
 
   const { data, error } = await supabase
@@ -29,7 +29,7 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const data = await req.json();
   const { wsId } = await params;
 

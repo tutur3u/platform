@@ -72,6 +72,9 @@ describe('Supabase Client', () => {
       expect(() => client.from('mira_accessories')).toThrow(
         getProxyOnlyPublicTableError('mira_accessories')
       );
+      expect(() => client.from('workspace_boards')).toThrow(
+        getProxyOnlyPublicTableError('workspace_boards')
+      );
       expect(client.from('users')).toEqual({ table: 'users' });
       expect(() => client.schema('public').from('mira_accessories')).toThrow(
         getProxyOnlyPublicTableError('mira_accessories')
@@ -109,6 +112,9 @@ describe('Supabase Client', () => {
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(() => client.from('workspace_calendars')).toThrow(
         getProxyOnlyPublicTableError('workspace_calendars')
+      );
+      expect(() => client.from('workspace_boards')).toThrow(
+        getProxyOnlyPublicTableError('workspace_boards')
       );
     });
   });

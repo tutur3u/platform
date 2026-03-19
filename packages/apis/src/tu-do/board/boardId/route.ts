@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -74,7 +77,9 @@ export async function PUT(req: Request, { params }: Params) {
     updateData.archived_at = archived ? new Date().toISOString() : null;
   }
 
-  const { error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { error } = await sbAdmin
     .from('workspace_boards')
     .update(updateData)
     .eq('id', parsedBoardId)
@@ -132,7 +137,9 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { error } = await sbAdmin
     .from('workspace_boards')
     .delete()
     .eq('id', parsedBoardId)

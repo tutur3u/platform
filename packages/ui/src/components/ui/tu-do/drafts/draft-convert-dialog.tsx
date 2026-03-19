@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -57,14 +58,10 @@ export function DraftConvertDialog({
   const { data: boards = [] } = useQuery({
     queryKey: ['workspace-boards', wsId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspace_boards')
-        .select('id, name')
-        .eq('ws_id', wsId)
-        .is('deleted_at', null)
-        .order('name');
-      if (error) throw error;
-      return data;
+      const payload = await listWorkspaceTaskBoards(wsId);
+      return payload.boards
+        .filter((board) => !board.deleted_at)
+        .map((board) => ({ id: board.id, name: board.name ?? '' }));
     },
     enabled: isOpen,
   });

@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -93,6 +96,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -155,7 +159,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         : null;
 
     // Create the new board in the target workspace
-    const { data: createdBoard, error: boardError } = await supabase
+    const { data: createdBoard, error: boardError } = await sbAdmin
       .from('workspace_boards')
       .insert({
         name: boardName.trim(),
