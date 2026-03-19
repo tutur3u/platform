@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -24,7 +24,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCreateBoardWithTemplate } from '@tuturuuu/utils/task-helper';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 import * as z from 'zod';
@@ -64,10 +63,40 @@ export function TaskBoardForm({
   onCancel,
 }: Props) {
   const t = useTranslations();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = React.useState(false);
   const createBoardMutation = useCreateBoardWithTemplate(wsId);
+  const updateBoardMutation = useMutation({
+    mutationFn: async ({
+      boardId,
+      name,
+      icon,
+    }: {
+      boardId: string;
+      name: string;
+      icon: string | null;
+    }) => {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/task-boards/${boardId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, icon }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res
+          .json()
+          .catch(() => ({ message: 'Unknown error occurred' }));
+        throw new Error(errorData.message || 'Failed to update board');
+      }
+
+      return res.json();
+    },
+  });
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -81,9 +110,19 @@ export function TaskBoardForm({
 
   const isDirty = form.formState.isDirty;
   const isSubmitting =
-    form.formState.isSubmitting || createBoardMutation.isPending;
+    form.formState.isSubmitting ||
+    createBoardMutation.isPending ||
+    updateBoardMutation.isPending;
 
   const isEditMode = !!data?.id;
+
+  const refreshBoardsList = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['boards', wsId] });
+    await queryClient.refetchQueries({
+      queryKey: ['boards', wsId],
+      type: 'active',
+    });
+  };
 
   // For new boards, only check if valid and not submitting
   // For editing, require the form to be dirty (changed)
@@ -96,32 +135,16 @@ export function TaskBoardForm({
       const icon = formData.icon ?? null;
 
       if (formData.id) {
-        // Update existing board (legacy API call)
-        const res = await fetch(
-          `/api/v1/workspaces/${wsId}/task-boards/${formData.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              name: boardName,
-              icon,
-            }),
-          }
-        );
+        await updateBoardMutation.mutateAsync({
+          boardId: formData.id,
+          name: boardName,
+          icon,
+        });
 
-        if (res.ok) {
-          toast.success('Board updated');
-          onFinish?.(formData);
-          setOpen(false);
-          router.refresh();
-        } else {
-          const errorData = await res
-            .json()
-            .catch(() => ({ message: 'Unknown error occurred' }));
-          toast.error(errorData.message || 'Failed to update board');
-        }
+        toast.success('Board updated');
+        onFinish?.(formData);
+        setOpen(false);
+        await refreshBoardsList();
       } else {
         // Create new board (default lists are created by DB trigger)
         // Note: cast icon to any since the mutation type uses the DB enum
@@ -137,9 +160,7 @@ export function TaskBoardForm({
         // Pass the created board data (with id) to onFinish
         onFinish?.({ ...formData, id: newBoard.id });
         setOpen(false);
-        // Ensure the boards list refreshes immediately (works for apps/tasks + ui views)
-        queryClient.invalidateQueries({ queryKey: ['boards', wsId] });
-        router.refresh();
+        await refreshBoardsList();
         form.reset();
       }
     } catch (error) {

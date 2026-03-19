@@ -16,14 +16,6 @@ const mutateAsync =
     }) => Promise<{ id: string }>
   >();
 
-const routerRefresh = vi.fn();
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    refresh: routerRefresh,
-  }),
-}));
-
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
@@ -47,7 +39,6 @@ describe('TaskBoardForm', () => {
 
   beforeEach(() => {
     mutateAsync.mockReset();
-    routerRefresh.mockReset();
 
     queryClient = new QueryClient({
       defaultOptions: {
@@ -83,8 +74,6 @@ describe('TaskBoardForm', () => {
         queryKey: ['boards', 'ws-1'],
       });
     });
-
-    expect(routerRefresh).toHaveBeenCalled();
   });
 
   it('trims the provided name before creating', async () => {
