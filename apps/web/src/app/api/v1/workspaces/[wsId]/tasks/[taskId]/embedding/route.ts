@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -38,8 +38,10 @@ export async function POST(_: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch the task
-    const { data: task, error: fetchError } = await supabase
+    const { data: task, error: fetchError } = await sbAdmin
       .from('tasks')
       .select('id, name, description')
       .eq('id', taskId)
@@ -80,7 +82,7 @@ export async function POST(_: Request, { params }: Params) {
     });
 
     // Update task with embedding
-    const { error: updateError } = await supabase
+    const { error: updateError } = await sbAdmin
       .from('tasks')
       .update({ embedding: JSON.stringify(embedding) })
       .eq('id', taskId);

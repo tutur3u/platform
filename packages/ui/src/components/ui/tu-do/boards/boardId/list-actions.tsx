@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
   ArrowRightLeft,
@@ -7,7 +7,11 @@ import {
   Pencil,
   Trash,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  createWorkspaceTaskList,
+  listWorkspaceTaskLists,
+  updateWorkspaceTaskList,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
@@ -29,7 +33,6 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
-  deleteTaskList,
   useMoveAllTasksFromList,
   useMoveTask,
 } from '@tuturuuu/utils/task-helper';
@@ -67,7 +70,6 @@ export function ListActions({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isMoveAllDialogOpen, setIsMoveAllDialogOpen] = useState(false);
-  const [isArchiving, setIsArchiving] = useState(false);
   const [newName, setNewName] = useState(listName);
 
   const queryClient = useQueryClient();
@@ -79,15 +81,143 @@ export function ListActions({
     broadcast
   );
 
-  async function handleDelete() {
-    if (!wsId || !boardId) {
-      toast.error(t('save_failed'));
-      return;
-    }
+  const deleteListMutation = useMutation({
+    mutationFn: async () => {
+      if (!wsId || !boardId) {
+        throw new Error(t('save_failed'));
+      }
 
-    await deleteTaskList(wsId, boardId, listId);
-    setIsDeleteDialogOpen(false);
-    onUpdate();
+      return updateWorkspaceTaskList(
+        wsId,
+        boardId,
+        listId,
+        { deleted: true },
+        {
+          baseUrl:
+            typeof window !== 'undefined' ? window.location.origin : undefined,
+        }
+      );
+    },
+    onSuccess: () => {
+      setIsDeleteDialogOpen(false);
+      onUpdate();
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t('save_failed'));
+    },
+  });
+
+  const renameListMutation = useMutation({
+    mutationFn: async (trimmedName: string) => {
+      if (!wsId || !boardId) {
+        throw new Error(t('save_failed'));
+      }
+
+      return updateWorkspaceTaskList(
+        wsId,
+        boardId,
+        listId,
+        { name: trimmedName },
+        {
+          baseUrl:
+            typeof window !== 'undefined' ? window.location.origin : undefined,
+        }
+      );
+    },
+    onMutate: async (trimmedName) => {
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: TaskList[] | undefined) => {
+          if (!old) return old;
+          return old.map((l) =>
+            l.id === listId ? { ...l, name: trimmedName } : l
+          );
+        }
+      );
+    },
+    onSuccess: (_, trimmedName) => {
+      broadcast?.('list:upsert', { list: { id: listId, name: trimmedName } });
+      toast.success(t('name_updated'));
+      onEditOpenChange(false);
+      onUpdate();
+    },
+    onError: (error) => {
+      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+      toast.error(error instanceof Error ? error.message : t('save_failed'));
+    },
+  });
+
+  const archiveAllTasksMutation = useMutation({
+    mutationFn: async () => {
+      if (!wsId || !boardId || tasks.length === 0) {
+        return [] as Task[];
+      }
+
+      const options = {
+        baseUrl:
+          typeof window !== 'undefined' ? window.location.origin : undefined,
+      };
+
+      const { lists } = await listWorkspaceTaskLists(wsId, boardId, options);
+      const existingClosedList = lists.find(
+        (list) => list.status === 'closed' && !list.deleted
+      );
+
+      const closedListId = existingClosedList
+        ? existingClosedList.id
+        : (
+            await createWorkspaceTaskList(
+              wsId,
+              boardId,
+              {
+                name: 'Archived',
+                status: 'closed',
+                color: 'PURPLE',
+              },
+              options
+            )
+          ).list.id;
+
+      const movedTasks: Task[] = [];
+      for (const task of tasks) {
+        const updatedTask = await moveTaskMutation.mutateAsync({
+          taskId: task.id,
+          newListId: closedListId,
+        });
+        movedTasks.push(updatedTask);
+      }
+
+      return movedTasks;
+    },
+    onSuccess: (movedTasks) => {
+      for (const updatedTask of movedTasks) {
+        broadcast?.('task:upsert', {
+          task: {
+            id: updatedTask.id,
+            list_id: updatedTask.list_id,
+            completed_at: updatedTask.completed_at,
+            closed_at: updatedTask.closed_at,
+          },
+        });
+      }
+
+      if (movedTasks.length > 0) {
+        toast.success(
+          `Successfully moved ${movedTasks.length} task${movedTasks.length !== 1 ? 's' : ''} to archive.`
+        );
+      }
+
+      onUpdate();
+      setIsArchiveDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Failed to archive tasks:', error);
+      toast.error(t('failed_to_archive_tasks'));
+    },
+  });
+
+  async function handleDelete() {
+    deleteListMutation.mutate();
   }
 
   async function handleUpdate() {
@@ -97,121 +227,16 @@ export function ListActions({
     }
 
     const trimmedName = newName.trim();
-
-    // Optimistic cache update
-    queryClient.setQueryData(
-      ['task_lists', boardId],
-      (old: TaskList[] | undefined) => {
-        if (!old) return old;
-        return old.map((l) =>
-          l.id === listId ? { ...l, name: trimmedName } : l
-        );
-      }
-    );
-
-    try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('task_lists')
-        .update({ name: trimmedName })
-        .eq('id', listId);
-      if (error) throw error;
-
-      broadcast?.('list:upsert', { list: { id: listId, name: trimmedName } });
-      toast.success(t('name_updated'));
-      onEditOpenChange(false);
-      onUpdate();
-    } catch (e: unknown) {
-      // Rollback on error
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-      toast.error(e instanceof Error ? e.message : t('save_failed'));
-    }
+    renameListMutation.mutate(trimmedName);
   }
 
   async function handleArchiveAllTasks() {
-    if (!boardId || tasks.length === 0) {
+    if (!wsId || !boardId || tasks.length === 0) {
       setIsArchiveDialogOpen(false);
       return;
     }
 
-    setIsArchiving(true);
-
-    try {
-      const supabase = createClient();
-
-      // Find or create a closed status list
-      const { data: existingClosedLists, error: fetchError } = await supabase
-        .from('task_lists')
-        .select('*')
-        .eq('board_id', boardId)
-        .eq('status', 'closed')
-        .eq('deleted', false)
-        .limit(1);
-
-      if (fetchError) throw fetchError;
-
-      let closedListId: string;
-
-      if (existingClosedLists && existingClosedLists.length > 0) {
-        // Use existing closed list
-        const firstClosedList = existingClosedLists[0];
-        if (firstClosedList) {
-          closedListId = firstClosedList.id;
-        } else {
-          throw new Error('No closed list found despite length check');
-        }
-      } else {
-        // Create new closed list
-        const { data: newClosedList, error: createError } = await supabase
-          .from('task_lists')
-          .insert({
-            name: 'Archived',
-            status: 'closed',
-            board_id: boardId,
-            position: 0,
-            color: 'PURPLE',
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        closedListId = newClosedList.id;
-      }
-
-      // Move all tasks to the closed list
-      for (const task of tasks) {
-        moveTaskMutation.mutate(
-          {
-            taskId: task.id,
-            newListId: closedListId,
-          },
-          {
-            onSuccess: (updatedTask) => {
-              broadcast?.('task:upsert', {
-                task: {
-                  id: updatedTask.id,
-                  list_id: updatedTask.list_id,
-                  completed_at: updatedTask.completed_at,
-                  closed_at: updatedTask.closed_at,
-                },
-              });
-            },
-          }
-        );
-      }
-
-      toast.success(
-        `Successfully moved ${tasks.length} task${tasks.length !== 1 ? 's' : ''} to archive.`
-      );
-
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to archive tasks:', error);
-      toast.error(t('failed_to_archive_tasks'));
-    } finally {
-      setIsArchiving(false);
-      setIsArchiveDialogOpen(false);
-    }
+    archiveAllTasksMutation.mutate();
   }
 
   // Handler for bulk moving all tasks from this list
@@ -287,7 +312,7 @@ export function ListActions({
               </DropdownMenuItem>
             </>
           )}
-          {listStatus === 'done' && tasks.length > 0 && (
+          {listStatus === 'done' && tasks.length > 0 && wsId && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setIsArchiveDialogOpen(true)}>
@@ -368,16 +393,18 @@ export function ListActions({
             <Button
               variant="ghost"
               onClick={() => setIsArchiveDialogOpen(false)}
-              disabled={isArchiving}
+              disabled={archiveAllTasksMutation.isPending}
             >
               {t('cancel')}
             </Button>
             <Button
               onClick={handleArchiveAllTasks}
-              disabled={isArchiving}
+              disabled={archiveAllTasksMutation.isPending}
               className="bg-dynamic-purple hover:bg-dynamic-purple/90"
             >
-              {isArchiving ? t('archiving') : t('archive_tasks')}
+              {archiveAllTasksMutation.isPending
+                ? t('archiving')
+                : t('archive_tasks')}
             </Button>
           </DialogFooter>
         </DialogContent>
