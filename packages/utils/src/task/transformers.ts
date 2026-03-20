@@ -16,26 +16,53 @@ function normalizeTaskUser(
     return null;
   }
 
-  if ('user' in assignee && assignee.user?.id) {
-    const { id, display_name, email, avatar_url, handle } = assignee.user;
-    return {
-      id,
-      display_name: display_name ?? undefined,
-      email: email ?? undefined,
-      avatar_url: avatar_url ?? undefined,
-      handle: handle ?? undefined,
-      user_id: id,
-    };
+  const expandedUser =
+    'user' in assignee && assignee.user && typeof assignee.user === 'object'
+      ? assignee.user
+      : null;
+
+  const effectiveUserId =
+    expandedUser?.id ??
+    ('user_id' in assignee && typeof assignee.user_id === 'string'
+      ? assignee.user_id
+      : undefined) ??
+    ('id' in assignee && typeof assignee.id === 'string'
+      ? assignee.id
+      : undefined);
+
+  if (!effectiveUserId) {
+    return null;
   }
 
-  if ('id' in assignee && assignee.id) {
-    return {
-      ...(assignee as TaskUser),
-      user_id: assignee.id,
-    };
-  }
+  const displayName =
+    expandedUser?.display_name ??
+    ('display_name' in assignee && typeof assignee.display_name === 'string'
+      ? assignee.display_name
+      : undefined);
+  const email =
+    expandedUser?.email ??
+    ('email' in assignee && typeof assignee.email === 'string'
+      ? assignee.email
+      : undefined);
+  const avatarUrl =
+    expandedUser?.avatar_url ??
+    ('avatar_url' in assignee && typeof assignee.avatar_url === 'string'
+      ? assignee.avatar_url
+      : undefined);
+  const handle =
+    expandedUser?.handle ??
+    ('handle' in assignee && typeof assignee.handle === 'string'
+      ? assignee.handle
+      : undefined);
 
-  return null;
+  return {
+    id: effectiveUserId,
+    ...(displayName ? { display_name: displayName } : {}),
+    ...(email ? { email } : {}),
+    ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+    ...(handle ? { handle } : {}),
+    user_id: effectiveUserId,
+  };
 }
 
 export function transformAssignees(

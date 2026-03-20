@@ -194,4 +194,42 @@ describe('useProgressiveBoardLoader', () => {
       },
     ]);
   });
+
+  it('overwrites local mutation when _localMutationAt precedes request start', async () => {
+    const cachedTask = {
+      id: 'task-1',
+      display_number: 1,
+      name: 'Task',
+      list_id: 'done-list',
+      created_at: '2026-03-19T00:00:00.000Z',
+      _localMutationAt: Date.now() - 60_000,
+    } as Task;
+    const { _localMutationAt: _ignored, ...serverTask } = cachedTask as Task & {
+      _localMutationAt?: number;
+    };
+
+    queryClient.setQueryData(['tasks', 'board-1'], [cachedTask]);
+
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [
+        {
+          ...serverTask,
+          list_id: 'todo-list',
+        },
+      ],
+    });
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1'),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.loadListPage('todo-list', 0);
+    });
+
+    const tasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
+    expect(tasks?.[0]?.list_id).toBe('todo-list');
+    expect(tasks?.[0]).not.toHaveProperty('_localMutationAt');
+  });
 });
