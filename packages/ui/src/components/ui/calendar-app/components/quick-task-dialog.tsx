@@ -157,7 +157,7 @@ export function QuickTaskDialog({
 
     setIsSubmitting(true);
     try {
-      const newTask = await createTask(supabase, selectedListId, {
+      const newTask = await createTask(supabase, wsId, selectedListId, {
         name: taskName.trim(),
       });
 

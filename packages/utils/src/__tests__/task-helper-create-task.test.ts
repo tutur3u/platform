@@ -98,7 +98,7 @@ describe('createTask scheduling persistence', () => {
   it('sends null scheduling fields when none are provided', async () => {
     const { supabase } = createSupabaseMock();
 
-    await createTask(supabase, 'list-1', {
+    await createTask(supabase, 'ws-1', 'list-1', {
       name: 'Task title',
     });
 
@@ -138,7 +138,7 @@ describe('createTask scheduling persistence', () => {
       auto_schedule: true,
     };
 
-    await createTask(supabase, 'list-1', taskInput);
+    await createTask(supabase, 'ws-1', 'list-1', taskInput);
 
     expect(mockCreateWorkspaceTask).toHaveBeenCalledTimes(1);
     expect(mockCreateWorkspaceTask).toHaveBeenCalledWith(
@@ -168,7 +168,7 @@ describe('createTask scheduling persistence', () => {
       auto_schedule: false,
     };
 
-    await createTask(supabase, 'list-1', taskInput);
+    await createTask(supabase, 'ws-1', 'list-1', taskInput);
 
     expect(mockCreateWorkspaceTask).toHaveBeenCalledTimes(1);
     expect(mockCreateWorkspaceTask).toHaveBeenCalledWith(

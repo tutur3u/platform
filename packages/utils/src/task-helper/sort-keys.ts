@@ -3,7 +3,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
-import { getMutationApiOptions, resolveListContext } from './shared';
+import { getMutationApiOptions } from './shared';
 
 export function priorityCompare(
   priorityA: TaskPriority | null | undefined,
@@ -213,6 +213,7 @@ export function normalizeSortKeys(tasks: Task[]): Task[] {
 
 export async function normalizeListSortKeys(
   supabase: TypedSupabaseClient,
+  wsId: string,
   listId: string,
   visualOrderTasks?: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
 ): Promise<void> {
@@ -272,7 +273,6 @@ export async function normalizeListSortKeys(
     sort_key: (index + 1) * SORT_KEY_BASE_UNIT,
   }));
 
-  const { wsId } = await resolveListContext(supabase, listId);
   const options = await getMutationApiOptions(supabase);
 
   await Promise.all(

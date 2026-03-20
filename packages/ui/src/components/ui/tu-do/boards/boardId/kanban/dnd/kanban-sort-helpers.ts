@@ -26,6 +26,7 @@ import {
  */
 export async function calculateSortKeyWithRetry(
   supabase: SupabaseClient,
+  wsId: string,
   prevSortKey: number | null | undefined,
   nextSortKey: number | null | undefined,
   listId: string,
@@ -48,7 +49,7 @@ export async function calculateSortKeyWithRetry(
       try {
         // Normalize the list sort keys to match visual order
         // If visual order is provided, use it; otherwise normalize by database order
-        await normalizeListSortKeys(supabase, listId, visualOrderTasks);
+        await normalizeListSortKeys(supabase, wsId, listId, visualOrderTasks);
         console.log('✅ List sort keys normalized, refetching...');
 
         // After normalization, we can't reuse the old prev/next values

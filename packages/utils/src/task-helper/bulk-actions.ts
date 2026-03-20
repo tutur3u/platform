@@ -194,6 +194,7 @@ export function useMoveAllTasksFromList(
 
 export async function moveAllTasksFromList(
   supabase: TypedSupabaseClient,
+  wsId: string,
   sourceListId: string,
   targetListId: string,
   targetBoardId?: string
@@ -220,7 +221,13 @@ export async function moveAllTasksFromList(
 
   for (const task of tasksToMove) {
     try {
-      await moveTaskToBoard(supabase, task.id, targetListId, targetBoardId);
+      await moveTaskToBoard(
+        supabase,
+        wsId,
+        task.id,
+        targetListId,
+        targetBoardId
+      );
       results.push({
         status: 'fulfilled',
         value: { success: true, taskId: task.id },

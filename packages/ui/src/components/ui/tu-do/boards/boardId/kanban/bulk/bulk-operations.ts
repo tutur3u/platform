@@ -474,6 +474,7 @@ function useBulkMoveToBoard(
         try {
           const result = await moveTaskToBoard(
             supabase,
+            boardId,
             taskId,
             targetListId,
             targetBoardId

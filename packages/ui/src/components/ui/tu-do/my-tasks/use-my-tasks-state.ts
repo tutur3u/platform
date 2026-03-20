@@ -412,7 +412,10 @@ export function useMyTasksState({
   });
 
   // Board config for estimation
-  const { data: boardConfig } = useBoardConfig(selectedBoardId || undefined);
+  const { data: boardConfig } = useBoardConfig(
+    selectedBoardId || undefined,
+    selectedWorkspaceId || undefined
+  );
 
   // Available lists for selected board
   const availableLists = useMemo(() => {
@@ -638,14 +641,19 @@ export function useMyTasksState({
         '@tuturuuu/utils/task-helper'
       );
 
-      const newTask = await createTaskFn(supabase, selectedListId, {
-        name: title.trim(),
-        description: undefined,
-        priority: options?.priority || undefined,
-        start_date: undefined,
-        end_date: options?.dueDate?.toISOString() || undefined,
-        estimation_points: options?.estimationPoints || undefined,
-      });
+      const newTask = await createTaskFn(
+        supabase,
+        selectedWorkspaceId,
+        selectedListId,
+        {
+          name: title.trim(),
+          description: undefined,
+          priority: options?.priority || undefined,
+          start_date: undefined,
+          end_date: options?.dueDate?.toISOString() || undefined,
+          estimation_points: options?.estimationPoints || undefined,
+        }
+      );
 
       if (options?.labelIds && options.labelIds.length > 0 && newTask?.id) {
         await supabase.from('task_labels').insert(

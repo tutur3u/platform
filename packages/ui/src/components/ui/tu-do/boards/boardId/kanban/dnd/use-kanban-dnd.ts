@@ -18,6 +18,7 @@ import { useAutoScroll } from './auto-scroll';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 
 interface UseKanbanDndProps {
+  wsId: string;
   boardId: string | null;
   columns: TaskList[];
   tasks: Task[];
@@ -32,6 +33,7 @@ interface UseKanbanDndProps {
 }
 
 export function useKanbanDnd({
+  wsId,
   boardId,
   columns,
   tasks,
@@ -78,12 +80,13 @@ export function useKanbanDnd({
     ) =>
       createCalculateSortKeyWithRetry(
         supabase,
+        wsId,
         prevSortKey,
         nextSortKey,
         listId,
         visualOrderTasks
       ),
-    [supabase]
+    [supabase, wsId]
   );
 
   // Initialize auto-scroll

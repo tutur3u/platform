@@ -2,7 +2,6 @@ import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 
 export function getTicketIdentifier(
   prefix: string | null | undefined,
@@ -94,53 +93,6 @@ export async function listAllActiveTasksForList(wsId: string, listId: string) {
   }
 
   return tasks;
-}
-
-export async function resolveListContext(
-  supabase: TypedSupabaseClient,
-  listId: string
-): Promise<{ wsId: string; boardId: string; status: TaskBoardStatus | null }> {
-  const { data, error } = await supabase
-    .from('task_lists')
-    .select('id, board_id, status, workspace_boards!inner(ws_id)')
-    .eq('id', listId)
-    .single();
-
-  if (error) throw error;
-
-  const wsId = data.workspace_boards?.ws_id;
-  if (!wsId) throw new Error('List not found');
-
-  return {
-    wsId,
-    boardId: data.board_id,
-    status: (data.status as TaskBoardStatus | null) ?? null,
-  };
-}
-
-export async function resolveTaskContext(
-  supabase: TypedSupabaseClient,
-  taskId: string
-): Promise<{ wsId: string; boardId: string; listId: string }> {
-  const { data, error } = await supabase
-    .from('tasks')
-    .select(
-      'id, list_id, task_lists!inner(board_id, workspace_boards!inner(ws_id))'
-    )
-    .eq('id', taskId)
-    .single();
-
-  if (error) throw error;
-
-  const wsId = data.task_lists?.workspace_boards?.ws_id;
-  const boardId = data.task_lists?.board_id;
-  if (!wsId || !boardId || !data.list_id) throw new Error('Task not found');
-
-  return {
-    wsId,
-    boardId,
-    listId: data.list_id,
-  };
 }
 
 export function toWorkspaceTaskUpdatePayload(

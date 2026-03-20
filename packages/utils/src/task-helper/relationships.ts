@@ -24,14 +24,13 @@ import {
   getTaskIdentifierForSearch,
   isTicketIdentifierLikeQuery,
   normalizeTaskSearchValue,
-  resolveTaskContext,
 } from './shared';
 
 export async function getTaskRelationships(
-  supabase: TypedSupabaseClient,
+  _supabase: TypedSupabaseClient,
+  wsId: string,
   taskId: string
 ): Promise<TaskRelationshipsResponse> {
-  const { wsId } = await resolveTaskContext(supabase, taskId);
   const payload = await getWorkspaceTaskRelationships(
     wsId,
     taskId,
@@ -42,9 +41,9 @@ export async function getTaskRelationships(
 
 export async function createTaskRelationship(
   supabase: TypedSupabaseClient,
+  wsId: string,
   input: CreateTaskRelationshipInput
 ): Promise<TaskRelationship> {
-  const { wsId } = await resolveTaskContext(supabase, input.source_task_id);
   const options = await getMutationApiOptions(supabase);
 
   try {
@@ -77,6 +76,7 @@ export async function createTaskRelationship(
 
 export async function deleteTaskRelationship(
   supabase: TypedSupabaseClient,
+  wsId: string,
   relationshipId: string
 ): Promise<void> {
   const options = await getMutationApiOptions(supabase);
@@ -89,7 +89,6 @@ export async function deleteTaskRelationship(
   if (error) throw error;
   if (!data) return;
 
-  const { wsId } = await resolveTaskContext(supabase, data.source_task_id);
   await deleteWorkspaceTaskRelationship(
     wsId,
     data.source_task_id,

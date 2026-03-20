@@ -106,7 +106,7 @@ export function KanbanBoard({
   const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
 
-  const { data: boardConfig } = useBoardConfig(boardId);
+  const { data: boardConfig } = useBoardConfig(boardId, workspaceId);
 
   // Move list mutation for reordering columns
   const moveListMutation = useMutation({
@@ -234,6 +234,7 @@ export function KanbanBoard({
     onDragOver,
     onDragEnd,
   } = useKanbanDnd({
+    wsId: workspaceId,
     boardId,
     columns,
     tasks,

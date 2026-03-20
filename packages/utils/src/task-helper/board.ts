@@ -4,10 +4,11 @@ import {
   createWorkspaceTaskBoard,
   getWorkspaceTaskBoard as getWorkspaceTaskBoardFromApi,
   listWorkspaceLabels,
-  resolveTaskProjectWorkspaceId,
+  updateWorkspaceTaskList,
 } from '@tuturuuu/internal-api/tasks';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, WorkspaceTaskBoard } from '@tuturuuu/types';
+import { getMutationApiOptions } from './shared';
 
 export async function getTaskBoard(
   _supabase: TypedSupabaseClient,
@@ -46,6 +47,24 @@ export async function createBoardWithTemplate(
   );
 
   return payload.board as WorkspaceTaskBoard;
+}
+
+export async function deleteTaskList(
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  boardId: string,
+  listId: string
+) {
+  const options = await getMutationApiOptions(supabase);
+  const { list } = await updateWorkspaceTaskList(
+    wsId,
+    boardId,
+    listId,
+    { deleted: true },
+    options
+  );
+
+  return list;
 }
 
 export function useCreateBoardWithTemplate(wsId: string) {
@@ -148,19 +167,18 @@ export interface BoardConfig {
   ticket_prefix: string | null;
 }
 
-export function useBoardConfig(boardId: string | null | undefined) {
+export function useBoardConfig(
+  boardId: string | null | undefined,
+  wsId: string | null | undefined
+) {
   return useQuery({
-    queryKey: ['board-config', boardId],
+    queryKey: ['board-config', wsId, boardId],
     queryFn: async () => {
-      if (!boardId) return null;
-
-      const workspaceId = await resolveTaskProjectWorkspaceId({ boardId });
-
-      if (!workspaceId) {
+      if (!boardId || !wsId) {
         return null;
       }
 
-      const payload = await getWorkspaceTaskBoardFromApi(workspaceId, boardId);
+      const payload = await getWorkspaceTaskBoardFromApi(wsId, boardId);
       const board = payload.board;
 
       return {
@@ -172,7 +190,7 @@ export function useBoardConfig(boardId: string | null | undefined) {
         ticket_prefix: board.ticket_prefix ?? null,
       } as BoardConfig;
     },
-    enabled: Boolean(boardId),
+    enabled: Boolean(boardId && wsId),
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });

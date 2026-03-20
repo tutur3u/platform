@@ -126,7 +126,7 @@ export function AddTaskForm({
   const workspaceId = wsId;
 
   // Fetch board config for estimation settings
-  const { data: boardConfig } = useBoardConfig(selectedBoardId);
+  const { data: boardConfig } = useBoardConfig(selectedBoardId, wsId);
 
   // Fetch workspace labels (only after board and list are selected)
   const { data: workspaceLabels = [], isLoading: labelsLoading } = useQuery({

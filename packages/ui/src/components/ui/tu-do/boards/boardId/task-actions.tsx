@@ -47,6 +47,7 @@ import {
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
+import { useParams } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 
 interface Props {
@@ -60,7 +61,9 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const { toast } = useToast();
   const nameId = useId();
   const descriptionId = useId();
-  const { data: boardConfig } = useBoardConfig(boardId);
+  const params = useParams();
+  const routeWsId = params.wsId as string | undefined;
+  const { data: boardConfig } = useBoardConfig(boardId, routeWsId);
   const workspaceId = boardConfig?.ws_id;
 
   // Fetch the latest task data using React Query

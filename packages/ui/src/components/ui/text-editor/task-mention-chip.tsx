@@ -20,6 +20,7 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import { useParams } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTaskActions } from '../../../hooks/use-task-actions';
@@ -280,6 +281,8 @@ export function TaskMentionChip({
   const queryClient = useQueryClient();
   const supabase = createClient();
   const { resolvedTheme } = useTheme();
+  const params = useParams();
+  const routeWsId = params.wsId as string | undefined;
   const isDark = resolvedTheme === 'dark';
 
   // Dialog states
@@ -365,7 +368,7 @@ export function TaskMentionChip({
   });
 
   // Get board config - only fetch when menu opens and we have task data
-  const { data: boardConfig } = useBoardConfig(task?.board_id);
+  const { data: boardConfig } = useBoardConfig(task?.board_id, routeWsId);
 
   // Fetch workspace labels
   const { data: workspaceLabels = [], isLoading: labelsLoading } =

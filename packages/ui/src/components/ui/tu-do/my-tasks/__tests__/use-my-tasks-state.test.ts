@@ -499,6 +499,7 @@ describe('useMyTasksState', () => {
 
       expect(mockCreateTaskFn).toHaveBeenCalledWith(
         expect.anything(), // supabase client
+        'ws-1',
         'list-1',
         expect.objectContaining({ name: 'New task' })
       );

@@ -8,12 +8,7 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Task, TaskAssignee } from '@tuturuuu/types/primitives/Task';
 
-import {
-  getMutationApiOptions,
-  resolveListContext,
-  resolveTaskContext,
-  toWorkspaceTaskUpdatePayload,
-} from './shared';
+import { getMutationApiOptions, toWorkspaceTaskUpdatePayload } from './shared';
 
 export async function getTaskAssignees(
   supabase: TypedSupabaseClient,
@@ -30,6 +25,7 @@ export async function getTaskAssignees(
 
 export async function createTask(
   supabase: TypedSupabaseClient,
+  wsId: string,
   listId: string,
   task: Partial<Task> & {
     description_yjs_state?: number[];
@@ -71,7 +67,10 @@ export async function createTask(
     throw new Error('List not found');
   }
 
-  const listContext = await resolveListContext(supabase, listId);
+  if (!wsId) {
+    throw new Error('Workspace ID is required');
+  }
+
   const schedulingInput = task as Partial<{
     total_duration: number | null;
     is_splittable: boolean | null;
@@ -83,7 +82,7 @@ export async function createTask(
 
   const options = await getMutationApiOptions(supabase);
   const { task: createdTask } = await createWorkspaceTask(
-    listContext.wsId,
+    wsId,
     {
       name: task.name.trim(),
       description: task.description || null,
@@ -126,10 +125,14 @@ export async function createTask(
 
 export async function updateTask(
   supabase: TypedSupabaseClient,
+  wsId: string,
   taskId: string,
   task: Partial<Task> & { completed?: boolean }
 ) {
-  const { wsId } = await resolveTaskContext(supabase, taskId);
+  if (!wsId) {
+    throw new Error('Workspace ID is required');
+  }
+
   const options = await getMutationApiOptions(supabase);
   const { task: data } = await updateWorkspaceTask(
     wsId,
@@ -182,6 +185,7 @@ export async function invalidateTaskCaches(
 
 export async function syncTaskArchivedStatus(
   supabase: TypedSupabaseClient,
+  wsId: string,
   taskId: string,
   listId: string
 ) {
@@ -211,7 +215,6 @@ export async function syncTaskArchivedStatus(
 
   if (!!task.closed_at !== shouldArchive) {
     try {
-      const { wsId } = await resolveTaskContext(supabase, taskId);
       const options = await getMutationApiOptions(supabase);
       await updateWorkspaceTask(
         wsId,
@@ -245,11 +248,15 @@ export async function moveTask(
 
 export async function moveTaskToBoard(
   supabase: TypedSupabaseClient,
+  wsId: string,
   taskId: string,
   newListId: string,
   targetBoardId?: string
 ) {
-  const { wsId } = await resolveTaskContext(supabase, taskId);
+  if (!wsId) {
+    throw new Error('Workspace ID is required');
+  }
+
   const options = await getMutationApiOptions(supabase);
   const result = await moveWorkspaceTask(
     wsId,

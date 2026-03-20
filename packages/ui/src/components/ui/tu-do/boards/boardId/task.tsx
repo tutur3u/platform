@@ -191,7 +191,8 @@ function TaskCardInner({
   );
 
   // Use React Query hooks for shared data (cached across all task cards)
-  const { data: boardConfig } = useBoardConfig(boardId);
+  const workspaceContextWsId = workspaceId ?? wsId;
+  const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
   const effectiveWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
   const taskShareWsId = effectiveWorkspaceId;
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
@@ -525,6 +526,10 @@ function TaskCardInner({
 
       // Duplicate all tasks
       for (const sourceTask of tasksToDuplicate) {
+        if (!effectiveWorkspaceId) {
+          throw new Error('Workspace ID is required to duplicate tasks');
+        }
+
         const taskData: Partial<Task> = {
           name: sourceTask.name.trim(),
           description: sourceTask.description,
@@ -536,6 +541,7 @@ function TaskCardInner({
 
         const newTask = await createTask(
           supabase,
+          effectiveWorkspaceId,
           sourceTask.list_id,
           taskData
         );

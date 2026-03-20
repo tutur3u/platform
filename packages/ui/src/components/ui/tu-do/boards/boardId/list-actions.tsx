@@ -80,8 +80,13 @@ export function ListActions({
   );
 
   async function handleDelete() {
+    if (!wsId || !boardId) {
+      toast.error(t('save_failed'));
+      return;
+    }
+
     const supabase = createClient();
-    await deleteTaskList(supabase, listId);
+    await deleteTaskList(supabase, wsId, boardId, listId);
     setIsDeleteDialogOpen(false);
     onUpdate();
   }
