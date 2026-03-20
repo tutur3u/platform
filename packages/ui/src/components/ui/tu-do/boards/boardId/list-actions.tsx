@@ -212,11 +212,11 @@ export function ListActions({
     },
   });
 
-  async function handleDelete() {
+  function handleDelete() {
     deleteListMutation.mutate();
   }
 
-  async function handleUpdate() {
+  function handleUpdate() {
     if (!newName.trim() || newName === listName) {
       onEditOpenChange(false);
       return;
@@ -226,7 +226,7 @@ export function ListActions({
     renameListMutation.mutate(trimmedName);
   }
 
-  async function handleArchiveAllTasks() {
+  function handleArchiveAllTasks() {
     if (!wsId || !boardId || tasks.length === 0) {
       setIsArchiveDialogOpen(false);
       return;

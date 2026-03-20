@@ -21,6 +21,47 @@ export async function getTaskAssignees(wsId: string, taskId: string) {
   return task.assignees ?? [];
 }
 
+function buildTaskArchivedStatusUpdates(
+  task: {
+    completed?: boolean | null;
+    completed_at?: string | null;
+    closed_at?: string | null;
+  },
+  listStatus: string | null | undefined
+) {
+  const updates: {
+    completed?: boolean;
+    completed_at?: string | null;
+    closed_at?: string | null;
+  } = {};
+
+  if (listStatus === 'done') {
+    if (task.completed !== true || !task.completed_at || task.closed_at) {
+      updates.completed = true;
+      updates.completed_at = new Date().toISOString();
+      updates.closed_at = null;
+    }
+  } else if (listStatus === 'closed') {
+    if (task.completed !== false || !task.closed_at || task.completed_at) {
+      updates.completed = false;
+      updates.closed_at = new Date().toISOString();
+      updates.completed_at = null;
+    }
+  } else {
+    if (task.completed !== false) {
+      updates.completed = false;
+    }
+    if (task.completed_at) {
+      updates.completed_at = null;
+    }
+    if (task.closed_at) {
+      updates.closed_at = null;
+    }
+  }
+
+  return updates;
+}
+
 export async function createTask(
   wsId: string,
   listId: string,
@@ -79,14 +120,6 @@ export async function createTask(
     options
   );
 
-  if (createdTask) {
-    triggerWorkspaceTaskEmbedding(wsId, createdTask.id, options).catch(
-      (err) => {
-        console.error('Failed to generate embedding:', err);
-      }
-    );
-  }
-
   return createdTask as Task;
 }
 
@@ -108,9 +141,11 @@ export async function updateTask(
   );
 
   if ((task.name !== undefined || task.description !== undefined) && data) {
-    triggerWorkspaceTaskEmbedding(wsId, taskId, options).catch((err) => {
-      console.error('Failed to regenerate embedding:', err);
-    });
+    triggerWorkspaceTaskEmbedding(wsId, taskId, options).catch(
+      (err: unknown) => {
+        console.error('Failed to regenerate embedding:', err);
+      }
+    );
   }
 
   return data as Task;
@@ -156,32 +191,9 @@ export async function syncTaskArchivedStatus(
 
   if (!list) {
     console.error('Error fetching list status: list not found', { listId });
-    return;
+    throw new Error(`Task list not found: ${listId}`);
   }
-
-  const updates: {
-    completed_at?: string | null;
-    closed_at?: string | null;
-  } = {};
-
-  if (list.status === 'done') {
-    if (!task.completed_at || task.closed_at) {
-      updates.completed_at = new Date().toISOString();
-      updates.closed_at = null;
-    }
-  } else if (list.status === 'closed') {
-    if (!task.closed_at || task.completed_at) {
-      updates.closed_at = new Date().toISOString();
-      updates.completed_at = null;
-    }
-  } else {
-    if (task.completed_at) {
-      updates.completed_at = null;
-    }
-    if (task.closed_at) {
-      updates.closed_at = null;
-    }
-  }
+  const updates = buildTaskArchivedStatusUpdates(task, list.status);
 
   if (Object.keys(updates).length === 0) {
     return;
@@ -202,19 +214,39 @@ export async function moveTask(
   newListId: string,
   options?: InternalApiClientOptions
 ) {
+  const clientOptions = options ?? getBrowserApiOptions();
+  const [{ boards }, { task }] = await Promise.all([
+    listWorkspaceBoardsWithLists(wsId, clientOptions),
+    getWorkspaceTask(wsId, taskId, clientOptions),
+  ]);
+
+  const targetList = boards
+    .flatMap((board) => board.task_lists)
+    .find((list) => list.id === newListId);
+
+  if (!targetList) {
+    throw new Error(`Task list not found: ${newListId}`);
+  }
+
+  const updates = buildTaskArchivedStatusUpdates(task, targetList.status);
+  const mutationOptions = options ?? (await getMutationApiOptions());
+
   await updateWorkspaceTask(
     wsId,
     taskId,
     {
       list_id: newListId,
+      ...updates,
     },
-    options
+    mutationOptions
   );
 
-  await syncTaskArchivedStatus(wsId, taskId, newListId, options);
-
-  const { task } = await getWorkspaceTask(wsId, taskId, options);
-  return task as Task;
+  const { task: updatedTask } = await getWorkspaceTask(
+    wsId,
+    taskId,
+    clientOptions
+  );
+  return updatedTask as Task;
 }
 
 export async function moveTaskToBoard(

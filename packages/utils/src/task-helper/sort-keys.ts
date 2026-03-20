@@ -212,45 +212,67 @@ export function normalizeSortKeys(tasks: Task[]): Task[] {
   }));
 }
 
+function sortTasksByPersistedOrder(
+  tasks: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
+) {
+  return [...tasks].sort((a, b) => {
+    const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
+    const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
+    if (sortA !== sortB) return sortA - sortB;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+}
+
+function reorderCanonicalTasksFromVisualOrder(
+  canonicalTasks: Pick<Task, 'id' | 'sort_key' | 'created_at'>[],
+  visualOrderTasks: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
+) {
+  const visualOrderById = new Map(
+    visualOrderTasks.map((task, index) => [task.id, index] as const)
+  );
+
+  const coversCanonicalList =
+    visualOrderById.size === canonicalTasks.length &&
+    canonicalTasks.every((task) => visualOrderById.has(task.id));
+
+  if (!coversCanonicalList) {
+    return canonicalTasks;
+  }
+
+  return [...canonicalTasks].sort(
+    (a, b) => visualOrderById.get(a.id)! - visualOrderById.get(b.id)!
+  );
+}
+
 export async function normalizeListSortKeys(
   wsId: string,
   listId: string,
   visualOrderTasks?: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
 ): Promise<void> {
-  let tasks: Pick<Task, 'id' | 'sort_key' | 'created_at'>[];
-
   if (visualOrderTasks !== undefined) {
     if (visualOrderTasks.length === 0) {
       return;
     }
-
-    tasks = visualOrderTasks;
-  } else {
-    const fetchedTasks = await listAllActiveTasksForList(wsId, listId);
-
-    if (!fetchedTasks.length) {
-      return;
-    }
-
-    tasks = fetchedTasks
-      .map((task) => ({
-        id: task.id,
-        sort_key: task.sort_key ?? null,
-        created_at: task.created_at,
-      }))
-      .sort((a, b) => {
-        const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
-        const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
-        if (sortA !== sortB) return sortA - sortB;
-        return (
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-      });
   }
 
-  if (tasks.length === 0) {
+  const fetchedTasks = await listAllActiveTasksForList(wsId, listId);
+
+  if (!fetchedTasks.length) {
     return;
   }
+
+  const canonicalTasks = sortTasksByPersistedOrder(
+    fetchedTasks.map((task) => ({
+      id: task.id,
+      sort_key: task.sort_key ?? null,
+      created_at: task.created_at,
+    }))
+  );
+
+  const tasks =
+    visualOrderTasks !== undefined
+      ? reorderCanonicalTasksFromVisualOrder(canonicalTasks, visualOrderTasks)
+      : canonicalTasks;
 
   if (!visualOrderTasks) {
     const needsNormalization = hasSortKeyCollisions(tasks);

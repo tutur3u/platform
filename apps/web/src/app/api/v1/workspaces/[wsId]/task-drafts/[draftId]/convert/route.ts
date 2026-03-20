@@ -75,6 +75,11 @@ export async function POST(
 ) {
   try {
     const { wsId: rawWsId, draftId } = await params;
+    const parsedDraftId = z.guid().safeParse(draftId);
+    if (!parsedDraftId.success) {
+      return NextResponse.json({ error: 'Invalid draft ID' }, { status: 400 });
+    }
+
     const supabase = await createClient(request);
 
     const {
@@ -144,7 +149,7 @@ export async function POST(
     const { data: claimedDraft, error: claimError } = await sbAdmin
       .from('task_drafts')
       .delete()
-      .eq('id', draftId)
+      .eq('id', parsedDraftId.data)
       .eq('ws_id', wsId)
       .eq('creator_id', user.id)
       .select('*')
