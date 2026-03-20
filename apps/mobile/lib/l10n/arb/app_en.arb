@@ -8,23 +8,9 @@
 
     "loginTitle": "Welcome back",
     "loginSubtitle": "Sign in to continue",
-    "authTagline": "Your AI productivity companion",
-    "loginTabOtp": "OTP",
-    "loginTabPassword": "Password",
-    "loginSendOtp": "Send OTP",
-    "loginVerifyOtp": "Verify OTP",
-    "loginRetryAfter": "Retry in {seconds}s",
-    "@loginRetryAfter": {
-        "placeholders": {
-            "seconds": {
-                "type": "int"
-            }
-        }
-    },
     "loginSignIn": "Sign in",
     "authContinueWithGoogle": "Continue with Google",
     "authContinueWithEmail": "or continue with email",
-    "authGoogleLoading": "Connecting to Google...",
     "authGoogleSignInFailed": "Google sign-in failed. Please try again.",
     "authGoogleBrowserLaunchFailed": "Unable to open Google sign-in right now.",
     "authLogOut": "Log out",

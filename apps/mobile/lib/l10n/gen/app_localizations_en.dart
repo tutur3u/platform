@@ -24,26 +24,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSubtitle => 'Sign in to continue';
 
   @override
-  String get authTagline => 'Your AI productivity companion';
-
-  @override
-  String get loginTabOtp => 'OTP';
-
-  @override
-  String get loginTabPassword => 'Password';
-
-  @override
-  String get loginSendOtp => 'Send OTP';
-
-  @override
-  String get loginVerifyOtp => 'Verify OTP';
-
-  @override
-  String loginRetryAfter(int seconds) {
-    return 'Retry in ${seconds}s';
-  }
-
-  @override
   String get loginSignIn => 'Sign in';
 
   @override
@@ -51,9 +31,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authContinueWithEmail => 'or continue with email';
-
-  @override
-  String get authGoogleLoading => 'Connecting to Google...';
 
   @override
   String get authGoogleSignInFailed => 'Google sign-in failed. Please try again.';

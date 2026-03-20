@@ -121,42 +121,6 @@ abstract class AppLocalizations {
   /// **'Sign in to continue'**
   String get loginSubtitle;
 
-  /// No description provided for @authTagline.
-  ///
-  /// In en, this message translates to:
-  /// **'Your AI productivity companion'**
-  String get authTagline;
-
-  /// No description provided for @loginTabOtp.
-  ///
-  /// In en, this message translates to:
-  /// **'OTP'**
-  String get loginTabOtp;
-
-  /// No description provided for @loginTabPassword.
-  ///
-  /// In en, this message translates to:
-  /// **'Password'**
-  String get loginTabPassword;
-
-  /// No description provided for @loginSendOtp.
-  ///
-  /// In en, this message translates to:
-  /// **'Send OTP'**
-  String get loginSendOtp;
-
-  /// No description provided for @loginVerifyOtp.
-  ///
-  /// In en, this message translates to:
-  /// **'Verify OTP'**
-  String get loginVerifyOtp;
-
-  /// No description provided for @loginRetryAfter.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry in {seconds}s'**
-  String loginRetryAfter(int seconds);
-
   /// No description provided for @loginSignIn.
   ///
   /// In en, this message translates to:
@@ -174,12 +138,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'or continue with email'**
   String get authContinueWithEmail;
-
-  /// No description provided for @authGoogleLoading.
-  ///
-  /// In en, this message translates to:
-  /// **'Connecting to Google...'**
-  String get authGoogleLoading;
 
   /// No description provided for @authGoogleSignInFailed.
   ///

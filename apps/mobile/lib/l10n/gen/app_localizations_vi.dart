@@ -24,26 +24,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loginSubtitle => 'Đăng nhập để tiếp tục';
 
   @override
-  String get authTagline => 'Người bạn đồng hành AI cho công việc';
-
-  @override
-  String get loginTabOtp => 'OTP';
-
-  @override
-  String get loginTabPassword => 'Mật khẩu';
-
-  @override
-  String get loginSendOtp => 'Gửi OTP';
-
-  @override
-  String get loginVerifyOtp => 'Xác thực OTP';
-
-  @override
-  String loginRetryAfter(int seconds) {
-    return 'Thử lại sau $seconds giây';
-  }
-
-  @override
   String get loginSignIn => 'Đăng nhập';
 
   @override
@@ -51,9 +31,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get authContinueWithEmail => 'hoặc tiếp tục với email';
-
-  @override
-  String get authGoogleLoading => 'Đang kết nối với Google...';
 
   @override
   String get authGoogleSignInFailed => 'Đăng nhập Google thất bại. Vui lòng thử lại.';

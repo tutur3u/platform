@@ -101,7 +101,7 @@ class _SignUpPageState extends State<SignUpPage> {
               width: double.infinity,
               child: shad.PrimaryButton(
                 onPressed: () => context.go('/login'),
-                child: Text(l10n.signUpBackToLogin),
+                child: Center(child: Text(l10n.signUpBackToLogin)),
               ),
             ),
           ],
@@ -195,8 +195,10 @@ class _SignUpPageState extends State<SignUpPage> {
                   child: shad.PrimaryButton(
                     onPressed: state.isLoading ? null : _handleSignUp,
                     child: state.isLoading
-                        ? const shad.CircularProgressIndicator(size: 16)
-                        : Text(l10n.signUpButton),
+                        ? const Center(
+                            child: shad.CircularProgressIndicator(size: 16),
+                          )
+                        : Center(child: Text(l10n.signUpButton)),
                   ),
                 ),
                 const shad.Gap(16),
