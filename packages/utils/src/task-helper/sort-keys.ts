@@ -215,20 +215,14 @@ export async function normalizeListSortKeys(
   listId: string,
   visualOrderTasks?: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
 ): Promise<void> {
-  console.log('🔧 Normalizing sort keys for list:', listId);
-
   let tasks: Pick<Task, 'id' | 'sort_key' | 'created_at'>[];
 
   if (visualOrderTasks && visualOrderTasks.length > 0) {
-    console.log(
-      '✨ Using provided visual order for normalization (respects active filters)'
-    );
     tasks = visualOrderTasks;
   } else {
     const fetchedTasks = await listAllActiveTasksForList(wsId, listId);
 
     if (!fetchedTasks.length) {
-      console.log('No tasks to normalize');
       return;
     }
 
@@ -249,7 +243,6 @@ export async function normalizeListSortKeys(
   }
 
   if (tasks.length === 0) {
-    console.log('No tasks to normalize');
     return;
   }
 
@@ -257,16 +250,9 @@ export async function normalizeListSortKeys(
     const needsNormalization = hasSortKeyCollisions(tasks as unknown as Task[]);
 
     if (!needsNormalization) {
-      console.log('✅ Sort keys are already properly spaced');
       return;
     }
   }
-
-  console.log(
-    visualOrderTasks
-      ? '✨ Normalizing with visual order (preserving filtered/sorted view)'
-      : '⚠️ Collisions detected, normalizing...'
-  );
 
   const updates = tasks.map((task, index) => ({
     id: task.id,
@@ -285,6 +271,4 @@ export async function normalizeListSortKeys(
       )
     )
   );
-
-  console.log('✅ Sort keys normalized successfully');
 }
