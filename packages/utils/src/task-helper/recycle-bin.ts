@@ -60,9 +60,9 @@ export function useRestoreTasks(boardId: string, wsId: string) {
             getBrowserApiOptions()
           );
           restoredTasks.push(task as Task);
-        } catch {
+        } catch (error) {
           if (!fallbackListId) {
-            continue;
+            throw error;
           }
 
           const { task } = await updateWorkspaceTask(
@@ -125,6 +125,8 @@ export function useRestoreTasks(boardId: string, wsId: string) {
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
 
+      queryClient.invalidateQueries({ queryKey: ['deleted-tasks', boardId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       console.error('Failed to restore tasks:', err);
     },
     onSuccess: (restoredTasks) => {
@@ -147,6 +149,7 @@ export function usePermanentlyDeleteTasks(boardId: string, wsId: string) {
   return useMutation({
     mutationFn: async (taskIds: string[]) => {
       let count = 0;
+      const failedTaskIds: string[] = [];
 
       for (const taskId of taskIds) {
         try {
@@ -154,10 +157,17 @@ export function usePermanentlyDeleteTasks(boardId: string, wsId: string) {
           count++;
         } catch (error) {
           console.error(`Failed to permanently delete task ${taskId}:`, error);
+          failedTaskIds.push(taskId);
         }
       }
 
-      return { count };
+      if (failedTaskIds.length > 0) {
+        throw new Error(
+          `Failed to permanently delete ${failedTaskIds.length} task${failedTaskIds.length === 1 ? '' : 's'}`
+        );
+      }
+
+      return { count, failedTaskIds };
     },
     onMutate: async (taskIds) => {
       await queryClient.cancelQueries({ queryKey: ['deleted-tasks', boardId] });
@@ -185,6 +195,7 @@ export function usePermanentlyDeleteTasks(boardId: string, wsId: string) {
         );
       }
 
+      queryClient.invalidateQueries({ queryKey: ['deleted-tasks', boardId] });
       console.error('Failed to permanently delete tasks:', err);
     },
   });

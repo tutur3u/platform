@@ -364,7 +364,7 @@ export function KanbanBoard({
             columns={columns}
             tasks={tasks}
             boardId={boardId ?? ''}
-            workspaceId={workspace.id}
+            workspaceId={workspaceId}
             isPersonalWorkspace={workspace.personal}
             cursorsEnabled={!!workspaceTier && workspaceTier !== 'FREE'}
             disableSort={disableSort}
@@ -398,7 +398,7 @@ export function KanbanBoard({
               isMultiSelectMode={isMultiSelectMode}
               selectedTasks={selectedTasks}
               onUpdate={() => {}}
-              wsId={workspace.id}
+              wsId={workspaceId}
             />
           </DragOverlay>
         </DndContext>

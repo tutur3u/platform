@@ -170,21 +170,18 @@ export function useCreateTask(boardId: string, wsId?: string) {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const trimmedName = task.name?.trim() ?? '';
 
       const optimisticTask: Task = {
+        ...task,
         id: `temp-${Date.now()}`,
-        name: task.name || 'New Task',
-        description: task.description,
+        name: trimmedName,
         list_id: listId,
-        start_date: task.start_date,
-        end_date: task.end_date,
-        priority: task.priority,
-        closed_at: null,
-        deleted_at: null,
+        closed_at: undefined,
+        deleted_at: undefined,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         assignees: [],
-        ...task,
       } as Task;
 
       queryClient.setQueryData(
@@ -284,6 +281,25 @@ export function useDeleteTask(boardId: string, wsId?: string) {
       }
 
       console.error('Failed to delete task:', err);
+    },
+    onSuccess: (deletedTask) => {
+      queryClient.setQueryData(
+        ['deleted-tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return [deletedTask];
+
+          const existingIndex = old.findIndex(
+            (task) => task.id === deletedTask.id
+          );
+          if (existingIndex === -1) {
+            return [deletedTask, ...old];
+          }
+
+          return old.map((task) =>
+            task.id === deletedTask.id ? deletedTask : task
+          );
+        }
+      );
     },
   });
 }

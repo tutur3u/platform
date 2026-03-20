@@ -2000,6 +2000,8 @@
     "move_tasks_description": "{count, plural, other {Chọn bảng và danh sách đích để di chuyển công việc.}}",
     "move_tasks_title": "{count, plural, other {Di chuyển # công việc}}",
     "move_to_list": "Di chuyển đến danh sách",
+    "moved_tasks_partially": "{moved, plural, one {Đã di chuyển 1 công việc} other {Đã di chuyển # công việc}}, {failed, plural, one {1 công việc thất bại} other {# công việc thất bại}}",
+    "moved_tasks_successfully": "{count, plural, one {Đã di chuyển thành công 1 công việc} other {Đã di chuyển thành công # công việc}}",
     "moving": "Đang di chuyển...",
     "moving_tasks_to": "{count, plural, other {Đang di chuyển # công việc tới}}",
     "n_assignees": "{count} người thực hiện",

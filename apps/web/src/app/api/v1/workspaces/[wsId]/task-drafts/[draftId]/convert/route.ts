@@ -27,8 +27,6 @@ export async function POST(
   try {
     const { wsId: rawWsId, draftId } = await params;
     const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -37,6 +35,9 @@ export async function POST(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    const sbAdmin = await createAdminClient();
 
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')

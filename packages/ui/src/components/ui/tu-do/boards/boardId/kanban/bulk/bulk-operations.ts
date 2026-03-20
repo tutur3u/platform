@@ -10,6 +10,7 @@
  */
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -621,11 +622,6 @@ function useBulkMoveToBoard(
           }
         );
       }
-
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      queryClient.invalidateQueries({
-        queryKey: ['tasks', data.targetBoardId],
-      });
     },
   });
 }
@@ -1746,7 +1742,7 @@ function useBulkClearAssignees(
  */
 function useBulkDeleteTasks(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   clearSelection: () => void,
   setBulkDeleteOpen: (open: boolean) => void,
@@ -1759,14 +1755,24 @@ function useBulkDeleteTasks(
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ deleted_at: new Date().toISOString() })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { deleted: true },
+            {
+              baseUrl:
+                typeof window !== 'undefined'
+                  ? window.location.origin
+                  : undefined,
+            }
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1937,7 +1943,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   );
   const deleteMutation = useBulkDeleteTasks(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     clearSelection,
     setBulkDeleteOpen,

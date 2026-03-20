@@ -15,6 +15,11 @@ type MoveAllTasksResult = {
   failedTaskIds: string[];
 };
 
+type BulkClearListResult = {
+  count: number;
+  failedTaskIds: string[];
+};
+
 export function useMoveAllTasksFromList(
   currentBoardId: string,
   wsId?: string,
@@ -174,8 +179,54 @@ export function useMoveAllTasksFromList(
 
       console.error('Bulk list move failed:', err);
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data, variables, context) => {
       const movedTaskIds = data.movedTaskIds ?? [];
+      const failedTaskIds = new Set(data.failedTaskIds ?? []);
+
+      if (failedTaskIds.size > 0) {
+        if (
+          variables.targetBoardId &&
+          variables.targetBoardId !== currentBoardId
+        ) {
+          const previousSourceTasks = context?.previousSourceTasks as
+            | Task[]
+            | undefined;
+          const failedTasks =
+            previousSourceTasks?.filter((task) => failedTaskIds.has(task.id)) ??
+            [];
+
+          queryClient.setQueryData(
+            ['tasks', currentBoardId],
+            (oldData: Task[] | undefined) => {
+              const existing = oldData ?? [];
+              const preserved = existing.filter(
+                (task) => !failedTaskIds.has(task.id)
+              );
+              return [...preserved, ...failedTasks];
+            }
+          );
+
+          queryClient.setQueryData(
+            ['tasks', variables.targetBoardId],
+            (oldData: Task[] | undefined) => {
+              if (!oldData) return oldData;
+              return oldData.filter((task) => !failedTaskIds.has(task.id));
+            }
+          );
+        } else {
+          queryClient.setQueryData(
+            ['tasks', currentBoardId],
+            (oldData: Task[] | undefined) => {
+              if (!oldData) return oldData;
+              return oldData.map((task) =>
+                failedTaskIds.has(task.id)
+                  ? { ...task, list_id: variables.sourceListId }
+                  : task
+              );
+            }
+          );
+        }
+      }
 
       if (
         variables.targetBoardId &&
@@ -190,22 +241,6 @@ export function useMoveAllTasksFromList(
             task: { id: taskId, list_id: variables.targetListId },
           });
         }
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['tasks', currentBoardId] });
-      queryClient.invalidateQueries({
-        queryKey: ['task_lists', currentBoardId],
-      });
-      if (
-        variables.targetBoardId &&
-        variables.targetBoardId !== currentBoardId
-      ) {
-        queryClient.invalidateQueries({
-          queryKey: ['tasks', variables.targetBoardId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['task_lists', variables.targetBoardId],
-        });
       }
     },
   });
@@ -280,6 +315,7 @@ export function useClearAllAssigneesFromList(boardId: string, wsId?: string) {
       }
       const tasks = await listAllActiveTasksForList(wsId, listId);
       let count = 0;
+      const failedTaskIds: string[] = [];
 
       for (const task of tasks) {
         try {
@@ -295,10 +331,15 @@ export function useClearAllAssigneesFromList(boardId: string, wsId?: string) {
             `Failed to clear assignees for task ${task.id}:`,
             error
           );
+          failedTaskIds.push(task.id);
         }
       }
 
-      return { count };
+      if (tasks.length > 0 && count === 0) {
+        throw new Error('Failed to clear any assignees from this list');
+      }
+
+      return { count, failedTaskIds } satisfies BulkClearListResult;
     },
     onMutate: async (listId) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -322,8 +363,32 @@ export function useClearAllAssigneesFromList(boardId: string, wsId?: string) {
       }
       console.error('Failed to clear all assignees:', err);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    onSuccess: (data, listId, context) => {
+      if (!context?.previousTasks || data.failedTaskIds.length === 0) {
+        return;
+      }
+
+      const previousTasks = context.previousTasks as Task[];
+      const failedTaskIds = new Set(data.failedTaskIds);
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+
+          return old.map((task) => {
+            if (!failedTaskIds.has(task.id)) {
+              return task;
+            }
+
+            const previousTask = previousTasks.find(
+              (entry) => entry.id === task.id && entry.list_id === listId
+            );
+
+            return previousTask ?? task;
+          });
+        }
+      );
     },
   });
 }
@@ -338,6 +403,7 @@ export function useClearAllLabelsFromList(boardId: string, wsId?: string) {
       }
       const tasks = await listAllActiveTasksForList(wsId, listId);
       let count = 0;
+      const failedTaskIds: string[] = [];
 
       for (const task of tasks) {
         try {
@@ -350,10 +416,15 @@ export function useClearAllLabelsFromList(boardId: string, wsId?: string) {
           count++;
         } catch (error) {
           console.error(`Failed to clear labels for task ${task.id}:`, error);
+          failedTaskIds.push(task.id);
         }
       }
 
-      return { count };
+      if (tasks.length > 0 && count === 0) {
+        throw new Error('Failed to clear any labels from this list');
+      }
+
+      return { count, failedTaskIds } satisfies BulkClearListResult;
     },
     onMutate: async (listId) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -377,8 +448,32 @@ export function useClearAllLabelsFromList(boardId: string, wsId?: string) {
       }
       console.error('Failed to clear all labels:', err);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    onSuccess: (data, listId, context) => {
+      if (!context?.previousTasks || data.failedTaskIds.length === 0) {
+        return;
+      }
+
+      const previousTasks = context.previousTasks as Task[];
+      const failedTaskIds = new Set(data.failedTaskIds);
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+
+          return old.map((task) => {
+            if (!failedTaskIds.has(task.id)) {
+              return task;
+            }
+
+            const previousTask = previousTasks.find(
+              (entry) => entry.id === task.id && entry.list_id === listId
+            );
+
+            return previousTask ?? task;
+          });
+        }
+      );
     },
   });
 }
@@ -393,6 +488,7 @@ export function useClearAllProjectsFromList(boardId: string, wsId?: string) {
       }
       const tasks = await listAllActiveTasksForList(wsId, listId);
       let count = 0;
+      const failedTaskIds: string[] = [];
 
       for (const task of tasks) {
         try {
@@ -405,10 +501,15 @@ export function useClearAllProjectsFromList(boardId: string, wsId?: string) {
           count++;
         } catch (error) {
           console.error(`Failed to clear projects for task ${task.id}:`, error);
+          failedTaskIds.push(task.id);
         }
       }
 
-      return { count };
+      if (tasks.length > 0 && count === 0) {
+        throw new Error('Failed to clear any projects from this list');
+      }
+
+      return { count, failedTaskIds } satisfies BulkClearListResult;
     },
     onMutate: async (listId) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -432,8 +533,32 @@ export function useClearAllProjectsFromList(boardId: string, wsId?: string) {
       }
       console.error('Failed to clear all projects:', err);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    onSuccess: (data, listId, context) => {
+      if (!context?.previousTasks || data.failedTaskIds.length === 0) {
+        return;
+      }
+
+      const previousTasks = context.previousTasks as Task[];
+      const failedTaskIds = new Set(data.failedTaskIds);
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+
+          return old.map((task) => {
+            if (!failedTaskIds.has(task.id)) {
+              return task;
+            }
+
+            const previousTask = previousTasks.find(
+              (entry) => entry.id === task.id && entry.list_id === listId
+            );
+
+            return previousTask ?? task;
+          });
+        }
+      );
     },
   });
 }

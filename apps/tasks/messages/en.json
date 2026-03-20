@@ -2099,6 +2099,8 @@
     "move_tasks_description": "{count, plural, one {Select a destination board and list to move your task to.} other {Select a destination board and list to move your tasks to.}}",
     "move_tasks_title": "{count, plural, one {Move 1 task} other {Move # tasks}}",
     "move_to_list": "Move to List",
+    "moved_tasks_partially": "{moved, plural, one {Moved 1 task} other {Moved # tasks}}, {failed, plural, one {1 task failed} other {# tasks failed}}",
+    "moved_tasks_successfully": "{count, plural, one {Moved 1 task successfully} other {Moved # tasks successfully}}",
     "moving": "Moving...",
     "moving_tasks_to": "{count, plural, one {Moving 1 task to} other {Moving # tasks to}}",
     "n_assignees": "{count} assignees",

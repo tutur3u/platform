@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   ArrowUpCircle,
@@ -339,6 +339,84 @@ function TaskCardInner({
     return doneList || closedList || null;
   };
 
+  const duplicateTaskMutation = useMutation({
+    mutationFn: async (tasksToDuplicate: Task[]) => {
+      if (!effectiveWorkspaceId) {
+        throw new Error('Workspace ID is required to duplicate tasks');
+      }
+
+      const duplicatedTasks: Task[] = [];
+
+      for (const sourceTask of tasksToDuplicate) {
+        const taskData: Parameters<typeof createTask>[2] = {
+          name: sourceTask.name.trim(),
+          description: sourceTask.description,
+          priority: sourceTask.priority,
+          start_date: sourceTask.start_date,
+          end_date: sourceTask.end_date,
+          estimation_points: sourceTask.estimation_points ?? null,
+          label_ids: sourceTask.labels?.map((label) => label.id) ?? [],
+          assignee_ids:
+            sourceTask.assignees?.map((assignee) => assignee.id) ?? [],
+          project_ids: sourceTask.projects?.map((project) => project.id) ?? [],
+        };
+
+        const newTask = await createTask(
+          effectiveWorkspaceId,
+          sourceTask.list_id,
+          taskData
+        );
+
+        duplicatedTasks.push({
+          ...newTask,
+          assignees: sourceTask.assignees,
+          labels: sourceTask.labels,
+          projects: sourceTask.projects,
+        });
+      }
+
+      return duplicatedTasks;
+    },
+    onSuccess: (duplicatedTasks) => {
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return duplicatedTasks;
+          const newTasks = duplicatedTasks.filter(
+            (newTask) => !old.some((task) => task.id === newTask.id)
+          );
+          return [...old, ...newTasks];
+        }
+      );
+
+      for (const duplicatedTask of duplicatedTasks) {
+        broadcast?.('task:upsert', { task: duplicatedTask });
+        if (
+          (duplicatedTask.assignees && duplicatedTask.assignees.length > 0) ||
+          (duplicatedTask.labels && duplicatedTask.labels.length > 0) ||
+          (duplicatedTask.projects && duplicatedTask.projects.length > 0)
+        ) {
+          broadcast?.('task:relations-changed', {
+            taskId: duplicatedTask.id,
+          });
+        }
+      }
+
+      toast.success(
+        t('tasks_duplicated_successfully', { count: duplicatedTasks.length })
+      );
+    },
+    onError: (error) => {
+      console.error('Error duplicating task(s):', error);
+      toast.error(
+        error instanceof Error ? error.message : t('please_try_again_later')
+      );
+    },
+    onSettled: () => {
+      setIsLoading(false);
+    },
+  });
+
   // Find specifically the closed list
   const getTargetClosedList = () => {
     return availableLists.find((list) => list.status === 'closed') || null;
@@ -525,73 +603,9 @@ function TaskCardInner({
       : [task];
 
     try {
-      const duplicatedTasks: Task[] = [];
-
-      // Duplicate all tasks
-      for (const sourceTask of tasksToDuplicate) {
-        if (!effectiveWorkspaceId) {
-          throw new Error('Workspace ID is required to duplicate tasks');
-        }
-
-        const taskData: Parameters<typeof createTask>[2] = {
-          name: sourceTask.name.trim(),
-          description: sourceTask.description,
-          priority: sourceTask.priority,
-          start_date: sourceTask.start_date,
-          end_date: sourceTask.end_date,
-          estimation_points: sourceTask.estimation_points ?? null,
-          label_ids: sourceTask.labels?.map((label) => label.id) ?? [],
-          assignee_ids:
-            sourceTask.assignees?.map((assignee) => assignee.id) ?? [],
-          project_ids: sourceTask.projects?.map((project) => project.id) ?? [],
-        };
-
-        const newTask = await createTask(
-          effectiveWorkspaceId,
-          sourceTask.list_id,
-          taskData
-        );
-
-        duplicatedTasks.push({
-          ...newTask,
-          assignees: sourceTask.assignees,
-          labels: sourceTask.labels,
-          projects: sourceTask.projects,
-        });
-      }
-
-      // Add all duplicated tasks to cache at once
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return duplicatedTasks;
-          // Filter out any tasks that already exist (in case realtime already added them)
-          const newTasks = duplicatedTasks.filter(
-            (newTask) => !old.some((t) => t.id === newTask.id)
-          );
-          return [...old, ...newTasks];
-        }
-      );
-
-      // Broadcast duplicated tasks to other clients
-      for (const dup of duplicatedTasks) {
-        broadcast?.('task:upsert', { task: dup });
-        if (
-          (dup.assignees && dup.assignees.length > 0) ||
-          (dup.labels && dup.labels.length > 0) ||
-          (dup.projects && dup.projects.length > 0)
-        ) {
-          broadcast?.('task:relations-changed', { taskId: dup.id });
-        }
-      }
-
-      const taskCount = duplicatedTasks.length;
-      toast.success(t('tasks_duplicated_successfully', { count: taskCount }));
-    } catch (error: any) {
-      console.error('Error duplicating task(s):', error);
-      toast.error(error.message || t('please_try_again_later'));
-    } finally {
-      setIsLoading(false);
+      await duplicateTaskMutation.mutateAsync(tasksToDuplicate);
+    } catch {
+      // Error handling is centralized in the mutation callbacks.
     }
   };
 

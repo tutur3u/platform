@@ -64,6 +64,7 @@ export function ListActions({
   onEditOpenChange,
 }: Props) {
   const t = useTranslations('common');
+  const canManageList = Boolean(wsId && boardId);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isMoveAllDialogOpen, setIsMoveAllDialogOpen] = useState(false);
@@ -246,11 +247,26 @@ export function ListActions({
     if (tasks.length === 0) return;
 
     try {
-      await moveAllTasksFromListMutation.mutateAsync({
+      const result = await moveAllTasksFromListMutation.mutateAsync({
         sourceListId: listId,
         targetListId,
         targetBoardId: targetBoardId !== boardId ? targetBoardId : undefined,
       });
+
+      if (result.movedCount > 0 && result.failedTaskIds.length > 0) {
+        toast.warning(
+          t('moved_tasks_partially', {
+            moved: result.movedCount,
+            failed: result.failedTaskIds.length,
+          })
+        );
+      } else if (result.movedCount > 0) {
+        toast.success(
+          t('moved_tasks_successfully', {
+            count: result.movedCount,
+          })
+        );
+      }
 
       // Close dialog and refresh
       setIsMoveAllDialogOpen(false);
@@ -271,12 +287,14 @@ export function ListActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onEditOpenChange(true)}>
-            <div className="h-4 w-4">
-              <Pencil className="h-4 w-4" />
-            </div>
-            {t('edit')}
-          </DropdownMenuItem>
+          {canManageList && (
+            <DropdownMenuItem onClick={() => onEditOpenChange(true)}>
+              <div className="h-4 w-4">
+                <Pencil className="h-4 w-4" />
+              </div>
+              {t('edit')}
+            </DropdownMenuItem>
+          )}
           {tasks.length > 0 && onSelectAll && (
             <>
               <DropdownMenuSeparator />
@@ -291,7 +309,7 @@ export function ListActions({
               </DropdownMenuItem>
             </>
           )}
-          {tasks.length > 0 && wsId && (
+          {canManageList && tasks.length > 0 && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleMoveAllTasks}>
@@ -305,7 +323,7 @@ export function ListActions({
               </DropdownMenuItem>
             </>
           )}
-          {listStatus === 'done' && tasks.length > 0 && wsId && (
+          {canManageList && listStatus === 'done' && tasks.length > 0 && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setIsArchiveDialogOpen(true)}>
@@ -316,17 +334,24 @@ export function ListActions({
               </DropdownMenuItem>
             </>
           )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)}>
-            <div className="h-4 w-4">
-              <Trash className="h-4 w-4 text-dynamic-red" />
-            </div>
-            {t('delete')}
-          </DropdownMenuItem>
+          {canManageList && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)}>
+                <div className="h-4 w-4">
+                  <Trash className="h-4 w-4 text-dynamic-red" />
+                </div>
+                {t('delete')}
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <Dialog
+        open={canManageList && isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('delete_list')}</DialogTitle>
@@ -348,7 +373,10 @@ export function ListActions({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEditOpen} onOpenChange={onEditOpenChange}>
+      <Dialog
+        open={canManageList && isEditOpen}
+        onOpenChange={onEditOpenChange}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('edit_list')}</DialogTitle>
@@ -374,7 +402,10 @@ export function ListActions({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
+      <Dialog
+        open={canManageList && isArchiveDialogOpen}
+        onOpenChange={setIsArchiveDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('archive_all_tasks')}</DialogTitle>
@@ -404,7 +435,7 @@ export function ListActions({
       </Dialog>
 
       {/* Board Selector for Moving All Tasks */}
-      {wsId && (
+      {canManageList && wsId && (
         <BoardSelector
           open={isMoveAllDialogOpen}
           onOpenChange={setIsMoveAllDialogOpen}

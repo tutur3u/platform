@@ -173,7 +173,9 @@ export function getSortKeyConfig(): {
   };
 }
 
-export function hasSortKeyCollisions(tasks: Task[]): boolean {
+type SortKeyLike = { sort_key?: number | null | undefined };
+
+export function hasSortKeyCollisions(tasks: SortKeyLike[]): boolean {
   const sortKeys = tasks
     .map((t) => t.sort_key)
     .filter((key): key is number => key !== null && key !== undefined);
@@ -247,7 +249,7 @@ export async function normalizeListSortKeys(
   }
 
   if (!visualOrderTasks) {
-    const needsNormalization = hasSortKeyCollisions(tasks as unknown as Task[]);
+    const needsNormalization = hasSortKeyCollisions(tasks);
 
     if (!needsNormalization) {
       return;

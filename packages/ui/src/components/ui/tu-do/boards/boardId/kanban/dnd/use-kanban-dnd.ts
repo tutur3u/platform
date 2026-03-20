@@ -17,7 +17,7 @@ import { useAutoScroll } from './auto-scroll';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 
 interface UseKanbanDndProps {
-  wsId: string;
+  wsId?: string | null;
   boardId: string | null;
   columns: TaskList[];
   tasks: Task[];
@@ -74,14 +74,19 @@ export function useKanbanDnd({
       nextSortKey: number | null | undefined,
       listId: string,
       visualOrderTasks?: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
-    ) =>
-      createCalculateSortKeyWithRetry(
+    ) => {
+      if (!wsId) {
+        return Promise.reject(new Error('Workspace ID is required'));
+      }
+
+      return createCalculateSortKeyWithRetry(
         wsId,
         prevSortKey,
         nextSortKey,
         listId,
         visualOrderTasks
-      ),
+      );
+    },
     [wsId]
   );
 
@@ -104,6 +109,12 @@ export function useKanbanDnd({
       if (!activeType) return;
 
       if (activeType === 'Task') {
+        if (!wsId) {
+          setHoverTargetListId(null);
+          setDragPreviewPosition(null);
+          return;
+        }
+
         const activeTask = active.data?.current?.task;
         if (!activeTask) return;
 
@@ -172,7 +183,7 @@ export function useKanbanDnd({
         setHoverTargetListId(targetListId);
       }
     },
-    [columns, hoverTargetListId, taskHeightsRef]
+    [columns, hoverTargetListId, taskHeightsRef, wsId]
   );
 
   // Global drag state reset on mouseup/touchend
@@ -209,6 +220,10 @@ export function useKanbanDnd({
       return;
     }
     if (type === 'Task') {
+      if (!wsId) {
+        return;
+      }
+
       const task = active.data.current.task;
 
       // If this is a multi-select drag, include all selected tasks
@@ -249,6 +264,17 @@ export function useKanbanDnd({
     const activeType = active.data?.current?.type;
 
     if (!activeType) {
+      setActiveColumn(null);
+      setActiveTask(null);
+      setHoverTargetListId(null);
+      setDragPreviewPosition(null);
+      pickedUpTaskColumn.current = null;
+      (processDragOver as any).lastTargetListId = null;
+      setOptimisticUpdateInProgress(new Set());
+      return;
+    }
+
+    if (activeType === 'Task' && !wsId) {
       setActiveColumn(null);
       setActiveTask(null);
       setHoverTargetListId(null);

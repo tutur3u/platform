@@ -79,14 +79,12 @@ export async function createTask(
     options
   );
 
-  if (typeof window !== 'undefined' && createdTask) {
-    triggerWorkspaceTaskEmbedding(
-      wsId,
-      createdTask.id,
-      getBrowserApiOptions()
-    ).catch((err) => {
-      console.error('Failed to generate embedding:', err);
-    });
+  if (createdTask) {
+    triggerWorkspaceTaskEmbedding(wsId, createdTask.id, options).catch(
+      (err) => {
+        console.error('Failed to generate embedding:', err);
+      }
+    );
   }
 
   return createdTask as Task;
@@ -109,16 +107,10 @@ export async function updateTask(
     options
   );
 
-  if (
-    (task.name !== undefined || task.description !== undefined) &&
-    typeof window !== 'undefined' &&
-    data
-  ) {
-    triggerWorkspaceTaskEmbedding(wsId, taskId, getBrowserApiOptions()).catch(
-      (err) => {
-        console.error('Failed to regenerate embedding:', err);
-      }
-    );
+  if ((task.name !== undefined || task.description !== undefined) && data) {
+    triggerWorkspaceTaskEmbedding(wsId, taskId, options).catch((err) => {
+      console.error('Failed to regenerate embedding:', err);
+    });
   }
 
   return data as Task;
