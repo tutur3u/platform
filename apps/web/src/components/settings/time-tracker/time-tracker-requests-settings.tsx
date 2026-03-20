@@ -12,6 +12,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from '@tuturuuu/ui/form';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Input } from '@tuturuuu/ui/input';
@@ -19,7 +20,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import * as z from 'zod';
 
 interface TimeTrackerRequestsSettingsProps {
@@ -85,9 +86,16 @@ export function TimeTrackerRequestsSettings({
     },
   });
 
-  const noApprovalNeeded = form.watch('noApprovalNeeded');
+  const noApprovalNeeded = useWatch({
+    control: form.control,
+    name: 'noApprovalNeeded',
+  });
+  const statusChangeGracePeriodMinutes = useWatch({
+    control: form.control,
+    name: 'statusChangeGracePeriodMinutes',
+  });
   const parsedGracePeriod = thresholdSchema.safeParse(
-    form.watch('statusChangeGracePeriodMinutes')
+    statusChangeGracePeriodMinutes
   );
 
   const updateThresholdMutation = useMutation({
@@ -152,11 +160,19 @@ export function TimeTrackerRequestsSettings({
       return;
     }
 
-    const thresholdValue = values.noApprovalNeeded
-      ? null
-      : thresholdSchema.safeParse(values.threshold).success
-        ? thresholdSchema.parse(values.threshold)
-        : null;
+    let thresholdValue: number | null = null;
+    if (!values.noApprovalNeeded) {
+      const parsedThreshold = thresholdSchema.safeParse(values.threshold);
+
+      if (!parsedThreshold.success) {
+        form.setError('threshold', {
+          message: parsedThreshold.error.issues[0]?.message,
+        });
+        return;
+      }
+
+      thresholdValue = parsedThreshold.data;
+    }
 
     await updateThresholdMutation.mutateAsync({
       threshold: thresholdValue,
@@ -222,6 +238,7 @@ export function TimeTrackerRequestsSettings({
                       )}
                     </div>
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -255,6 +272,7 @@ export function TimeTrackerRequestsSettings({
                     )}
                   </div>
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
