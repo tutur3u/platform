@@ -137,11 +137,17 @@ class _AppState extends State<App> {
             return BlocBuilder<ThemeCubit, ThemeState>(
               builder: (context, themeState) {
                 return shad.ShadcnApp.router(
-                  theme: const shad.ThemeData(
+                  theme: shad.ThemeData(
                     colorScheme: shad.ColorSchemes.lightZinc,
+                    typography: const shad.Typography.geist().copyWith(
+                      sans: () => const TextStyle(fontFamily: 'NotoSans'),
+                    ),
                   ),
-                  darkTheme: const shad.ThemeData.dark(
+                  darkTheme: shad.ThemeData.dark(
                     colorScheme: shad.ColorSchemes.darkZinc,
+                    typography: const shad.Typography.geist().copyWith(
+                      sans: () => const TextStyle(fontFamily: 'NotoSans'),
+                    ),
                   ),
                   themeMode: themeState.themeMode,
                   locale: localeState.locale,

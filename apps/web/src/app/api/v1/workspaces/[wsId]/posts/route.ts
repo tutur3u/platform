@@ -2,6 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { PostEmail } from '@/app/[locale]/(dashboard)/[wsId]/posts/types';
+import {
+  autoSkipOldPostEmails,
+  getPostEmailMaxAgeCutoff,
+  getPostEmailQueueRows,
+  summarizePostEmailQueue,
+} from '@/lib/post-email-queue';
 
 export async function GET(
   req: NextRequest,
@@ -25,19 +31,23 @@ export async function GET(
 
   const sbAdmin = await createAdminClient();
 
+  await autoSkipOldPostEmails(sbAdmin, { wsId });
+
   const hasFilters =
     includedGroups.length > 0 || excludedGroups.length > 0 || !!userId;
+  const cutoff = getPostEmailMaxAgeCutoff();
 
   const queryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
-      `notes, user_id, email_id, is_completed, user:workspace_users!inner(email, display_name, full_name, ws_id), ...user_group_posts${hasFilters ? '!inner' : ''}(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)`,
+      `post_id, notes, user_id, email_id, is_completed, approval_status, rejection_reason, user:workspace_users!user_id!inner(email, display_name, full_name, ws_id), user_group_posts${hasFilters ? '!inner' : ''}(id, title, content, group_id, created_at, workspace_user_groups(id, name)), sent_emails(subject)`,
       {
         count: 'exact',
       }
     )
     .eq('workspace_users.ws_id', wsId)
-    .not('workspace_users.email', 'ilike', '%@easy%');
+    .not('workspace_users.email', 'ilike', '%@easy%')
+    .gte('user_group_posts.created_at', cutoff);
 
   if (includedGroups.length > 0) {
     queryBuilder.in('user_group_posts.group_id', includedGroups);
@@ -64,22 +74,57 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const rows = data || [];
+  const postIds = [
+    ...new Set(rows.map((item: any) => item.post_id).filter(Boolean)),
+  ];
+  const queueRows = await getPostEmailQueueRows(sbAdmin, postIds);
+  const queueByPostAndUser = new Map<string, (typeof queueRows)[number]>();
+  const queueByPost = new Map<string, typeof queueRows>();
+
+  for (const row of queueRows) {
+    queueByPostAndUser.set(`${row.post_id}:${row.user_id}`, row);
+    const rowsForPost = queueByPost.get(row.post_id) ?? [];
+    rowsForPost.push(row);
+    queueByPost.set(row.post_id, rowsForPost);
+  }
+
   return NextResponse.json({
-    data: (data || []).map((item: any) => ({
-      notes: item.notes,
-      user_id: item.user_id,
-      email_id: item.email_id,
-      is_completed: item.is_completed,
-      ws_id: item.user?.ws_id,
-      email: item.user?.email,
-      recipient: item.user?.full_name || item.user?.display_name,
-      post_id: item.post_id,
-      post_title: item.post_title,
-      post_content: item.post_content,
-      group_id: item.group_id,
-      group_name: item.group_name,
-      subject: item.subject,
-    })),
+    data: rows.map((item: any) => {
+      const queueRow = queueByPostAndUser.get(
+        `${item.post_id}:${item.user_id}`
+      );
+      const queueCounts = item.post_id
+        ? summarizePostEmailQueue(queueByPost.get(item.post_id) ?? [])
+        : summarizePostEmailQueue([]);
+
+      return {
+        notes: item.notes,
+        user_id: item.user_id,
+        email_id: item.email_id,
+        is_completed: item.is_completed,
+        ws_id: item.user?.ws_id,
+        email: item.user?.email,
+        recipient: item.user?.full_name || item.user?.display_name,
+        post_id: item.user_group_posts?.id,
+        post_title: item.user_group_posts?.title,
+        post_content: item.user_group_posts?.content,
+        group_id: item.user_group_posts?.group_id,
+        group_name: item.user_group_posts?.workspace_user_groups?.name,
+        subject: item.sent_emails?.subject,
+        queue_status: queueRow?.status ?? (item.email_id ? 'sent' : 'queued'),
+        queue_attempt_count: queueRow?.attempt_count ?? 0,
+        queue_last_error: queueRow?.last_error ?? null,
+        queue_sent_at: queueRow?.sent_at ?? null,
+        approval_status: item.approval_status ?? 'PENDING',
+        approval_rejection_reason: item.rejection_reason ?? null,
+        can_remove_approval:
+          item.approval_status === 'APPROVED' &&
+          queueRow?.status !== 'sent' &&
+          !item.email_id,
+        queue_counts: queueCounts,
+      };
+    }),
     count: count || 0,
   } as { data: PostEmail[]; count: number });
 }

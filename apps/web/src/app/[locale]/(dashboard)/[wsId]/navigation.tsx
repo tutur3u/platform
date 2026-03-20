@@ -94,6 +94,7 @@ import {
   Wallet,
   Warehouse,
 } from '@tuturuuu/icons';
+import { DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   ROOT_WORKSPACE_ID,
@@ -216,6 +217,11 @@ export async function WorkspaceNavigationLinks({
     userInvoiceValue === '__workspace_default__'
       ? workspaceShowInvoices
       : String(userInvoiceValue) === 'true';
+
+  const usersDatabaseDisabled =
+    withoutPermission('manage_users') &&
+    withoutPermission('view_users_private_info') &&
+    withoutPermission('view_users_public_info');
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -589,6 +595,7 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/groups/indicators`,
             `/${personalOrWsId}/users/group-tags`,
+            `/${personalOrWsId}/users/feedbacks`,
             `/${personalOrWsId}/users/reports`,
             `/${personalOrWsId}/users/approvals`,
             `/${personalOrWsId}/users/structure`,
@@ -618,10 +625,11 @@ export async function WorkspaceNavigationLinks({
               title: t('workspace-users-tabs.database'),
               href: `/${personalOrWsId}/users/database`,
               icon: <BookUser className="h-5 w-5" />,
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('view_users_private_info') &&
-                withoutPermission('view_users_public_info'),
+              disabled: usersDatabaseDisabled,
+              deferredQueryParamsFromWorkspaceConfig: {
+                configId: DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+                queryParam: 'excludedGroups',
+              },
             },
             {
               title: t('workspace-users-tabs.groups'),
@@ -639,6 +647,12 @@ export async function WorkspaceNavigationLinks({
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('view_user_groups'),
+            },
+            {
+              title: t('workspace-users-tabs.feedbacks'),
+              href: `/${personalOrWsId}/users/feedbacks`,
+              icon: <MessageCircleIcon className="h-5 w-5" />,
+              disabled: withoutPermission('view_user_groups'),
             },
             null,
             {
@@ -667,9 +681,9 @@ export async function WorkspaceNavigationLinks({
               icon: <GalleryVerticalEnd className="h-5 w-5" />,
               disabled:
                 !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
-                (!DEV_MODE &&
-                  (ENABLE_AI_ONLY ||
-                    withoutPermission('send_user_group_post_emails'))),
+                (!DEV_MODE && ENABLE_AI_ONLY) ||
+                (withoutPermission('view_user_groups_posts') &&
+                  withoutPermission('approve_posts')),
               experimental: 'beta',
             },
             null,
@@ -702,7 +716,7 @@ export async function WorkspaceNavigationLinks({
               withoutPermission('view_user_groups') &&
               withoutPermission('view_user_groups_reports') &&
               withoutPermission('view_user_groups_scores') &&
-              withoutPermission('send_user_group_post_emails') &&
+              withoutPermission('view_user_groups_posts') &&
               withoutPermission('create_lead_generations') &&
               withoutPermission('approve_reports') &&
               withoutPermission('approve_posts')),

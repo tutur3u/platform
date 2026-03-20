@@ -13,6 +13,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { RequireAttentionName } from '@/components/users/require-attention-name';
+import { fetchRequireAttentionUserIds } from '@/lib/require-attention-users';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import EditUserDialog from './edit-user-dialog';
 import LinkedPromotionsClient from './linked-promotions-client';
@@ -61,7 +63,11 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
     hasPrivateInfo,
     hasPublicInfo,
   })) as WorkspaceUser & {
-    referrer?: { id: string; display_name: string | null };
+    referrer?: {
+      id: string;
+      display_name: string | null;
+      has_require_attention_feedback?: boolean;
+    };
   };
 
   const isGuest = await isUserGuest(userId);
@@ -108,7 +114,14 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
             alt="Avatar"
             className="aspect-square min-w-32 rounded-lg object-cover"
           />
-          {data.full_name && <div>{data.full_name}</div>}
+          {data.full_name && (
+            <div>
+              <RequireAttentionName
+                name={data.full_name}
+                requireAttention={!!data.has_require_attention_feedback}
+              />
+            </div>
+          )}
           {isGuest && (
             <div className="inline-flex items-center rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-0.5 font-medium text-dynamic-orange text-sm">
               {t('guest')}
@@ -120,7 +133,12 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
               className="inline-flex items-center gap-1 rounded-full border border-dynamic-border bg-dynamic-surface/50 px-2 py-0.5 font-medium text-sm transition-colors hover:bg-dynamic-surface/80"
             >
               <span className="opacity-60">Referred by:</span>
-              <span>{data.referrer.display_name || data.full_name || '-'}</span>
+              <RequireAttentionName
+                name={data.referrer.display_name || data.full_name || '-'}
+                requireAttention={
+                  !!data.referrer.has_require_attention_feedback
+                }
+              />
             </Link>
           )}
         </div>
@@ -138,7 +156,10 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
             {hasPublicInfo && data.display_name && (
               <div>
                 <span className="opacity-60">{t('display_name')}:</span>{' '}
-                {data.display_name}
+                <RequireAttentionName
+                  name={data.display_name}
+                  requireAttention={!!data.has_require_attention_feedback}
+                />
               </div>
             )}
             {hasPrivateInfo && data.birthday && (
@@ -386,9 +407,20 @@ async function getData({
   }
 
   const userWithDetails = rawData as unknown as RPCUserWithDetails;
+  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
+    wsId,
+    userIds: [
+      userWithDetails.id,
+      ...(userWithDetails.referrer?.id ? [userWithDetails.referrer.id] : []),
+    ],
+  });
 
   const data: WorkspaceUser & {
-    referrer?: { id: string; display_name: string | null };
+    referrer?: {
+      id: string;
+      display_name: string | null;
+      has_require_attention_feedback?: boolean;
+    };
     updated_at?: string | null;
     group_count?: number;
     linked_users: { id: string; display_name: string | null }[];
@@ -410,6 +442,9 @@ async function getData({
     archived_until: userWithDetails.archived_until,
     created_at: userWithDetails.created_at,
     updated_at: userWithDetails.updated_at,
+    has_require_attention_feedback: requireAttentionUserIds.has(
+      userWithDetails.id
+    ),
     group_count: userWithDetails.group_count ?? undefined,
     linked_users: (userWithDetails.linked_users || [])
       .map(({ platform_user_id, users }) =>
@@ -431,6 +466,9 @@ async function getData({
             userWithDetails.referrer.display_name ||
             userWithDetails.referrer.full_name ||
             '',
+          has_require_attention_feedback: requireAttentionUserIds.has(
+            userWithDetails.referrer.id
+          ),
         }
       : undefined,
   };
@@ -587,7 +625,19 @@ async function getAvailableUsersForReferral({
     p_user_id: currentUserId,
   });
   if (error) throw error;
-  return { data, count: data?.length || 0 };
+  const availableUsers = (data || []) as WorkspaceUser[];
+  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
+    wsId,
+    userIds: availableUsers.map((user) => user.id),
+  });
+
+  return {
+    data: availableUsers.map((user) => ({
+      ...user,
+      has_require_attention_feedback: requireAttentionUserIds.has(user.id),
+    })),
+    count: availableUsers.length,
+  };
 }
 
 async function getReferredUsers({
@@ -607,7 +657,17 @@ async function getReferredUsers({
     .eq('archived', false)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data || []) as unknown as WorkspaceUser[];
+
+  const referredUsers = (data || []) as unknown as WorkspaceUser[];
+  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
+    wsId,
+    userIds: referredUsers.map((user) => user.id),
+  });
+
+  return referredUsers.map((user) => ({
+    ...user,
+    has_require_attention_feedback: requireAttentionUserIds.has(user.id),
+  }));
 }
 
 async function getUserSentEmails({

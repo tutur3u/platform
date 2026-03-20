@@ -1,14 +1,6 @@
 import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart'
-    hide
-        AppBar,
-        FilledButton,
-        Scaffold,
-        TabBar,
-        TabBarView,
-        TabController,
-        TextButton,
-        TextField;
+    hide AppBar, FilledButton, Scaffold, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';
@@ -29,50 +21,20 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _otpController = TextEditingController();
+  final _emailController = TextEditingController(
+    text: Env.isDevelopment ? 'local@tuturuuu.com' : '',
+  );
+  final _passwordController = TextEditingController(
+    text: Env.isDevelopment ? 'password123' : '',
+  );
 
-  int _index = 0;
-  bool _otpSent = false;
-  int _retryAfter = 0;
   String? _captchaToken;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _otpController.dispose();
     super.dispose();
-  }
-
-  Future<void> _handleSendOtp() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) return;
-    if (Env.isTurnstileConfigured && _captchaToken == null) return;
-
-    final captcha = _captchaToken;
-    setState(() => _captchaToken = null);
-
-    final cubit = context.read<AuthCubit>();
-    final result = await cubit.sendOtp(email, captchaToken: captcha);
-
-    if (result.success && mounted) {
-      setState(() {
-        _otpSent = true;
-        _retryAfter = 0;
-      });
-    } else if (result.retryAfter != null) {
-      setState(() => _retryAfter = result.retryAfter!);
-    }
-  }
-
-  Future<void> _handleVerifyOtp() async {
-    final email = _emailController.text.trim();
-    final otp = _otpController.text.trim();
-    if (email.isEmpty || otp.isEmpty) return;
-
-    await context.read<AuthCubit>().verifyOtp(email, otp);
   }
 
   Future<void> _handlePasswordLogin() async {
@@ -111,6 +73,12 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 children: [
                   const shad.Gap(64),
+                  Image.asset(
+                    'assets/logos/transparent.png',
+                    width: 64,
+                    height: 64,
+                  ),
+                  const shad.Gap(24),
                   Text(
                     l10n.loginTitle,
                     style: shad.Theme.of(context).typography.h2,
@@ -133,23 +101,8 @@ class _LoginPageState extends State<LoginPage> {
                   const shad.Gap(20),
                   const AuthMethodDivider(),
                   const shad.Gap(20),
-                  shad.Tabs(
-                    index: _index,
-                    onChanged: (index) => setState(() => _index = index),
-                    children: [
-                      shad.TabItem(child: Text(l10n.loginTabOtp)),
-                      shad.TabItem(child: Text(l10n.loginTabPassword)),
-                    ],
-                  ),
-                  const shad.Gap(24),
                   Expanded(
-                    child: IndexedStack(
-                      index: _index,
-                      children: [
-                        _buildOtpTab(),
-                        _buildPasswordTab(),
-                      ],
-                    ),
+                    child: _buildPasswordForm(),
                   ),
                   // Error display
                   BlocBuilder<AuthCubit, AuthState>(
@@ -189,57 +142,48 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildOtpTab() {
+  Widget _buildPasswordForm() {
     return BlocBuilder<AuthCubit, AuthState>(
       buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
       builder: (context, state) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            shad.FormField(
-              key: const shad.FormKey<String>(#loginEmail),
-              label: Text(context.l10n.emailLabel),
-              child: shad.TextField(
-                controller: _emailController,
-                placeholder: Text(context.l10n.emailLabel),
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _handleSendOtp(),
-                enabled: !_otpSent && !state.isLoading,
-              ),
-            ),
-            if (_otpSent) ...[
-              const shad.Gap(16),
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               shad.FormField(
-                key: const shad.FormKey<String>(#loginOtp),
-                label: const Text('OTP'),
-                child: shad.InputOTP(
-                  onChanged: (value) async {
-                    _otpController.text = value.otpToString();
-                    if (value.every((e) => e != null)) {
-                      await _handleVerifyOtp();
-                    }
-                  },
-                  children: [
-                    shad.InputOTPChild.character(allowDigit: true),
-                    shad.InputOTPChild.character(allowDigit: true),
-                    shad.InputOTPChild.character(allowDigit: true),
-                    shad.InputOTPChild.separator,
-                    shad.InputOTPChild.character(allowDigit: true),
-                    shad.InputOTPChild.character(allowDigit: true),
-                    shad.InputOTPChild.character(allowDigit: true),
-                  ],
+                key: const shad.FormKey<String>(#loginEmail),
+                label: Text(context.l10n.emailLabel),
+                child: shad.TextField(
+                  controller: _emailController,
+                  placeholder: Text(context.l10n.emailLabel),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                 ),
               ),
               const shad.Gap(16),
-              shad.PrimaryButton(
-                onPressed: state.isLoading ? null : _handleVerifyOtp,
-                child: state.isLoading
-                    ? const shad.CircularProgressIndicator(size: 20)
-                    : Text(context.l10n.loginVerifyOtp),
+              shad.FormField(
+                key: const shad.FormKey<String>(#loginPassword),
+                label: Text(context.l10n.passwordLabel),
+                child: shad.TextField(
+                  controller: _passwordController,
+                  placeholder: Text(context.l10n.passwordLabel),
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _handlePasswordLogin(),
+                  features: const [
+                    shad.InputFeature.passwordToggle(),
+                  ],
+                ),
               ),
-            ] else ...[
-              const shad.Gap(16),
+              const shad.Gap(8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: shad.GhostButton(
+                  onPressed: () => context.push('/forgot-password'),
+                  child: Text(context.l10n.loginForgotPassword),
+                ),
+              ),
+              const shad.Gap(8),
               if (Env.isTurnstileConfigured) ...[
                 CloudflareTurnstile(
                   siteKey: Env.turnstileSiteKey,
@@ -248,91 +192,25 @@ class _LoginPageState extends State<LoginPage> {
                     setState(() => _captchaToken = token);
                   },
                 ),
-                const shad.Gap(16),
+                const shad.Gap(8),
               ],
-              shad.PrimaryButton(
-                onPressed:
-                    state.isLoading ||
-                        (Env.isTurnstileConfigured && _captchaToken == null)
-                    ? null
-                    : _handleSendOtp,
-                child: state.isLoading
-                    ? const shad.CircularProgressIndicator(size: 20)
-                    : Text(
-                        _retryAfter > 0
-                            ? context.l10n.loginRetryAfter(_retryAfter)
-                            : context.l10n.loginSendOtp,
-                      ),
+              SizedBox(
+                width: double.infinity,
+                child: shad.PrimaryButton(
+                  onPressed:
+                      state.isLoading ||
+                          (Env.isTurnstileConfigured && _captchaToken == null)
+                      ? null
+                      : _handlePasswordLogin,
+                  child: state.isLoading
+                      ? const Center(
+                          child: shad.CircularProgressIndicator(size: 20),
+                        )
+                      : Center(child: Text(context.l10n.loginSignIn)),
+                ),
               ),
             ],
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildPasswordTab() {
-    return BlocBuilder<AuthCubit, AuthState>(
-      buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
-      builder: (context, state) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            shad.FormField(
-              key: const shad.FormKey<String>(#loginEmailPassword),
-              label: Text(context.l10n.emailLabel),
-              child: shad.TextField(
-                controller: _emailController,
-                placeholder: Text(context.l10n.emailLabel),
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-              ),
-            ),
-            const shad.Gap(16),
-            shad.FormField(
-              key: const shad.FormKey<String>(#loginPassword),
-              label: Text(context.l10n.passwordLabel),
-              child: shad.TextField(
-                controller: _passwordController,
-                placeholder: Text(context.l10n.passwordLabel),
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _handlePasswordLogin(),
-                features: const [
-                  shad.InputFeature.passwordToggle(),
-                ],
-              ),
-            ),
-            const shad.Gap(8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: shad.GhostButton(
-                onPressed: () => context.push('/forgot-password'),
-                child: Text(context.l10n.loginForgotPassword),
-              ),
-            ),
-            const shad.Gap(8),
-            if (Env.isTurnstileConfigured) ...[
-              CloudflareTurnstile(
-                siteKey: Env.turnstileSiteKey,
-                baseUrl: Env.turnstileBaseUrl,
-                onTokenReceived: (token) {
-                  setState(() => _captchaToken = token);
-                },
-              ),
-              const shad.Gap(8),
-            ],
-            shad.PrimaryButton(
-              onPressed:
-                  state.isLoading ||
-                      (Env.isTurnstileConfigured && _captchaToken == null)
-                  ? null
-                  : _handlePasswordLogin,
-              child: state.isLoading
-                  ? const shad.CircularProgressIndicator(size: 20)
-                  : Text(context.l10n.loginSignIn),
-            ),
-          ],
+          ),
         );
       },
     );

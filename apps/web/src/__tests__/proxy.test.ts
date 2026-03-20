@@ -66,6 +66,22 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('ignores reserved tilde workspace API segments before UUID-backed workspace checks', async () => {
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/workspaces/~/mail/send', {
+        method: 'POST',
+        body: '{}',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('bypasses auth and locale rewriting for the offline fallback route', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~offline'));

@@ -1,7 +1,5 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { useWorkspaceTimeThreshold } from '@tuturuuu/hooks';
 import {
   CalendarIcon,
   CheckCircle2Icon,
@@ -14,6 +12,7 @@ import {
   InfoIcon,
   Loader2,
   Paperclip,
+  Settings,
   UserIcon,
   XCircleIcon,
   XIcon,
@@ -39,9 +38,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useAvailableUsers, useRequests } from '../hooks/use-requests';
-import { ThresholdSettingsDialog } from '../threshold-settings-dialog';
 import type { RequestsViewProps } from '../utils';
 import {
   calculateDuration,
@@ -70,7 +68,6 @@ export function RequestsView({
   const t = useTranslations('time-tracker.requests');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
 
   const isAllMode = viewMode === 'all';
 
@@ -121,10 +118,6 @@ export function RequestsView({
   const { data: availableUsersData = [], isLoading: usersLoading } =
     useAvailableUsers({ wsId, enabled: isAllMode });
 
-  // Only fetch threshold data in 'all' mode
-  const { data: thresholdData, isLoading: thresholdLoading } =
-    useWorkspaceTimeThreshold(wsId, { enabled: isAllMode });
-
   const requests = requestsData?.requests || [];
   const totalCount = requestsData?.totalCount || 0;
   const totalPages = requestsData?.totalPages || 0;
@@ -167,12 +160,6 @@ export function RequestsView({
     params.set('page', '1');
     router.push(`?${params.toString()}`);
   };
-
-  const handleThresholdUpdate = useCallback(() => {
-    queryClient.invalidateQueries({
-      queryKey: ['workspace-time-threshold', wsId],
-    });
-  }, [queryClient, wsId]);
 
   if (isError) {
     return (
@@ -320,18 +307,22 @@ export function RequestsView({
 
         <div className="flex items-center gap-2">
           {/* Threshold settings - only shown in 'all' mode */}
-          {isAllMode &&
-            canManageWorkspaceSettings &&
-            (thresholdLoading ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <ThresholdSettingsDialog
-                wsId={wsId}
-                currentThreshold={thresholdData?.threshold}
-                canManageWorkspaceSettings={canManageWorkspaceSettings}
-                onUpdate={handleThresholdUpdate}
-              />
-            ))}
+          {isAllMode && canManageWorkspaceSettings && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('settingsDialog', 'open');
+                params.set('settingsTab', 'time_tracker_requests');
+                router.push(`?${params.toString()}`);
+              }}
+            >
+              <Settings className="h-4 w-4" />
+              {t('settings.button')}
+            </Button>
+          )}
           <span className="text-muted-foreground text-sm">
             {t('list.itemsPerPage')}:
           </span>

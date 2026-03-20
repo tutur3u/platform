@@ -15,33 +15,38 @@ class WorkspaceSelectorButton extends StatelessWidget {
     return BlocBuilder<WorkspaceCubit, WorkspaceState>(
       buildWhen: (prev, curr) => prev.currentWorkspace != curr.currentWorkspace,
       builder: (context, state) {
-        final workspaceName = _displayWorkspaceName(
-          state.currentWorkspace?.name ?? l10n.assistantPersonalWorkspace,
-        );
+        final workspace = state.currentWorkspace;
+        final workspaceName = workspace?.personal ?? true
+            ? l10n.workspacePersonalBadge
+            : _displayWorkspaceName(workspace?.name ?? '');
 
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(12),
             onTap: () => showWorkspacePickerSheet(context),
-            child: Ink(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 132),
+                    constraints: const BoxConstraints(maxWidth: 148),
                     child: Text(
                       workspaceName,
                       overflow: TextOverflow.ellipsis,
                       softWrap: false,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                   const SizedBox(width: 2),
-                  const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ],
               ),
             ),
@@ -52,7 +57,7 @@ class WorkspaceSelectorButton extends StatelessWidget {
   }
 
   String _displayWorkspaceName(String value) {
-    if (value.toUpperCase() != value) return value;
+    if (value.isEmpty || value.toUpperCase() != value) return value;
     return value
         .toLowerCase()
         .split(RegExp(r'\s+'))

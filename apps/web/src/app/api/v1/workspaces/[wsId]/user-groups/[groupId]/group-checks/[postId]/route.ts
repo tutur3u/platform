@@ -3,6 +3,7 @@ import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { enqueueApprovedPostEmails } from '@/lib/post-email-queue';
 
 interface Params {
   params: Promise<{
@@ -39,7 +40,6 @@ export async function PUT(req: Request, { params }: Params) {
     .select(`
       id,
       group_id,
-      post_approval_status,
       workspace_user_groups!inner(ws_id)
     `)
     .eq('id', postId)
@@ -48,13 +48,6 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
   if (postErr || !post) {
     return NextResponse.json({ message: 'Post not found' }, { status: 404 });
-  }
-
-  if (post.post_approval_status !== 'APPROVED') {
-    return NextResponse.json(
-      { message: 'Post must be approved before updating checks' },
-      { status: 403 }
-    );
   }
 
   // Validate payload
@@ -110,6 +103,17 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
+    await enqueueApprovedPostEmails(sbAdmin, {
+      wsId,
+      postId,
+      groupId,
+      userIds: (
+        validatedData as Array<{
+          user_id: string;
+        }>
+      ).map((item) => item.user_id),
+    });
+
     return NextResponse.json({ message: 'Data updated successfully' });
   } else {
     const singleData = validatedData as {
@@ -143,6 +147,13 @@ export async function PUT(req: Request, { params }: Params) {
         { status: 500 }
       );
     }
+
+    await enqueueApprovedPostEmails(sbAdmin, {
+      wsId,
+      postId,
+      groupId,
+      userIds: [singleData.user_id],
+    });
 
     return NextResponse.json({ message: 'Data updated successfully' });
   }

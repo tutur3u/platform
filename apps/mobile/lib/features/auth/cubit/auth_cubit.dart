@@ -50,48 +50,6 @@ class AuthCubit extends Cubit<AuthState> {
     });
   }
 
-  // ── OTP ─────────────────────────────────────────
-
-  Future<({bool success, int? retryAfter})> sendOtp(
-    String email, {
-    String? captchaToken,
-  }) async {
-    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
-    final result = await _repo.sendOtp(email, captchaToken: captchaToken);
-    emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
-    );
-    return (success: result.success, retryAfter: result.retryAfter);
-  }
-
-  Future<bool> verifyOtp(String email, String otp) async {
-    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
-    final result = await _repo.verifyOtp(email, otp);
-    if (result.success) {
-      final user = await _repo.getCurrentUser();
-      if (user != null) {
-        if (_repo.checkMfaRequired()) {
-          emit(AuthState.mfaRequired(user));
-        } else {
-          emit(AuthState.authenticated(user));
-        }
-        return true;
-      }
-    }
-    emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
-    );
-    return false;
-  }
-
   // ── Password ────────────────────────────────────
 
   Future<bool> signInWithPassword(

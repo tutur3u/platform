@@ -166,7 +166,7 @@ GoRouter createAppRouter(
         builder: (context, state, child) => BlocProvider(
           create: (_) => AssistantChromeCubit(),
           child: ShellPage(
-            matchedLocation: state.matchedLocation,
+            matchedLocation: state.uri.path,
             child: child,
           ),
         ),

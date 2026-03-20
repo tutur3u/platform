@@ -4,7 +4,10 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import {
+  FeedbackContentSchema,
+  normalizeWorkspaceFeedback,
+} from '../../../../../users/feedbacks/shared';
 
 interface Params {
   params: Promise<{
@@ -13,11 +16,6 @@ interface Params {
     userId: string;
   }>;
 }
-
-const FeedbackSchema = z.object({
-  content: z.string().min(1),
-  require_attention: z.boolean().default(false),
-});
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId, userId } = await params;
@@ -69,22 +67,23 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const feedbacks = (data || []).map((feedback) => {
-    const creator = feedback.creator as unknown as {
-      full_name: string | null;
-      display_name: string | null;
-    } | null;
-
-    return {
+  const feedbacks = (data || []).map((feedback) =>
+    normalizeWorkspaceFeedback({
       ...feedback,
-      creator: creator
+      user_id: userId,
+      group_id: groupId,
+      user: null,
+      group: null,
+      creator: feedback.creator
         ? {
-            full_name: creator.full_name,
-            display_name: creator.display_name,
+            id: null,
+            full_name: feedback.creator.full_name,
+            display_name: feedback.creator.display_name,
+            email: null,
           }
         : null,
-    };
-  });
+    })
+  );
 
   return NextResponse.json({
     data: feedbacks,
@@ -111,7 +110,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const body = await req.json();
-  const parsed = FeedbackSchema.safeParse(body);
+  const parsed = FeedbackContentSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -191,7 +190,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const body = await req.json();
-  const parsed = FeedbackSchema.safeParse(body);
+  const parsed = FeedbackContentSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(

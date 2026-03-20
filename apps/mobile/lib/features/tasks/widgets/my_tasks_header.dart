@@ -5,12 +5,14 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class MyTasksHeader extends StatelessWidget {
   const MyTasksHeader({
+    required this.totalActiveCount,
     required this.overdueCount,
     required this.todayCount,
     required this.upcomingCount,
     super.key,
   });
 
+  final int totalActiveCount;
   final int overdueCount;
   final int todayCount;
   final int upcomingCount;
@@ -32,59 +34,49 @@ class MyTasksHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                greeting,
-                style: theme.typography.h2.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                formattedDate,
-                style: theme.typography.textMuted,
-              ),
-            ],
+        Text(
+          greeting,
+          style: theme.typography.h4.copyWith(
+            fontWeight: FontWeight.w800,
           ),
         ),
-        Row(
+        const SizedBox(height: 4),
+        Text(
+          formattedDate,
+          style: theme.typography.textSmall.copyWith(
+            color: theme.colorScheme.mutedForeground,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            Expanded(
-              child: _SummaryCard(
-                count: overdueCount,
-                label: l10n.tasksOverdue,
-                icon: Icons.schedule,
-                accentColor: theme.colorScheme.destructive,
-                backgroundColor: theme.colorScheme.destructive.withValues(
-                  alpha: 0.08,
-                ),
+            _MetaChip(
+              label: l10n.tasksTitle,
+              value: totalActiveCount,
+              foregroundColor: theme.colorScheme.foreground,
+              backgroundColor: theme.colorScheme.muted,
+            ),
+            _MetaChip(
+              label: l10n.tasksOverdue,
+              value: overdueCount,
+              foregroundColor: theme.colorScheme.destructive,
+              backgroundColor: theme.colorScheme.destructive.withValues(
+                alpha: 0.08,
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _SummaryCard(
-                count: todayCount,
-                label: l10n.tasksDueToday,
-                icon: Icons.today,
-                accentColor: Colors.orange,
-                backgroundColor: Colors.orange.withValues(alpha: 0.08),
-              ),
+            _MetaChip(
+              label: l10n.tasksDueToday,
+              value: todayCount,
+              foregroundColor: const Color(0xFFE59A12),
+              backgroundColor: const Color(0xFFE59A12).withValues(alpha: 0.1),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _SummaryCard(
-                count: upcomingCount,
-                label: l10n.tasksUpcoming,
-                icon: Icons.outlined_flag,
-                accentColor: theme.colorScheme.primary,
-                backgroundColor: theme.colorScheme.primary.withValues(
-                  alpha: 0.08,
-                ),
-              ),
+            _MetaChip(
+              label: l10n.tasksUpcoming,
+              value: upcomingCount,
+              foregroundColor: theme.colorScheme.mutedForeground,
+              backgroundColor: theme.colorScheme.muted,
             ),
           ],
         ),
@@ -93,19 +85,17 @@ class MyTasksHeader extends StatelessWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.count,
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
     required this.label,
-    required this.icon,
-    required this.accentColor,
+    required this.value,
+    required this.foregroundColor,
     required this.backgroundColor,
   });
 
-  final int count;
   final String label;
-  final IconData icon;
-  final Color accentColor;
+  final int value;
+  final Color foregroundColor;
   final Color backgroundColor;
 
   @override
@@ -113,38 +103,25 @@ class _SummaryCard extends StatelessWidget {
     final theme = shad.Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withValues(alpha: 0.16)),
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 18, color: accentColor),
-          ),
-          const SizedBox(height: 12),
           Text(
-            '$count',
-            style: theme.typography.h4.copyWith(
-              color: accentColor,
+            '$value',
+            style: theme.typography.small.copyWith(
+              color: foregroundColor,
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(width: 6),
           Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.xSmall.copyWith(
+            style: theme.typography.small.copyWith(
               color: theme.colorScheme.mutedForeground,
               fontWeight: FontWeight.w600,
             ),

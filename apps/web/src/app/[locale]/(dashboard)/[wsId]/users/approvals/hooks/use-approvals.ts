@@ -49,9 +49,11 @@ interface UseApprovalsResult {
   setRejectReason: (reason: string) => void;
   closeRejectDialog: () => void;
   approveItem: (itemId: string) => void;
+  unapproveItem: (itemId: string) => void;
   approveAllItems: () => void;
   rejectItem: (params: { id: string; reason: string }) => void;
   isApproving: boolean;
+  isUnapproving: boolean;
   isApprovingAll: boolean;
   approveAllProgress: { current: number; total: number } | null;
   isRejecting: boolean;
@@ -334,6 +336,52 @@ export function useApprovals({
     },
   });
 
+  const unapproveMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      mutatingItemIdRef.current = itemId;
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/approvals`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'unapprove',
+            kind,
+            itemId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || tCommon('error'));
+      }
+    },
+    onSuccess: async () => {
+      toast.success(t('actions.unapproved'));
+      if (mutatingItemIdRef.current) {
+        advanceToNextItem(mutatingItemIdRef.current);
+        mutatingItemIdRef.current = null;
+      } else {
+        setDetailItem(null);
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ['ws', wsId, 'approvals', kind],
+      });
+
+      if (kind === 'posts') {
+        await queryClient.invalidateQueries({
+          queryKey: ['group-posts', wsId],
+        });
+      }
+    },
+    onError: (error) => {
+      mutatingItemIdRef.current = null;
+      toast.error(error instanceof Error ? error.message : tCommon('error'));
+    },
+  });
+
   const { items, totalCount, totalPages, isError, error, pendingItemIds } =
     useMemo(() => {
       if (kind === 'reports') {
@@ -411,9 +459,11 @@ export function useApprovals({
     totalPendingCount: totalCount,
     closeRejectDialog,
     approveItem: approveMutation.mutate,
+    unapproveItem: unapproveMutation.mutate,
     approveAllItems: () => approveAllMutation.mutate(),
     rejectItem: rejectMutation.mutate,
     isApproving: approveMutation.isPending,
+    isUnapproving: unapproveMutation.isPending,
     isApprovingAll: approveAllMutation.isPending,
     approveAllProgress,
     isRejecting: rejectMutation.isPending,

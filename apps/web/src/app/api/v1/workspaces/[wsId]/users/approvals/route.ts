@@ -10,8 +10,28 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { MAX_APPROVAL_REJECTION_REASON_LENGTH } from '@/features/reports/report-limits';
+import {
+  cancelQueuedPostEmails,
+  enqueueApprovedPostEmails,
+  getPostEmailQueueRows,
+  hasPostEmailBeenSent,
+  summarizePostEmailQueue,
+} from '@/lib/post-email-queue';
 
 type ApprovalStatus = Database['public']['Enums']['approval_status'];
+
+function buildPostApprovalItemId(postId: string, userId: string) {
+  return `${postId}:${userId}`;
+}
+
+function parsePostApprovalItemId(itemId: string) {
+  const [postId, userId] = itemId.split(':');
+  if (!postId || !userId) {
+    return null;
+  }
+
+  return { postId, userId };
+}
 
 const SearchParamsSchema = z.object({
   kind: z.enum(['reports', 'posts']),
@@ -24,7 +44,7 @@ const SearchParamsSchema = z.object({
 });
 
 const MutationSchema = z.object({
-  action: z.enum(['approve', 'reject', 'approveAll']),
+  action: z.enum(['approve', 'reject', 'approveAll', 'unapprove']),
   kind: z.enum(['reports', 'posts']),
   itemId: z.string().optional(),
   reason: z.string().max(MAX_APPROVAL_REJECTION_REASON_LENGTH).optional(),
@@ -58,7 +78,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const { containsPermission } = permissions;
     const canApproveReports = containsPermission('approve_reports');
-    const canApprovePosts = containsPermission('approve_posts');
+    const canApprovePosts = containsPermission('send_user_group_post_emails');
 
     const { searchParams } = new URL(request.url);
     const parsed = SearchParamsSchema.safeParse(
@@ -185,17 +205,22 @@ export async function GET(request: Request, { params }: Params) {
     } else {
       // Posts
       let countQuery = sbAdmin
-        .from('user_group_posts')
-        .select('id, workspace_user_groups!inner(ws_id)', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('workspace_user_groups.ws_id', wsId);
+        .from('user_group_post_checks')
+        .select(
+          'post_id, user_id, user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))',
+          {
+            count: 'exact',
+            head: true,
+          }
+        )
+        .eq('user_group_posts.workspace_user_groups.ws_id', wsId);
 
-      if (groupId) countQuery = countQuery.eq('group_id', groupId);
+      if (groupId)
+        countQuery = countQuery.eq('user_group_posts.group_id', groupId);
+      if (userId) countQuery = countQuery.eq('user_id', userId);
       if (status !== 'all') {
         countQuery = countQuery.eq(
-          'post_approval_status',
+          'approval_status',
           status.toUpperCase() as ApprovalStatus
         );
       }
@@ -204,16 +229,17 @@ export async function GET(request: Request, { params }: Params) {
       if (countError) throw countError;
 
       let dataQuery = sbAdmin
-        .from('user_group_posts')
+        .from('user_group_post_checks')
         .select(
-          'id, title, content, notes, created_at, updated_by, post_approval_status, rejection_reason, approved_at, rejected_at, group_id, modifier:workspace_users!updated_by(display_name, full_name, email), ...workspace_user_groups(group_name:name, ws_id)'
+          'post_id, user_id, notes, is_completed, approval_status, rejection_reason, approved_at, rejected_at, approved_by, post:user_group_posts!inner(id, title, content, notes, created_at, updated_by, group_id, modifier:workspace_users!updated_by(display_name, full_name, email), workspace_user_groups!inner(name, ws_id)), user:workspace_users!user_id!inner(full_name, display_name, email)'
         )
-        .eq('workspace_user_groups.ws_id', wsId);
+        .eq('post.workspace_user_groups.ws_id', wsId);
 
-      if (groupId) dataQuery = dataQuery.eq('group_id', groupId);
+      if (groupId) dataQuery = dataQuery.eq('post.group_id', groupId);
+      if (userId) dataQuery = dataQuery.eq('user_id', userId);
       if (status !== 'all') {
         dataQuery = dataQuery.eq(
-          'post_approval_status',
+          'approval_status',
           status.toUpperCase() as ApprovalStatus
         );
       }
@@ -228,21 +254,86 @@ export async function GET(request: Request, { params }: Params) {
 
       if (error) throw error;
 
+      const postIds = (data ?? []).map((row) => row.post_id);
+      const queueRows = await getPostEmailQueueRows(sbAdmin, postIds);
+      const queueRowsByRecipient = new Map<
+        string,
+        (typeof queueRows)[number]
+      >();
+
+      for (const row of queueRows) {
+        queueRowsByRecipient.set(
+          buildPostApprovalItemId(row.post_id, row.user_id),
+          row
+        );
+      }
+
+      const recipientPairs = (data ?? []).map((row) => ({
+        postId: row.post_id,
+        userId: row.user_id,
+      }));
+      const uniqueUserIds = [
+        ...new Set(recipientPairs.map((pair) => pair.userId).filter(Boolean)),
+      ];
+
+      const { data: sentEmails, error: sentEmailsError } =
+        postIds.length === 0 || uniqueUserIds.length === 0
+          ? { data: [], error: null }
+          : await sbAdmin
+              .from('sent_emails')
+              .select('post_id, receiver_id')
+              .in('post_id', postIds);
+
+      if (sentEmailsError) throw sentEmailsError;
+
+      const sentRecipientIds = new Set(
+        (sentEmails ?? [])
+          .filter(
+            (row) =>
+              uniqueUserIds.includes(row.receiver_id) && Boolean(row.post_id)
+          )
+          .map((row) => buildPostApprovalItemId(row.post_id!, row.receiver_id))
+      );
+
       const items = (data ?? []).map((row) => {
-        const modifier = row.modifier as unknown as {
+        const modifier = row.post?.modifier as unknown as {
           display_name: string | null;
           full_name: string | null;
           email: string | null;
         } | null;
+        const itemId = buildPostApprovalItemId(row.post_id, row.user_id);
+        const queueRow = queueRowsByRecipient.get(itemId);
+        const canRemoveApproval =
+          row.approval_status === 'APPROVED' &&
+          !sentRecipientIds.has(itemId) &&
+          queueRow?.status !== 'sent';
+        const userName =
+          row.user?.full_name || row.user?.display_name || row.user?.email;
 
         return {
-          ...row,
-          group_name: row.group_name,
+          id: itemId,
+          title: row.post?.title,
+          content: row.post?.content,
+          notes: row.notes ?? row.post?.notes ?? null,
+          created_at: row.post?.created_at,
+          updated_by: row.post?.updated_by,
+          post_approval_status: row.approval_status,
+          rejection_reason: row.rejection_reason,
+          approved_at: row.approved_at,
+          rejected_at: row.rejected_at,
+          group_id: row.post?.group_id,
+          group_name: row.post?.workspace_user_groups?.name,
+          user_id: row.user_id,
+          user_name: userName,
+          post_id: row.post_id,
+          is_completed: row.is_completed,
           modifier_name:
             modifier?.display_name ||
             modifier?.full_name ||
             modifier?.email ||
             null,
+          can_remove_approval: canRemoveApproval,
+          queue_counts: summarizePostEmailQueue(queueRow ? [queueRow] : []),
         };
       });
 
@@ -277,7 +368,7 @@ export async function PUT(request: Request, { params }: Params) {
 
     const { containsPermission } = permissions;
     const canApproveReports = containsPermission('approve_reports');
-    const canApprovePosts = containsPermission('approve_posts');
+    const canApprovePosts = containsPermission('send_user_group_post_emails');
 
     const body = await request.json();
     const parsed = MutationSchema.safeParse(body);
@@ -358,33 +449,53 @@ export async function PUT(request: Request, { params }: Params) {
           .eq('id', itemId);
         if (error) throw error;
       } else {
-        const { data: post, error: fetchError } = await sbAdmin
-          .from('user_group_posts')
-          .select('id, workspace_user_groups!inner(ws_id)')
-          .eq('id', itemId)
-          .eq('workspace_user_groups.ws_id', wsId)
+        const parsedItem = parsePostApprovalItemId(itemId);
+        if (!parsedItem) {
+          return NextResponse.json(
+            { message: 'Invalid post approval item ID' },
+            { status: 400 }
+          );
+        }
+
+        const { data: check, error: fetchError } = await sbAdmin
+          .from('user_group_post_checks')
+          .select(
+            'post_id, user_id, approval_status, user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))'
+          )
+          .eq('post_id', parsedItem.postId)
+          .eq('user_id', parsedItem.userId)
+          .eq('user_group_posts.workspace_user_groups.ws_id', wsId)
           .maybeSingle();
 
         if (fetchError) throw fetchError;
-        if (!post) {
+        if (!check) {
           return NextResponse.json(
-            { message: 'Post not found' },
+            { message: 'Post approval item not found' },
             { status: 404 }
           );
         }
 
         const { error } = await sbAdmin
-          .from('user_group_posts')
+          .from('user_group_post_checks')
           .update({
-            post_approval_status: 'APPROVED' as ApprovalStatus,
+            approval_status: 'APPROVED' as ApprovalStatus,
             approved_by: workspaceUser.virtual_user_id,
             approved_at: now,
             rejected_by: null,
             rejected_at: null,
             rejection_reason: null,
           })
-          .eq('id', itemId);
+          .eq('post_id', parsedItem.postId)
+          .eq('user_id', parsedItem.userId);
         if (error) throw error;
+
+        await enqueueApprovedPostEmails(sbAdmin, {
+          wsId,
+          postId: parsedItem.postId,
+          groupId: check.user_group_posts?.group_id,
+          senderPlatformUserId: user.id,
+          userIds: [parsedItem.userId],
+        });
       }
     } else if (action === 'reject') {
       if (!itemId)
@@ -429,36 +540,57 @@ export async function PUT(request: Request, { params }: Params) {
           .eq('id', itemId);
         if (error) throw error;
       } else {
-        const { data: post, error: fetchError } = await sbAdmin
-          .from('user_group_posts')
-          .select('id, workspace_user_groups!inner(ws_id)')
-          .eq('id', itemId)
-          .eq('workspace_user_groups.ws_id', wsId)
+        const parsedItem = parsePostApprovalItemId(itemId);
+        if (!parsedItem) {
+          return NextResponse.json(
+            { message: 'Invalid post approval item ID' },
+            { status: 400 }
+          );
+        }
+
+        const { data: check, error: fetchError } = await sbAdmin
+          .from('user_group_post_checks')
+          .select(
+            'post_id, user_id, user_group_posts!inner(workspace_user_groups!inner(ws_id))'
+          )
+          .eq('post_id', parsedItem.postId)
+          .eq('user_id', parsedItem.userId)
+          .eq('user_group_posts.workspace_user_groups.ws_id', wsId)
           .maybeSingle();
 
         if (fetchError) throw fetchError;
-        if (!post) {
+        if (!check) {
           return NextResponse.json(
-            { message: 'Post not found' },
+            { message: 'Post approval item not found' },
             { status: 404 }
           );
         }
 
         const { error } = await sbAdmin
-          .from('user_group_posts')
+          .from('user_group_post_checks')
           .update({
-            post_approval_status: 'REJECTED' as ApprovalStatus,
+            approval_status: 'REJECTED' as ApprovalStatus,
             rejected_by: workspaceUser.virtual_user_id,
             rejected_at: now,
             rejection_reason: reason.trim(),
             approved_by: null,
             approved_at: null,
           })
-          .eq('id', itemId);
+          .eq('post_id', parsedItem.postId)
+          .eq('user_id', parsedItem.userId);
         if (error) throw error;
+
+        await cancelQueuedPostEmails(sbAdmin, parsedItem.postId, [
+          parsedItem.userId,
+        ]);
       }
     } else if (action === 'approveAll') {
       let allPendingIds: string[] = [];
+      const pendingPostGroups: Array<{
+        post_id: string;
+        group_id: string;
+        user_id: string;
+      }> = [];
 
       if (kind === 'reports') {
         let q = sbAdmin
@@ -476,16 +608,29 @@ export async function PUT(request: Request, { params }: Params) {
         allPendingIds = (data ?? []).map((item) => item.id);
       } else {
         let q = sbAdmin
-          .from('user_group_posts')
-          .select('id, workspace_user_groups!inner(ws_id)')
-          .eq('workspace_user_groups.ws_id', wsId)
-          .eq('post_approval_status', 'PENDING');
+          .from('user_group_post_checks')
+          .select(
+            'post_id, user_id, user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))'
+          )
+          .eq('user_group_posts.workspace_user_groups.ws_id', wsId)
+          .eq('approval_status', 'PENDING');
 
-        if (filters?.groupId) q = q.eq('group_id', filters.groupId);
+        if (filters?.groupId)
+          q = q.eq('user_group_posts.group_id', filters.groupId);
+        if (filters?.userId) q = q.eq('user_id', filters.userId);
 
         const { data, error } = await q;
         if (error) throw error;
-        allPendingIds = (data ?? []).map((item) => item.id);
+        allPendingIds = (data ?? []).map((item) =>
+          buildPostApprovalItemId(item.post_id, item.user_id)
+        );
+        pendingPostGroups.push(
+          ...(data ?? []).map((item) => ({
+            post_id: item.post_id,
+            group_id: item.user_group_posts.group_id,
+            user_id: item.user_id,
+          }))
+        );
       }
 
       if (allPendingIds.length > 0) {
@@ -506,21 +651,119 @@ export async function PUT(request: Request, { params }: Params) {
               .in('id', batch);
             if (error) throw error;
           } else {
-            const { error } = await sbAdmin
-              .from('user_group_posts')
-              .update({
-                post_approval_status: 'APPROVED' as ApprovalStatus,
-                approved_by: workspaceUser.virtual_user_id,
-                approved_at: now,
-                rejected_by: null,
-                rejected_at: null,
-                rejection_reason: null,
-              })
-              .in('id', batch);
-            if (error) throw error;
+            const parsedBatch = batch
+              .map((value) => parsePostApprovalItemId(value))
+              .filter(Boolean);
+            for (const item of parsedBatch) {
+              const { error } = await sbAdmin
+                .from('user_group_post_checks')
+                .update({
+                  approval_status: 'APPROVED' as ApprovalStatus,
+                  approved_by: workspaceUser.virtual_user_id,
+                  approved_at: now,
+                  rejected_by: null,
+                  rejected_at: null,
+                  rejection_reason: null,
+                })
+                .eq('post_id', item!.postId)
+                .eq('user_id', item!.userId);
+              if (error) throw error;
+            }
+          }
+        }
+
+        if (kind === 'posts') {
+          for (const post of pendingPostGroups) {
+            await enqueueApprovedPostEmails(sbAdmin, {
+              wsId,
+              postId: post.post_id,
+              groupId: post.group_id,
+              senderPlatformUserId: user.id,
+              userIds: [post.user_id],
+            });
           }
         }
       }
+    } else if (action === 'unapprove') {
+      if (kind !== 'posts') {
+        return NextResponse.json(
+          { message: 'Unapprove is only supported for posts' },
+          { status: 400 }
+        );
+      }
+
+      if (!itemId) {
+        return NextResponse.json(
+          { message: 'Item ID is required' },
+          { status: 400 }
+        );
+      }
+
+      const parsedItem = parsePostApprovalItemId(itemId);
+      if (!parsedItem) {
+        return NextResponse.json(
+          { message: 'Invalid post approval item ID' },
+          { status: 400 }
+        );
+      }
+
+      const { data: check, error: fetchError } = await sbAdmin
+        .from('user_group_post_checks')
+        .select(
+          'post_id, user_id, approval_status, user_group_posts!inner(workspace_user_groups!inner(ws_id))'
+        )
+        .eq('post_id', parsedItem.postId)
+        .eq('user_id', parsedItem.userId)
+        .eq('user_group_posts.workspace_user_groups.ws_id', wsId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!check) {
+        return NextResponse.json(
+          { message: 'Post approval item not found' },
+          { status: 404 }
+        );
+      }
+
+      if (check.approval_status !== 'APPROVED') {
+        return NextResponse.json(
+          { message: 'Only approved items can remove approval' },
+          { status: 409 }
+        );
+      }
+
+      const alreadySent = await hasPostEmailBeenSent(
+        sbAdmin,
+        parsedItem.postId,
+        parsedItem.userId
+      );
+      if (alreadySent) {
+        return NextResponse.json(
+          {
+            message: 'Approval cannot be removed after an email has been sent',
+          },
+          { status: 409 }
+        );
+      }
+
+      const { error } = await sbAdmin
+        .from('user_group_post_checks')
+        .update({
+          approval_status: 'PENDING' as ApprovalStatus,
+          approved_by: null,
+          approved_at: null,
+          rejected_by: null,
+          rejected_at: null,
+          rejection_reason: null,
+        })
+        .eq('post_id', parsedItem.postId)
+        .eq('user_id', parsedItem.userId);
+
+      if (error) throw error;
+
+      await cancelQueuedPostEmails(sbAdmin, parsedItem.postId, [
+        parsedItem.userId,
+      ]);
     }
 
     return NextResponse.json({ success: true });

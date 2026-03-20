@@ -16,6 +16,7 @@ import moment from 'moment';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment } from 'react';
+import { RequireAttentionName } from '@/components/users/require-attention-name';
 import { UserRowActions } from './row-actions';
 
 interface UserColumnsExtraData {
@@ -178,9 +179,16 @@ export const getUserColumns = ({
             <TooltipProvider>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger className="font-semibold underline">
-                  {row.getValue('full_name') ||
-                    row.getValue('display_name') ||
-                    '-'}
+                  <RequireAttentionName
+                    name={
+                      row.getValue('full_name') ||
+                      row.getValue('display_name') ||
+                      '-'
+                    }
+                    requireAttention={
+                      !!row.original.has_require_attention_feedback
+                    }
+                  />
                 </TooltipTrigger>
                 <TooltipContent className="text-center">
                   {t(`${namespace}.linked_to`)}{' '}
@@ -210,7 +218,14 @@ export const getUserColumns = ({
               key={`${row.id}-name`}
               className="font-semibold hover:underline"
             >
-              {row.getValue('full_name') || row.getValue('display_name') || '-'}
+              <RequireAttentionName
+                name={
+                  row.getValue('full_name') ||
+                  row.getValue('display_name') ||
+                  '-'
+                }
+                requireAttention={!!row.original.has_require_attention_feedback}
+              />
             </span>
           )}
         </Link>
@@ -232,9 +247,16 @@ export const getUserColumns = ({
             <TooltipProvider>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger className="font-semibold underline">
-                  {row.getValue('display_name') ||
-                    row.getValue('full_name') ||
-                    '-'}
+                  <RequireAttentionName
+                    name={
+                      row.getValue('display_name') ||
+                      row.getValue('full_name') ||
+                      '-'
+                    }
+                    requireAttention={
+                      !!row.original.has_require_attention_feedback
+                    }
+                  />
                 </TooltipTrigger>
                 <TooltipContent className="text-center">
                   {t(`${namespace}.linked_to`)}{' '}
@@ -260,7 +282,12 @@ export const getUserColumns = ({
               </Tooltip>
             </TooltipProvider>
           ) : (
-            row.getValue('display_name') || row.getValue('full_name') || '-'
+            <RequireAttentionName
+              name={
+                row.getValue('display_name') || row.getValue('full_name') || '-'
+              }
+              requireAttention={!!row.original.has_require_attention_feedback}
+            />
           )}
         </Link>
       ),

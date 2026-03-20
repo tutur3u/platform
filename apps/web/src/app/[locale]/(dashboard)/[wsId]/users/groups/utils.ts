@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { notFound } from 'next/navigation';
 import type { ManagerUser } from './hooks';
@@ -53,6 +54,28 @@ export async function verifyGroupAccess(wsId: string, groupId: string) {
  */
 export function escapeLikeWildcards(str: string): string {
   return str.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
+export function normalizeUserGroupSearchText(value: string): string {
+  return removeAccents(value).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+export function matchesUserGroupSearch(
+  name: string | null | undefined,
+  q: string
+) {
+  const normalizedQuery = normalizeUserGroupSearchText(q);
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const normalizedName = normalizeUserGroupSearchText(name ?? '');
+  if (!normalizedName) {
+    return false;
+  }
+
+  const queryTerms = normalizedQuery.split(' ').filter(Boolean);
+  return queryTerms.every((term) => normalizedName.includes(term));
 }
 
 export async function fetchManagersForGroups(

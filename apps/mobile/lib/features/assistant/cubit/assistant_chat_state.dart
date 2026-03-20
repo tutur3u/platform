@@ -10,6 +10,7 @@ class AssistantChatState extends Equatable {
   const AssistantChatState({
     this.workspaceId,
     this.status = AssistantChatStatus.idle,
+    this.hasLoadedOnce = false,
     this.chat,
     this.storedChatId,
     required this.fallbackChatId,
@@ -24,6 +25,7 @@ class AssistantChatState extends Equatable {
 
   final String? workspaceId;
   final AssistantChatStatus status;
+  final bool hasLoadedOnce;
   final AssistantChatRecord? chat;
   final String? storedChatId;
   final String fallbackChatId;
@@ -42,6 +44,7 @@ class AssistantChatState extends Equatable {
   AssistantChatState copyWith({
     Object? workspaceId = _assistantChatSentinel,
     AssistantChatStatus? status,
+    bool? hasLoadedOnce,
     Object? chat = _assistantChatSentinel,
     Object? storedChatId = _assistantChatSentinel,
     String? fallbackChatId,
@@ -59,6 +62,7 @@ class AssistantChatState extends Equatable {
           ? this.workspaceId
           : workspaceId as String?,
       status: status ?? this.status,
+      hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce,
       chat: chat == _assistantChatSentinel
           ? this.chat
           : chat as AssistantChatRecord?,
@@ -87,6 +91,7 @@ class AssistantChatState extends Equatable {
   List<Object?> get props => [
     workspaceId,
     status,
+    hasLoadedOnce,
     chat,
     storedChatId,
     fallbackChatId,

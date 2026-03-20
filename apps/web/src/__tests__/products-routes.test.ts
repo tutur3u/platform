@@ -6,6 +6,11 @@ const mocks = vi.hoisted(() => {
   const productInsertSingle = vi.fn();
   const productCountSingle = vi.fn();
   const inventoryInsert = vi.fn();
+  const inventorySelectEq = vi.fn();
+  const inventoryDeleteEq = vi.fn();
+  const inventoryDeleteWarehouseEq = vi.fn();
+  const inventoryUpdateEq = vi.fn();
+  const stockChangesInsert = vi.fn();
 
   const sessionSupabase = {
     auth: {
@@ -21,6 +26,15 @@ const mocks = vi.hoisted(() => {
       if (table === 'inventory_products') {
         return {
           insert: inventoryInsert,
+          select: vi.fn(() => ({
+            eq: inventorySelectEq,
+          })),
+          delete: vi.fn(() => ({
+            eq: inventoryDeleteEq,
+          })),
+          update: vi.fn(() => ({
+            eq: inventoryUpdateEq,
+          })),
         };
       }
 
@@ -38,7 +52,7 @@ const mocks = vi.hoisted(() => {
 
       if (table === 'product_stock_changes') {
         return {
-          insert: vi.fn().mockResolvedValue({ error: null }),
+          insert: stockChangesInsert,
         };
       }
 
@@ -75,6 +89,39 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'inventory_products') {
+        return {
+          insert: inventoryInsert,
+          select: vi.fn(() => ({
+            eq: inventorySelectEq,
+          })),
+          delete: vi.fn(() => ({
+            eq: inventoryDeleteEq,
+          })),
+          update: vi.fn(() => ({
+            eq: inventoryUpdateEq,
+          })),
+        };
+      }
+
+      if (table === 'workspace_user_linked_users') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === 'product_stock_changes') {
+        return {
+          insert: stockChangesInsert,
+        };
+      }
+
       throw new Error(`Unexpected admin table: ${table}`);
     }),
   };
@@ -94,11 +141,16 @@ const mocks = vi.hoisted(() => {
   return {
     adminSupabase,
     inventoryInsert,
+    inventoryDeleteEq,
+    inventoryDeleteWarehouseEq,
+    inventorySelectEq,
+    inventoryUpdateEq,
     permissions,
     productCountSingle,
     productInsertSingle,
     productMaybeSingle,
     sessionSupabase,
+    stockChangesInsert,
   };
 });
 
@@ -125,6 +177,15 @@ describe('product routes', () => {
       error: null,
     });
     mocks.inventoryInsert.mockResolvedValue({ error: null });
+    mocks.inventorySelectEq.mockResolvedValue({ data: [], error: null });
+    mocks.inventoryDeleteWarehouseEq.mockResolvedValue({ error: null });
+    mocks.inventoryDeleteEq.mockReturnValue({
+      eq: mocks.inventoryDeleteWarehouseEq,
+    });
+    mocks.inventoryUpdateEq.mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    });
+    mocks.stockChangesInsert.mockResolvedValue({ error: null });
   });
 
   it('loads product details from workspace_products with the admin client', async () => {
@@ -229,6 +290,70 @@ describe('product routes', () => {
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
     expect(mocks.inventoryInsert).toHaveBeenCalled();
+  });
+
+  it('updates product inventory through the admin client for protected tables', async () => {
+    mocks.productMaybeSingle.mockResolvedValue({
+      data: { id: 'product-1' },
+      error: null,
+    });
+    mocks.inventorySelectEq.mockResolvedValue({
+      data: [
+        {
+          product_id: 'product-1',
+          warehouse_id: '11111111-1111-4111-8111-111111111111',
+          unit_id: '22222222-2222-4222-8222-222222222222',
+          amount: 3,
+          min_amount: 1,
+          price: 10,
+        },
+      ],
+      error: null,
+    });
+
+    const finalUpdateEq = vi.fn().mockResolvedValue({ error: null });
+    const firstUpdateEq = vi.fn().mockReturnValue({
+      eq: finalUpdateEq,
+    });
+    mocks.inventoryUpdateEq.mockReturnValue({
+      eq: firstUpdateEq,
+    });
+
+    const { PATCH } = await import(
+      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
+    );
+    const response = await PATCH(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/products/product-1/inventory',
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            inventory: [
+              {
+                warehouse_id: '11111111-1111-4111-8111-111111111111',
+                unit_id: '22222222-2222-4222-8222-222222222222',
+                amount: 5,
+                min_amount: 1,
+                price: 10,
+              },
+            ],
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('inventory_products');
+    expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
+      'inventory_products'
+    );
   });
 
   it('counts products through the admin client after session auth', async () => {

@@ -1,8 +1,15 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  autoSkipOldPostEmails,
+  getPostEmailMaxAgeCutoff,
+  getPostEmailQueueRows,
+  summarizePostEmailQueue,
+} from '@/lib/post-email-queue';
 import PostsClient from './client';
+import type { PostEmail } from './types';
 
 export const metadata: Metadata = {
   title: 'Posts',
@@ -31,30 +38,26 @@ export default async function PostsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
+        const permissions = await getPermissions({ wsId });
+
+        const canApprovePosts =
+          permissions?.containsPermission('send_user_group_post_emails') ??
+          false;
+
         // Combined query - fetch both posts data and sent emails count in one call
         const { postsData, sentEmailsCount } = await getPostsData(
           wsId,
           searchParamsData
         );
 
-        // Extract unique emails from posts data and check blacklist status
-        const userEmails = [
-          ...new Set(
-            postsData.data
-              .map((post: { email: string | null }) => post.email)
-              .filter(Boolean) as string[]
-          ),
-        ];
-        const blacklistedEmails = await getEmailBlacklistStatus(userEmails);
-
         return (
           <PostsClient
             wsId={wsId}
             locale={locale}
+            canApprovePosts={canApprovePosts}
             searchParams={searchParamsData}
             postsData={postsData}
-            postsStatus={{ count: sentEmailsCount }}
-            blacklistedEmails={blacklistedEmails}
+            postsStatus={sentEmailsCount}
           />
         );
       }}
@@ -72,98 +75,116 @@ async function getPostsData(
     userId,
   }: SearchParams = {}
 ) {
-  const searchParams = new URLSearchParams({
-    page,
-    pageSize,
-  });
-
-  if (includedGroups) {
-    const groups = Array.isArray(includedGroups)
-      ? includedGroups
-      : [includedGroups];
-    for (const g of groups) searchParams.append('includedGroups', g);
-  }
-
-  if (excludedGroups) {
-    const groups = Array.isArray(excludedGroups)
-      ? excludedGroups
-      : [excludedGroups];
-    for (const g of groups) searchParams.append('excludedGroups', g);
-  }
-
-  if (userId) searchParams.set('userId', userId);
-
-  const requestHeaders = await headers();
-  const forwardedHeaders: Record<string, string> = {};
-  requestHeaders.forEach((value, key) => {
-    forwardedHeaders[key] = value;
-  });
-
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:7803'}/api/v1/workspaces/${wsId}/posts?${searchParams.toString()}`,
-    {
-      cache: 'no-store',
-      headers: forwardedHeaders,
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch posts data');
-  }
-
-  const { data, count } = await response.json();
-
-  // For sent emails count, we might need a separate API or just use the count from the same API if it's filtered correctly
-  // Original code had a separate query for sent emails count.
-  // Let's assume the API returns what we need or we can add a separate count API.
-  // The original sentEmailsQueryBuilder was:
-  /*
-  const sentEmailsQueryBuilder = supabase
-    .from('user_group_post_checks')
-    .select(
-      'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
-      {
-        head: true,
-        count: 'exact',
-      }
-    )
-  */
-  // This counts total sent emails.
-
   const sbAdmin = await createAdminClient();
-  const sentEmailsQueryBuilder = sbAdmin
+  const parsedPage = Number.parseInt(page, 10);
+  const parsedSize = Number.parseInt(pageSize, 10);
+  const start = (parsedPage - 1) * parsedSize;
+  const end = start + parsedSize - 1;
+  const includedGroupIds = Array.isArray(includedGroups)
+    ? includedGroups
+    : includedGroups
+      ? [includedGroups]
+      : [];
+  const excludedGroupIds = Array.isArray(excludedGroups)
+    ? excludedGroups
+    : excludedGroups
+      ? [excludedGroups]
+      : [];
+  const hasFilters =
+    includedGroupIds.length > 0 || excludedGroupIds.length > 0 || !!userId;
+  const cutoff = getPostEmailMaxAgeCutoff();
+
+  await autoSkipOldPostEmails(sbAdmin, { wsId });
+
+  const queryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
-      'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
+      `post_id, notes, user_id, email_id, is_completed, approval_status, rejection_reason, user:workspace_users!user_id!inner(email, display_name, full_name, ws_id), user_group_posts${hasFilters ? '!inner' : ''}(id, title, content, group_id, created_at, workspace_user_groups(id, name)), sent_emails(subject)`,
       {
-        head: true,
         count: 'exact',
       }
     )
     .eq('workspace_users.ws_id', wsId)
-    .not('workspace_users.email', 'ilike', '%@easy%');
+    .not('workspace_users.email', 'ilike', '%@easy%')
+    .gte('user_group_posts.created_at', cutoff)
+    .order('created_at', { ascending: false })
+    .range(start, end)
+    .limit(parsedSize);
 
-  if (includedGroups) {
-    const groups = Array.isArray(includedGroups)
-      ? includedGroups
-      : [includedGroups];
-    if (groups.length > 0)
-      sentEmailsQueryBuilder.in('user_group_posts.group_id', groups);
+  if (includedGroupIds.length > 0) {
+    queryBuilder.in('user_group_posts.group_id', includedGroupIds);
   }
-
-  if (excludedGroups) {
-    const groups = Array.isArray(excludedGroups)
-      ? excludedGroups
-      : [excludedGroups];
-    if (groups.length > 0)
-      sentEmailsQueryBuilder.not('user_group_posts.group_id', 'in', groups);
+  if (excludedGroupIds.length > 0) {
+    queryBuilder.not('user_group_posts.group_id', 'in', excludedGroupIds);
   }
-
   if (userId) {
-    sentEmailsQueryBuilder.eq('user_id', userId);
+    queryBuilder.eq('user_id', userId);
   }
 
-  const { count: sentEmailsCount } = await sentEmailsQueryBuilder;
+  const { data: rows, error, count } = await queryBuilder;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const postIds = [
+    ...new Set((rows ?? []).map((item: any) => item.post_id).filter(Boolean)),
+  ];
+  const queueRows = await getPostEmailQueueRows(sbAdmin, postIds);
+  const queueByPostAndUser = new Map<string, (typeof queueRows)[number]>();
+  const queueByPost = new Map<string, typeof queueRows>();
+
+  for (const row of queueRows) {
+    queueByPostAndUser.set(`${row.post_id}:${row.user_id}`, row);
+    const rowsForPost = queueByPost.get(row.post_id) ?? [];
+    rowsForPost.push(row);
+    queueByPost.set(row.post_id, rowsForPost);
+  }
+
+  const data = (rows ?? []).map((item: any) => {
+    const queueRow = queueByPostAndUser.get(`${item.post_id}:${item.user_id}`);
+    const queueCounts = item.post_id
+      ? summarizePostEmailQueue(queueByPost.get(item.post_id) ?? [])
+      : summarizePostEmailQueue([]);
+
+    return {
+      notes: item.notes,
+      user_id: item.user_id,
+      email_id: item.email_id,
+      is_completed: item.is_completed,
+      ws_id: item.user?.ws_id,
+      email: item.user?.email,
+      recipient: item.user?.full_name || item.user?.display_name,
+      post_id: item.user_group_posts?.id,
+      post_title: item.user_group_posts?.title,
+      post_content: item.user_group_posts?.content,
+      group_id: item.user_group_posts?.group_id,
+      group_name: item.user_group_posts?.workspace_user_groups?.name,
+      subject: item.sent_emails?.subject,
+      queue_status: queueRow?.status ?? (item.email_id ? 'sent' : 'queued'),
+      queue_attempt_count: queueRow?.attempt_count ?? 0,
+      queue_last_error: queueRow?.last_error ?? null,
+      queue_sent_at: queueRow?.sent_at ?? null,
+      approval_status: item.approval_status ?? 'PENDING',
+      approval_rejection_reason: item.rejection_reason ?? null,
+      can_remove_approval:
+        item.approval_status === 'APPROVED' &&
+        queueRow?.status !== 'sent' &&
+        !item.email_id,
+      queue_counts: queueCounts,
+    } satisfies PostEmail;
+  });
+
+  const summary = {
+    queued: data.filter((item) => item.queue_status === 'queued').length,
+    processing: data.filter((item) => item.queue_status === 'processing')
+      .length,
+    sent: data.filter((item) => item.queue_status === 'sent').length,
+    failed: data.filter((item) => item.queue_status === 'failed').length,
+    blocked: data.filter((item) => item.queue_status === 'blocked').length,
+    cancelled: data.filter((item) => item.queue_status === 'cancelled').length,
+    skipped: data.filter((item) => item.queue_status === 'skipped').length,
+  };
 
   return {
     postsData: {
@@ -173,29 +194,6 @@ async function getPostsData(
       })),
       count: count || 0,
     },
-    sentEmailsCount: sentEmailsCount || 0,
+    sentEmailsCount: summary,
   };
-}
-
-async function getEmailBlacklistStatus(emails: string[]): Promise<Set<string>> {
-  if (emails.length === 0) return new Set();
-
-  const sbAdmin = await createAdminClient();
-  const { data: blockStatuses, error } = await sbAdmin.rpc(
-    'get_email_block_statuses',
-    { p_emails: emails }
-  );
-
-  if (error) {
-    console.error('Error checking email blacklist:', error);
-    return new Set();
-  }
-
-  const blacklistedEmails = new Set(
-    (blockStatuses || [])
-      .filter((status) => status.is_blocked && status.email)
-      .map((status) => status.email as string)
-  );
-
-  return blacklistedEmails;
 }

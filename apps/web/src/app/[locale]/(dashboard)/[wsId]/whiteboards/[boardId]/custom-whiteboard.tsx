@@ -860,6 +860,56 @@ export function CustomWhiteboard({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [performSave]);
 
+  // Handle clipboard paste errors gracefully
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const clipboardData = e.clipboardData;
+      if (!clipboardData) return;
+
+      const hasImage = Array.from(clipboardData.types).some((type) =>
+        type.startsWith('image/')
+      );
+
+      if (!hasImage) return;
+
+      // Try to read clipboard image; catch permission/unsupported errors
+      try {
+        for (const item of clipboardData.items) {
+          if (item.type.startsWith('image/')) {
+            const blob = item.getAsFile();
+            if (!blob) {
+              toast.error('Failed to read image from clipboard', {
+                description:
+                  'Try copying the image again or use the file upload tool instead.',
+              });
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        if (
+          errorMessage.includes('clipboard') ||
+          errorMessage.includes('Clipboard') ||
+          errorMessage.includes('model') ||
+          errorMessage.includes('not support')
+        ) {
+          toast.error('Cannot paste image from clipboard', {
+            description:
+              'Your browser may restrict clipboard access. Try using the file upload tool in the toolbar instead.',
+          });
+          e.preventDefault();
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste, { capture: true });
+    return () =>
+      window.removeEventListener('paste', handlePaste, { capture: true });
+  }, []);
+
   // Refetch snapshot when connection is restored
   useEffect(() => {
     if (previousConnectionStatusRef.current === null) {
