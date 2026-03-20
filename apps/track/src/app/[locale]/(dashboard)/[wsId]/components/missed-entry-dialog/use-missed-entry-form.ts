@@ -6,7 +6,6 @@ import {
 } from '@tuturuuu/hooks';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useSessionActions } from '../session-history/use-session-actions';
 import type {
@@ -21,7 +20,6 @@ export function useMissedEntryForm(
 ): UseMissedEntryFormReturn {
   const { open, onOpenChange, wsId, mode = 'normal' } = props;
 
-  const router = useRouter();
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
   // Fetch workspace configuration for future sessions
@@ -67,7 +65,6 @@ export function useMissedEntryForm(
   return useSharedMissedEntryForm(open, config, {
     onOpenChange,
     onSuccess: (message) => {
-      router.refresh();
       toast.success(
         t(
           message === 'Entry added successfully'
@@ -88,9 +85,6 @@ export function useMissedEntryForm(
     },
     onError: (message) => {
       toast.error(message);
-    },
-    refreshData: () => {
-      router.refresh();
     },
     getValidationErrorMessage,
   });
