@@ -10,6 +10,7 @@ import type {
 } from './progressive-loader-context';
 
 const PAGE_SIZE = 50;
+const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 
 /**
  * Manages per-list pagination state and merges results into the shared
@@ -80,16 +81,23 @@ export function useProgressiveBoardLoader(
                 const localTask = task as Task & {
                   _localMutationAt?: number;
                 };
+                const localMutationAt = localTask._localMutationAt;
+                const hasFreshLocalMutation =
+                  typeof localMutationAt === 'number' &&
+                  localMutationAt > requestStartedAt &&
+                  Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS;
 
-                if (
-                  typeof localTask._localMutationAt === 'number' &&
-                  localTask._localMutationAt > requestStartedAt
-                ) {
+                if (hasFreshLocalMutation) {
                   return task;
                 }
               }
 
-              return { ...task, ...incomingTask };
+              const taskWithoutLocalMutationAt = {
+                ...(task as Task & { _localMutationAt?: number }),
+              };
+              delete taskWithoutLocalMutationAt._localMutationAt;
+
+              return { ...taskWithoutLocalMutationAt, ...incomingTask };
             });
 
             return [...mergedExisting, ...incomingById.values()];
