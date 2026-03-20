@@ -154,8 +154,7 @@ class _ShellPageState extends State<ShellPage> {
   Widget _buildGlobalCompactScaffold(BuildContext context, AppTabState state) {
     final l10n = context.l10n;
     final items = _buildNavItems(context, state, l10n);
-    final selectedIndex = _calculateSelectedIndex(widget.matchedLocation);
-    final selectedKey = _keyForIndex(selectedIndex);
+    final selectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
     final showBottomNav =
         !widget.matchedLocation.startsWith(Routes.assistant) ||
@@ -323,8 +322,10 @@ class _ShellPageState extends State<ShellPage> {
     DeviceClass deviceClass,
   ) {
     final l10n = context.l10n;
-    final selectedIndex = _calculateSelectedIndex(widget.matchedLocation);
-    final selectedKey = _keyForIndex(selectedIndex, useGlobalKey: false);
+    final selectedKey = _selectedKeyForLocation(
+      widget.matchedLocation,
+      useGlobalKey: false,
+    );
     final moduleRoute = _isModuleRoute(widget.matchedLocation);
     void onSelected(Key? key) =>
         _onItemTapped(_indexForKey(key), context, state);
@@ -359,9 +360,9 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   shad.AppBar _buildAppBar(BuildContext context) {
-    return const shad.AppBar(
-      title: _ShellTopBarTitle(),
-      trailing: [AvatarDropdown()],
+    return shad.AppBar(
+      title: _ShellTopBarTitle(matchedLocation: widget.matchedLocation),
+      trailing: const [AvatarDropdown()],
     );
   }
 
@@ -675,11 +676,19 @@ class _ShellPageState extends State<ShellPage> {
     _longPressTimer = null;
   }
 
-  Key _keyForIndex(int index, {bool useGlobalKey = true}) => switch (index) {
-    1 => _assistantKey,
-    2 => useGlobalKey ? _appsTabKey : _appsKey,
-    _ => _homeKey,
-  };
+  Key? _selectedKeyForLocation(String location, {bool useGlobalKey = true}) {
+    if (location == Routes.home) {
+      return _homeKey;
+    }
+    if (location == Routes.assistant) {
+      return _assistantKey;
+    }
+    if (location == Routes.apps ||
+        AppRegistry.moduleFromLocation(location) != null) {
+      return useGlobalKey ? _appsTabKey : _appsKey;
+    }
+    return null;
+  }
 
   static int _indexForKey(Key? key) {
     if (key == _assistantKey) return 1;
@@ -700,39 +709,65 @@ class _ShellPageState extends State<ShellPage> {
 }
 
 class _ShellTopBarTitle extends StatelessWidget {
-  const _ShellTopBarTitle();
+  const _ShellTopBarTitle({required this.matchedLocation});
+
+  final String matchedLocation;
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/logos/transparent.png',
-              width: 26,
-              height: 26,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '/',
+    final title = switch (matchedLocation) {
+      Routes.home => context.l10n.navHome,
+      Routes.assistant => 'Mira',
+      Routes.profileRoot => context.l10n.profileTitle,
+      Routes.settings => context.l10n.settingsTitle,
+      _ => null,
+    };
+
+    if (title != null) {
+      return Row(
+        children: [
+          Image.asset(
+            'assets/logos/transparent.png',
+            width: 26,
+            height: 26,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.78),
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: 8),
-            const WorkspaceSelectorButton(),
-          ],
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Image.asset(
+          'assets/logos/transparent.png',
+          width: 26,
+          height: 26,
+          fit: BoxFit.contain,
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 11),
+          child: Text(
+            '/',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.78),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const Flexible(child: WorkspaceSelectorButton()),
+      ],
     );
   }
 }

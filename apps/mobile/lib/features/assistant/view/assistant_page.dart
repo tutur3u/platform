@@ -86,7 +86,7 @@ class _AssistantPageState extends State<AssistantPage> {
   @override
   Widget build(BuildContext context) {
     final workspace = context.select(
-      (WorkspaceCubit cubit) => cubit.state.currentWorkspace,
+      (WorkspaceCubit cubit) => cubit.state.personalWorkspaceOrCurrent,
     );
 
     if (workspace != null && workspace.id != _loadedWorkspaceId) {
@@ -104,7 +104,7 @@ class _AssistantPageState extends State<AssistantPage> {
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, workspaceState) {
-          final currentWorkspace = workspaceState.currentWorkspace;
+          final currentWorkspace = workspaceState.personalWorkspaceOrCurrent;
           if (currentWorkspace == null) {
             return shad.Scaffold(
               child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
@@ -238,80 +238,13 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    Workspace workspace,
-    AssistantShellState shellState,
-  ) {
-    final theme = Theme.of(context);
-    final workspaceName =
-        workspace.name ??
-        (workspace.personal
-            ? context.l10n.assistantPersonalWorkspace
-            : workspace.id);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              shellState.soul.name.isEmpty
-                  ? 'M'
-                  : shellState.soul.name.characters.first.toUpperCase(),
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  shellState.soul.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  workspaceName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildConversation(
     BuildContext context,
     Workspace workspace,
     AssistantShellState shellState,
     AssistantChatState chatState,
   ) {
-    final children = <Widget>[
-      _buildHeader(context, workspace, shellState),
-      const SizedBox(height: 10),
-    ];
+    final children = <Widget>[];
 
     if (chatState.status == AssistantChatStatus.restoring &&
         chatState.messages.isEmpty) {

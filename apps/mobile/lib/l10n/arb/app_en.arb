@@ -1067,7 +1067,7 @@
     "profileSave": "Save",
     "profileCancel": "Cancel",
 
-    "workspacePickerTitle": "Switch workspace",
+    "workspacePickerTitle": "Workspaces",
     "workspacePersonalBadge": "Personal",
     "workspacePersonalSection": "Personal",
     "workspaceTeamSection": "Team workspaces",

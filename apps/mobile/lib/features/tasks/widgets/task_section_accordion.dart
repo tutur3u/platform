@@ -31,9 +31,12 @@ class TaskSectionAccordion extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final count = trailingCount ?? tasks.length;
 
-    return shad.Card(
-      padding: EdgeInsets.zero,
-      borderColor: accentColor.withValues(alpha: 0.18),
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card.withValues(alpha: 0.68),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withValues(alpha: 0.16)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -41,22 +44,22 @@ class TaskSectionAccordion extends StatelessWidget {
           children: [
             InkWell(
               onTap: onToggle,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(child: icon),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,7 +97,7 @@ class TaskSectionAccordion extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Icon(
                       isCollapsed ? Icons.expand_more : Icons.expand_less,
                       color: theme.colorScheme.mutedForeground,
@@ -115,7 +118,12 @@ class TaskSectionAccordion extends StatelessWidget {
                           for (var i = 0; i < tasks.length; i++) ...[
                             _TaskTile(task: tasks[i]),
                             if (i != tasks.length - 1)
-                              const SizedBox(height: 10),
+                              Divider(
+                                height: 14,
+                                color: theme.colorScheme.border.withValues(
+                                  alpha: 0.45,
+                                ),
+                              ),
                           ],
                         ],
                       ),
@@ -147,12 +155,12 @@ class _TaskTile extends StatelessWidget {
     // TODO(navigation): Open the mobile task detail flow once a route exists.
     return shad.GhostButton(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _PriorityIndicator(priority: task.priority),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +172,7 @@ class _TaskTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.p.copyWith(
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   if (subtitle.isNotEmpty) ...[
@@ -185,13 +193,20 @@ class _TaskTile extends StatelessWidget {
             ),
             if (task.endDate != null) ...[
               const SizedBox(width: 8),
-              Text(
-                DateFormat.MMMd(
-                  Localizations.localeOf(context).toLanguageTag(),
-                ).format(task.endDate!),
-                style: theme.typography.xSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                  fontWeight: FontWeight.w600,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.muted,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  DateFormat.MMMd(
+                    Localizations.localeOf(context).toLanguageTag(),
+                  ).format(task.endDate!),
+                  style: theme.typography.xSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],

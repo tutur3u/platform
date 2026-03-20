@@ -2718,7 +2718,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileCancel => 'Hủy';
 
   @override
-  String get workspacePickerTitle => 'Chuyển không gian làm việc';
+  String get workspacePickerTitle => 'Không gian làm việc';
 
   @override
   String get workspacePersonalBadge => 'Cá nhân';

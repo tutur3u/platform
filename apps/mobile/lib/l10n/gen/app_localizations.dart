@@ -5302,7 +5302,7 @@ abstract class AppLocalizations {
   /// No description provided for @workspacePickerTitle.
   ///
   /// In en, this message translates to:
-  /// **'Switch workspace'**
+  /// **'Workspaces'**
   String get workspacePickerTitle;
 
   /// No description provided for @workspacePersonalBadge.

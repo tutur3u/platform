@@ -3,13 +3,40 @@ import 'package:mobile/core/theme/colors.dart';
 
 /// Material 3 theme data for light and dark modes.
 abstract final class AppTheme {
+  static ColorScheme get _lightScheme =>
+      ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        surface: AppColors.backgroundLight,
+      ).copyWith(
+        surface: AppColors.backgroundLight,
+        surfaceContainerLowest: AppColors.surfaceLight,
+        surfaceContainerLow: const Color(0xFFF9F6F0),
+        surfaceContainer: const Color(0xFFF4EFE7),
+        surfaceContainerHigh: const Color(0xFFEDE7DD),
+        surfaceContainerHighest: const Color(0xFFE5DED2),
+      );
+
+  static ColorScheme get _darkScheme =>
+      ColorScheme.fromSeed(
+        seedColor: AppColors.primaryDark,
+        brightness: Brightness.dark,
+        surface: AppColors.backgroundDark,
+      ).copyWith(
+        surface: AppColors.backgroundDark,
+        surfaceContainerLowest: AppColors.surfaceDark,
+        surfaceContainerLow: const Color(0xFF1C1E22),
+        surfaceContainer: const Color(0xFF23262B),
+        surfaceContainerHigh: const Color(0xFF2A2D33),
+        surfaceContainerHighest: const Color(0xFF31353C),
+      );
+
   static ThemeData get light => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    colorSchemeSeed: AppColors.primary,
+    colorScheme: _lightScheme,
     scaffoldBackgroundColor: AppColors.backgroundLight,
     appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.surfaceLight,
       foregroundColor: AppColors.textPrimaryLight,
       elevation: 0,
       scrolledUnderElevation: 0.5,
@@ -18,7 +45,7 @@ abstract final class AppTheme {
       color: AppColors.borderLight,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.surfaceLight,
       indicatorColor: AppColors.primary.withValues(alpha: 0.12),
       elevation: 0,
     ),
@@ -27,10 +54,10 @@ abstract final class AppTheme {
   static ThemeData get dark => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    colorSchemeSeed: AppColors.primaryDark,
+    colorScheme: _darkScheme,
     scaffoldBackgroundColor: AppColors.backgroundDark,
     appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: AppColors.surfaceDark,
       foregroundColor: AppColors.textPrimaryDark,
       elevation: 0,
       scrolledUnderElevation: 0.5,
@@ -39,7 +66,7 @@ abstract final class AppTheme {
       color: AppColors.borderDark,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: AppColors.surfaceDark,
       indicatorColor: AppColors.primaryDark.withValues(alpha: 0.12),
       elevation: 0,
     ),

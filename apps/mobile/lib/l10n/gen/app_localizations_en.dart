@@ -2724,7 +2724,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileCancel => 'Cancel';
 
   @override
-  String get workspacePickerTitle => 'Switch workspace';
+  String get workspacePickerTitle => 'Workspaces';
 
   @override
   String get workspacePersonalBadge => 'Personal';

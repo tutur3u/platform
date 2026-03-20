@@ -12,6 +12,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_boards_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_form_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -76,7 +77,8 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     final l10n = context.l10n;
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
+        MobileSectionAppBar(
+          title: l10n.taskBoardsTitle,
           leading: [
             shad.OutlineButton(
               density: shad.ButtonDensity.icon,
@@ -91,8 +93,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
               child: const Icon(Icons.arrow_back),
             ),
           ],
-          title: Text(l10n.taskBoardsTitle),
-          trailing: [
+          actions: [
             BlocBuilder<TaskBoardsCubit, TaskBoardsState>(
               buildWhen: (prev, curr) => prev.filter != curr.filter,
               builder: (context, state) {

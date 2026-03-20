@@ -49,7 +49,10 @@ class DashboardPage extends StatelessWidget {
   }
 
   void _loadTasksIfReady(BuildContext context, TaskListCubit cubit) {
-    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
+    final workspace = context
+        .read<WorkspaceCubit>()
+        .state
+        .personalWorkspaceOrCurrent;
     if (workspace == null) return;
     unawaited(
       cubit.loadTasks(wsId: workspace.id, isPersonal: workspace.personal),
@@ -57,7 +60,10 @@ class DashboardPage extends StatelessWidget {
   }
 
   void _loadEventsIfReady(BuildContext context, CalendarCubit cubit) {
-    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
+    final workspace = context
+        .read<WorkspaceCubit>()
+        .state
+        .personalWorkspaceOrCurrent;
     if (workspace == null) return;
     unawaited(cubit.loadEvents(workspace.id));
   }
@@ -72,9 +78,10 @@ class _DashboardView extends StatelessWidget {
       listeners: [
         BlocListener<WorkspaceCubit, WorkspaceState>(
           listenWhen: (previous, current) =>
-              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+              previous.personalWorkspaceOrCurrent?.id !=
+              current.personalWorkspaceOrCurrent?.id,
           listener: (context, state) {
-            final workspace = state.currentWorkspace;
+            final workspace = state.personalWorkspaceOrCurrent;
             if (workspace == null) return;
             unawaited(
               context.read<TaskListCubit>().loadTasks(
@@ -88,7 +95,7 @@ class _DashboardView extends StatelessWidget {
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, workspaceState) {
-          final workspace = workspaceState.currentWorkspace;
+          final workspace = workspaceState.personalWorkspaceOrCurrent;
           if (workspace == null) {
             return shad.Scaffold(
               child: Center(child: Text(context.l10n.assistantSelectWorkspace)),

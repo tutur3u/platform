@@ -6,17 +6,22 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class MobileSectionAppBar extends StatelessWidget {
   const MobileSectionAppBar({
-    required this.title,
+    this.title,
+    this.titleWidget,
     super.key,
     this.actions = const [],
+    this.leading = const [],
   });
 
-  final String title;
+  final String? title;
+  final Widget? titleWidget;
   final List<Widget> actions;
+  final List<Widget> leading;
 
   @override
   Widget build(BuildContext context) {
     var hasAuthCubit = true;
+    final theme = shad.Theme.of(context);
     try {
       context.read<AuthCubit>();
     } on Exception {
@@ -24,7 +29,29 @@ class MobileSectionAppBar extends StatelessWidget {
     }
 
     return shad.AppBar(
-      title: Text(title),
+      leading: leading,
+      title: Row(
+        children: [
+          Image.asset(
+            'assets/logos/transparent.png',
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child:
+                titleWidget ??
+                Text(
+                  title ?? '',
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+          ),
+        ],
+      ),
       trailing: [
         ...actions,
         if (hasAuthCubit) const AvatarDropdown(),

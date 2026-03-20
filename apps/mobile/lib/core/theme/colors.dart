@@ -7,10 +7,10 @@ abstract final class AppColors {
   static const primaryDark = Color(0xFF818CF8); // indigo-400
 
   // Surfaces
-  static const backgroundLight = Color(0xFFFFFFFF);
-  static const backgroundDark = Color(0xFF09090B); // zinc-950
-  static const surfaceLight = Color(0xFFF4F4F5); // zinc-100
-  static const surfaceDark = Color(0xFF18181B); // zinc-900
+  static const backgroundLight = Color(0xFFFCFAF6); // light neutral pastel
+  static const backgroundDark = Color(0xFF0D0E10); // deeper premium dark gray
+  static const surfaceLight = Color(0xFFFFFFFF); // lifted neutral surface
+  static const surfaceDark = Color(0xFF17191C); // raised dark surface
 
   // Borders
   static const borderLight = Color(0xFFE4E4E7); // zinc-200
