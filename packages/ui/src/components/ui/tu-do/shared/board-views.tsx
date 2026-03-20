@@ -165,6 +165,11 @@ export function BoardViews({
     [filters]
   );
 
+  const activeLists = useMemo(
+    () => lists.filter((list) => !list.deleted),
+    [lists]
+  );
+
   // When filters or sorting are active, auto-load all remaining pages so
   // client-side filtering/sorting operates on complete data.
   const autoLoadingRef = useRef(false);
@@ -173,7 +178,7 @@ export function BoardViews({
       return;
 
     // Find the first list that still has more pages and isn't loading
-    for (const list of lists) {
+    for (const list of activeLists) {
       const state = pagination[list.id];
       if (state?.hasMore && !state.isLoading) {
         autoLoadingRef.current = true;
@@ -183,7 +188,7 @@ export function BoardViews({
         return; // Process one at a time; the next run picks up the next list
       }
     }
-  }, [currentView, hasActiveFilters, pagination, lists, loadListPage]);
+  }, [currentView, hasActiveFilters, pagination, activeLists, loadListPage]);
 
   // Semantic search hook
   const {
@@ -201,10 +206,10 @@ export function BoardViews({
   // Filter lists based on selected status filter
   const filteredLists = useMemo(() => {
     if (listStatusFilter === 'all') {
-      return lists;
+      return activeLists;
     }
-    return lists.filter((list) => list.status === listStatusFilter);
-  }, [lists, listStatusFilter]);
+    return activeLists.filter((list) => list.status === listStatusFilter);
+  }, [activeLists, listStatusFilter]);
 
   // Helper function to apply non-search filters
   const applyNonSearchFilters = useCallback(
@@ -327,7 +332,7 @@ export function BoardViews({
     if (filters.sortBy) {
       // Create a map of list_id to status
       const listStatusMap = new Map(
-        lists.map((list) => [list.id, list.status])
+        activeLists.map((list) => [list.id, list.status])
       );
 
       // Separate tasks into sortable and completion (done/closed) tasks
@@ -457,7 +462,7 @@ export function BoardViews({
     }
 
     return tasks;
-  }, [filteredTasks, taskOverrides, filters.sortBy, lists]);
+  }, [filteredTasks, taskOverrides, filters.sortBy, activeLists]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({

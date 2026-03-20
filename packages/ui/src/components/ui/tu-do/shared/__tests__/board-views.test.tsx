@@ -22,6 +22,11 @@ const loadListPageMock = vi.fn();
 let boardHeaderProps:
   | React.ComponentProps<typeof import('../board-header')['BoardHeader']>
   | undefined;
+let kanbanBoardProps:
+  | React.ComponentProps<
+      typeof import('../../boards/boardId/kanban')['KanbanBoard']
+    >
+  | undefined;
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -69,7 +74,10 @@ vi.mock('../recycle-bin-panel', () => ({
 }));
 
 vi.mock('../../boards/boardId/kanban', () => ({
-  KanbanBoard: () => <div data-testid="kanban-view">Kanban</div>,
+  KanbanBoard: (props: any) => {
+    kanbanBoardProps = props;
+    return <div data-testid="kanban-view">Kanban</div>;
+  },
 }));
 
 vi.mock('../list-view', () => ({
@@ -137,7 +145,7 @@ const mockTasks: Task[] = [
 
 const mockWorkspaceLabels: WorkspaceLabel[] = [];
 
-function renderBoardViews() {
+function renderBoardViews(overrides?: { lists?: TaskList[]; tasks?: Task[] }) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -152,8 +160,8 @@ function renderBoardViews() {
         <BoardViews
           board={mockBoard as any}
           currentUserId="user-1"
-          lists={mockLists}
-          tasks={mockTasks}
+          lists={overrides?.lists ?? mockLists}
+          tasks={overrides?.tasks ?? mockTasks}
           workspace={mockWorkspace as any}
           workspaceLabels={mockWorkspaceLabels}
         />
@@ -165,6 +173,7 @@ function renderBoardViews() {
 describe('BoardViews', () => {
   beforeEach(() => {
     boardHeaderProps = undefined;
+    kanbanBoardProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
     vi.mocked(listWorkspaceTasks).mockReset();
@@ -211,6 +220,42 @@ describe('BoardViews', () => {
 
   it('creates a task from the first visible list with the board filters when pressing C', () => {
     renderBoardViews();
+
+    fireEvent.keyDown(document, { key: 'c' });
+
+    expect(createTaskMock).toHaveBeenCalledTimes(1);
+    expect(createTaskMock).toHaveBeenCalledWith(
+      'board-1',
+      'list-1',
+      mockLists,
+      {
+        assignees: [],
+        dueDateRange: null,
+        estimationRange: null,
+        includeMyTasks: false,
+        includeUnassigned: false,
+        labels: [],
+        priorities: [],
+        projects: [],
+      }
+    );
+  });
+
+  it('excludes deleted lists from active board views and create shortcuts', () => {
+    const listsWithDeletedFirst: TaskList[] = [
+      {
+        ...mockLists[0]!,
+        deleted: true,
+        id: 'list-deleted',
+        name: 'Deleted',
+        position: -1,
+      },
+      ...mockLists,
+    ];
+
+    renderBoardViews({ lists: listsWithDeletedFirst });
+
+    expect(kanbanBoardProps?.lists).toEqual(mockLists);
 
     fireEvent.keyDown(document, { key: 'c' });
 

@@ -100,7 +100,10 @@ export function BoardClient({
   }, [broadcast]);
 
   useEffect(() => {
-    queryClient.setQueryData(['task_lists', boardId], lists);
+    queryClient.setQueryData(
+      ['task_lists', boardId],
+      lists.filter((list) => !list.deleted)
+    );
   }, [boardId, lists, queryClient]);
 
   useEffect(() => {

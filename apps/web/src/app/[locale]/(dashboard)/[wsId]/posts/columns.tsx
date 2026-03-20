@@ -5,9 +5,11 @@ import { Check, X } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import PostsRowActions from './row-actions';
+import { getPostEmailStatusAppearance } from './status-meta';
 import type { PostEmail } from './types';
 
 interface PostEmailExtraData {
@@ -92,7 +94,7 @@ export const getPostEmailColumns = ({
 
       return (
         <Badge variant="outline" className={className}>
-          {value.toLowerCase()}
+          {value === '-' ? value : t(`${namespace}.${value.toLowerCase()}`)}
         </Badge>
       );
     },
@@ -106,9 +108,27 @@ export const getPostEmailColumns = ({
         title={t(`${namespace}.queue_status`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="capitalize">{row.getValue('queue_status') || '-'}</div>
-    ),
+    cell: ({ row }) => {
+      const value = row.getValue('queue_status') as PostEmail['queue_status'];
+
+      if (!value) {
+        return <div>-</div>;
+      }
+
+      const {
+        icon: Icon,
+        className,
+        iconClassName,
+        labelKey,
+      } = getPostEmailStatusAppearance(value);
+
+      return (
+        <Badge variant="outline" className={className}>
+          <Icon className={cn('mr-1 h-3.5 w-3.5', iconClassName)} />
+          {t(`${namespace}.${labelKey}`)}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: 'subject',
@@ -177,7 +197,9 @@ export const getPostEmailColumns = ({
     ),
     cell: ({ row }) => (
       <div className="min-w-32">
-        {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
+        {row.getValue('created_at')
+          ? moment(row.getValue('created_at')).format('DD/MM/YYYY')
+          : '-'}
       </div>
     ),
   },

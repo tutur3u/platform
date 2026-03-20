@@ -39,7 +39,7 @@ export function useOptimisticLoadingEmails() {
 
 // Helper function to create a unique key for post email selection
 export function createPostEmailKey(postEmail: PostEmail): string {
-  return `${postEmail.user_id}-${postEmail.id}`;
+  return postEmail.id ?? `${postEmail.post_id}:${postEmail.user_id}`;
 }
 
 // Helper function to check if an email is optimistically sent

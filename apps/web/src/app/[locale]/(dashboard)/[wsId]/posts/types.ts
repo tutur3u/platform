@@ -1,3 +1,45 @@
+export const POST_EMAIL_QUEUE_STATUSES = [
+  'queued',
+  'processing',
+  'sent',
+  'failed',
+  'blocked',
+  'cancelled',
+  'skipped',
+] as const;
+
+export type PostEmailQueueStatus = (typeof POST_EMAIL_QUEUE_STATUSES)[number];
+
+export function isPostEmailQueueStatus(
+  value?: string
+): value is PostEmailQueueStatus {
+  return POST_EMAIL_QUEUE_STATUSES.includes(value as PostEmailQueueStatus);
+}
+
+export interface PostsSearchParams {
+  page?: string;
+  pageSize?: string;
+  includedGroups?: string | string[];
+  excludedGroups?: string | string[];
+  userId?: string;
+  queueStatus?: string;
+  cursor?: string;
+}
+
+export interface PostEmailStatusSummary {
+  total: number;
+  queued: number;
+  processing: number;
+  sent: number;
+  failed: number;
+  blocked: number;
+  cancelled: number;
+  skipped: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
 export interface PostEmail {
   id?: string | null;
   subject?: string | null;
@@ -15,14 +57,7 @@ export interface PostEmail {
   notes?: string | null;
   post_created_at?: string | null;
   created_at?: Date | null;
-  queue_status?:
-    | 'queued'
-    | 'processing'
-    | 'sent'
-    | 'failed'
-    | 'blocked'
-    | 'cancelled'
-    | 'skipped';
+  queue_status?: PostEmailQueueStatus;
   queue_attempt_count?: number;
   queue_last_error?: string | null;
   queue_sent_at?: string | null;

@@ -6969,6 +6969,7 @@
   },
   "post-email-data-table": {
     "approval_status": "Approval Status",
+    "approved": "Approved",
     "blocked": "Blocked",
     "cancelled": "Cancelled",
     "created_at": "Created At",
@@ -6993,7 +6994,9 @@
     "queue_status": "Queue Status",
     "queued": "Queued",
     "recipient": "Recipient",
+    "rejected": "Rejected",
     "sent": "Sent",
+    "skipped": "Skipped",
     "subject": "Subject",
     "view_post": "View Post"
   },
@@ -12489,13 +12492,18 @@
     "yes_no": "Yes/No"
   },
   "ws-post-emails": {
+    "clear_status_filter": "Clear status filter",
     "description": "Monitor system-managed email delivery for approved user group posts.",
     "failed_emails": "Failed / blocked",
+    "matching_deliveries": "Showing {filtered} of {total} deliveries",
     "plural": "Posts",
     "processing_emails": "Processing",
     "queued_emails": "Queued",
     "sent_emails": "Sent emails",
-    "singular": "Post"
+    "singular": "Post",
+    "status_overview": "Workspace-wide delivery status",
+    "status_overview_description": "Counts stay global for the current workspace filters so queued, processing, skipped, cancelled, and sent deliveries remain easy to compare.",
+    "total_deliveries": "Eligible deliveries"
   },
   "ws-presence": {
     "apply_their_filters": "Apply their filters",

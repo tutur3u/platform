@@ -6969,6 +6969,7 @@
   },
   "post-email-data-table": {
     "approval_status": "Trạng thái phê duyệt",
+    "approved": "Đã phê duyệt",
     "blocked": "Bị chặn",
     "cancelled": "Đã hủy",
     "created_at": "Ngày tạo",
@@ -6993,7 +6994,9 @@
     "queue_status": "Trạng thái hàng chờ",
     "queued": "Đang chờ",
     "recipient": "Người nhận",
+    "rejected": "Bị từ chối",
     "sent": "Đã gửi",
+    "skipped": "Đã bỏ qua",
     "subject": "Chủ đề",
     "view_post": "Xem bài viết"
   },
@@ -12489,13 +12492,18 @@
     "yes_no": "Có/Không"
   },
   "ws-post-emails": {
+    "clear_status_filter": "Xóa bộ lọc trạng thái",
     "description": "Theo dõi việc gửi email do hệ thống xử lý cho các bài viết nhóm người dùng đã được phê duyệt.",
     "failed_emails": "Thất bại / bị chặn",
+    "matching_deliveries": "Hiển thị {filtered} trên {total} lượt gửi",
     "plural": "Bài viết",
     "processing_emails": "Đang xử lý",
     "queued_emails": "Đang chờ",
     "sent_emails": "Email đã gửi",
-    "singular": "Bài viết"
+    "singular": "Bài viết",
+    "status_overview": "Trạng thái gửi toàn không gian làm việc",
+    "status_overview_description": "Các số liệu vẫn được tính trên toàn bộ phạm vi bộ lọc hiện tại của không gian làm việc để bạn so sánh nhanh trạng thái đang chờ, đang xử lý, đã bỏ qua, đã hủy và đã gửi.",
+    "total_deliveries": "Lượt gửi đủ điều kiện"
   },
   "ws-presence": {
     "apply_their_filters": "Áp dụng bộ lọc của họ",

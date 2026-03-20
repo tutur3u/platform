@@ -32,7 +32,7 @@ export function PostDisplay({
 
   if (!postEmail) {
     return (
-      <div className="flex h-full items-center justify-center bg-muted/20">
+      <div className="flex min-h-[36rem] items-center justify-center rounded-lg border border-border/60 bg-muted/20 shadow-sm">
         <div className="text-center text-muted-foreground">
           <Send className="mx-auto mb-4 h-12 w-12 opacity-50" />
           <p className="font-medium text-lg">{t('details_title')}</p>
@@ -48,19 +48,25 @@ export function PostDisplay({
       : postEmail.approval_status === 'REJECTED'
         ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
         : 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow';
+  const approvalLabelKey =
+    postEmail.approval_status === 'APPROVED'
+      ? 'approved'
+      : postEmail.approval_status === 'REJECTED'
+        ? 'rejected'
+        : 'pending';
   const hasFollowUp = Boolean(
     postEmail.approval_rejection_reason || postEmail.queue_last_error
   );
 
   return (
-    <div className="flex h-fit flex-col rounded-lg border">
+    <div className="flex min-h-[36rem] flex-col rounded-lg border border-border/60 shadow-sm">
       <div className="flex flex-col gap-3 rounded-t-lg border-b px-4 py-4 backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold text-lg">{t('details_title')}</h3>
           <div className="flex flex-wrap items-center gap-2">
             <PostsRowActions data={postEmail} />
             <Badge variant="outline" className={approvalClassName}>
-              {(postEmail.approval_status ?? '-').toLowerCase()}
+              {t(approvalLabelKey)}
             </Badge>
           </div>
         </div>
