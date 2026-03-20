@@ -20,6 +20,7 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
+import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
 
 interface TaskBlockingMenuTranslations {
   dependencies: string;
@@ -56,6 +57,8 @@ interface TaskBlockingMenuProps {
   onAddBlockedBy: (task: RelatedTaskInfo) => void;
   /** Called when removing a task that blocks this task */
   onRemoveBlockedBy: (taskId: string) => void;
+  /** Called when submenu open state changes */
+  onOpenChange?: (open: boolean) => void;
   /** Translations for the menu */
   translations: TaskBlockingMenuTranslations;
 }
@@ -71,11 +74,13 @@ export function TaskBlockingMenu({
   onRemoveBlocking,
   onAddBlockedBy,
   onRemoveBlockedBy,
+  onOpenChange,
   translations,
 }: TaskBlockingMenuProps) {
   const [activeTab, setActiveTab] = React.useState<'blocks' | 'blocked-by'>(
     'blocks'
   );
+  const [isSubmenuOpen, setIsSubmenuOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearch] = useDebounce(searchQuery, 300);
 
@@ -100,12 +105,19 @@ export function TaskBlockingMenu({
     excludeTaskIds: excludeIds,
     searchQuery: debouncedSearch || undefined,
     limit: 30,
+    enabled: isSubmenuOpen,
   });
 
-  // Reset search when tab changes
-  React.useEffect(() => {
-    setSearchQuery('');
-  }, []);
+  const handleSubmenuOpenChange = React.useCallback(
+    (open: boolean) => {
+      setIsSubmenuOpen(open);
+      onOpenChange?.(open);
+      if (!open) {
+        setSearchQuery('');
+      }
+    },
+    [onOpenChange]
+  );
 
   const totalCount = blockingTasks.length + blockedByTasks.length;
   const currentList = activeTab === 'blocks' ? blockingTasks : blockedByTasks;
@@ -114,7 +126,7 @@ export function TaskBlockingMenu({
     activeTab === 'blocks' ? onRemoveBlocking : onRemoveBlockedBy;
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub onOpenChange={handleSubmenuOpenChange}>
       <DropdownMenuSubTrigger>
         <Ban className="h-4 w-4 text-dynamic-red" />
         {translations.dependencies}
@@ -158,41 +170,48 @@ export function TaskBlockingMenu({
           <div className="border-b">
             <ScrollArea className="max-h-37.5">
               <div className="space-y-1 p-2">
-                {currentList.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between gap-2 rounded p-1.5 hover:bg-muted/50"
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <span
-                        className={cn(
-                          'truncate text-sm',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {task.board_name}
-                        {typeof task.display_number === 'number' &&
-                          ` #${task.display_number}`}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(task.id)}
-                      disabled={isSaving && savingTaskId === task.id}
-                      aria-label={translations.remove_dependency}
-                      className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                {currentList.map((task) => {
+                  const taskIdentifier = formatRelationshipTaskIdentifier(task);
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between gap-2 rounded p-1.5 hover:bg-muted/50"
                     >
-                      {isSaving && savingTaskId === task.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <X className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span
+                          className={cn(
+                            'truncate text-sm',
+                            task.completed &&
+                              'text-muted-foreground line-through'
+                          )}
+                        >
+                          {task.name}
+                        </span>
+                        {taskIdentifier && (
+                          <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                            {taskIdentifier}
+                          </span>
+                        )}
+                        <span className="text-muted-foreground text-xs">
+                          {task.board_name}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(task.id)}
+                        disabled={isSaving && savingTaskId === task.id}
+                        aria-label={translations.remove_dependency}
+                        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        {isSaving && savingTaskId === task.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <X className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </div>
@@ -232,34 +251,41 @@ export function TaskBlockingMenu({
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {tasks.map((task) => (
-                  <CommandItem
-                    key={task.id}
-                    value={task.id}
-                    onSelect={() => handleAdd(task)}
-                    disabled={isSaving}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span
-                        className={cn(
-                          'truncate text-sm',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      {task.board_name && (
-                        <span className="text-muted-foreground text-xs">
-                          {task.board_name}
-                          {typeof task.display_number === 'number' &&
-                            ` #${task.display_number}`}
+                {tasks.map((task) => {
+                  const taskIdentifier = formatRelationshipTaskIdentifier(task);
+                  return (
+                    <CommandItem
+                      key={task.id}
+                      value={task.id}
+                      onSelect={() => handleAdd(task)}
+                      disabled={isSaving}
+                      className="flex cursor-pointer items-center gap-2"
+                    >
+                      <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span
+                          className={cn(
+                            'truncate text-sm',
+                            task.completed &&
+                              'text-muted-foreground line-through'
+                          )}
+                        >
+                          {task.name}
                         </span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
+                        {taskIdentifier && (
+                          <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                            {taskIdentifier}
+                          </span>
+                        )}
+                        {task.board_name && (
+                          <span className="text-muted-foreground text-xs">
+                            {task.board_name}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             )}
           </CommandList>

@@ -58,6 +58,7 @@ export interface WorkspaceTaskApiTask extends Task {
   description_yjs_state?: number[] | null;
   board_id?: string | null;
   board_name?: string;
+  ticket_prefix?: string | null;
   deleted_at?: string;
   list_deleted?: boolean;
 }
@@ -79,6 +80,7 @@ export interface ListWorkspaceTasksOptions {
   q?: string;
   limit?: number;
   offset?: number;
+  includeRelationshipSummary?: boolean;
 }
 
 export interface WorkspaceTasksResponse {
@@ -509,6 +511,7 @@ export async function listWorkspaceTasks(
         q: options?.q,
         limit: options?.limit,
         offset: options?.offset,
+        includeRelationshipSummary: options?.includeRelationshipSummary,
       },
       cache: 'no-store',
     }

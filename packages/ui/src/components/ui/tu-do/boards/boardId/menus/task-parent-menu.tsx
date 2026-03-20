@@ -19,6 +19,7 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
+import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
 
 interface TaskParentMenuTranslations {
   parent_task: string;
@@ -44,6 +45,8 @@ interface TaskParentMenuProps {
   onSetParent: (task: RelatedTaskInfo) => void;
   /** Called when parent is removed */
   onRemoveParent: () => void;
+  /** Called when submenu open state changes */
+  onOpenChange?: (open: boolean) => void;
   /** Translations for the menu */
   translations: TaskParentMenuTranslations;
 }
@@ -56,10 +59,21 @@ export function TaskParentMenu({
   isSaving,
   onSetParent,
   onRemoveParent,
+  onOpenChange,
   translations,
 }: TaskParentMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isSubmenuOpen, setIsSubmenuOpen] = React.useState(false);
   const [debouncedSearch] = useDebounce(searchQuery, 300);
+  const trimmedSearchQuery = searchQuery.trim();
+  const trimmedDebouncedSearch = debouncedSearch.trim();
+  const isSearchSynced =
+    trimmedSearchQuery.length === 0
+      ? trimmedDebouncedSearch.length === 0
+      : trimmedDebouncedSearch === trimmedSearchQuery;
+  const parentTaskIdentifier = parentTask
+    ? formatRelationshipTaskIdentifier(parentTask)
+    : null;
 
   // Exclude current task and all its children (to prevent cycles)
   const excludeIds = React.useMemo(() => {
@@ -77,16 +91,24 @@ export function TaskParentMenu({
     isError: tasksError,
   } = useWorkspaceTasks(wsId, {
     excludeTaskIds: excludeIds,
-    searchQuery: debouncedSearch || undefined,
+    searchQuery: trimmedDebouncedSearch || undefined,
     limit: 30,
+    enabled: isSubmenuOpen && isSearchSynced,
   });
+  const shouldShowLoading = isSubmenuOpen && (!isSearchSynced || tasksLoading);
+  const visibleTasks = isSearchSynced ? tasks : [];
 
   // Reset search when menu closes
-  const handleSubContentOpenChange = React.useCallback((open: boolean) => {
-    if (!open) {
-      setSearchQuery('');
-    }
-  }, []);
+  const handleSubContentOpenChange = React.useCallback(
+    (open: boolean) => {
+      setIsSubmenuOpen(open);
+      onOpenChange?.(open);
+      if (!open) {
+        setSearchQuery('');
+      }
+    },
+    [onOpenChange]
+  );
 
   return (
     <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
@@ -105,9 +127,13 @@ export function TaskParentMenu({
           <div className="border-b p-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm">{parentTask.name}</span>
+                <span className="truncate text-sm">
+                  {parentTaskIdentifier
+                    ? `${parentTaskIdentifier} - ${parentTask.name}`
+                    : parentTask.name}
+                </span>
                 <span className="text-muted-foreground text-xs">
-                  {parentTask.board_name} #{parentTask.display_number}
+                  {parentTask.board_name}
                 </span>
               </div>
               <button
@@ -135,7 +161,7 @@ export function TaskParentMenu({
             className="h-9"
           />
           <CommandList className="max-h-62.5">
-            {tasksLoading ? (
+            {shouldShowLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
@@ -143,7 +169,7 @@ export function TaskParentMenu({
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
                 {translations.error_loading_tasks}
               </CommandEmpty>
-            ) : tasks.length === 0 ? (
+            ) : visibleTasks.length === 0 ? (
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
                 {searchQuery ? (
                   <>
@@ -156,33 +182,42 @@ export function TaskParentMenu({
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {tasks.map((task) => (
-                  <CommandItem
-                    key={task.id}
-                    value={task.id}
-                    onSelect={() => {
-                      onSetParent(task);
-                    }}
-                    disabled={isSaving}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span
-                        className={cn(
-                          'truncate text-sm',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      {task.board_name && (
-                        <span className="text-muted-foreground text-xs">
-                          {task.board_name} #{task.display_number}
+                {visibleTasks.map((task) => {
+                  const taskIdentifier = formatRelationshipTaskIdentifier(task);
+                  return (
+                    <CommandItem
+                      key={task.id}
+                      value={task.id}
+                      onSelect={() => {
+                        onSetParent(task);
+                      }}
+                      disabled={isSaving}
+                      className="flex cursor-pointer items-center gap-2"
+                    >
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span
+                          className={cn(
+                            'truncate text-sm',
+                            task.completed &&
+                              'text-muted-foreground line-through'
+                          )}
+                        >
+                          {task.name}
                         </span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
+                        {taskIdentifier && (
+                          <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                            {taskIdentifier}
+                          </span>
+                        )}
+                        {task.board_name && (
+                          <span className="text-muted-foreground text-xs">
+                            {task.board_name}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             )}
           </CommandList>

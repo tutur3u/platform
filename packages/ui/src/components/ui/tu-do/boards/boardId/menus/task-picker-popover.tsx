@@ -22,11 +22,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
+import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
 
 interface TaskPickerOption {
   id: string;
   name: string;
   display_number?: number | null;
+  ticket_prefix?: string | null;
   completed?: boolean | null;
   priority?: 'low' | 'normal' | 'high' | 'critical' | null;
   board_id?: string | null;
@@ -153,9 +155,15 @@ export function TaskPickerPopover({
     }
 
     if (mode === 'single' && selectedTask) {
+      const selectedTaskIdentifier =
+        formatRelationshipTaskIdentifier(selectedTask);
       return (
         <div className="flex w-full items-center justify-between gap-2">
-          <span className="truncate">{selectedTask.name}</span>
+          <span className="truncate">
+            {selectedTaskIdentifier
+              ? `${selectedTaskIdentifier} - ${selectedTask.name}`
+              : selectedTask.name}
+          </span>
           {onClear && (
             <X
               className="h-4 w-4 shrink-0 opacity-50 hover:opacity-100"
@@ -232,6 +240,7 @@ export function TaskPickerPopover({
               <CommandGroup>
                 {tasks.map((task) => {
                   const selected = isTaskSelected(task.id);
+                  const taskIdentifier = formatRelationshipTaskIdentifier(task);
                   return (
                     <CommandItem
                       key={task.id}
@@ -259,6 +268,11 @@ export function TaskPickerPopover({
                           >
                             {task.name}
                           </span>
+                          {taskIdentifier && (
+                            <span className="shrink-0 rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                              {taskIdentifier}
+                            </span>
+                          )}
                           {task.priority &&
                             ['high', 'critical'].includes(task.priority) && (
                               <span className="shrink-0 rounded bg-dynamic-red/10 px-1 py-0.5 font-medium text-[10px] text-dynamic-red">
@@ -270,9 +284,6 @@ export function TaskPickerPopover({
                           <div className="flex items-center gap-1 text-muted-foreground text-xs">
                             <ExternalLink className="h-3 w-3" />
                             <span className="truncate">{task.board_name}</span>
-                            <span className="opacity-50">
-                              #{task.display_number}
-                            </span>
                           </div>
                         )}
                       </div>

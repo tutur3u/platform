@@ -20,6 +20,7 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
+import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
 
 interface TaskRelatedMenuTranslations {
   related_tasks: string;
@@ -45,6 +46,8 @@ interface TaskRelatedMenuProps {
   onAddRelated: (task: RelatedTaskInfo) => void;
   /** Called when removing a related task */
   onRemoveRelated: (taskId: string) => void;
+  /** Called when submenu open state changes */
+  onOpenChange?: (open: boolean) => void;
   /** Translations for the menu */
   translations: TaskRelatedMenuTranslations;
 }
@@ -57,9 +60,11 @@ export function TaskRelatedMenu({
   savingTaskId,
   onAddRelated,
   onRemoveRelated,
+  onOpenChange,
   translations,
 }: TaskRelatedMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isSubmenuOpen, setIsSubmenuOpen] = React.useState(false);
   const [debouncedSearch] = useDebounce(searchQuery, 300);
 
   // Exclude current task and all already-related tasks
@@ -74,15 +79,21 @@ export function TaskRelatedMenu({
       excludeTaskIds: excludeIds,
       searchQuery: debouncedSearch || undefined,
       limit: 30,
+      enabled: isSubmenuOpen,
     }
   );
 
   // Reset search when menu closes
-  const handleSubContentOpenChange = React.useCallback((open: boolean) => {
-    if (!open) {
-      setSearchQuery('');
-    }
-  }, []);
+  const handleSubContentOpenChange = React.useCallback(
+    (open: boolean) => {
+      setIsSubmenuOpen(open);
+      onOpenChange?.(open);
+      if (!open) {
+        setSearchQuery('');
+      }
+    },
+    [onOpenChange]
+  );
 
   return (
     <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
@@ -106,38 +117,48 @@ export function TaskRelatedMenu({
             </div>
             <ScrollArea className="max-h-45">
               <div className="space-y-1 p-2">
-                {relatedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between gap-2 rounded p-1.5 hover:bg-muted/50"
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <span
-                        className={cn(
-                          'truncate text-sm',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {task.board_name} #{task.display_number}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveRelated(task.id)}
-                      disabled={isSaving && savingTaskId === task.id}
-                      className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                {relatedTasks.map((task) => {
+                  const taskIdentifier = formatRelationshipTaskIdentifier(task);
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between gap-2 rounded p-1.5 hover:bg-muted/50"
                     >
-                      {isSaving && savingTaskId === task.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <X className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span
+                          className={cn(
+                            'truncate text-sm',
+                            task.completed &&
+                              'text-muted-foreground line-through'
+                          )}
+                        >
+                          {task.name}
+                        </span>
+                        {taskIdentifier && (
+                          <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                            {taskIdentifier}
+                          </span>
+                        )}
+                        <span className="text-muted-foreground text-xs">
+                          {task.board_name}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveRelated(task.id)}
+                        disabled={isSaving && savingTaskId === task.id}
+                        aria-label={`Remove relationship with ${task.name || 'task'}`}
+                        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        {isSaving && savingTaskId === task.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <X className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </div>
@@ -169,32 +190,41 @@ export function TaskRelatedMenu({
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {tasks.map((task) => (
-                  <CommandItem
-                    key={task.id}
-                    value={task.id}
-                    onSelect={() => onAddRelated(task)}
-                    disabled={isSaving}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span
-                        className={cn(
-                          'truncate text-sm',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      {task.board_name && (
-                        <span className="text-muted-foreground text-xs">
-                          {task.board_name} #{task.display_number}
+                {tasks.map((task) => {
+                  const taskIdentifier = formatRelationshipTaskIdentifier(task);
+                  return (
+                    <CommandItem
+                      key={task.id}
+                      value={task.id}
+                      onSelect={() => onAddRelated(task)}
+                      disabled={isSaving}
+                      className="flex cursor-pointer items-center gap-2"
+                    >
+                      <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span
+                          className={cn(
+                            'truncate text-sm',
+                            task.completed &&
+                              'text-muted-foreground line-through'
+                          )}
+                        >
+                          {task.name}
                         </span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
+                        {taskIdentifier && (
+                          <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                            {taskIdentifier}
+                          </span>
+                        )}
+                        {task.board_name && (
+                          <span className="text-muted-foreground text-xs">
+                            {task.board_name}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             )}
           </CommandList>

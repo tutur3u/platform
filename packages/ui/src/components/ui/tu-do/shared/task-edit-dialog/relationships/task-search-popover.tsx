@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
+import { formatRelationshipTaskIdentifier } from '../../relationship-task-identifier';
 import type {
   TaskSearchPopoverContentProps,
   TaskSearchPopoverProps,
@@ -134,32 +135,41 @@ export function TaskSearchPopoverContent({
               <CommandGroup
                 heading={showCreateOption ? 'Existing tasks' : undefined}
               >
-                {tasks.map((task) => (
-                  <CommandItem
-                    key={task.id}
-                    value={task.id}
-                    onSelect={() => onSelect(task)}
-                    disabled={isSaving || disabled}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span
-                        className={cn(
-                          'truncate text-sm',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      {task.board_name && (
-                        <span className="text-muted-foreground text-xs">
-                          {task.board_name} #{task.display_number}
+                {tasks.map((task) => {
+                  const taskIdentifier = formatRelationshipTaskIdentifier(task);
+                  return (
+                    <CommandItem
+                      key={task.id}
+                      value={task.id}
+                      onSelect={() => onSelect(task)}
+                      disabled={isSaving || disabled}
+                      className="flex cursor-pointer items-center gap-2"
+                    >
+                      <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span
+                          className={cn(
+                            'truncate text-sm',
+                            task.completed &&
+                              'text-muted-foreground line-through'
+                          )}
+                        >
+                          {task.name}
                         </span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
+                        {taskIdentifier && (
+                          <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                            {taskIdentifier}
+                          </span>
+                        )}
+                        {task.board_name && (
+                          <span className="text-muted-foreground text-xs">
+                            {task.board_name}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             )}
           </>

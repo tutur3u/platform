@@ -68,6 +68,27 @@ export function getTicketIdentifier(
   return `${effectivePrefix}-${displayNumber}`.toUpperCase();
 }
 
+function normalizeTaskSearchValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function isTicketIdentifierLikeQuery(query: string) {
+  const normalized = normalizeTaskSearchValue(query);
+  if (!normalized) return false;
+  return /^\d+$/.test(normalized) || /^[a-z][a-z0-9_-]*-\d+$/.test(normalized);
+}
+
+function getTaskIdentifierForSearch(task: {
+  ticket_prefix?: string | null;
+  display_number?: number | null;
+}) {
+  if (typeof task.display_number !== 'number') {
+    return null;
+  }
+
+  return getTicketIdentifier(task.ticket_prefix, task.display_number);
+}
+
 export async function getTaskBoard(
   _supabase: TypedSupabaseClient,
   boardId: string,
@@ -2909,41 +2930,81 @@ export async function getWorkspaceTasks(
   }
 ): Promise<RelatedTaskInfo[]> {
   const excluded = new Set(options?.excludeTaskIds ?? []);
+  const normalizedSearch = options?.searchQuery
+    ? normalizeTaskSearchValue(options.searchQuery)
+    : '';
+  const ticketLikeSearch = normalizedSearch
+    ? isTicketIdentifierLikeQuery(normalizedSearch)
+    : false;
   const targetLimit = options?.limit ?? 50;
   const requestLimit = Math.max(25, Math.min(targetLimit * 2, 200));
   const collected: RelatedTaskInfo[] = [];
   const seenTaskIds = new Set<string>();
 
-  const { tasks } = await listWorkspaceTasks(
-    wsId,
-    {
-      q: options?.searchQuery,
-      limit: requestLimit,
-    },
+  const clientOptions =
     typeof window !== 'undefined'
       ? { baseUrl: window.location.origin }
-      : undefined
-  );
+      : undefined;
 
-  for (const task of tasks ?? []) {
-    if (excluded.has(task.id) || seenTaskIds.has(task.id)) {
-      continue;
-    }
+  let offset = 0;
+  while (true) {
+    const { tasks } = await listWorkspaceTasks(
+      wsId,
+      {
+        q: ticketLikeSearch ? undefined : options?.searchQuery,
+        limit: requestLimit,
+        offset,
+        includeRelationshipSummary: !ticketLikeSearch,
+      },
+      clientOptions
+    );
 
-    seenTaskIds.add(task.id);
-    collected.push({
-      id: task.id,
-      name: task.name,
-      display_number: task.display_number,
-      completed: !!task.closed_at || !!task.completed_at,
-      priority: isTaskPriority(task.priority) ? task.priority : null,
-      board_id: task.board_id ?? null,
-      board_name: task.board_name,
-    });
-
-    if (collected.length >= targetLimit) {
+    const pageTasks = tasks ?? [];
+    if (pageTasks.length === 0) {
       break;
     }
+
+    for (const task of pageTasks) {
+      if (excluded.has(task.id) || seenTaskIds.has(task.id)) {
+        continue;
+      }
+
+      if (normalizedSearch) {
+        const taskName = normalizeTaskSearchValue(task.name ?? '');
+        const taskIdentifier = normalizeTaskSearchValue(
+          getTaskIdentifierForSearch(task) ?? ''
+        );
+
+        if (
+          !taskName.includes(normalizedSearch) &&
+          !taskIdentifier.includes(normalizedSearch)
+        ) {
+          continue;
+        }
+      }
+
+      seenTaskIds.add(task.id);
+      collected.push({
+        id: task.id,
+        name: task.name,
+        display_number: task.display_number,
+        ticket_prefix: task.ticket_prefix ?? null,
+        completed: !!task.closed_at || !!task.completed_at,
+        priority: isTaskPriority(task.priority) ? task.priority : null,
+        board_id: task.board_id ?? null,
+        board_name: task.board_name,
+      });
+
+      if (collected.length >= targetLimit) {
+        return collected;
+      }
+    }
+
+    if (pageTasks.length < requestLimit) {
+      break;
+    }
+
+    offset += requestLimit;
   }
 
   return collected;

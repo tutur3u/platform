@@ -54,6 +54,13 @@ export interface Task {
     scheduled_minutes: number;
     completed: boolean;
   }[];
+  relationship_summary?: {
+    parent_task_id: string | null;
+    child_count: number;
+    blocked_by_count: number;
+    blocking_count: number;
+    related_count: number;
+  };
 }
 
 export interface TaskAssignee {
