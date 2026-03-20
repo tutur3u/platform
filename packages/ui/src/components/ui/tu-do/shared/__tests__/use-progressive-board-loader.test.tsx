@@ -128,4 +128,70 @@ describe('useProgressiveBoardLoader', () => {
       },
     ]);
   });
+
+  it('does not overwrite a local move completed after request start', async () => {
+    const cachedTask: Task = {
+      id: 'task-1',
+      display_number: 1,
+      name: 'Task',
+      list_id: 'done-list',
+      created_at: '2026-03-19T00:00:00.000Z',
+      closed_at: '2026-03-19T01:00:00.000Z',
+      completed_at: '2026-03-19T01:00:00.000Z',
+    };
+
+    queryClient.setQueryData(['tasks', 'board-1'], [cachedTask]);
+
+    let resolveFetch: (value: { tasks: Task[] }) => void = () => {
+      throw new Error('Expected pending fetch resolver');
+    };
+    const pendingFetch = new Promise<{ tasks: Task[] }>((resolve) => {
+      resolveFetch = resolve;
+    });
+
+    vi.mocked(listWorkspaceTasks).mockImplementationOnce(() => pendingFetch);
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1'),
+      { wrapper }
+    );
+
+    let loadPromise: Promise<unknown> | undefined;
+    await act(async () => {
+      loadPromise = result.current.loadListPage('todo-list', 0);
+      await Promise.resolve();
+    });
+
+    queryClient.setQueryData(
+      ['tasks', 'board-1'],
+      [
+        {
+          ...cachedTask,
+          _localMutationAt: Date.now() + 1000,
+        } as Task,
+      ]
+    );
+
+    resolveFetch({
+      tasks: [
+        {
+          ...cachedTask,
+          list_id: 'todo-list',
+          completed_at: undefined,
+          closed_at: undefined,
+        },
+      ],
+    });
+
+    await act(async () => {
+      await loadPromise;
+    });
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+      {
+        ...cachedTask,
+        _localMutationAt: expect.any(Number),
+      },
+    ]);
+  });
 });

@@ -44,6 +44,7 @@ export function useProgressiveBoardLoader(
       });
 
       try {
+        const requestStartedAt = Date.now();
         const payload = await listWorkspaceTasks(wsId, {
           listId,
           limit: PAGE_SIZE,
@@ -70,7 +71,24 @@ export function useProgressiveBoardLoader(
             const mergedExisting = existing.map((task) => {
               const incomingTask = incomingById.get(task.id);
               if (!incomingTask) return task;
+
               incomingById.delete(task.id);
+
+              // Guard against stale in-flight list responses overriding a task
+              // that was moved locally after this request started.
+              if (task.list_id !== incomingTask.list_id) {
+                const localTask = task as Task & {
+                  _localMutationAt?: number;
+                };
+
+                if (
+                  typeof localTask._localMutationAt === 'number' &&
+                  localTask._localMutationAt > requestStartedAt
+                ) {
+                  return task;
+                }
+              }
+
               return { ...task, ...incomingTask };
             });
 
