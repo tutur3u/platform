@@ -19,10 +19,10 @@ export async function optimizeWhiteboardImageUpload(file: File) {
       .default;
 
     const compressedBlob = await imageCompression(file, {
-      maxSizeMB: 10,
-      maxWidthOrHeight: 4096,
+      maxSizeMB: 20,
+      maxWidthOrHeight: 8192,
       useWebWorker: true,
-      initialQuality: 0.82,
+      initialQuality: 0.85,
       fileType: file.type,
     });
 

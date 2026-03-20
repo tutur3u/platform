@@ -1,6 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  fetchRequireAttentionUserIds,
+  withRequireAttentionFlag,
+} from '@/lib/require-attention-users';
 
 interface Params {
   params: Promise<{
@@ -75,8 +79,14 @@ export async function GET(req: Request, { params }: Params) {
     })
   );
 
+  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
+    wsId,
+    userIds: members.map((member) => member.id),
+    groupId,
+  });
+
   return NextResponse.json({
-    data: members,
+    data: withRequireAttentionFlag(members, requireAttentionUserIds),
     count: data?.length ?? 0,
     next: (data?.length ?? 0) < limit ? undefined : offset + limit,
   });

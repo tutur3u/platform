@@ -24,6 +24,12 @@ class WorkspaceState extends Equatable {
   final bool isCreating;
 
   bool get hasWorkspace => currentWorkspace != null;
+  Workspace? get personalWorkspaceOrCurrent {
+    for (final workspace in workspaces) {
+      if (workspace.personal) return workspace;
+    }
+    return currentWorkspace;
+  }
 
   WorkspaceState copyWith({
     WorkspaceStatus? status,

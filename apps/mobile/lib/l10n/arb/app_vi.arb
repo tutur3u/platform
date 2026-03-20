@@ -8,23 +8,9 @@
 
     "loginTitle": "Chào mừng trở lại",
     "loginSubtitle": "Đăng nhập để tiếp tục",
-    "authTagline": "Người bạn đồng hành AI cho công việc",
-    "loginTabOtp": "OTP",
-    "loginTabPassword": "Mật khẩu",
-    "loginSendOtp": "Gửi OTP",
-    "loginVerifyOtp": "Xác thực OTP",
-    "loginRetryAfter": "Thử lại sau {seconds} giây",
-    "@loginRetryAfter": {
-        "placeholders": {
-            "seconds": {
-                "type": "int"
-            }
-        }
-    },
     "loginSignIn": "Đăng nhập",
     "authContinueWithGoogle": "Tiếp tục với Google",
     "authContinueWithEmail": "hoặc tiếp tục với email",
-    "authGoogleLoading": "Đang kết nối với Google...",
     "authGoogleSignInFailed": "Đăng nhập Google thất bại. Vui lòng thử lại.",
     "authGoogleBrowserLaunchFailed": "Không thể mở đăng nhập Google lúc này.",
     "authLogOut": "Đăng xuất",
@@ -1085,7 +1071,7 @@
     "profileSave": "Lưu",
     "profileCancel": "Hủy",
 
-    "workspacePickerTitle": "Chuyển không gian làm việc",
+    "workspacePickerTitle": "Không gian làm việc",
     "workspacePersonalBadge": "Cá nhân",
     "workspacePersonalSection": "Cá nhân",
     "workspaceTeamSection": "Nhóm làm việc",

@@ -20,6 +20,10 @@
       "schedule": "*/10 * * * *"
     },
     {
+      "path": "/api/cron/process-post-email-queue",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/calendar/provider-sync",
       "schedule": "*/10 * * * *"
     },

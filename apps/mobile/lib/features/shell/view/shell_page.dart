@@ -11,10 +11,13 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/widgets/workspace_selector_button.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
+import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -107,6 +110,24 @@ class _ShellPageState extends State<ShellPage> {
     );
   }
 
+  Widget _buildGlobalBody() {
+    if (_isRootTabLocation(widget.matchedLocation)) {
+      return MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: IndexedStack(
+          index: _rootTabIndex(widget.matchedLocation),
+          children: const [
+            DashboardPage(),
+            AssistantPage(),
+            AppsHubPage(),
+          ],
+        ),
+      );
+    }
+    return _buildNormalizedChild();
+  }
+
   /// Compact: bottom NavigationBar inside Scaffold footers.
   Widget _buildCompactLayout(
     BuildContext context,
@@ -115,7 +136,7 @@ class _ShellPageState extends State<ShellPage> {
   }) {
     final isMiniAppRoute = activeModule != null;
     if (!isMiniAppRoute) {
-      _cachedGlobalBody = _buildNormalizedChild();
+      _cachedGlobalBody = _buildGlobalBody();
       _activeLayerPage = 0;
       if (_layerController.hasClients && _layerController.page?.round() != 0) {
         _syncingLayerPage = true;
@@ -154,8 +175,7 @@ class _ShellPageState extends State<ShellPage> {
   Widget _buildGlobalCompactScaffold(BuildContext context, AppTabState state) {
     final l10n = context.l10n;
     final items = _buildNavItems(context, state, l10n);
-    final selectedIndex = _calculateSelectedIndex(widget.matchedLocation);
-    final selectedKey = _keyForIndex(selectedIndex);
+    final selectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
     final showBottomNav =
         !widget.matchedLocation.startsWith(Routes.assistant) ||
@@ -196,7 +216,7 @@ class _ShellPageState extends State<ShellPage> {
               ),
             ]
           : const [],
-      child: _buildNormalizedChild(),
+      child: _buildGlobalBody(),
     );
   }
 
@@ -323,8 +343,10 @@ class _ShellPageState extends State<ShellPage> {
     DeviceClass deviceClass,
   ) {
     final l10n = context.l10n;
-    final selectedIndex = _calculateSelectedIndex(widget.matchedLocation);
-    final selectedKey = _keyForIndex(selectedIndex, useGlobalKey: false);
+    final selectedKey = _selectedKeyForLocation(
+      widget.matchedLocation,
+      useGlobalKey: false,
+    );
     final moduleRoute = _isModuleRoute(widget.matchedLocation);
     void onSelected(Key? key) =>
         _onItemTapped(_indexForKey(key), context, state);
@@ -352,16 +374,23 @@ class _ShellPageState extends State<ShellPage> {
       child: Row(
         children: [
           sideNav,
-          Expanded(child: _buildNormalizedChild(preserveTop: moduleRoute)),
+          Expanded(
+            child: moduleRoute
+                ? _buildNormalizedChild(preserveTop: true)
+                : _buildGlobalBody(),
+          ),
         ],
       ),
     );
   }
 
   shad.AppBar _buildAppBar(BuildContext context) {
-    return const shad.AppBar(
-      title: _ShellTopBarTitle(),
-      trailing: [AvatarDropdown()],
+    return shad.AppBar(
+      height: mobileSectionAppBarHeight,
+      padding: mobileSectionAppBarPadding,
+      trailingGap: 6,
+      trailing: const [AvatarDropdown()],
+      child: _ShellTopBarTitle(matchedLocation: widget.matchedLocation),
     );
   }
 
@@ -675,11 +704,31 @@ class _ShellPageState extends State<ShellPage> {
     _longPressTimer = null;
   }
 
-  Key _keyForIndex(int index, {bool useGlobalKey = true}) => switch (index) {
-    1 => _assistantKey,
-    2 => useGlobalKey ? _appsTabKey : _appsKey,
-    _ => _homeKey,
-  };
+  Key? _selectedKeyForLocation(String location, {bool useGlobalKey = true}) {
+    if (location == Routes.home) {
+      return _homeKey;
+    }
+    if (location == Routes.assistant) {
+      return _assistantKey;
+    }
+    if (location == Routes.apps ||
+        AppRegistry.moduleFromLocation(location) != null) {
+      return useGlobalKey ? _appsTabKey : _appsKey;
+    }
+    return null;
+  }
+
+  bool _isRootTabLocation(String location) {
+    return location == Routes.home ||
+        location == Routes.assistant ||
+        location == Routes.apps;
+  }
+
+  int _rootTabIndex(String location) {
+    if (location == Routes.assistant) return 1;
+    if (location == Routes.apps) return 2;
+    return 0;
+  }
 
   static int _indexForKey(Key? key) {
     if (key == _assistantKey) return 1;
@@ -700,38 +749,75 @@ class _ShellPageState extends State<ShellPage> {
 }
 
 class _ShellTopBarTitle extends StatelessWidget {
-  const _ShellTopBarTitle();
+  const _ShellTopBarTitle({required this.matchedLocation});
+
+  final String matchedLocation;
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(),
+    final theme = shad.Theme.of(context);
+    final title = switch (matchedLocation) {
+      Routes.home => context.l10n.navHome,
+      Routes.assistant => 'Mira',
+      Routes.profileRoot => context.l10n.profileTitle,
+      Routes.settings => context.l10n.settingsTitle,
+      _ => null,
+    };
+
+    if (title != null) {
+      return SizedBox(
+        height: mobileSectionAppBarHeight,
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
               'assets/logos/transparent.png',
-              width: 26,
-              height: 26,
+              width: mobileSectionAppBarLogoSize,
+              height: mobileSectionAppBarLogoSize,
               fit: BoxFit.contain,
             ),
-            const SizedBox(width: 8),
-            Text(
+            const SizedBox(width: 10),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: mobileSectionAppBarHeight,
+      child: Row(
+        children: [
+          Image.asset(
+            'assets/logos/transparent.png',
+            width: mobileSectionAppBarLogoSize,
+            height: mobileSectionAppBarLogoSize,
+            fit: BoxFit.contain,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 11),
+            child: Text(
               '/',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: theme.typography.large.copyWith(
                 color: Theme.of(
                   context,
                 ).colorScheme.onSurfaceVariant.withValues(alpha: 0.78),
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: 8),
-            const WorkspaceSelectorButton(),
-          ],
-        ),
+          ),
+          const Expanded(child: WorkspaceSelectorButton()),
+        ],
       ),
     );
   }

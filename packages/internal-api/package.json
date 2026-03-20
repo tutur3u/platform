@@ -27,6 +27,7 @@
     "./templates": "./src/templates.ts",
     "./time-tracking": "./src/time-tracking.ts",
     "./users": "./src/users.ts",
+    "./users-feedbacks": "./src/users-feedbacks.ts",
     "./workspace-configs": "./src/workspace-configs.ts",
     "./workspaces": "./src/workspaces.ts"
   },

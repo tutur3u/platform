@@ -21,8 +21,6 @@ class ApiConfig {
 
 /// Auth endpoint paths (called via the mobile auth API on the web backend).
 abstract final class AuthEndpoints {
-  static const sendOtp = '/api/v1/auth/mobile/send-otp';
-  static const verifyOtp = '/api/v1/auth/mobile/verify-otp';
   static const passwordLogin = '/api/v1/auth/mobile/password-login';
 }
 

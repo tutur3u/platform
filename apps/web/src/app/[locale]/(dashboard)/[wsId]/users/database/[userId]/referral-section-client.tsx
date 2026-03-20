@@ -19,6 +19,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { RequireAttentionName } from '@/components/users/require-attention-name';
 
 interface ReferralSectionClientProps {
   wsId: string;
@@ -369,11 +370,17 @@ export default function ReferralSectionClient({
                                     <User className="h-4 w-4 text-dynamic-blue" />
                                   </div>
                                 )}
-                                <div className="font-medium">
-                                  {u.display_name ||
+                                <RequireAttentionName
+                                  name={
+                                    u.display_name ||
                                     u.full_name ||
-                                    t('common.unknown')}
-                                </div>
+                                    t('common.unknown')
+                                  }
+                                  requireAttention={
+                                    !!u.has_require_attention_feedback
+                                  }
+                                  className="font-medium"
+                                />
                               </div>
                             </Link>
                             {canUpdateUsers && (

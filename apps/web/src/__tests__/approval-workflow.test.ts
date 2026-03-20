@@ -3,26 +3,45 @@ import { describe, expect, it } from 'vitest';
 import {
   APPROVAL_STATUS,
   type ApprovalStatus,
-  canSendEmail,
+  canRemoveApproval,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/approvals/utils';
 
 describe('Post Approval Workflow', () => {
-  describe('Email Send Guard', () => {
+  describe('Approval Revoke Guard', () => {
     it.each([
-      { status: 'PENDING' as ApprovalStatus, expected: false },
-      { status: 'APPROVED' as ApprovalStatus, expected: true },
-      { status: 'REJECTED' as ApprovalStatus, expected: false },
-    ])('should return $expected when post approval status is $status', ({
+      {
+        status: 'PENDING' as ApprovalStatus,
+        can_remove_approval: false,
+        expected: false,
+      },
+      {
+        status: 'APPROVED' as ApprovalStatus,
+        can_remove_approval: true,
+        expected: true,
+      },
+      {
+        status: 'APPROVED' as ApprovalStatus,
+        can_remove_approval: false,
+        expected: false,
+      },
+      {
+        status: 'REJECTED' as ApprovalStatus,
+        can_remove_approval: false,
+        expected: false,
+      },
+    ])('should return $expected when post state is revocable=$can_remove_approval status=$status', ({
       status,
+      can_remove_approval,
       expected,
     }) => {
       const mockPost = {
         id: 'post-1',
         post_approval_status: status,
+        can_remove_approval,
         title: 'Test Post',
       };
 
-      expect(canSendEmail(mockPost)).toBe(expected);
+      expect(canRemoveApproval(mockPost)).toBe(expected);
     });
   });
 

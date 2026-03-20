@@ -271,9 +271,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
-    const typedSbAdmin = sbAdmin as TypedSupabaseClient;
+    const typedSupabase = supabase as TypedSupabaseClient;
     const { data: transitionResultRaw, error: transitionError } =
-      await typedSbAdmin.rpc(
+      await typedSupabase.rpc(
         'update_workspace_configs_with_approval_transitions',
         {
           p_ws_id: wsId,

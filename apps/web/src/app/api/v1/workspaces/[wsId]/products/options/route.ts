@@ -56,7 +56,7 @@ export async function GET(request: Request, { params }: Params) {
     const { data, error } = await sbAdmin
       .from('workspace_products')
       .select(
-        `id, name, description, manufacturer, category_id, inventory_products!inventory_products_product_id_fkey(unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(name))`
+        `id, name, description, manufacturer, category_id, inventory_products!inventory_products_product_id_fkey(unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(id, name), inventory_warehouses!inventory_products_warehouse_id_fkey(id, name))`
       )
       .eq('ws_id', wsId)
       .order('name');

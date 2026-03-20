@@ -57,7 +57,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const canCheckUserAttendance = containsPermission('check_user_attendance');
   const canViewUserGroupsScores = containsPermission('view_user_groups_scores');
   const canApproveReports = containsPermission('approve_reports');
-  const canApprovePosts = containsPermission('approve_posts');
+  const canApprovePosts = containsPermission('send_user_group_post_emails');
   const canViewRequests = canApproveReports || canApprovePosts;
 
   // Get rejected counts for badge

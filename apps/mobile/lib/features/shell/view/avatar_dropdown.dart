@@ -168,17 +168,64 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
         return PopupMenuButton<String>(
           offset: const Offset(0, 48),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
             side: BorderSide(color: theme.colorScheme.border),
           ),
           color: theme.colorScheme.popover,
           itemBuilder: (context) => [
             PopupMenuItem<String>(
+              enabled: false,
+              height: 64,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    foregroundImage: avatarUrl != null
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                    backgroundColor: theme.colorScheme.muted,
+                    child: Text(
+                      _getInitials(name),
+                      style: theme.typography.large.copyWith(
+                        color: theme.colorScheme.foreground,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name ?? l10n.settingsProfile,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.p.copyWith(
+                            color: theme.colorScheme.popoverForeground,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (email != null)
+                          Text(
+                            email,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.small.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const PopupMenuDivider(),
+            PopupMenuItem<String>(
               value: 'workspace',
               child: Row(
                 children: [
                   Icon(
-                    Icons.swap_horiz,
+                    Icons.swap_horiz_rounded,
                     size: 16,
                     color: theme.colorScheme.popoverForeground,
                   ),
@@ -198,7 +245,7 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
               child: Row(
                 children: [
                   Icon(
-                    Icons.person_outline,
+                    Icons.person_outline_rounded,
                     size: 16,
                     color: theme.colorScheme.popoverForeground,
                   ),
@@ -266,19 +313,33 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
                 unawaited(authCubit.signOut());
             }
           },
-          child: CircleAvatar(
-            radius: 16,
-            foregroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-            onForegroundImageError: avatarUrl != null
-                ? (_, _) => debugPrint(
-                    'AvatarDropdown avatar image failed to load: $avatarUrl',
-                  )
-                : null,
-            backgroundColor: theme.colorScheme.muted,
-            child: Text(
-              _getInitials(name),
-              style: theme.typography.large.copyWith(
-                color: theme.colorScheme.foreground,
+          child: Container(
+            width: 40,
+            height: 40,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.muted.withValues(alpha: 0.32),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: theme.colorScheme.border.withValues(alpha: 0.45),
+              ),
+            ),
+            child: CircleAvatar(
+              radius: 16,
+              foregroundImage: avatarUrl != null
+                  ? NetworkImage(avatarUrl)
+                  : null,
+              onForegroundImageError: avatarUrl != null
+                  ? (_, _) => debugPrint(
+                      'AvatarDropdown avatar image failed to load: $avatarUrl',
+                    )
+                  : null,
+              backgroundColor: theme.colorScheme.muted,
+              child: Text(
+                _getInitials(name),
+                style: theme.typography.large.copyWith(
+                  color: theme.colorScheme.foreground,
+                ),
               ),
             ),
           ),

@@ -8,9 +8,9 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
-  escapeLikeWildcards,
   fetchManagersForGroups,
   getUserGroupMemberships,
+  matchesUserGroupSearch,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
@@ -89,10 +89,7 @@ export async function GET(request: Request, { params }: Params) {
       .eq('ws_id', wsId)
       .order('name');
 
-    if (sp.q) {
-      const escapedSearch = escapeLikeWildcards(sp.q);
-      queryBuilder.ilike('name', `%${escapedSearch}%`);
-    }
+    const shouldUseAccentInsensitiveSearch = Boolean(sp.q?.trim());
 
     const requestedGroupIds = normalizeListParam(sp.ids);
 
@@ -117,9 +114,11 @@ export async function GET(request: Request, { params }: Params) {
       queryBuilder.in('id', groupIds);
     }
 
-    const start = (sp.page - 1) * sp.pageSize;
-    const end = sp.page * sp.pageSize - 1;
-    queryBuilder.range(start, end);
+    if (!shouldUseAccentInsensitiveSearch) {
+      const start = (sp.page - 1) * sp.pageSize;
+      const end = sp.page * sp.pageSize - 1;
+      queryBuilder.range(start, end);
+    }
 
     const {
       data: fetchedData,
@@ -136,8 +135,21 @@ export async function GET(request: Request, { params }: Params) {
       throw error;
     }
 
-    data = fetchedData as UserGroup[];
-    count = fetchedCount ?? 0;
+    let filteredData = (fetchedData as UserGroup[]) ?? [];
+
+    if (shouldUseAccentInsensitiveSearch) {
+      filteredData = filteredData.filter((group) =>
+        matchesUserGroupSearch(group.name, sp.q ?? '')
+      );
+
+      count = filteredData.length;
+
+      const start = (sp.page - 1) * sp.pageSize;
+      data = filteredData.slice(start, start + sp.pageSize);
+    } else {
+      data = filteredData;
+      count = fetchedCount ?? 0;
+    }
 
     // Fetch managers for the fetched groups
     if (data.length > 0) {

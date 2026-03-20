@@ -4,12 +4,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
-import { useCallback } from 'react';
+import { parseAsString, useQueryState } from 'nuqs';
+import { useCallback, useEffect, useRef } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserGroupColumns } from './columns';
 import Filters from './filters';
-import { type UserGroupsResponse, useUserGroups } from './hooks';
+import { type UserGroupsResponse, useInfiniteUserGroups } from './hooks';
 
 interface Props {
   wsId: string;
@@ -24,6 +24,7 @@ interface Props {
 export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const [q, setQ] = useQueryState(
     'q',
@@ -33,37 +34,53 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
     })
   );
 
-  const [page, setPage] = useQueryState(
-    'page',
-    parseAsInteger.withDefault(1).withOptions({
-      shallow: true,
-    })
-  );
-
-  const [pageSize, setPageSize] = useQueryState(
-    'pageSize',
-    parseAsInteger.withDefault(10).withOptions({
-      shallow: true,
-    })
-  );
-
-  const pageIndex = page > 0 ? page - 1 : 0;
-
-  const { data, isLoading, isFetching, error, refetch } = useUserGroups(
+  const {
+    groups: fetchedGroups,
+    count,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+    refetch,
+  } = useInfiniteUserGroups(
     wsId,
     {
       q,
-      page,
-      pageSize,
     },
     {
-      initialData:
-        !q && page === 1 && pageSize === 10 ? initialData : undefined,
+      initialData: !q ? initialData : undefined,
     }
   );
 
-  const groups = data?.data
-    ? data.data.map((g) => ({
+  useEffect(() => {
+    const node = loadMoreRef.current;
+
+    if (!node || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting || isFetchingNextPage || !hasNextPage) {
+          return;
+        }
+
+        void fetchNextPage();
+      },
+      {
+        rootMargin: '200px 0px',
+      }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const groups = fetchedGroups.length
+    ? fetchedGroups.map((g) => ({
         ...g,
         ws_id: wsId,
         href: `/${wsId}/users/groups/${g.id}`,
@@ -75,31 +92,16 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
   const handleSearch = useCallback(
     (query: string) => {
       setQ(query || null);
-      setPage(1);
     },
-    [setQ, setPage]
-  );
-
-  const handleSetParams = useCallback(
-    (params: { page?: number; pageSize?: string }) => {
-      if (params.page !== undefined) {
-        setPage(params.page);
-      }
-      if (params.pageSize !== undefined) {
-        setPageSize(Number(params.pageSize));
-      }
-    },
-    [setPage, setPageSize]
+    [setQ]
   );
 
   const handleResetParams = useCallback(() => {
     setQ(null);
-    setPage(null);
-    setPageSize(null);
-  }, [setQ, setPage, setPageSize]);
+  }, [setQ]);
 
-  const hasError = Boolean(error || data?.error);
-  const errorMessage = data?.errorMessage;
+  const hasError = Boolean(error);
+  const errorMessage = error instanceof Error ? error.message : undefined;
 
   if (hasError) {
     return (
@@ -128,7 +130,7 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
     );
   }
 
-  const showLoadingOverlay = isFetching && !isLoading;
+  const showLoadingOverlay = isFetching && !isLoading && !isFetchingNextPage;
 
   return (
     <div className="relative">
@@ -147,14 +149,12 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
         data={groups}
         columnGenerator={getUserGroupColumns}
         namespace="user-group-data-table"
-        count={data?.count ?? 0}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
+        count={count}
         filters={<Filters wsId={wsId} />}
         onSearch={handleSearch}
-        setParams={handleSetParams}
         resetParams={handleResetParams}
         isFiltered={!!q}
+        hidePagination
         extraData={{
           canCreateUserGroups: permissions.canCreate,
           canUpdateUserGroups: permissions.canUpdate,
@@ -164,6 +164,9 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
           queryClient.invalidateQueries({
             queryKey: ['workspace-user-groups', wsId],
           });
+          queryClient.invalidateQueries({
+            queryKey: ['workspace-user-groups-infinite', wsId],
+          });
         }}
         defaultVisibility={{
           id: false,
@@ -171,6 +174,27 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
           created_at: false,
         }}
       />
+
+      <div ref={loadMoreRef} className="h-1" />
+
+      {(hasNextPage || isFetchingNextPage) && (
+        <div className="mt-4 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('common.loading')}
+              </>
+            ) : (
+              t('common.load_more')
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

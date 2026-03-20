@@ -75,8 +75,10 @@ import { TaskSettings } from './tasks/task-settings';
 import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
 import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
+import { TimeTrackerRequestsSettings } from './time-tracker/time-tracker-requests-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import FeaturedGroupsSettings from './users/featured-groups-settings';
+import { RequireAttentionColorSettings } from './users/require-attention-color-settings';
 import UsersManagementSettings from './users/users-management-settings';
 import BillingSettings from './workspace/billing-settings';
 import MembersSettings from './workspace/members-settings';
@@ -349,6 +351,15 @@ export function SettingsDialog({
                 keywords: ['Featured', 'Groups', 'Quick', 'Filter', 'Pinned'],
               },
               {
+                name: 'require_attention_color',
+                label: t('settings.user_management.require_attention_color'),
+                icon: Paintbrush,
+                description: t(
+                  'settings.user_management.require_attention_color_description'
+                ),
+                keywords: ['Users', 'Feedback', 'Attention', 'Color'],
+              },
+              {
                 name: 'approvals',
                 label: t('settings.approvals.title'),
                 icon: ClipboardList,
@@ -475,6 +486,13 @@ export function SettingsDialog({
                 icon: Goal,
                 description: t('settings.time_tracker.goals_description'),
                 keywords: ['Time Tracker', 'Goals', 'Productivity'],
+              },
+              {
+                name: 'time_tracker_requests',
+                label: t('settings.time_tracker.requests'),
+                icon: ClipboardList,
+                description: t('settings.time_tracker.requests_description'),
+                keywords: ['Time Tracker', 'Requests', 'Threshold'],
               },
               {
                 name: 'break_types',
@@ -805,6 +823,12 @@ export function SettingsDialog({
           </div>
         )}
 
+        {activeTab === 'require_attention_color' && (
+          <div className="h-full">
+            <RequireAttentionColorSettings />
+          </div>
+        )}
+
         {activeTab === 'approvals' && wsId && (
           <div className="h-full">
             <ApprovalsSettings wsId={wsId} />
@@ -872,6 +896,13 @@ export function SettingsDialog({
 
         {activeTab === 'time_tracker_general' && wsId && (
           <TimeTrackerGeneralSettings wsId={wsId} />
+        )}
+
+        {activeTab === 'time_tracker_requests' && wsId && (
+          <TimeTrackerRequestsSettings
+            wsId={wsId}
+            canManageWorkspaceSettings={canManageWorkspaceSettings}
+          />
         )}
 
         {activeTab === 'attendance_display' && wsId && (

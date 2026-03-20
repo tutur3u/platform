@@ -20,51 +20,36 @@ class AppsHubPage extends StatelessWidget {
     final modules = AppRegistry.modules(context);
 
     return shad.Scaffold(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(
-                context,
-              ).colorScheme.surfaceContainerLowest.withValues(alpha: 0.82),
-              Theme.of(context).colorScheme.surface,
-            ],
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            ResponsivePadding.horizontal(context.deviceClass),
+            10,
+            ResponsivePadding.horizontal(context.deviceClass),
+            24 + MediaQuery.paddingOf(context).bottom,
           ),
-        ),
-        child: SafeArea(
-          top: false,
-          bottom: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              ResponsivePadding.horizontal(context.deviceClass),
-              10,
-              ResponsivePadding.horizontal(context.deviceClass),
-              24 + MediaQuery.paddingOf(context).bottom,
-            ),
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                const SliverToBoxAdapter(child: _AppsIntro()),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverGrid(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    return _SubproductCard(
-                      module: modules[index],
-                      index: index,
-                    );
-                  }, childCount: modules.length),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.88,
-                  ),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              const SliverToBoxAdapter(child: _AppsIntro()),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              SliverGrid(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return _SubproductCard(
+                    module: modules[index],
+                    index: index,
+                  );
+                }, childCount: modules.length),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.88,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
