@@ -1,50 +1,121 @@
 import type { Task, TaskAssignee } from '@tuturuuu/types/primitives/Task';
 import type { User } from '@tuturuuu/types/primitives/User';
 
+type TaskUser = NonNullable<Task['assignees']>[number];
+type TaskLabel = NonNullable<Task['labels']>[number];
+type TaskProject = NonNullable<Task['projects']>[number];
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeTaskUser(
+  assignee: (TaskAssignee & { user: User }) | TaskUser | null | undefined
+): (TaskUser & { user_id: string }) | null {
+  if (!assignee) {
+    return null;
+  }
+
+  if ('user' in assignee && assignee.user?.id) {
+    const { id, display_name, email, avatar_url, handle } = assignee.user;
+    return {
+      id,
+      display_name: display_name ?? undefined,
+      email: email ?? undefined,
+      avatar_url: avatar_url ?? undefined,
+      handle: handle ?? undefined,
+      user_id: id,
+    };
+  }
+
+  if ('id' in assignee && assignee.id) {
+    return {
+      ...(assignee as TaskUser),
+      user_id: assignee.id,
+    };
+  }
+
+  return null;
+}
+
 export function transformAssignees(
-  assignees: (TaskAssignee & { user: User })[]
-): (User & { user_id: string })[] {
+  assignees:
+    | Array<(TaskAssignee & { user: User }) | TaskUser>
+    | null
+    | undefined
+): (TaskUser & { user_id: string })[] {
   return (
     assignees
-      ?.map((a) => ({
-        ...a.user,
-        user_id: a.user?.id || '', // Include user_id for consistency with workspace members structure
-      }))
+      ?.map((assignee) => normalizeTaskUser(assignee))
+      .filter((user): user is TaskUser & { user_id: string } =>
+        Boolean(user?.id)
+      )
       .filter(
         (user, index: number, self) =>
-          user?.id && self.findIndex((u) => u.id === user.id) === index
+          self.findIndex((u) => u.id === user.id) === index
       ) || []
   );
 }
 
-type TaskLabelEntry = {
-  label?: NonNullable<Task['labels']>[number] | null;
-};
+function normalizeLabels(labels: unknown): TaskLabel[] {
+  if (!Array.isArray(labels)) {
+    return [];
+  }
 
-type TaskProjectEntry = {
-  project?: NonNullable<Task['projects']>[number] | null;
-};
+  return labels
+    .map((entry): TaskLabel | null => {
+      if (!isObject(entry)) {
+        return null;
+      }
+
+      if ('label' in entry && isObject(entry.label) && 'id' in entry.label) {
+        return entry.label as TaskLabel;
+      }
+
+      if ('id' in entry) {
+        return entry as TaskLabel;
+      }
+
+      return null;
+    })
+    .filter((label): label is TaskLabel => Boolean(label?.id));
+}
+
+function normalizeProjects(projects: unknown): TaskProject[] {
+  if (!Array.isArray(projects)) {
+    return [];
+  }
+
+  return projects
+    .map((entry): TaskProject | null => {
+      if (!isObject(entry)) {
+        return null;
+      }
+
+      if (
+        'project' in entry &&
+        isObject(entry.project) &&
+        'id' in entry.project
+      ) {
+        return entry.project as TaskProject;
+      }
+
+      if ('id' in entry) {
+        return entry as TaskProject;
+      }
+
+      return null;
+    })
+    .filter((project): project is TaskProject => Boolean(project?.id));
+}
 
 export function transformTaskRecord(task: any): Task {
-  const normalizedLabels =
-    (task.labels as TaskLabelEntry[] | null | undefined)
-      ?.map((entry) => entry.label)
-      .filter((label): label is NonNullable<Task['labels']>[number] =>
-        Boolean(label)
-      ) ?? [];
-
-  const normalizedProjects =
-    (task.projects as TaskProjectEntry[] | null | undefined)
-      ?.map((entry) => entry.project)
-      .filter((project): project is NonNullable<Task['projects']>[number] =>
-        Boolean(project)
-      ) ?? [];
+  const normalizedLabels = normalizeLabels(task.labels);
+  const normalizedProjects = normalizeProjects(task.projects);
 
   return {
     ...task,
-    assignees: transformAssignees(
-      task.assignees as (TaskAssignee & { user: User })[]
-    ),
+    assignees: transformAssignees(task.assignees),
     labels: normalizedLabels,
     projects: normalizedProjects,
   } as Task;
