@@ -60,7 +60,11 @@ async function hasWorkspaceEmailRateLimitOverrides(
   const match = pathname.match(EMAIL_ROUTE_WORKSPACE_PATTERN);
   const wsId = match?.[1];
 
-  if (!wsId || (await isPersonalWorkspace(wsId))) {
+  if (
+    !wsId ||
+    wsId.startsWith(RESERVED_ROOT_SEGMENT_PREFIX) ||
+    (await isPersonalWorkspace(wsId))
+  ) {
     return false;
   }
 
