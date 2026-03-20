@@ -66,6 +66,7 @@ export default class SupabaseProvider extends EventEmitter {
       }
 
       this._dirty = true;
+      this.synced = false;
 
       this.logger(
         `document updated locally (${update.length} bytes), broadcasting update to peers`
@@ -96,8 +97,9 @@ export default class SupabaseProvider extends EventEmitter {
 
     // Schedule a new save after the debounce period
     this.saveTimeout = setTimeout(() => {
+      this.saveTimeout = undefined;
       this.logger('debounce period elapsed, saving to database');
-      this.save();
+      void this.save();
     }, this.saveDebounceMs);
   }
 
@@ -105,18 +107,23 @@ export default class SupabaseProvider extends EventEmitter {
    * Immediately save any pending changes without waiting for debounce period.
    * Also flushes any pending broadcast.
    */
-  flushSave() {
+  async flushSave() {
     // Flush pending broadcast first
     if (this.broadcastDebounceTimeout) {
       clearTimeout(this.broadcastDebounceTimeout);
       this.broadcastDebounceTimeout = undefined;
+
+      const update = Y.encodeStateAsUpdate(this.doc);
+      if (update && update.length > 0) {
+        this.emit('message', update);
+      }
     }
 
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = undefined;
       this.logger('flushing pending save immediately');
-      this.save();
+      await this.save();
     }
   }
 
@@ -151,7 +158,7 @@ export default class SupabaseProvider extends EventEmitter {
       // Don't save if not connected or destroyed
       if (!this.connected || this.destroyed) {
         this.logger('skipping save - not connected or destroyed');
-        return;
+        return false;
       }
 
       const content = Array.from(Y.encodeStateAsUpdate(this.doc));
@@ -159,13 +166,13 @@ export default class SupabaseProvider extends EventEmitter {
       // Skip save if content is empty or too small (likely invalid)
       if (!content || content.length === 0) {
         this.logger('skipping save - empty content');
-        return;
+        return false;
       }
 
       // Skip save if content is suspiciously small (might be corrupted)
       if (content.length < 10) {
         this.logger('skipping save - content too small, possibly corrupted');
-        return;
+        return false;
       }
 
       this.logger(`saving ${content.length} bytes to database`);
@@ -198,14 +205,14 @@ export default class SupabaseProvider extends EventEmitter {
 
             // Stop trying to save this document
             this.logger('stopping future saves due to 422 error');
-            return;
+            return false;
           }
 
           // Handle 404 errors - task doesn't exist
           if (status === 404) {
             console.warn(`Task ${this.config.id} not found, stopping saves`);
             this.synced = false;
-            return;
+            return false;
           }
 
           throw error;
@@ -213,7 +220,9 @@ export default class SupabaseProvider extends EventEmitter {
       }
 
       this.logger('save successful');
+      this.synced = true;
       this.emit('save', this.version);
+      return true;
     } catch (error: any) {
       this.logger('unexpected error during save:', error);
       console.error('Failed to save Yjs document:', {
@@ -221,6 +230,7 @@ export default class SupabaseProvider extends EventEmitter {
         message: error?.message,
         taskId: this.config.id,
       });
+      return false;
     }
   }
 

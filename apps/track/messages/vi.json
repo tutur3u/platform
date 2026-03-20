@@ -11810,6 +11810,8 @@
       "dates": "Ngày tháng",
       "delete_board_confirmation": "Hành động này không thể hoàn tác. Bảng \"{name}\" và tất cả các mục của nó sẽ bị xóa vĩnh viễn.",
       "dependencies": "Sự phụ thuộc",
+      "description_close_failed_description": "Các thay đổi mô tả mới nhất vẫn chưa được xác nhận trên máy chủ. Hãy giữ hộp thoại mở và thử lại.",
+      "description_close_failed_title": "Mô tả công việc vẫn đang đồng bộ",
       "description_placeholder": "Thêm mô tả chi tiết, đính kèm tệp hoặc sử dụng markdown...",
       "description_storage_counter": "Còn {percent}%",
       "description_storage_helper": "Còn chỗ trong mô tả. Định dạng, nhắc tên và nội dung nhúng cũng được tính.",

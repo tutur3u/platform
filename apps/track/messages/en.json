@@ -11810,6 +11810,8 @@
       "dates": "Dates",
       "delete_board_confirmation": "This action cannot be undone. The board \"{name}\" and all its items will be permanently deleted.",
       "dependencies": "Dependencies",
+      "description_close_failed_description": "The latest description changes have not been confirmed on the server yet. Keep the dialog open and try again.",
+      "description_close_failed_title": "Task description is still syncing",
       "description_placeholder": "Add a detailed description, attach files, or use markdown...",
       "description_storage_counter": "{percent}% left",
       "description_storage_helper": "Room left in your description. Formatting, mentions, and embeds count too.",

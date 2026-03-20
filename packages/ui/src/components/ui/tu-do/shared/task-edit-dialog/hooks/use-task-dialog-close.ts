@@ -1,16 +1,11 @@
 'use client';
 
-import type { QueryClient } from '@tanstack/react-query';
-import type { JSONContent } from '@tiptap/react';
-import type React from 'react';
 import { useCallback, useRef } from 'react';
 import type { PendingRelationship } from '../types/pending-relationship';
-import { clearDraft, saveYjsDescriptionToDatabase } from '../utils';
+import { clearDraft } from '../utils';
 
 export interface UseTaskDialogCloseProps {
   taskId?: string;
-  wsId: string;
-  boardId: string;
   isCreateMode: boolean;
   collaborationMode: boolean;
   synced: boolean;
@@ -19,20 +14,15 @@ export interface UseTaskDialogCloseProps {
   parentTaskId?: string;
   pendingRelationship?: PendingRelationship;
 
-  // Refs
-  flushEditorPendingRef: React.MutableRefObject<
-    (() => JSONContent | null) | undefined
-  >;
-
   // Callbacks
-  queryClient: QueryClient;
   onClose: () => void;
   onNavigateToTask?: (taskId: string) => Promise<void>;
   flushNameUpdate: () => Promise<void>;
-  flushCollaborativePersistence?: () => void;
+  persistTaskDescription?: () => Promise<boolean>;
+  onCloseBlocked?: () => void;
 
   // State setters
-  setShowSyncWarning: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowSyncWarning: (value: boolean) => void;
 }
 
 export interface UseTaskDialogCloseReturn {
@@ -52,8 +42,6 @@ export interface UseTaskDialogCloseReturn {
  */
 export function useTaskDialogClose({
   taskId,
-  wsId,
-  boardId,
   isCreateMode,
   collaborationMode,
   synced,
@@ -61,68 +49,62 @@ export function useTaskDialogClose({
   draftStorageKey,
   parentTaskId,
   pendingRelationship,
-  flushEditorPendingRef,
-  queryClient,
   onClose,
   onNavigateToTask,
   flushNameUpdate,
-  flushCollaborativePersistence,
+  persistTaskDescription,
+  onCloseBlocked,
   setShowSyncWarning,
 }: UseTaskDialogCloseProps): UseTaskDialogCloseReturn {
   const handleCloseRef = useRef<() => void>(() => {});
+  const isClosingRef = useRef(false);
 
   // Main close handler
   const handleClose = useCallback(async () => {
+    if (isClosingRef.current) return;
+
     // Show warning if not synced in collaboration mode
     if (collaborationMode && !isCreateMode && (!synced || !connected)) {
       setShowSyncWarning(true);
       return;
     }
 
-    // Close dialog immediately
-    onClose();
+    isClosingRef.current = true;
 
-    // Background saves (non-blocking)
-    const performBackgroundSaves = async () => {
-      try {
-        await flushNameUpdate();
+    try {
+      await flushNameUpdate();
 
-        if (flushCollaborativePersistence) {
-          flushCollaborativePersistence();
-        } else if (!isCreateMode && taskId && flushEditorPendingRef.current) {
-          await saveYjsDescriptionToDatabase({
-            wsId,
-            taskId,
-            getContent: flushEditorPendingRef.current,
-            boardId,
-            queryClient,
-            context: 'close',
-          });
+      if (!isCreateMode && taskId) {
+        const descriptionPersisted = (await persistTaskDescription?.()) ?? true;
+
+        if (!descriptionPersisted) {
+          onCloseBlocked?.();
+          return;
         }
-
-        if (!isCreateMode) {
-          clearDraft(draftStorageKey);
-        }
-      } catch (error) {
-        console.error('Error during background save on close:', error);
       }
-    };
 
-    performBackgroundSaves();
+      if (!isCreateMode) {
+        clearDraft(draftStorageKey);
+      }
+
+      onClose();
+    } catch (error) {
+      console.error('Error during close save:', error);
+      onCloseBlocked?.();
+    } finally {
+      isClosingRef.current = false;
+    }
   }, [
     collaborationMode,
     isCreateMode,
     synced,
     connected,
-    onClose,
     flushNameUpdate,
-    flushCollaborativePersistence,
     taskId,
-    wsId,
-    boardId,
-    queryClient,
+    persistTaskDescription,
+    onCloseBlocked,
     draftStorageKey,
-    flushEditorPendingRef,
+    onClose,
     setShowSyncWarning,
   ]);
 
@@ -135,17 +117,8 @@ export function useTaskDialogClose({
       try {
         await flushNameUpdate();
 
-        if (flushCollaborativePersistence) {
-          flushCollaborativePersistence();
-        } else if (!isCreateMode && taskId && flushEditorPendingRef.current) {
-          await saveYjsDescriptionToDatabase({
-            wsId,
-            taskId,
-            getContent: flushEditorPendingRef.current,
-            boardId,
-            queryClient,
-            context: 'force-close',
-          });
+        if (!isCreateMode && taskId) {
+          await persistTaskDescription?.();
         }
 
         if (!isCreateMode) {
@@ -161,14 +134,10 @@ export function useTaskDialogClose({
     setShowSyncWarning,
     onClose,
     flushNameUpdate,
-    flushCollaborativePersistence,
     isCreateMode,
     taskId,
-    wsId,
-    boardId,
-    queryClient,
+    persistTaskDescription,
     draftStorageKey,
-    flushEditorPendingRef,
   ]);
 
   // Navigate back to related task (for create mode with pending relationship)

@@ -1,11 +1,25 @@
 import type { JSONContent } from '@tiptap/react';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const taskApiMocks = vi.hoisted(() => ({
+  mockFetchWorkspaceTaskDescription: vi.fn(),
+  mockUpdateWorkspaceTaskDescription: vi.fn(),
+}));
+
+vi.mock('./hooks/task-api', () => ({
+  fetchWorkspaceTaskDescription: taskApiMocks.mockFetchWorkspaceTaskDescription,
+  updateWorkspaceTaskDescription:
+    taskApiMocks.mockUpdateWorkspaceTaskDescription,
+}));
+
 import {
+  broadcastTaskDescriptionUpsert,
   buildTaskDescriptionUpdatePayload,
   getTaskDescriptionPercentLeft,
   getTaskDescriptionPreviewText,
   getTaskDescriptionStorageLength,
+  saveAndVerifyYjsDescriptionToDatabase,
   serializeTaskDescriptionContent,
   updateTaskDescriptionCaches,
 } from './utils';
@@ -20,6 +34,10 @@ describe('task edit dialog utils', () => {
       },
     ],
   };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('serializes task description content', () => {
     expect(serializeTaskDescriptionContent(content)).toBe(
@@ -155,5 +173,151 @@ describe('task edit dialog utils', () => {
 
   it('extracts plain text preview text from rich descriptions', () => {
     expect(getTaskDescriptionPreviewText(content)).toContain('Hello world');
+  });
+
+  it('saves and verifies the persisted description payload', async () => {
+    taskApiMocks.mockUpdateWorkspaceTaskDescription.mockResolvedValueOnce({});
+    taskApiMocks.mockFetchWorkspaceTaskDescription.mockResolvedValueOnce({
+      description: JSON.stringify(content),
+      description_yjs_state: [1, 2, 3],
+    });
+
+    const result = await saveAndVerifyYjsDescriptionToDatabase({
+      wsId: 'ws-1',
+      taskId: 'task-1',
+      getContent: () => content,
+      getYjsState: () => [1, 2, 3],
+      boardId: 'board-1',
+      queryClient: { setQueryData: vi.fn() } as any,
+      context: 'test',
+    });
+
+    expect(result).toBe(true);
+    expect(
+      taskApiMocks.mockUpdateWorkspaceTaskDescription
+    ).toHaveBeenCalledWith('ws-1', 'task-1', {
+      description: JSON.stringify(content),
+      description_yjs_state: [1, 2, 3],
+    });
+    expect(taskApiMocks.mockFetchWorkspaceTaskDescription).toHaveBeenCalledWith(
+      'ws-1',
+      'task-1'
+    );
+  });
+
+  it('fails verification when the restored description does not match', async () => {
+    taskApiMocks.mockUpdateWorkspaceTaskDescription.mockResolvedValueOnce({});
+    taskApiMocks.mockFetchWorkspaceTaskDescription.mockResolvedValueOnce({
+      description: JSON.stringify({
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Stale content' }],
+          },
+        ],
+      }),
+      description_yjs_state: [1, 2, 3],
+    });
+
+    const result = await saveAndVerifyYjsDescriptionToDatabase({
+      wsId: 'ws-1',
+      taskId: 'task-1',
+      getContent: () => content,
+      getYjsState: () => [1, 2, 3],
+      context: 'test-mismatch',
+    });
+
+    expect(result).toBe(false);
+  });
+
+  it('verifies oversized descriptions using yjs state when plain text storage is omitted', async () => {
+    const oversized: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: 'x'.repeat(MAX_TASK_DESCRIPTION_LENGTH),
+            },
+          ],
+        },
+      ],
+    };
+
+    taskApiMocks.mockUpdateWorkspaceTaskDescription.mockResolvedValueOnce({});
+    taskApiMocks.mockFetchWorkspaceTaskDescription.mockResolvedValueOnce({
+      description: JSON.stringify(content),
+      description_yjs_state: [9, 9, 9],
+    });
+
+    const result = await saveAndVerifyYjsDescriptionToDatabase({
+      wsId: 'ws-1',
+      taskId: 'task-1',
+      getContent: () => oversized,
+      getYjsState: () => [9, 9, 9],
+      context: 'test-oversized',
+    });
+
+    expect(result).toBe(true);
+    expect(
+      taskApiMocks.mockUpdateWorkspaceTaskDescription
+    ).toHaveBeenCalledWith('ws-1', 'task-1', {
+      description_yjs_state: [9, 9, 9],
+    });
+  });
+
+  it('returns false when the verification fetch fails', async () => {
+    taskApiMocks.mockUpdateWorkspaceTaskDescription.mockResolvedValueOnce({});
+    taskApiMocks.mockFetchWorkspaceTaskDescription.mockRejectedValueOnce(
+      new Error('fetch failed')
+    );
+
+    const result = await saveAndVerifyYjsDescriptionToDatabase({
+      wsId: 'ws-1',
+      taskId: 'task-1',
+      getContent: () => content,
+      context: 'test-fetch-failure',
+    });
+
+    expect(result).toBe(false);
+  });
+
+  it('fails verification when description matches but yjs state differs', async () => {
+    taskApiMocks.mockUpdateWorkspaceTaskDescription.mockResolvedValueOnce({});
+    taskApiMocks.mockFetchWorkspaceTaskDescription.mockResolvedValueOnce({
+      description: JSON.stringify(content),
+      description_yjs_state: [3, 2, 1],
+    });
+
+    const result = await saveAndVerifyYjsDescriptionToDatabase({
+      wsId: 'ws-1',
+      taskId: 'task-1',
+      getContent: () => content,
+      getYjsState: () => [1, 2, 3],
+      context: 'test-yjs-mismatch',
+    });
+
+    expect(result).toBe(false);
+  });
+
+  it('broadcasts task upsert payload for description cache updates', () => {
+    const broadcast = vi.fn();
+    const descriptionString = JSON.stringify(content);
+
+    broadcastTaskDescriptionUpsert({
+      taskId: 'task-1',
+      descriptionString,
+      broadcast,
+    });
+
+    expect(broadcast).toHaveBeenCalledWith('task:upsert', {
+      task: {
+        id: 'task-1',
+        description: descriptionString,
+      },
+    });
   });
 });

@@ -2,13 +2,17 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
-import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
+import {
+  convertJsonContentToYjsState,
+  convertYjsStateToJsonContent,
+} from '@tuturuuu/utils/yjs-helper';
 import debounce from 'lodash/debounce';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
-import type * as Y from 'yjs';
+import * as Y from 'yjs';
 import { DESCRIPTION_SYNC_DEBOUNCE_MS } from '../constants';
 import {
+  getDescriptionContent,
   serializeTaskDescriptionContent,
   updateTaskDescriptionCaches,
 } from '../utils';
@@ -16,6 +20,11 @@ import {
   fetchWorkspaceTaskDescription,
   updateWorkspaceTaskDescription,
 } from './task-api';
+
+const EMPTY_DOC_CONTENT: JSONContent = {
+  type: 'doc',
+  content: [{ type: 'paragraph' }],
+};
 
 export interface UseTaskYjsSyncProps {
   taskId?: string;
@@ -55,7 +64,7 @@ export function useTaskYjsSync({
 
   // Initialize Yjs state for task description if not present
   useEffect(() => {
-    if (!taskId || !editorInstance?.schema || !description || !doc) return;
+    if (!taskId || !editorInstance?.schema || !doc) return;
     if (initializedTaskIdRef.current === taskId) return;
 
     const initializeYjsState = async () => {
@@ -69,22 +78,69 @@ export function useTaskYjsSync({
         )
           ? taskDescription.description_yjs_state
           : null;
+        const canonicalDescription =
+          getDescriptionContent(taskDescription.description) ||
+          description ||
+          EMPTY_DOC_CONTENT;
+        const canonicalDescriptionString =
+          serializeTaskDescriptionContent(canonicalDescription);
+
+        const applyYjsStateToDoc = (yjsState: Uint8Array) => {
+          doc.transact(() => {
+            const fragment = doc.getXmlFragment('prosemirror');
+            if (fragment.length > 0) {
+              fragment.delete(0, fragment.length);
+            }
+          });
+
+          if (yjsState.length > 0) {
+            Y.applyUpdate(doc, yjsState);
+          }
+        };
 
         if (!currentYjsState || currentYjsState.length === 0) {
           const yjsState = convertJsonContentToYjsState(
-            description,
+            canonicalDescription,
             editorInstance.schema
           );
+          const nextYjsState = Array.from(yjsState);
 
-          if (yjsState.length > 0) {
-            await updateWorkspaceTaskDescription(wsId, taskId, {
-              description_yjs_state: Array.from(yjsState),
-            });
-          }
+          await updateWorkspaceTaskDescription(wsId, taskId, {
+            description_yjs_state: nextYjsState,
+          });
 
-          // Import Y dynamically to apply update
-          const Y = await import('yjs');
-          Y.applyUpdate(doc, yjsState);
+          applyYjsStateToDoc(yjsState);
+          initializedTaskIdRef.current = taskId;
+          return;
+        }
+
+        let shouldHealYjsState = false;
+        try {
+          const restoredFromYjs = convertYjsStateToJsonContent(
+            Uint8Array.from(currentYjsState),
+            editorInstance.schema
+          );
+          const restoredDescriptionString =
+            serializeTaskDescriptionContent(restoredFromYjs);
+
+          shouldHealYjsState =
+            restoredDescriptionString !== canonicalDescriptionString;
+        } catch {
+          shouldHealYjsState = true;
+        }
+
+        if (shouldHealYjsState) {
+          const healedYjsState = convertJsonContentToYjsState(
+            canonicalDescription,
+            editorInstance.schema
+          );
+          const nextYjsState = Array.from(healedYjsState);
+
+          await updateWorkspaceTaskDescription(wsId, taskId, {
+            description_yjs_state: nextYjsState,
+          });
+
+          applyYjsStateToDoc(healedYjsState);
         }
 
         initializedTaskIdRef.current = taskId;

@@ -19,6 +19,7 @@ import {
   getTicketIdentifier,
   invalidateTaskCaches,
 } from '@tuturuuu/utils/task-helper';
+import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -27,6 +28,7 @@ import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/Boar
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
+import { getActiveBroadcast } from './board-broadcast-context';
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
@@ -66,11 +68,13 @@ import type {
   PendingRelationshipType,
 } from './task-edit-dialog/types/pending-relationship';
 import {
-  clearDraft,
+  broadcastTaskDescriptionUpsert,
   getDraftStorageKey,
   getTaskDescriptionPercentLeft,
   getTaskDescriptionStorageLength,
+  saveAndVerifyYjsDescriptionToDatabase,
   saveYjsDescriptionToDatabase,
+  serializeTaskDescriptionContent,
 } from './task-edit-dialog/utils';
 import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
@@ -160,6 +164,7 @@ export function TaskEditDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const t = useTranslations('common');
+  const dialogT = useTranslations('ws-task-boards.dialog');
 
   // Access workspace tier for tier-aware collaboration settings (null outside the provider)
   const presenceCtx = useOptionalWorkspacePresenceContext();
@@ -282,17 +287,25 @@ export function TaskEditDialog({
     async (yjsState: number[]) => {
       if (!task?.id) return;
 
-      await saveYjsDescriptionToDatabase({
+      const content =
+        flushEditorPendingRef.current?.() ?? descriptionRef.current;
+      const didPersist = await saveYjsDescriptionToDatabase({
         wsId: effectiveTaskWsId,
         taskId: task.id,
-        getContent: () =>
-          flushEditorPendingRef.current
-            ? flushEditorPendingRef.current()
-            : descriptionRef.current,
+        getContent: () => content,
         getYjsState: () => yjsState,
         boardId,
         queryClient,
         context: 'realtime-persist',
+      });
+
+      if (!didPersist) return;
+
+      const broadcast = getActiveBroadcast();
+      broadcastTaskDescriptionUpsert({
+        taskId: task.id,
+        descriptionString: serializeTaskDescriptionContent(content),
+        broadcast: broadcast ?? undefined,
       });
     },
     [boardId, effectiveTaskWsId, queryClient, task?.id]
@@ -313,9 +326,36 @@ export function TaskEditDialog({
     saveDocumentState: saveTaskDescriptionState,
   });
 
-  const isYjsSyncing = useMemo(() => {
-    return isOpen && !isCreateMode && realtimeEnabled && !!task?.id && !synced;
+  const [hasHydratedYjsState, setHasHydratedYjsState] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !realtimeEnabled || !task?.id) {
+      setHasHydratedYjsState(false);
+      return;
+    }
+
+    if (synced) {
+      setHasHydratedYjsState(true);
+    }
   }, [isOpen, isCreateMode, realtimeEnabled, task?.id, synced]);
+
+  const isYjsSyncing = useMemo(() => {
+    return (
+      isOpen &&
+      !isCreateMode &&
+      realtimeEnabled &&
+      !!task?.id &&
+      !hasHydratedYjsState &&
+      !synced
+    );
+  }, [
+    hasHydratedYjsState,
+    isOpen,
+    isCreateMode,
+    realtimeEnabled,
+    task?.id,
+    synced,
+  ]);
 
   // Update user when props change
   useEffect(() => {
@@ -1041,12 +1081,41 @@ export function TaskEditDialog({
     setSelectedProjects: formState.setSelectedProjects,
   });
 
+  const persistTaskDescriptionOnClose = useCallback(async () => {
+    if (isCreateMode || !task?.id || !flushEditorPendingRef.current) {
+      return true;
+    }
+
+    const currentContent = flushEditorPendingRef.current();
+    const yjsState =
+      currentContent && editorInstance?.schema
+        ? Array.from(
+            convertJsonContentToYjsState(currentContent, editorInstance.schema)
+          )
+        : null;
+
+    return saveAndVerifyYjsDescriptionToDatabase({
+      wsId: effectiveTaskWsId,
+      taskId: task.id,
+      getContent: () => currentContent,
+      getYjsState: () => yjsState,
+      boardId,
+      queryClient,
+      context: 'close',
+    });
+  }, [
+    isCreateMode,
+    task?.id,
+    effectiveTaskWsId,
+    editorInstance,
+    boardId,
+    queryClient,
+  ]);
+
   // Close handlers
   const { handleClose, handleForceClose, handleNavigateBack, handleCloseRef } =
     useTaskDialogClose({
       taskId: task?.id,
-      wsId: effectiveTaskWsId,
-      boardId,
       isCreateMode,
       collaborationMode,
       synced,
@@ -1054,14 +1123,26 @@ export function TaskEditDialog({
       draftStorageKey,
       parentTaskId,
       pendingRelationship,
-      flushEditorPendingRef,
-      queryClient,
       onClose,
       onNavigateToTask,
       flushNameUpdate,
-      flushCollaborativePersistence: provider
-        ? () => provider.flushSave()
-        : undefined,
+      persistTaskDescription: persistTaskDescriptionOnClose,
+      onCloseBlocked: () => {
+        const closeFailedTitle = dialogT.has('description_close_failed_title')
+          ? dialogT('description_close_failed_title')
+          : 'Task description is still syncing';
+        const closeFailedDescription = dialogT.has(
+          'description_close_failed_description'
+        )
+          ? dialogT('description_close_failed_description')
+          : 'The latest description changes have not been confirmed on the server yet. Keep the dialog open and try again.';
+
+        toast({
+          title: closeFailedTitle,
+          description: closeFailedDescription,
+          variant: 'destructive',
+        });
+      },
       setShowSyncWarning,
     });
 
@@ -1192,46 +1273,11 @@ export function TaskEditDialog({
     if (showSyncWarning && synced && connected) {
       const timer = setTimeout(async () => {
         setShowSyncWarning(false);
-        await flushNameUpdate();
-        if (
-          collaborationMode &&
-          !isCreateMode &&
-          task?.id &&
-          flushEditorPendingRef.current
-        ) {
-          if (provider) {
-            provider.flushSave();
-          } else {
-            await saveYjsDescriptionToDatabase({
-              wsId: effectiveTaskWsId,
-              taskId: task.id,
-              getContent: flushEditorPendingRef.current,
-              boardId,
-              queryClient,
-              context: 'auto-close',
-            });
-          }
-        }
-        if (!isCreateMode) clearDraft(draftStorageKey);
-        onClose();
+        await handleClose();
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [
-    showSyncWarning,
-    synced,
-    connected,
-    flushNameUpdate,
-    isCreateMode,
-    draftStorageKey,
-    onClose,
-    collaborationMode,
-    task?.id,
-    provider,
-    effectiveTaskWsId,
-    boardId,
-    queryClient,
-  ]);
+  }, [showSyncWarning, synced, connected, handleClose]);
 
   // Sync saveAsDraft with user setting when dialog opens (always on when editing a draft)
   useEffect(() => {

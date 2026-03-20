@@ -4,7 +4,10 @@ import type { Json } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
-import { updateWorkspaceTaskDescription } from './hooks/task-api';
+import {
+  fetchWorkspaceTaskDescription,
+  updateWorkspaceTaskDescription,
+} from './hooks/task-api';
 
 function isErrorWithMessage(error: unknown): error is {
   code?: string;
@@ -121,6 +124,41 @@ function describeTaskPersistenceError(error: unknown) {
   return { error };
 }
 
+function yjsStatesMatch(
+  expected: number[] | null | undefined,
+  actual: number[] | null | undefined
+): boolean {
+  if (expected === undefined) return true;
+  if (expected === null) return actual === null;
+  if (!Array.isArray(actual)) return false;
+  if (actual.length !== expected.length) return false;
+
+  for (let index = 0; index < expected.length; index += 1) {
+    if (expected[index] !== actual[index]) return false;
+  }
+
+  return true;
+}
+
+export function broadcastTaskDescriptionUpsert({
+  taskId,
+  descriptionString,
+  broadcast,
+}: {
+  taskId: string;
+  descriptionString: string | null;
+  broadcast?: (event: string, payload: Record<string, unknown>) => void;
+}) {
+  if (!broadcast) return;
+
+  broadcast('task:upsert', {
+    task: {
+      id: taskId,
+      description: descriptionString ?? null,
+    },
+  });
+}
+
 /**
  * Helper function to parse task description from various formats
  * Handles both JSONContent objects and string formats
@@ -208,6 +246,90 @@ export async function saveYjsDescriptionToDatabase({
   } catch (error) {
     console.error(
       `Failed to save Yjs description (${context}):`,
+      describeTaskPersistenceError(error)
+    );
+    return false;
+  }
+}
+
+/**
+ * Persists the latest editor state and verifies that the read-back task
+ * description matches the state the user had before closing the dialog.
+ */
+export async function saveAndVerifyYjsDescriptionToDatabase({
+  wsId,
+  taskId,
+  getContent,
+  getYjsState,
+  boardId,
+  queryClient,
+  context = 'save-and-verify',
+}: {
+  wsId: string;
+  taskId: string;
+  getContent: () => JSONContent | null;
+  getYjsState?: () => number[] | null | undefined;
+  boardId?: string;
+  queryClient?: QueryClient;
+  context?: string;
+}): Promise<boolean> {
+  try {
+    const currentDescription = getContent();
+    const descriptionString =
+      serializeTaskDescriptionContent(currentDescription);
+    const yjsState = getYjsState?.();
+    const payload = buildTaskDescriptionUpdatePayload({
+      content: currentDescription,
+      yjsState,
+    });
+
+    if (Object.keys(payload).length === 0) {
+      return true;
+    }
+
+    await updateWorkspaceTaskDescription(wsId, taskId, payload);
+
+    updateTaskDescriptionCaches({
+      taskId,
+      descriptionString,
+      boardId,
+      queryClient,
+    });
+
+    const persistedDescription = await fetchWorkspaceTaskDescription(
+      wsId,
+      taskId
+    );
+    const descriptionMatches =
+      payload.description === undefined ||
+      persistedDescription.description === payload.description;
+    const shouldVerifyYjsState = payload.description_yjs_state !== undefined;
+    const yjsMatches = shouldVerifyYjsState
+      ? yjsStatesMatch(
+          payload.description_yjs_state,
+          persistedDescription.description_yjs_state
+        )
+      : true;
+
+    if (!descriptionMatches || !yjsMatches) {
+      console.error(`Task description verification failed (${context})`, {
+        descriptionMatches,
+        expectedDescription: payload.description,
+        persistedDescription: persistedDescription.description,
+        yjsMatches,
+        expectedYjsStateLength: payload.description_yjs_state?.length ?? null,
+        persistedYjsStateLength:
+          persistedDescription.description_yjs_state?.length ?? null,
+        taskId,
+        wsId,
+      });
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      `Failed to save and verify Yjs description (${context}):`,
       describeTaskPersistenceError(error)
     );
     return false;

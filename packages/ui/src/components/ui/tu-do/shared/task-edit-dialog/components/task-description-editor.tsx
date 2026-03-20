@@ -285,6 +285,9 @@ export function TaskDescriptionEditor({
           content={description}
           onChange={setDescription}
           onImmediateChange={(nextDescription) => {
+            if (allowYjsSync) {
+              setDescription(nextDescription);
+            }
             onDescriptionStorageLengthChange(
               getTaskDescriptionStorageLength(nextDescription)
             );
