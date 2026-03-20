@@ -53,4 +53,6 @@ class Env {
 
   static bool get isConfigured =>
       supabaseAnonKey.isNotEmpty && supabaseUrl.isNotEmpty;
+
+  static bool get isDevelopment => apiBaseUrl.contains('localhost');
 }

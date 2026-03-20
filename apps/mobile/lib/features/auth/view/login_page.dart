@@ -21,8 +21,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(
+    text: Env.isDevelopment ? 'local@tuturuuu.com' : '',
+  );
+  final _passwordController = TextEditingController(
+    text: Env.isDevelopment ? 'password123' : '',
+  );
 
   String? _captchaToken;
 
