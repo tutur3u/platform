@@ -7523,6 +7523,8 @@
       "inactive": "Inactive",
       "no_goals_description": "Set time tracking goals to monitor your productivity",
       "no_goals_title": "No goals set",
+      "requests": "Requests",
+      "requests_description": "Configure request approvals and missed entry thresholds",
       "save": "Save changes",
       "saving": "Saving...",
       "select_goal_type": "Select goal type",
