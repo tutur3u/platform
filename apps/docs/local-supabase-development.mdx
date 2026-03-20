@@ -1,6 +1,6 @@
 ---
 title: 'Local Supabase Development'
-description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
+description: 'Learn how to work with Supabase locally in the NCT Hub development workflow.'
 ---
 
 <Info>
@@ -11,13 +11,13 @@ description: 'Learn how to work with Supabase locally in the Tuturuuu developmen
 
 ## Overview
 
-Tuturuuu utilizes Supabase for database management and authentication. This guide explains how to work efficiently with Supabase in the local development workflow.
+NCT Hub utilizes Supabase for database management and authentication. This guide explains how to work efficiently with Supabase in the local development workflow.
 
 ## Basic Commands
 
 ### Starting Supabase
 
-To start a local Supabase instance tailored for Tuturuuu:
+To start a local Supabase instance tailored for NCT Hub:
 
 ```bash
 bun sb:start
@@ -45,7 +45,7 @@ bun sb:status
 
 ### Recommended Startup
 
-When developing for Tuturuuu, you have several options to start your environment:
+When developing for NCT Hub, you have several options to start your environment:
 
 1. **Standard Approach**: Start Next.js apps and Supabase separately.
 
@@ -187,7 +187,7 @@ const workspaceName: string = workspace?.name;
 
 ### Short-hand Type Access
 
-For more convenient access to common table types, Tuturuuu also provides short-hand type definitions in `packages/types/src/db.ts`. These are easier to use and remember than the full database type paths:
+For more convenient access to common table types, NCT Hub also provides short-hand type definitions in `packages/types/src/db.ts`. These are easier to use and remember than the full database type paths:
 
 ```typescript
 import type { WorkspaceCourse, WorkspaceRole } from '@ncthub/types/db';
@@ -261,7 +261,7 @@ For more details about Supabase CLI usage, refer to the [Supabase CLI documentat
 
 ## Row Level Security (RLS)
 
-Row Level Security (RLS) is a powerful Postgres feature that allows you to control access to rows in a database table based on the user making the request. In Tuturuuu, we use RLS extensively to ensure data security.
+Row Level Security (RLS) is a powerful Postgres feature that allows you to control access to rows in a database table based on the user making the request. In NCT Hub, we use RLS extensively to ensure data security.
 
 ### Enabling RLS
 
@@ -273,11 +273,11 @@ alter table <schema_name>.<table_name> enable row level security;
 
 ### Creating RLS Policies
 
-Policies define the conditions under which users can access or modify data. Here are some common patterns used in Tuturuuu:
+Policies define the conditions under which users can access or modify data. Here are some common patterns used in NCT Hub:
 
 #### Organization-based Access
 
-In Tuturuuu, most resources belong to an organization (workspace). Here's how to create policies for organization-based access:
+In NCT Hub, most resources belong to an organization (workspace). Here's how to create policies for organization-based access:
 
 ```sql
 -- Allow users to select data from their organizations
@@ -442,7 +442,7 @@ ROLLBACK;
 
 ## Database Triggers
 
-Triggers in Postgres allow you to automatically execute a function when a specified database event occurs (INSERT, UPDATE, DELETE). In Tuturuuu, we use triggers for various purposes like:
+Triggers in Postgres allow you to automatically execute a function when a specified database event occurs (INSERT, UPDATE, DELETE). In NCT Hub, we use triggers for various purposes like:
 
 - Maintaining audit logs
 - Syncing data between tables
@@ -450,7 +450,7 @@ Triggers in Postgres allow you to automatically execute a function when a specif
 
 ### Creating Triggers
 
-Here's how to create a trigger in your Tuturuuu development workflow:
+Here's how to create a trigger in your NCT Hub development workflow:
 
 1. First, create a trigger function:
 
@@ -487,7 +487,7 @@ create trigger on_auth_user_created
   execute function public.handle_new_user();
 ```
 
-### Common Triggers in Tuturuuu
+### Common Triggers in NCT Hub
 
 #### Audit Logging
 
@@ -566,7 +566,7 @@ where user_id = 'test-uuid' and role = 'admin';
 
 ## Seeding Your Database
 
-Database seeding is the process of populating your database with initial data. In Tuturuuu, we use seeding to:
+Database seeding is the process of populating your database with initial data. In NCT Hub, we use seeding to:
 
 1. Create test users and workspaces for local development
 2. Initialize lookup tables with standard values
@@ -574,11 +574,11 @@ Database seeding is the process of populating your database with initial data. I
 
 ### Seed Files Location
 
-In Tuturuuu, seed files are stored in `apps/db/supabase/seed.sql`. This file is automatically executed when you run `bun sb:reset` or start a fresh Supabase instance.
+In NCT Hub, seed files are stored in `apps/db/supabase/seed.sql`. This file is automatically executed when you run `bun sb:reset` or start a fresh Supabase instance.
 
-### Real Examples from Tuturuuu's Seed File
+### Real Examples from NCT Hub's Seed File
 
-Let's look at some real examples from Tuturuuu's seed.sql file:
+Let's look at some real examples from NCT Hub's seed.sql file:
 
 #### 1. Authentication Users
 
@@ -624,8 +624,8 @@ insert into
 values
     (
         '00000000-0000-0000-0000-000000000000',
-        'Tuturuuu',
-        'tuturuuu',
+        'NCT Hub',
+        'ncthub',
         '00000000-0000-0000-0000-000000000001'
     ),
     (
@@ -761,7 +761,7 @@ This is helpful when you've set up data manually and want to preserve it for fut
 
 ### Recommended Seeding Workflow
 
-For Tuturuuu development, we recommend:
+For NCT Hub development, we recommend:
 
 1. Start with a fresh database: `bun sb:reset`
 2. Make changes through the UI or your app
@@ -772,21 +772,21 @@ For Tuturuuu development, we recommend:
 
 ## AI Integration with Vercel AI SDK
 
-Tuturuuu uses Vercel's AI SDK for its AI features, utilizing structured data generation capabilities that integrate with Supabase. This section covers how to work with AI features in the development workflow.
+NCT Hub uses Vercel's AI SDK for its AI features, utilizing structured data generation capabilities that integrate with Supabase. This section covers how to work with AI features in the development workflow.
 
-### Overview of AI SDK in Tuturuuu
+### Overview of AI SDK in NCT Hub
 
-The AI SDK standardizes integrating various AI models across supported providers into Tuturuuu applications. It enables structured data generation, tool calling, and streaming responses to create rich AI-powered features.
+The AI SDK standardizes integrating various AI models across supported providers into NCT Hub applications. It enables structured data generation, tool calling, and streaming responses to create rich AI-powered features.
 
 The main libraries used are:
 
 - `ai` - Core Vercel AI SDK package
 - `@ai-sdk/google` - Provider-specific integration for Google models
-- `@ncthub/supabase` - Supabase client with Tuturuuu-specific utilities
+- `@ncthub/supabase` - Supabase client with NCT Hub-specific utilities
 
 ### Generating Structured Data
 
-Tuturuuu uses the AI SDK's structured data generation capabilities to create typed responses from AI models. This approach ensures type safety and consistent data structures for features like:
+NCT Hub uses the AI SDK's structured data generation capabilities to create typed responses from AI models. This approach ensures type safety and consistent data structures for features like:
 
 - Flashcards generation
 - Quiz generation
@@ -795,14 +795,14 @@ Tuturuuu uses the AI SDK's structured data generation capabilities to create typ
 
 #### Example: Flashcard Generation
 
-The structured data pattern used in Tuturuuu follows this workflow:
+The structured data pattern used in NCT Hub follows this workflow:
 
 1. Define a schema using Zod
 2. Connect to Supabase for authentication and workspace validation
 3. Generate structured data using the AI SDK
 4. Stream the response to the client
 
-Here's an example from Tuturuuu's codebase:
+Here's an example from NCT Hub's codebase:
 
 ```typescript
 // 1. Define the schema
@@ -860,7 +860,7 @@ export async function POST(req: Request) {
 
 ### Available Models
 
-Tuturuuu supports multiple AI models through Vercel AI SDK. You can define which models are available in your application by updating the `models.ts` file in the `packages/ai` directory:
+NCT Hub supports multiple AI models through Vercel AI SDK. You can define which models are available in your application by updating the `models.ts` file in the `packages/ai` directory:
 
 ```typescript
 export const models = [
@@ -898,7 +898,7 @@ export const myNewSchema = z.object({
 
 ### Integration with Supabase
 
-Tuturuuu's AI features leverage Supabase for:
+NCT Hub's AI features leverage Supabase for:
 
 1. **Authentication** - Validating users before making AI requests
 2. **Authorization** - Checking workspace permissions via `workspace_secrets`
@@ -944,7 +944,7 @@ When integrating AI features, implement proper error handling to account for:
 3. Invalid user input
 4. Exceeded token limits
 
-Example error handling pattern used in Tuturuuu:
+Example error handling pattern used in NCT Hub:
 
 ```typescript
 try {

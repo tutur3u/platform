@@ -58,7 +58,7 @@ Create a new file in `apps/web/src/trpc/routers/`:
 ```typescript
 // apps/web/src/trpc/routers/tasks.ts
 import { protectedProcedure, router } from '../init';
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@ncthub/supabase/server';
 import { z } from 'zod';
 
 export const tasksRouter = router({

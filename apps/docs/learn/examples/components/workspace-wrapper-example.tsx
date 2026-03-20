@@ -5,7 +5,7 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 // Example 4: Using withWorkspace Helper
 import { withWorkspace } from '@/components/workspace-wrapper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@ncthub/utils/workspace-helper';
 
 // Example 1: Basic Dashboard Page
 export default async function DashboardPage({
