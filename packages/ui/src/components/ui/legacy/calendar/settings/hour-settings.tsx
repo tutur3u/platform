@@ -266,9 +266,12 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
   );
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === 'object' && !Array.isArray(value));
+
 // Type guard for WeekTimeRanges
-function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
-  if (!obj || typeof obj !== 'object') return false;
+function isValidWeekTimeRanges(obj: unknown): obj is WeekTimeRanges {
+  if (!isRecord(obj)) return false;
   const days = [
     'monday',
     'tuesday',
@@ -278,10 +281,12 @@ function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
     'saturday',
     'sunday',
   ];
-  return days.every(
-    (day) =>
-      obj[day] &&
-      typeof obj[day].enabled === 'boolean' &&
-      Array.isArray(obj[day].timeBlocks)
-  );
+  return days.every((day) => {
+    const entry = obj[day];
+    if (!isRecord(entry)) return false;
+
+    return (
+      typeof entry.enabled === 'boolean' && Array.isArray(entry.timeBlocks)
+    );
+  });
 }

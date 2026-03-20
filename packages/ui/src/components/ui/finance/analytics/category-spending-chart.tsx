@@ -106,7 +106,7 @@ export function CategorySpendingChart({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(props: any) =>
+                    label={(props) =>
                       `${props.name}: ${((props.percent || 0) * 100).toFixed(0)}%`
                     }
                     outerRadius={80}
