@@ -38,6 +38,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { RequireAttentionName } from '@/components/users/require-attention-name';
 
 interface UserFeedbackSectionProps {
   user: WorkspaceUser | null;
@@ -538,9 +539,11 @@ export default function UserFeedbackSection({
                           </div>
                           <div className="flex items-center gap-1 text-dynamic-blue">
                             <ShieldUserIcon className="h-3 w-3" />
-                            <span className="max-w-32 truncate">
-                              {getCreatorName(feedback)}
-                            </span>
+                            <RequireAttentionName
+                              name={getCreatorName(feedback)}
+                              requireAttention={feedback.require_attention}
+                              className="max-w-32 truncate"
+                            />
                           </div>
                         </div>
                       </div>

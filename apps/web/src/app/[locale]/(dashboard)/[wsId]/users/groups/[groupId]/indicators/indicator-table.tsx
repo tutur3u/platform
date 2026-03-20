@@ -6,6 +6,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
+import { RequireAttentionName } from '@/components/users/require-attention-name';
 import type { GroupIndicator } from './types';
 
 interface IndicatorTableProps {
@@ -161,9 +162,13 @@ export function IndicatorTable({
                               {getInitials(user.full_name)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="line-clamp-1 break-all text-sm">
-                            {user.full_name}
-                          </span>
+                          <RequireAttentionName
+                            name={user.full_name || '-'}
+                            requireAttention={
+                              !!user.has_require_attention_feedback
+                            }
+                            className="line-clamp-1 break-all text-sm"
+                          />
                         </button>
                       </td>
                       {groupIndicators.map((indicator) => {

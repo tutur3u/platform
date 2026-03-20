@@ -595,6 +595,7 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/groups/indicators`,
             `/${personalOrWsId}/users/group-tags`,
+            `/${personalOrWsId}/users/feedbacks`,
             `/${personalOrWsId}/users/reports`,
             `/${personalOrWsId}/users/approvals`,
             `/${personalOrWsId}/users/structure`,
@@ -646,6 +647,12 @@ export async function WorkspaceNavigationLinks({
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('view_user_groups'),
+            },
+            {
+              title: t('workspace-users-tabs.feedbacks'),
+              href: `/${personalOrWsId}/users/feedbacks`,
+              icon: <MessageCircleIcon className="h-5 w-5" />,
+              disabled: withoutPermission('view_user_groups'),
             },
             null,
             {

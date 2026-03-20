@@ -77,6 +77,7 @@ import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-
 import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import FeaturedGroupsSettings from './users/featured-groups-settings';
+import { RequireAttentionColorSettings } from './users/require-attention-color-settings';
 import UsersManagementSettings from './users/users-management-settings';
 import BillingSettings from './workspace/billing-settings';
 import MembersSettings from './workspace/members-settings';
@@ -347,6 +348,15 @@ export function SettingsDialog({
                   'settings.user_management.featured_groups_description'
                 ),
                 keywords: ['Featured', 'Groups', 'Quick', 'Filter', 'Pinned'],
+              },
+              {
+                name: 'require_attention_color',
+                label: t('settings.user_management.require_attention_color'),
+                icon: Paintbrush,
+                description: t(
+                  'settings.user_management.require_attention_color_description'
+                ),
+                keywords: ['Users', 'Feedback', 'Attention', 'Color'],
               },
               {
                 name: 'approvals',
@@ -802,6 +812,12 @@ export function SettingsDialog({
         {activeTab === 'featured_groups' && wsId && (
           <div className="h-full">
             <FeaturedGroupsSettings wsId={wsId} />
+          </div>
+        )}
+
+        {activeTab === 'require_attention_color' && (
+          <div className="h-full">
+            <RequireAttentionColorSettings />
           </div>
         )}
 

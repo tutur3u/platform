@@ -26,6 +26,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { RequireAttentionName } from '@/components/users/require-attention-name';
 
 interface UserFeedbackDialogProps {
   open: boolean;
@@ -228,7 +229,10 @@ export default function UserFeedbackDialog({
                 <div className="flex flex-col gap-2">
                   <Label>{t('ws-users.full_name')}</Label>
                   <div className="rounded-md bg-muted px-3 py-2 text-sm">
-                    {user.full_name || ''}
+                    <RequireAttentionName
+                      name={user.full_name || ''}
+                      requireAttention={!!user.has_require_attention_feedback}
+                    />
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -372,8 +376,11 @@ export default function UserFeedbackDialog({
                               </div>
                             </div>
                             <div className="flex max-w-sm items-center gap-1 truncate text-dynamic-blue">
-                              <ShieldUserIcon className="h-4 w-4" />{' '}
-                              {getCreatorName(feedback)}
+                              <ShieldUserIcon className="h-4 w-4" />
+                              <RequireAttentionName
+                                name={getCreatorName(feedback)}
+                                requireAttention={feedback.require_attention}
+                              />
                             </div>
                           </div>
                         </div>

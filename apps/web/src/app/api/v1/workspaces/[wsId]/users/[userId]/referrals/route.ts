@@ -5,6 +5,10 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  fetchRequireAttentionUserIds,
+  withRequireAttentionFlag,
+} from '@/lib/require-attention-users';
 
 interface Params {
   params: Promise<{
@@ -39,7 +43,27 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
 
-    return NextResponse.json(data ?? []);
+    const availableUsers = (data ?? []) as {
+      id: string;
+      full_name?: string | null;
+      display_name?: string | null;
+    }[];
+    const requireAttentionUserIds = await fetchRequireAttentionUserIds(
+      sbAdmin,
+      {
+        wsId,
+        userIds: availableUsers.map((user) => user.id),
+      }
+    );
+
+    return NextResponse.json(
+      withRequireAttentionFlag(
+        availableUsers as unknown as {
+          id: string;
+        }[],
+        requireAttentionUserIds
+      )
+    );
   }
 
   // Default: list referred users
@@ -61,7 +85,25 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ data: data ?? [], count: count ?? 0 });
+  const referredUsers = (data ?? []) as {
+    id: string;
+    full_name?: string | null;
+    display_name?: string | null;
+  }[];
+  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
+    wsId,
+    userIds: referredUsers.map((user) => user.id),
+  });
+
+  return NextResponse.json({
+    data: withRequireAttentionFlag(
+      referredUsers as unknown as {
+        id: string;
+      }[],
+      requireAttentionUserIds
+    ),
+    count: count ?? 0,
+  });
 }
 
 export async function POST(req: Request, { params }: Params) {

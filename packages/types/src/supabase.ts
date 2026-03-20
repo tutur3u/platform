@@ -24754,6 +24754,12 @@ export type Database = {
         }[];
       };
       get_workspace_users_count: { Args: { ws_id: string }; Returns: number };
+      get_workspace_users_require_attention: {
+        Args: { p_group_id?: string; p_user_ids?: string[]; p_ws_id: string };
+        Returns: {
+          user_id: string;
+        }[];
+      };
       get_workspace_wallets_count: { Args: { ws_id: string }; Returns: number };
       get_workspace_wallets_expense:
         | {

@@ -8,6 +8,10 @@ import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
+import {
+  fetchRequireAttentionUserIds,
+  withRequireAttentionFlag,
+} from '@/lib/require-attention-users';
 
 function normalizeListParam(value: string | string[]) {
   const rawValues = Array.isArray(value) ? value : [value];
@@ -61,6 +65,7 @@ const SearchParamsSchema = z.object({
     .enum(['active', 'archived', 'archived_until', 'all'])
     .default('active'),
   linkStatus: z.enum(['all', 'linked', 'virtual']).default('all'),
+  requireAttention: z.enum(['all', 'true', 'false']).default('all'),
   withPromotions: z
     .enum(['true', 'false'])
     .catch('false')
@@ -166,10 +171,12 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    // Apply pagination
     const start = (sp.page - 1) * sp.pageSize;
     const end = sp.page * sp.pageSize - 1;
-    queryBuilder = queryBuilder.range(start, end);
+
+    if (sp.requireAttention === 'all') {
+      queryBuilder = queryBuilder.range(start, end);
+    }
 
     const { data, error, count } = await queryBuilder;
 
@@ -186,7 +193,30 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    const workspaceUsers = (data as unknown as WorkspaceUser[]) ?? [];
+    const allWorkspaceUsers = (data as unknown as WorkspaceUser[]) ?? [];
+    let effectiveCount = count ?? 0;
+    let workspaceUsers = allWorkspaceUsers;
+
+    if (sp.requireAttention !== 'all') {
+      const requireAttentionUserIds = await fetchRequireAttentionUserIds(
+        sbAdmin,
+        {
+          wsId,
+          userIds: allWorkspaceUsers.map((user) => user.id),
+        }
+      );
+
+      const shouldRequireAttention = sp.requireAttention === 'true';
+      const filteredWorkspaceUsers = allWorkspaceUsers.filter((user) =>
+        shouldRequireAttention
+          ? requireAttentionUserIds.has(user.id)
+          : !requireAttentionUserIds.has(user.id)
+      );
+
+      effectiveCount = filteredWorkspaceUsers.length;
+      workspaceUsers = filteredWorkspaceUsers.slice(start, start + sp.pageSize);
+    }
+
     const workspaceUserIds = workspaceUsers
       .map((user) => user.id)
       .filter((userId): userId is string => Boolean(userId));
@@ -205,23 +235,28 @@ export async function GET(request: Request, { params }: Params) {
     >();
 
     if (workspaceUserIds.length > 0) {
-      const [guestResult, promotionsResult] = await Promise.all([
-        sbAdmin
-          .from('workspace_user_groups_users')
-          .select('user_id, workspace_user_groups!inner(is_guest, ws_id)')
-          .eq('workspace_user_groups.ws_id', wsId)
-          .eq('workspace_user_groups.is_guest', true)
-          .in('user_id', workspaceUserIds),
-        sp.withPromotions
-          ? sbAdmin
-              .from('user_linked_promotions')
-              .select(
-                'user_id, workspace_promotions!inner(id, name, code, value, use_ratio, ws_id)'
-              )
-              .eq('workspace_promotions.ws_id', wsId)
-              .in('user_id', workspaceUserIds)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
+      const [guestResult, promotionsResult, requireAttentionUserIds] =
+        await Promise.all([
+          sbAdmin
+            .from('workspace_user_groups_users')
+            .select('user_id, workspace_user_groups!inner(is_guest, ws_id)')
+            .eq('workspace_user_groups.ws_id', wsId)
+            .eq('workspace_user_groups.is_guest', true)
+            .in('user_id', workspaceUserIds),
+          sp.withPromotions
+            ? sbAdmin
+                .from('user_linked_promotions')
+                .select(
+                  'user_id, workspace_promotions!inner(id, name, code, value, use_ratio, ws_id)'
+                )
+                .eq('workspace_promotions.ws_id', wsId)
+                .in('user_id', workspaceUserIds)
+            : Promise.resolve({ data: [], error: null }),
+          fetchRequireAttentionUserIds(sbAdmin, {
+            wsId,
+            userIds: workspaceUserIds,
+          }),
+        ]);
 
       const guestMemberships = guestResult.data;
       const guestError = guestResult.error;
@@ -252,6 +287,12 @@ export async function GET(request: Request, { params }: Params) {
           promotionsMap.set(item.user_id, promotions);
         }
       }
+
+      const usersWithAttention = withRequireAttentionFlag(
+        workspaceUsers,
+        requireAttentionUserIds
+      );
+      workspaceUsers.splice(0, workspaceUsers.length, ...usersWithAttention);
     }
 
     const withDetails = workspaceUsers.map((u) => {
@@ -312,7 +353,7 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json({
       data: withDetails,
-      count: count ?? 0,
+      count: effectiveCount,
       permissions: {
         hasPrivateInfo,
         hasPublicInfo,
