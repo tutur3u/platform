@@ -24624,84 +24624,45 @@ export type Database = {
           with_zero_subscriptions: number;
         }[];
       };
-      get_workspace_post_email_rows:
-        | {
-            Args: {
-              p_approval_status?: Database['public']['Enums']['approval_status'];
-              p_cutoff?: string;
-              p_excluded_group_ids?: string[];
-              p_included_group_ids?: string[];
-              p_limit?: number;
-              p_offset?: number;
-              p_queue_status?: string;
-              p_user_id?: string;
-              p_ws_id: string;
-            };
-            Returns: {
-              approval_rejection_reason: string;
-              approval_status: Database['public']['Enums']['approval_status'];
-              can_remove_approval: boolean;
-              check_created_at: string;
-              email: string;
-              email_id: string;
-              group_id: string;
-              group_name: string;
-              is_completed: boolean;
-              notes: string;
-              post_content: string;
-              post_created_at: string;
-              post_id: string;
-              post_title: string;
-              queue_attempt_count: number;
-              queue_last_error: string;
-              queue_sent_at: string;
-              queue_status: string;
-              recipient: string;
-              row_key: string;
-              subject: string;
-              total_count: number;
-              user_id: string;
-              ws_id: string;
-            }[];
-          }
-        | {
-            Args: {
-              p_cutoff?: string;
-              p_excluded_group_ids?: string[];
-              p_included_group_ids?: string[];
-              p_limit?: number;
-              p_offset?: number;
-              p_queue_status?: string;
-              p_user_id?: string;
-              p_ws_id: string;
-            };
-            Returns: {
-              approval_rejection_reason: string;
-              approval_status: Database['public']['Enums']['approval_status'];
-              can_remove_approval: boolean;
-              check_created_at: string;
-              email: string;
-              email_id: string;
-              group_id: string;
-              group_name: string;
-              is_completed: boolean;
-              notes: string;
-              post_content: string;
-              post_created_at: string;
-              post_id: string;
-              post_title: string;
-              queue_attempt_count: number;
-              queue_last_error: string;
-              queue_sent_at: string;
-              queue_status: string;
-              recipient: string;
-              row_key: string;
-              subject: string;
-              total_count: number;
-              user_id: string;
-              ws_id: string;
-            }[];
-          };
+      get_workspace_post_email_rows: {
+        Args: {
+          p_approval_status?: Database['public']['Enums']['approval_status'];
+          p_cutoff?: string;
+          p_excluded_group_ids?: string[];
+          p_included_group_ids?: string[];
+          p_limit?: number;
+          p_offset?: number;
+          p_queue_status?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approval_rejection_reason: string;
+          approval_status: Database['public']['Enums']['approval_status'];
+          can_remove_approval: boolean;
+          check_created_at: string;
+          email: string;
+          email_id: string;
+          group_id: string;
+          group_name: string;
+          is_completed: boolean;
+          notes: string;
+          post_content: string;
+          post_created_at: string;
+          post_id: string;
+          post_title: string;
+          queue_attempt_count: number;
+          queue_last_error: string;
+          queue_sent_at: string;
+          queue_status: string;
+          recipient: string;
+          row_key: string;
+          subject: string;
+          total_count: number;
+          user_id: string;
+          ws_id: string;
+        }[];
+      };
       get_workspace_post_email_status_summary: {
         Args: {
           p_cutoff?: string;
