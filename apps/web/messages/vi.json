@@ -919,6 +919,8 @@
       "reject": "Từ chối",
       "rejected": "Đã ghi nhận từ chối.",
       "sessionSummary": "Phiên này: {approved} đã duyệt, {rejected} đã từ chối",
+      "unapprove": "Gỡ phê duyệt",
+      "unapproved": "Đã gỡ phê duyệt.",
       "viewDetails": "Xem Chi Tiết"
     },
     "common": {
@@ -6959,10 +6961,15 @@
     "prompt_tokens": "Token lệnh nhắc"
   },
   "post-email-data-table": {
+    "approval_status": "Trạng thái phê duyệt",
     "blocked": "Bị chặn",
+    "cancelled": "Đã hủy",
     "created_at": "Ngày tạo",
+    "details_description": "Chọn một bản ghi gửi bài viết để xem trạng thái xử lý hiện tại của hệ thống.",
+    "details_title": "Chi tiết gửi bài viết",
     "email": "Email",
     "error": "Lỗi",
+    "failed": "Thất bại",
     "group_name": "Tên nhóm",
     "id": "Mã số",
     "is_completed": "Làm xong",
@@ -6971,14 +6978,17 @@
     "pending": "Chờ gửi",
     "post_content": "Nội dung bài viết",
     "post_content_placeholder": "vd: \"Hôm nay chúng ta đã thảo luận về sự kiện sắp tới.\"",
+    "post_details": "Chi tiết bài viết",
     "post_title": "Tiêu đề bài viết",
     "post_title_placeholder": "vd: \"Ghi chú cuộc họp\"",
     "preview": "Xem trước",
+    "processing": "Đang xử lý",
+    "queue_status": "Trạng thái hàng chờ",
+    "queued": "Đang chờ",
     "recipient": "Người nhận",
-    "send_email": "Gửi email",
-    "sending": "Đang gửi",
     "sent": "Đã gửi",
-    "subject": "Chủ đề"
+    "subject": "Chủ đề",
+    "view_post": "Xem bài viết"
   },
   "product-data-table": {
     "category": "Danh mục",
@@ -10862,6 +10872,8 @@
     "payroll": "Bảng lương"
   },
   "ws_post_details": {
+    "approval_locked": "Không thể gỡ phê duyệt vì đã có ít nhất một email được gửi.",
+    "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",
     "check_all": "Đã kiểm tra tất cả",
     "completed": "Hoàn thành"
   },
@@ -12460,9 +12472,11 @@
     "yes_no": "Có/Không"
   },
   "ws-post-emails": {
-    "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài viết của nhóm người dùng cụ thể.",
-    "pending_emails": "Email đang chờ được gửi",
+    "description": "Theo dõi việc gửi email do hệ thống xử lý cho các bài viết nhóm người dùng đã được phê duyệt.",
+    "failed_emails": "Thất bại / bị chặn",
     "plural": "Bài viết",
+    "processing_emails": "Đang xử lý",
+    "queued_emails": "Đang chờ",
     "sent_emails": "Email đã gửi",
     "singular": "Bài viết"
   },

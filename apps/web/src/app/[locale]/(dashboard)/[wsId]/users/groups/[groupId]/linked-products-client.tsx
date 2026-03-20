@@ -58,6 +58,11 @@ interface WorkspaceProduct {
     unit_id: string;
     warehouse_id: string;
     inventory_units: {
+      id: string;
+      name: string | null;
+    } | null;
+    inventory_warehouses: {
+      id: string;
       name: string | null;
     } | null;
   }>;
@@ -359,6 +364,21 @@ export default function LinkedProductsClient({
   });
 
   // Get available units for selected product
+  const getAvailableWarehouses = (productId: string) => {
+    const product = workspaceProducts?.find((p) => p.id === productId);
+    const inventory = product?.inventory_products ?? [];
+    const seen = new Set<string>();
+
+    return inventory.filter((item) => {
+      if (!item.warehouse_id || seen.has(item.warehouse_id)) {
+        return false;
+      }
+
+      seen.add(item.warehouse_id);
+      return true;
+    });
+  };
+
   const getAvailableUnits = (productId: string, warehouseId: string) => {
     const product = workspaceProducts?.find((p) => p.id === productId);
     const list = product?.inventory_products || [];
@@ -366,8 +386,17 @@ export default function LinkedProductsClient({
     return list.filter((ip) => ip.warehouse_id === warehouseId);
   };
 
-  const getWarehouseName = (warehouseId?: string | null) => {
+  const getWarehouseName = (
+    productId?: string,
+    warehouseId?: string | null
+  ) => {
     if (!warehouseId) return null;
+    const productWarehouse = productId
+      ? getAvailableWarehouses(productId).find(
+          (item) => item.warehouse_id === warehouseId
+        )?.inventory_warehouses?.name
+      : null;
+    if (productWarehouse) return productWarehouse;
     const wh = (warehouses ?? []).find((w) => w.id === warehouseId);
     return wh?.name ?? null;
   };
@@ -457,6 +486,21 @@ export default function LinkedProductsClient({
       (product) => !linkedProducts.some((linked) => linked.id === product.id)
     ) || [];
 
+  const availableWarehouses = selectedProduct
+    ? getAvailableWarehouses(selectedProduct)
+    : [];
+
+  const handleProductChange = (value: string) => {
+    setSelectedProduct(value);
+    setSelectedWarehouse('');
+    setSelectedUnit('');
+  };
+
+  const handleWarehouseChange = (value: string) => {
+    setSelectedWarehouse(value);
+    setSelectedUnit('');
+  };
+
   return (
     <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -493,7 +537,7 @@ export default function LinkedProductsClient({
                       })
                     )}
                     selected={selectedProduct}
-                    onChange={(value) => setSelectedProduct(value as string)}
+                    onChange={(value) => handleProductChange(value as string)}
                     placeholder={t('ws-invoices.search_products')}
                   />
                 </div>
@@ -504,7 +548,7 @@ export default function LinkedProductsClient({
                     </Label>
                     <Select
                       value={selectedWarehouse}
-                      onValueChange={setSelectedWarehouse}
+                      onValueChange={handleWarehouseChange}
                     >
                       <SelectTrigger>
                         <SelectValue
@@ -512,9 +556,16 @@ export default function LinkedProductsClient({
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {((warehouses ?? []) as WarehouseOption[]).map((wh) => (
-                          <SelectItem key={wh.id} value={wh.id}>
-                            {wh.name ||
+                        {availableWarehouses.map((inventory) => (
+                          <SelectItem
+                            key={inventory.warehouse_id}
+                            value={inventory.warehouse_id}
+                          >
+                            {inventory.inventory_warehouses?.name ||
+                              getWarehouseName(
+                                selectedProduct,
+                                inventory.warehouse_id
+                              ) ||
                               t('ws-inventory-warehouses.unnamed_warehouse')}
                           </SelectItem>
                         ))}
@@ -585,7 +636,10 @@ export default function LinkedProductsClient({
             const missingWarehouse = !product.warehouse_id;
             const missingUnit = !product.unit_id;
             const hasMissing = missingWarehouse || missingUnit;
-            const warehouseName = getWarehouseName(product.warehouse_id);
+            const warehouseName = getWarehouseName(
+              product.id,
+              product.warehouse_id
+            );
             const unitName = getUnitName(
               product.id,
               product.warehouse_id,
@@ -741,18 +795,27 @@ export default function LinkedProductsClient({
               </Label>
               <Select
                 value={selectedWarehouse}
-                onValueChange={setSelectedWarehouse}
+                onValueChange={handleWarehouseChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t('ws-groups.select_warehouse')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {((warehouses ?? []) as WarehouseOption[]).map((wh) => (
-                    <SelectItem key={wh.id} value={wh.id}>
-                      {wh.name ||
-                        t('ws-inventory-warehouses.unnamed_warehouse')}
-                    </SelectItem>
-                  ))}
+                  {getAvailableWarehouses(editingProduct?.id ?? '').map(
+                    (inventory) => (
+                      <SelectItem
+                        key={inventory.warehouse_id}
+                        value={inventory.warehouse_id}
+                      >
+                        {inventory.inventory_warehouses?.name ||
+                          getWarehouseName(
+                            editingProduct?.id,
+                            inventory.warehouse_id
+                          ) ||
+                          t('ws-inventory-warehouses.unnamed_warehouse')}
+                      </SelectItem>
+                    )
+                  )}
                 </SelectContent>
               </Select>
             </div>

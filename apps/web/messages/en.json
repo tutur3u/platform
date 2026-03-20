@@ -919,6 +919,8 @@
       "reject": "Reject",
       "rejected": "Rejection recorded.",
       "sessionSummary": "This session: {approved} approved, {rejected} rejected",
+      "unapprove": "Remove approval",
+      "unapproved": "Approval removed.",
       "viewDetails": "View Details"
     },
     "common": {
@@ -6959,10 +6961,15 @@
     "prompt_tokens": "Prompt tokens"
   },
   "post-email-data-table": {
+    "approval_status": "Approval Status",
     "blocked": "Blocked",
+    "cancelled": "Cancelled",
     "created_at": "Created At",
+    "details_description": "Select a queued post delivery to inspect its current system status.",
+    "details_title": "Post Delivery Details",
     "email": "Email",
     "error": "Error",
+    "failed": "Failed",
     "group_name": "Group Name",
     "id": "ID",
     "is_completed": "Work Completed",
@@ -6971,14 +6978,17 @@
     "pending": "Pending",
     "post_content": "Post Content",
     "post_content_placeholder": "e.g. \"Today we discussed the upcoming event.\"",
+    "post_details": "Post Details",
     "post_title": "Post Title",
     "post_title_placeholder": "e.g. \"Meeting Notes\"",
     "preview": "Preview",
+    "processing": "Processing",
+    "queue_status": "Queue Status",
+    "queued": "Queued",
     "recipient": "Recipient",
-    "send_email": "Send Email",
-    "sending": "Sending",
     "sent": "Sent",
-    "subject": "Subject"
+    "subject": "Subject",
+    "view_post": "View Post"
   },
   "product-data-table": {
     "category": "Category",
@@ -10862,6 +10872,8 @@
     "payroll": "Payroll"
   },
   "ws_post_details": {
+    "approval_locked": "Approval is locked because at least one email has already been sent.",
+    "approval_revocable": "Approval can still be removed because no email has been sent yet.",
     "check_all": "Check all",
     "completed": "Completed"
   },
@@ -12460,9 +12472,11 @@
     "yes_no": "Yes/No"
   },
   "ws-post-emails": {
-    "description": "Send emails to users that have their work checked by authorized staff in specific user group posts.",
-    "pending_emails": "Pending emails",
+    "description": "Monitor system-managed email delivery for approved user group posts.",
+    "failed_emails": "Failed / blocked",
     "plural": "Posts",
+    "processing_emails": "Processing",
+    "queued_emails": "Queued",
     "sent_emails": "Sent emails",
     "singular": "Post"
   },
