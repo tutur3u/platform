@@ -1,5 +1,3 @@
-'use client';
-
 import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
 
 interface TaskIdentifierLike {

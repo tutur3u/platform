@@ -811,7 +811,9 @@ function TaskCardInner({
 
     // Child tasks (sub-tasks) count badge
     if (childTaskCount > 0) {
-      const completedCount = childTasks.filter((t) => t.completed).length;
+      const completedCount = childTasks.filter(
+        (childTask) => childTask.completed
+      ).length;
       const canShowCompletedCount = hasLoadedRelationships;
       badges.push({
         id: 'children',
@@ -1974,6 +1976,7 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
     'start_date',
     'completed_at',
     'estimation_points',
+    'relationship_summary',
     'list_id',
   ];
   for (const k of keys) {

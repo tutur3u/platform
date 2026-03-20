@@ -159,6 +159,11 @@ export async function GET(
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
     const searchQuery = url.searchParams.get('q')?.trim();
+    const includeRelationshipSummaryParam = url.searchParams.get(
+      'includeRelationshipSummary'
+    );
+    const includeRelationshipSummary =
+      includeRelationshipSummaryParam !== 'false';
 
     const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
 
@@ -255,23 +260,26 @@ export async function GET(
       string,
       TaskRelationshipSummary
     >();
-    const taskIds = tasks.map((task) => task.id).filter(Boolean);
 
-    try {
-      relationshipSummaryByTaskId = await buildTaskRelationshipSummary(
-        sbAdmin,
-        normalizedWorkspaceId,
-        taskIds
-      );
-    } catch (relationshipError) {
-      console.error(
-        'Failed to load task relationship summaries:',
-        relationshipError
-      );
-      return NextResponse.json(
-        { error: 'Failed to load task relationships' },
-        { status: 500 }
-      );
+    if (includeRelationshipSummary) {
+      const taskIds = tasks.map((task) => task.id).filter(Boolean);
+
+      try {
+        relationshipSummaryByTaskId = await buildTaskRelationshipSummary(
+          sbAdmin,
+          normalizedWorkspaceId,
+          taskIds
+        );
+      } catch (relationshipError) {
+        console.error(
+          'Failed to load task relationship summaries:',
+          relationshipError
+        );
+        return NextResponse.json(
+          { error: 'Failed to load task relationships' },
+          { status: 500 }
+        );
+      }
     }
 
     const tasksWithRelationshipSummary = tasks.map((task) => {
@@ -294,13 +302,17 @@ export async function GET(
           task.ticket_prefix ??
           taskList?.workspace_boards?.ticket_prefix ??
           null,
-        relationship_summary: {
-          parent_task_id: summary?.parentTaskId ?? null,
-          child_count: summary?.childCount ?? 0,
-          blocked_by_count: summary?.blockedByCount ?? 0,
-          blocking_count: summary?.blockingCount ?? 0,
-          related_count: summary?.relatedCount ?? 0,
-        },
+        ...(includeRelationshipSummary
+          ? {
+              relationship_summary: {
+                parent_task_id: summary?.parentTaskId ?? null,
+                child_count: summary?.childCount ?? 0,
+                blocked_by_count: summary?.blockedByCount ?? 0,
+                blocking_count: summary?.blockingCount ?? 0,
+                related_count: summary?.relatedCount ?? 0,
+              },
+            }
+          : {}),
       };
     });
 

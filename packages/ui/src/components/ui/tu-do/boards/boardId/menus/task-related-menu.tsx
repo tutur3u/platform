@@ -147,6 +147,7 @@ export function TaskRelatedMenu({
                         type="button"
                         onClick={() => onRemoveRelated(task.id)}
                         disabled={isSaving && savingTaskId === task.id}
+                        aria-label={`Remove relationship with ${task.name || 'task'}`}
                         className="shrink-0 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       >
                         {isSaving && savingTaskId === task.id ? (

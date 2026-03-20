@@ -2954,6 +2954,7 @@ export async function getWorkspaceTasks(
         q: ticketLikeSearch ? undefined : options?.searchQuery,
         limit: requestLimit,
         offset,
+        includeRelationshipSummary: !ticketLikeSearch,
       },
       clientOptions
     );

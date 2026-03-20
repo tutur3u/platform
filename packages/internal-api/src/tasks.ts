@@ -80,6 +80,7 @@ export interface ListWorkspaceTasksOptions {
   q?: string;
   limit?: number;
   offset?: number;
+  includeRelationshipSummary?: boolean;
 }
 
 export interface WorkspaceTasksResponse {
@@ -510,6 +511,7 @@ export async function listWorkspaceTasks(
         q: options?.q,
         limit: options?.limit,
         offset: options?.offset,
+        includeRelationshipSummary: options?.includeRelationshipSummary,
       },
       cache: 'no-store',
     }
