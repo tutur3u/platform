@@ -173,6 +173,7 @@ export async function GET(
         priority,
         completed,
         completed_at,
+        sort_key,
         start_date,
         end_date,
         estimation_points,
