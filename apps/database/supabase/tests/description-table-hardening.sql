@@ -380,8 +380,8 @@ select is(
 
 select is(
   strict_payload_field_byte_limit('workspace_whiteboards', 'snapshot'),
-  65536,
-  'whiteboard snapshots use the reduced payload ceiling'
+  67108864,
+  'whiteboard snapshots allow up to 64 MB for large canvas content'
 );
 
 create temporary table pgtap_text_limit_probe (

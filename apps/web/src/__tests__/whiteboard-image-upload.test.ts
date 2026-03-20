@@ -32,7 +32,7 @@ describe('whiteboard image upload optimization', () => {
       originalFile,
       expect.objectContaining({
         fileType: 'image/png',
-        maxWidthOrHeight: 4096,
+        maxWidthOrHeight: 8192,
       })
     );
     expect(result).toBeInstanceOf(File);

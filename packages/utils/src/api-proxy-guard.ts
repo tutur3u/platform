@@ -55,15 +55,15 @@ const limiterCache = new Map<string, Limiters>();
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
 const DEFAULT_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
-  { window: 'minute', limit: 12, duration: '1 m' },
-  { window: 'hour', limit: 120, duration: '1 h' },
-  { window: 'day', limit: 400, duration: '1 d' },
+  { window: 'minute', limit: 30, duration: '1 m' },
+  { window: 'hour', limit: 300, duration: '1 h' },
+  { window: 'day', limit: 2000, duration: '1 d' },
 ];
 
 const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
-  { window: 'minute', limit: 10, duration: '1 m' },
-  { window: 'hour', limit: 90, duration: '1 h' },
-  { window: 'day', limit: 240, duration: '1 d' },
+  { window: 'minute', limit: 20, duration: '1 m' },
+  { window: 'hour', limit: 200, duration: '1 h' },
+  { window: 'day', limit: 1200, duration: '1 d' },
 ];
 
 const AUTH_RATE_LIMITS: RateLimitProfile = {
