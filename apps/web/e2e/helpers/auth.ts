@@ -48,14 +48,26 @@ export async function authenticateTestUser(page: Page): Promise<void> {
     .first()
     .click();
 
-  // Step 5: Wait for successful auth redirect
-  // After signInWithPassword() succeeds, the form calls window.location.reload().
-  // On reload, the login form detects the authenticated user and calls
-  // processNextUrl() → router.push('/'), which navigates away from /login.
-  await page.waitForURL((url) => !url.pathname.includes('/login'), {
-    timeout: 60_000,
-    waitUntil: 'domcontentloaded',
-  });
+  // Step 5: Wait for successful post-login state
+  // The current auth flow can stay on /login (e.g., temporary OTP layout changes)
+  // while still being authenticated, so don't require URL to change.
+  await page.waitForFunction(
+    async () => {
+      try {
+        const response = await fetch('/api/v1/users/me/profile', {
+          cache: 'no-store',
+        });
+        if (!response.ok) return false;
+        const data = await response.json();
+        return Boolean(data?.id);
+      } catch {
+        return false;
+      }
+    },
+    {
+      timeout: 60_000,
+    }
+  );
 
   // Step 6: Let cookies settle after redirects
   await page.waitForTimeout(2_000);
