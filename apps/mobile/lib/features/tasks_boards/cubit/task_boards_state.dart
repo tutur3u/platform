@@ -15,6 +15,7 @@ class TaskBoardsState extends Equatable {
     this.currentPage = 1,
     this.pageSize = 20,
     this.totalCount = 0,
+    this.isLoadingMore = false,
     this.error,
   });
 
@@ -25,6 +26,7 @@ class TaskBoardsState extends Equatable {
   final int currentPage;
   final int pageSize;
   final int totalCount;
+  final bool isLoadingMore;
   final String? error;
 
   int get totalPages {
@@ -63,6 +65,7 @@ class TaskBoardsState extends Equatable {
     int? currentPage,
     int? pageSize,
     int? totalCount,
+    bool? isLoadingMore,
     Object? error = _taskBoardsSentinel,
     bool clearError = false,
   }) {
@@ -76,6 +79,7 @@ class TaskBoardsState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       pageSize: pageSize ?? this.pageSize,
       totalCount: totalCount ?? this.totalCount,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       error: clearError
           ? null
           : error == _taskBoardsSentinel
@@ -93,6 +97,7 @@ class TaskBoardsState extends Equatable {
     currentPage,
     pageSize,
     totalCount,
+    isLoadingMore,
     error,
   ];
 }

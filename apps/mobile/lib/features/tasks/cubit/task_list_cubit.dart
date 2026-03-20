@@ -20,6 +20,8 @@ class TaskListCubit extends Cubit<TaskListState> {
     required String wsId,
     required bool isPersonal,
   }) async {
+    final preserveData =
+        _wsId == wsId && _isPersonal == isPersonal && state.hasLoadedOnce;
     _wsId = wsId;
     _isPersonal = isPersonal;
     final requestVersion = ++_requestVersion;
@@ -27,14 +29,15 @@ class TaskListCubit extends Cubit<TaskListState> {
     emit(
       state.copyWith(
         status: TaskListStatus.loading,
-        overdueTasks: const [],
-        todayTasks: const [],
-        upcomingTasks: const [],
-        completedTasks: const [],
-        totalActiveTasks: 0,
-        totalCompletedTasks: 0,
-        hasMoreCompleted: false,
-        completedPage: 0,
+        hasLoadedOnce: preserveData && state.hasLoadedOnce,
+        overdueTasks: preserveData ? null : const [],
+        todayTasks: preserveData ? null : const [],
+        upcomingTasks: preserveData ? null : const [],
+        completedTasks: preserveData ? null : const [],
+        totalActiveTasks: preserveData ? null : 0,
+        totalCompletedTasks: preserveData ? null : 0,
+        hasMoreCompleted: preserveData ? null : false,
+        completedPage: preserveData ? null : 0,
         isLoadingMoreCompleted: false,
         clearError: true,
       ),
@@ -47,6 +50,7 @@ class TaskListCubit extends Cubit<TaskListState> {
       emit(
         state.copyWith(
           status: TaskListStatus.loaded,
+          hasLoadedOnce: true,
           overdueTasks: page.overdue,
           todayTasks: page.today,
           upcomingTasks: page.upcoming,
@@ -61,7 +65,12 @@ class TaskListCubit extends Cubit<TaskListState> {
       );
     } on Exception catch (e) {
       if (requestVersion != _requestVersion) return;
-      emit(state.copyWith(status: TaskListStatus.error, error: e.toString()));
+      emit(
+        state.copyWith(
+          status: TaskListStatus.error,
+          error: e.toString(),
+        ),
+      );
     }
   }
 

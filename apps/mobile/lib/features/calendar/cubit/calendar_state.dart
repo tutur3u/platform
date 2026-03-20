@@ -7,6 +7,7 @@ enum CalendarViewMode { day, threeDays, week, month, agenda }
 class CalendarState extends Equatable {
   const CalendarState({
     this.status = CalendarStatus.initial,
+    this.hasLoadedOnce = false,
     this.viewMode = CalendarViewMode.agenda,
     this.selectedDate,
     this.focusedMonth,
@@ -17,6 +18,7 @@ class CalendarState extends Equatable {
   });
 
   final CalendarStatus status;
+  final bool hasLoadedOnce;
   final CalendarViewMode viewMode;
   final DateTime? selectedDate;
   final DateTime? focusedMonth;
@@ -72,6 +74,7 @@ class CalendarState extends Equatable {
 
   CalendarState copyWith({
     CalendarStatus? status,
+    bool? hasLoadedOnce,
     CalendarViewMode? viewMode,
     Object? selectedDate = _sentinel,
     Object? focusedMonth = _sentinel,
@@ -82,6 +85,7 @@ class CalendarState extends Equatable {
     bool? isLoadingMore,
   }) => CalendarState(
     status: status ?? this.status,
+    hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce,
     viewMode: viewMode ?? this.viewMode,
     selectedDate: selectedDate == _sentinel
         ? this.selectedDate
@@ -100,6 +104,7 @@ class CalendarState extends Equatable {
   @override
   List<Object?> get props => [
     status,
+    hasLoadedOnce,
     viewMode,
     selectedDate,
     focusedMonth,

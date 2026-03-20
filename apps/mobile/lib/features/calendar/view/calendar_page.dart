@@ -96,6 +96,12 @@ class _CalendarView extends StatelessWidget {
               buildWhen: (prev, curr) => prev.viewMode != curr.viewMode,
               builder: (context, state) {
                 return PopupMenuButton<CalendarViewMode>(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 40,
+                    height: 40,
+                  ),
+                  iconSize: 22,
                   icon: const Icon(Icons.view_agenda_outlined),
                   onSelected: (mode) {
                     context.read<CalendarCubit>().setViewMode(mode);

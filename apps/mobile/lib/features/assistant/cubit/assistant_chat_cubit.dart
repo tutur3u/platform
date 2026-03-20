@@ -55,6 +55,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
   Future<void> loadWorkspace(String wsId) async {
     final workspaceVersion = ++_workspaceVersion;
+    final preserveState = state.workspaceId == wsId && state.hasLoadedOnce;
     await _streamSubscription?.cancel();
     _queueDebounce?.cancel();
     _queue.clear();
@@ -63,13 +64,26 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     _activeTextBlockId = null;
     _activeReasoningBlockId = null;
 
-    emit(
-      AssistantChatState(
-        workspaceId: wsId,
-        fallbackChatId: _repository.generateUuid(),
-        status: AssistantChatStatus.restoring,
-      ),
-    );
+    if (preserveState) {
+      emit(
+        state.copyWith(
+          workspaceId: wsId,
+          fallbackChatId: _repository.generateUuid(),
+          composerAttachments: const [],
+          queuedPreview: null,
+          status: AssistantChatStatus.restoring,
+          clearError: true,
+        ),
+      );
+    } else {
+      emit(
+        AssistantChatState(
+          workspaceId: wsId,
+          fallbackChatId: _repository.generateUuid(),
+          status: AssistantChatStatus.restoring,
+        ),
+      );
+    }
 
     try {
       final storedChatId = await _preferences.loadChatId(wsId);
@@ -80,6 +94,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         emit(
           state.copyWith(
             status: AssistantChatStatus.idle,
+            hasLoadedOnce: true,
             history: history,
             storedChatId: null,
           ),
@@ -99,6 +114,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         emit(
           state.copyWith(
             status: AssistantChatStatus.idle,
+            hasLoadedOnce: true,
             chat: null,
             storedChatId: null,
             messages: const [],
@@ -113,6 +129,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       emit(
         state.copyWith(
           status: AssistantChatStatus.idle,
+          hasLoadedOnce: true,
           chat: restored.chat,
           storedChatId: restored.chat?.id,
           messages: restored.messages,

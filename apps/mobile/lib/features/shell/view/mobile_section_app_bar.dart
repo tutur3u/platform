@@ -4,6 +4,15 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+const double mobileSectionAppBarLogoSize = 26;
+const double mobileSectionAppBarHeight = 46;
+const EdgeInsets mobileSectionAppBarPadding = EdgeInsets.fromLTRB(
+  16,
+  10,
+  16,
+  10,
+);
+
 class MobileSectionAppBar extends StatelessWidget {
   const MobileSectionAppBar({
     this.title,
@@ -29,33 +38,46 @@ class MobileSectionAppBar extends StatelessWidget {
     }
 
     return shad.AppBar(
+      height: mobileSectionAppBarHeight,
+      padding: mobileSectionAppBarPadding,
+      leadingGap: 8,
+      trailingGap: 6,
       leading: leading,
-      title: Row(
-        children: [
-          Image.asset(
-            'assets/logos/transparent.png',
-            width: 24,
-            height: 24,
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(width: 10),
-          Flexible(
-            child:
-                titleWidget ??
-                Text(
-                  title ?? '',
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-          ),
-        ],
-      ),
       trailing: [
         ...actions,
         if (hasAuthCubit) const AvatarDropdown(),
       ],
+      child: SizedBox(
+        height: mobileSectionAppBarHeight,
+        child: Row(
+          children: [
+            Image.asset(
+              'assets/logos/transparent.png',
+              width: mobileSectionAppBarLogoSize,
+              height: mobileSectionAppBarLogoSize,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: DefaultTextStyle.merge(
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  child:
+                      titleWidget ??
+                      Text(
+                        title ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

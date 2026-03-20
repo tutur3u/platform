@@ -7,6 +7,7 @@ enum TaskListSection { overdue, today, upcoming, completed }
 class TaskListState extends Equatable {
   const TaskListState({
     this.status = TaskListStatus.initial,
+    this.hasLoadedOnce = false,
     this.overdueTasks = const [],
     this.todayTasks = const [],
     this.upcomingTasks = const [],
@@ -24,6 +25,7 @@ class TaskListState extends Equatable {
   });
 
   final TaskListStatus status;
+  final bool hasLoadedOnce;
   final List<UserTask> overdueTasks;
   final List<UserTask> todayTasks;
   final List<UserTask> upcomingTasks;
@@ -41,6 +43,7 @@ class TaskListState extends Equatable {
 
   TaskListState copyWith({
     TaskListStatus? status,
+    bool? hasLoadedOnce,
     List<UserTask>? overdueTasks,
     List<UserTask>? todayTasks,
     List<UserTask>? upcomingTasks,
@@ -58,6 +61,7 @@ class TaskListState extends Equatable {
     bool clearError = false,
   }) => TaskListState(
     status: status ?? this.status,
+    hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce,
     overdueTasks: overdueTasks ?? this.overdueTasks,
     todayTasks: todayTasks ?? this.todayTasks,
     upcomingTasks: upcomingTasks ?? this.upcomingTasks,
@@ -78,6 +82,7 @@ class TaskListState extends Equatable {
   @override
   List<Object?> get props => [
     status,
+    hasLoadedOnce,
     overdueTasks,
     todayTasks,
     upcomingTasks,

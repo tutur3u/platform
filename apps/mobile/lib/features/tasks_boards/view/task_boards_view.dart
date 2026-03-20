@@ -22,7 +22,6 @@ import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-import 'package:shared_preferences/shared_preferences.dart';
 
 part 'task_boards_cards.dart';
 part 'task_boards_states.dart';
@@ -41,22 +40,28 @@ class TaskBoardsView extends StatefulWidget {
 
 class _TaskBoardsViewState extends State<TaskBoardsView> {
   static const double _fabContentBottomPadding = 96;
-  static const String _pageSizePreferenceKey = 'task_boards_page_size';
-  static const List<int> _pageSizeOptions = [1, 5, 10, 20, 50, 100, 200];
 
   late final WorkspacePermissionsRepository _permissionsRepository;
+  final ScrollController _scrollController = ScrollController();
   String? _permissionsWorkspaceId;
   bool _canManageProjects = false;
   bool _isCheckingPermissions = false;
   bool _permissionsLoadFailed = false;
-  int _pageSize = 20;
 
   @override
   void initState() {
     super.initState();
     _permissionsRepository =
         widget.permissionsRepository ?? WorkspacePermissionsRepository();
-    unawaited(_loadPageSizePreference());
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
   }
 
   @override
@@ -79,20 +84,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
       headers: [
         MobileSectionAppBar(
           title: l10n.taskBoardsTitle,
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.tasks);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
           actions: [
             BlocBuilder<TaskBoardsCubit, TaskBoardsState>(
               buildWhen: (prev, curr) => prev.filter != curr.filter,
@@ -105,13 +96,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                   ),
                 );
               },
-            ),
-            Tooltip(
-              message: '${l10n.taskBoardsPageSize}: $_pageSize',
-              child: shad.IconButton.ghost(
-                icon: const Icon(shad.LucideIcons.listOrdered),
-                onPressed: () => _showPageSizeMenu(context),
-              ),
             ),
           ],
         ),
@@ -181,6 +165,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
           child: RefreshIndicator(
             onRefresh: _reload,
             child: ListView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
               children: [
@@ -205,25 +190,34 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                       ),
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: _PaginationRow(
-                    currentPage: state.currentPage,
-                    totalPages: state.totalPages,
-                    onPrevious: state.hasPreviousPage
-                        ? () => unawaited(_goToPage(state.currentPage - 1))
-                        : null,
-                    onNext: state.hasNextPage
-                        ? () => unawaited(_goToPage(state.currentPage + 1))
-                        : null,
+                if (state.isLoadingMore)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: shad.CircularProgressIndicator()),
                   ),
-                ),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final state = context.read<TaskBoardsCubit>().state;
+    if (!state.hasNextPage || state.isLoadingMore) {
+      return;
+    }
+
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 280) {
+      final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+      if (wsId != null) {
+        unawaited(context.read<TaskBoardsCubit>().loadMoreBoards(wsId));
+      }
+    }
   }
 
   Future<void> _loadPermissions() async {
@@ -261,7 +255,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         unawaited(
           context.read<TaskBoardsCubit>().loadBoards(
             wsId,
-            pageSize: _pageSize,
           ),
         );
       }
@@ -294,60 +287,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
 
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
-    await context.read<TaskBoardsCubit>().loadBoards(wsId, pageSize: _pageSize);
-  }
-
-  Future<void> _loadPageSizePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    final storedPageSize = prefs.getInt(_pageSizePreferenceKey) ?? 20;
-    final normalizedPageSize = storedPageSize.clamp(1, 200);
-
-    if (!mounted) return;
-    if (_pageSize == normalizedPageSize) return;
-
-    setState(() => _pageSize = normalizedPageSize);
-
-    if (!_canManageProjects || _permissionsLoadFailed) return;
-
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-    unawaited(
-      context.read<TaskBoardsCubit>().loadBoards(wsId, pageSize: _pageSize),
-    );
-  }
-
-  Future<void> _setPageSize(int newPageSize) async {
-    final normalizedPageSize = newPageSize.clamp(1, 200);
-    if (_pageSize == normalizedPageSize) return;
-
-    final taskBoardsCubit = context.read<TaskBoardsCubit>();
-    final capturedWsId = context
-        .read<WorkspaceCubit>()
-        .state
-        .currentWorkspace
-        ?.id;
-
-    setState(() => _pageSize = normalizedPageSize);
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_pageSizePreferenceKey, normalizedPageSize);
-    if (!mounted) return;
-
-    if (!_canManageProjects || _permissionsLoadFailed) return;
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null || capturedWsId == null || wsId != capturedWsId) return;
-    await taskBoardsCubit.goToPage(
-      wsId,
-      1,
-      pageSize: normalizedPageSize,
-    );
-  }
-
-  Future<void> _goToPage(int page) async {
-    if (!_canManageProjects || _permissionsLoadFailed) return;
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-    await context.read<TaskBoardsCubit>().goToPage(wsId, page);
+    await context.read<TaskBoardsCubit>().loadBoards(wsId);
   }
 
   Future<void> _openCreateBoard() async {
@@ -596,29 +536,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     );
   }
 
-  void _showPageSizeMenu(BuildContext context) {
-    shad.showDropdown<void>(
-      context: context,
-      builder: (context) => shad.DropdownMenu(
-        children: _pageSizeOptions
-            .map(
-              (option) => shad.MenuButton(
-                leading: _pageSize == option
-                    ? const Icon(Icons.check, size: 16)
-                    : const SizedBox(width: 16, height: 16),
-                onPressed: (context) {
-                  unawaited(_setPageSize(option));
-                },
-                child: Text(
-                  context.l10n.taskBoardsPageSizeOption(option),
-                ),
-              ),
-            )
-            .toList(growable: false),
-      ),
-    );
-  }
-
   shad.MenuButton _buildFilterMenuButton({
     required BuildContext context,
     required TaskBoardsFilter selected,
@@ -633,45 +550,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         cubit.setFilter(filter);
       },
       child: Text(_filterLabel(context, filter)),
-    );
-  }
-}
-
-class _PaginationRow extends StatelessWidget {
-  const _PaginationRow({
-    required this.currentPage,
-    required this.totalPages,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  final int currentPage;
-  final int totalPages;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Row(
-      children: [
-        shad.OutlineButton(
-          onPressed: onPrevious,
-          child: Text(l10n.commonPrevious),
-        ),
-        const shad.Gap(8),
-        Expanded(
-          child: Center(
-            child: Text(l10n.taskBoardsPageInfo(currentPage, totalPages)),
-          ),
-        ),
-        const shad.Gap(8),
-        shad.OutlineButton(
-          onPressed: onNext,
-          child: Text(l10n.commonNext),
-        ),
-      ],
     );
   }
 }

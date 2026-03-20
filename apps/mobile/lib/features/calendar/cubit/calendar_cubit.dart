@@ -14,10 +14,21 @@ class CalendarCubit extends Cubit<CalendarState> {
       super(CalendarState(selectedDate: DateTime.now()));
 
   final CalendarRepository _repo;
+  String? _wsId;
 
   /// Loads events within a 3-month window around the selected date.
   Future<void> loadEvents(String wsId) async {
-    emit(state.copyWith(status: CalendarStatus.loading, clearError: true));
+    final preserveEvents = _wsId == wsId && state.hasLoadedOnce;
+    _wsId = wsId;
+    emit(
+      state.copyWith(
+        status: CalendarStatus.loading,
+        hasLoadedOnce: preserveEvents && state.hasLoadedOnce,
+        events: preserveEvents ? null : const [],
+        fetchedRange: preserveEvents ? _sentinel : null,
+        clearError: true,
+      ),
+    );
 
     try {
       final center = state.effectiveSelectedDate;
@@ -29,6 +40,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       emit(
         state.copyWith(
           status: CalendarStatus.loaded,
+          hasLoadedOnce: true,
           events: events,
           fetchedRange: DateTimeRange(start: start, end: end),
           clearError: true,

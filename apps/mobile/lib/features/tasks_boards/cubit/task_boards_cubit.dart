@@ -14,42 +14,48 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
   int _loadRequestToken = 0;
 
   Future<void> loadBoards(String wsId, {int? pageSize}) async {
-    final workspaceChanged = state.workspaceId != wsId;
-    final page = workspaceChanged ? 1 : state.currentPage;
-    await _loadBoardsForPage(wsId, page: page, pageSize: pageSize);
+    await _loadBoardsForPage(wsId, page: 1, pageSize: pageSize, reset: true);
   }
 
   void setFilter(TaskBoardsFilter filter) {
     emit(state.copyWith(filter: filter));
   }
 
-  Future<void> goToPage(String wsId, int page, {int? pageSize}) async {
-    final normalizedPage = page < 1 ? 1 : page;
+  Future<void> loadMoreBoards(String wsId) async {
+    if (state.isLoadingMore || !state.hasNextPage) {
+      return;
+    }
+
     await _loadBoardsForPage(
       wsId,
-      page: normalizedPage,
-      pageSize: pageSize ?? state.pageSize,
+      page: state.currentPage + 1,
+      pageSize: state.pageSize,
+      reset: false,
     );
   }
 
   Future<void> _loadBoardsForPage(
     String wsId, {
     required int page,
+    required bool reset,
     int? pageSize,
   }) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
     final normalizedPage = page < 1 ? 1 : page;
     final normalizedPageSize = (pageSize ?? state.pageSize).clamp(1, 200);
+    final isLoadingMore =
+        !reset && !workspaceChanged && state.boards.isNotEmpty;
 
     emit(
       state.copyWith(
-        status: TaskBoardsStatus.loading,
+        status: isLoadingMore ? state.status : TaskBoardsStatus.loading,
         workspaceId: wsId,
         currentPage: normalizedPage,
         pageSize: normalizedPageSize,
-        totalCount: workspaceChanged ? 0 : state.totalCount,
-        boards: workspaceChanged ? const [] : state.boards,
+        totalCount: reset || workspaceChanged ? 0 : state.totalCount,
+        boards: reset || workspaceChanged ? const [] : state.boards,
+        isLoadingMore: isLoadingMore,
         clearError: true,
       ),
     );
@@ -69,7 +75,10 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
           currentPage: pageData.page,
           pageSize: pageData.pageSize,
           totalCount: pageData.totalCount,
-          boards: pageData.boards,
+          boards: reset || workspaceChanged
+              ? pageData.boards
+              : List.unmodifiable([...state.boards, ...pageData.boards]),
+          isLoadingMore: false,
           clearError: true,
         ),
       );
@@ -79,6 +88,7 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
         state.copyWith(
           status: TaskBoardsStatus.error,
           workspaceId: wsId,
+          isLoadingMore: false,
           error: error.toString(),
         ),
       );
@@ -188,12 +198,18 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
       }
       await _loadBoardsForPage(
         wsId,
-        page: state.currentPage,
+        page: 1,
         pageSize: state.pageSize,
+        reset: true,
       );
     } catch (_) {
       if (state.workspaceId == wsId) {
-        emit(state.copyWith(status: TaskBoardsStatus.loaded));
+        emit(
+          state.copyWith(
+            status: TaskBoardsStatus.loaded,
+            isLoadingMore: false,
+          ),
+        );
       }
       rethrow;
     }
