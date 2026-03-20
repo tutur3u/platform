@@ -57,6 +57,8 @@ interface TaskBlockingMenuProps {
   onAddBlockedBy: (task: RelatedTaskInfo) => void;
   /** Called when removing a task that blocks this task */
   onRemoveBlockedBy: (taskId: string) => void;
+  /** Called when submenu open state changes */
+  onOpenChange?: (open: boolean) => void;
   /** Translations for the menu */
   translations: TaskBlockingMenuTranslations;
 }
@@ -72,11 +74,13 @@ export function TaskBlockingMenu({
   onRemoveBlocking,
   onAddBlockedBy,
   onRemoveBlockedBy,
+  onOpenChange,
   translations,
 }: TaskBlockingMenuProps) {
   const [activeTab, setActiveTab] = React.useState<'blocks' | 'blocked-by'>(
     'blocks'
   );
+  const [isSubmenuOpen, setIsSubmenuOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearch] = useDebounce(searchQuery, 300);
 
@@ -101,12 +105,19 @@ export function TaskBlockingMenu({
     excludeTaskIds: excludeIds,
     searchQuery: debouncedSearch || undefined,
     limit: 30,
+    enabled: isSubmenuOpen,
   });
 
-  // Reset search when tab changes
-  React.useEffect(() => {
-    setSearchQuery('');
-  }, []);
+  const handleSubmenuOpenChange = React.useCallback(
+    (open: boolean) => {
+      setIsSubmenuOpen(open);
+      onOpenChange?.(open);
+      if (!open) {
+        setSearchQuery('');
+      }
+    },
+    [onOpenChange]
+  );
 
   const totalCount = blockingTasks.length + blockedByTasks.length;
   const currentList = activeTab === 'blocks' ? blockingTasks : blockedByTasks;
@@ -115,7 +126,7 @@ export function TaskBlockingMenu({
     activeTab === 'blocks' ? onRemoveBlocking : onRemoveBlockedBy;
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub onOpenChange={handleSubmenuOpenChange}>
       <DropdownMenuSubTrigger>
         <Ban className="h-4 w-4 text-dynamic-red" />
         {translations.dependencies}

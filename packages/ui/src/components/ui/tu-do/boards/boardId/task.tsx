@@ -158,6 +158,15 @@ function TaskCardInner({
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [relationshipMenusOpen, setRelationshipMenusOpen] = useState({
+    parent: false,
+    dependencies: false,
+    related: false,
+  });
+  const isAnyRelationshipMenuOpen =
+    relationshipMenusOpen.parent ||
+    relationshipMenusOpen.dependencies ||
+    relationshipMenusOpen.related;
 
   // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
@@ -268,7 +277,7 @@ function TaskCardInner({
     taskId: task.id,
     boardId,
     wsId: effectiveWorkspaceId,
-    enabled: menuOpen,
+    enabled: isAnyRelationshipMenuOpen,
   });
 
   const relationshipSummary =
@@ -1203,7 +1212,19 @@ function TaskCardInner({
           <div className="flex items-center justify-end gap-1">
             {/* Main Actions Menu - With integrated date picker */}
             {!isOverlay && (
-              <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenu
+                open={menuOpen}
+                onOpenChange={(open) => {
+                  setMenuOpen(open);
+                  if (!open) {
+                    setRelationshipMenusOpen({
+                      parent: false,
+                      dependencies: false,
+                      related: false,
+                    });
+                  }
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -1406,6 +1427,12 @@ function TaskCardInner({
                         isSaving={relationshipSaving}
                         onSetParent={setParentTask}
                         onRemoveParent={removeParentTask}
+                        onOpenChange={(open) =>
+                          setRelationshipMenusOpen((prev) => ({
+                            ...prev,
+                            parent: open,
+                          }))
+                        }
                         translations={{
                           parent_task: t('parent_task'),
                           search_tasks: t('search_tasks'),
@@ -1428,6 +1455,12 @@ function TaskCardInner({
                         onRemoveBlocking={removeBlockingTask}
                         onAddBlockedBy={addBlockedByTask}
                         onRemoveBlockedBy={removeBlockedByTask}
+                        onOpenChange={(open) =>
+                          setRelationshipMenusOpen((prev) => ({
+                            ...prev,
+                            dependencies: open,
+                          }))
+                        }
                         translations={{
                           dependencies: t('dependencies'),
                           blocks: t('blocks'),
@@ -1452,6 +1485,12 @@ function TaskCardInner({
                         savingTaskId={relationshipSavingTaskId}
                         onAddRelated={addRelatedTask}
                         onRemoveRelated={removeRelatedTask}
+                        onOpenChange={(open) =>
+                          setRelationshipMenusOpen((prev) => ({
+                            ...prev,
+                            related: open,
+                          }))
+                        }
                         translations={{
                           related_tasks: t('related_tasks'),
                           currently_related: t('currently_related'),

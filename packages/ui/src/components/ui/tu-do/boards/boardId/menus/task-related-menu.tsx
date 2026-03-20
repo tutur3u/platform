@@ -46,6 +46,8 @@ interface TaskRelatedMenuProps {
   onAddRelated: (task: RelatedTaskInfo) => void;
   /** Called when removing a related task */
   onRemoveRelated: (taskId: string) => void;
+  /** Called when submenu open state changes */
+  onOpenChange?: (open: boolean) => void;
   /** Translations for the menu */
   translations: TaskRelatedMenuTranslations;
 }
@@ -58,9 +60,11 @@ export function TaskRelatedMenu({
   savingTaskId,
   onAddRelated,
   onRemoveRelated,
+  onOpenChange,
   translations,
 }: TaskRelatedMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isSubmenuOpen, setIsSubmenuOpen] = React.useState(false);
   const [debouncedSearch] = useDebounce(searchQuery, 300);
 
   // Exclude current task and all already-related tasks
@@ -75,15 +79,21 @@ export function TaskRelatedMenu({
       excludeTaskIds: excludeIds,
       searchQuery: debouncedSearch || undefined,
       limit: 30,
+      enabled: isSubmenuOpen,
     }
   );
 
   // Reset search when menu closes
-  const handleSubContentOpenChange = React.useCallback((open: boolean) => {
-    if (!open) {
-      setSearchQuery('');
-    }
-  }, []);
+  const handleSubContentOpenChange = React.useCallback(
+    (open: boolean) => {
+      setIsSubmenuOpen(open);
+      onOpenChange?.(open);
+      if (!open) {
+        setSearchQuery('');
+      }
+    },
+    [onOpenChange]
+  );
 
   return (
     <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
