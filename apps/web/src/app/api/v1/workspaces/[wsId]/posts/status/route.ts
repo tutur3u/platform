@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
+  getPostEmailMaxAgeCutoff,
   getPostEmailQueueRows,
   summarizePostEmailQueue,
 } from '@/lib/post-email-queue';
@@ -25,15 +26,17 @@ export async function GET(
   const userId = searchParams.get('userId') || undefined;
 
   const sbAdmin = await createAdminClient();
+  const cutoff = getPostEmailMaxAgeCutoff();
 
   const queryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
-      'user_id, user_group_posts!inner(id, group_id), workspace_users!user_id!inner(ws_id)',
+      'user_id, user_group_posts!inner(id, group_id, created_at), workspace_users!user_id!inner(ws_id)',
       { count: 'exact' }
     )
     .eq('workspace_users.ws_id', wsId)
-    .not('workspace_users.email', 'ilike', '%@easy%');
+    .not('workspace_users.email', 'ilike', '%@easy%')
+    .gte('user_group_posts.created_at', cutoff);
 
   if (includedGroups.length > 0) {
     queryBuilder.in('user_group_posts.group_id', includedGroups);

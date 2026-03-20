@@ -3,6 +3,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { PostEmail } from '@/app/[locale]/(dashboard)/[wsId]/posts/types';
 import {
+  autoSkipOldPostEmails,
+  getPostEmailMaxAgeCutoff,
   getPostEmailQueueRows,
   summarizePostEmailQueue,
 } from '@/lib/post-email-queue';
@@ -29,19 +31,23 @@ export async function GET(
 
   const sbAdmin = await createAdminClient();
 
+  await autoSkipOldPostEmails(sbAdmin, { wsId });
+
   const hasFilters =
     includedGroups.length > 0 || excludedGroups.length > 0 || !!userId;
+  const cutoff = getPostEmailMaxAgeCutoff();
 
   const queryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
-      `post_id, notes, user_id, email_id, is_completed, approval_status, rejection_reason, user:workspace_users!user_id!inner(email, display_name, full_name, ws_id), user_group_posts${hasFilters ? '!inner' : ''}(id, title, content, group_id, workspace_user_groups(id, name)), sent_emails(subject)`,
+      `post_id, notes, user_id, email_id, is_completed, approval_status, rejection_reason, user:workspace_users!user_id!inner(email, display_name, full_name, ws_id), user_group_posts${hasFilters ? '!inner' : ''}(id, title, content, group_id, created_at, workspace_user_groups(id, name)), sent_emails(subject)`,
       {
         count: 'exact',
       }
     )
     .eq('workspace_users.ws_id', wsId)
-    .not('workspace_users.email', 'ilike', '%@easy%');
+    .not('workspace_users.email', 'ilike', '%@easy%')
+    .gte('user_group_posts.created_at', cutoff);
 
   if (includedGroups.length > 0) {
     queryBuilder.in('user_group_posts.group_id', includedGroups);

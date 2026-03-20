@@ -40,6 +40,7 @@ interface PostsClientProps {
     failed: number;
     blocked: number;
     cancelled: number;
+    skipped: number;
   };
 }
 
@@ -62,6 +63,7 @@ export default function PostsClient({
     failed: 0,
     blocked: 0,
     cancelled: 0,
+    skipped: 0,
   };
 
   useEffect(() => {
@@ -150,6 +152,7 @@ export default function PostsClient({
               notes: false,
               created_at: false,
               queue_attempt_count: false,
+              queue_status: false,
               post_title: false,
               post_content: false,
             }}

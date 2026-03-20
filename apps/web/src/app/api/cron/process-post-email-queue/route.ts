@@ -1,7 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { processPostEmailQueueBatch } from '@/lib/post-email-queue';
+import {
+  autoSkipOldPostEmails,
+  processPostEmailQueueBatch,
+} from '@/lib/post-email-queue';
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,6 +30,8 @@ export async function GET(req: NextRequest) {
       req.nextUrl.searchParams.get('limit') || '25',
       10
     );
+
+    await autoSkipOldPostEmails(sbAdmin);
 
     const result = await processPostEmailQueueBatch(sbAdmin, {
       limit: Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 100) : 25,

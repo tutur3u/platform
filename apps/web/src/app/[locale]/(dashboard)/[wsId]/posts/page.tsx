@@ -3,6 +3,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
+  autoSkipOldPostEmails,
+  getPostEmailMaxAgeCutoff,
   getPostEmailQueueRows,
   summarizePostEmailQueue,
 } from '@/lib/post-email-queue';
@@ -90,17 +92,21 @@ async function getPostsData(
       : [];
   const hasFilters =
     includedGroupIds.length > 0 || excludedGroupIds.length > 0 || !!userId;
+  const cutoff = getPostEmailMaxAgeCutoff();
+
+  await autoSkipOldPostEmails(sbAdmin, { wsId });
 
   const queryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
-      `post_id, notes, user_id, email_id, is_completed, approval_status, rejection_reason, user:workspace_users!user_id!inner(email, display_name, full_name, ws_id), user_group_posts${hasFilters ? '!inner' : ''}(id, title, content, group_id, workspace_user_groups(id, name)), sent_emails(subject)`,
+      `post_id, notes, user_id, email_id, is_completed, approval_status, rejection_reason, user:workspace_users!user_id!inner(email, display_name, full_name, ws_id), user_group_posts${hasFilters ? '!inner' : ''}(id, title, content, group_id, created_at, workspace_user_groups(id, name)), sent_emails(subject)`,
       {
         count: 'exact',
       }
     )
     .eq('workspace_users.ws_id', wsId)
     .not('workspace_users.email', 'ilike', '%@easy%')
+    .gte('user_group_posts.created_at', cutoff)
     .order('created_at', { ascending: false })
     .range(start, end)
     .limit(parsedSize);
@@ -177,6 +183,7 @@ async function getPostsData(
     failed: data.filter((item) => item.queue_status === 'failed').length,
     blocked: data.filter((item) => item.queue_status === 'blocked').length,
     cancelled: data.filter((item) => item.queue_status === 'cancelled').length,
+    skipped: data.filter((item) => item.queue_status === 'skipped').length,
   };
 
   return {

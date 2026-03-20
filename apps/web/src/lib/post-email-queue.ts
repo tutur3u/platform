@@ -12,7 +12,14 @@ export type PostEmailQueueStatus =
   | 'sent'
   | 'failed'
   | 'blocked'
-  | 'cancelled';
+  | 'cancelled'
+  | 'skipped';
+
+export const POST_EMAIL_MAX_AGE_DAYS = 7;
+
+export function getPostEmailMaxAgeCutoff(): string {
+  return dayjs().subtract(POST_EMAIL_MAX_AGE_DAYS, 'day').toISOString();
+}
 
 export interface PostEmailQueueRow {
   id: string;
@@ -78,6 +85,7 @@ export function summarizePostEmailQueue(
     failed: rows.filter((row) => row.status === 'failed').length,
     blocked: rows.filter((row) => row.status === 'blocked').length,
     cancelled: rows.filter((row) => row.status === 'cancelled').length,
+    skipped: rows.filter((row) => row.status === 'skipped').length,
   };
 }
 
@@ -221,7 +229,7 @@ export async function enqueueApprovedPostEmails(
 ) {
   const { data: post, error: postError } = await sbAdmin
     .from('user_group_posts')
-    .select('id, group_id, workspace_user_groups!inner(ws_id)')
+    .select('id, group_id, created_at, workspace_user_groups!inner(ws_id)')
     .eq('id', postId)
     .eq('workspace_user_groups.ws_id', wsId)
     .maybeSingle();
@@ -229,6 +237,13 @@ export async function enqueueApprovedPostEmails(
   if (postError) throw postError;
   if (!post) return { queued: 0 };
   if (groupId && post.group_id !== groupId) return { queued: 0 };
+
+  if (post.created_at) {
+    const cutoff = getPostEmailMaxAgeCutoff();
+    if (post.created_at < cutoff) {
+      return { queued: 0 };
+    }
+  }
 
   const recipients = await getEligibleRecipients(sbAdmin, {
     wsId,
@@ -345,6 +360,34 @@ export async function cancelQueuedPostEmails(
   if (error) throw error;
 }
 
+export async function autoSkipOldPostEmails(
+  sbAdmin: any,
+  { wsId }: { wsId?: string } = {}
+): Promise<number> {
+  const cutoff = getPostEmailMaxAgeCutoff();
+
+  let query = getQueueTable(sbAdmin)
+    .update({
+      status: 'skipped',
+      batch_id: null,
+      claimed_at: null,
+      cancelled_at: new Date().toISOString(),
+      last_error: `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days`,
+    })
+    .in('status', ['queued', 'failed', 'blocked'])
+    .lt('created_at', cutoff);
+
+  if (wsId) {
+    query = query.eq('ws_id', wsId);
+  }
+
+  const { data, error } = await query.select('id');
+
+  if (error) throw error;
+
+  return data?.length ?? 0;
+}
+
 async function markQueueRow(
   sbAdmin: any,
   queueId: string,
@@ -370,6 +413,13 @@ async function buildPostSendContext(
 
   if (postError) throw postError;
   if (!post) return null;
+
+  if (post.created_at) {
+    const cutoff = getPostEmailMaxAgeCutoff();
+    if (post.created_at < cutoff) {
+      return null;
+    }
+  }
 
   const { data: check, error: checkError } = await sbAdmin
     .from('user_group_post_checks')
@@ -500,14 +550,27 @@ export async function processPostEmailQueueBatch(
       const context = await buildPostSendContext(sbAdmin, row);
 
       if (!context) {
+        const cutoff = getPostEmailMaxAgeCutoff();
+        const isOld = await sbAdmin
+          .from('user_group_posts')
+          .select('created_at')
+          .eq('id', row.post_id)
+          .lt('created_at', cutoff)
+          .maybeSingle()
+          .then(({ data }: any) => !!data);
+
         await markQueueRow(sbAdmin, row.id, {
-          status: 'cancelled',
+          status: isOld ? 'skipped' : 'cancelled',
           batch_id: null,
           cancelled_at: new Date().toISOString(),
-          last_error:
-            'Post is no longer approved or recipient is no longer eligible.',
+          last_error: isOld
+            ? `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days`
+            : 'Post is no longer approved or recipient is no longer eligible.',
         });
-        results.push({ id: row.id, status: 'cancelled' });
+        results.push({
+          id: row.id,
+          status: isOld ? 'skipped' : 'cancelled',
+        });
         continue;
       }
 

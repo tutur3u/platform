@@ -21,7 +21,8 @@ export interface PostEmail {
     | 'sent'
     | 'failed'
     | 'blocked'
-    | 'cancelled';
+    | 'cancelled'
+    | 'skipped';
   queue_attempt_count?: number;
   queue_last_error?: string | null;
   queue_sent_at?: string | null;
@@ -35,5 +36,6 @@ export interface PostEmail {
     failed: number;
     blocked: number;
     cancelled: number;
+    skipped: number;
   };
 }
