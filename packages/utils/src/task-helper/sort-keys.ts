@@ -219,7 +219,11 @@ export async function normalizeListSortKeys(
 ): Promise<void> {
   let tasks: Pick<Task, 'id' | 'sort_key' | 'created_at'>[];
 
-  if (visualOrderTasks && visualOrderTasks.length > 0) {
+  if (visualOrderTasks !== undefined) {
+    if (visualOrderTasks.length === 0) {
+      return;
+    }
+
     tasks = visualOrderTasks;
   } else {
     const fetchedTasks = await listAllActiveTasksForList(wsId, listId);

@@ -42,7 +42,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   Table,
@@ -173,11 +172,6 @@ export function ListView({
       await bulkDeleteTasks();
     } catch (error) {
       console.error('Error deleting tasks:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete tasks.',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -188,19 +182,24 @@ export function ListView({
   }, [tasks]);
 
   useEffect(() => {
-    if (previousWorkspaceIdRef.current === workspaceId) {
-      previousBoardIdRef.current = boardId;
+    const previousWorkspaceId = previousWorkspaceIdRef.current;
+    const previousBoardId = previousBoardIdRef.current;
+    const workspaceChanged = previousWorkspaceId !== workspaceId;
+    const boardChanged = previousBoardId !== boardId;
+
+    if (!workspaceChanged && !boardChanged) {
       return;
     }
 
-    const previousBoardId = previousBoardIdRef.current;
     previousWorkspaceIdRef.current = workspaceId;
     previousBoardIdRef.current = boardId;
     clearSelection();
-    void queryClient.cancelQueries({ queryKey: ['tasks', previousBoardId] });
-    void queryClient.cancelQueries({
-      queryKey: ['deleted-tasks', previousBoardId],
-    });
+    if (previousBoardId) {
+      void queryClient.cancelQueries({ queryKey: ['tasks', previousBoardId] });
+      void queryClient.cancelQueries({
+        queryKey: ['deleted-tasks', previousBoardId],
+      });
+    }
   }, [boardId, clearSelection, queryClient, workspaceId]);
 
   // Apply sorting only (filters are handled by parent)

@@ -81,10 +81,8 @@ export function useUpdateTask(boardId: string, wsId?: string) {
           return old.map((task) => {
             if (task.id === updatedTask.id) {
               return {
+                ...task,
                 ...updatedTask,
-                assignees: task.assignees,
-                labels: task.labels,
-                projects: task.projects,
               };
             }
             return task;
@@ -216,10 +214,19 @@ export function useCreateTask(boardId: string, wsId?: string) {
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
+          const optimisticTaskId = context?.optimisticTask.id;
+
           if (!old) return [newTask];
-          return old.map((task) =>
-            task.id === context?.optimisticTask.id ? newTask : task
-          );
+
+          const nextTasks = optimisticTaskId
+            ? old.map((task) => (task.id === optimisticTaskId ? newTask : task))
+            : [...old];
+
+          if (nextTasks.some((task) => task.id === newTask.id)) {
+            return nextTasks;
+          }
+
+          return [...nextTasks, newTask];
         }
       );
     },
@@ -304,6 +311,15 @@ export function useDeleteTask(boardId: string, wsId?: string) {
       console.error('Failed to delete task:', err);
     },
     onSuccess: (deletedTask) => {
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          const nextTasks = old.filter((task) => task.id !== deletedTask.id);
+          return nextTasks.length > 0 ? nextTasks : undefined;
+        }
+      );
+
       queryClient.setQueryData(
         ['deleted-tasks', boardId],
         (old: Task[] | undefined) => {

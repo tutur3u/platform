@@ -136,10 +136,12 @@ export async function POST(request: Request, { params }: Params) {
     });
 
     // Update task with embedding
-    const { error: updateError } = await sbAdmin
+    const { data: updatedTask, error: updateError } = await sbAdmin
       .from('tasks')
       .update({ embedding: JSON.stringify(embedding) })
-      .eq('id', task.id);
+      .eq('id', task.id)
+      .select('id')
+      .maybeSingle();
 
     if (updateError) {
       console.error('Error updating task embedding:', updateError);
@@ -147,6 +149,10 @@ export async function POST(request: Request, { params }: Params) {
         { message: 'Error updating embedding', error: updateError.message },
         { status: 500 }
       );
+    }
+
+    if (!updatedTask) {
+      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
     }
 
     return NextResponse.json({

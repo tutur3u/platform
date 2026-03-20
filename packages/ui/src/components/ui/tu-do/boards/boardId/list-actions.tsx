@@ -122,6 +122,8 @@ export function ListActions({
       );
     },
     onMutate: async (trimmedName) => {
+      await queryClient.cancelQueries({ queryKey: ['task_lists', boardId] });
+
       queryClient.setQueryData(
         ['task_lists', boardId],
         (old: TaskList[] | undefined) => {

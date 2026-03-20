@@ -99,6 +99,36 @@ const CreateTaskSchema = z.object({
 });
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 
+function parseTaskIdentifierQuery(identifier: string) {
+  const normalized = identifier.trim().toUpperCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (/^\d+$/.test(normalized)) {
+    return {
+      displayNumber: Number.parseInt(normalized, 10),
+      ticketPrefix: null,
+    };
+  }
+
+  const match = normalized.match(/^([A-Z][A-Z0-9_-]*)-(\d+)$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, ticketPrefix, displayNumber] = match;
+  if (!ticketPrefix || !displayNumber) {
+    return null;
+  }
+
+  return {
+    ticketPrefix,
+    displayNumber: Number.parseInt(displayNumber, 10),
+  };
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -159,6 +189,7 @@ export async function GET(
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
     const searchQuery = url.searchParams.get('q')?.trim();
+    const identifierQuery = url.searchParams.get('identifier')?.trim();
     const includeRelationshipSummaryParam = url.searchParams.get(
       'includeRelationshipSummary'
     );
@@ -254,6 +285,21 @@ export async function GET(
 
     if (searchQuery) {
       query = query.ilike('name', `%${searchQuery}%`);
+    }
+
+    const parsedIdentifier = identifierQuery
+      ? parseTaskIdentifierQuery(identifierQuery)
+      : null;
+
+    if (parsedIdentifier) {
+      query = query.eq('display_number', parsedIdentifier.displayNumber);
+
+      if (parsedIdentifier.ticketPrefix) {
+        query = query.eq(
+          'task_lists.workspace_boards.ticket_prefix',
+          parsedIdentifier.ticketPrefix
+        );
+      }
     }
 
     const { data, error, count } = await query

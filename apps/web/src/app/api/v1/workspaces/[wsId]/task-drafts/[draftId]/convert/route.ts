@@ -2,7 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { TaskDraft } from '@tuturuuu/types/db';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Database, TaskDraft } from '@tuturuuu/types';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -25,6 +26,7 @@ type DraftRelationField = Pick<
   TaskDraft,
   'assignee_ids' | 'label_ids' | 'project_ids'
 >[keyof Pick<TaskDraft, 'assignee_ids' | 'label_ids' | 'project_ids'>];
+type TaskDraftInsert = Database['public']['Tables']['task_drafts']['Insert'];
 
 function normalizeDraftRelationIds(
   value: DraftRelationField,
@@ -51,6 +53,20 @@ function normalizeDraftRelationIds(
   }
 
   return { ids };
+}
+
+async function restoreDraft(sbAdmin: TypedSupabaseClient, draft: TaskDraft) {
+  const draftToRestore: TaskDraftInsert = {
+    ...draft,
+  };
+  const { error } = await sbAdmin.from('task_drafts').insert(draftToRestore);
+
+  if (error) {
+    console.error(
+      'Failed to restore task draft after conversion error:',
+      error
+    );
+  }
 }
 
 export async function POST(
@@ -94,22 +110,6 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Fetch the draft
-    const draftResult = await sbAdmin
-      .from('task_drafts')
-      .select('*')
-      .eq('id', draftId)
-      .eq('ws_id', wsId)
-      .eq('creator_id', user.id)
-      .single();
-
-    const draft = draftResult.data as TaskDraft | null;
-    const draftError = draftResult.error;
-
-    if (draftError || !draft) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
-    }
-
     const body = await request.json();
     const { listId } = convertSchema.parse(body);
 
@@ -141,6 +141,29 @@ export async function POST(
       );
     }
 
+    const { data: claimedDraft, error: claimError } = await sbAdmin
+      .from('task_drafts')
+      .delete()
+      .eq('id', draftId)
+      .eq('ws_id', wsId)
+      .eq('creator_id', user.id)
+      .select('*')
+      .maybeSingle();
+
+    if (claimError) {
+      console.error('Failed to claim draft for conversion:', claimError);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+
+    if (!claimedDraft) {
+      return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
+    }
+
+    const draft = claimedDraft as TaskDraft;
+
     // Create the task from draft data
     const validPriorities = ['critical', 'high', 'normal', 'low'] as const;
     type ValidPriority = (typeof validPriorities)[number];
@@ -167,37 +190,35 @@ export async function POST(
       normalizedProjectIds.error;
 
     if (invalidDraftRelationError) {
+      await restoreDraft(sbAdmin, draft);
       return NextResponse.json(
         { error: invalidDraftRelationError },
         { status: 400 }
       );
     }
 
-    const newTask = await createTask(wsId, listId, {
-      name: draft.name,
-      description: draft.description || undefined,
-      priority,
-      start_date: draft.start_date || undefined,
-      end_date: draft.end_date || undefined,
-      estimation_points: draft.estimation_points ?? undefined,
-      assignee_ids: normalizedAssigneeIds.ids,
-      label_ids: normalizedLabelIds.ids,
-      project_ids: normalizedProjectIds.ids,
-    });
+    try {
+      const newTask = await createTask(wsId, listId, {
+        name: draft.name,
+        description: draft.description || undefined,
+        priority,
+        start_date: draft.start_date || undefined,
+        end_date: draft.end_date || undefined,
+        estimation_points: draft.estimation_points ?? undefined,
+        assignee_ids: normalizedAssigneeIds.ids,
+        label_ids: normalizedLabelIds.ids,
+        project_ids: normalizedProjectIds.ids,
+      });
 
-    // Delete the draft
-    await sbAdmin
-      .from('task_drafts')
-      .delete()
-      .eq('id', draftId)
-      .eq('ws_id', wsId)
-      .eq('creator_id', user.id);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Draft converted to task successfully',
-      data: { taskId: newTask.id },
-    });
+      return NextResponse.json({
+        success: true,
+        message: 'Draft converted to task successfully',
+        data: { taskId: newTask.id },
+      });
+    } catch (createError) {
+      await restoreDraft(sbAdmin, draft);
+      throw createError;
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 });

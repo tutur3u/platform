@@ -200,7 +200,11 @@ export async function getWorkspaceTasks(
 
   const clientOptions =
     typeof window !== 'undefined'
-      ? { baseUrl: window.location.origin }
+      ? {
+          baseUrl: window.location.origin,
+          fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+            fetch(input, { ...init, cache: init?.cache ?? 'no-store' }),
+        }
       : undefined;
 
   let offset = 0;
@@ -209,6 +213,7 @@ export async function getWorkspaceTasks(
       wsId,
       {
         q: ticketLikeSearch ? undefined : options?.searchQuery,
+        identifier: ticketLikeSearch ? options?.searchQuery : undefined,
         limit: requestLimit,
         offset,
         includeRelationshipSummary: !ticketLikeSearch,

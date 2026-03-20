@@ -192,6 +192,7 @@ export async function syncTaskArchivedStatus(
     await updateWorkspaceTask(wsId, taskId, updates, mutationOptions);
   } catch (updateError) {
     console.error('Error syncing task archived status:', updateError);
+    throw updateError;
   }
 }
 

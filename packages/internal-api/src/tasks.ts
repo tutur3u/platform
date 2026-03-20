@@ -79,6 +79,7 @@ export interface ListWorkspaceTasksOptions {
   boardId?: string;
   listId?: string;
   q?: string;
+  identifier?: string;
   limit?: number;
   offset?: number;
   includeRelationshipSummary?: boolean;
@@ -513,6 +514,7 @@ export async function listWorkspaceTasks(
         boardId: options?.boardId,
         listId: options?.listId,
         q: options?.q,
+        identifier: options?.identifier,
         limit: options?.limit,
         offset: options?.offset,
         includeRelationshipSummary: options?.includeRelationshipSummary,
