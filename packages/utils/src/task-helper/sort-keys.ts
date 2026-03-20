@@ -264,10 +264,11 @@ export async function normalizeListSortKeys(
   const options = await getMutationApiOptions();
 
   const concurrency = 5;
+  const errors: Error[] = [];
 
   for (let index = 0; index < updates.length; index += concurrency) {
     const chunk = updates.slice(index, index + concurrency);
-    await Promise.all(
+    const results = await Promise.allSettled(
       chunk.map((update) =>
         updateWorkspaceTask(
           wsId,
@@ -276,6 +277,23 @@ export async function normalizeListSortKeys(
           options
         )
       )
+    );
+
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        errors.push(
+          result.reason instanceof Error
+            ? result.reason
+            : new Error(String(result.reason))
+        );
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new AggregateError(
+      errors,
+      `Failed to update ${errors.length} task(s) during normalization`
     );
   }
 }

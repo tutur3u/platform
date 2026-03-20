@@ -172,7 +172,7 @@ export function ListActions({
               wsId,
               boardId,
               {
-                name: 'Archived',
+                name: t('archived'),
                 status: 'closed',
                 color: 'PURPLE',
               },

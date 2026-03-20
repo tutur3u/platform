@@ -8,10 +8,12 @@ import type {
 } from '@tuturuuu/types/primitives/TaskRelationship';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
+  TaskRelationshipError,
   useCreateTaskRelationship,
   useCreateTaskWithRelationship,
   useDeleteTaskRelationship,
 } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import {
   getActiveBroadcast,
@@ -77,6 +79,7 @@ export function useTaskDependencies({
   onUpdate,
 }: UseTaskDependenciesProps): UseTaskDependenciesReturn {
   const queryClient = useQueryClient();
+  const tc = useTranslations('common');
   const contextBroadcast = useBoardBroadcast();
   const broadcast = contextBroadcast ?? getActiveBroadcast();
 
@@ -110,11 +113,29 @@ export function useTaskDependencies({
   });
 
   // Mutations
-  const createRelationship = useCreateTaskRelationship(wsId, boardId);
-  const deleteRelationship = useDeleteTaskRelationship(wsId, boardId);
+  const createRelationship = useCreateTaskRelationship(wsId);
+  const deleteRelationship = useDeleteTaskRelationship(wsId);
   const createTaskWithRelationship = useCreateTaskWithRelationship(
     boardId,
     wsId
+  );
+
+  const getRelationshipErrorMessage = useCallback(
+    (error: unknown, fallback: string) => {
+      if (error instanceof TaskRelationshipError) {
+        switch (error.code) {
+          case 'already_exists':
+            return tc('task_relationship_already_exists');
+          case 'single_parent':
+            return tc('task_relationship_single_parent');
+          case 'circular':
+            return tc('task_relationship_circular');
+        }
+      }
+
+      return error instanceof Error && error.message ? error.message : fallback;
+    },
+    [tc]
   );
 
   // Helper to invalidate relationship caches and broadcast changes.
@@ -185,8 +206,10 @@ export function useTaskDependencies({
 
         await invalidateCaches(task?.id);
       } catch (e) {
-        const message =
-          e instanceof Error ? e.message : 'Unable to update parent task';
+        const message = getRelationshipErrorMessage(
+          e,
+          'Unable to update parent task'
+        );
         toast.error(`Failed to update parent: ${message}`);
       } finally {
         setSavingRelationship(null);
@@ -199,6 +222,7 @@ export function useTaskDependencies({
       deleteRelationship,
       createRelationship,
       invalidateCaches,
+      getRelationshipErrorMessage,
     ]
   );
 
@@ -280,13 +304,22 @@ export function useTaskDependencies({
         await invalidateCaches(task.id);
       } catch (e: any) {
         toast.error(
-          `Failed to add sub-task: ${e.message || 'Unable to add sub-task'}`
+          `Failed to add sub-task: ${getRelationshipErrorMessage(
+            e,
+            'Unable to add sub-task'
+          )}`
         );
       } finally {
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, createRelationship, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      createRelationship,
+      invalidateCaches,
+      getRelationshipErrorMessage,
+    ]
   );
 
   const removeChildTask = useCallback(
@@ -344,13 +377,22 @@ export function useTaskDependencies({
         await invalidateCaches(task.id);
       } catch (e: any) {
         toast.error(
-          `Failed to add blocking relationship: ${e.message || 'Unable to add blocking relationship'}`
+          `Failed to add blocking relationship: ${getRelationshipErrorMessage(
+            e,
+            'Unable to add blocking relationship'
+          )}`
         );
       } finally {
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, createRelationship, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      createRelationship,
+      invalidateCaches,
+      getRelationshipErrorMessage,
+    ]
   );
 
   const removeBlockingTask = useCallback(
@@ -446,13 +488,22 @@ export function useTaskDependencies({
         await invalidateCaches(task.id);
       } catch (e: any) {
         toast.error(
-          `Failed to add dependency: ${e.message || 'Unable to add dependency'}`
+          `Failed to add dependency: ${getRelationshipErrorMessage(
+            e,
+            'Unable to add dependency'
+          )}`
         );
       } finally {
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, createRelationship, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      createRelationship,
+      invalidateCaches,
+      getRelationshipErrorMessage,
+    ]
   );
 
   const removeBlockedByTask = useCallback(
@@ -546,13 +597,22 @@ export function useTaskDependencies({
         await invalidateCaches(task.id);
       } catch (e: any) {
         toast.error(
-          `Failed to add related task: ${e.message || 'Unable to add related task'}`
+          `Failed to add related task: ${getRelationshipErrorMessage(
+            e,
+            'Unable to add related task'
+          )}`
         );
       } finally {
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, createRelationship, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      createRelationship,
+      invalidateCaches,
+      getRelationshipErrorMessage,
+    ]
   );
 
   const removeRelatedTask = useCallback(

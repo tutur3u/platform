@@ -44,7 +44,6 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -97,8 +96,6 @@ interface ColumnVisibility {
   actions: boolean;
 }
 
-const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
-
 export function ListView({
   workspaceId,
   boardId,
@@ -117,11 +114,11 @@ export function ListView({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
-  const [isLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const previousWorkspaceIdRef = useRef(workspaceId);
+  const previousBoardIdRef = useRef(boardId);
   const { openTask } = useTaskDialog();
 
   // Infinite scroll
@@ -192,12 +189,19 @@ export function ListView({
 
   useEffect(() => {
     if (previousWorkspaceIdRef.current === workspaceId) {
+      previousBoardIdRef.current = boardId;
       return;
     }
 
+    const previousBoardId = previousBoardIdRef.current;
     previousWorkspaceIdRef.current = workspaceId;
+    previousBoardIdRef.current = boardId;
     clearSelection();
-  }, [clearSelection, workspaceId]);
+    void queryClient.cancelQueries({ queryKey: ['tasks', previousBoardId] });
+    void queryClient.cancelQueries({
+      queryKey: ['deleted-tasks', previousBoardId],
+    });
+  }, [boardId, clearSelection, queryClient, workspaceId]);
 
   // Apply sorting only (filters are handled by parent)
   const sortedTasks = useMemo(() => {
@@ -342,7 +346,7 @@ export function ListView({
       const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
 
       // Load more when user scrolls to 80%
-      if (scrollPercentage > 0.8 && hasMore && !isLoading) {
+      if (scrollPercentage > 0.8 && hasMore) {
         setDisplayCount((prev) => prev + LOAD_MORE_COUNT);
       }
     };
@@ -352,7 +356,7 @@ export function ListView({
       scrollContainer.addEventListener('scroll', handleScroll);
       return () => scrollContainer.removeEventListener('scroll', handleScroll);
     }
-  }, [hasMore, isLoading]);
+  }, [hasMore]);
 
   function formatDate(date: string) {
     const dateObj = new Date(date);
@@ -412,21 +416,6 @@ export function ListView({
               : undefined
           }
         />
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="mt-2 flex h-full flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 flex-1" />
-        </div>
-        <div className="space-y-3">
-          {SKELETON_KEYS.map((key: string) => (
-            <Skeleton key={`loading-skeleton-${key}`} className="h-16 w-full" />
-          ))}
-        </div>
       </div>
     );
   }

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TaskDraft } from '@tuturuuu/types/db';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -19,6 +20,38 @@ const uuidString = z
 const convertSchema = z.object({
   listId: uuidString,
 });
+
+type DraftRelationField = Pick<
+  TaskDraft,
+  'assignee_ids' | 'label_ids' | 'project_ids'
+>[keyof Pick<TaskDraft, 'assignee_ids' | 'label_ids' | 'project_ids'>];
+
+function normalizeDraftRelationIds(
+  value: DraftRelationField,
+  fieldName: 'assignee_ids' | 'label_ids' | 'project_ids'
+) {
+  if (value == null) {
+    return { ids: [] as string[] };
+  }
+
+  if (!Array.isArray(value)) {
+    return { error: `Invalid ${fieldName} on draft` };
+  }
+
+  const ids: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string') {
+      return { error: `Invalid ${fieldName} on draft` };
+    }
+
+    const trimmed = entry.trim();
+    if (trimmed.length > 0) {
+      ids.push(trimmed);
+    }
+  }
+
+  return { ids };
+}
 
 export async function POST(
   request: NextRequest,
@@ -62,13 +95,16 @@ export async function POST(
     }
 
     // Fetch the draft
-    const { data: draft, error: draftError } = await sbAdmin
+    const draftResult = await sbAdmin
       .from('task_drafts')
       .select('*')
       .eq('id', draftId)
       .eq('ws_id', wsId)
       .eq('creator_id', user.id)
       .single();
+
+    const draft = draftResult.data as TaskDraft | null;
+    const draftError = draftResult.error;
 
     if (draftError || !draft) {
       return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
@@ -112,6 +148,31 @@ export async function POST(
       ? (draft.priority as ValidPriority)
       : undefined;
 
+    const normalizedAssigneeIds = normalizeDraftRelationIds(
+      draft.assignee_ids,
+      'assignee_ids'
+    );
+    const normalizedLabelIds = normalizeDraftRelationIds(
+      draft.label_ids,
+      'label_ids'
+    );
+    const normalizedProjectIds = normalizeDraftRelationIds(
+      draft.project_ids,
+      'project_ids'
+    );
+
+    const invalidDraftRelationError =
+      normalizedAssigneeIds.error ??
+      normalizedLabelIds.error ??
+      normalizedProjectIds.error;
+
+    if (invalidDraftRelationError) {
+      return NextResponse.json(
+        { error: invalidDraftRelationError },
+        { status: 400 }
+      );
+    }
+
     const newTask = await createTask(wsId, listId, {
       name: draft.name,
       description: draft.description || undefined,
@@ -119,17 +180,9 @@ export async function POST(
       start_date: draft.start_date || undefined,
       end_date: draft.end_date || undefined,
       estimation_points: draft.estimation_points ?? undefined,
-      assignee_ids: Array.isArray(draft.assignee_ids)
-        ? (draft.assignee_ids as string[])
-        : [],
-      label_ids: Array.isArray(draft.label_ids)
-        ? (draft.label_ids as string[])
-        : [],
-      project_ids: Array.isArray(
-        (draft as { project_ids?: unknown }).project_ids
-      )
-        ? (((draft as { project_ids?: unknown }).project_ids as string[]) ?? [])
-        : [],
+      assignee_ids: normalizedAssigneeIds.ids,
+      label_ids: normalizedLabelIds.ids,
+      project_ids: normalizedProjectIds.ids,
     });
 
     // Delete the draft

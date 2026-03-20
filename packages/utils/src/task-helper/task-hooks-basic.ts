@@ -197,6 +197,17 @@ export function useCreateTask(boardId: string, wsId?: string) {
     onError: (err, _, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      } else if (context?.optimisticTask) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            const nextTasks = old.filter(
+              (task) => task.id !== context.optimisticTask.id
+            );
+            return nextTasks.length > 0 ? nextTasks : undefined;
+          }
+        );
       }
 
       console.error('Failed to create task:', err);
@@ -277,6 +288,16 @@ export function useDeleteTask(boardId: string, wsId?: string) {
         queryClient.setQueryData(
           ['deleted-tasks', boardId],
           context.previousDeletedTasks
+        );
+      } else if (context?.deletedTask) {
+        const deletedTaskId = context.deletedTask.id;
+        queryClient.setQueryData(
+          ['deleted-tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            const nextTasks = old.filter((task) => task.id !== deletedTaskId);
+            return nextTasks.length > 0 ? nextTasks : undefined;
+          }
         );
       }
 

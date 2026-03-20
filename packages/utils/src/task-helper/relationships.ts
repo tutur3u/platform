@@ -25,6 +25,18 @@ import {
   normalizeTaskSearchValue,
 } from './shared';
 
+export type TaskRelationshipErrorCode =
+  | 'already_exists'
+  | 'single_parent'
+  | 'circular';
+
+export class TaskRelationshipError extends Error {
+  constructor(public readonly code: TaskRelationshipErrorCode) {
+    super(code);
+    this.name = 'TaskRelationshipError';
+  }
+}
+
 export async function getTaskRelationships(
   wsId: string,
   taskId: string
@@ -57,15 +69,13 @@ export async function createTaskRelationship(
       typedError.code === '23505' ||
       typedError.message?.includes('already exists')
     ) {
-      throw new Error('This relationship already exists.');
+      throw new TaskRelationshipError('already_exists');
     }
     if (typedError.message?.includes('single parent')) {
-      throw new Error('A task can only have one parent.');
+      throw new TaskRelationshipError('single_parent');
     }
     if (typedError.message?.includes('circular')) {
-      throw new Error(
-        'This would create a circular relationship, which is not allowed.'
-      );
+      throw new TaskRelationshipError('circular');
     }
     throw error;
   }
@@ -73,7 +83,6 @@ export async function createTaskRelationship(
 
 export async function deleteTaskRelationship(
   wsId: string,
-  relationshipId: string,
   relationship?: Pick<
     TaskRelationship,
     'source_task_id' | 'target_task_id' | 'type'
@@ -81,7 +90,7 @@ export async function deleteTaskRelationship(
 ): Promise<void> {
   if (!relationship) {
     throw new Error(
-      `deleteTaskRelationship now requires relationship details for id ${relationshipId}. Provide source_task_id, target_task_id, and type.`
+      'deleteTaskRelationship requires source_task_id, target_task_id, and type.'
     );
   }
 
@@ -118,21 +127,12 @@ export function useTaskRelationships(
   });
 }
 
-export function useCreateTaskRelationship(wsId: string, _boardId?: string) {
+export function useCreateTaskRelationship(wsId: string) {
   const queryClient = useQueryClient();
-  const baseUrl =
-    typeof window !== 'undefined' ? window.location.origin : undefined;
 
   return useMutation({
-    mutationFn: async (input: CreateTaskRelationshipInput) => {
-      const { relationship } = await createWorkspaceTaskRelationship(
-        wsId,
-        input.source_task_id,
-        input,
-        baseUrl ? { baseUrl } : undefined
-      );
-      return relationship;
-    },
+    mutationFn: async (input: CreateTaskRelationshipInput) =>
+      createTaskRelationship(wsId, input),
     onSuccess: async (_, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({
@@ -146,10 +146,8 @@ export function useCreateTaskRelationship(wsId: string, _boardId?: string) {
   });
 }
 
-export function useDeleteTaskRelationship(wsId: string, _boardId?: string) {
+export function useDeleteTaskRelationship(wsId: string) {
   const queryClient = useQueryClient();
-  const baseUrl =
-    typeof window !== 'undefined' ? window.location.origin : undefined;
 
   return useMutation({
     mutationFn: async ({
@@ -161,16 +159,11 @@ export function useDeleteTaskRelationship(wsId: string, _boardId?: string) {
       targetTaskId: string;
       type: TaskRelationshipType;
     }) => {
-      return deleteWorkspaceTaskRelationship(
-        wsId,
-        sourceTaskId,
-        {
-          source_task_id: sourceTaskId,
-          target_task_id: targetTaskId,
-          type,
-        },
-        baseUrl ? { baseUrl } : undefined
-      );
+      return deleteTaskRelationship(wsId, {
+        source_task_id: sourceTaskId,
+        target_task_id: targetTaskId,
+        type,
+      });
     },
     onSuccess: async (_, variables) => {
       await Promise.all([

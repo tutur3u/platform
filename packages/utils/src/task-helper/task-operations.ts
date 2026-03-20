@@ -159,20 +159,39 @@ export async function syncTaskArchivedStatus(
     return;
   }
 
-  const shouldArchive = list.status === 'done' || list.status === 'closed';
+  const updates: {
+    completed_at?: string | null;
+    closed_at?: string | null;
+  } = {};
 
-  if (!!task.closed_at !== shouldArchive) {
-    try {
-      const mutationOptions = options ?? (await getMutationApiOptions());
-      await updateWorkspaceTask(
-        wsId,
-        taskId,
-        { closed_at: shouldArchive ? new Date().toISOString() : null },
-        mutationOptions
-      );
-    } catch (updateError) {
-      console.error('Error syncing task archived status:', updateError);
+  if (list.status === 'done') {
+    if (!task.completed_at || task.closed_at) {
+      updates.completed_at = new Date().toISOString();
+      updates.closed_at = null;
     }
+  } else if (list.status === 'closed') {
+    if (!task.closed_at || task.completed_at) {
+      updates.closed_at = new Date().toISOString();
+      updates.completed_at = null;
+    }
+  } else {
+    if (task.completed_at) {
+      updates.completed_at = null;
+    }
+    if (task.closed_at) {
+      updates.closed_at = null;
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return;
+  }
+
+  try {
+    const mutationOptions = options ?? (await getMutationApiOptions());
+    await updateWorkspaceTask(wsId, taskId, updates, mutationOptions);
+  } catch (updateError) {
+    console.error('Error syncing task archived status:', updateError);
   }
 }
 

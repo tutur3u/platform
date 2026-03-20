@@ -2312,6 +2312,9 @@
     "task": "task",
     "task_duplicated_successfully": "Task duplicated successfully",
     "task_header": "Task",
+    "task_relationship_already_exists": "This relationship already exists.",
+    "task_relationship_circular": "This would create a circular relationship, which is not allowed.",
+    "task_relationship_single_parent": "A task can only have one parent.",
     "task_sharing": {
       "add_people": "Add people",
       "anyone_with_link_can_view": "Anyone with the link can view",

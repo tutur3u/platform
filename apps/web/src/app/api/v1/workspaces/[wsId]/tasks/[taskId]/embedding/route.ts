@@ -6,6 +6,7 @@ import {
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -32,15 +33,43 @@ export async function POST(request: Request, { params }: Params) {
 
     const supabase = await createClient(request);
     const { wsId: rawWsId, taskId } = await params;
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Check authentication
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const parsedTaskId = z.guid().safeParse(taskId);
+    if (!parsedTaskId.success) {
+      return NextResponse.json({ message: 'Invalid task ID' }, { status: 400 });
+    }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error(
+        'Error verifying workspace membership for embedding generation:',
+        membershipError
+      );
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const sbAdmin = await createAdminClient();
@@ -60,7 +89,7 @@ export async function POST(request: Request, { params }: Params) {
         )
       `
       )
-      .eq('id', taskId)
+      .eq('id', parsedTaskId.data)
       .eq('task_lists.workspace_boards.ws_id', wsId)
       .maybeSingle();
 
@@ -122,7 +151,7 @@ export async function POST(request: Request, { params }: Params) {
 
     return NextResponse.json({
       message: 'Embedding generated successfully',
-      taskId,
+      taskId: parsedTaskId.data,
     });
   } catch (error) {
     console.error('Error generating embedding:', error);

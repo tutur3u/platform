@@ -65,6 +65,7 @@ export function useKanbanDnd({
   // Refs for drag state
   const pickedUpTaskColumn = useRef<string | null>(null);
   const isDraggingRef = useRef(false);
+  const lastTargetListIdRef = useRef<string | null>(null);
 
   const queryClient = useQueryClient();
   // Use the extracted calculateSortKeyWithRetry helper
@@ -93,12 +94,26 @@ export function useKanbanDnd({
   // Initialize auto-scroll
   useAutoScroll(isDraggingRef, scrollContainerRef);
 
+  const resetDragState = useCallback((clearOptimisticUpdates = false) => {
+    setActiveColumn(null);
+    setActiveTask(null);
+    setHoverTargetListId(null);
+    setDragPreviewPosition(null);
+    pickedUpTaskColumn.current = null;
+    lastTargetListIdRef.current = null;
+    isDraggingRef.current = false;
+
+    if (clearOptimisticUpdates) {
+      setOptimisticUpdateInProgress(new Set());
+    }
+  }, []);
+
   const processDragOver = useCallback(
     (event: DragOverEvent) => {
       const { active, over } = event;
       if (!over) {
-        if ((processDragOver as any).lastTargetListId) {
-          (processDragOver as any).lastTargetListId = null;
+        if (lastTargetListIdRef.current) {
+          lastTargetListIdRef.current = null;
           setHoverTargetListId(null);
           setDragPreviewPosition(null);
         }
@@ -173,29 +188,22 @@ export function useKanbanDnd({
         if (!sourceListExists || !targetListExists) return;
 
         // Skip if target list unchanged for current drag set to avoid redundant cache writes
-        if ((processDragOver as any).lastTargetListId === targetListId) {
-          if (hoverTargetListId !== targetListId) {
-            setHoverTargetListId(targetListId);
-          }
+        if (lastTargetListIdRef.current === targetListId) {
           return;
         }
-        (processDragOver as any).lastTargetListId = targetListId;
-        setHoverTargetListId(targetListId);
+        lastTargetListIdRef.current = targetListId;
+        setHoverTargetListId((current) =>
+          current === targetListId ? current : targetListId
+        );
       }
     },
-    [columns, hoverTargetListId, taskHeightsRef, wsId]
+    [columns, taskHeightsRef, wsId]
   );
 
   // Global drag state reset on mouseup/touchend
   useEffect(() => {
     function handleGlobalPointerUp() {
-      setActiveColumn(null);
-      setActiveTask(null);
-      setHoverTargetListId(null);
-      setDragPreviewPosition(null);
-      pickedUpTaskColumn.current = null;
-      (processDragOver as any).lastTargetListId = null;
-      isDraggingRef.current = false;
+      resetDragState();
     }
     window.addEventListener('mouseup', handleGlobalPointerUp);
     window.addEventListener('touchend', handleGlobalPointerUp);
@@ -203,7 +211,7 @@ export function useKanbanDnd({
       window.removeEventListener('mouseup', handleGlobalPointerUp);
       window.removeEventListener('touchend', handleGlobalPointerUp);
     };
-  }, [processDragOver]);
+  }, [resetDragState]);
 
   // Capture drag start card left position
   function onDragStart(event: DragStartEvent) {
@@ -234,6 +242,7 @@ export function useKanbanDnd({
       }
 
       pickedUpTaskColumn.current = String(task.list_id);
+      lastTargetListIdRef.current = String(task.list_id);
       setHoverTargetListId(String(task.list_id));
       return;
     }
@@ -251,37 +260,19 @@ export function useKanbanDnd({
 
     if (!over) {
       // Reset drag state only on invalid drop
-      setActiveColumn(null);
-      setActiveTask(null);
-      setHoverTargetListId(null);
-      setDragPreviewPosition(null);
-      pickedUpTaskColumn.current = null;
-      (processDragOver as any).lastTargetListId = null;
-      setOptimisticUpdateInProgress(new Set());
+      resetDragState(true);
       return;
     }
 
     const activeType = active.data?.current?.type;
 
     if (!activeType) {
-      setActiveColumn(null);
-      setActiveTask(null);
-      setHoverTargetListId(null);
-      setDragPreviewPosition(null);
-      pickedUpTaskColumn.current = null;
-      (processDragOver as any).lastTargetListId = null;
-      setOptimisticUpdateInProgress(new Set());
+      resetDragState(true);
       return;
     }
 
     if (activeType === 'Task' && !wsId) {
-      setActiveColumn(null);
-      setActiveTask(null);
-      setHoverTargetListId(null);
-      setDragPreviewPosition(null);
-      pickedUpTaskColumn.current = null;
-      (processDragOver as any).lastTargetListId = null;
-      setOptimisticUpdateInProgress(new Set());
+      resetDragState(true);
       return;
     }
 
@@ -376,7 +367,7 @@ export function useKanbanDnd({
       setHoverTargetListId(null);
       setDragPreviewPosition(null);
       pickedUpTaskColumn.current = null;
-      (processDragOver as any).lastTargetListId = null;
+      lastTargetListIdRef.current = null;
       setOptimisticUpdateInProgress(new Set());
       return;
     }
@@ -385,13 +376,7 @@ export function useKanbanDnd({
       const activeTask = active.data?.current?.task;
 
       if (!activeTask) {
-        setActiveColumn(null);
-        setActiveTask(null);
-        setHoverTargetListId(null);
-        setDragPreviewPosition(null);
-        pickedUpTaskColumn.current = null;
-        (processDragOver as any).lastTargetListId = null;
-        setOptimisticUpdateInProgress(new Set());
+        resetDragState(true);
         return;
       }
 
@@ -404,48 +389,24 @@ export function useKanbanDnd({
         // When dropping on a task, use the list_id of the target task
         const targetTask = over.data?.current?.task;
         if (!targetTask) {
-          setActiveColumn(null);
-          setActiveTask(null);
-          setHoverTargetListId(null);
-          setDragPreviewPosition(null);
-          pickedUpTaskColumn.current = null;
-          (processDragOver as any).lastTargetListId = null;
-          setOptimisticUpdateInProgress(new Set());
+          resetDragState(true);
           return;
         }
         targetListId = String(targetTask.list_id);
       } else if (overType === 'ColumnSurface') {
         const columnId = over.data?.current?.columnId || over.id;
         if (!columnId) {
-          setActiveColumn(null);
-          setActiveTask(null);
-          setHoverTargetListId(null);
-          setDragPreviewPosition(null);
-          pickedUpTaskColumn.current = null;
-          (processDragOver as any).lastTargetListId = null;
-          setOptimisticUpdateInProgress(new Set());
+          resetDragState(true);
           return;
         }
         targetListId = String(columnId);
       } else {
-        setActiveColumn(null);
-        setActiveTask(null);
-        setHoverTargetListId(null);
-        setDragPreviewPosition(null);
-        pickedUpTaskColumn.current = null;
-        (processDragOver as any).lastTargetListId = null;
-        setOptimisticUpdateInProgress(new Set());
+        resetDragState(true);
         return;
       }
 
       if (!originalListId) {
-        setActiveColumn(null);
-        setActiveTask(null);
-        setHoverTargetListId(null);
-        setDragPreviewPosition(null);
-        pickedUpTaskColumn.current = null;
-        (processDragOver as any).lastTargetListId = null;
-        setOptimisticUpdateInProgress(new Set());
+        resetDragState(true);
         return;
       }
 
@@ -457,13 +418,7 @@ export function useKanbanDnd({
       );
 
       if (!sourceListExists || !targetListExists) {
-        setActiveColumn(null);
-        setActiveTask(null);
-        setHoverTargetListId(null);
-        setDragPreviewPosition(null);
-        pickedUpTaskColumn.current = null;
-        (processDragOver as any).lastTargetListId = null;
-        setOptimisticUpdateInProgress(new Set());
+        resetDragState(true);
         return;
       }
 
@@ -532,13 +487,7 @@ export function useKanbanDnd({
           }
         } catch (error) {
           console.error('Failed to calculate sort key:', error);
-          setActiveColumn(null);
-          setActiveTask(null);
-          setHoverTargetListId(null);
-          setDragPreviewPosition(null);
-          pickedUpTaskColumn.current = null;
-          (processDragOver as any).lastTargetListId = null;
-          setOptimisticUpdateInProgress(new Set());
+          resetDragState(true);
           return;
         }
       } else if (overType === 'Task') {
@@ -611,13 +560,7 @@ export function useKanbanDnd({
           }
         } catch (error) {
           console.error('Failed to calculate sort key:', error);
-          setActiveColumn(null);
-          setActiveTask(null);
-          setHoverTargetListId(null);
-          setDragPreviewPosition(null);
-          pickedUpTaskColumn.current = null;
-          (processDragOver as any).lastTargetListId = null;
-          setOptimisticUpdateInProgress(new Set());
+          resetDragState(true);
           return;
         }
       } else {
@@ -648,13 +591,7 @@ export function useKanbanDnd({
           }
         } catch (error) {
           console.error('Failed to calculate sort key:', error);
-          setActiveColumn(null);
-          setActiveTask(null);
-          setHoverTargetListId(null);
-          setDragPreviewPosition(null);
-          pickedUpTaskColumn.current = null;
-          (processDragOver as any).lastTargetListId = null;
-          setOptimisticUpdateInProgress(new Set());
+          resetDragState(true);
           return;
         }
       }
@@ -852,13 +789,7 @@ export function useKanbanDnd({
               'Failed to calculate sort keys for batch move:',
               error
             );
-            setActiveColumn(null);
-            setActiveTask(null);
-            setHoverTargetListId(null);
-            setDragPreviewPosition(null);
-            pickedUpTaskColumn.current = null;
-            (processDragOver as any).lastTargetListId = null;
-            setOptimisticUpdateInProgress(new Set());
+            resetDragState(true);
             return;
           }
 
@@ -887,22 +818,10 @@ export function useKanbanDnd({
         }
 
         requestAnimationFrame(() => {
-          setActiveColumn(null);
-          setActiveTask(null);
-          setHoverTargetListId(null);
-          setDragPreviewPosition(null);
-          pickedUpTaskColumn.current = null;
-          (processDragOver as any).lastTargetListId = null;
-          setOptimisticUpdateInProgress(new Set());
+          resetDragState(true);
         });
       } else {
-        setActiveColumn(null);
-        setActiveTask(null);
-        setHoverTargetListId(null);
-        setDragPreviewPosition(null);
-        pickedUpTaskColumn.current = null;
-        (processDragOver as any).lastTargetListId = null;
-        setOptimisticUpdateInProgress(new Set());
+        resetDragState(true);
       }
     }
   }

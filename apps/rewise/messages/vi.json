@@ -2217,6 +2217,9 @@
     "task": "công việc",
     "task_duplicated_successfully": "Đã nhân bản công việc thành công",
     "task_header": "Công việc",
+    "task_relationship_already_exists": "Mối quan hệ này đã tồn tại.",
+    "task_relationship_circular": "Thao tác này sẽ tạo ra mối quan hệ vòng lặp, điều này không được phép.",
+    "task_relationship_single_parent": "Một công việc chỉ có thể có một công việc cha.",
     "task_sharing": {
       "add_people": "Thêm người",
       "anyone_with_link_can_view": "Bất kỳ ai có liên kết đều có thể xem",
