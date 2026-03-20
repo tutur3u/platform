@@ -1935,6 +1935,8 @@
     "archive_whiteboard_title": "Lưu trữ bảng trắng",
     "archived": "Đã lưu trữ",
     "archived_boards": "Bảng đã lưu trữ",
+    "archived_tasks_partially": "{moved, plural, one {Đã lưu trữ 1 công việc} other {Đã lưu trữ # công việc}}, {failed, plural, one {1 công việc thất bại} other {# công việc thất bại}}",
+    "archived_tasks_successfully": "{count, plural, one {Đã lưu trữ thành công 1 công việc} other {Đã lưu trữ thành công # công việc}}",
     "archived_whiteboards": "Bảng trắng đã lưu trữ",
     "archiving": "Đang lưu trữ...",
     "are_you_sure": "Bạn có chắc chắn không?",

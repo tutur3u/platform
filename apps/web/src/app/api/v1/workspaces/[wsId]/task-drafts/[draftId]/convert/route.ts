@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { createTask } from '@tuturuuu/utils/task-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -24,9 +25,10 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string; draftId: string }> }
 ) {
   try {
-    const { wsId, draftId } = await params;
-    const supabase = await createClient();
+    const { wsId: rawWsId, draftId } = await params;
+    const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -36,12 +38,23 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error(
+        'Failed to verify workspace membership for draft conversion:',
+        membershipError
+      );
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -105,43 +118,18 @@ export async function POST(
       start_date: draft.start_date || undefined,
       end_date: draft.end_date || undefined,
       estimation_points: draft.estimation_points ?? undefined,
+      assignee_ids: Array.isArray(draft.assignee_ids)
+        ? (draft.assignee_ids as string[])
+        : [],
+      label_ids: Array.isArray(draft.label_ids)
+        ? (draft.label_ids as string[])
+        : [],
+      project_ids: Array.isArray(
+        (draft as { project_ids?: unknown }).project_ids
+      )
+        ? (((draft as { project_ids?: unknown }).project_ids as string[]) ?? [])
+        : [],
     });
-
-    // Add assignees one by one to ensure triggers fire
-    const assigneeIds = (draft.assignee_ids as string[]) || [];
-    for (const userId of assigneeIds) {
-      const { error } = await supabase.from('task_assignees').insert({
-        task_id: newTask.id,
-        user_id: userId,
-      });
-      if (error) {
-        console.error(`Failed to add assignee ${userId}:`, error);
-      }
-    }
-
-    // Add labels one by one to ensure triggers fire
-    const labelIds = (draft.label_ids as string[]) || [];
-    for (const labelId of labelIds) {
-      const { error } = await supabase.from('task_labels').insert({
-        task_id: newTask.id,
-        label_id: labelId,
-      });
-      if (error) {
-        console.error(`Failed to add label ${labelId}:`, error);
-      }
-    }
-
-    // Add projects one by one to ensure triggers fire
-    const projectIds = ((draft as any).project_ids as string[]) || [];
-    for (const projectId of projectIds) {
-      const { error } = await supabase.from('task_project_tasks').insert({
-        task_id: newTask.id,
-        project_id: projectId,
-      });
-      if (error) {
-        console.error(`Failed to add project ${projectId}:`, error);
-      }
-    }
 
     // Delete the draft
     await sbAdmin

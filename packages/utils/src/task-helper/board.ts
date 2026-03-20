@@ -85,7 +85,7 @@ export function useCreateBoardWithTemplate(wsId: string) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });
+      queryClient.invalidateQueries({ queryKey: ['boards', wsId] });
     },
     onError: (error) => {
       console.error('Error creating board:', error);
@@ -173,6 +173,9 @@ export function useBoardConfig(
 
       const payload = await getWorkspaceTaskBoardFromApi(wsId, boardId);
       const board = payload.board;
+      if (!board) {
+        return null;
+      }
 
       return {
         id: board.id,

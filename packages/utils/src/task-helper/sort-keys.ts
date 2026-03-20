@@ -16,7 +16,7 @@ export function priorityCompare(
   };
 
   const getOrderValue = (priority: TaskPriority | null | undefined): number => {
-    return priority ? priorityOrder[priority] : 5;
+    return priority ? priorityOrder[priority] : 0;
   };
 
   const valueA = getOrderValue(priorityA);
@@ -261,14 +261,19 @@ export async function normalizeListSortKeys(
 
   const options = await getMutationApiOptions();
 
-  await Promise.all(
-    updates.map((update) =>
-      updateWorkspaceTask(
-        wsId,
-        update.id,
-        { sort_key: update.sort_key },
-        options
+  const concurrency = 5;
+
+  for (let index = 0; index < updates.length; index += concurrency) {
+    const chunk = updates.slice(index, index + concurrency);
+    await Promise.all(
+      chunk.map((update) =>
+        updateWorkspaceTask(
+          wsId,
+          update.id,
+          { sort_key: update.sort_key },
+          options
+        )
       )
-    )
-  );
+    );
+  }
 }

@@ -235,12 +235,10 @@ export async function GET(
       .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId);
 
     if (includeDeletedMode === 'none') {
-      query = query.is('deleted_at', null);
+      query = query.is('deleted_at', null).eq('task_lists.deleted', false);
     } else if (includeDeletedMode === 'only') {
       query = query.not('deleted_at', 'is', null);
     }
-
-    query = query.eq('task_lists.deleted', false);
 
     if (forTimeTracking) {
       query = query

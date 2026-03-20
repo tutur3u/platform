@@ -8,6 +8,13 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { getBrowserApiOptions, listAllActiveTasksForList } from './shared';
 import { moveTaskToBoard } from './task-operations';
 
+type MoveAllTasksResult = {
+  success: true;
+  movedCount: number;
+  movedTaskIds: string[];
+  failedTaskIds: string[];
+};
+
 export function useMoveAllTasksFromList(
   currentBoardId: string,
   wsId?: string,
@@ -31,7 +38,12 @@ export function useMoveAllTasksFromList(
 
       const tasksToMove = await listAllActiveTasksForList(wsId, sourceListId);
       if (tasksToMove.length === 0) {
-        return { success: true, movedCount: 0, movedTaskIds: [] as string[] };
+        return {
+          success: true,
+          movedCount: 0,
+          movedTaskIds: [] as string[],
+          failedTaskIds: [] as string[],
+        } satisfies MoveAllTasksResult;
       }
 
       const results = [] as {
@@ -60,10 +72,13 @@ export function useMoveAllTasksFromList(
       const movedTaskIds = results
         .filter((result) => result.status === 'fulfilled')
         .map((result) => result.taskId);
+      const failedTaskIds = results
+        .filter((result) => result.status === 'rejected')
+        .map((result) => result.taskId);
 
-      if (movedTaskIds.length !== tasksToMove.length) {
+      if (movedTaskIds.length === 0) {
         throw new Error(
-          `Failed to move ${tasksToMove.length - movedTaskIds.length} out of ${tasksToMove.length} tasks`
+          `Failed to move all ${tasksToMove.length} tasks from list ${sourceListId}`
         );
       }
 
@@ -71,7 +86,8 @@ export function useMoveAllTasksFromList(
         success: true,
         movedCount: movedTaskIds.length,
         movedTaskIds,
-      };
+        failedTaskIds,
+      } satisfies MoveAllTasksResult;
     },
     onMutate: async ({ sourceListId, targetListId, targetBoardId }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', currentBoardId] });
@@ -176,6 +192,7 @@ export function useMoveAllTasksFromList(
         }
       }
 
+      queryClient.invalidateQueries({ queryKey: ['tasks', currentBoardId] });
       queryClient.invalidateQueries({
         queryKey: ['task_lists', currentBoardId],
       });
@@ -183,6 +200,9 @@ export function useMoveAllTasksFromList(
         variables.targetBoardId &&
         variables.targetBoardId !== currentBoardId
       ) {
+        queryClient.invalidateQueries({
+          queryKey: ['tasks', variables.targetBoardId],
+        });
         queryClient.invalidateQueries({
           queryKey: ['task_lists', variables.targetBoardId],
         });
@@ -200,7 +220,12 @@ export async function moveAllTasksFromList(
   const tasksToMove = await listAllActiveTasksForList(wsId, sourceListId);
 
   if (!tasksToMove || tasksToMove.length === 0) {
-    return { success: true, movedCount: 0, movedTaskIds: [] as string[] };
+    return {
+      success: true,
+      movedCount: 0,
+      movedTaskIds: [] as string[],
+      failedTaskIds: [] as string[],
+    } satisfies MoveAllTasksResult;
   }
 
   const results: {
@@ -226,16 +251,23 @@ export async function moveAllTasksFromList(
   ).length;
 
   const failed = results.length - successful;
-
-  if (failed > 0) {
-    throw new Error(`Failed to move ${failed} out of ${results.length} tasks`);
-  }
-
   const movedTaskIds = results
     .filter((result) => result.status === 'fulfilled' && result.value)
     .map((result) => result.value!.taskId);
+  const failedTaskIds = tasksToMove
+    .map((task) => task.id)
+    .filter((taskId) => !movedTaskIds.includes(taskId));
 
-  return { success: true, movedCount: successful, movedTaskIds };
+  if (successful === 0) {
+    throw new Error(`Failed to move ${failed} out of ${results.length} tasks`);
+  }
+
+  return {
+    success: true,
+    movedCount: successful,
+    movedTaskIds,
+    failedTaskIds,
+  } satisfies MoveAllTasksResult;
 }
 
 export function useClearAllAssigneesFromList(boardId: string, wsId?: string) {

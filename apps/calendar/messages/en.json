@@ -1692,6 +1692,8 @@
     "archive_tasks_confirmation": "Are you sure you want to archive all {count} task(s) from this list? They will be moved to the archive.",
     "archived": "Archived",
     "archived_boards": "Archived Boards",
+    "archived_tasks_partially": "{moved, plural, one {Archived 1 task} other {Archived # tasks}}, {failed, plural, one {1 task failed} other {# tasks failed}}",
+    "archived_tasks_successfully": "{count, plural, one {Archived 1 task successfully} other {Archived # tasks successfully}}",
     "archiving": "Archiving...",
     "are_you_sure": "Are you sure?",
     "ascending": "Ascending",

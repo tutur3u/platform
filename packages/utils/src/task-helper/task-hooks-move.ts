@@ -42,7 +42,7 @@ export function useMoveTask(boardId: string, wsId?: string) {
           return old.map((task) => {
             if (task.id === taskId) {
               const targetList = queryClient.getQueryData([
-                'task-lists',
+                'task_lists',
                 boardId,
               ]) as TaskList[] | undefined;
               const list = targetList?.find((l) => l.id === newListId);

@@ -36,6 +36,7 @@ interface WorkspaceMember {
 interface BulkOperationsConfig {
   queryClient: QueryClient;
   supabase: SupabaseClient;
+  wsId: string;
   boardId: string;
   selectedTasks: Set<string>;
   columns: TaskList[];
@@ -444,6 +445,7 @@ function useBulkUpdateCustomDueDate(
  */
 function useBulkMoveToBoard(
   queryClient: QueryClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -472,7 +474,7 @@ function useBulkMoveToBoard(
       for (const taskId of taskIds) {
         try {
           const result = await moveTaskToBoard(
-            boardId,
+            wsId,
             taskId,
             targetListId,
             targetBoardId
@@ -549,7 +551,7 @@ function useBulkMoveToBoard(
         );
       }
 
-      return { previousTasks, previousTargetTasks };
+      return { previousTasks, previousTargetTasks, tasksToMove };
     },
     onError: (error, variables, context) => {
       // Rollback both boards
@@ -565,12 +567,31 @@ function useBulkMoveToBoard(
       console.error('Bulk move to board failed', error);
       toast.error('Failed to move selected tasks to another board');
     },
-    onSuccess: (data) => {
+    onSuccess: (data, _variables, context) => {
       console.log(
         `✅ Moved ${data.count} tasks to board ${data.targetBoardId}`
       );
+      const movedIds = new Set(data.movedTasks.map((task) => task.id));
+      const failedTasks = (context?.tasksToMove ?? []).filter(
+        (task) => !movedIds.has(task.id)
+      );
+
+      if (failedTasks.length > 0) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            const existing = old ?? [];
+            const failedIdSet = new Set(failedTasks.map((task) => task.id));
+            const preserved = existing.filter(
+              (task) => !failedIdSet.has(task.id)
+            );
+            return [...preserved, ...failedTasks];
+          }
+        );
+      }
+
       // Broadcast task deletion from source board
-      for (const tid of data.taskIds) {
+      for (const tid of data.movedTasks.map((task) => task.id)) {
         broadcast?.('task:delete', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
@@ -588,16 +609,23 @@ function useBulkMoveToBoard(
         queryClient.setQueryData(
           ['tasks', data.targetBoardId],
           (old: Task[] | undefined) => {
-            if (!old) return [data.movedTasks];
+            if (!old) return data.movedTasks;
 
             // Remove any optimistic versions and add real ones
-            const movedIds = new Set(data.movedTasks.map((t) => t.id));
-            const filteredOld = old.filter((t) => !movedIds.has(t.id));
+            const failedIds = new Set(failedTasks.map((task) => task.id));
+            const filteredOld = old.filter(
+              (task) => !movedIds.has(task.id) && !failedIds.has(task.id)
+            );
 
             return [...filteredOld, ...data.movedTasks];
           }
         );
       }
+
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+      queryClient.invalidateQueries({
+        queryKey: ['tasks', data.targetBoardId],
+      });
     },
   });
 }
@@ -1795,6 +1823,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   const {
     queryClient,
     supabase,
+    wsId,
     boardId,
     selectedTasks,
     columns,
@@ -1916,6 +1945,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   );
   const moveToBoardMutation = useBulkMoveToBoard(
     queryClient,
+    wsId,
     boardId,
     broadcast
   );

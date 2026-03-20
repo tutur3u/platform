@@ -1,5 +1,9 @@
 import { google } from '@ai-sdk/google';
-import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -14,7 +18,7 @@ interface Params {
  * Generate and update embedding for a specific task
  * Requires GOOGLE_GENERATIVE_AI_API_KEY to be set
  */
-export async function POST(_: Request, { params }: Params) {
+export async function POST(request: Request, { params }: Params) {
   try {
     // Check if API key is available
     const hasApiKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -26,8 +30,9 @@ export async function POST(_: Request, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
-    const { taskId } = await params;
+    const supabase = await createClient(request);
+    const { wsId: rawWsId, taskId } = await params;
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Check authentication
     const {
@@ -43,11 +48,31 @@ export async function POST(_: Request, { params }: Params) {
     // Fetch the task
     const { data: task, error: fetchError } = await sbAdmin
       .from('tasks')
-      .select('id, name, description')
+      .select(
+        `
+        id,
+        name,
+        description,
+        task_lists!inner(
+          workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+      )
       .eq('id', taskId)
-      .single();
+      .eq('task_lists.workspace_boards.ws_id', wsId)
+      .maybeSingle();
 
-    if (fetchError || !task) {
+    if (fetchError) {
+      console.error('Error loading task for embedding generation:', fetchError);
+      return NextResponse.json(
+        { message: 'Failed to load task' },
+        { status: 500 }
+      );
+    }
+
+    if (!task) {
       return NextResponse.json({ message: 'Task not found' }, { status: 404 });
     }
 
@@ -85,7 +110,7 @@ export async function POST(_: Request, { params }: Params) {
     const { error: updateError } = await sbAdmin
       .from('tasks')
       .update({ embedding: JSON.stringify(embedding) })
-      .eq('id', taskId);
+      .eq('id', task.id);
 
     if (updateError) {
       console.error('Error updating task embedding:', updateError);

@@ -20,6 +20,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 - **Type Integrity**: Always run `bun sb:typegen` after schema changes. **Prefer** importing types from `packages/types/src/db.ts`.
 - **Bilingual Support**: ALWAYS provide translations for both English (en.json) AND Vietnamese (vi.json) for all user-facing strings.
+- **Shared UI Translation Parity**: When adding new translation keys consumed from shared packages like `packages/ui` (for example `common.*` keys), update every app-level `messages/en.json` and `messages/vi.json` bundle that ships that shared UI, and keep the message files alphabetically sorted.
 - **Navigation Parity**: ALWAYS update `navigation.tsx` in the relevant app when adding new routes (aliases + children + icons + permissions).
 - **Proactive Refactoring**: Evaluate files >400 LOC and components >200 LOC for extraction into smaller, focused units.
 - **Unified Verification**: Always end your session with a `bun check`. Ensure all checks pass (you may ignore ones that were not introduced by you). For mobile changes, run `bun check:mobile`.

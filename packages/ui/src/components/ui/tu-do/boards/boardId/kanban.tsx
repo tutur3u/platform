@@ -172,6 +172,7 @@ export function KanbanBoard({
   const bulkOps = useBulkOperations({
     queryClient,
     supabase,
+    wsId: workspaceId,
     boardId: boardId ?? '',
     selectedTasks,
     columns,

@@ -153,6 +153,7 @@ export function ListView({
   const { bulkUpdateDueDate, bulkUpdatePriority } = useBulkOperations({
     queryClient,
     supabase,
+    wsId: workspaceId,
     boardId,
     selectedTasks,
     columns: lists,

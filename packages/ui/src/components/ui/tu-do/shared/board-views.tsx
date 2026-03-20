@@ -604,7 +604,7 @@ export function BoardViews({
       <RecycleBinPanel
         open={recycleBinOpen}
         onOpenChange={setRecycleBinOpen}
-        wsId={board.ws_id}
+        wsId={board.ws_id ?? workspace.id}
         boardId={board.id}
         lists={lists}
         translations={{

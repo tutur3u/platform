@@ -32,10 +32,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import {
-  useMoveAllTasksFromList,
-  useMoveTask,
-} from '@tuturuuu/utils/task-helper';
+import { useMoveAllTasksFromList } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
@@ -74,7 +71,6 @@ export function ListActions({
 
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
-  const moveTaskMutation = useMoveTask(boardId, wsId);
   const moveAllTasksFromListMutation = useMoveAllTasksFromList(
     boardId,
     wsId,
@@ -150,7 +146,12 @@ export function ListActions({
   const archiveAllTasksMutation = useMutation({
     mutationFn: async () => {
       if (!wsId || !boardId || tasks.length === 0) {
-        return [] as Task[];
+        return {
+          success: true,
+          movedCount: 0,
+          movedTaskIds: [] as string[],
+          failedTaskIds: [] as string[],
+        };
       }
 
       const options = {
@@ -178,32 +179,24 @@ export function ListActions({
             )
           ).list.id;
 
-      const movedTasks: Task[] = [];
-      for (const task of tasks) {
-        const updatedTask = await moveTaskMutation.mutateAsync({
-          taskId: task.id,
-          newListId: closedListId,
-        });
-        movedTasks.push(updatedTask);
-      }
-
-      return movedTasks;
+      return moveAllTasksFromListMutation.mutateAsync({
+        sourceListId: listId,
+        targetListId: closedListId,
+      });
     },
-    onSuccess: (movedTasks) => {
-      for (const updatedTask of movedTasks) {
-        broadcast?.('task:upsert', {
-          task: {
-            id: updatedTask.id,
-            list_id: updatedTask.list_id,
-            completed_at: updatedTask.completed_at,
-            closed_at: updatedTask.closed_at,
-          },
-        });
-      }
-
-      if (movedTasks.length > 0) {
+    onSuccess: (result) => {
+      if (result.movedCount > 0 && result.failedTaskIds.length > 0) {
+        toast.warning(
+          t('archived_tasks_partially', {
+            moved: result.movedCount,
+            failed: result.failedTaskIds.length,
+          })
+        );
+      } else if (result.movedCount > 0) {
         toast.success(
-          `Successfully moved ${movedTasks.length} task${movedTasks.length !== 1 ? 's' : ''} to archive.`
+          t('archived_tasks_successfully', {
+            count: result.movedCount,
+          })
         );
       }
 

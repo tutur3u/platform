@@ -37,8 +37,8 @@ export function useUpdateTask(boardId: string, wsId?: string) {
 
       let blockedTaskIdsPromise: Promise<string[]> | null = null;
       if (
-        (updates.completed_at !== undefined && updates.completed_at !== null) ||
-        (updates.closed_at !== undefined && updates.closed_at !== null)
+        updates.completed_at !== undefined ||
+        updates.closed_at !== undefined
       ) {
         if (wsId) {
           blockedTaskIdsPromise = Promise.resolve(
@@ -145,6 +145,7 @@ export function useCreateTask(boardId: string, wsId?: string) {
         {
           name: task.name.trim(),
           description: task.description || null,
+          description_yjs_state: task.description_yjs_state ?? null,
           listId,
           priority: task.priority || null,
           start_date: task.start_date || null,

@@ -149,12 +149,13 @@ export async function invalidateTaskCaches(
 export async function syncTaskArchivedStatus(
   wsId: string,
   taskId: string,
-  listId: string
+  listId: string,
+  options?: InternalApiClientOptions
 ) {
-  const options = getBrowserApiOptions();
+  const clientOptions = options ?? getBrowserApiOptions();
   const [{ boards }, { task }] = await Promise.all([
-    listWorkspaceBoardsWithLists(wsId, options),
-    getWorkspaceTask(wsId, taskId, options),
+    listWorkspaceBoardsWithLists(wsId, clientOptions),
+    getWorkspaceTask(wsId, taskId, clientOptions),
   ]);
 
   const list = boards
@@ -170,7 +171,7 @@ export async function syncTaskArchivedStatus(
 
   if (!!task.closed_at !== shouldArchive) {
     try {
-      const mutationOptions = await getMutationApiOptions();
+      const mutationOptions = options ?? (await getMutationApiOptions());
       await updateWorkspaceTask(
         wsId,
         taskId,
@@ -189,7 +190,7 @@ export async function moveTask(
   newListId: string,
   options?: InternalApiClientOptions
 ) {
-  const { task } = await updateWorkspaceTask(
+  await updateWorkspaceTask(
     wsId,
     taskId,
     {
@@ -198,6 +199,9 @@ export async function moveTask(
     options
   );
 
+  await syncTaskArchivedStatus(wsId, taskId, newListId, options);
+
+  const { task } = await getWorkspaceTask(wsId, taskId, options);
   return task as Task;
 }
 
