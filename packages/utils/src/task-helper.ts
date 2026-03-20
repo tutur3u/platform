@@ -2941,51 +2941,69 @@ export async function getWorkspaceTasks(
   const collected: RelatedTaskInfo[] = [];
   const seenTaskIds = new Set<string>();
 
-  const { tasks } = await listWorkspaceTasks(
-    wsId,
-    {
-      q: ticketLikeSearch ? undefined : options?.searchQuery,
-      limit: requestLimit,
-    },
+  const clientOptions =
     typeof window !== 'undefined'
       ? { baseUrl: window.location.origin }
-      : undefined
-  );
+      : undefined;
 
-  for (const task of tasks ?? []) {
-    if (excluded.has(task.id) || seenTaskIds.has(task.id)) {
-      continue;
+  let offset = 0;
+  while (true) {
+    const { tasks } = await listWorkspaceTasks(
+      wsId,
+      {
+        q: ticketLikeSearch ? undefined : options?.searchQuery,
+        limit: requestLimit,
+        offset,
+      },
+      clientOptions
+    );
+
+    const pageTasks = tasks ?? [];
+    if (pageTasks.length === 0) {
+      break;
     }
 
-    if (normalizedSearch) {
-      const taskName = normalizeTaskSearchValue(task.name ?? '');
-      const taskIdentifier = normalizeTaskSearchValue(
-        getTaskIdentifierForSearch(task) ?? ''
-      );
-
-      if (
-        !taskName.includes(normalizedSearch) &&
-        !taskIdentifier.includes(normalizedSearch)
-      ) {
+    for (const task of pageTasks) {
+      if (excluded.has(task.id) || seenTaskIds.has(task.id)) {
         continue;
+      }
+
+      if (normalizedSearch) {
+        const taskName = normalizeTaskSearchValue(task.name ?? '');
+        const taskIdentifier = normalizeTaskSearchValue(
+          getTaskIdentifierForSearch(task) ?? ''
+        );
+
+        if (
+          !taskName.includes(normalizedSearch) &&
+          !taskIdentifier.includes(normalizedSearch)
+        ) {
+          continue;
+        }
+      }
+
+      seenTaskIds.add(task.id);
+      collected.push({
+        id: task.id,
+        name: task.name,
+        display_number: task.display_number,
+        ticket_prefix: task.ticket_prefix ?? null,
+        completed: !!task.closed_at || !!task.completed_at,
+        priority: isTaskPriority(task.priority) ? task.priority : null,
+        board_id: task.board_id ?? null,
+        board_name: task.board_name,
+      });
+
+      if (collected.length >= targetLimit) {
+        return collected;
       }
     }
 
-    seenTaskIds.add(task.id);
-    collected.push({
-      id: task.id,
-      name: task.name,
-      display_number: task.display_number,
-      ticket_prefix: task.ticket_prefix ?? null,
-      completed: !!task.closed_at || !!task.completed_at,
-      priority: isTaskPriority(task.priority) ? task.priority : null,
-      board_id: task.board_id ?? null,
-      board_name: task.board_name,
-    });
-
-    if (collected.length >= targetLimit) {
+    if (pageTasks.length < requestLimit) {
       break;
     }
+
+    offset += requestLimit;
   }
 
   return collected;

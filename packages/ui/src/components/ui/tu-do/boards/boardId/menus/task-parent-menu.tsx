@@ -65,6 +65,12 @@ export function TaskParentMenu({
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isSubmenuOpen, setIsSubmenuOpen] = React.useState(false);
   const [debouncedSearch] = useDebounce(searchQuery, 300);
+  const trimmedSearchQuery = searchQuery.trim();
+  const trimmedDebouncedSearch = debouncedSearch.trim();
+  const isSearchSynced =
+    trimmedSearchQuery.length === 0
+      ? trimmedDebouncedSearch.length === 0
+      : trimmedDebouncedSearch === trimmedSearchQuery;
   const parentTaskIdentifier = parentTask
     ? formatRelationshipTaskIdentifier(parentTask)
     : null;
@@ -85,10 +91,12 @@ export function TaskParentMenu({
     isError: tasksError,
   } = useWorkspaceTasks(wsId, {
     excludeTaskIds: excludeIds,
-    searchQuery: debouncedSearch || undefined,
+    searchQuery: trimmedDebouncedSearch || undefined,
     limit: 30,
-    enabled: isSubmenuOpen,
+    enabled: isSubmenuOpen && isSearchSynced,
   });
+  const shouldShowLoading = isSubmenuOpen && (!isSearchSynced || tasksLoading);
+  const visibleTasks = isSearchSynced ? tasks : [];
 
   // Reset search when menu closes
   const handleSubContentOpenChange = React.useCallback(
@@ -153,7 +161,7 @@ export function TaskParentMenu({
             className="h-9"
           />
           <CommandList className="max-h-62.5">
-            {tasksLoading ? (
+            {shouldShowLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
@@ -161,7 +169,7 @@ export function TaskParentMenu({
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
                 {translations.error_loading_tasks}
               </CommandEmpty>
-            ) : tasks.length === 0 ? (
+            ) : visibleTasks.length === 0 ? (
               <CommandEmpty className="py-4 text-center text-muted-foreground text-xs">
                 {searchQuery ? (
                   <>
@@ -174,7 +182,7 @@ export function TaskParentMenu({
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {tasks.map((task) => {
+                {visibleTasks.map((task) => {
                   const taskIdentifier = formatRelationshipTaskIdentifier(task);
                   return (
                     <CommandItem
