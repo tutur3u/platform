@@ -7,7 +7,10 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceAiModelFavorites,
+  toggleWorkspaceAiModelFavorite,
+} from '@tuturuuu/internal-api/ai';
 import type { AIModelUI } from '@tuturuuu/types';
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -30,14 +33,8 @@ import type { ModelFavoriteToggleHandler } from './types';
 import { useSortedProviderList } from './use-provider-logo-availability';
 
 async function fetchFavorites(wsId: string): Promise<Set<string>> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('ai_model_favorites')
-    .select('model_id')
-    .eq('ws_id', wsId);
-
-  if (error || !data?.length) return new Set();
-  return new Set(data.map((row) => row.model_id));
+  const favoriteIds = await listWorkspaceAiModelFavorites(wsId);
+  return new Set(favoriteIds);
 }
 
 async function toggleFavorite(
@@ -45,39 +42,7 @@ async function toggleFavorite(
   modelId: string,
   isFavorited: boolean
 ): Promise<void> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Authentication required');
-  }
-
-  if (isFavorited) {
-    const { error } = await supabase
-      .from('ai_model_favorites')
-      .delete()
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .eq('model_id', modelId);
-
-    if (error) {
-      throw new Error(error.message || 'Failed to update favorites');
-    }
-
-    return;
-  }
-
-  const { error } = await supabase.from('ai_model_favorites').insert({
-    ws_id: wsId,
-    user_id: user.id,
-    model_id: modelId,
-  });
-
-  if (error) {
-    throw new Error(error.message || 'Failed to update favorites');
-  }
+  await toggleWorkspaceAiModelFavorite(wsId, { modelId, isFavorited });
 }
 
 interface UseMiraModelSelectorDataParams {

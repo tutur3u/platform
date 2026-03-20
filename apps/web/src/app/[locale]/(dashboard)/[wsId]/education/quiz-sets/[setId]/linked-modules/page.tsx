@@ -56,6 +56,7 @@ export default async function WorkspaceCoursesPage({
         createDescription={t('ws-course-modules.create_description')}
         action={
           <QuizsetModuleLinker
+            wsId={wsId}
             setId={setId}
             data={allModules.map((m) => ({
               ...m,

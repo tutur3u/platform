@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCategoryBreakdown } from '@tuturuuu/internal-api/finance';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   type ChartConfig,
@@ -42,43 +42,21 @@ export function CategorySpendingChart({
   currency = 'USD',
 }: CategorySpendingChartProps) {
   const locale = useLocale();
-  const supabase = createClient();
 
   const { data: categoryData, isLoading } = useQuery({
     queryKey: ['category_spending', wsId, startDate, endDate],
     queryFn: async () => {
-      let query = supabase
-        .from('wallet_transactions')
-        .select(
-          `
-          amount,
-          category_id,
-          transaction_categories(name),
-          workspace_wallets!inner(ws_id)
-        `
-        )
-        .eq('workspace_wallets.ws_id', wsId)
-        .lt('amount', 0); // Only expenses
+      const data = (await getCategoryBreakdown(wsId, {
+        startDate,
+        endDate,
+        type: 'expense',
+      })) as Array<{ category_name: string | null; total: number }>;
 
-      if (startDate) {
-        query = query.gte('taken_at', startDate);
-      }
-
-      if (endDate) {
-        query = query.lte('taken_at', endDate);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Group by category and sum amounts
       const categoryMap = new Map<string, number>();
 
-      data?.forEach((transaction: any) => {
-        const categoryName =
-          transaction.transaction_categories?.name || 'Uncategorized';
-        const amount = Math.abs(Number(transaction.amount));
+      data?.forEach((transaction) => {
+        const categoryName = transaction.category_name || 'Uncategorized';
+        const amount = Math.abs(Number(transaction.total));
 
         categoryMap.set(
           categoryName,
@@ -128,7 +106,7 @@ export function CategorySpendingChart({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(props: any) =>
+                    label={(props) =>
                       `${props.name}: ${((props.percent || 0) * 100).toFixed(0)}%`
                     }
                     outerRadius={80}

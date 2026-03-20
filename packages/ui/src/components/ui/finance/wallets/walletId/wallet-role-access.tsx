@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Search, Shield, Trash2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceRoles } from '@tuturuuu/internal-api/roles';
 import type { WorkspaceRoleWalletWhitelist } from '@tuturuuu/types/primitives/WorkspaceRoleWalletWhitelist';
 import {
   AlertDialog,
@@ -578,13 +578,5 @@ async function getRoleAccess(wsId: string, walletId: string) {
 }
 
 async function getAvailableRoles(wsId: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('workspace_roles')
-    .select('id, name')
-    .eq('ws_id', wsId)
-    .order('name', { ascending: true });
-
-  if (error) throw error;
-  return data || [];
+  return listWorkspaceRoles(wsId);
 }

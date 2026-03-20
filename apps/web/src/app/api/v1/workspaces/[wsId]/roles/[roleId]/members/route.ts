@@ -11,11 +11,14 @@ export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { roleId } = await params;
 
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from('workspace_role_members')
-    .select('*', {
-      count: 'exact',
-    })
+    .select(
+      '...users!inner(id, display_name, full_name, avatar_url, ...user_private_details(email))',
+      {
+        count: 'exact',
+      }
+    )
     .eq('role_id', roleId);
 
   if (error) {
@@ -26,7 +29,7 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({ data: data ?? [], count: count ?? 0 });
 }
 
 export async function POST(req: Request, { params }: Params) {

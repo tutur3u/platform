@@ -1,23 +1,24 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export function ModuleToggles({
+  wsId,
   courseId,
   moduleId,
   //   isPublic: initialIsPublic,
   isPublished: initialIsPublished,
 }: {
+  wsId: string;
   courseId: string;
   moduleId: string;
   isPublic: boolean;
   isPublished: boolean;
 }) {
   const t = useTranslations();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
   //   const [isPublic, setIsPublic] = useState(initialIsPublic);
@@ -42,18 +43,17 @@ export function ModuleToggles({
   //   };
 
   const handlePublishedChange = async (checked: boolean) => {
-    const { error } = await supabase
-      .from('workspace_course_modules')
-      .update({ is_published: checked })
-      .eq('course_id', courseId)
-      .eq('id', moduleId);
-
-    if (error) {
+    setLoading(true);
+    try {
+      await updateWorkspaceCourseModule(wsId, moduleId, {
+        course_id: courseId,
+        is_published: checked,
+      });
+      setIsPublished(checked);
+    } catch {
       setLoading(false);
-      throw error;
+      throw new Error('Failed to update module');
     }
-
-    setIsPublished(checked);
     setLoading(false);
   };
 

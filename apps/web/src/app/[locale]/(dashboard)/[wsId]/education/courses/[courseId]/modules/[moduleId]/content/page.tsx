@@ -14,13 +14,14 @@ export const metadata: Metadata = {
 
 interface Props {
   params: Promise<{
+    wsId: string;
     courseId: string;
     moduleId: string;
   }>;
 }
 
 export default async function ModuleContentPage({ params }: Props) {
-  const { courseId, moduleId } = await params;
+  const { wsId, courseId, moduleId } = await params;
   const t = await getTranslations();
 
   const getContent = async (courseId: string, moduleId: string) => {
@@ -60,6 +61,7 @@ export default async function ModuleContentPage({ params }: Props) {
         showSecondaryTrigger
       />
       <ModuleContentEditor
+        wsId={wsId}
         courseId={courseId}
         moduleId={moduleId}
         content={content}

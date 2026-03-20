@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCategoryBreakdown } from '@tuturuuu/internal-api/finance';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn } from '@tuturuuu/utils/format';
@@ -186,7 +186,6 @@ export function CategoryDonutChart({
       timezone,
     ],
     queryFn: async () => {
-      const supabase = createClient();
       // Create start/end timestamps in the user's timezone
       // IMPORTANT: Use the resolved timezone, not UTC, to ensure we query the correct local day
       const startDate = dayjs
@@ -196,20 +195,13 @@ export function CategoryDonutChart({
         .tz(`${periodEndDate || periodStartDate} 23:59:59.999`, timezone)
         .toISOString();
 
-      const { data, error } = await supabase.rpc('get_category_breakdown', {
-        _ws_id: workspaceId!, // Safe: query is only enabled when workspaceId exists
-        _start_date: startDate,
-        _end_date: endDate,
-        include_confidential: true,
-        _transaction_type: type,
-        _interval: 'daily',
-        _anchor_to_latest: false,
-        _timezone: timezone, // Pass timezone for correct date grouping
-        _wallet_ids: walletId ? [walletId] : undefined,
-      });
-
-      if (error) throw error;
-      return data as {
+      const data = (await getCategoryBreakdown(workspaceId!, {
+        walletId,
+        startDate,
+        endDate,
+        type,
+        timezone,
+      })) as {
         period: string;
         category_id: string | null;
         category_name: string;
@@ -217,6 +209,7 @@ export function CategoryDonutChart({
         category_color: string | null;
         total: number;
       }[];
+      return data;
     },
     staleTime: 2 * 60 * 1000, // 2 minute cache
     refetchOnWindowFocus: false,

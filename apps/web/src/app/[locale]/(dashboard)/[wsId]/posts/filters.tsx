@@ -1,7 +1,7 @@
 'use client';
 
 import { MinusCircle, PlusCircle, User } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getPostsFilterOptions } from '@tuturuuu/internal-api/settings';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { useTranslations } from 'next-intl';
@@ -98,22 +98,10 @@ export default function PostsFilters({
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups_with_amount')
-    .select('id, name, amount', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data: data || [], count: count || 0 } as {
-    data: UserGroup[];
-    count: number;
+  const data = await getPostsFilterOptions(wsId);
+  return {
+    data: data.userGroups as UserGroup[],
+    count: data.userGroups.length,
   };
 }
 
@@ -121,51 +109,20 @@ async function getExcludedUserGroups(
   wsId: string,
   { includedGroups }: SearchParams
 ) {
-  const supabase = createClient();
-
-  if (!includedGroups || includedGroups.length === 0) {
-    return getUserGroups(wsId);
-  }
-
-  const queryBuilder = supabase
-    .rpc(
-      'get_possible_excluded_groups',
-      {
-        _ws_id: wsId,
-        included_groups: Array.isArray(includedGroups)
-          ? includedGroups
-          : [includedGroups],
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('id, name, amount')
-    .order('name');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data: data || [], count: count || 0 } as {
-    data: UserGroup[];
-    count: number;
+  const data = await getPostsFilterOptions(wsId, {
+    includedGroups: Array.isArray(includedGroups)
+      ? includedGroups
+      : includedGroups
+        ? [includedGroups]
+        : [],
+  });
+  return {
+    data: data.excludedUserGroups as UserGroup[],
+    count: data.excludedUserGroups.length,
   };
 }
 
 async function getUsers(wsId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_users')
-    .select('id, full_name')
-    .eq('ws_id', wsId)
-    .order('full_name', { ascending: true });
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data: data || [], count: count || 0 } as {
-    data: WorkspaceUser[];
-    count: number;
-  };
+  const data = await getPostsFilterOptions(wsId);
+  return { data: data.users as WorkspaceUser[], count: data.users.length };
 }

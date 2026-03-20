@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceEmails } from '@tuturuuu/internal-api/mail';
 import type { InternalEmail, User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { useCallback, useEffect, useState } from 'react';
@@ -88,22 +88,5 @@ async function getWorkspaceMails(
   page: number = 0,
   pageSize: number = 20
 ) {
-  const supabase = createClient();
-
-  const start = page * pageSize;
-  const end = start + pageSize - 1;
-
-  const { data, error } = await supabase
-    .from('internal_emails')
-    .select('*')
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false })
-    .range(start, end);
-
-  if (error || !data) {
-    console.error('Failed to fetch internal_emails', error);
-    return [];
-  }
-
-  return data;
+  return listWorkspaceEmails(wsId, { page, pageSize });
 }

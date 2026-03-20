@@ -1,17 +1,19 @@
 'use client';
 
 import { Trash } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function DeleteLinkButton({
+  wsId,
   moduleId,
   courseId,
   link,
   links,
 }: {
+  wsId: string;
   moduleId: string;
   courseId: string;
   link: string;
@@ -26,24 +28,19 @@ export default function DeleteLinkButton({
     links: string[]
   ) => {
     setLoading(true);
-    const supabase = createClient();
-
-    const { data, error } = await supabase
-      .from('workspace_course_modules')
-      .update({
+    try {
+      await updateWorkspaceCourseModule(wsId, moduleId, {
+        course_id: courseId,
         youtube_links: links,
-      })
-      .eq('id', moduleId)
-      .eq('course_id', courseId);
-
-    if (error) {
+      });
+      router.refresh();
+      setLoading(false);
+      return null;
+    } catch (error) {
       console.error('error', error);
       setLoading(false);
-    } else {
-      router.refresh();
+      return null;
     }
-
-    return data;
   };
 
   return (

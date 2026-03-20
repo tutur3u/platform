@@ -1,7 +1,10 @@
 'use client';
 
 import { Briefcase, Calendar, Clock, User } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  getWorkspaceCalendarHours,
+  updateWorkspaceCalendarHours,
+} from '@tuturuuu/internal-api/settings';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -32,77 +35,25 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
   useEffect(() => {
     const fetchHours = async () => {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from('workspace_calendar_hour_settings')
-        .select('*')
-        .eq('ws_id', wsId);
-
-      if (error) {
+      try {
+        const data = await getWorkspaceCalendarHours(wsId);
+        setValue({
+          personalHours: isValidWeekTimeRanges(data.personalHours)
+            ? data.personalHours
+            : defaultWeekTimeRanges,
+          workHours: isValidWeekTimeRanges(data.workHours)
+            ? data.workHours
+            : defaultWeekTimeRanges,
+          meetingHours: isValidWeekTimeRanges(data.meetingHours)
+            ? data.meetingHours
+            : defaultWeekTimeRanges,
+        });
+      } catch (error) {
         console.error('Error fetching hours:', error);
         toast.error(
           'Failed to load hour settings. Please refresh or try again later.'
         );
-        return;
       }
-
-      // If no data exists, create default settings
-      if (!data || data.length === 0) {
-        const makeDefaultData = () => structuredClone(defaultWeekTimeRanges);
-        const defaultSettings = [
-          {
-            type: 'PERSONAL' as const,
-            data: JSON.stringify(makeDefaultData()),
-            ws_id: wsId,
-          },
-          {
-            type: 'WORK' as const,
-            data: JSON.stringify(makeDefaultData()),
-            ws_id: wsId,
-          },
-          {
-            type: 'MEETING' as const,
-            data: JSON.stringify(makeDefaultData()),
-            ws_id: wsId,
-          },
-        ];
-
-        const { error: insertError } = await supabase
-          .from('workspace_calendar_hour_settings')
-          .insert(defaultSettings)
-          .select();
-
-        if (insertError) {
-          console.error('Error creating default settings:', insertError);
-          return;
-        }
-
-        setValue({
-          personalHours: defaultWeekTimeRanges,
-          workHours: defaultWeekTimeRanges,
-          meetingHours: defaultWeekTimeRanges,
-        });
-        return;
-      }
-
-      setValue({
-        personalHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
-          : defaultWeekTimeRanges,
-        workHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'WORK')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'WORK')?.data)
-          : defaultWeekTimeRanges,
-        meetingHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'MEETING')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'MEETING')?.data)
-          : defaultWeekTimeRanges,
-      });
     };
 
     fetchHours();
@@ -125,26 +76,17 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       personalHours: newHours,
     }));
 
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('workspace_calendar_hour_settings')
-      .upsert(
-        {
-          data: JSON.stringify(newHours),
-          type: 'PERSONAL',
-          ws_id: wsId,
-        },
-        { onConflict: 'ws_id,type' }
-      );
-
-    if (error) {
+    try {
+      await updateWorkspaceCalendarHours(wsId, {
+        type: 'PERSONAL',
+        hours: newHours,
+      });
+      toast.success('Personal hours updated');
+    } catch (error) {
       console.error('Error updating personal hours:', error);
       toast.error('Failed to update personal hours');
       return;
     }
-
-    toast.success('Personal hours updated');
   };
 
   const handleWorkHoursChange = async (newHours?: WeekTimeRanges | null) => {
@@ -158,26 +100,17 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       workHours: newHours,
     }));
 
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('workspace_calendar_hour_settings')
-      .upsert(
-        {
-          data: JSON.stringify(newHours),
-          type: 'WORK',
-          ws_id: wsId,
-        },
-        { onConflict: 'ws_id,type' }
-      );
-
-    if (error) {
+    try {
+      await updateWorkspaceCalendarHours(wsId, {
+        type: 'WORK',
+        hours: newHours,
+      });
+      toast.success('Work hours updated');
+    } catch (error) {
       console.error('Error updating work hours:', error);
       toast.error('Failed to update work hours');
       return;
     }
-
-    toast.success('Work hours updated');
   };
 
   const handleMeetingHoursChange = async (newHours?: WeekTimeRanges | null) => {
@@ -191,26 +124,17 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       meetingHours: newHours,
     }));
 
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('workspace_calendar_hour_settings')
-      .upsert(
-        {
-          data: JSON.stringify(newHours),
-          type: 'MEETING',
-          ws_id: wsId,
-        },
-        { onConflict: 'ws_id,type' }
-      );
-
-    if (error) {
+    try {
+      await updateWorkspaceCalendarHours(wsId, {
+        type: 'MEETING',
+        hours: newHours,
+      });
+      toast.success('Meeting hours updated');
+    } catch (error) {
       console.error('Error updating meeting hours:', error);
       toast.error('Failed to update meeting hours');
       return;
     }
-
-    toast.success('Meeting hours updated');
   };
 
   // Helper to get a summary of active days
@@ -342,9 +266,12 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
   );
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === 'object' && !Array.isArray(value));
+
 // Type guard for WeekTimeRanges
-function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
-  if (!obj || typeof obj !== 'object') return false;
+function isValidWeekTimeRanges(obj: unknown): obj is WeekTimeRanges {
+  if (!isRecord(obj)) return false;
   const days = [
     'monday',
     'tuesday',
@@ -354,22 +281,12 @@ function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
     'saturday',
     'sunday',
   ];
-  return days.every(
-    (day) =>
-      obj[day] &&
-      typeof obj[day].enabled === 'boolean' &&
-      Array.isArray(obj[day].timeBlocks)
-  );
-}
+  return days.every((day) => {
+    const entry = obj[day];
+    if (!isRecord(entry)) return false;
 
-// Safe JSON parse helper
-function safeParse(data: any): any {
-  if (typeof data === 'string') {
-    try {
-      return JSON.parse(data);
-    } catch {
-      return undefined;
-    }
-  }
-  return data;
+    return (
+      typeof entry.enabled === 'boolean' && Array.isArray(entry.timeBlocks)
+    );
+  });
 }

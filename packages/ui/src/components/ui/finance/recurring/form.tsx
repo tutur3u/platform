@@ -2,8 +2,12 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { listWallets } from '@tuturuuu/internal-api/finance';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  createRecurringTransaction,
+  listTransactionCategories,
+  listWallets,
+  updateRecurringTransaction,
+} from '@tuturuuu/internal-api/finance';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -66,7 +70,6 @@ export function RecurringTransactionForm({
   onSuccess,
 }: RecurringTransactionFormProps) {
   const queryClient = useQueryClient();
-  const supabase = createClient();
   const isEditing = !!data?.id;
 
   const { data: wallets } = useQuery({
@@ -76,16 +79,7 @@ export function RecurringTransactionForm({
 
   const { data: categories } = useQuery({
     queryKey: ['categories', wsId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transaction_categories')
-        .select('id, name')
-        .eq('ws_id', wsId)
-        .order('name');
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => listTransactionCategories(wsId),
   });
 
   const form = useForm<RecurringFormValues>({
@@ -116,7 +110,6 @@ export function RecurringTransactionForm({
   const onSubmit = async (formData: RecurringFormValues) => {
     try {
       const transactionData = {
-        ws_id: wsId,
         name: formData.name,
         description: formData.description || null,
         amount: parseFloat(formData.amount),
@@ -128,22 +121,10 @@ export function RecurringTransactionForm({
       };
 
       if (isEditing && data) {
-        const { error } = await supabase
-          .from('recurring_transactions')
-          .update(transactionData)
-          .eq('id', data.id);
-
-        if (error) throw error;
+        await updateRecurringTransaction(wsId, data.id, transactionData);
         toast.success('Recurring transaction updated successfully');
       } else {
-        const { error } = await supabase.from('recurring_transactions').insert([
-          {
-            ...transactionData,
-            next_occurrence: formData.start_date,
-          },
-        ]);
-
-        if (error) throw error;
+        await createRecurringTransaction(wsId, transactionData);
         toast.success('Recurring transaction created successfully');
       }
 
@@ -246,11 +227,18 @@ export function RecurringTransactionForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {categories?.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
+                    {categories
+                      ?.filter(
+                        (
+                          category
+                        ): category is typeof category & { id: string } =>
+                          typeof category.id === 'string'
+                      )
+                      .map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />

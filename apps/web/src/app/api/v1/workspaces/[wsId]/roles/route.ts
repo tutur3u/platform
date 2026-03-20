@@ -16,7 +16,7 @@ export async function GET(_: Request, { params }: Params) {
     .from('workspace_roles')
     .select('*')
     .eq('ws_id', wsId)
-    .single();
+    .order('name', { ascending: true });
 
   if (error) {
     console.log(error);
@@ -26,7 +26,7 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(data ?? []);
 }
 
 export async function POST(req: Request, { params }: Params) {

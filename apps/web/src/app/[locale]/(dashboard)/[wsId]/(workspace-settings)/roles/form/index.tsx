@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Banknote, Monitor, PencilRuler, Users } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId, WorkspaceRole } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -256,21 +256,6 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
 }
 
 async function getWorkspaceUsers(wsId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_members')
-    .select(
-      'id:user_id, ...users(display_name, ...user_private_details(email))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
-    .order('user_id');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  const data = (await listWorkspaceMembers(wsId)) as WorkspaceUser[];
+  return { data, count: data.length };
 }

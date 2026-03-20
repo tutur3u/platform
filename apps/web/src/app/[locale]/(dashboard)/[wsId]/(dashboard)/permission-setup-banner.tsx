@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Settings, ShieldAlert, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getWorkspacePermissionSetupStatus } from '@tuturuuu/internal-api/settings';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
@@ -23,44 +23,8 @@ export default function PermissionSetupBanner({
 
   const { data: hasPermissions, isLoading } = useQuery({
     queryKey: ['workspace-permissions-configured', wsId],
-    queryFn: async () => {
-      const supabase = createClient();
-
-      // Check for default permissions
-      const { data: defaultPerms, error: defaultError } = await supabase
-        .from('workspace_default_permissions')
-        .select('permission')
-        .eq('ws_id', wsId)
-        .eq('enabled', true)
-        .limit(1);
-
-      if (defaultError) {
-        console.error('Error checking default permissions:', defaultError);
-        return true; // Don't show banner on error
-      }
-
-      if (defaultPerms && defaultPerms.length > 0) {
-        return true;
-      }
-
-      // Check for roles with permissions
-      const { data: roles, error: rolesError } = await supabase
-        .from('workspace_roles')
-        .select('id')
-        .eq('ws_id', wsId)
-        .limit(1);
-
-      if (rolesError) {
-        console.error('Error checking roles:', rolesError);
-        return true; // Don't show banner on error
-      }
-
-      if (roles && roles.length > 0) {
-        return true;
-      }
-
-      return false;
-    },
+    queryFn: async () =>
+      (await getWorkspacePermissionSetupStatus(wsId)).hasConfiguredPermissions,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 

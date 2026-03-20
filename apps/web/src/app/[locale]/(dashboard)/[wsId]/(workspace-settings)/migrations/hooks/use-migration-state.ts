@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocalStorage } from '@mantine/hooks';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MigrationModule } from '../modules';
 import {
@@ -347,14 +347,9 @@ export function useMigrationState(
       setTargetWorkspaceName(null);
 
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('workspaces')
-          .select('name')
-          .eq('id', wsId)
-          .single();
+        const data = await getWorkspace(wsId);
 
-        if (error || !data) {
+        if (!data) {
           setTargetWorkspaceName('');
         } else {
           setTargetWorkspaceName(data.name || '');

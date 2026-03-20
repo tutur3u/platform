@@ -61,6 +61,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               </div>
             </h1>
             <ModuleToggles
+              wsId={wsId}
               courseId={courseId}
               moduleId={moduleId}
               isPublic={data.is_public}

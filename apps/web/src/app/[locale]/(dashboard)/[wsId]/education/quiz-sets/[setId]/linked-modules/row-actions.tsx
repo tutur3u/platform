@@ -2,7 +2,10 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  deleteWorkspaceCourseModule as deleteWorkspaceCourseModuleRequest,
+  unlinkQuizSetModule,
+} from '@tuturuuu/internal-api/education';
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
@@ -34,25 +37,17 @@ export function WorkspaceCourseModuleRowActions({
 }: WorkspaceCourseModuleRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
-  const supabase = createClient();
 
   const data = row.original;
 
   const deleteWorkspaceCourseModule = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${wsId}/course-modules/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
+    try {
+      await deleteWorkspaceCourseModuleRequest(wsId, data.id!);
       router.refresh();
-    } else {
-      const data = await res.json();
+    } catch (error) {
       toast({
         title: 'Failed to delete workspace user group tag',
-        description: data.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -60,19 +55,14 @@ export function WorkspaceCourseModuleRowActions({
   const unlinkWorkspaceCourseModule = async () => {
     if (!data.id || !setId) return;
 
-    const { error } = await supabase
-      .from('course_module_quiz_sets')
-      .delete()
-      .eq('module_id', data.id)
-      .eq('set_id', setId);
-
-    if (error) {
+    try {
+      await unlinkQuizSetModule(wsId, setId, data.id);
+      router.refresh();
+    } catch (error) {
       toast({
         title: 'Failed to unlink workspace course module',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
       });
-    } else {
-      router.refresh();
     }
   };
 

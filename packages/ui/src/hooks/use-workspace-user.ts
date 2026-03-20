@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
 /**
@@ -14,40 +14,15 @@ export function useWorkspaceUser() {
   return useQuery({
     queryKey: ['workspace-user'],
     queryFn: async (): Promise<WorkspaceUser> => {
-      const supabase = createClient();
-
-      // Get current authenticated user
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        throw new Error('Not authenticated');
-      }
-
-      // Fetch user data with private details
-      const { data, error } = await supabase
-        .from('users')
-        .select(
-          'id, display_name, avatar_url, bio, handle, created_at, user_private_details(email, new_email, birthday, full_name, default_workspace_id)'
-        )
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to fetch user: ${error.message}`);
-      }
-
-      if (!data) {
-        throw new Error('User data not found');
-      }
-
-      // Merge user data with private details
-      const { user_private_details, ...rest } = data;
+      const data = await getCurrentUserProfile();
       return {
-        ...rest,
-        ...user_private_details,
+        id: data.id,
+        email: data.email,
+        display_name: data.display_name,
+        avatar_url: data.avatar_url,
+        full_name: data.full_name,
+        created_at: data.created_at,
+        new_email: data.new_email,
       } as WorkspaceUser;
     },
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
