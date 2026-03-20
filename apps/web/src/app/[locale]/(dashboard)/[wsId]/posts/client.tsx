@@ -30,6 +30,7 @@ interface SearchParams {
 interface PostsClientProps {
   wsId: string;
   locale: string;
+  canApprovePosts: boolean;
   searchParams: SearchParams;
   postsData: { data: PostEmail[]; count: number };
   postsStatus: {
@@ -45,6 +46,7 @@ interface PostsClientProps {
 export default function PostsClient({
   wsId,
   locale,
+  canApprovePosts,
   searchParams,
   postsData,
   postsStatus,
@@ -160,7 +162,11 @@ export default function PostsClient({
             }}
           />
         </div>
-        <PostDisplay postEmail={selectedPost} />
+        <PostDisplay
+          wsId={wsId}
+          postEmail={selectedPost}
+          canApprovePosts={canApprovePosts}
+        />
       </div>
     </div>
   );

@@ -35,7 +35,7 @@ export async function GET(
   const queryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
-      `notes, user_id, email_id, is_completed, user:workspace_users!inner(email, display_name, full_name, ws_id), user_group_posts${hasFilters ? '!inner' : ''}(id, title, content, post_approval_status, group_id, workspace_user_groups(id, name)), sent_emails(subject)`,
+      `post_id, notes, user_id, email_id, is_completed, approval_status, rejection_reason, user:workspace_users!user_id!inner(email, display_name, full_name, ws_id), user_group_posts${hasFilters ? '!inner' : ''}(id, title, content, group_id, workspace_user_groups(id, name)), sent_emails(subject)`,
       {
         count: 'exact',
       }
@@ -83,27 +83,6 @@ export async function GET(
     queueByPost.set(row.post_id, rowsForPost);
   }
 
-  const { data: sentEmails, error: sentEmailsError } =
-    postIds.length === 0
-      ? { data: [], error: null }
-      : await sbAdmin
-          .from('sent_emails')
-          .select('post_id')
-          .in('post_id', postIds);
-
-  if (sentEmailsError) {
-    return NextResponse.json(
-      { error: sentEmailsError.message },
-      { status: 500 }
-    );
-  }
-
-  const sentPostIds = new Set(
-    (sentEmails ?? [])
-      .map((row) => row.post_id)
-      .filter((value): value is string => Boolean(value))
-  );
-
   return NextResponse.json({
     data: rows.map((item: any) => {
       const queueRow = queueByPostAndUser.get(
@@ -131,12 +110,12 @@ export async function GET(
         queue_attempt_count: queueRow?.attempt_count ?? 0,
         queue_last_error: queueRow?.last_error ?? null,
         queue_sent_at: queueRow?.sent_at ?? null,
-        post_approval_status:
-          item.user_group_posts?.post_approval_status ?? 'APPROVED',
+        approval_status: item.approval_status ?? 'PENDING',
+        approval_rejection_reason: item.rejection_reason ?? null,
         can_remove_approval:
-          item.user_group_posts?.id &&
-          !sentPostIds.has(item.user_group_posts.id) &&
-          queueCounts.sent === 0,
+          item.approval_status === 'APPROVED' &&
+          queueRow?.status !== 'sent' &&
+          !item.email_id,
         queue_counts: queueCounts,
       };
     }),

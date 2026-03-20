@@ -473,6 +473,7 @@ export type ReportLogEntry = Tables<'external_user_monthly_report_logs'>;
  */
 export type PostApprovalQueryResult = {
   id: string;
+  post_id?: string | null;
   title: string | null;
   content: string | null;
   notes: string | null;
@@ -482,6 +483,9 @@ export type PostApprovalQueryResult = {
   rejection_reason: string | null;
   approved_at: string | null;
   rejected_at: string | null;
+  user_id?: string | null;
+  user_name?: string | null;
+  is_completed?: boolean | null;
   modifier?: {
     full_name?: string | null;
     display_name?: string | null;

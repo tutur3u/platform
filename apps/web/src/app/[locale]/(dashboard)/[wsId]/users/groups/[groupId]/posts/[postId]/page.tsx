@@ -1,7 +1,7 @@
 import {
-  AlertCircle,
   Check,
   CheckCheck,
+  CheckCircle2,
   CircleHelp,
   Clock,
   Send,
@@ -9,7 +9,6 @@ import {
 } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { Database } from '@tuturuuu/types/supabase';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -22,7 +21,6 @@ import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   getPostEmailQueueRows,
-  hasPostEmailBeenSent,
   summarizePostEmailQueue,
 } from '@/lib/post-email-queue';
 import { CheckAll } from './check-all';
@@ -83,12 +81,9 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         const canUpdateUserGroupsPosts = containsPermission(
           'update_user_groups_posts'
         );
-        type ApprovalStatus = Database['public']['Enums']['approval_status'];
-        const approvalStatus: ApprovalStatus =
-          (post.post_approval_status as ApprovalStatus) ?? 'PENDING';
-        const isApproved = approvalStatus === 'APPROVED';
-        const canRemoveApproval = isApproved && status.canRemoveApproval;
-
+        const canApprovePosts = containsPermission(
+          'send_user_group_post_emails'
+        );
         return (
           <div>
             <FeatureSummary
@@ -101,24 +96,6 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                     >
                       {group.name}
                     </Link>
-                    {!isApproved && (
-                      <Badge
-                        variant={
-                          approvalStatus === 'REJECTED'
-                            ? 'destructive'
-                            : 'outline'
-                        }
-                        className={
-                          approvalStatus === 'PENDING'
-                            ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow'
-                            : ''
-                        }
-                      >
-                        {approvalStatus === 'REJECTED'
-                          ? t('approvals.status.rejected')
-                          : t('approvals.status.pending')}
-                      </Badge>
-                    )}
                     {post.created_at && (
                       <div className="flex items-center gap-0.5 text-nowrap text-xs opacity-70">
                         <Clock className="h-3 w-3" />
@@ -126,34 +103,20 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                       </div>
                     )}
                   </div>
-                  {approvalStatus === 'REJECTED' && post.rejection_reason && (
-                    <div className="mt-2 flex items-start gap-2 rounded-md border border-dynamic-red/20 bg-dynamic-red/5 p-3">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-red" />
-                      <div>
-                        <p className="font-medium text-dynamic-red text-sm">
-                          {t('ws-user-groups.rejection_reason')}
-                        </p>
-                        <p className="mt-0.5 text-dynamic-red/80 text-sm">
-                          {post.rejection_reason}
-                        </p>
-                        {post.rejected_at && (
-                          <p className="mt-1 text-muted-foreground text-xs">
-                            {format(
-                              new Date(post.rejected_at),
-                              'HH:mm, dd/MM/yyyy'
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {isApproved && (
-                    <Badge variant="secondary">
-                      {canRemoveApproval
-                        ? t('ws_post_details.approval_revocable')
-                        : t('ws_post_details.approval_locked')}
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green">
+                      {t('approvals.status.approved')}:{' '}
+                      {status.approvals.approved}
                     </Badge>
-                  )}
+                    <Badge className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow">
+                      {t('approvals.status.pending')}:{' '}
+                      {status.approvals.pending}
+                    </Badge>
+                    <Badge className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red">
+                      {t('approvals.status.rejected')}:{' '}
+                      {status.approvals.rejected}
+                    </Badge>
+                  </div>
                   <Separator />
                 </div>
               }
@@ -177,7 +140,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               secondaryTriggerIcon={<CheckCheck className="mr-1 h-5 w-5" />}
               secondaryTitle={t('ws_post_details.check_all')}
               form={
-                canUpdateUserGroupsPosts && isApproved ? (
+                canUpdateUserGroupsPosts ? (
                   <CheckAll
                     wsId={wsId}
                     groupId={groupId}
@@ -188,10 +151,8 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                   />
                 ) : undefined
               }
-              disableSecondaryTrigger={
-                status.checked === status.count || !isApproved
-              }
-              showSecondaryTrigger={canUpdateUserGroupsPosts && isApproved}
+              disableSecondaryTrigger={status.checked === status.count}
+              showSecondaryTrigger={canUpdateUserGroupsPosts}
             />
             <Separator className="my-4" />
             <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
@@ -257,11 +218,12 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                 </div>
                 <div className="text-2xl">{status.queue.processing}</div>
               </div>
-              <div className="rounded border border-dynamic-yellow/15 bg-dynamic-yellow/10 p-4 text-dynamic-yellow">
-                <div className="font-semibold">
-                  {t('post-email-data-table.cancelled')}
+              <div className="rounded border border-dynamic-green/15 bg-dynamic-green/10 p-4 text-dynamic-green">
+                <div className="font-semibold">{t('approvals.title')}</div>
+                <div className="flex items-center gap-2 text-2xl">
+                  <CheckCircle2 className="h-5 w-5" />
+                  {status.approvals.approved}
                 </div>
-                <div className="text-2xl">{status.queue.cancelled}</div>
               </div>
             </div>
             <Separator className="my-4" />
@@ -273,6 +235,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                 group_id: groupId,
               }}
               canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
+              canApprovePosts={canApprovePosts}
               queueByUserId={status.queueByUserId}
             />
           </div>
@@ -313,7 +276,7 @@ async function getPostStatus(groupId: string, postId: string) {
   const { data: users, count } = await sbAdmin
     .from('workspace_user_groups_users')
     .select(
-      '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
+      '...workspace_users(id, user_group_post_checks!user_id!inner(post_id, is_completed, approval_status))',
       {
         count: 'exact',
       }
@@ -344,7 +307,26 @@ async function getPostStatus(groupId: string, postId: string) {
     count,
     queue: queueSummary,
     queueByUserId,
-    canRemoveApproval: !(await hasPostEmailBeenSent(sbAdmin, postId)),
+    approvals: {
+      approved:
+        users?.filter((user) =>
+          user?.user_group_post_checks?.find(
+            (check) => check?.approval_status === 'APPROVED'
+          )
+        ).length ?? 0,
+      pending:
+        users?.filter((user) =>
+          user?.user_group_post_checks?.find(
+            (check) => check?.approval_status === 'PENDING'
+          )
+        ).length ?? 0,
+      rejected:
+        users?.filter((user) =>
+          user?.user_group_post_checks?.find(
+            (check) => check?.approval_status === 'REJECTED'
+          )
+        ).length ?? 0,
+    },
   };
 }
 

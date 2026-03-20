@@ -33,7 +33,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const { containsPermission } = permissions;
     const canApproveReports = containsPermission('approve_reports');
-    const canApprovePosts = containsPermission('approve_posts');
+    const canApprovePosts = containsPermission('send_user_group_post_emails');
 
     const { searchParams } = new URL(request.url);
     const parsed = SearchParamsSchema.safeParse(

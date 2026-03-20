@@ -11,6 +11,7 @@ interface Props {
   wsId: string;
   post: UserGroupPost;
   canUpdateUserGroupsPosts: boolean;
+  canApprovePosts?: boolean;
   queueByUserId: Record<string, PostEmailQueueRow>;
 }
 
@@ -21,6 +22,10 @@ interface UserGroupPostCheck {
   notes: string;
   created_at?: string;
   email_id?: string | null;
+  approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approved_at?: string | null;
+  rejected_at?: string | null;
+  rejection_reason?: string | null;
 }
 
 export function UsersList({
@@ -28,6 +33,7 @@ export function UsersList({
   wsId,
   post,
   canUpdateUserGroupsPosts,
+  canApprovePosts = false,
   queueByUserId,
 }: Props) {
   const groupId = post.group_id;
@@ -66,6 +72,7 @@ export function UsersList({
             post_id: post.id,
             is_completed: null,
             notes: '',
+            approval_status: 'PENDING',
           };
         }
       }
@@ -85,6 +92,7 @@ export function UsersList({
             wsId={wsId}
             post={post}
             canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
+            canApprovePosts={canApprovePosts}
             initialCheck={checksMap?.[user.id]}
             isLoadingChecks={isLoading}
             queueItem={queueByUserId[user.id]}

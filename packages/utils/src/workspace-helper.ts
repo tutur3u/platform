@@ -535,7 +535,7 @@ export async function getPermissions({
   wsId: string;
   request?: Request;
 }): Promise<PermissionsResult | null> {
-  const supabase = await createClient(request);
+  const supabase = await (request ? createClient(request) : createClient());
 
   const {
     data: { user },

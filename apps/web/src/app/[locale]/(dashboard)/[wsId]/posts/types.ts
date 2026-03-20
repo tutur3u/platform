@@ -25,7 +25,8 @@ export interface PostEmail {
   queue_attempt_count?: number;
   queue_last_error?: string | null;
   queue_sent_at?: string | null;
-  post_approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approval_rejection_reason?: string | null;
   can_remove_approval?: boolean;
   queue_counts?: {
     queued: number;

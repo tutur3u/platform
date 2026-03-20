@@ -44,6 +44,7 @@ interface ExistingQueueState {
 interface EligibleRecipient {
   user_id: string;
   email: string;
+  approved_by: string | null;
 }
 
 interface PostSendContext {
@@ -99,19 +100,25 @@ export async function getPostEmailQueueRows(
 
 export async function hasPostEmailBeenSent(
   sbAdmin: any,
-  postId: string
+  postId: string,
+  userId?: string
 ): Promise<boolean> {
+  let sentEmailsQuery = sbAdmin
+    .from('sent_emails')
+    .select('id', { count: 'exact', head: true })
+    .eq('post_id', postId);
+  let sentQueueQuery = getQueueTable(sbAdmin)
+    .select('id')
+    .eq('post_id', postId)
+    .eq('status', 'sent');
+
+  if (userId) {
+    sentEmailsQuery = sentEmailsQuery.eq('receiver_id', userId);
+    sentQueueQuery = sentQueueQuery.eq('user_id', userId);
+  }
+
   const [{ count: sentEmailsCount, error: sentEmailsError }, sentQueueRows] =
-    await Promise.all([
-      sbAdmin
-        .from('sent_emails')
-        .select('id', { count: 'exact', head: true })
-        .eq('post_id', postId),
-      getQueueTable(sbAdmin)
-        .select('id')
-        .eq('post_id', postId)
-        .eq('status', 'sent'),
-    ]);
+    await Promise.all([sentEmailsQuery, sentQueueQuery]);
 
   if (sentEmailsError) {
     throw sentEmailsError;
@@ -168,7 +175,7 @@ async function getEligibleRecipients(
   let query = sbAdmin
     .from('user_group_post_checks')
     .select(
-      'user_id, is_completed, user:workspace_users!inner(id, email, ws_id)'
+      'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id!inner(id, email, ws_id)'
     )
     .eq('post_id', postId)
     .eq('user.ws_id', wsId);
@@ -184,10 +191,14 @@ async function getEligibleRecipients(
   }
 
   return (data ?? [])
-    .filter((row: any) => row.is_completed !== null)
+    .filter(
+      (row: any) =>
+        row.is_completed !== null && row.approval_status === 'APPROVED'
+    )
     .map((row: any) => ({
       user_id: row.user_id as string,
       email: row.user?.email as string,
+      approved_by: (row.approved_by as string | null) ?? null,
     }))
     .filter((row: EligibleRecipient) => isValidEmailAddress(row.email));
 }
@@ -210,9 +221,7 @@ export async function enqueueApprovedPostEmails(
 ) {
   const { data: post, error: postError } = await sbAdmin
     .from('user_group_posts')
-    .select(
-      'id, group_id, post_approval_status, approved_by, workspace_user_groups!inner(ws_id)'
-    )
+    .select('id, group_id, workspace_user_groups!inner(ws_id)')
     .eq('id', postId)
     .eq('workspace_user_groups.ws_id', wsId)
     .maybeSingle();
@@ -220,20 +229,6 @@ export async function enqueueApprovedPostEmails(
   if (postError) throw postError;
   if (!post) return { queued: 0 };
   if (groupId && post.group_id !== groupId) return { queued: 0 };
-  if (post.post_approval_status !== 'APPROVED') return { queued: 0 };
-
-  const resolvedSenderPlatformUserId = await resolveSenderPlatformUserId(
-    sbAdmin,
-    {
-      wsId,
-      approvedByWorkspaceUserId: post.approved_by,
-      fallbackSenderPlatformUserId: senderPlatformUserId,
-    }
-  );
-
-  if (!resolvedSenderPlatformUserId) {
-    return { queued: 0 };
-  }
 
   const recipients = await getEligibleRecipients(sbAdmin, {
     wsId,
@@ -268,29 +263,46 @@ export async function enqueueApprovedPostEmails(
     ])
   );
 
-  const upsertRows = recipients
+  const candidateRows = recipients
     .filter((recipient) => {
       if (sentRecipientIds.has(recipient.user_id)) return false;
       const existing = existingByUserId.get(recipient.user_id);
       return existing?.status !== 'sent' && existing?.status !== 'processing';
     })
-    .map((recipient) => ({
-      ws_id: wsId,
-      group_id: post.group_id,
-      post_id: postId,
-      user_id: recipient.user_id,
-      sender_platform_user_id: resolvedSenderPlatformUserId,
-      status: 'queued',
-      batch_id: null,
-      attempt_count: 0,
-      last_error: null,
-      blocked_reason: null,
-      claimed_at: null,
-      last_attempt_at: null,
-      sent_at: null,
-      cancelled_at: null,
-      sent_email_id: null,
-    }));
+    .map(async (recipient) => {
+      const resolvedSenderPlatformUserId = await resolveSenderPlatformUserId(
+        sbAdmin,
+        {
+          wsId,
+          approvedByWorkspaceUserId: recipient.approved_by,
+          fallbackSenderPlatformUserId: senderPlatformUserId,
+        }
+      );
+
+      if (!resolvedSenderPlatformUserId) {
+        return null;
+      }
+
+      return {
+        ws_id: wsId,
+        group_id: post.group_id,
+        post_id: postId,
+        user_id: recipient.user_id,
+        sender_platform_user_id: resolvedSenderPlatformUserId,
+        status: 'queued',
+        batch_id: null,
+        attempt_count: 0,
+        last_error: null,
+        blocked_reason: null,
+        claimed_at: null,
+        last_attempt_at: null,
+        sent_at: null,
+        cancelled_at: null,
+        sent_email_id: null,
+      };
+    });
+
+  const upsertRows = (await Promise.all(candidateRows)).filter(Boolean);
 
   if (upsertRows.length === 0) {
     return { queued: 0 };
@@ -308,9 +320,13 @@ export async function enqueueApprovedPostEmails(
   return { queued: upsertRows.length };
 }
 
-export async function cancelQueuedPostEmails(sbAdmin: any, postId: string) {
+export async function cancelQueuedPostEmails(
+  sbAdmin: any,
+  postId: string,
+  userIds?: string[]
+) {
   const now = new Date().toISOString();
-  const { error } = await getQueueTable(sbAdmin)
+  let query = getQueueTable(sbAdmin)
     .update({
       status: 'cancelled',
       batch_id: null,
@@ -319,6 +335,12 @@ export async function cancelQueuedPostEmails(sbAdmin: any, postId: string) {
     })
     .eq('post_id', postId)
     .in('status', ['queued', 'failed', 'blocked', 'processing']);
+
+  if (userIds && userIds.length > 0) {
+    query = query.in('user_id', userIds);
+  }
+
+  const { error } = await query;
 
   if (error) throw error;
 }
@@ -341,26 +363,31 @@ async function buildPostSendContext(
   const { data: post, error: postError } = await sbAdmin
     .from('user_group_posts')
     .select(
-      'id, group_id, title, content, notes, created_at, post_approval_status, workspace_user_groups!inner(ws_id, name)'
+      'id, group_id, title, content, notes, created_at, workspace_user_groups!inner(ws_id, name)'
     )
     .eq('id', queueRow.post_id)
     .maybeSingle();
 
   if (postError) throw postError;
   if (!post) return null;
-  if (post.post_approval_status !== 'APPROVED') return null;
 
   const { data: check, error: checkError } = await sbAdmin
     .from('user_group_post_checks')
     .select(
-      'user_id, notes, is_completed, user:workspace_users!inner(id, email, full_name, display_name)'
+      'user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
     )
     .eq('post_id', queueRow.post_id)
     .eq('user_id', queueRow.user_id)
     .maybeSingle();
 
   if (checkError) throw checkError;
-  if (!check || check.is_completed === null) return null;
+  if (
+    !check ||
+    check.is_completed === null ||
+    check.approval_status !== 'APPROVED'
+  ) {
+    return null;
+  }
 
   const email = check.user?.email as string | undefined;
   if (!isValidEmailAddress(email)) return null;
@@ -374,7 +401,7 @@ async function buildPostSendContext(
       content: post.content,
       notes: post.notes,
       created_at: post.created_at,
-      post_approval_status: post.post_approval_status,
+      post_approval_status: 'APPROVED',
       group_name: Array.isArray(post.workspace_user_groups)
         ? post.workspace_user_groups[0]?.name
         : post.workspace_user_groups?.name,

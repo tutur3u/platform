@@ -207,7 +207,7 @@ export function ApprovalDetailDialog({
 
   // Fetch latest approved log using useQuery hook
   const reportId = item?.kind === 'reports' && open ? item.id : null;
-  const postId = item?.kind === 'posts' && open ? item.id : null;
+  const postId = item?.kind === 'posts' && open ? (item.post_id ?? null) : null;
 
   const { data: previousReportVersion } = useLatestApprovedLog(wsId, reportId);
   const { data: previousPostVersion } = useLatestApprovedPostLog(wsId, postId);

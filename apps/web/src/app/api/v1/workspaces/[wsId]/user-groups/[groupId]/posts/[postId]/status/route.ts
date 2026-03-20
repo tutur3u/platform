@@ -40,7 +40,7 @@ export async function GET(req: Request, { params }: Params) {
   } = await sbAdmin
     .from('workspace_user_groups_users')
     .select(
-      '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
+      '...workspace_users(id, user_group_post_checks!user_id!inner(post_id, is_completed))',
       {
         count: 'exact',
       }

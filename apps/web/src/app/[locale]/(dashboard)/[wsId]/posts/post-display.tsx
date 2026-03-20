@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Calendar,
-  ExternalLink,
-  MailCheck,
-  Send,
-  Users,
-} from '@tuturuuu/icons';
+import { Calendar, ExternalLink, Send, Users } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,10 +10,19 @@ import dayjs from 'dayjs';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { PostApprovalActions } from '@/components/post-approval-actions';
 import PostsRowActions from './row-actions';
 import type { PostEmail } from './types';
 
-export function PostDisplay({ postEmail }: { postEmail: PostEmail | null }) {
+export function PostDisplay({
+  wsId,
+  postEmail,
+  canApprovePosts = false,
+}: {
+  wsId: string;
+  postEmail: PostEmail | null;
+  canApprovePosts?: boolean;
+}) {
   const locale = useLocale();
   const t = useTranslations('post-email-data-table');
 
@@ -39,11 +42,37 @@ export function PostDisplay({ postEmail }: { postEmail: PostEmail | null }) {
     );
   }
 
+  const approvalClassName =
+    postEmail.approval_status === 'APPROVED'
+      ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
+      : postEmail.approval_status === 'REJECTED'
+        ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
+        : 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow';
+  const hasFollowUp = Boolean(
+    postEmail.approval_rejection_reason || postEmail.queue_last_error
+  );
+
   return (
     <div className="flex h-fit flex-col rounded-lg border">
-      <div className="flex h-16 items-center justify-between rounded-t-lg border-b px-4 backdrop-blur-sm">
-        <h3 className="font-semibold text-lg">{t('details_title')}</h3>
-        <PostsRowActions data={postEmail} />
+      <div className="flex flex-col gap-3 rounded-t-lg border-b px-4 py-4 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-semibold text-lg">{t('details_title')}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <PostsRowActions data={postEmail} />
+            <Badge variant="outline" className={approvalClassName}>
+              {(postEmail.approval_status ?? '-').toLowerCase()}
+            </Badge>
+          </div>
+        </div>
+        {canApprovePosts && postEmail.post_id && postEmail.user_id && (
+          <PostApprovalActions
+            wsId={wsId}
+            itemId={`${postEmail.post_id}:${postEmail.user_id}`}
+            approvalStatus={postEmail.approval_status ?? 'PENDING'}
+            canRemoveApproval={postEmail.can_remove_approval}
+            compact
+          />
+        )}
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
@@ -75,7 +104,7 @@ export function PostDisplay({ postEmail }: { postEmail: PostEmail | null }) {
                   <div className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
                     <Link
-                      href={`/${postEmail.ws_id}/users/groups/${postEmail.group_id}`}
+                      href={`/${wsId}/users/groups/${postEmail.group_id}`}
                       className="text-primary hover:underline"
                     >
                       {postEmail.group_name || '-'}
@@ -105,7 +134,7 @@ export function PostDisplay({ postEmail }: { postEmail: PostEmail | null }) {
               {postEmail.post_id && postEmail.group_id && (
                 <Button variant="outline" size="sm" asChild>
                   <Link
-                    href={`/${postEmail.ws_id}/users/groups/${postEmail.group_id}/posts/${postEmail.post_id}`}
+                    href={`/${wsId}/users/groups/${postEmail.group_id}/posts/${postEmail.post_id}`}
                     className="flex items-center gap-1"
                   >
                     <ExternalLink className="h-3 w-3" />
@@ -147,37 +176,23 @@ export function PostDisplay({ postEmail }: { postEmail: PostEmail | null }) {
             </div>
           </div>
 
-          <Separator />
+          {hasFollowUp && (
+            <>
+              <Separator />
 
-          <div className="space-y-4">
-            <h5 className="flex items-center gap-2 font-semibold text-base">
-              <MailCheck className="h-4 w-4" />
-              {t('queue_status')}
-            </h5>
+              {postEmail.approval_rejection_reason && (
+                <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
+                  {postEmail.approval_rejection_reason}
+                </div>
+              )}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <span className="font-medium text-muted-foreground text-sm">
-                  {t('queue_status')}
-                </span>
-                <PostsRowActions data={postEmail} />
-              </div>
-              <div className="space-y-2">
-                <span className="font-medium text-muted-foreground text-sm">
-                  {t('approval_status')}
-                </span>
-                <Badge variant="outline" className="capitalize">
-                  {postEmail.post_approval_status?.toLowerCase() || '-'}
-                </Badge>
-              </div>
-            </div>
-
-            {postEmail.queue_last_error && (
-              <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
-                {postEmail.queue_last_error}
-              </div>
-            )}
-          </div>
+              {postEmail.queue_last_error && (
+                <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
+                  {postEmail.queue_last_error}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </ScrollArea>
     </div>

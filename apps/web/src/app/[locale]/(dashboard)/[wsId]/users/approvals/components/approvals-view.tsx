@@ -597,6 +597,28 @@ export function ApprovalsView({
                       <div>
                         <div className="font-semibold text-sm">{title}</div>
                         <div className="flex flex-wrap items-center gap-1 text-muted-foreground text-xs">
+                          {item.kind === 'posts' &&
+                            item.user_name &&
+                            (item.user_id ? (
+                              <Link
+                                href={`/${wsId}/users/database/${item.user_id}`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Badge
+                                  variant="secondary"
+                                  className="cursor-pointer hover:bg-secondary/80"
+                                >
+                                  {item.user_name}
+                                </Badge>
+                              </Link>
+                            ) : (
+                              <Badge variant="secondary">
+                                {item.user_name}
+                              </Badge>
+                            ))}
+                          {item.kind === 'posts' && item.user_name && (
+                            <span className="mx-0.5">•</span>
+                          )}
                           {item.kind === 'reports' &&
                             item.user_name &&
                             (item.user_id ? (

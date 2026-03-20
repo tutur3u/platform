@@ -29,7 +29,7 @@ export async function GET(
   const queryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
-      'user_id, user_group_posts!inner(id, group_id), workspace_users!inner(ws_id)',
+      'user_id, user_group_posts!inner(id, group_id), workspace_users!user_id!inner(ws_id)',
       { count: 'exact' }
     )
     .eq('workspace_users.ws_id', wsId)

@@ -13321,30 +13321,83 @@ export type Database = {
       };
       user_group_post_checks: {
         Row: {
+          approval_status: Database['public']['Enums']['approval_status'];
+          approved_at: string | null;
+          approved_by: string | null;
           created_at: string;
           email_id: string | null;
           is_completed: boolean;
           notes: string | null;
           post_id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
           user_id: string;
         };
         Insert: {
+          approval_status?: Database['public']['Enums']['approval_status'];
+          approved_at?: string | null;
+          approved_by?: string | null;
           created_at?: string;
           email_id?: string | null;
           is_completed: boolean;
           notes?: string | null;
           post_id: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
           user_id: string;
         };
         Update: {
+          approval_status?: Database['public']['Enums']['approval_status'];
+          approved_at?: string | null;
+          approved_by?: string | null;
           created_at?: string;
           email_id?: string | null;
           is_completed?: boolean;
           notes?: string | null;
           post_id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'user_group_post_checks_email_id_fkey';
             columns: ['email_id'];
@@ -13364,6 +13417,41 @@ export type Database = {
             columns: ['post_id'];
             isOneToOne: false;
             referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
+            columns: ['rejected_by'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
           },
           {

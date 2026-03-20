@@ -56,7 +56,9 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data, error } = await sbAdmin
     .from('user_group_post_checks')
-    .select('*')
+    .select(
+      'post_id, user_id, is_completed, notes, created_at, email_id, approval_status, approved_at, rejected_at, rejection_reason'
+    )
     .eq('post_id', postId);
 
   if (error) {
@@ -125,13 +127,12 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  // Ensure resource belongs to this workspace and group, and is approved
+  // Ensure resource belongs to this workspace and group
   const { data: post, error: postErr } = await sbAdmin
     .from('user_group_posts')
     .select(`
       id,
       group_id,
-      post_approval_status,
       workspace_user_groups!inner(ws_id)
     `)
     .eq('id', postId)
@@ -141,13 +142,6 @@ export async function POST(req: Request, { params }: Params) {
 
   if (postErr || !post) {
     return NextResponse.json({ message: 'Post not found' }, { status: 404 });
-  }
-
-  if (post.post_approval_status !== 'APPROVED') {
-    return NextResponse.json(
-      { message: 'Post must be approved before updating checks' },
-      { status: 403 }
-    );
   }
 
   const insertPayload = isArray

@@ -22,6 +22,8 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { PostApprovalActions } from '@/components/post-approval-actions';
 import type { PostEmailQueueRow } from '@/lib/post-email-queue';
 
 interface Props {
@@ -29,6 +31,7 @@ interface Props {
   wsId: string;
   post: UserGroupPost;
   canUpdateUserGroupsPosts?: boolean;
+  canApprovePosts?: boolean;
   queueItem?: PostEmailQueueRow;
   initialCheck?: Partial<{
     user_id: string;
@@ -37,6 +40,10 @@ interface Props {
     notes: string;
     created_at?: string;
     email_id?: string | null;
+    approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+    approved_at?: string | null;
+    rejected_at?: string | null;
+    rejection_reason?: string | null;
   }> | null;
   isLoadingChecks?: boolean;
 }
@@ -91,17 +98,20 @@ function UserCard({
   wsId,
   post,
   canUpdateUserGroupsPosts = false,
+  canApprovePosts = false,
   queueItem,
   initialCheck = null,
   isLoadingChecks = false,
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const t = useTranslations();
 
   const check = initialCheck;
   const isLoadingCheck = isLoadingChecks;
   const queueBadge = getQueueBadge(queueItem);
   const QueueIcon = queueBadge.icon;
+  const approvalStatus = check?.approval_status ?? 'PENDING';
 
   const { mutate: handleSaveStatus, isPending: isSaving } = useMutation({
     mutationFn: async ({
@@ -158,8 +168,6 @@ function UserCard({
     });
   };
 
-  const isApproved = post.post_approval_status === 'APPROVED';
-
   return (
     <Card className="w-full rounded-lg p-4 shadow-md">
       <div className="mb-4 flex items-center">
@@ -189,10 +197,31 @@ function UserCard({
               </p>
             )}
           </div>
-          <Badge variant="outline" className={queueBadge.className}>
-            <QueueIcon className="mr-1 h-3.5 w-3.5" />
-            {queueBadge.label}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge
+              variant="outline"
+              className={cn(
+                approvalStatus === 'APPROVED' &&
+                  'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green',
+                approvalStatus === 'PENDING' &&
+                  'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
+                approvalStatus === 'REJECTED' &&
+                  'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
+              )}
+            >
+              {approvalStatus === 'APPROVED'
+                ? t('approvals.status.approved')
+                : approvalStatus === 'REJECTED'
+                  ? t('approvals.status.rejected')
+                  : t('approvals.status.pending')}
+            </Badge>
+            {(queueItem || check?.email_id) && (
+              <Badge variant="outline" className={queueBadge.className}>
+                <QueueIcon className="mr-1 h-3.5 w-3.5" />
+                {queueBadge.label}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
@@ -202,13 +231,40 @@ function UserCard({
           name="notes"
           placeholder="Notes"
           defaultValue={check?.notes || ''}
-          disabled={isLoadingCheck || !check || !isApproved}
+          disabled={isLoadingCheck || !check}
         />
       </form>
+
+      {check?.rejection_reason && approvalStatus === 'REJECTED' && (
+        <div className="mt-3 rounded border border-dynamic-red/20 bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
+          {check.rejection_reason}
+        </div>
+      )}
 
       {queueItem?.last_error && (
         <div className="mt-3 rounded border border-dynamic-red/20 bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
           {queueItem.last_error}
+        </div>
+      )}
+
+      {canApprovePosts && post.id && user.id && (
+        <div className="mt-4">
+          <PostApprovalActions
+            wsId={wsId}
+            itemId={`${post.id}:${user.id}`}
+            approvalStatus={approvalStatus}
+            canRemoveApproval={
+              approvalStatus === 'APPROVED' &&
+              queueItem?.status !== 'sent' &&
+              !check?.email_id
+            }
+            compact
+            onCompleted={() => {
+              queryClient.invalidateQueries({
+                queryKey: ['group-post-checks', post.id],
+              });
+            }}
+          />
         </div>
       )}
 
@@ -218,7 +274,7 @@ function UserCard({
             <Button
               type="submit"
               form={`notes-form-${user.id}`}
-              disabled={isSaving || !check || !isApproved}
+              disabled={isSaving || !check}
               variant="outline"
               className="w-full border"
             >
@@ -243,7 +299,7 @@ function UserCard({
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check || !isApproved}
+              disabled={isSaving || !check}
             >
               <X />
             </Button>
@@ -258,7 +314,7 @@ function UserCard({
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check || !isApproved}
+              disabled={isSaving || !check}
             >
               <CircleSlash />
             </Button>
@@ -273,7 +329,7 @@ function UserCard({
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check || !isApproved}
+              disabled={isSaving || !check}
             >
               <Check />
             </Button>

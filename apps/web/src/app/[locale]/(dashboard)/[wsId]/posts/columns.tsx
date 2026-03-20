@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import 'dayjs/locale/vi';
@@ -70,6 +71,31 @@ export const getPostEmailColumns = ({
         {row.getValue('post_title') || '-'}
       </div>
     ),
+  },
+  {
+    accessorKey: 'approval_status',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.approval_status`)}
+      />
+    ),
+    cell: ({ row }) => {
+      const value = (row.getValue('approval_status') as string | null) ?? '-';
+      const className =
+        value === 'APPROVED'
+          ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
+          : value === 'REJECTED'
+            ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
+            : 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow';
+
+      return (
+        <Badge variant="outline" className={className}>
+          {value.toLowerCase()}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: 'queue_status',
