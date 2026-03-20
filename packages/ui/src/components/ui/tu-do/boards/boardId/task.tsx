@@ -263,11 +263,39 @@ function TaskCardInner({
     removeRelatedTask,
     isSaving: relationshipSaving,
     savingTaskId: relationshipSavingTaskId,
+    hasLoadedRelationships,
   } = useTaskCardRelationships({
     taskId: task.id,
     boardId,
     wsId: effectiveWorkspaceId,
+    enabled: menuOpen,
   });
+
+  const relationshipSummary =
+    task.relationship_summary ??
+    ({
+      parent_task_id: null,
+      child_count: 0,
+      blocked_by_count: 0,
+      blocking_count: 0,
+      related_count: 0,
+    } as const);
+
+  const hasParentRelationship = hasLoadedRelationships
+    ? !!parentTask
+    : !!relationshipSummary.parent_task_id;
+  const childTaskCount = hasLoadedRelationships
+    ? childTasks.length
+    : relationshipSummary.child_count;
+  const blockedByCount = hasLoadedRelationships
+    ? blockedByTasks.length
+    : relationshipSummary.blocked_by_count;
+  const blockingCount = hasLoadedRelationships
+    ? blockingTasks.length
+    : relationshipSummary.blocking_count;
+  const relatedTaskCount = hasLoadedRelationships
+    ? relatedTasks.length
+    : relationshipSummary.related_count;
 
   // Fetch available task lists using React Query (same key as other components)
   const { data: availableLists = [] } = useQuery({
@@ -748,7 +776,7 @@ function TaskCardInner({
     }
 
     // Parent task indicator badge
-    if (parentTask) {
+    if (hasParentRelationship) {
       badges.push({
         id: 'parent',
         element: (
@@ -756,21 +784,26 @@ function TaskCardInner({
             key="parent"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 text-[10px] text-dynamic-purple"
-            title={t('subtask_of', { name: parentTask.name })}
+            title={
+              parentTask
+                ? t('subtask_of', { name: parentTask.name })
+                : undefined
+            }
             ref={(el) => {
               if (el) badgeRefs.current.set('parent', el as any);
             }}
           >
             <ArrowUpCircle className="h-2.5 w-2.5" />
-            {parentTask.name}
+            {parentTask?.name ?? t('parent_task')}
           </Badge>
         ),
       });
     }
 
     // Child tasks (sub-tasks) count badge
-    if (childTasks.length > 0) {
+    if (childTaskCount > 0) {
       const completedCount = childTasks.filter((t) => t.completed).length;
+      const canShowCompletedCount = hasLoadedRelationships;
       badges.push({
         id: 'children',
         element: (
@@ -779,27 +812,33 @@ function TaskCardInner({
             variant="secondary"
             className={cn(
               'h-5 shrink-0 border px-2 text-[10px]',
-              completedCount === childTasks.length
+              canShowCompletedCount && completedCount === childTaskCount
                 ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
                 : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
             )}
-            title={t('n_subtasks_completed', {
-              checked: completedCount,
-              total: childTasks.length,
-            })}
+            title={
+              canShowCompletedCount
+                ? t('n_subtasks_completed', {
+                    checked: completedCount,
+                    total: childTaskCount,
+                  })
+                : undefined
+            }
             ref={(el) => {
               if (el) badgeRefs.current.set('children', el as any);
             }}
           >
             <ListTree className="h-2.5 w-2.5" />
-            {completedCount}/{childTasks.length}
+            {canShowCompletedCount
+              ? `${completedCount}/${childTaskCount}`
+              : childTaskCount}
           </Badge>
         ),
       });
     }
 
     // Blocked indicator badge (this task is blocked by others)
-    if (blockedByTasks.length > 0) {
+    if (blockedByCount > 0) {
       badges.push({
         id: 'blocked',
         element: (
@@ -807,7 +846,7 @@ function TaskCardInner({
             key="blocked"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-red/30 bg-dynamic-red/10 px-2 text-[10px] text-dynamic-red"
-            title={t('blocked_by_n_tasks', { count: blockedByTasks.length })}
+            title={t('blocked_by_n_tasks', { count: blockedByCount })}
             ref={(el) => {
               if (el) badgeRefs.current.set('blocked', el as any);
             }}
@@ -820,7 +859,7 @@ function TaskCardInner({
     }
 
     // Blocking indicator badge (this task blocks others)
-    if (blockingTasks.length > 0) {
+    if (blockingCount > 0) {
       badges.push({
         id: 'blocking',
         element: (
@@ -828,20 +867,20 @@ function TaskCardInner({
             key="blocking"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 text-[10px] text-dynamic-orange"
-            title={t('blocking_n_tasks', { count: blockingTasks.length })}
+            title={t('blocking_n_tasks', { count: blockingCount })}
             ref={(el) => {
               if (el) badgeRefs.current.set('blocking', el as any);
             }}
           >
             <Ban className="h-2.5 w-2.5" />
-            {blockingTasks.length}
+            {blockingCount}
           </Badge>
         ),
       });
     }
 
     // Related tasks indicator badge
-    if (relatedTasks.length > 0) {
+    if (relatedTaskCount > 0) {
       badges.push({
         id: 'related',
         element: (
@@ -849,13 +888,13 @@ function TaskCardInner({
             key="related"
             variant="secondary"
             className="h-5 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 text-[10px] text-dynamic-blue"
-            title={t('n_related_tasks', { count: relatedTasks.length })}
+            title={t('n_related_tasks', { count: relatedTaskCount })}
             ref={(el) => {
               if (el) badgeRefs.current.set('related', el as any);
             }}
           >
             <Link2 className="h-2.5 w-2.5" />
-            {relatedTasks.length}
+            {relatedTaskCount}
           </Badge>
         ),
       });
@@ -874,10 +913,13 @@ function TaskCardInner({
     descriptionMeta.checkedCheckboxes,
     descriptionMeta.indeterminateCheckboxes,
     parentTask,
+    hasParentRelationship,
     childTasks,
-    blockingTasks,
-    blockedByTasks,
-    relatedTasks,
+    childTaskCount,
+    hasLoadedRelationships,
+    blockingCount,
+    blockedByCount,
+    relatedTaskCount,
     t,
   ]);
 

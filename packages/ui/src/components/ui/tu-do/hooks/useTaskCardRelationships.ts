@@ -17,6 +17,7 @@ export interface UseTaskCardRelationshipsProps {
   taskId: string;
   boardId: string;
   wsId?: string;
+  enabled?: boolean;
 }
 
 export interface UseTaskCardRelationshipsReturn {
@@ -45,6 +46,7 @@ export interface UseTaskCardRelationshipsReturn {
   // Saving state
   isSaving: boolean;
   savingTaskId: string | null;
+  hasLoadedRelationships: boolean;
 }
 
 /**
@@ -55,6 +57,7 @@ export function useTaskCardRelationships({
   taskId,
   boardId,
   wsId,
+  enabled = true,
 }: UseTaskCardRelationshipsProps): UseTaskCardRelationshipsReturn {
   const broadcast = useBoardBroadcast();
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
@@ -69,7 +72,7 @@ export function useTaskCardRelationships({
 
       return getWorkspaceTaskRelationships(wsId, taskId);
     },
-    enabled: !!wsId && !!taskId,
+    enabled: enabled && !!wsId && !!taskId,
     staleTime: 30000,
   });
 
@@ -86,6 +89,7 @@ export function useTaskCardRelationships({
   const blocking = relationships?.blocking ?? [];
   const blockedBy = relationships?.blockedBy ?? [];
   const relatedTasks = relationships?.relatedTasks ?? [];
+  const hasLoadedRelationships = relationships !== undefined;
 
   // Parent task actions
   const setParentTask = useCallback(
@@ -298,5 +302,6 @@ export function useTaskCardRelationships({
     removeRelatedTask,
     isSaving,
     savingTaskId,
+    hasLoadedRelationships,
   };
 }
