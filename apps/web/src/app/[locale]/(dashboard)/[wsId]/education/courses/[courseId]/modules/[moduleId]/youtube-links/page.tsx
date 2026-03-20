@@ -60,6 +60,7 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
             className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-2 md:p-4"
           >
             <DeleteLinkButton
+              wsId={wsId}
               moduleId={moduleId}
               courseId={courseId}
               link={link}

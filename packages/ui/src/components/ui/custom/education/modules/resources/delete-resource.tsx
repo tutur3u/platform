@@ -1,7 +1,7 @@
 'use client';
 
 import { Trash } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { deleteWorkspaceStorageObject } from '@tuturuuu/internal-api/education';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -16,13 +16,17 @@ export function DeleteResourceButton({ path }: { path: string }) {
 
   const deleteResource = async (path: string) => {
     setLoading(true);
-    const supabase = createClient();
+    const wsId = path.split('/')[0];
 
-    const { error } = await supabase.storage.from('workspaces').remove([path]);
+    if (!wsId) {
+      setLoading(false);
+      return;
+    }
 
-    if (!error) {
+    try {
+      await deleteWorkspaceStorageObject(wsId, path);
       router.refresh();
-    } else {
+    } catch {
       setLoading(false);
     }
   };

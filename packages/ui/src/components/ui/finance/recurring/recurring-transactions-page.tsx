@@ -2,7 +2,11 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, Ellipsis, Plus, RefreshCw } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  deleteRecurringTransaction as deleteRecurringTransactionRequest,
+  listRecurringTransactions,
+  listUpcomingRecurringTransactions,
+} from '@tuturuuu/internal-api/finance';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,48 +68,24 @@ export default function RecurringTransactionsPage({
   const [editingTransaction, setEditingTransaction] =
     useState<RecurringTransaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   const { data: recurringTransactions, isLoading } = useQuery({
     queryKey: ['recurring_transactions', wsId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('recurring_transactions')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('next_occurrence', { ascending: true });
-
-      if (error) throw error;
-      return data as RecurringTransaction[];
-    },
+    queryFn: async () =>
+      (await listRecurringTransactions(wsId)) as RecurringTransaction[],
   });
 
   const { data: upcomingTransactions } = useQuery({
     queryKey: ['upcoming_recurring_transactions', wsId],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        'get_upcoming_recurring_transactions',
-        {
-          _ws_id: wsId,
-          days_ahead: 30,
-        }
-      );
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () =>
+      listUpcomingRecurringTransactions(wsId, { daysAhead: 30 }),
   });
 
-  const deleteRecurringTransaction = async (id: string) => {
+  const handleDeleteRecurringTransaction = async (id: string) => {
     setDeletingId(id);
     try {
-      const { error } = await supabase
-        .from('recurring_transactions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await deleteRecurringTransactionRequest(wsId, id);
 
       toast.success('Recurring transaction deleted successfully');
       queryClient.invalidateQueries({
@@ -267,7 +247,7 @@ export default function RecurringTransactionsPage({
                                       </AlertDialogCancel>
                                       <AlertDialogAction
                                         onClick={() =>
-                                          deleteRecurringTransaction(
+                                          handleDeleteRecurringTransaction(
                                             transaction.id
                                           )
                                         }

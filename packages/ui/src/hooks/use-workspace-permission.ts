@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { checkWorkspacePermission } from '@tuturuuu/internal-api/settings';
 import type { PermissionId } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
@@ -40,34 +40,14 @@ export function useWorkspacePermission({
   enabled = true,
   user,
 }: UseWorkspacePermissionOptions): UseWorkspacePermissionReturn {
-  const supabase = createClient();
-
   const {
     data: hasPermission,
     isLoading,
     error,
   } = useQuery({
     queryKey: ['workspace-permission', wsId, permission, user.id],
-    queryFn: async () => {
-      // Explicit "no user" case: user is unauthenticated (not a transient error)
-      // Check permission via RPC – throw on error (transient failures surface properly)
-      const { data, error: rpcError } = await supabase.rpc(
-        'has_workspace_permission',
-        {
-          p_user_id: user.id,
-          p_ws_id: wsId,
-          p_permission: permission,
-        }
-      );
-
-      if (rpcError) {
-        throw new Error(
-          `Failed to check workspace permission: ${rpcError.message}`
-        );
-      }
-
-      return data ?? false;
-    },
+    queryFn: async () =>
+      (await checkWorkspacePermission(wsId, permission, user.id)).hasPermission,
     enabled: enabled && !!wsId && !!user,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     retry: 1, // Retry once on failure

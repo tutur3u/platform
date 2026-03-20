@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createWorkspaceStorageSignedUrl } from '@tuturuuu/internal-api/storage';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
@@ -30,7 +30,6 @@ export function FileDisplay({
 }) {
   const t = useTranslations();
 
-  const supabase = createClient();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,21 +37,25 @@ export function FileDisplay({
       if (!file.id || !file.name) return;
 
       const fullPath = `${path.endsWith('/') ? path : `${path}/`}${file.name}`;
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .createSignedUrl(fullPath, 3600);
+      const wsId = fullPath.split('/')[0];
+      if (!wsId) return;
+      const relativePath = fullPath.slice(wsId.length + 1);
 
-      if (error) {
+      try {
+        const nextSignedUrl = await createWorkspaceStorageSignedUrl(
+          wsId,
+          relativePath,
+          3600
+        );
+        setSignedUrl(nextSignedUrl);
+      } catch (error) {
         console.error(error);
         return;
       }
-      console.log(data);
-
-      setSignedUrl(data?.signedUrl);
     };
 
     fetchSignedUrl();
-  }, [file.id, file.name, path, supabase.storage]);
+  }, [file.id, file.name, path]);
 
   if (!signedUrl) return null;
 

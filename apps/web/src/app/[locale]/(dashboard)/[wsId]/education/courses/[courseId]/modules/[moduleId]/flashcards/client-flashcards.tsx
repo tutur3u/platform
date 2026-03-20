@@ -1,7 +1,7 @@
 'use client';
 
 import { Pencil, Trash, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { deleteWorkspaceFlashcard } from '@tuturuuu/internal-api/education';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,22 +53,16 @@ export default function ClientFlashcards({
 }) {
   const router = useRouter();
   const t = useTranslations();
-  const supabase = createClient();
 
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
   const onDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('workspace_flashcards')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
+    try {
+      await deleteWorkspaceFlashcard(wsId, id);
+      router.refresh();
+    } catch (error) {
       console.log(error);
-      return;
     }
-
-    router.refresh();
   };
 
   return (

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ArrowDownCircle, ArrowUpCircle, Check, Tag, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listTransactionCategories } from '@tuturuuu/internal-api/finance';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -43,20 +43,19 @@ interface CategoryFilterProps {
 async function fetchTransactionCategories(
   wsId: string
 ): Promise<TransactionCategory[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('transaction_categories')
-    .select('id, name, is_expense, icon, color')
-    .eq('ws_id', wsId)
-    .order('name', { ascending: true });
-
-  if (error) throw error;
-  return (data || []).map((cat) => ({
-    ...cat,
-    is_expense: cat.is_expense ?? false,
-    icon: cat.icon ?? null,
-    color: cat.color ?? null,
-  }));
+  const data = await listTransactionCategories(wsId);
+  return (data || [])
+    .filter(
+      (cat): cat is typeof cat & { id: string; name: string } =>
+        typeof cat.id === 'string' && typeof cat.name === 'string'
+    )
+    .map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      is_expense: cat.is_expense ?? false,
+      icon: cat.icon ?? null,
+      color: cat.color ?? null,
+    }));
 }
 
 export function CategoryFilter({

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getSpendingTrends } from '@tuturuuu/internal-api/finance';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   type ChartConfig,
@@ -34,57 +34,13 @@ export function SpendingTrendsChart({
   currency = 'USD',
 }: SpendingTrendsChartProps) {
   const locale = useLocale();
-  const supabase = createClient();
   const { resolvedTheme } = useTheme();
 
   const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
 
   const { data: trendsData, isLoading } = useQuery({
     queryKey: ['spending_trends', wsId],
-    queryFn: async () => {
-      // Get last 30 days of spending
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
-
-      const { data, error } = await supabase
-        .from('wallet_transactions')
-        .select(
-          `
-          amount,
-          taken_at,
-          workspace_wallets!inner(ws_id)
-        `
-        )
-        .eq('workspace_wallets.ws_id', wsId)
-        .lt('amount', 0) // Only expenses
-        .gte('taken_at', startDate.toISOString())
-        .order('taken_at', { ascending: true });
-
-      if (error) throw error;
-
-      // Group by day
-      const dailySpending = new Map<string, number>();
-
-      // Initialize all days with 0
-      for (let i = 0; i < 30; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
-        const dateStr = format(date, 'yyyy-MM-dd');
-        dailySpending.set(dateStr, 0);
-      }
-
-      // Add actual spending
-      data?.forEach((transaction: any) => {
-        const dateStr = format(new Date(transaction.taken_at), 'yyyy-MM-dd');
-        const amount = Math.abs(Number(transaction.amount));
-        dailySpending.set(dateStr, (dailySpending.get(dateStr) || 0) + amount);
-      });
-
-      return Array.from(dailySpending.entries()).map(([date, amount]) => ({
-        date,
-        amount,
-      }));
-    },
+    queryFn: async () => getSpendingTrends(wsId, { days: 30 }),
   });
 
   const chartConfig = {

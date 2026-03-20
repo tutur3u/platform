@@ -190,19 +190,24 @@ export async function fetchGatewayModelsPage({
 export async function fetchGatewayFavoriteModels(
   wsId: string
 ): Promise<GatewayModelUi[]> {
-  const { createClient } = await import('@tuturuuu/supabase/next/client');
-  const supabase = createClient();
-  const { data: favorites, error: favoritesError } = await supabase
-    .from('ai_model_favorites')
-    .select('model_id')
-    .eq('ws_id', wsId);
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/ai/model-favorites`,
+    {
+      cache: 'no-store',
+    }
+  );
 
-  if (favoritesError || !favorites?.length) return [];
+  if (!response.ok) return [];
 
-  const favoriteIds = new Set(favorites.map((favorite) => favorite.model_id));
+  const { favoriteIds = [] } = (await response.json()) as {
+    favoriteIds?: string[];
+  };
+  if (favoriteIds.length === 0) return [];
+
+  const favoriteIdSet = new Set(favoriteIds);
   const catalog = await fetchGatewayModelCatalog();
 
-  return catalog.filter((model) => favoriteIds.has(model.value));
+  return catalog.filter((model) => favoriteIdSet.has(model.value));
 }
 
 export async function fetchGatewayModels(): Promise<GatewayModelUi[]> {

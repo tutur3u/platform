@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, Users, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -40,34 +40,33 @@ async function fetchWorkspaceUsers(
   wsId: string,
   filterType: 'all' | 'transaction_creators' | 'invoice_creators' = 'all'
 ): Promise<WorkspaceUser[]> {
-  const supabase = await createClient();
-
   if (filterType === 'transaction_creators') {
-    const { data, error } = await supabase
-      .from('distinct_transaction_creators' as any)
-      .select('id, display_name');
+    const response = await fetch(
+      `/api/v1/workspaces/${wsId}/finance/filter-users?type=transaction_creators`,
+      {
+        cache: 'no-store',
+      }
+    );
 
-    if (error) throw error;
-    return (data as unknown as WorkspaceUser[]) || [];
+    if (!response.ok) throw new Error('Failed to fetch transaction creators');
+    const data = (await response.json()) as { users?: WorkspaceUser[] };
+    return data.users || [];
   }
 
   if (filterType === 'invoice_creators') {
-    const { data, error } = await supabase
-      .from('distinct_invoice_creators' as any)
-      .select('id, display_name');
+    const response = await fetch(
+      `/api/v1/workspaces/${wsId}/finance/filter-users?type=invoice_creators`,
+      {
+        cache: 'no-store',
+      }
+    );
 
-    if (error) throw error;
-    return (data as unknown as WorkspaceUser[]) || [];
+    if (!response.ok) throw new Error('Failed to fetch invoice creators');
+    const data = (await response.json()) as { users?: WorkspaceUser[] };
+    return data.users || [];
   }
 
-  const { data, error } = await supabase
-    .from('workspace_users')
-    .select('id, full_name, display_name, email, avatar_url')
-    .eq('ws_id', wsId)
-    .order('full_name', { ascending: true });
-
-  if (error) throw error;
-  return data || [];
+  return (await listWorkspaceMembers(wsId)) as WorkspaceUser[];
 }
 
 export function UserFilter({

@@ -8,7 +8,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getTransactionStats } from '@tuturuuu/internal-api/finance';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionViewMode } from '@tuturuuu/types/primitives/TransactionPeriod';
 import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
@@ -192,7 +192,6 @@ export function PeriodBreakdownPanel({
       timezone,
     ],
     queryFn: async () => {
-      const supabase = createClient();
       // Create start/end timestamps in the user's timezone
       // IMPORTANT: Use the resolved timezone, not UTC, to ensure we query the correct local day
       const startDate = dayjs
@@ -202,16 +201,11 @@ export function PeriodBreakdownPanel({
         .tz(`${computedPeriodEnd} 23:59:59.999`, timezone)
         .toISOString();
 
-      const { data, error } = await supabase.rpc('get_transaction_stats', {
-        p_ws_id: workspaceId!, // Safe: query is only enabled when workspaceId exists
-        p_start_date: startDate,
-        p_end_date: endDate,
+      const row = await getTransactionStats(workspaceId!, {
+        start: startDate,
+        end: endDate,
       });
 
-      if (error) throw error;
-
-      // RPC returns an array with one row
-      const row = data?.[0];
       if (!row) {
         return {
           totalIncome: 0,
@@ -223,11 +217,11 @@ export function PeriodBreakdownPanel({
       }
 
       return {
-        totalIncome: Number(row.total_income) || 0,
-        totalExpense: Number(row.total_expense) || 0,
-        netTotal: Number(row.net_total) || 0,
-        transactionCount: Number(row.total_transactions) || 0,
-        hasRedactedAmounts: row.has_redacted_amounts || false,
+        totalIncome: Number(row.totalIncome) || 0,
+        totalExpense: Number(row.totalExpense) || 0,
+        netTotal: Number(row.netTotal) || 0,
+        transactionCount: Number(row.totalTransactions) || 0,
+        hasRedactedAmounts: row.hasRedactedAmounts || false,
       };
     },
     staleTime: 2 * 60 * 1000, // 2 minute cache

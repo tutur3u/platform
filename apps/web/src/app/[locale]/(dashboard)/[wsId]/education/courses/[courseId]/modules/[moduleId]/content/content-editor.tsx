@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { toast } from '@tuturuuu/ui/sonner';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
@@ -8,12 +8,18 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Props {
+  wsId: string;
   courseId: string;
   moduleId: string;
   content?: JSONContent;
 }
 
-export function ModuleContentEditor({ courseId, moduleId, content }: Props) {
+export function ModuleContentEditor({
+  wsId,
+  courseId,
+  moduleId,
+  content,
+}: Props) {
   const [post, setPost] = useState<JSONContent | null>(content || null);
   const t = useTranslations();
 
@@ -23,15 +29,12 @@ export function ModuleContentEditor({ courseId, moduleId, content }: Props) {
   };
 
   const saveContentToDB = async (content: JSONContent | null) => {
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('workspace_course_modules')
-      .update({ content })
-      .eq('id', moduleId)
-      .eq('course_id', courseId);
-
-    if (error) {
+    try {
+      await updateWorkspaceCourseModule(wsId, moduleId, {
+        course_id: courseId,
+        content,
+      });
+    } catch (error) {
       console.log(error);
       toast.error(t('common.error_saving_content'));
     }

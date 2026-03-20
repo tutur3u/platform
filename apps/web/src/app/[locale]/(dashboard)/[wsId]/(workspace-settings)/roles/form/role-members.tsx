@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Search, User, UserPlus, Users, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listRoleMembers } from '@tuturuuu/internal-api/roles';
+import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -34,7 +35,7 @@ export default function RoleFormMembersSection({
 
   const roleMembersQuery = useQuery({
     queryKey: ['workspaces', wsId, 'roles', roleId, 'members'],
-    queryFn: roleId ? () => getRoleMembers(roleId) : undefined,
+    queryFn: roleId ? () => getRoleMembers(wsId, roleId) : undefined,
     enabled: !!roleId,
   });
 
@@ -339,37 +340,13 @@ export default function RoleFormMembersSection({
 }
 
 async function getWorkspaceUsers(wsId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_members')
-    .select(
-      'id:user_id, ...users(display_name, full_name, avatar_url, ...user_private_details(email))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
-    .order('user_id');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  const data = (await listWorkspaceMembers(wsId)) as WorkspaceUser[];
+  return { data, count: data.length };
 }
 
-async function getRoleMembers(roleId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_role_members')
-    .select('...users!inner(id, display_name, avatar_url)', {
-      count: 'exact',
-    })
-    .eq('role_id', roleId);
-
-  const { data, count, error } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+async function getRoleMembers(wsId: string, roleId: string) {
+  return (await listRoleMembers(wsId, roleId)) as {
+    data: WorkspaceUser[];
+    count: number;
+  };
 }

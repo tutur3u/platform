@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getWorkspaceCalendarSettings } from '@tuturuuu/internal-api/settings';
+import { getUserCalendarSettings } from '@tuturuuu/internal-api/users';
 import {
   type CalendarPreferences,
   CalendarPreferencesProvider as UICalendarPreferencesProvider,
@@ -23,58 +24,18 @@ export function CalendarPreferencesProvider({
   wsId,
 }: CalendarPreferencesProviderProps) {
   const locale = useLocale();
-  const supabase = createClient();
-  const [userId, setUserId] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id ?? null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
 
   // Fetch user calendar settings
   const { data: userSettings } = useQuery({
-    queryKey: ['users', 'calendar-settings', userId],
-    queryFn: async () => {
-      if (!userId) return null;
-      const res = await fetch('/api/v1/users/calendar-settings', {
-        cache: 'no-store',
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data as {
-        timezone?: string | null;
-        first_day_of_week?: string | null;
-        time_format?: string | null;
-      };
-    },
-    enabled: !!userId,
+    queryKey: ['users', 'calendar-settings'],
+    queryFn: async () => getUserCalendarSettings(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch workspace calendar settings (if wsId is provided)
   const { data: workspaceSettings } = useQuery({
     queryKey: ['workspace-calendar-settings', wsId],
-    queryFn: async () => {
-      if (!wsId) return null;
-      const res = await fetch(`/api/v1/workspaces/${wsId}/calendar-settings`, {
-        cache: 'no-store',
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data as {
-        timezone?: string | null;
-        first_day_of_week?: string | null;
-      };
-    },
+    queryFn: async () => (wsId ? getWorkspaceCalendarSettings(wsId) : null),
     enabled: !!wsId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, Eye, EyeOff, RotateCcw } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCategoryBreakdown } from '@tuturuuu/internal-api/finance';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn } from '@tuturuuu/utils/format';
@@ -331,20 +331,13 @@ export function CategoryBreakdownDialog({
 
   // Fetch category breakdown for a given transaction type
   const fetchCategoryBreakdown = async (txType: string) => {
-    const supabase = createClient();
-    const { data, error } = await supabase.rpc('get_category_breakdown', {
-      _ws_id: workspaceId,
-      _start_date: periodStart,
-      _end_date: periodEnd,
-      include_confidential: true,
-      _transaction_type: txType,
-      _interval: 'daily',
-      _anchor_to_latest: false,
-      _timezone: timezone,
-      _wallet_ids: walletId ? [walletId] : undefined,
-    });
-    if (error) throw error;
-    return data as CategoryBreakdownData[];
+    return (await getCategoryBreakdown(workspaceId, {
+      walletId,
+      startDate: periodStart,
+      endDate: periodEnd,
+      type: txType,
+      timezone,
+    })) as CategoryBreakdownData[];
   };
 
   const queryBase = {

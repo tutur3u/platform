@@ -343,8 +343,26 @@ export function GoogleCalendarSettings({
       }
 
       // Also delete all calendar connections for this workspace
-      const supabase = createClient();
-      await supabase.from('calendar_connections').delete().eq('ws_id', wsId);
+      const connectionsResponse = await fetch(
+        `/api/v1/calendar/connections?wsId=${wsId}`,
+        {
+          cache: 'no-store',
+        }
+      );
+
+      if (connectionsResponse.ok) {
+        const { connections } = (await connectionsResponse.json()) as {
+          connections?: Array<{ id: string }>;
+        };
+
+        await Promise.all(
+          (connections ?? []).map((connection) =>
+            fetch(`/api/v1/calendar/connections?id=${connection.id}`, {
+              method: 'DELETE',
+            })
+          )
+        );
+      }
 
       toast({
         title: 'Disconnected',

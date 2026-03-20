@@ -1,15 +1,17 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { linkQuizSetModules } from '@tuturuuu/internal-api/education';
 import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Filter } from '../../../../users/filters';
 
 export function QuizsetModuleLinker({
+  wsId,
   setId,
   data,
 }: {
+  wsId: string;
   setId: string;
   data: (Partial<WorkspaceCourseModule> & {
     selected?: boolean;
@@ -17,15 +19,9 @@ export function QuizsetModuleLinker({
 }) {
   const router = useRouter();
   const t = useTranslations();
-  const supabase = createClient();
 
   const onSet = async (moduleIds: string[]) => {
-    await supabase.from('course_module_quiz_sets').upsert(
-      moduleIds.map((module_id) => ({
-        module_id,
-        set_id: setId,
-      }))
-    );
+    await linkQuizSetModules(wsId, setId, moduleIds);
     router.refresh();
   };
 
