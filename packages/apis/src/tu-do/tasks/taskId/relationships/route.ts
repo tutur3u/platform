@@ -36,6 +36,7 @@ interface RelationshipTaskRow {
   list: {
     board: {
       name: string;
+      ticket_prefix: string | null;
       ws_id: string | null;
     } | null;
   } | null;
@@ -83,6 +84,7 @@ function toTaskInfo(task: RelationshipTaskRow): RelatedTaskInfo {
       : null,
     board_id: task.board_id,
     board_name: task.list?.board?.name,
+    ticket_prefix: task.list?.board?.ticket_prefix ?? null,
   };
 }
 
@@ -177,6 +179,7 @@ export async function GET(
           list:task_lists(
             board:workspace_boards(
               name,
+              ticket_prefix,
               ws_id
             )
           )
@@ -209,6 +212,7 @@ export async function GET(
           list:task_lists(
             board:workspace_boards(
               name,
+              ticket_prefix,
               ws_id
             )
           )

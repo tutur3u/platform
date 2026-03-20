@@ -73,6 +73,18 @@ async function loadRelationshipEdgesByTaskColumn(
 }
 
 export function normalizeTask<T extends TaskRecord>(task: T) {
+  const taskList = task.task_lists as
+    | {
+        deleted?: boolean | null;
+        board_id?: string | null;
+        workspace_boards?: {
+          name?: string | null;
+          ticket_prefix?: string | null;
+        } | null;
+      }
+    | null
+    | undefined;
+
   const normalizedAssignees = (task.assignees ?? []).flatMap(
     (entry: TaskAssigneeRelation) => {
       const resolvedId = entry.user?.id || entry.user_id;
@@ -136,7 +148,10 @@ export function normalizeTask<T extends TaskRecord>(task: T) {
     project_ids: Array.from(
       new Set(normalizedProjects.map((project) => project.id))
     ),
-    list_deleted: task.task_lists?.deleted ?? false,
+    list_deleted: taskList?.deleted ?? false,
+    board_id: taskList?.board_id ?? null,
+    board_name: taskList?.workspace_boards?.name ?? null,
+    ticket_prefix: taskList?.workspace_boards?.ticket_prefix ?? null,
   };
 }
 

@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { formatRelationshipTaskIdentifier } from '../../../relationship-task-identifier';
 import type { ClickableTaskItemProps } from '../types/task-relationships.types';
 
 export function ClickableTaskItem({
@@ -20,6 +21,8 @@ export function ClickableTaskItem({
   showRemove = true,
   disabled = false,
 }: ClickableTaskItemProps) {
+  const taskIdentifier = formatRelationshipTaskIdentifier(task);
+
   return (
     <div className="group flex items-center justify-between gap-2 rounded-lg border bg-background p-2.5 transition-colors hover:bg-muted/50">
       <TooltipProvider>
@@ -45,10 +48,13 @@ export function ClickableTaskItem({
                 >
                   {task.name}
                 </span>
+                {taskIdentifier && (
+                  <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                    {taskIdentifier}
+                  </span>
+                )}
                 <span className="text-muted-foreground text-xs">
-                  {task.board_name}{' '}
-                  {typeof task.display_number === 'number' &&
-                    ` #${task.display_number}`}
+                  {task.board_name}
                 </span>
               </div>
               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />

@@ -19,6 +19,7 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
+import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
 
 interface TaskParentMenuTranslations {
   parent_task: string;
@@ -60,6 +61,9 @@ export function TaskParentMenu({
 }: TaskParentMenuProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [debouncedSearch] = useDebounce(searchQuery, 300);
+  const parentTaskIdentifier = parentTask
+    ? formatRelationshipTaskIdentifier(parentTask)
+    : null;
 
   // Exclude current task and all its children (to prevent cycles)
   const excludeIds = React.useMemo(() => {
@@ -105,9 +109,13 @@ export function TaskParentMenu({
           <div className="border-b p-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm">{parentTask.name}</span>
+                <span className="truncate text-sm">
+                  {parentTaskIdentifier
+                    ? `${parentTaskIdentifier} - ${parentTask.name}`
+                    : parentTask.name}
+                </span>
                 <span className="text-muted-foreground text-xs">
-                  {parentTask.board_name} #{parentTask.display_number}
+                  {parentTask.board_name}
                 </span>
               </div>
               <button
@@ -156,33 +164,42 @@ export function TaskParentMenu({
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {tasks.map((task) => (
-                  <CommandItem
-                    key={task.id}
-                    value={task.id}
-                    onSelect={() => {
-                      onSetParent(task);
-                    }}
-                    disabled={isSaving}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span
-                        className={cn(
-                          'truncate text-sm',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      {task.board_name && (
-                        <span className="text-muted-foreground text-xs">
-                          {task.board_name} #{task.display_number}
+                {tasks.map((task) => {
+                  const taskIdentifier = formatRelationshipTaskIdentifier(task);
+                  return (
+                    <CommandItem
+                      key={task.id}
+                      value={task.id}
+                      onSelect={() => {
+                        onSetParent(task);
+                      }}
+                      disabled={isSaving}
+                      className="flex cursor-pointer items-center gap-2"
+                    >
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span
+                          className={cn(
+                            'truncate text-sm',
+                            task.completed &&
+                              'text-muted-foreground line-through'
+                          )}
+                        >
+                          {task.name}
                         </span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
+                        {taskIdentifier && (
+                          <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
+                            {taskIdentifier}
+                          </span>
+                        )}
+                        {task.board_name && (
+                          <span className="text-muted-foreground text-xs">
+                            {task.board_name}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             )}
           </CommandList>

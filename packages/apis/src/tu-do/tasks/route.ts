@@ -189,6 +189,7 @@ export async function GET(
           workspace_boards!inner (
             id,
             name,
+            ticket_prefix,
             ws_id
           )
         ),
@@ -274,8 +275,24 @@ export async function GET(
 
     const tasksWithRelationshipSummary = tasks.map((task) => {
       const summary = relationshipSummaryByTaskId.get(task.id);
+      const taskList = task.task_lists as
+        | {
+            board_id?: string | null;
+            workspace_boards?: {
+              name?: string | null;
+              ticket_prefix?: string | null;
+            } | null;
+          }
+        | null
+        | undefined;
       return {
         ...task,
+        board_id: task.board_id ?? taskList?.board_id ?? null,
+        board_name: task.board_name ?? taskList?.workspace_boards?.name ?? null,
+        ticket_prefix:
+          task.ticket_prefix ??
+          taskList?.workspace_boards?.ticket_prefix ??
+          null,
         relationship_summary: {
           parent_task_id: summary?.parentTaskId ?? null,
           child_count: summary?.childCount ?? 0,
@@ -547,14 +564,15 @@ export async function POST(
         estimation_points,
         created_at,
         list_id,
-        task_lists!inner(
-          id,
-          name,
-          workspace_boards!inner(
-            name
+          task_lists!inner(
+            id,
+            name,
+            workspace_boards!inner(
+              name,
+              ticket_prefix
+            )
           )
-        )
-      `
+        `
       )
       .maybeSingle();
 
@@ -672,6 +690,7 @@ export async function POST(
       created_at: data.created_at,
       list_id: data.list_id,
       board_name: data.task_lists?.workspace_boards?.name,
+      ticket_prefix: data.task_lists?.workspace_boards?.ticket_prefix,
       list_name: data.task_lists?.name,
     };
 

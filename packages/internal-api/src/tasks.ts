@@ -58,6 +58,7 @@ export interface WorkspaceTaskApiTask extends Task {
   description_yjs_state?: number[] | null;
   board_id?: string | null;
   board_name?: string;
+  ticket_prefix?: string | null;
   deleted_at?: string;
   list_deleted?: boolean;
 }

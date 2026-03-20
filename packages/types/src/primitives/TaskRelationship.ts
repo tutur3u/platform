@@ -31,6 +31,7 @@ export interface RelatedTaskInfo {
   id: string;
   name: string;
   display_number?: number | null;
+  ticket_prefix?: string | null;
   completed?: boolean | null;
   priority?: 'low' | 'normal' | 'high' | 'critical' | null;
   board_id?: string | null;
