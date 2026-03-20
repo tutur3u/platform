@@ -12492,6 +12492,7 @@
     "yes_no": "Có/Không"
   },
   "ws-post-emails": {
+    "clear_filters": "Xóa bộ lọc",
     "clear_status_filter": "Xóa bộ lọc trạng thái",
     "description": "Theo dõi việc gửi email do hệ thống xử lý cho các bài viết nhóm người dùng đã được phê duyệt.",
     "failed_emails": "Thất bại / bị chặn",

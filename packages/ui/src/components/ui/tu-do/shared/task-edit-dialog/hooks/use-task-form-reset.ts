@@ -66,11 +66,14 @@ export function useTaskFormReset({
   setSelectedProjects,
 }: UseTaskFormResetProps): void {
   const previousTaskIdRef = useRef<string | null>(null);
+  const previousIsOpenRef = useRef<boolean>(false);
   const isMountedRef = useRef(true);
 
   // Reset form when task changes or dialog opens
   useEffect(() => {
     const taskIdChanged = previousTaskIdRef.current !== task?.id;
+    const justOpened = isOpen && !previousIsOpenRef.current;
+    previousIsOpenRef.current = isOpen;
 
     // Helper to check if filters have any active values
     const hasActiveFilters =
@@ -81,7 +84,10 @@ export function useTaskFormReset({
         (filters.priorities && filters.priorities.length > 0) ||
         filters.includeMyTasks);
 
-    if (isOpen && !isCreateMode && taskIdChanged) {
+    // In edit mode, reset whenever the dialog opens or the task changes.
+    // We don't reset on close (see below) so we must reset on every open
+    // to ensure the form reflects the latest DB state, even for the same task.
+    if (isOpen && !isCreateMode && (taskIdChanged || justOpened)) {
       setName(task?.name || '');
       setDescription(getDescriptionContent(task?.description));
       setPriority(task?.priority || null);
@@ -128,35 +134,11 @@ export function useTaskFormReset({
     setSelectedProjects,
   ]);
 
-  // Reset transient edits when closing without saving in edit mode
-  useEffect(() => {
-    if (!isOpen && previousTaskIdRef.current && !isCreateMode) {
-      setName(task?.name || '');
-      setDescription(getDescriptionContent(task?.description));
-      setPriority(task?.priority || null);
-      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
-      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
-      setSelectedListId(task?.list_id || '');
-      setEstimationPoints(task?.estimation_points ?? null);
-      setSelectedLabels(task?.labels || []);
-      setSelectedAssignees(task?.assignees || []);
-      setSelectedProjects(task?.projects || []);
-    }
-  }, [
-    isOpen,
-    isCreateMode,
-    task,
-    setName,
-    setDescription,
-    setPriority,
-    setStartDate,
-    setEndDate,
-    setSelectedListId,
-    setEstimationPoints,
-    setSelectedLabels,
-    setSelectedAssignees,
-    setSelectedProjects,
-  ]);
+  // NOTE: We intentionally do NOT reset form state from task props on dialog close
+  // in edit mode. The task prop comes from TaskDialogProvider's state.task which is
+  // set once when the dialog opens and never updated during the session. Resetting
+  // from it on close overwrites the user's edits with stale data. The open effect
+  // above handles loading fresh data when a different task is opened.
 
   // Apply filters when dialog opens in create mode
   useEffect(() => {

@@ -7,12 +7,13 @@ import {
   getPostEmailMaxAgeCutoff,
 } from '@/lib/post-email-queue';
 import type {
+  PostApprovalStatus,
   PostEmail,
   PostEmailQueueStatus,
   PostEmailStatusSummary,
   PostsSearchParams,
 } from './types';
-import { isPostEmailQueueStatus } from './types';
+import { isPostApprovalStatus, isPostEmailQueueStatus } from './types';
 
 type PostEmailSummaryRpcRow =
   Database['public']['Functions']['get_workspace_post_email_status_summary']['Returns'][number];
@@ -38,6 +39,12 @@ function normalizeQueueStatus(
   value?: string
 ): PostEmailQueueStatus | undefined {
   return isPostEmailQueueStatus(value) ? value : undefined;
+}
+
+function normalizeApprovalStatus(
+  value?: string
+): PostApprovalStatus | undefined {
+  return isPostApprovalStatus(value) ? value : undefined;
 }
 
 function mapPostEmailRow(row: PostEmailRowRpc): PostEmail {
@@ -94,6 +101,7 @@ export async function getPostsPageData(
     includedGroups,
     excludedGroups,
     userId,
+    approvalStatus,
     queueStatus,
   }: PostsSearchParams = {}
 ) {
@@ -104,6 +112,7 @@ export async function getPostsPageData(
     Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
   const safeSize =
     Number.isFinite(parsedSize) && parsedSize > 0 ? parsedSize : 10;
+  const activeApprovalStatus = normalizeApprovalStatus(approvalStatus);
   const includedGroupIds = normalizeArrayParam(includedGroups);
   const excludedGroupIds = normalizeArrayParam(excludedGroups);
   const activeQueueStatus = normalizeQueueStatus(queueStatus);
@@ -119,6 +128,9 @@ export async function getPostsPageData(
       : {}),
     ...(excludedGroupIds.length > 0
       ? { p_excluded_group_ids: excludedGroupIds }
+      : {}),
+    ...(activeApprovalStatus
+      ? { p_approval_status: activeApprovalStatus }
       : {}),
     ...(userId ? { p_user_id: userId } : {}),
     ...(activeQueueStatus ? { p_queue_status: activeQueueStatus } : {}),

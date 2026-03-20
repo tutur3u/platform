@@ -16,6 +16,20 @@ export function isPostEmailQueueStatus(
   return POST_EMAIL_QUEUE_STATUSES.includes(value as PostEmailQueueStatus);
 }
 
+export const POST_APPROVAL_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+] as const;
+
+export type PostApprovalStatus = (typeof POST_APPROVAL_STATUSES)[number];
+
+export function isPostApprovalStatus(
+  value?: string
+): value is PostApprovalStatus {
+  return POST_APPROVAL_STATUSES.includes(value as PostApprovalStatus);
+}
+
 export interface PostsSearchParams {
   page?: string;
   pageSize?: string;
@@ -23,6 +37,7 @@ export interface PostsSearchParams {
   excludedGroups?: string | string[];
   userId?: string;
   queueStatus?: string;
+  approvalStatus?: string;
   cursor?: string;
 }
 
@@ -61,7 +76,7 @@ export interface PostEmail {
   queue_attempt_count?: number;
   queue_last_error?: string | null;
   queue_sent_at?: string | null;
-  approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approval_status?: PostApprovalStatus;
   approval_rejection_reason?: string | null;
   can_remove_approval?: boolean;
   queue_counts?: {

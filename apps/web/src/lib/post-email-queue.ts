@@ -489,15 +489,41 @@ export async function processPostEmailQueueBatch(
   sbAdmin: any,
   { limit = 25 }: { limit?: number } = {}
 ) {
-  const { data, error } = await getQueueTable(sbAdmin)
+  const safeLimit = Math.max(1, limit);
+  const { data: queuedData, error: queuedError } = await getQueueTable(sbAdmin)
     .select('*')
-    .in('status', ['queued', 'failed'])
+    .eq('status', 'queued')
     .order('created_at', { ascending: true })
-    .limit(limit);
+    .limit(safeLimit);
 
-  if (error) throw error;
+  if (queuedError) throw queuedError;
 
-  const rows = (data ?? []) as PostEmailQueueRow[];
+  let rows = prioritizePostEmailQueueBatch(
+    (queuedData ?? []) as PostEmailQueueRow[],
+    [],
+    safeLimit
+  );
+
+  if (rows.length < safeLimit) {
+    const remaining = safeLimit - rows.length;
+    const { data: failedData, error: failedError } = await getQueueTable(
+      sbAdmin
+    )
+      .select('*')
+      .eq('status', 'failed')
+      .order('last_attempt_at', { ascending: true, nullsFirst: true })
+      .order('created_at', { ascending: true })
+      .limit(remaining);
+
+    if (failedError) throw failedError;
+
+    rows = prioritizePostEmailQueueBatch(
+      (queuedData ?? []) as PostEmailQueueRow[],
+      (failedData ?? []) as PostEmailQueueRow[],
+      safeLimit
+    );
+  }
+
   if (rows.length === 0) {
     return {
       processed: 0,
@@ -709,4 +735,12 @@ export async function processPostEmailQueueBatch(
     failed,
     results,
   };
+}
+
+export function prioritizePostEmailQueueBatch(
+  queuedRows: PostEmailQueueRow[],
+  failedRows: PostEmailQueueRow[],
+  limit: number
+) {
+  return queuedRows.concat(failedRows).slice(0, Math.max(1, limit));
 }

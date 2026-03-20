@@ -9,7 +9,10 @@ import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import PostsRowActions from './row-actions';
-import { getPostEmailStatusAppearance } from './status-meta';
+import {
+  getPostApprovalStatusAppearance,
+  getPostEmailStatusAppearance,
+} from './status-meta';
 import type { PostEmail } from './types';
 
 interface PostEmailExtraData {
@@ -84,17 +87,24 @@ export const getPostEmailColumns = ({
       />
     ),
     cell: ({ row }) => {
-      const value = (row.getValue('approval_status') as string | null) ?? '-';
-      const className =
-        value === 'APPROVED'
-          ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
-          : value === 'REJECTED'
-            ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
-            : 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow';
+      const value = row.getValue(
+        'approval_status'
+      ) as PostEmail['approval_status'];
+
+      if (!value) {
+        return <Badge variant="outline">-</Badge>;
+      }
+
+      const {
+        icon: Icon,
+        className,
+        labelKey,
+      } = getPostApprovalStatusAppearance(value);
 
       return (
         <Badge variant="outline" className={className}>
-          {value === '-' ? value : t(`${namespace}.${value.toLowerCase()}`)}
+          <Icon className="mr-1 h-3.5 w-3.5" />
+          {t(`${namespace}.${labelKey}`)}
         </Badge>
       );
     },

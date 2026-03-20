@@ -1,7 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ListFilter, MinusCircle, PlusCircle, User } from '@tuturuuu/icons';
+import {
+  CheckCircle2,
+  ListFilter,
+  MinusCircle,
+  PlusCircle,
+  User,
+} from '@tuturuuu/icons';
 import { getPostsFilterOptions } from '@tuturuuu/internal-api/settings';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -9,7 +15,9 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Filter } from '../users/filters';
 import {
+  getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
+  POST_APPROVAL_STATUS_ORDER,
   POST_EMAIL_STATUS_ORDER,
 } from './status-meta';
 import type { PostEmailStatusSummary, PostsSearchParams } from './types';
@@ -50,6 +58,30 @@ export default function PostsFilters({
 
   return (
     <>
+      <Filter
+        key="approval-status-filter"
+        tag="approvalStatus"
+        title={t('post-email-data-table.approval_status')}
+        icon={<CheckCircle2 className="mr-2 h-4 w-4" />}
+        multiple={false}
+        extraQueryOnSet={{ page: '1' }}
+        options={POST_APPROVAL_STATUS_ORDER.map((status) => {
+          const appearance = getPostApprovalStatusAppearance(status);
+          const Icon = appearance.icon;
+
+          return {
+            label: t(`post-email-data-table.${appearance.labelKey}`),
+            value: status,
+            count:
+              status === 'APPROVED'
+                ? statusSummary.approved
+                : status === 'REJECTED'
+                  ? statusSummary.rejected
+                  : statusSummary.pending,
+            icon: <Icon className="h-4 w-4" />,
+          };
+        })}
+      />
       <Filter
         key="queue-status-filter"
         tag="queueStatus"

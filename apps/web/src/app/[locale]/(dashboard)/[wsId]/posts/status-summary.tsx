@@ -6,10 +6,16 @@ import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import {
+  getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
+  POST_APPROVAL_STATUS_ORDER,
   POST_EMAIL_STATUS_ORDER,
 } from './status-meta';
-import type { PostEmailQueueStatus, PostEmailStatusSummary } from './types';
+import type {
+  PostApprovalStatus,
+  PostEmailQueueStatus,
+  PostEmailStatusSummary,
+} from './types';
 
 function getStatusPercentage(count: number, total: number) {
   if (total <= 0) return 0;
@@ -17,10 +23,12 @@ function getStatusPercentage(count: number, total: number) {
 }
 
 export function PostStatusSummary({
+  activeApprovalStatus,
   activeStatus,
   filteredCount,
   summary,
 }: {
+  activeApprovalStatus?: PostApprovalStatus;
   activeStatus?: PostEmailQueueStatus;
   filteredCount: number;
   summary: PostEmailStatusSummary;
@@ -33,6 +41,12 @@ export function PostStatusSummary({
     searchParams.set({
       page: '1',
       queueStatus: activeStatus === status ? undefined : status,
+    });
+  };
+  const toggleApprovalStatus = (status: PostApprovalStatus) => {
+    searchParams.set({
+      approvalStatus: activeApprovalStatus === status ? undefined : status,
+      page: '1',
     });
   };
 
@@ -64,19 +78,52 @@ export function PostStatusSummary({
               </p>
             </div>
 
-            {activeStatus ? (
+            <div className="flex flex-wrap gap-2">
+              {POST_APPROVAL_STATUS_ORDER.map((status) => {
+                const appearance = getPostApprovalStatusAppearance(status);
+                const Icon = appearance.icon;
+                const count =
+                  status === 'APPROVED'
+                    ? summary.approved
+                    : status === 'REJECTED'
+                      ? summary.rejected
+                      : summary.pending;
+                const isActive = activeApprovalStatus === status;
+
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => toggleApprovalStatus(status)}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors',
+                      isActive
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : appearance.className
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{tableT(appearance.labelKey)}</span>
+                    <span className="font-semibold">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {activeStatus || activeApprovalStatus ? (
               <Button
                 variant="outline"
                 size="sm"
                 className="w-fit"
                 onClick={() =>
                   searchParams.set({
+                    approvalStatus: undefined,
                     page: '1',
                     queueStatus: undefined,
                   })
                 }
               >
-                {t('clear_status_filter')}
+                {t('clear_filters')}
               </Button>
             ) : null}
           </div>

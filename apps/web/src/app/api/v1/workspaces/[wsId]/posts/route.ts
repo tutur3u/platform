@@ -27,6 +27,7 @@ export async function GET(
     includedGroups: searchParams.getAll('includedGroups'),
     excludedGroups: searchParams.getAll('excludedGroups'),
     userId: searchParams.get('userId') || undefined,
+    approvalStatus: searchParams.get('approvalStatus') || undefined,
     queueStatus: searchParams.get('queueStatus') || undefined,
   };
 

@@ -8,9 +8,10 @@ import {
   Loader,
   MailX,
   SkipForward,
+  XCircle,
 } from '@tuturuuu/icons';
 import type { ComponentType } from 'react';
-import type { PostEmailQueueStatus } from './types';
+import type { PostApprovalStatus, PostEmailQueueStatus } from './types';
 
 export type PostEmailStatusLabelKey = PostEmailQueueStatus;
 
@@ -23,6 +24,41 @@ export const POST_EMAIL_STATUS_ORDER: PostEmailQueueStatus[] = [
   'cancelled',
   'skipped',
 ];
+
+export const POST_APPROVAL_STATUS_ORDER: PostApprovalStatus[] = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+];
+
+export function getPostApprovalStatusAppearance(status?: PostApprovalStatus): {
+  icon: ComponentType<{ className?: string }>;
+  className: string;
+  labelKey: 'approved' | 'pending' | 'rejected';
+} {
+  switch (status) {
+    case 'APPROVED':
+      return {
+        icon: CheckCircle2,
+        className:
+          'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green',
+        labelKey: 'approved',
+      };
+    case 'REJECTED':
+      return {
+        icon: XCircle,
+        className: 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red',
+        labelKey: 'rejected',
+      };
+    default:
+      return {
+        icon: Clock3,
+        className:
+          'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
+        labelKey: 'pending',
+      };
+  }
+}
 
 export function getPostEmailStatusAppearance(status?: PostEmailQueueStatus): {
   icon: ComponentType<{ className?: string }>;

@@ -20,7 +20,11 @@ import {
   useBoardBroadcast,
 } from '../../board-broadcast-context';
 import type { PendingRelationship } from '../types/pending-relationship';
-import { clearDraft, serializeTaskDescriptionContent } from '../utils';
+import {
+  clearDraft,
+  serializeTaskDescriptionContent,
+  updateTaskDescriptionCaches,
+} from '../utils';
 import {
   updateWorkspaceTask,
   updateWorkspaceTaskDescription,
@@ -385,6 +389,7 @@ export function useTaskSave({
     await handleUpdateTask({
       taskId,
       wsId,
+      boardId,
       name,
       descriptionString,
       descriptionYjsState,
@@ -1027,6 +1032,7 @@ async function handlePendingRelationship(
 async function handleUpdateTask({
   taskId,
   wsId,
+  boardId,
   name,
   descriptionString,
   descriptionYjsState,
@@ -1048,6 +1054,7 @@ async function handleUpdateTask({
 }: {
   taskId?: string;
   wsId: string;
+  boardId: string;
   name: string;
   descriptionString: string | null;
   descriptionYjsState: number[] | null;
@@ -1129,6 +1136,12 @@ async function handleUpdateTask({
       await updateWorkspaceTaskDescription(wsId, taskId, {
         description: descriptionString,
         description_yjs_state: descriptionYjsState,
+      });
+      updateTaskDescriptionCaches({
+        taskId,
+        descriptionString,
+        boardId,
+        queryClient,
       });
       toast({
         title: 'Task updated',
