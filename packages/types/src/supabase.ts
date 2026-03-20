@@ -8806,6 +8806,231 @@ export type Database = {
           },
         ];
       };
+      post_email_queue: {
+        Row: {
+          attempt_count: number;
+          batch_id: string | null;
+          blocked_reason: string | null;
+          cancelled_at: string | null;
+          claimed_at: string | null;
+          created_at: string;
+          group_id: string;
+          id: string;
+          last_attempt_at: string | null;
+          last_error: string | null;
+          post_id: string;
+          sender_platform_user_id: string;
+          sent_at: string | null;
+          sent_email_id: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          attempt_count?: number;
+          batch_id?: string | null;
+          blocked_reason?: string | null;
+          cancelled_at?: string | null;
+          claimed_at?: string | null;
+          created_at?: string;
+          group_id: string;
+          id?: string;
+          last_attempt_at?: string | null;
+          last_error?: string | null;
+          post_id: string;
+          sender_platform_user_id: string;
+          sent_at?: string | null;
+          sent_email_id?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          attempt_count?: number;
+          batch_id?: string | null;
+          blocked_reason?: string | null;
+          cancelled_at?: string | null;
+          claimed_at?: string | null;
+          created_at?: string;
+          group_id?: string;
+          id?: string;
+          last_attempt_at?: string | null;
+          last_error?: string | null;
+          post_id?: string;
+          sender_platform_user_id?: string;
+          sent_at?: string | null;
+          sent_email_id?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_email_queue_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['post_id_full'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_sender_platform_user_id_fkey';
+            columns: ['sender_platform_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_sender_platform_user_id_fkey';
+            columns: ['sender_platform_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_sender_platform_user_id_fkey';
+            columns: ['sender_platform_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_sender_platform_user_id_fkey';
+            columns: ['sender_platform_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_sent_email_id_fkey';
+            columns: ['sent_email_id'];
+            isOneToOne: false;
+            referencedRelation: 'sent_emails';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_email_queue_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       product_categories: {
         Row: {
           created_at: string | null;

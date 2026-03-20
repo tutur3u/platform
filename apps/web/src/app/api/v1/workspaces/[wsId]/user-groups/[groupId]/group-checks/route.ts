@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { enqueueApprovedPostEmails } from '@/lib/post-email-queue';
 
 interface Params {
   params: Promise<{
@@ -172,6 +173,13 @@ export async function POST(req: Request, { params }: Params) {
       { status: 500 }
     );
   }
+
+  await enqueueApprovedPostEmails(sbAdmin, {
+    wsId,
+    postId,
+    groupId,
+    userIds: insertPayload.map((item) => item.user_id),
+  });
 
   return NextResponse.json({ message: 'Data inserted successfully' });
 }

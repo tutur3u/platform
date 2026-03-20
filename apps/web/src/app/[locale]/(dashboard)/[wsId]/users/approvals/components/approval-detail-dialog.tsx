@@ -57,8 +57,10 @@ interface ApprovalDetailDialogProps {
   formatDate: (value?: string | null) => string;
   canApprove: boolean;
   onApprove: (id: string) => void;
+  onUnapprove: (id: string) => void;
   onReject: (params: { id: string; reason: string }) => void;
   isApproving: boolean;
+  isUnapproving: boolean;
   isRejecting: boolean;
   items?: ApprovalItem[];
   onNavigateToItem?: (item: ApprovalItem) => void;
@@ -72,8 +74,10 @@ export function ApprovalDetailDialog({
   formatDate,
   canApprove,
   onApprove,
+  onUnapprove,
   onReject,
   isApproving,
+  isUnapproving,
   isRejecting,
   items = [],
   onNavigateToItem,
@@ -600,7 +604,8 @@ export function ApprovalDetailDialog({
             </div>
             {/* Action Buttons in Header */}
             {canApprove &&
-              status === 'PENDING' &&
+              (status === 'PENDING' ||
+                (status === 'APPROVED' && item.kind === 'posts')) &&
               (showRejectForm ? (
                 <div className="flex items-center gap-2">
                   <Textarea
@@ -651,21 +656,37 @@ export function ApprovalDetailDialog({
                     <X className="h-3 w-3" />
                     {t('actions.reject')}
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (!item) return;
-                      onApprove(item.id);
-                    }}
-                    disabled={isApproving}
-                    className="h-8 gap-1 bg-dynamic-green hover:bg-dynamic-green/90"
-                  >
-                    {isApproving && (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    )}
-                    <Check className="h-3 w-3" />
-                    {t('actions.approve')}
-                  </Button>
+                  {status === 'APPROVED' && item.kind === 'posts' ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onUnapprove(item.id)}
+                      disabled={!item.can_remove_approval || isUnapproving}
+                      className="h-8 gap-1"
+                    >
+                      {isUnapproving && (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      )}
+                      <X className="h-3 w-3" />
+                      {t('actions.unapprove')}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (!item) return;
+                        onApprove(item.id);
+                      }}
+                      disabled={isApproving}
+                      className="h-8 gap-1 bg-dynamic-green hover:bg-dynamic-green/90"
+                    >
+                      {isApproving && (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      )}
+                      <Check className="h-3 w-3" />
+                      {t('actions.approve')}
+                    </Button>
+                  )}
                 </div>
               ))}
           </div>

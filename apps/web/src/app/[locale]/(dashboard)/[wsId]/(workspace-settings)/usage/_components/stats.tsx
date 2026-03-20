@@ -183,7 +183,10 @@ export async function PostsUsageStats({ wsId }: { wsId: string }) {
   if (!permissions) notFound();
   const { containsPermission } = permissions;
 
-  if (!containsPermission('send_user_group_post_emails')) {
+  if (
+    !containsPermission('view_user_groups_posts') &&
+    !containsPermission('approve_posts')
+  ) {
     return <StatisticCard title="Posts" value="***" className="opacity-50" />;
   }
 

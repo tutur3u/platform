@@ -1,6 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  getPostEmailQueueRows,
+  hasPostEmailBeenSent,
+  summarizePostEmailQueue,
+} from '@/lib/post-email-queue';
 
 interface Params {
   params: Promise<{
@@ -51,21 +56,9 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { count: emailsCount, error: emailsError } = await sbAdmin
-    .from('sent_emails')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('post_id', postId);
-
-  if (emailsError) {
-    console.error(emailsError);
-    return NextResponse.json(
-      { message: 'Error fetching sent emails' },
-      { status: 500 }
-    );
-  }
+  const queueRows = await getPostEmailQueueRows(sbAdmin, [postId]);
+  const queueSummary = summarizePostEmailQueue(queueRows);
+  const canRemoveApproval = !(await hasPostEmailBeenSent(sbAdmin, postId));
 
   const safeUsers = (users || []) as Array<{
     id: string | null;
@@ -76,7 +69,7 @@ export async function GET(req: Request, { params }: Params) {
   }>;
 
   return NextResponse.json({
-    sent: emailsCount || 0,
+    sent: queueSummary.sent,
     checked: safeUsers.filter((user) =>
       user?.user_group_post_checks?.find((check) => check?.is_completed)
     ).length,
@@ -87,5 +80,7 @@ export async function GET(req: Request, { params }: Params) {
     ).length,
     tentative: safeUsers.filter((user) => !user?.id).length,
     count: count || 0,
+    queue: queueSummary,
+    can_remove_approval: canRemoveApproval,
   });
 }

@@ -497,6 +497,15 @@ export type PostApprovalQueryResult = {
  */
 export type PostApprovalItem = PostApprovalQueryResult & {
   modifier_name?: string | null;
+  can_remove_approval?: boolean;
+  queue_counts?: {
+    queued: number;
+    processing: number;
+    sent: number;
+    failed: number;
+    blocked: number;
+    cancelled: number;
+  };
 };
 
 /**

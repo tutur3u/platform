@@ -1,25 +1,21 @@
 'use client';
 
-import { MailWarning, Send } from '@tuturuuu/icons';
+import {
+  Clock3,
+  LoaderCircle,
+  MailCheck,
+  TriangleAlert,
+} from '@tuturuuu/icons';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
-import useEmail from '@/hooks/useEmail';
 import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
 import type { PostEmail } from './types';
-import {
-  createPostEmailKey,
-  isOptimisticallyLoading,
-  isOptimisticallySent,
-  useOptimisticLoadingEmails,
-  useOptimisticSentEmails,
-  usePosts,
-} from './use-posts';
+import { createPostEmailKey, usePosts } from './use-posts';
 
 interface SearchParams {
   page?: string;
@@ -36,8 +32,14 @@ interface PostsClientProps {
   locale: string;
   searchParams: SearchParams;
   postsData: { data: PostEmail[]; count: number };
-  postsStatus: { count: number };
-  blacklistedEmails: Set<string>;
+  postsStatus: {
+    queued: number;
+    processing: number;
+    sent: number;
+    failed: number;
+    blocked: number;
+    cancelled: number;
+  };
 }
 
 export default function PostsClient({
@@ -46,44 +48,19 @@ export default function PostsClient({
   searchParams,
   postsData,
   postsStatus,
-  blacklistedEmails,
 }: PostsClientProps) {
   const t = useTranslations();
-  const router = useRouter();
   const [posts, setPosts] = usePosts();
-  const [optimisticSentEmails] = useOptimisticSentEmails();
-  const [optimisticLoadingEmails] = useOptimisticLoadingEmails();
-  const { globalState, setGlobalState } = useEmail();
   const [selectedPost, setSelectedPost] = useState<PostEmail | null>(null);
-
-  // Calculate optimistic counts
-  const optimisticSentCount =
-    postsData?.data?.filter(
-      (post) =>
-        isOptimisticallySent(post, optimisticSentEmails) && !post.email_id
-    ).length || 0;
-
-  // Count emails currently being sent (loading)
-  const optimisticLoadingCount =
-    postsData?.data?.filter((post) =>
-      isOptimisticallyLoading(post, optimisticLoadingEmails)
-    ).length || 0;
-
-  const actualSentCount = postsStatus?.count || 0;
-  const totalSentCount = actualSentCount + optimisticSentCount;
   const totalCount = postsData?.count || 0;
-  // Pending count excludes both sent and currently loading emails
-  const pendingCount = totalCount - totalSentCount - optimisticLoadingCount;
-
-  // Remove React Query and client-side fetches for initial data
-  // Keep invalidate logic for client-side updates if needed
-
-  useEffect(() => {
-    if (globalState.success) {
-      // Invalidate logic for client-side updates (if you have mutation logic)
-      setGlobalState((prev) => ({ ...prev, success: false }));
-    }
-  }, [globalState.success, setGlobalState]);
+  const queueSummary = postsStatus || {
+    queued: 0,
+    processing: 0,
+    sent: 0,
+    failed: 0,
+    blocked: 0,
+    cancelled: 0,
+  };
 
   useEffect(() => {
     if (posts.selected && postsData?.data) {
@@ -91,9 +68,10 @@ export default function PostsClient({
         (p: PostEmail) => createPostEmailKey(p) === posts.selected
       );
       setSelectedPost(found || null);
-    } else {
-      setSelectedPost(null);
+      return;
     }
+
+    setSelectedPost(null);
   }, [posts.selected, postsData]);
 
   return (
@@ -107,23 +85,47 @@ export default function PostsClient({
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
           <div className="flex items-center gap-2 font-bold text-xl">
-            <Send />
+            <MailCheck />
             {t('ws-post-emails.sent_emails')}
           </div>
           <Separator className="my-1 bg-dynamic-purple/15" />
           <div className="font-semibold text-xl md:text-3xl">
-            {totalSentCount}
+            {queueSummary.sent}
             <span className="opacity-50">/{totalCount}</span>
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
           <div className="flex items-center gap-2 font-bold text-xl">
-            <MailWarning />
-            {t('ws-post-emails.pending_emails')}
+            <Clock3 />
+            {t('ws-post-emails.queued_emails')}
           </div>
           <Separator className="my-1 bg-dynamic-red/15" />
           <div className="font-semibold text-3xl">
-            {pendingCount}
+            {queueSummary.queued}
+            <span className="opacity-50">/{totalCount}</span>
+          </div>
+        </div>
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 p-4 text-dynamic-blue">
+          <div className="flex items-center gap-2 font-bold text-xl">
+            <LoaderCircle />
+            {t('ws-post-emails.processing_emails')}
+          </div>
+          <Separator className="my-1 bg-dynamic-blue/15" />
+          <div className="font-semibold text-3xl">
+            {queueSummary.processing}
+            <span className="opacity-50">/{totalCount}</span>
+          </div>
+        </div>
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-orange/15 bg-dynamic-orange/15 p-4 text-dynamic-orange">
+          <div className="flex items-center gap-2 font-bold text-xl">
+            <TriangleAlert />
+            {t('ws-post-emails.failed_emails')}
+          </div>
+          <Separator className="my-1 bg-dynamic-orange/15" />
+          <div className="font-semibold text-3xl">
+            {queueSummary.failed +
+              queueSummary.blocked +
+              queueSummary.cancelled}
             <span className="opacity-50">/{totalCount}</span>
           </div>
         </div>
@@ -135,11 +137,7 @@ export default function PostsClient({
             data={postsData?.data || []}
             namespace="post-email-data-table"
             columnGenerator={getPostEmailColumns}
-            extraData={{
-              locale,
-              onEmailSent: () => router.refresh(),
-              blacklistedEmails,
-            }}
+            extraData={{ locale }}
             count={postsData?.count || 0}
             filters={<PostsFilters wsId={wsId} searchParams={searchParams} />}
             defaultVisibility={{
@@ -149,6 +147,7 @@ export default function PostsClient({
               is_completed: false,
               notes: false,
               created_at: false,
+              queue_attempt_count: false,
               post_title: false,
               post_content: false,
             }}
@@ -161,10 +160,7 @@ export default function PostsClient({
             }}
           />
         </div>
-        <PostDisplay
-          postEmail={selectedPost}
-          blacklistedEmails={blacklistedEmails}
-        />
+        <PostDisplay postEmail={selectedPost} />
       </div>
     </div>
   );

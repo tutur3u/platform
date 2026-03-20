@@ -1,79 +1,39 @@
 'use client';
 
 import {
-  Ban,
   Calendar,
-  Check,
-  Clock,
   ExternalLink,
-  Mail,
   MailCheck,
   Send,
-  User,
   Users,
-  X,
 } from '@tuturuuu/icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import PostsRowActions from './row-actions';
 import type { PostEmail } from './types';
-import {
-  isOptimisticallyLoading,
-  isOptimisticallySent,
-  useOptimisticLoadingEmails,
-  useOptimisticSentEmails,
-} from './use-posts';
 
-interface PostDisplayProps {
-  postEmail: PostEmail | null;
-  blacklistedEmails?: Set<string>;
-}
-
-export function PostDisplay({
-  postEmail,
-  blacklistedEmails,
-}: PostDisplayProps) {
+export function PostDisplay({ postEmail }: { postEmail: PostEmail | null }) {
   const locale = useLocale();
-  const [optimisticSentEmails] = useOptimisticSentEmails();
-  const [optimisticLoadingEmails] = useOptimisticLoadingEmails();
+  const t = useTranslations('post-email-data-table');
 
-  // Set dayjs locale
   useEffect(() => {
     dayjs.locale(locale);
   }, [locale]);
-
-  // Check if email is sent (either from server data or optimistically)
-  const isSent = postEmail
-    ? !!postEmail.email_id ||
-      isOptimisticallySent(postEmail, optimisticSentEmails)
-    : false;
-  // Check if email is loading (either from local state or optimistically)
-  const isLoading = postEmail
-    ? isOptimisticallyLoading(postEmail, optimisticLoadingEmails)
-    : false;
-
-  // Check if email is blacklisted
-  const isEmailBlacklisted = postEmail?.email
-    ? (blacklistedEmails?.has(postEmail.email) ?? false)
-    : false;
 
   if (!postEmail) {
     return (
       <div className="flex h-full items-center justify-center bg-muted/20">
         <div className="text-center text-muted-foreground">
           <Send className="mx-auto mb-4 h-12 w-12 opacity-50" />
-          <p className="font-medium text-lg">Post Email Details</p>
-          <p className="text-sm">
-            Select a post email to view its details and manage actions
-          </p>
+          <p className="font-medium text-lg">{t('details_title')}</p>
+          <p className="text-sm">{t('details_description')}</p>
         </div>
       </div>
     );
@@ -82,27 +42,15 @@ export function PostDisplay({
   return (
     <div className="flex h-fit flex-col rounded-lg border">
       <div className="flex h-16 items-center justify-between rounded-t-lg border-b px-4 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Post Email Details</h3>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <PostsRowActions
-            data={postEmail}
-            isEmailBlacklisted={isEmailBlacklisted}
-          />
-        </div>
+        <h3 className="font-semibold text-lg">{t('details_title')}</h3>
+        <PostsRowActions data={postEmail} />
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-6 p-6">
-          {/* Recipient Information */}
           <div className="space-y-4">
             <div className="flex items-start gap-4">
               <Avatar className="h-12 w-12 shadow-sm ring-2 ring-background">
-                <AvatarImage
-                  alt={postEmail.recipient ?? postEmail.email ?? ''}
-                />
                 <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
                   {(postEmail.recipient ?? postEmail.email ?? 'U')
                     .split(' ')
@@ -116,11 +64,10 @@ export function PostDisplay({
               <div className="min-w-0 flex-1 space-y-2">
                 <div>
                   <h4 className="font-semibold text-base text-foreground">
-                    {postEmail.recipient || 'Unknown Recipient'}
+                    {postEmail.recipient || '-'}
                   </h4>
-                  <p className="flex items-center gap-1 text-muted-foreground text-sm">
-                    <Mail className="h-3 w-3" />
-                    {postEmail.email}
+                  <p className="text-muted-foreground text-sm">
+                    {postEmail.email || '-'}
                   </p>
                 </div>
 
@@ -131,14 +78,16 @@ export function PostDisplay({
                       href={`/${postEmail.ws_id}/users/groups/${postEmail.group_id}`}
                       className="text-primary hover:underline"
                     >
-                      {postEmail.group_name || 'Unknown Group'}
+                      {postEmail.group_name || '-'}
                     </Link>
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {dayjs(postEmail.post_created_at).format(
-                      'YYYY-MM-DD HH:mm'
-                    )}
+                    {postEmail.post_created_at
+                      ? dayjs(postEmail.post_created_at).format(
+                          'YYYY-MM-DD HH:mm'
+                        )
+                      : '-'}
                   </div>
                 </div>
               </div>
@@ -147,12 +96,11 @@ export function PostDisplay({
 
           <Separator />
 
-          {/* Post Information */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h5 className="flex items-center gap-2 font-semibold text-base">
                 <Send className="h-4 w-4" />
-                Post Details
+                {t('post_details')}
               </h5>
               {postEmail.post_id && postEmail.group_id && (
                 <Button variant="outline" size="sm" asChild>
@@ -161,7 +109,7 @@ export function PostDisplay({
                     className="flex items-center gap-1"
                   >
                     <ExternalLink className="h-3 w-3" />
-                    View Post
+                    {t('view_post')}
                   </Link>
                 </Button>
               )}
@@ -170,32 +118,30 @@ export function PostDisplay({
             <div className="space-y-3">
               <div>
                 <span className="font-medium text-muted-foreground text-sm">
-                  Title
+                  {t('post_title')}
                 </span>
                 <p className="mt-1 font-medium text-sm">
-                  {postEmail.post_title || 'No title'}
+                  {postEmail.post_title || '-'}
                 </p>
               </div>
 
               <div>
                 <span className="font-medium text-muted-foreground text-sm">
-                  Content
+                  {t('post_content')}
                 </span>
                 <div className="mt-1 rounded-lg border bg-muted/30 p-3">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {postEmail.post_content || 'No content'}
+                    {postEmail.post_content || '-'}
                   </p>
                 </div>
               </div>
 
-              {postEmail.subject && (
+              {postEmail.notes && (
                 <div>
                   <span className="font-medium text-muted-foreground text-sm">
-                    Email Subject
+                    {t('notes')}
                   </span>
-                  <p className="mt-1 font-medium text-sm">
-                    {postEmail.subject}
-                  </p>
+                  <p className="mt-1 text-sm">{postEmail.notes}</p>
                 </div>
               )}
             </div>
@@ -203,99 +149,35 @@ export function PostDisplay({
 
           <Separator />
 
-          {/* Email Status */}
           <div className="space-y-4">
             <h5 className="flex items-center gap-2 font-semibold text-base">
               <MailCheck className="h-4 w-4" />
-              Email Status
+              {t('queue_status')}
             </h5>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <span className="font-medium text-muted-foreground text-sm">
-                  Status
+                  {t('queue_status')}
                 </span>
-                <div className="flex items-center gap-2">
-                  {isEmailBlacklisted ? (
-                    <Badge
-                      variant="outline"
-                      className="border-dynamic-red/30 text-dynamic-red"
-                    >
-                      <Ban className="mr-1 h-3 w-3" />
-                      Blocked
-                    </Badge>
-                  ) : isLoading ? (
-                    <Badge
-                      variant="secondary"
-                      className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
-                    >
-                      <LoadingIndicator className="mr-1 h-3 w-3" />
-                      Sending...
-                    </Badge>
-                  ) : isSent ? (
-                    <Badge
-                      variant="default"
-                      className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
-                    >
-                      <MailCheck className="mr-1 h-3 w-3" />
-                      Sent
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="secondary"
-                      className="border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange"
-                    >
-                      <Clock className="mr-1 h-3 w-3" />
-                      Pending
-                    </Badge>
-                  )}
-                </div>
+                <PostsRowActions data={postEmail} />
               </div>
-
               <div className="space-y-2">
                 <span className="font-medium text-muted-foreground text-sm">
-                  Completion
+                  {t('approval_status')}
                 </span>
-                <div className="flex items-center gap-2">
-                  {postEmail.is_completed ? (
-                    <Badge
-                      variant="default"
-                      className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
-                    >
-                      <Check className="mr-1 h-3 w-3" />
-                      Completed
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="border-dynamic-red/30 text-dynamic-red"
-                    >
-                      <X className="mr-1 h-3 w-3" />
-                      Incomplete
-                    </Badge>
-                  )}
-                </div>
+                <Badge variant="outline" className="capitalize">
+                  {postEmail.post_approval_status?.toLowerCase() || '-'}
+                </Badge>
               </div>
             </div>
-          </div>
 
-          {/* Notes */}
-          {postEmail.notes && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <h5 className="flex items-center gap-2 font-semibold text-base">
-                  <User className="h-4 w-4" />
-                  Notes
-                </h5>
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {postEmail.notes}
-                  </p>
-                </div>
+            {postEmail.queue_last_error && (
+              <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
+                {postEmail.queue_last_error}
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </ScrollArea>
     </div>

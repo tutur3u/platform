@@ -10,6 +10,13 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { MAX_APPROVAL_REJECTION_REASON_LENGTH } from '@/features/reports/report-limits';
+import {
+  cancelQueuedPostEmails,
+  enqueueApprovedPostEmails,
+  getPostEmailQueueRows,
+  hasPostEmailBeenSent,
+  summarizePostEmailQueue,
+} from '@/lib/post-email-queue';
 
 type ApprovalStatus = Database['public']['Enums']['approval_status'];
 
@@ -24,7 +31,7 @@ const SearchParamsSchema = z.object({
 });
 
 const MutationSchema = z.object({
-  action: z.enum(['approve', 'reject', 'approveAll']),
+  action: z.enum(['approve', 'reject', 'approveAll', 'unapprove']),
   kind: z.enum(['reports', 'posts']),
   itemId: z.string().optional(),
   reason: z.string().max(MAX_APPROVAL_REJECTION_REASON_LENGTH).optional(),
@@ -228,12 +235,45 @@ export async function GET(request: Request, { params }: Params) {
 
       if (error) throw error;
 
+      const postIds = (data ?? []).map((row) => row.id);
+      const queueRows = await getPostEmailQueueRows(sbAdmin, postIds);
+      const queueRowsByPostId = new Map<string, typeof queueRows>();
+
+      for (const row of queueRows) {
+        const rows = queueRowsByPostId.get(row.post_id) ?? [];
+        rows.push(row);
+        queueRowsByPostId.set(row.post_id, rows);
+      }
+
+      const { data: sentEmails, error: sentEmailsError } =
+        postIds.length === 0
+          ? { data: [], error: null }
+          : await sbAdmin
+              .from('sent_emails')
+              .select('post_id')
+              .in('post_id', postIds);
+
+      if (sentEmailsError) throw sentEmailsError;
+
+      const sentPostIds = new Set(
+        (sentEmails ?? [])
+          .map((row) => row.post_id)
+          .filter((value): value is string => Boolean(value))
+      );
+
       const items = (data ?? []).map((row) => {
         const modifier = row.modifier as unknown as {
           display_name: string | null;
           full_name: string | null;
           email: string | null;
         } | null;
+        const queueSummary = summarizePostEmailQueue(
+          queueRowsByPostId.get(row.id) ?? []
+        );
+        const canRemoveApproval =
+          row.post_approval_status === 'APPROVED' &&
+          !sentPostIds.has(row.id) &&
+          queueSummary.sent === 0;
 
         return {
           ...row,
@@ -243,6 +283,8 @@ export async function GET(request: Request, { params }: Params) {
             modifier?.full_name ||
             modifier?.email ||
             null,
+          can_remove_approval: canRemoveApproval,
+          queue_counts: queueSummary,
         };
       });
 
@@ -360,7 +402,7 @@ export async function PUT(request: Request, { params }: Params) {
       } else {
         const { data: post, error: fetchError } = await sbAdmin
           .from('user_group_posts')
-          .select('id, workspace_user_groups!inner(ws_id)')
+          .select('id, group_id, workspace_user_groups!inner(ws_id)')
           .eq('id', itemId)
           .eq('workspace_user_groups.ws_id', wsId)
           .maybeSingle();
@@ -385,6 +427,13 @@ export async function PUT(request: Request, { params }: Params) {
           })
           .eq('id', itemId);
         if (error) throw error;
+
+        await enqueueApprovedPostEmails(sbAdmin, {
+          wsId,
+          postId: itemId,
+          groupId: post.group_id,
+          senderPlatformUserId: user.id,
+        });
       }
     } else if (action === 'reject') {
       if (!itemId)
@@ -459,6 +508,7 @@ export async function PUT(request: Request, { params }: Params) {
       }
     } else if (action === 'approveAll') {
       let allPendingIds: string[] = [];
+      const pendingPostGroups: Array<{ id: string; group_id: string }> = [];
 
       if (kind === 'reports') {
         let q = sbAdmin
@@ -477,7 +527,7 @@ export async function PUT(request: Request, { params }: Params) {
       } else {
         let q = sbAdmin
           .from('user_group_posts')
-          .select('id, workspace_user_groups!inner(ws_id)')
+          .select('id, group_id, workspace_user_groups!inner(ws_id)')
           .eq('workspace_user_groups.ws_id', wsId)
           .eq('post_approval_status', 'PENDING');
 
@@ -486,6 +536,12 @@ export async function PUT(request: Request, { params }: Params) {
         const { data, error } = await q;
         if (error) throw error;
         allPendingIds = (data ?? []).map((item) => item.id);
+        pendingPostGroups.push(
+          ...(data ?? []).map((item) => ({
+            id: item.id,
+            group_id: item.group_id,
+          }))
+        );
       }
 
       if (allPendingIds.length > 0) {
@@ -520,7 +576,82 @@ export async function PUT(request: Request, { params }: Params) {
             if (error) throw error;
           }
         }
+
+        if (kind === 'posts') {
+          for (const post of pendingPostGroups) {
+            await enqueueApprovedPostEmails(sbAdmin, {
+              wsId,
+              postId: post.id,
+              groupId: post.group_id,
+              senderPlatformUserId: user.id,
+            });
+          }
+        }
       }
+    } else if (action === 'unapprove') {
+      if (kind !== 'posts') {
+        return NextResponse.json(
+          { message: 'Unapprove is only supported for posts' },
+          { status: 400 }
+        );
+      }
+
+      if (!itemId) {
+        return NextResponse.json(
+          { message: 'Item ID is required' },
+          { status: 400 }
+        );
+      }
+
+      const { data: post, error: fetchError } = await sbAdmin
+        .from('user_group_posts')
+        .select(
+          'id, group_id, post_approval_status, workspace_user_groups!inner(ws_id)'
+        )
+        .eq('id', itemId)
+        .eq('workspace_user_groups.ws_id', wsId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      if (!post) {
+        return NextResponse.json(
+          { message: 'Post not found' },
+          { status: 404 }
+        );
+      }
+
+      if (post.post_approval_status !== 'APPROVED') {
+        return NextResponse.json(
+          { message: 'Only approved posts can remove approval' },
+          { status: 409 }
+        );
+      }
+
+      const alreadySent = await hasPostEmailBeenSent(sbAdmin, itemId);
+      if (alreadySent) {
+        return NextResponse.json(
+          {
+            message: 'Approval cannot be removed after an email has been sent',
+          },
+          { status: 409 }
+        );
+      }
+
+      const { error } = await sbAdmin
+        .from('user_group_posts')
+        .update({
+          post_approval_status: 'PENDING' as ApprovalStatus,
+          approved_by: null,
+          approved_at: null,
+          rejected_by: null,
+          rejected_at: null,
+          rejection_reason: null,
+        })
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      await cancelQueuedPostEmails(sbAdmin, itemId);
     }
 
     return NextResponse.json({ success: true });

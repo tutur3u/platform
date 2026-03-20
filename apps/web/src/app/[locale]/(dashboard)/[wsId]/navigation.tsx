@@ -674,9 +674,9 @@ export async function WorkspaceNavigationLinks({
               icon: <GalleryVerticalEnd className="h-5 w-5" />,
               disabled:
                 !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
-                (!DEV_MODE &&
-                  (ENABLE_AI_ONLY ||
-                    withoutPermission('send_user_group_post_emails'))),
+                (!DEV_MODE && ENABLE_AI_ONLY) ||
+                (withoutPermission('view_user_groups_posts') &&
+                  withoutPermission('approve_posts')),
               experimental: 'beta',
             },
             null,
@@ -709,7 +709,7 @@ export async function WorkspaceNavigationLinks({
               withoutPermission('view_user_groups') &&
               withoutPermission('view_user_groups_reports') &&
               withoutPermission('view_user_groups_scores') &&
-              withoutPermission('send_user_group_post_emails') &&
+              withoutPermission('view_user_groups_posts') &&
               withoutPermission('create_lead_generations') &&
               withoutPermission('approve_reports') &&
               withoutPermission('approve_posts')),

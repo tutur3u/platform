@@ -1,8 +1,8 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import PostsClient from './client';
+import type { PostEmail } from './types';
 
 export const metadata: Metadata = {
   title: 'Posts',
@@ -37,24 +37,13 @@ export default async function PostsPage({
           searchParamsData
         );
 
-        // Extract unique emails from posts data and check blacklist status
-        const userEmails = [
-          ...new Set(
-            postsData.data
-              .map((post: { email: string | null }) => post.email)
-              .filter(Boolean) as string[]
-          ),
-        ];
-        const blacklistedEmails = await getEmailBlacklistStatus(userEmails);
-
         return (
           <PostsClient
             wsId={wsId}
             locale={locale}
             searchParams={searchParamsData}
             postsData={postsData}
-            postsStatus={{ count: sentEmailsCount }}
-            blacklistedEmails={blacklistedEmails}
+            postsStatus={sentEmailsCount}
           />
         );
       }}
@@ -111,59 +100,20 @@ async function getPostsData(
     throw new Error('Failed to fetch posts data');
   }
 
-  const { data, count } = await response.json();
+  const { data, count } = (await response.json()) as {
+    data: PostEmail[];
+    count: number;
+  };
 
-  // For sent emails count, we might need a separate API or just use the count from the same API if it's filtered correctly
-  // Original code had a separate query for sent emails count.
-  // Let's assume the API returns what we need or we can add a separate count API.
-  // The original sentEmailsQueryBuilder was:
-  /*
-  const sentEmailsQueryBuilder = supabase
-    .from('user_group_post_checks')
-    .select(
-      'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
-      {
-        head: true,
-        count: 'exact',
-      }
-    )
-  */
-  // This counts total sent emails.
-
-  const sbAdmin = await createAdminClient();
-  const sentEmailsQueryBuilder = sbAdmin
-    .from('user_group_post_checks')
-    .select(
-      'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
-      {
-        head: true,
-        count: 'exact',
-      }
-    )
-    .eq('workspace_users.ws_id', wsId)
-    .not('workspace_users.email', 'ilike', '%@easy%');
-
-  if (includedGroups) {
-    const groups = Array.isArray(includedGroups)
-      ? includedGroups
-      : [includedGroups];
-    if (groups.length > 0)
-      sentEmailsQueryBuilder.in('user_group_posts.group_id', groups);
-  }
-
-  if (excludedGroups) {
-    const groups = Array.isArray(excludedGroups)
-      ? excludedGroups
-      : [excludedGroups];
-    if (groups.length > 0)
-      sentEmailsQueryBuilder.not('user_group_posts.group_id', 'in', groups);
-  }
-
-  if (userId) {
-    sentEmailsQueryBuilder.eq('user_id', userId);
-  }
-
-  const { count: sentEmailsCount } = await sentEmailsQueryBuilder;
+  const summary = {
+    queued: data.filter((item) => item.queue_status === 'queued').length,
+    processing: data.filter((item) => item.queue_status === 'processing')
+      .length,
+    sent: data.filter((item) => item.queue_status === 'sent').length,
+    failed: data.filter((item) => item.queue_status === 'failed').length,
+    blocked: data.filter((item) => item.queue_status === 'blocked').length,
+    cancelled: data.filter((item) => item.queue_status === 'cancelled').length,
+  };
 
   return {
     postsData: {
@@ -173,29 +123,6 @@ async function getPostsData(
       })),
       count: count || 0,
     },
-    sentEmailsCount: sentEmailsCount || 0,
+    sentEmailsCount: summary,
   };
-}
-
-async function getEmailBlacklistStatus(emails: string[]): Promise<Set<string>> {
-  if (emails.length === 0) return new Set();
-
-  const sbAdmin = await createAdminClient();
-  const { data: blockStatuses, error } = await sbAdmin.rpc(
-    'get_email_block_statuses',
-    { p_emails: emails }
-  );
-
-  if (error) {
-    console.error('Error checking email blacklist:', error);
-    return new Set();
-  }
-
-  const blacklistedEmails = new Set(
-    (blockStatuses || [])
-      .filter((status) => status.is_blocked && status.email)
-      .map((status) => status.email as string)
-  );
-
-  return blacklistedEmails;
 }

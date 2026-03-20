@@ -95,9 +95,11 @@ export function ApprovalsView({
     isError,
     error,
     approveItem,
+    unapproveItem,
     approveAllItems,
     rejectItem,
     isApproving,
+    isUnapproving,
     isApprovingAll,
     approveAllProgress,
     isRejecting,
@@ -768,8 +770,10 @@ export function ApprovalsView({
         formatDate={formatDate}
         canApprove={canApprove}
         onApprove={approveItem}
+        onUnapprove={unapproveItem}
         onReject={rejectItem}
         isApproving={isApproving}
+        isUnapproving={isUnapproving}
         isRejecting={isRejecting}
         items={items}
         onNavigateToItem={setDetailItem}

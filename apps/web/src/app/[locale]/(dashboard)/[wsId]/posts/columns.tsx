@@ -11,14 +11,11 @@ import type { PostEmail } from './types';
 
 interface PostEmailExtraData {
   locale?: string;
-  onEmailSent: () => void;
-  blacklistedEmails?: Set<string>;
 }
 
 export const getPostEmailColumns = ({
   t,
   namespace,
-  extraData,
 }: ColumnGeneratorOptions<PostEmail> & {
   extraData?: PostEmailExtraData;
 }): ColumnDef<PostEmail>[] => [
@@ -72,6 +69,19 @@ export const getPostEmailColumns = ({
       <div className="line-clamp-1 min-w-32 text-primary">
         {row.getValue('post_title') || '-'}
       </div>
+    ),
+  },
+  {
+    accessorKey: 'queue_status',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.queue_status`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="capitalize">{row.getValue('queue_status') || '-'}</div>
     ),
   },
   {
@@ -148,17 +158,7 @@ export const getPostEmailColumns = ({
   {
     id: 'actions',
     cell: ({ row }) => {
-      return (
-        <PostsRowActions
-          data={row.original}
-          onEmailSent={extraData.onEmailSent}
-          isEmailBlacklisted={
-            row.original.email
-              ? (extraData.blacklistedEmails?.has(row.original.email) ?? false)
-              : false
-          }
-        />
-      );
+      return <PostsRowActions data={row.original} />;
     },
   },
 ];

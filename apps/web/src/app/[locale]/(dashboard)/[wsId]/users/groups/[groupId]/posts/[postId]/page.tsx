@@ -20,8 +20,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  getPostEmailQueueRows,
+  hasPostEmailBeenSent,
+  summarizePostEmailQueue,
+} from '@/lib/post-email-queue';
 import { CheckAll } from './check-all';
-import { EmailList } from './email-list';
 import { UsersList } from './users-list';
 
 export const metadata: Metadata = {
@@ -76,25 +80,14 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
           href: `/${wsId}/users/database/${u.id}`,
         }));
 
-        // Check email blacklist status for all users
-        const userEmails = users
-          .map((u) => u.email)
-          .filter(Boolean) as string[];
-        const blacklistedEmails = await getEmailBlacklistStatus(userEmails);
-
-        // Get permissions
-
         const canUpdateUserGroupsPosts = containsPermission(
           'update_user_groups_posts'
         );
-        const canSendUserGroupPostEmails = containsPermission(
-          'send_user_group_post_emails'
-        );
-
         type ApprovalStatus = Database['public']['Enums']['approval_status'];
         const approvalStatus: ApprovalStatus =
           (post.post_approval_status as ApprovalStatus) ?? 'PENDING';
         const isApproved = approvalStatus === 'APPROVED';
+        const canRemoveApproval = isApproved && status.canRemoveApproval;
 
         return (
           <div>
@@ -154,6 +147,13 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                       </div>
                     </div>
                   )}
+                  {isApproved && (
+                    <Badge variant="secondary">
+                      {canRemoveApproval
+                        ? t('ws_post_details.approval_revocable')
+                        : t('ws_post_details.approval_locked')}
+                    </Badge>
+                  )}
                   <Separator />
                 </div>
               }
@@ -190,11 +190,6 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               }
               disableSecondaryTrigger={
                 status.checked === status.count || !isApproved
-              }
-              action={
-                canSendUserGroupPostEmails && isApproved ? (
-                  <EmailList wsId={wsId} groupId={groupId} />
-                ) : null
               }
               showSecondaryTrigger={canUpdateUserGroupsPosts && isApproved}
             />
@@ -236,13 +231,37 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 p-4 text-dynamic-blue">
                 <div className="flex items-center gap-2 font-bold text-xl">
                   <CircleHelp />
-                  {t('common.unknown')}
+                  {t('post-email-data-table.queued')}
                 </div>
                 <Separator className="my-1 bg-dynamic-blue/15" />
                 <div className="font-semibold text-3xl">
-                  {status.tenative}
+                  {status.queue.queued + status.queue.processing}
                   <span className="opacity-50">/{status.count}</span>
                 </div>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-3">
+              <div className="rounded border border-dynamic-orange/15 bg-dynamic-orange/10 p-4 text-dynamic-orange">
+                <div className="font-semibold">
+                  {t('post-email-data-table.failed')}
+                </div>
+                <div className="text-2xl">
+                  {status.queue.failed +
+                    status.queue.blocked +
+                    status.queue.cancelled}
+                </div>
+              </div>
+              <div className="rounded border border-dynamic-blue/15 bg-dynamic-blue/10 p-4 text-dynamic-blue">
+                <div className="font-semibold">
+                  {t('post-email-data-table.processing')}
+                </div>
+                <div className="text-2xl">{status.queue.processing}</div>
+              </div>
+              <div className="rounded border border-dynamic-yellow/15 bg-dynamic-yellow/10 p-4 text-dynamic-yellow">
+                <div className="font-semibold">
+                  {t('post-email-data-table.cancelled')}
+                </div>
+                <div className="text-2xl">{status.queue.cancelled}</div>
               </div>
             </div>
             <Separator className="my-4" />
@@ -254,9 +273,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                 group_id: groupId,
               }}
               canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
-              canSendUserGroupPostEmails={canSendUserGroupPostEmails}
-              sentEmailUserIds={status.sent || []}
-              blacklistedEmails={blacklistedEmails}
+              queueByUserId={status.queueByUserId}
             />
           </div>
         );
@@ -304,15 +321,17 @@ async function getPostStatus(groupId: string, postId: string) {
     .eq('group_id', groupId)
     .eq('workspace_users.user_group_post_checks.post_id', postId);
 
-  const { data: sentEmails } = await sbAdmin
-    .from('sent_emails')
-    .select('receiver_id', {
-      count: 'exact',
-    })
-    .eq('post_id', postId);
+  const queueRows = await getPostEmailQueueRows(sbAdmin, [postId]);
+  const queueSummary = summarizePostEmailQueue(queueRows);
+  const queueByUserId = Object.fromEntries(
+    queueRows.map((row) => [row.user_id, row])
+  );
 
   return {
-    sent: sentEmails?.map((email) => email.receiver_id) || [],
+    sent:
+      queueRows
+        .filter((row) => row.status === 'sent')
+        .map((row) => row.user_id) || [],
     checked: users?.filter((user) =>
       user?.user_group_post_checks?.find((check) => check?.is_completed)
     ).length,
@@ -323,6 +342,9 @@ async function getPostStatus(groupId: string, postId: string) {
     ).length,
     tenative: users?.filter((user) => !user.id).length,
     count,
+    queue: queueSummary,
+    queueByUserId,
+    canRemoveApproval: !(await hasPostEmailBeenSent(sbAdmin, postId)),
   };
 }
 
@@ -369,27 +391,4 @@ async function getUserData(
   }
 
   return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
-}
-
-async function getEmailBlacklistStatus(emails: string[]): Promise<Set<string>> {
-  if (emails.length === 0) return new Set();
-
-  const sbAdmin = await createAdminClient();
-  const { data: blockStatuses, error } = await sbAdmin.rpc(
-    'get_email_block_statuses',
-    { p_emails: emails }
-  );
-
-  if (error) {
-    console.error('Error checking email blacklist:', error);
-    return new Set();
-  }
-
-  const blacklistedEmails = new Set(
-    (blockStatuses || [])
-      .filter((status) => status.is_blocked && status.email)
-      .map((status) => status.email as string)
-  );
-
-  return blacklistedEmails;
 }
