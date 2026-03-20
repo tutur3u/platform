@@ -126,7 +126,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
     useState(false);
   const refetchingAfterWorkspaceRef = useRef(false);
 
-  const updateTaskMutation = useUpdateTask(boardId);
+  const updateTaskMutation = useUpdateTask(boardId, workspaceId);
 
   // Update local state when task data changes
   useEffect(() => {

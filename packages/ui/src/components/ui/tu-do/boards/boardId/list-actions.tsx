@@ -75,6 +75,7 @@ export function ListActions({
   const moveTaskMutation = useMoveTask(boardId, wsId);
   const moveAllTasksFromListMutation = useMoveAllTasksFromList(
     boardId,
+    wsId,
     broadcast
   );
 

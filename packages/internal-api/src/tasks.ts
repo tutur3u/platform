@@ -5,6 +5,7 @@ import type {
 } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoardStatusTemplate } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type {
   CreateTaskRelationshipInput,
@@ -81,10 +82,13 @@ export interface ListWorkspaceTasksOptions {
   limit?: number;
   offset?: number;
   includeRelationshipSummary?: boolean;
+  includeDeleted?: boolean | 'only';
+  includeCount?: boolean;
 }
 
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
+  count?: number;
 }
 
 export type WorkspaceTaskBoardListItem = Pick<
@@ -512,7 +516,26 @@ export async function listWorkspaceTasks(
         limit: options?.limit,
         offset: options?.offset,
         includeRelationshipSummary: options?.includeRelationshipSummary,
+        includeDeleted:
+          options?.includeDeleted === 'only'
+            ? 'only'
+            : options?.includeDeleted === true
+              ? 'all'
+              : undefined,
+        includeCount: options?.includeCount,
       },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listTaskBoardStatusTemplates(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ templates: TaskBoardStatusTemplate[] }>(
+    '/api/v1/task-board-status-templates',
+    {
       cache: 'no-store',
     }
   );

@@ -164,6 +164,14 @@ export async function GET(
     );
     const includeRelationshipSummary =
       includeRelationshipSummaryParam !== 'false';
+    const includeDeletedParam = url.searchParams.get('includeDeleted');
+    const includeDeletedMode =
+      includeDeletedParam === 'only'
+        ? 'only'
+        : includeDeletedParam === 'all'
+          ? 'all'
+          : 'none';
+    const includeCount = url.searchParams.get('includeCount') === 'true';
 
     const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
 
@@ -221,10 +229,16 @@ export async function GET(
             status
           )
         )
-      `
+      `,
+        includeCount ? { count: 'exact' } : undefined
       )
-      .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId)
-      .is('deleted_at', null);
+      .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId);
+
+    if (includeDeletedMode === 'none') {
+      query = query.is('deleted_at', null);
+    } else if (includeDeletedMode === 'only') {
+      query = query.not('deleted_at', 'is', null);
+    }
 
     query = query.eq('task_lists.deleted', false);
 
@@ -244,7 +258,7 @@ export async function GET(
       query = query.ilike('name', `%${searchQuery}%`);
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
       .order('sort_key', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -316,7 +330,10 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({ tasks: tasksWithRelationshipSummary });
+    return NextResponse.json({
+      tasks: tasksWithRelationshipSummary,
+      ...(includeCount ? { count: count ?? 0 } : {}),
+    });
   } catch (error) {
     console.error('Error fetching tasks:', error);
     return NextResponse.json(

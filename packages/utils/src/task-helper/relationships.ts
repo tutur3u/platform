@@ -1,0 +1,347 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  createWorkspaceTaskRelationship,
+  createWorkspaceTaskWithRelationship,
+  deleteWorkspaceTaskRelationship,
+  getWorkspaceTaskRelationships,
+  listWorkspaceTasks,
+} from '@tuturuuu/internal-api/tasks';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type {
+  CreateTaskRelationshipInput,
+  CreateTaskWithRelationshipInput,
+  RelatedTaskInfo,
+  TaskRelationship,
+  TaskRelationshipsResponse,
+  TaskRelationshipType,
+} from '@tuturuuu/types/primitives/TaskRelationship';
+
+import {
+  getBrowserApiOptions,
+  getMutationApiOptions,
+  getTaskIdentifierForSearch,
+  isTicketIdentifierLikeQuery,
+  normalizeTaskSearchValue,
+  resolveTaskContext,
+} from './shared';
+
+export async function getTaskRelationships(
+  supabase: TypedSupabaseClient,
+  taskId: string
+): Promise<TaskRelationshipsResponse> {
+  const { wsId } = await resolveTaskContext(supabase, taskId);
+  const payload = await getWorkspaceTaskRelationships(
+    wsId,
+    taskId,
+    getBrowserApiOptions()
+  );
+  return payload;
+}
+
+export async function createTaskRelationship(
+  supabase: TypedSupabaseClient,
+  input: CreateTaskRelationshipInput
+): Promise<TaskRelationship> {
+  const { wsId } = await resolveTaskContext(supabase, input.source_task_id);
+  const options = await getMutationApiOptions(supabase);
+
+  try {
+    const { relationship } = await createWorkspaceTaskRelationship(
+      wsId,
+      input.source_task_id,
+      input,
+      options
+    );
+    return relationship;
+  } catch (error) {
+    const typedError = error as Error & { code?: string };
+    if (
+      typedError.code === '23505' ||
+      typedError.message?.includes('already exists')
+    ) {
+      throw new Error('This relationship already exists.');
+    }
+    if (typedError.message?.includes('single parent')) {
+      throw new Error('A task can only have one parent.');
+    }
+    if (typedError.message?.includes('circular')) {
+      throw new Error(
+        'This would create a circular relationship, which is not allowed.'
+      );
+    }
+    throw error;
+  }
+}
+
+export async function deleteTaskRelationship(
+  supabase: TypedSupabaseClient,
+  relationshipId: string
+): Promise<void> {
+  const options = await getMutationApiOptions(supabase);
+  const { data, error } = await supabase
+    .from('task_relationships')
+    .select('source_task_id, target_task_id, type')
+    .eq('id', relationshipId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return;
+
+  const { wsId } = await resolveTaskContext(supabase, data.source_task_id);
+  await deleteWorkspaceTaskRelationship(
+    wsId,
+    data.source_task_id,
+    {
+      source_task_id: data.source_task_id,
+      target_task_id: data.target_task_id,
+      type: data.type,
+    },
+    options
+  );
+}
+
+export function useTaskRelationships(
+  taskId: string | undefined,
+  wsId?: string
+) {
+  return useQuery({
+    queryKey: ['task-relationships', taskId, wsId],
+    queryFn: async () => {
+      if (!taskId || !wsId) return null;
+      const relationships = await getWorkspaceTaskRelationships(
+        wsId,
+        taskId,
+        getBrowserApiOptions()
+      );
+      return relationships;
+    },
+    enabled: !!taskId && !!wsId,
+    staleTime: 30000,
+  });
+}
+
+export function useCreateTaskRelationship(wsId: string, _boardId?: string) {
+  const queryClient = useQueryClient();
+  const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : undefined;
+
+  return useMutation({
+    mutationFn: async (input: CreateTaskRelationshipInput) => {
+      const { relationship } = await createWorkspaceTaskRelationship(
+        wsId,
+        input.source_task_id,
+        input,
+        baseUrl ? { baseUrl } : undefined
+      );
+      return relationship;
+    },
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.source_task_id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.target_task_id],
+        }),
+      ]);
+    },
+  });
+}
+
+export function useDeleteTaskRelationship(wsId: string, _boardId?: string) {
+  const queryClient = useQueryClient();
+  const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : undefined;
+
+  return useMutation({
+    mutationFn: async ({
+      sourceTaskId,
+      targetTaskId,
+      type,
+    }: {
+      sourceTaskId: string;
+      targetTaskId: string;
+      type: TaskRelationshipType;
+    }) => {
+      return deleteWorkspaceTaskRelationship(
+        wsId,
+        sourceTaskId,
+        {
+          source_task_id: sourceTaskId,
+          target_task_id: targetTaskId,
+          type,
+        },
+        baseUrl ? { baseUrl } : undefined
+      );
+    },
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.sourceTaskId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.targetTaskId],
+        }),
+      ]);
+    },
+  });
+}
+
+export async function getWorkspaceTasks(
+  wsId: string,
+  options?: {
+    excludeTaskIds?: string[];
+    searchQuery?: string;
+    limit?: number;
+  }
+): Promise<RelatedTaskInfo[]> {
+  const excluded = new Set(options?.excludeTaskIds ?? []);
+  const normalizedSearch = options?.searchQuery
+    ? normalizeTaskSearchValue(options.searchQuery)
+    : '';
+  const ticketLikeSearch = normalizedSearch
+    ? isTicketIdentifierLikeQuery(normalizedSearch)
+    : false;
+  const targetLimit = options?.limit ?? 50;
+  const requestLimit = Math.max(25, Math.min(targetLimit * 2, 200));
+  const collected: RelatedTaskInfo[] = [];
+  const seenTaskIds = new Set<string>();
+
+  const clientOptions =
+    typeof window !== 'undefined'
+      ? { baseUrl: window.location.origin }
+      : undefined;
+
+  let offset = 0;
+  while (true) {
+    const { tasks } = await listWorkspaceTasks(
+      wsId,
+      {
+        q: ticketLikeSearch ? undefined : options?.searchQuery,
+        limit: requestLimit,
+        offset,
+        includeRelationshipSummary: !ticketLikeSearch,
+      },
+      clientOptions
+    );
+
+    const pageTasks = tasks ?? [];
+    if (pageTasks.length === 0) {
+      break;
+    }
+
+    for (const task of pageTasks) {
+      if (excluded.has(task.id) || seenTaskIds.has(task.id)) {
+        continue;
+      }
+
+      if (normalizedSearch) {
+        const taskName = normalizeTaskSearchValue(task.name ?? '');
+        const taskIdentifier = normalizeTaskSearchValue(
+          getTaskIdentifierForSearch(task) ?? ''
+        );
+
+        if (
+          !taskName.includes(normalizedSearch) &&
+          !taskIdentifier.includes(normalizedSearch)
+        ) {
+          continue;
+        }
+      }
+
+      seenTaskIds.add(task.id);
+      collected.push({
+        id: task.id,
+        name: task.name,
+        display_number: task.display_number,
+        ticket_prefix: task.ticket_prefix ?? null,
+        completed: !!task.closed_at || !!task.completed_at,
+        priority: isTaskPriority(task.priority) ? task.priority : null,
+        board_id: task.board_id ?? null,
+        board_name: task.board_name,
+      });
+
+      if (collected.length >= targetLimit) {
+        return collected;
+      }
+    }
+
+    if (pageTasks.length < requestLimit) {
+      break;
+    }
+
+    offset += requestLimit;
+  }
+
+  return collected;
+}
+
+export function useWorkspaceTasks(
+  wsId: string | undefined,
+  options?: {
+    excludeTaskIds?: string[];
+    searchQuery?: string;
+    limit?: number;
+    enabled?: boolean;
+  }
+) {
+  return useQuery({
+    queryKey: [
+      'workspace-tasks',
+      wsId,
+      options?.excludeTaskIds,
+      options?.searchQuery,
+      options?.limit,
+    ],
+    queryFn: async () => {
+      if (!wsId) return [];
+      return getWorkspaceTasks(wsId, options);
+    },
+    enabled: !!wsId && (options?.enabled ?? true),
+    staleTime: 30000,
+  });
+}
+
+export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateTaskWithRelationshipInput) => {
+      const result = await createWorkspaceTaskWithRelationship(
+        wsId,
+        input,
+        getBrowserApiOptions()
+      );
+      return {
+        task: result.task as Task,
+        relationship: result.relationship,
+      };
+    },
+    onSuccess: async (result, variables) => {
+      if (boardId) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [result.task];
+            if (old.some((t) => t.id === result.task.id)) return old;
+            return [...old, result.task];
+          }
+        );
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', variables.currentTaskId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', result.task.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-tasks', wsId],
+        }),
+      ]);
+    },
+  });
+}
