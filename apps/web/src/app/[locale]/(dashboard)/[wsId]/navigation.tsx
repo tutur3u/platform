@@ -94,6 +94,7 @@ import {
   Wallet,
   Warehouse,
 } from '@tuturuuu/icons';
+import { DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   ROOT_WORKSPACE_ID,
@@ -216,6 +217,11 @@ export async function WorkspaceNavigationLinks({
     userInvoiceValue === '__workspace_default__'
       ? workspaceShowInvoices
       : String(userInvoiceValue) === 'true';
+
+  const usersDatabaseDisabled =
+    withoutPermission('manage_users') &&
+    withoutPermission('view_users_private_info') &&
+    withoutPermission('view_users_public_info');
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -618,10 +624,11 @@ export async function WorkspaceNavigationLinks({
               title: t('workspace-users-tabs.database'),
               href: `/${personalOrWsId}/users/database`,
               icon: <BookUser className="h-5 w-5" />,
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('view_users_private_info') &&
-                withoutPermission('view_users_public_info'),
+              disabled: usersDatabaseDisabled,
+              deferredQueryParamsFromWorkspaceConfig: {
+                configId: DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+                queryParam: 'excludedGroups',
+              },
             },
             {
               title: t('workspace-users-tabs.groups'),
