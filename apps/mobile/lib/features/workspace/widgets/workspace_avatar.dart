@@ -10,13 +10,16 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class WorkspaceAvatar extends StatelessWidget {
   const WorkspaceAvatar({
     required this.workspace,
+    this.radius = 18,
     super.key,
   });
 
   final Workspace workspace;
+  final double radius;
 
   @override
   Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
     final initials = workspace.personal
         ? 'P'
         : (workspace.name != null && workspace.name!.isNotEmpty
@@ -24,12 +27,22 @@ class WorkspaceAvatar extends StatelessWidget {
               : 'W');
 
     final backgroundColor = workspace.personal
-        ? shad.Theme.of(context).colorScheme.primary
+        ? theme.colorScheme.primary
         : _colorFromId(workspace.id);
 
-    return shad.Avatar(
-      initials: initials,
+    return CircleAvatar(
+      radius: radius,
       backgroundColor: backgroundColor,
+      foregroundImage: workspace.avatarUrl != null
+          ? NetworkImage(workspace.avatarUrl!)
+          : null,
+      child: Text(
+        initials,
+        style: theme.typography.small.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 

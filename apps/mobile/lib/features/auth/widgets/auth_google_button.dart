@@ -14,9 +14,6 @@ class AuthGoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final l10n = context.l10n;
-
     return SizedBox(
       width: double.infinity,
       child: shad.OutlineButton(
@@ -24,28 +21,15 @@ class AuthGoogleButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 22,
-              height: 22,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                'G',
-                style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+            Image.asset(
+              'assets/logos/google-logo.png',
+              width: 20,
+              height: 20,
             ),
             const shad.Gap(10),
             Flexible(
               child: Text(
-                isLoading
-                    ? l10n.authGoogleLoading
-                    : l10n.authContinueWithGoogle,
+                context.l10n.authContinueWithGoogle,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
               ),

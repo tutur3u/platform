@@ -86,7 +86,7 @@ class _AssistantPageState extends State<AssistantPage> {
   @override
   Widget build(BuildContext context) {
     final workspace = context.select(
-      (WorkspaceCubit cubit) => cubit.state.currentWorkspace,
+      (WorkspaceCubit cubit) => cubit.state.personalWorkspaceOrCurrent,
     );
 
     if (workspace != null && workspace.id != _loadedWorkspaceId) {
@@ -104,7 +104,7 @@ class _AssistantPageState extends State<AssistantPage> {
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, workspaceState) {
-          final currentWorkspace = workspaceState.currentWorkspace;
+          final currentWorkspace = workspaceState.personalWorkspaceOrCurrent;
           if (currentWorkspace == null) {
             return shad.Scaffold(
               child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
@@ -152,76 +152,70 @@ class _AssistantPageState extends State<AssistantPage> {
                 ],
                 child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
                   builder: (context, chatState) {
-                    final theme = Theme.of(context);
                     final isFullscreen = context.select(
                       (AssistantChromeCubit cubit) => cubit.state.isFullscreen,
                     );
+                    final showRefreshingIndicator =
+                        (shellState.status == AssistantShellStatus.loading &&
+                            shellState.hasWorkspace) ||
+                        (chatState.status == AssistantChatStatus.restoring &&
+                            chatState.hasLoadedOnce);
 
                     return shad.Scaffold(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              theme.colorScheme.surface,
-                              theme.colorScheme.surfaceContainerLowest
-                                  .withValues(alpha: 0.6),
-                              theme.colorScheme.surface,
-                            ],
+                      child: SafeArea(
+                        top: false,
+                        bottom: isFullscreen,
+                        child: AnimatedPadding(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.viewInsetsOf(context).bottom,
                           ),
-                        ),
-                        child: SafeArea(
-                          top: false,
-                          bottom: isFullscreen,
-                          child: AnimatedPadding(
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOut,
-                            padding: EdgeInsets.only(
-                              bottom: MediaQuery.viewInsetsOf(context).bottom,
+                          child: ResponsiveWrapper(
+                            maxWidth: ResponsivePadding.maxContentWidth(
+                              context.deviceClass,
                             ),
-                            child: ResponsiveWrapper(
-                              maxWidth: ResponsivePadding.maxContentWidth(
-                                context.deviceClass,
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                ResponsivePadding.horizontal(
+                                  context.deviceClass,
+                                ),
+                                0,
+                                ResponsivePadding.horizontal(
+                                  context.deviceClass,
+                                ),
+                                isFullscreen ? 4 : 0,
                               ),
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(
-                                  ResponsivePadding.horizontal(
-                                    context.deviceClass,
-                                  ),
-                                  0,
-                                  ResponsivePadding.horizontal(
-                                    context.deviceClass,
-                                  ),
-                                  isFullscreen ? 4 : 0,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                      child: Stack(
-                                        children: [
-                                          Positioned.fill(
-                                            child: _buildConversation(
-                                              context,
-                                              currentWorkspace,
-                                              shellState,
-                                              chatState,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                              child: Column(
+                                children: [
+                                  if (showRefreshingIndicator)
+                                    const Padding(
+                                      padding: EdgeInsets.only(bottom: 8),
+                                      child: _AssistantRefreshStrip(),
                                     ),
-                                    if (!shellState.isViewOnly)
-                                      const shad.Gap(8),
-                                    if (!shellState.isViewOnly)
-                                      _buildComposer(
-                                        context,
-                                        currentWorkspace.id,
-                                        shellState,
-                                        chatState,
-                                      ),
-                                  ],
-                                ),
+                                  Expanded(
+                                    child: Stack(
+                                      children: [
+                                        Positioned.fill(
+                                          child: _buildConversation(
+                                            context,
+                                            currentWorkspace,
+                                            shellState,
+                                            chatState,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (!shellState.isViewOnly) const shad.Gap(8),
+                                  if (!shellState.isViewOnly)
+                                    _buildComposer(
+                                      context,
+                                      currentWorkspace.id,
+                                      shellState,
+                                      chatState,
+                                    ),
+                                ],
                               ),
                             ),
                           ),
@@ -238,82 +232,16 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    Workspace workspace,
-    AssistantShellState shellState,
-  ) {
-    final theme = Theme.of(context);
-    final workspaceName =
-        workspace.name ??
-        (workspace.personal
-            ? context.l10n.assistantPersonalWorkspace
-            : workspace.id);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              shellState.soul.name.isEmpty
-                  ? 'M'
-                  : shellState.soul.name.characters.first.toUpperCase(),
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  shellState.soul.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  workspaceName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildConversation(
     BuildContext context,
     Workspace workspace,
     AssistantShellState shellState,
     AssistantChatState chatState,
   ) {
-    final children = <Widget>[
-      _buildHeader(context, workspace, shellState),
-      const SizedBox(height: 10),
-    ];
+    final children = <Widget>[];
 
     if (chatState.status == AssistantChatStatus.restoring &&
+        !chatState.hasLoadedOnce &&
         chatState.messages.isEmpty) {
       children.add(
         SizedBox(
@@ -790,49 +718,52 @@ class _AssistantPageState extends State<AssistantPage> {
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440),
+        constraints: const BoxConstraints(maxWidth: 420),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 40),
+          padding: const EdgeInsets.symmetric(vertical: 28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(18),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   Icons.auto_awesome_rounded,
+                  size: 20,
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(
                 shellState.soul.name,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 context.l10n.assistantWorkspaceAwareDescription,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.35,
+                  height: 1.3,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 8,
                 runSpacing: 8,
                 children: prompts
                     .map(
-                      (prompt) => OutlinedButton(
+                      (prompt) => shad.OutlineButton(
                         onPressed: () => _submitText(wsId, shellState, prompt),
                         child: Text(prompt, textAlign: TextAlign.center),
                       ),
@@ -854,8 +785,10 @@ class _AssistantPageState extends State<AssistantPage> {
   ) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(24),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Padding(
@@ -1570,6 +1503,18 @@ class _AssistantPageState extends State<AssistantPage> {
           ],
         );
       },
+    );
+  }
+}
+
+class _AssistantRefreshStrip extends StatelessWidget {
+  const _AssistantRefreshStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: const LinearProgressIndicator(minHeight: 3),
     );
   }
 }

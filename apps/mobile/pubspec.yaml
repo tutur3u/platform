@@ -66,3 +66,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logos/transparent.png
+    - assets/logos/google-logo.png
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans.ttf

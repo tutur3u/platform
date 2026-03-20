@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AuthScaffold extends StatelessWidget {
@@ -20,7 +19,6 @@ class AuthScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final deviceClass = context.deviceClass;
     final hPadding = ResponsivePadding.horizontal(deviceClass);
@@ -50,38 +48,12 @@ class AuthScaffold extends StatelessWidget {
                     ),
 
                   // Brand Header
-                  Column(
-                    children: [
-                      // Animated Logo Placeholder (or simplified text logo)
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [
-                            Colors.blue,
-                            Colors.purple,
-                            Colors.amber,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: Text(
-                          l10n.appTitle,
-                          style: theme.typography.h1.copyWith(
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white, // Required for ShaderMask
-                          ),
-                        ),
-                      ),
-                      const shad.Gap(8),
-                      Text(
-                        l10n.authTagline,
-                        style: theme.typography.lead.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                          fontSize: 18,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                  Center(
+                    child: Image.asset(
+                      'assets/logos/transparent.png',
+                      width: 64,
+                      height: 64,
+                    ),
                   ),
 
                   const shad.Gap(48),

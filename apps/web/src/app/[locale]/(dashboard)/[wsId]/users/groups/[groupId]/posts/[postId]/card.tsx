@@ -3,37 +3,36 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
+  Ban,
   Check,
   CircleSlash,
-  Mail,
+  Clock3,
+  LoaderCircle,
   MailCheck,
-  MoveRight,
   Save,
-  Send,
   X,
 } from '@tuturuuu/icons';
 import type { UserGroupPost } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { isEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import useEmail from '@/hooks/useEmail';
+import { useTranslations } from 'next-intl';
+import { PostApprovalActions } from '@/components/post-approval-actions';
+import type { PostEmailQueueRow } from '@/lib/post-email-queue';
 
 interface Props {
   user: WorkspaceUser;
   wsId: string;
   post: UserGroupPost;
-  hideEmailSending: boolean;
-  disableEmailSending: boolean;
-  isEmailBlacklisted?: boolean;
   canUpdateUserGroupsPosts?: boolean;
+  canApprovePosts?: boolean;
+  queueItem?: PostEmailQueueRow;
   initialCheck?: Partial<{
     user_id: string;
     post_id: string;
@@ -41,35 +40,79 @@ interface Props {
     notes: string;
     created_at?: string;
     email_id?: string | null;
+    approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+    approved_at?: string | null;
+    rejected_at?: string | null;
+    rejection_reason?: string | null;
   }> | null;
   isLoadingChecks?: boolean;
+}
+
+function getQueueBadge(queueItem?: PostEmailQueueRow) {
+  switch (queueItem?.status) {
+    case 'sent':
+      return {
+        icon: MailCheck,
+        className:
+          'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green',
+        label: 'Sent',
+      };
+    case 'processing':
+      return {
+        icon: LoaderCircle,
+        className:
+          'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue',
+        label: 'Processing',
+      };
+    case 'failed':
+      return {
+        icon: AlertCircle,
+        className: 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red',
+        label: 'Failed',
+      };
+    case 'blocked':
+      return {
+        icon: Ban,
+        className:
+          'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange',
+        label: 'Blocked',
+      };
+    case 'cancelled':
+      return {
+        icon: CircleSlash,
+        className: 'border-muted bg-muted text-muted-foreground',
+        label: 'Cancelled',
+      };
+    default:
+      return {
+        icon: Clock3,
+        className:
+          'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
+        label: 'Queued',
+      };
+  }
 }
 
 function UserCard({
   user,
   wsId,
   post,
-  hideEmailSending,
-  disableEmailSending,
-  isEmailBlacklisted = false,
   canUpdateUserGroupsPosts = false,
+  canApprovePosts = false,
+  queueItem,
   initialCheck = null,
   isLoadingChecks = false,
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const t = useTranslations();
 
-  const { sendEmail, localLoading, localError, localSuccess } = useEmail();
-
-  useEffect(() => {
-    if (localSuccess) router.refresh();
-  }, [router, localSuccess]);
-
-  // Use check data from parent query
   const check = initialCheck;
   const isLoadingCheck = isLoadingChecks;
+  const queueBadge = getQueueBadge(queueItem);
+  const QueueIcon = queueBadge.icon;
+  const approvalStatus = check?.approval_status ?? 'PENDING';
 
-  // Save or update group post check status
   const { mutate: handleSaveStatus, isPending: isSaving } = useMutation({
     mutationFn: async ({
       isCompleted,
@@ -83,13 +126,7 @@ function UserCard({
       }
 
       const finalNotes = notes ?? check?.notes ?? '';
-
-      if (isCompleted === check?.is_completed && finalNotes === check?.notes) {
-        return check;
-      }
-
       const method = check?.user_id && check?.post_id ? 'PUT' : 'POST';
-
       const endpoint =
         check?.user_id && check?.post_id
           ? `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`
@@ -116,7 +153,6 @@ function UserCard({
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate the parent query that fetches all checks
       queryClient.invalidateQueries({
         queryKey: ['group-post-checks', post.id],
       });
@@ -131,32 +167,6 @@ function UserCard({
       isCompleted: check?.is_completed ?? null,
     });
   };
-
-  const handleSendEmail = async () => {
-    if (post && user.email && check?.is_completed != null) {
-      await sendEmail({
-        wsId,
-        postId: post.id!,
-        groupId: post.group_id!,
-        post,
-        users: [
-          {
-            id: user.id,
-            email: user.email,
-            username:
-              user.full_name ||
-              user.display_name ||
-              user.email ||
-              '<Chưa có tên>',
-            notes: check?.notes || '',
-            is_completed: check?.is_completed,
-          },
-        ],
-      });
-    }
-  };
-
-  const isApproved = post.post_approval_status === 'APPROVED';
 
   return (
     <Card className="w-full rounded-lg p-4 shadow-md">
@@ -176,15 +186,42 @@ function UserCard({
             </AvatarFallback>
           </Avatar>
         )}
-        <div className="ml-4 w-full">
-          <h3 className="font-semibold text-foreground text-lg">
-            {user.full_name}
-          </h3>
-          {(user.email || user.phone) && (
-            <p className="text-foreground text-sm">
-              {user.email || user.phone}
-            </p>
-          )}
+        <div className="ml-4 flex w-full items-start justify-between gap-3">
+          <div>
+            <h3 className="font-semibold text-foreground text-lg">
+              {user.full_name}
+            </h3>
+            {(user.email || user.phone) && (
+              <p className="text-foreground text-sm">
+                {user.email || user.phone}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <Badge
+              variant="outline"
+              className={cn(
+                approvalStatus === 'APPROVED' &&
+                  'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green',
+                approvalStatus === 'PENDING' &&
+                  'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
+                approvalStatus === 'REJECTED' &&
+                  'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
+              )}
+            >
+              {approvalStatus === 'APPROVED'
+                ? t('approvals.status.approved')
+                : approvalStatus === 'REJECTED'
+                  ? t('approvals.status.rejected')
+                  : t('approvals.status.pending')}
+            </Badge>
+            {(queueItem || check?.email_id) && (
+              <Badge variant="outline" className={queueBadge.className}>
+                <QueueIcon className="mr-1 h-3.5 w-3.5" />
+                {queueBadge.label}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
@@ -194,22 +231,50 @@ function UserCard({
           name="notes"
           placeholder="Notes"
           defaultValue={check?.notes || ''}
-          disabled={isLoadingCheck || !check || !isApproved}
+          disabled={isLoadingCheck || !check}
         />
       </form>
 
-      <div
-        className={cn(
-          'mt-4 flex flex-wrap justify-between gap-2',
-          hideEmailSending && 'justify-end'
-        )}
-      >
+      {check?.rejection_reason && approvalStatus === 'REJECTED' && (
+        <div className="mt-3 rounded border border-dynamic-red/20 bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
+          {check.rejection_reason}
+        </div>
+      )}
+
+      {queueItem?.last_error && (
+        <div className="mt-3 rounded border border-dynamic-red/20 bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
+          {queueItem.last_error}
+        </div>
+      )}
+
+      {canApprovePosts && post.id && user.id && (
+        <div className="mt-4">
+          <PostApprovalActions
+            wsId={wsId}
+            itemId={`${post.id}:${user.id}`}
+            approvalStatus={approvalStatus}
+            canRemoveApproval={
+              approvalStatus === 'APPROVED' &&
+              queueItem?.status !== 'sent' &&
+              !check?.email_id
+            }
+            compact
+            onCompleted={() => {
+              queryClient.invalidateQueries({
+                queryKey: ['group-post-checks', post.id],
+              });
+            }}
+          />
+        </div>
+      )}
+
+      <div className={cn('mt-4 flex flex-wrap justify-between gap-2')}>
         <div className="flex w-full items-center justify-center gap-2">
           {canUpdateUserGroupsPosts && (
             <Button
               type="submit"
               form={`notes-form-${user.id}`}
-              disabled={isSaving || !check || !isApproved}
+              disabled={isSaving || !check}
               variant="outline"
               className="w-full border"
             >
@@ -234,33 +299,29 @@ function UserCard({
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check || !isApproved}
+              disabled={isSaving || !check}
             >
               <X />
             </Button>
           )}
           {canUpdateUserGroupsPosts && (
             <Button
-              variant={check?.is_completed != null ? 'outline' : 'ghost'}
-              onClick={() =>
-                handleSaveStatus({
-                  isCompleted: null,
-                })
-              }
+              variant={check?.is_completed == null ? 'outline' : 'ghost'}
+              onClick={() => handleSaveStatus({ isCompleted: null })}
               className={cn(
                 check?.is_completed == null
                   ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check || !isApproved}
+              disabled={isSaving || !check}
             >
               <CircleSlash />
             </Button>
           )}
           {canUpdateUserGroupsPosts && (
             <Button
-              variant={check?.is_completed == null ? 'outline' : 'ghost'}
+              variant={check?.is_completed != null ? 'outline' : 'ghost'}
               onClick={() => handleSaveStatus({ isCompleted: true })}
               className={cn(
                 check?.is_completed != null && check.is_completed
@@ -268,89 +329,12 @@ function UserCard({
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check || !isApproved}
+              disabled={isSaving || !check}
             >
               <Check />
             </Button>
           )}
         </div>
-
-        {hideEmailSending ? (
-          <div>
-            <Button variant="secondary" disabled>
-              {disableEmailSending || localSuccess ? (
-                <MailCheck className="h-6 w-6" />
-              ) : (
-                <Send className="h-6 w-6" />
-              )}
-            </Button>
-          </div>
-        ) : (
-          <div className="w-full">
-            <Button
-              onClick={handleSendEmail}
-              disabled={
-                disableEmailSending ||
-                isEmailBlacklisted ||
-                localSuccess ||
-                localLoading ||
-                !user.email ||
-                !isEmail(user.email) ||
-                check?.is_completed == null ||
-                isSaving ||
-                !check ||
-                !isApproved
-              }
-              variant={
-                localLoading ||
-                disableEmailSending ||
-                localSuccess ||
-                isEmailBlacklisted
-                  ? 'secondary'
-                  : undefined
-              }
-              className="w-full"
-            >
-              <Mail className="mr-2" />
-              <span className="flex items-center justify-center opacity-70">
-                {localLoading ? (
-                  <LoadingIndicator />
-                ) : isEmailBlacklisted ? (
-                  'Email blacklisted'
-                ) : disableEmailSending || localSuccess ? (
-                  'Email sent'
-                ) : (
-                  'Send email'
-                )}
-              </span>
-              {user.email && (
-                <>
-                  <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
-                  <span className="hidden underline md:inline-block">
-                    {user.email}
-                  </span>
-                </>
-              )}
-            </Button>
-            {localError && (
-              <div
-                role="alert"
-                aria-live="assertive"
-                className="mt-2 flex items-start gap-2 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-2 text-dynamic-red text-sm"
-              >
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <div className="flex-1 text-xs">
-                  <div className="font-semibold text-sm">
-                    Failed to send email
-                  </div>
-                  <div className="wrap-break-word opacity-80">
-                    {String(localError)}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </Card>
   );

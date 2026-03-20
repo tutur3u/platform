@@ -65,6 +65,9 @@ export function UserGroupRowActions({
         queryClient.invalidateQueries({
           queryKey: ['workspace-user-groups', data.ws_id],
         });
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-user-groups-infinite', data.ws_id],
+        });
         router.refresh();
       } else {
         const data = await res.json();

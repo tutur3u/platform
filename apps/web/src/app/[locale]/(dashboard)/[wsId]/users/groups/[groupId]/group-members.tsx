@@ -42,6 +42,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { RequireAttentionName } from '@/components/users/require-attention-name';
 import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import GroupMemberActions from './group-member-actions';
 
@@ -346,7 +347,21 @@ export default function GroupMembers({
                             )}
                             <div>
                               <div className="flex items-center gap-2">
-                                <div
+                                <RequireAttentionName
+                                  name={
+                                    person.full_name
+                                      ? person.display_name
+                                        ? `${person.full_name} (${person.display_name})`
+                                        : person.full_name
+                                      : person.display_name ||
+                                        person.email ||
+                                        (isManager
+                                          ? t('ws-user-group-details.managers')
+                                          : t('common.unknown'))
+                                  }
+                                  requireAttention={
+                                    !!person.has_require_attention_feedback
+                                  }
                                   className={cn(
                                     'font-medium',
                                     (person.archived ||
@@ -355,17 +370,7 @@ export default function GroupMembers({
                                           new Date())) &&
                                       'text-dynamic-red line-through decoration-2 decoration-dynamic-red'
                                   )}
-                                >
-                                  {person.full_name
-                                    ? person.display_name
-                                      ? `${person.full_name} (${person.display_name})`
-                                      : person.full_name
-                                    : person.display_name ||
-                                      person.email ||
-                                      (isManager
-                                        ? t('ws-user-group-details.managers')
-                                        : t('common.unknown'))}
-                                </div>
+                                />
                                 {isManager && (
                                   <Badge
                                     variant="default"

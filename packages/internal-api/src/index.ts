@@ -94,6 +94,12 @@ export {
   updateUserConfig,
 } from './users';
 export {
+  createWorkspaceUserFeedback,
+  deleteWorkspaceUserFeedback,
+  listWorkspaceUserFeedbacks,
+  updateWorkspaceUserFeedback,
+} from './users-feedbacks';
+export {
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
   getOptionalWorkspaceConfig,

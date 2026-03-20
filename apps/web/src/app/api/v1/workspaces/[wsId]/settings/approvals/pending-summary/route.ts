@@ -77,13 +77,16 @@ export async function GET(request: Request, { params }: Params) {
         .eq('user.ws_id', wsId)
         .eq('report_approval_status', 'PENDING'),
       sbAdmin
-        .from('user_group_posts')
-        .select('id, workspace_user_groups!inner(ws_id)', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('workspace_user_groups.ws_id', wsId)
-        .eq('post_approval_status', 'PENDING'),
+        .from('user_group_post_checks')
+        .select(
+          'post_id, user_group_posts!inner(workspace_user_groups!inner(ws_id))',
+          {
+            count: 'exact',
+            head: true,
+          }
+        )
+        .eq('user_group_posts.workspace_user_groups.ws_id', wsId)
+        .eq('approval_status', 'PENDING'),
     ]);
 
     if (reportsCountError || postsCountError) {

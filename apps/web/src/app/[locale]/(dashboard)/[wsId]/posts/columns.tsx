@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import 'dayjs/locale/vi';
@@ -11,14 +12,11 @@ import type { PostEmail } from './types';
 
 interface PostEmailExtraData {
   locale?: string;
-  onEmailSent: () => void;
-  blacklistedEmails?: Set<string>;
 }
 
 export const getPostEmailColumns = ({
   t,
   namespace,
-  extraData,
 }: ColumnGeneratorOptions<PostEmail> & {
   extraData?: PostEmailExtraData;
 }): ColumnDef<PostEmail>[] => [
@@ -72,6 +70,44 @@ export const getPostEmailColumns = ({
       <div className="line-clamp-1 min-w-32 text-primary">
         {row.getValue('post_title') || '-'}
       </div>
+    ),
+  },
+  {
+    accessorKey: 'approval_status',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.approval_status`)}
+      />
+    ),
+    cell: ({ row }) => {
+      const value = (row.getValue('approval_status') as string | null) ?? '-';
+      const className =
+        value === 'APPROVED'
+          ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
+          : value === 'REJECTED'
+            ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
+            : 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow';
+
+      return (
+        <Badge variant="outline" className={className}>
+          {value.toLowerCase()}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: 'queue_status',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.queue_status`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="capitalize">{row.getValue('queue_status') || '-'}</div>
     ),
   },
   {
@@ -148,17 +184,7 @@ export const getPostEmailColumns = ({
   {
     id: 'actions',
     cell: ({ row }) => {
-      return (
-        <PostsRowActions
-          data={row.original}
-          onEmailSent={extraData.onEmailSent}
-          isEmailBlacklisted={
-            row.original.email
-              ? (extraData.blacklistedEmails?.has(row.original.email) ?? false)
-              : false
-          }
-        />
-      );
+      return <PostsRowActions data={row.original} />;
     },
   },
 ];

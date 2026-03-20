@@ -125,6 +125,9 @@ export default function UserGroupForm({
         queryClient.invalidateQueries({
           queryKey: ['workspace-user-groups', wsId],
         });
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-user-groups-infinite', wsId],
+        });
         router.refresh();
       } else {
         const errorData = await res.json();

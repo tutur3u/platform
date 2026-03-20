@@ -36,7 +36,7 @@ void main() {
       expect(find.text('Continue with Google'), findsOneWidget);
     });
 
-    testWidgets('shows loading copy and disables Google while auth is busy', (
+    testWidgets('disables Google button while auth is busy', (
       tester,
     ) async {
       final state = const AuthState.unauthenticated().copyWith(isLoading: true);
@@ -52,9 +52,9 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Connecting to Google...'), findsOneWidget);
+      expect(find.text('Continue with Google'), findsOneWidget);
 
-      await tester.tap(find.text('Connecting to Google...'));
+      await tester.tap(find.text('Continue with Google'));
       verifyNever(() => authCubit.signInWithGoogle());
     });
   });

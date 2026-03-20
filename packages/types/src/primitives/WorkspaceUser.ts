@@ -27,6 +27,7 @@ export interface WorkspaceUser {
     id: string;
     display_name: string | null;
   }[];
+  has_require_attention_feedback?: boolean | null;
   href?: string;
   attendance?: WorkspaceUserAttendance[];
   created_at?: string | null;

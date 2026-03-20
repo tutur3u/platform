@@ -1,6 +1,8 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Sparkles } from '@tuturuuu/icons';
+import { getWorkspaceConfigIdList } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -19,6 +21,10 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 import type { NavLink as NavLinkType } from './navigation';
 
+function matchesPathPrefix(targetPath: string, pathPrefix: string) {
+  return targetPath === pathPrefix || targetPath.startsWith(`${pathPrefix}/`);
+}
+
 interface NavLinkProps {
   wsId: string;
   link: NavLinkType;
@@ -28,6 +34,7 @@ interface NavLinkProps {
 }
 
 export function NavLink({
+  wsId,
   link,
   isCollapsed,
   onSubMenuClick,
@@ -135,35 +142,99 @@ export function NavLink({
     );
   };
 
+  const shouldResolveQueryParamsFromConfig =
+    !!href &&
+    !newTab &&
+    !!link.deferredQueryParamsFromWorkspaceConfig &&
+    (!link.deferredQueryParamsFromWorkspaceConfig.onlyWhenPathPrefix ||
+      matchesPathPrefix(
+        pathname,
+        link.deferredQueryParamsFromWorkspaceConfig.onlyWhenPathPrefix
+      ));
+
+  const deferredConfig = link.deferredQueryParamsFromWorkspaceConfig;
+  const deferredQueryParam = deferredConfig?.queryParam ?? 'excludedGroups';
+
+  const {
+    data: resolvedQueryParamIds,
+    isLoading: isResolvingHref,
+    isError: isResolveHrefError,
+  } = useQuery({
+    queryKey: [
+      'nav-workspace-config-id-list',
+      wsId,
+      deferredConfig?.configId,
+      deferredQueryParam,
+    ],
+    queryFn: () => getWorkspaceConfigIdList(wsId, deferredConfig!.configId),
+    enabled: shouldResolveQueryParamsFromConfig,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const effectiveHref =
+    shouldResolveQueryParamsFromConfig && href
+      ? (() => {
+          if (isResolveHrefError) return href;
+          if (!resolvedQueryParamIds) return undefined;
+
+          const url = new URL(href, window.location.origin);
+          url.searchParams.delete(deferredQueryParam);
+
+          if (resolvedQueryParamIds.length > 0) {
+            url.searchParams.set(
+              deferredQueryParam,
+              resolvedQueryParamIds.join(',')
+            );
+          }
+
+          return `${url.pathname}${url.search}${url.hash}`;
+        })()
+      : href;
+
   const commonProps = {
     className: cn(
       'group/navlink flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
       link.isBack && 'mb-2 cursor-pointer',
+      isResolvingHref && 'pointer-events-none opacity-70',
       isDisabled
         ? 'cursor-not-allowed opacity-50'
         : 'hover:bg-accent hover:text-accent-foreground'
     ),
-    onClick: () => {
+    onClick: (event: React.MouseEvent<HTMLElement>) => {
       if (isTierRestricted) {
+        event.preventDefault();
         setShowUpgradeDialog(true);
         return;
       }
-      if (isDisabled) return;
+      if (isDisabled || isResolvingHref) {
+        event.preventDefault();
+        return;
+      }
       if (onLinkClick) {
         onLinkClick();
       } else if (hasChildren) {
+        event.preventDefault();
         onSubMenuClick(children, title);
       } else if (href) {
+        if (shouldResolveQueryParamsFromConfig && !effectiveHref) {
+          event.preventDefault();
+          return;
+        }
         onClick();
       }
     },
   };
 
   const linkElement =
-    href && !isDisabled ? (
-      <Link href={href} {...commonProps} target={newTab ? '_blank' : '_self'}>
+    effectiveHref && !isDisabled ? (
+      <Link
+        href={effectiveHref}
+        {...commonProps}
+        target={newTab ? '_blank' : '_self'}
+      >
         {content}
       </Link>
     ) : (

@@ -1,10 +1,17 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  fetchRequireAttentionUserIds,
+  withRequireAttentionFlag,
+} from '@/lib/require-attention-users';
 import GroupIndicatorsManager from './group-indicators-manager';
 
 export const metadata: Metadata = {
@@ -126,7 +133,7 @@ async function getIndicators(groupId: string) {
 }
 
 async function getUserData(wsId: string, groupId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -146,5 +153,16 @@ async function getUserData(wsId: string, groupId: string) {
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+
+  const users = (data ?? []) as unknown as WorkspaceUser[];
+  const requireAttentionUserIds = await fetchRequireAttentionUserIds(supabase, {
+    wsId,
+    userIds: users.map((user) => user.id),
+    groupId,
+  });
+
+  return {
+    data: withRequireAttentionFlag(users, requireAttentionUserIds),
+    count,
+  } as { data: WorkspaceUser[]; count: number };
 }

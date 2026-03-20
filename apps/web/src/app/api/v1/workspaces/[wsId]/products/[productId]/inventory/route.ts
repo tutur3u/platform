@@ -31,6 +31,7 @@ interface Params {
 
 const getWorkspaceUserId = async (
   supabase: TypedSupabaseClient,
+  sbAdmin: TypedSupabaseClient,
   wsId: string
 ) => {
   const {
@@ -39,7 +40,7 @@ const getWorkspaceUserId = async (
 
   if (!user) return null;
 
-  const { data: workspaceUser } = await supabase
+  const { data: workspaceUser } = await sbAdmin
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
     .eq('platform_user_id', user.id)
@@ -110,7 +111,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Insert inventory items
-  const { error } = await supabase.from('inventory_products').insert(
+  const { error } = await sbAdmin.from('inventory_products').insert(
     inventory.map((item) => ({
       ...item,
       product_id: productId,
@@ -125,7 +126,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const workspaceUserId = await getWorkspaceUserId(supabase, wsId);
+  const workspaceUserId = await getWorkspaceUserId(supabase, sbAdmin, wsId);
   if (workspaceUserId) {
     const stockChanges = inventory
       .map((item) => ({
@@ -149,7 +150,7 @@ export async function POST(req: Request, { params }: Params) {
       }));
 
     if (stockChanges.length > 0) {
-      await supabase.from('product_stock_changes').insert(stockChanges);
+      await sbAdmin.from('product_stock_changes').insert(stockChanges);
     }
   }
 
@@ -214,7 +215,7 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   // Get existing inventory to compare
-  const { data: existingInventory, error: fetchError } = await supabase
+  const { data: existingInventory, error: fetchError } = await sbAdmin
     .from('inventory_products')
     .select('*')
     .eq('product_id', productId);
@@ -227,7 +228,7 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const workspaceUserId = await getWorkspaceUserId(supabase, wsId);
+  const workspaceUserId = await getWorkspaceUserId(supabase, sbAdmin, wsId);
 
   // If inventory is empty, clear all existing inventory
   if (inventory.length === 0) {
@@ -254,11 +255,11 @@ export async function PATCH(req: Request, { params }: Params) {
         }));
 
       if (stockChanges.length > 0) {
-        await supabase.from('product_stock_changes').insert(stockChanges);
+        await sbAdmin.from('product_stock_changes').insert(stockChanges);
       }
     }
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await sbAdmin
       .from('inventory_products')
       .delete()
       .eq('product_id', productId);
@@ -322,7 +323,7 @@ export async function PATCH(req: Request, { params }: Params) {
         const difference = getStockChangeAmount(existingItem?.amount, null);
 
         if (difference != null) {
-          await supabase.from('product_stock_changes').insert({
+          await sbAdmin.from('product_stock_changes').insert({
             product_id: productId,
             unit_id: unit_id,
             warehouse_id: warehouse_id,
@@ -332,7 +333,7 @@ export async function PATCH(req: Request, { params }: Params) {
         }
       }
 
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await sbAdmin
         .from('inventory_products')
         .delete()
         .eq('product_id', productId)
@@ -351,7 +352,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // Perform insertions
   if (toInsert.length > 0) {
-    const { error: insertError } = await supabase
+    const { error: insertError } = await sbAdmin
       .from('inventory_products')
       .insert(
         toInsert.map((item) => ({
@@ -392,7 +393,7 @@ export async function PATCH(req: Request, { params }: Params) {
         }));
 
       if (stockChanges.length > 0) {
-        await supabase.from('product_stock_changes').insert(stockChanges);
+        await sbAdmin.from('product_stock_changes').insert(stockChanges);
       }
     }
   }
@@ -409,7 +410,7 @@ export async function PATCH(req: Request, { params }: Params) {
         );
 
         if (stockDifference != null) {
-          await supabase.from('product_stock_changes').insert({
+          await sbAdmin.from('product_stock_changes').insert({
             product_id: productId,
             unit_id: item.unit_id,
             warehouse_id: item.warehouse_id,
@@ -419,7 +420,7 @@ export async function PATCH(req: Request, { params }: Params) {
         }
       }
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await sbAdmin
         .from('inventory_products')
         .update({
           amount: item.amount,
@@ -509,7 +510,7 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
-  const { data: existingInventory, error: fetchError } = await supabase
+  const { data: existingInventory, error: fetchError } = await sbAdmin
     .from('inventory_products')
     .select('*')
     .eq('product_id', productId);
@@ -522,7 +523,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const workspaceUserId = await getWorkspaceUserId(supabase, wsId);
+  const workspaceUserId = await getWorkspaceUserId(supabase, sbAdmin, wsId);
   if (workspaceUserId && existingInventory?.length) {
     const stockChanges = existingInventory
       .map((item) => ({
@@ -546,7 +547,7 @@ export async function DELETE(req: Request, { params }: Params) {
       }));
 
     if (stockChanges.length > 0) {
-      const { error: stockChangeError } = await supabase
+      const { error: stockChangeError } = await sbAdmin
         .from('product_stock_changes')
         .insert(stockChanges);
       if (stockChangeError) {
@@ -556,7 +557,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   // Delete all inventory for this product
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('inventory_products')
     .delete()
     .eq('product_id', productId);

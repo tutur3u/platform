@@ -82,7 +82,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   Widget build(BuildContext context) {
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
+        MobileSectionAppBar(
           leading: [
             shad.OutlineButton(
               density: shad.ButtonDensity.icon,
@@ -97,7 +97,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               child: const Icon(Icons.arrow_back),
             ),
           ],
-          title: BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
+          titleWidget: BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
             buildWhen: (prev, curr) => prev.board != curr.board,
             builder: (context, state) {
               final title = state.board?.name?.trim().isNotEmpty == true
@@ -106,7 +106,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               return Text(title);
             },
           ),
-          trailing: [
+          actions: [
             BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
               buildWhen: (prev, curr) => prev.filters != curr.filters,
               builder: (context, state) {

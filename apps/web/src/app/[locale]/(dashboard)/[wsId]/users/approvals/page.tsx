@@ -53,7 +53,9 @@ export default async function UserApprovalsPage({ params }: PageProps) {
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canApproveReports = containsPermission('approve_reports');
-        const canApprovePosts = containsPermission('approve_posts');
+        const canApprovePosts = containsPermission(
+          'send_user_group_post_emails'
+        );
 
         if (!canApproveReports && !canApprovePosts) {
           notFound();

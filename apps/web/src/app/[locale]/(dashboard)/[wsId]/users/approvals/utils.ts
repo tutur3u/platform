@@ -21,10 +21,14 @@ export function getStatusColorClasses(
   return STATUS_COLORS[status as ApprovalStatus];
 }
 
-export function canSendEmail(post: {
+export function canRemoveApproval(post: {
   post_approval_status: ApprovalStatus | string;
+  can_remove_approval?: boolean;
 }): boolean {
-  return post.post_approval_status === 'APPROVED';
+  return (
+    post.post_approval_status === 'APPROVED' &&
+    post.can_remove_approval === true
+  );
 }
 
 export const STATUS_LABELS: Record<

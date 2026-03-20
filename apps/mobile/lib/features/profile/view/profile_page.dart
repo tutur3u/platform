@@ -42,11 +42,6 @@ class _ProfileView extends StatelessWidget {
     final l10n = context.l10n;
 
     return shad.Scaffold(
-      headers: [
-        shad.AppBar(
-          title: Text(l10n.profileTitle),
-        ),
-      ],
       child: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           if (state.status == ProfileStatus.loading) {

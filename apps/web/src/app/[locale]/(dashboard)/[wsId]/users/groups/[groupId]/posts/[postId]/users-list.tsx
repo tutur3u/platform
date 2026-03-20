@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { UserGroupPost } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { PostEmailQueueRow } from '@/lib/post-email-queue';
 import UserCard from './card';
 
 interface Props {
@@ -10,9 +11,8 @@ interface Props {
   wsId: string;
   post: UserGroupPost;
   canUpdateUserGroupsPosts: boolean;
-  canSendUserGroupPostEmails: boolean;
-  sentEmailUserIds: string[];
-  blacklistedEmails: Set<string>;
+  canApprovePosts?: boolean;
+  queueByUserId: Record<string, PostEmailQueueRow>;
 }
 
 interface UserGroupPostCheck {
@@ -22,6 +22,10 @@ interface UserGroupPostCheck {
   notes: string;
   created_at?: string;
   email_id?: string | null;
+  approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approved_at?: string | null;
+  rejected_at?: string | null;
+  rejection_reason?: string | null;
 }
 
 export function UsersList({
@@ -29,9 +33,8 @@ export function UsersList({
   wsId,
   post,
   canUpdateUserGroupsPosts,
-  canSendUserGroupPostEmails,
-  sentEmailUserIds,
-  blacklistedEmails,
+  canApprovePosts = false,
+  queueByUserId,
 }: Props) {
   const groupId = post.group_id;
 
@@ -69,6 +72,7 @@ export function UsersList({
             post_id: post.id,
             is_completed: null,
             notes: '',
+            approval_status: 'PENDING',
           };
         }
       }
@@ -87,14 +91,11 @@ export function UsersList({
             user={user}
             wsId={wsId}
             post={post}
-            disableEmailSending={sentEmailUserIds.includes(user.id)}
-            isEmailBlacklisted={
-              user.email ? blacklistedEmails.has(user.email) : false
-            }
-            hideEmailSending={!canSendUserGroupPostEmails}
             canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
+            canApprovePosts={canApprovePosts}
             initialCheck={checksMap?.[user.id]}
             isLoadingChecks={isLoading}
+            queueItem={queueByUserId[user.id]}
           />
         </div>
       ))}

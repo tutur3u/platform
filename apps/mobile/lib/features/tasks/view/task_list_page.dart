@@ -138,14 +138,15 @@ class _TaskListViewState extends State<_TaskListView> {
                 child: ListView(
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding),
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
                   children: [
                     MyTasksHeader(
+                      totalActiveCount: state.totalActiveTasks,
                       overdueCount: state.overdueTasks.length,
                       todayCount: state.todayTasks.length,
                       upcomingCount: state.upcomingTasks.length,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     if (state.overdueTasks.isNotEmpty)
                       TaskSectionAccordion(
                         title: l10n.tasksOverdue,
@@ -166,7 +167,7 @@ class _TaskListViewState extends State<_TaskListView> {
                             ),
                       ),
                     if (state.overdueTasks.isNotEmpty)
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                     if (state.todayTasks.isNotEmpty)
                       TaskSectionAccordion(
                         title: l10n.tasksDueToday,
@@ -184,7 +185,7 @@ class _TaskListViewState extends State<_TaskListView> {
                               TaskListSection.today,
                             ),
                       ),
-                    if (state.todayTasks.isNotEmpty) const SizedBox(height: 12),
+                    if (state.todayTasks.isNotEmpty) const SizedBox(height: 10),
                     if (state.upcomingTasks.isNotEmpty)
                       TaskSectionAccordion(
                         title: l10n.tasksUpcoming,
@@ -203,9 +204,9 @@ class _TaskListViewState extends State<_TaskListView> {
                             ),
                       ),
                     if (state.upcomingTasks.isNotEmpty)
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                     if (state.totalActiveTasks == 0) const _AllCaughtUpView(),
-                    if (state.totalActiveTasks == 0) const SizedBox(height: 12),
+                    if (state.totalActiveTasks == 0) const SizedBox(height: 10),
                     if (state.completedTasks.isNotEmpty)
                       TaskSectionAccordion(
                         title: l10n.tasksCompleted,
@@ -252,27 +253,46 @@ class _AllCaughtUpView extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return shad.Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.75),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 56,
-              color: Colors.green.shade700,
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.green.shade700.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(
+                Icons.check_rounded,
+                size: 28,
+                color: Colors.green.shade700,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               l10n.tasksAllCaughtUp,
-              style: theme.typography.h3,
+              style: theme.typography.h4.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               l10n.tasksAllCaughtUpSubtitle,
-              style: theme.typography.textMuted,
+              style: theme.typography.textSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

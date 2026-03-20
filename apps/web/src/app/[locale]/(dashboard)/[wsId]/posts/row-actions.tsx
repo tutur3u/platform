@@ -1,189 +1,89 @@
+'use client';
+
 import {
+  AlertTriangle,
   Ban,
-  CircleAlert,
-  CircleSlash,
-  MailCheck,
-  Send,
+  CheckCircle2,
+  Clock3,
+  LoaderCircle,
+  MailX,
 } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import dayjs from 'dayjs';
-import { useRouter } from 'next/navigation';
+import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
-import useEmail from '@/hooks/useEmail';
+import type { ComponentType } from 'react';
 import type { PostEmail } from './types';
-import {
-  isOptimisticallyLoading,
-  isOptimisticallySent,
-  markAsOptimisticallyLoading,
-  markAsOptimisticallySent,
-  removeFromOptimisticLoading,
-  useOptimisticLoadingEmails,
-  useOptimisticSentEmails,
-} from './use-posts';
 
-export default function PostsRowActions({
-  data,
-  onEmailSent,
-  isEmailBlacklisted = false,
-}: {
-  data: PostEmail;
-  onEmailSent?: () => void;
-  isEmailBlacklisted?: boolean;
-}) {
-  const t = useTranslations();
-  const router = useRouter();
-  const { sendEmail, localLoading, localError, localSuccess } = useEmail();
-  const [optimisticSentEmails, setOptimisticSentEmails] =
-    useOptimisticSentEmails();
-  const [optimisticLoadingEmails, setOptimisticLoadingEmails] =
-    useOptimisticLoadingEmails();
+type QueueStatusLabelKey =
+  | 'blocked'
+  | 'cancelled'
+  | 'failed'
+  | 'processing'
+  | 'queued'
+  | 'sent';
 
-  const sendable =
-    !!data.email &&
-    !!data.ws_id &&
-    !!data.user_id &&
-    !!data.post_id &&
-    !!data.group_id &&
-    !!data.group_name &&
-    !!data.post_title &&
-    !!data.post_content &&
-    (data?.is_completed === true || data?.is_completed === false);
+function getStatusAppearance(status: PostEmail['queue_status']): {
+  icon: ComponentType<{ className?: string }>;
+  className: string;
+  labelKey: QueueStatusLabelKey;
+} {
+  switch (status) {
+    case 'sent':
+      return {
+        icon: CheckCircle2,
+        className:
+          'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green',
+        labelKey: 'sent',
+      };
+    case 'processing':
+      return {
+        icon: LoaderCircle,
+        className:
+          'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue',
+        labelKey: 'processing',
+      };
+    case 'failed':
+      return {
+        icon: AlertTriangle,
+        className: 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red',
+        labelKey: 'failed',
+      };
+    case 'blocked':
+      return {
+        icon: Ban,
+        className:
+          'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange',
+        labelKey: 'blocked',
+      };
+    case 'cancelled':
+      return {
+        icon: MailX,
+        className: 'border-muted bg-muted text-muted-foreground',
+        labelKey: 'cancelled',
+      };
+    default:
+      return {
+        icon: Clock3,
+        className:
+          'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
+        labelKey: 'queued',
+      };
+  }
+}
 
-  // Check if email is sent (either from server data or optimistically)
-  const isSent =
-    !!data.email_id || isOptimisticallySent(data, optimisticSentEmails);
-  // Check if email is loading (either from local state or optimistically)
-  const isLoading =
-    localLoading || isOptimisticallyLoading(data, optimisticLoadingEmails);
-
-  const handleSendEmail = async () => {
-    // The local loading, error, and success states are now managed by useEmail hook
-
-    if (
-      !!data.email &&
-      !!data.ws_id &&
-      !!data.user_id &&
-      !!data.post_id &&
-      !!data.group_id &&
-      !!data.group_name &&
-      !!data.post_title &&
-      !!data.post_content &&
-      (data?.is_completed === true || data?.is_completed === false)
-    ) {
-      // Mark as optimistically loading immediately
-      markAsOptimisticallyLoading(
-        data,
-        optimisticLoadingEmails,
-        setOptimisticLoadingEmails
-      );
-
-      const success = await sendEmail({
-        wsId: data.ws_id,
-        postId: data.post_id,
-        groupId: data.group_id,
-        post: {
-          id: data.post_id || undefined,
-          title: data.post_title || null,
-          content: data.post_content || null,
-          notes: data.notes || '',
-          group_name: data.group_name || null,
-          created_at: (() => {
-            const dateStr = data.post_created_at || data.created_at;
-            const parsed = dayjs(dateStr);
-            return parsed.isValid()
-              ? parsed.toISOString()
-              : new Date().toISOString();
-          })(),
-        },
-        users: [
-          {
-            id: data.user_id,
-            email: data.email,
-            username: data.recipient || data.email || '<Chưa có tên>',
-            notes: data?.notes || '',
-            is_completed: data?.is_completed,
-          },
-        ],
-      });
-
-      // Remove from optimistic loading
-      removeFromOptimisticLoading(
-        data,
-        optimisticLoadingEmails,
-        setOptimisticLoadingEmails
-      );
-
-      // Only mark as optimistically sent if the email was sent successfully
-      if (success) {
-        markAsOptimisticallySent(
-          data,
-          optimisticSentEmails,
-          setOptimisticSentEmails
-        );
-      }
-
-      if (onEmailSent) onEmailSent();
-      // Always refresh router after sending email
-      router.refresh();
-    }
-  };
+export default function PostsRowActions({ data }: { data: PostEmail }) {
+  const t = useTranslations('post-email-data-table');
+  const {
+    icon: Icon,
+    className,
+    labelKey,
+  } = getStatusAppearance(data.queue_status);
 
   return (
     <div className="flex flex-none items-center justify-end gap-2">
-      <Button
-        size="xs"
-        onClick={handleSendEmail}
-        disabled={
-          !!localError ||
-          isLoading ||
-          !data.email ||
-          isSent ||
-          !sendable ||
-          data.email.includes('@easy') ||
-          isEmailBlacklisted ||
-          localSuccess
-        }
-        variant={
-          localError
-            ? 'destructive'
-            : isLoading
-              ? 'secondary'
-              : isEmailBlacklisted || localSuccess || isSent
-                ? 'outline'
-                : undefined
-        }
-        className="flex min-w-[90px] items-center gap-2"
-      >
-        {isEmailBlacklisted ? (
-          <>
-            <Ban className="h-4 w-4" />
-            <span>{t('post-email-data-table.blocked')}</span>
-          </>
-        ) : data?.email?.includes('@easy') ? (
-          <CircleSlash className="h-4 w-4" />
-        ) : isLoading ? (
-          <>
-            <LoadingIndicator />
-            <span>{t('post-email-data-table.sending')}</span>
-          </>
-        ) : localError ? (
-          <>
-            <CircleAlert className="h-4 w-4" />
-            <span>{t('post-email-data-table.error')}</span>
-          </>
-        ) : localSuccess || isSent ? (
-          <>
-            <MailCheck className="h-4 w-4" />
-            <span>{t('post-email-data-table.sent')}</span>
-          </>
-        ) : (
-          <>
-            <Send className="mr-1.5 h-4 w-4" />
-            {t('post-email-data-table.send_email')}
-          </>
-        )}
-      </Button>
+      <Badge variant="outline" className={className}>
+        <Icon className="mr-1 h-3.5 w-3.5" />
+        {t(labelKey)}
+      </Badge>
     </div>
   );
 }

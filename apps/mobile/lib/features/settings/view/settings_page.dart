@@ -27,9 +27,6 @@ class SettingsPage extends StatelessWidget {
     final l10n = context.l10n;
 
     return shad.Scaffold(
-      headers: [
-        shad.AppBar(title: Text(l10n.settingsTitle)),
-      ],
       child: ResponsiveWrapper(
         maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
         child: ListView(

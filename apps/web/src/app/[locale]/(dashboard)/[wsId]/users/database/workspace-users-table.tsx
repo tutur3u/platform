@@ -9,6 +9,7 @@ import {
   Link,
   Link2Off,
   Loader2,
+  ShieldAlert,
   Users,
 } from '@tuturuuu/icons';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
@@ -106,6 +107,13 @@ export function WorkspaceUsersTable({
     })
   );
 
+  const [requireAttention, setRequireAttention] = useQueryState(
+    'requireAttention',
+    parseAsString.withDefault('all').withOptions({
+      shallow: true,
+    })
+  );
+
   const [includedGroups, setIncludedGroups] = useQueryState(
     'includedGroups',
     parseAsArrayOf(parseAsString).withDefault([]).withOptions({
@@ -168,6 +176,7 @@ export function WorkspaceUsersTable({
       excludedGroups: effectiveExcludedGroups,
       status: status as 'active' | 'archived' | 'archived_until' | 'all',
       linkStatus: linkStatus as 'all' | 'linked' | 'virtual',
+      requireAttention: requireAttention as 'all' | 'true' | 'false',
     },
     {
       enabled: isInitialized,
@@ -226,6 +235,7 @@ export function WorkspaceUsersTable({
     setPageSize(null);
     setStatus(null);
     setLinkStatus(null);
+    setRequireAttention(null);
     setIncludedGroups(null);
     setExcludedGroups(null);
   }, [
@@ -234,6 +244,7 @@ export function WorkspaceUsersTable({
     setPageSize,
     setStatus,
     setLinkStatus,
+    setRequireAttention,
     setIncludedGroups,
     setExcludedGroups,
   ]);
@@ -352,6 +363,37 @@ export function WorkspaceUsersTable({
                 </SelectItem>
               </SelectContent>
             </Select>
+            <Select
+              value={requireAttention}
+              onValueChange={(val) => {
+                setRequireAttention(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-8 w-44 border-dashed bg-background">
+                <SelectValue placeholder={t('ws-users.attention_filter')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>{t('ws-users.attention_all')}</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="true">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4" />
+                    <span>{t('ws-users.attention_only')}</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="false">
+                  <div className="flex items-center gap-2">
+                    <Link2Off className="h-4 w-4" />
+                    <span>{t('ws-users.attention_none')}</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
             <Filters
               wsId={wsId}
               effectiveExcludedGroups={effectiveExcludedGroups}
@@ -368,6 +410,7 @@ export function WorkspaceUsersTable({
           !!q ||
           status !== 'active' ||
           linkStatus !== 'all' ||
+          requireAttention !== 'all' ||
           includedGroups.length > 0 ||
           effectiveExcludedGroups.length > 0
         }

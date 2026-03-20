@@ -10,9 +10,9 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UserGroupForm from './form';
 import { UserGroupsTable } from './user-groups-table';
 import {
-  escapeLikeWildcards,
   fetchManagersForGroups,
   getUserGroupMemberships,
+  matchesUserGroupSearch,
 } from './utils';
 
 export const metadata: Metadata = {
@@ -67,7 +67,9 @@ export default async function WorkspaceUserGroupsPage({
 
         const initialData = await getInitialData(
           wsId,
-          sp,
+          {
+            q: sp.q,
+          },
           containsPermission('manage_users')
         );
 
@@ -118,7 +120,7 @@ async function getInitialData(
   {
     q,
     page = '1',
-    pageSize = '10',
+    pageSize = '50',
   }: { q?: string; page?: string; pageSize?: string } = {},
   hasManageUsers: boolean = false
 ) {
@@ -136,10 +138,7 @@ async function getInitialData(
       .eq('ws_id', wsId)
       .order('name');
 
-    if (q) {
-      const escapedSearch = escapeLikeWildcards(q);
-      queryBuilder.ilike('name', `%${escapedSearch}%`);
-    }
+    const shouldUseAccentInsensitiveSearch = Boolean(q?.trim());
 
     if (!hasManageUsers) {
       const groupIds = await getUserGroupMemberships(wsId);
@@ -162,14 +161,26 @@ async function getInitialData(
       !Number.isNaN(parsedSize) && parsedSize > 0 ? parsedSize : 10;
     validPageSize = Math.min(validPageSize, 100);
 
-    const start = (validPage - 1) * validPageSize;
-    const end = start + validPageSize - 1;
-    queryBuilder.range(start, end);
+    if (!shouldUseAccentInsensitiveSearch) {
+      const start = (validPage - 1) * validPageSize;
+      const end = start + validPageSize - 1;
+      queryBuilder.range(start, end);
+    }
 
     const { data: fetchedData, error, count } = await queryBuilder;
     if (error) throw error;
 
-    let groups = fetchedData as UserGroup[];
+    let groups = (fetchedData as UserGroup[]) ?? [];
+    let filteredCount = count ?? 0;
+
+    if (shouldUseAccentInsensitiveSearch) {
+      groups = groups.filter((group) =>
+        matchesUserGroupSearch(group.name, q ?? '')
+      );
+      filteredCount = groups.length;
+      const start = (validPage - 1) * validPageSize;
+      groups = groups.slice(start, start + validPageSize);
+    }
 
     // Fetch managers for the fetched groups
     if (groups.length > 0) {
@@ -181,7 +192,10 @@ async function getInitialData(
       }));
     }
 
-    return { data: groups, count: count ?? 0 };
+    return {
+      data: groups,
+      count: filteredCount,
+    };
   } catch (error) {
     console.error('Error fetching initial user groups:', error);
     return {

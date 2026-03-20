@@ -49,7 +49,10 @@ class DashboardPage extends StatelessWidget {
   }
 
   void _loadTasksIfReady(BuildContext context, TaskListCubit cubit) {
-    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
+    final workspace = context
+        .read<WorkspaceCubit>()
+        .state
+        .personalWorkspaceOrCurrent;
     if (workspace == null) return;
     unawaited(
       cubit.loadTasks(wsId: workspace.id, isPersonal: workspace.personal),
@@ -57,7 +60,10 @@ class DashboardPage extends StatelessWidget {
   }
 
   void _loadEventsIfReady(BuildContext context, CalendarCubit cubit) {
-    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
+    final workspace = context
+        .read<WorkspaceCubit>()
+        .state
+        .personalWorkspaceOrCurrent;
     if (workspace == null) return;
     unawaited(cubit.loadEvents(workspace.id));
   }
@@ -72,9 +78,10 @@ class _DashboardView extends StatelessWidget {
       listeners: [
         BlocListener<WorkspaceCubit, WorkspaceState>(
           listenWhen: (previous, current) =>
-              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+              previous.personalWorkspaceOrCurrent?.id !=
+              current.personalWorkspaceOrCurrent?.id,
           listener: (context, state) {
-            final workspace = state.currentWorkspace;
+            final workspace = state.personalWorkspaceOrCurrent;
             if (workspace == null) return;
             unawaited(
               context.read<TaskListCubit>().loadTasks(
@@ -88,7 +95,7 @@ class _DashboardView extends StatelessWidget {
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, workspaceState) {
-          final workspace = workspaceState.currentWorkspace;
+          final workspace = workspaceState.personalWorkspaceOrCurrent;
           if (workspace == null) {
             return shad.Scaffold(
               child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
@@ -101,98 +108,114 @@ class _DashboardView extends StatelessWidget {
                 builder: (context, calendarState) {
                   final focusTasks = _focusTasks(taskState);
                   final upcomingEvents = _upcomingEvents(calendarState.events);
+                  final showInitialLoading =
+                      !taskState.hasLoadedOnce &&
+                      taskState.status == TaskListStatus.loading &&
+                      !calendarState.hasLoadedOnce &&
+                      calendarState.status == CalendarStatus.loading;
+                  final showRefreshingIndicator =
+                      (taskState.status == TaskListStatus.loading &&
+                          taskState.hasLoadedOnce) ||
+                      (calendarState.status == CalendarStatus.loading &&
+                          calendarState.hasLoadedOnce);
+
+                  if (showInitialLoading) {
+                    return const shad.Scaffold(
+                      child: Center(child: shad.CircularProgressIndicator()),
+                    );
+                  }
 
                   return shad.Scaffold(
                     child: RefreshIndicator(
                       onRefresh: () => _refresh(context, workspace),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Theme.of(context).colorScheme.surface,
-                              Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerLowest
-                                  .withValues(alpha: 0.88),
-                              Theme.of(context).colorScheme.surface,
-                            ],
-                          ),
-                        ),
-                        child: SafeArea(
-                          top: false,
-                          bottom: false,
-                          child: ResponsiveWrapper(
-                            maxWidth: ResponsivePadding.maxContentWidth(
-                              context.deviceClass,
-                            ),
-                            child: CustomScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(
-                                parent: BouncingScrollPhysics(),
+                      child: Stack(
+                        children: [
+                          SafeArea(
+                            top: false,
+                            bottom: false,
+                            child: ResponsiveWrapper(
+                              maxWidth: ResponsivePadding.maxContentWidth(
+                                context.deviceClass,
                               ),
-                              slivers: [
-                                SliverPadding(
-                                  padding: EdgeInsets.fromLTRB(
-                                    ResponsivePadding.horizontal(
-                                      context.deviceClass,
-                                    ),
-                                    10,
-                                    ResponsivePadding.horizontal(
-                                      context.deviceClass,
-                                    ),
-                                    24 + MediaQuery.paddingOf(context).bottom,
-                                  ),
-                                  sliver: SliverList.list(
-                                    children: [
-                                      _TodaySummaryCard(
-                                        workspaceName: _displayWorkspaceName(
-                                          workspace.name ??
-                                              context
-                                                  .l10n
-                                                  .assistantPersonalWorkspace,
-                                        ),
-                                        activeTasks: taskState.totalActiveTasks,
-                                        overdueTasks:
-                                            taskState.overdueTasks.length,
-                                        nextEvents: upcomingEvents.length,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      _OverviewActionsRow(),
-                                      const SizedBox(height: 14),
-                                      _SectionCard(
-                                        title:
-                                            context.l10n.dashboardAssignedToMe,
-                                        actionLabel:
-                                            context.l10n.dashboardOpenTasks,
-                                        onTap: () => context.go(Routes.tasks),
-                                        child: _AssignedTasksBlock(
-                                          state: taskState,
-                                          tasks: focusTasks,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 14),
-                                      _SectionCard(
-                                        title: context
-                                            .l10n
-                                            .dashboardUpcomingEvents,
-                                        actionLabel:
-                                            context.l10n.dashboardOpenCalendar,
-                                        onTap: () =>
-                                            context.go(Routes.calendar),
-                                        child: _UpcomingEventsBlock(
-                                          status: calendarState.status,
-                                          error: calendarState.error,
-                                          events: upcomingEvents,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                              child: CustomScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(
+                                  parent: BouncingScrollPhysics(),
                                 ),
-                              ],
+                                slivers: [
+                                  SliverPadding(
+                                    padding: EdgeInsets.fromLTRB(
+                                      ResponsivePadding.horizontal(
+                                        context.deviceClass,
+                                      ),
+                                      10,
+                                      ResponsivePadding.horizontal(
+                                        context.deviceClass,
+                                      ),
+                                      24 + MediaQuery.paddingOf(context).bottom,
+                                    ),
+                                    sliver: SliverList.list(
+                                      children: [
+                                        _TodaySummaryCard(
+                                          workspaceName: _displayWorkspaceName(
+                                            workspace.name ??
+                                                context
+                                                    .l10n
+                                                    .assistantPersonalWorkspace,
+                                          ),
+                                          activeTasks:
+                                              taskState.totalActiveTasks,
+                                          overdueTasks:
+                                              taskState.overdueTasks.length,
+                                          nextEvents: upcomingEvents.length,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _OverviewActionsRow(),
+                                        const SizedBox(height: 14),
+                                        _SectionCard(
+                                          title: context
+                                              .l10n
+                                              .dashboardAssignedToMe,
+                                          actionLabel:
+                                              context.l10n.dashboardOpenTasks,
+                                          onTap: () => context.go(Routes.tasks),
+                                          child: _AssignedTasksBlock(
+                                            state: taskState,
+                                            tasks: focusTasks,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _SectionCard(
+                                          title: context
+                                              .l10n
+                                              .dashboardUpcomingEvents,
+                                          actionLabel: context
+                                              .l10n
+                                              .dashboardOpenCalendar,
+                                          onTap: () =>
+                                              context.go(Routes.calendar),
+                                          child: _UpcomingEventsBlock(
+                                            status: calendarState.status,
+                                            hasLoadedOnce:
+                                                calendarState.hasLoadedOnce,
+                                            error: calendarState.error,
+                                            events: upcomingEvents,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
+                          if (showRefreshingIndicator)
+                            const Positioned(
+                              top: 0,
+                              left: 16,
+                              right: 16,
+                              child: IgnorePointer(child: _RefreshStrip()),
+                            ),
+                        ],
                       ),
                     ),
                   );
@@ -277,24 +300,6 @@ class _TodaySummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateLabel = DateFormat('EEE, d MMM').format(DateTime.now());
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final headerTone = isDark
-        ? const _DashboardSurfaceTone(
-            background: Color(0xFF241D36),
-            backgroundSecondary: Color(0xFF1E2937),
-            border: Color(0xFF4E4A73),
-            shadow: Color(0x33121824),
-            title: Color(0xFFF3EEFF),
-            subtitle: Color(0xFFC6BEDD),
-          )
-        : const _DashboardSurfaceTone(
-            background: Color(0xFFF1EAFF),
-            backgroundSecondary: Color(0xFFE8F4FF),
-            border: Color(0xFFD5C8F0),
-            shadow: Color(0x1F9C8BD7),
-            title: Color(0xFF271C43),
-            subtitle: Color(0xFF61567C),
-          );
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -302,84 +307,59 @@ class _TodaySummaryCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [headerTone.background, headerTone.backgroundSecondary],
+          colors: [
+            theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.96),
+            theme.colorScheme.surfaceContainer.withValues(alpha: 0.82),
+          ],
         ),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: headerTone.border),
-        boxShadow: [
-          BoxShadow(
-            color: headerTone.shadow,
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             context.l10n.dashboardTodayTitle,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: headerTone.title,
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             '$workspaceName • $dateLabel',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: headerTone.subtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+          Row(
             children: [
-              _MetricPill(
-                icon: Icons.checklist_rounded,
-                label: context.l10n.dashboardTasksMetric(activeTasks),
-                tone: isDark
-                    ? const _Tone(
-                        background: Color(0xFF1E3428),
-                        border: Color(0xFF3F7152),
-                        foreground: Color(0xFFD9F4E3),
-                      )
-                    : const _Tone(
-                        background: Color(0xFFE9F7EF),
-                        border: Color(0xFFBDE2CA),
-                        foreground: Color(0xFF1B5C39),
-                      ),
+              Expanded(
+                child: _MetricTile(
+                  value: '$activeTasks',
+                  label: context.l10n.dashboardTasksMetric(activeTasks),
+                ),
               ),
-              _MetricPill(
-                icon: Icons.warning_amber_rounded,
-                label: context.l10n.dashboardOverdueMetric(overdueTasks),
-                tone: isDark
-                    ? const _Tone(
-                        background: Color(0xFF3A2C1F),
-                        border: Color(0xFF8A6338),
-                        foreground: Color(0xFFFFE8C9),
-                      )
-                    : const _Tone(
-                        background: Color(0xFFFFF1DF),
-                        border: Color(0xFFEBCB9E),
-                        foreground: Color(0xFF8A531D),
-                      ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MetricTile(
+                  value: '$overdueTasks',
+                  label: context.l10n.dashboardOverdueMetric(overdueTasks),
+                  foreground: theme.colorScheme.error,
+                  background: theme.colorScheme.errorContainer.withValues(
+                    alpha: 0.44,
+                  ),
+                ),
               ),
-              _MetricPill(
-                icon: Icons.calendar_today_rounded,
-                label: context.l10n.dashboardEventsMetric(nextEvents),
-                tone: isDark
-                    ? const _Tone(
-                        background: Color(0xFF1E3040),
-                        border: Color(0xFF466989),
-                        foreground: Color(0xFFD9EDFF),
-                      )
-                    : const _Tone(
-                        background: Color(0xFFEAF3FF),
-                        border: Color(0xFFC6DCF8),
-                        foreground: Color(0xFF25537E),
-                      ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MetricTile(
+                  value: '$nextEvents',
+                  label: context.l10n.dashboardEventsMetric(nextEvents),
+                  background: theme.colorScheme.secondaryContainer.withValues(
+                    alpha: 0.52,
+                  ),
+                ),
               ),
             ],
           ),
@@ -389,36 +369,51 @@ class _TodaySummaryCard extends StatelessWidget {
   }
 }
 
-class _MetricPill extends StatelessWidget {
-  const _MetricPill({
-    required this.icon,
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.value,
     required this.label,
-    required this.tone,
+    this.foreground,
+    this.background,
   });
 
-  final IconData icon;
+  final String value;
   final String label;
-  final _Tone tone;
+  final Color? foreground;
+  final Color? background;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final resolvedForeground = foreground ?? theme.colorScheme.onSurface;
+    final resolvedBackground =
+        background ?? theme.colorScheme.surfaceContainerHighest;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: tone.background,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: tone.border),
+        color: resolvedBackground,
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: tone.foreground),
-          const SizedBox(width: 8),
+          Text(
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: resolvedForeground,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: tone.foreground,
-              fontWeight: FontWeight.w700,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+              height: 1.2,
             ),
           ),
         ],
@@ -427,22 +422,53 @@ class _MetricPill extends StatelessWidget {
   }
 }
 
+class _InlineActionButton extends StatelessWidget {
+  const _InlineActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return shad.OutlineButton(
+      onPressed: onPressed,
+      leading: Icon(icon, size: 16),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
 class _OverviewActionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+    return Row(
       children: [
-        ActionChip(
-          avatar: const Icon(Icons.checklist_rounded, size: 16),
-          label: Text(context.l10n.dashboardOpenTasks),
-          onPressed: () => context.go(Routes.tasks),
+        Expanded(
+          child: _InlineActionButton(
+            icon: Icons.checklist_rounded,
+            label: context.l10n.dashboardOpenTasks,
+            onPressed: () => context.go(Routes.tasks),
+          ),
         ),
-        ActionChip(
-          avatar: const Icon(Icons.calendar_today_rounded, size: 16),
-          label: Text(context.l10n.dashboardOpenCalendar),
-          onPressed: () => context.go(Routes.calendar),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _InlineActionButton(
+            icon: Icons.calendar_today_rounded,
+            label: context.l10n.dashboardOpenCalendar,
+            onPressed: () => context.go(Routes.calendar),
+          ),
         ),
       ],
     );
@@ -466,10 +492,10 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(26),
+        color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.76),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: theme.colorScheme.outlineVariant,
         ),
@@ -482,15 +508,15 @@ class _SectionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              TextButton(onPressed: onTap, child: Text(actionLabel)),
+              shad.GhostButton(onPressed: onTap, child: Text(actionLabel)),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           child,
         ],
       ),
@@ -509,9 +535,7 @@ class _AssignedTasksBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.status == TaskListStatus.loading &&
-        state.totalActiveTasks == 0 &&
-        tasks.isEmpty) {
+    if (state.status == TaskListStatus.loading && !state.hasLoadedOnce) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
         child: Center(child: CircularProgressIndicator()),
@@ -521,7 +545,18 @@ class _AssignedTasksBlock extends StatelessWidget {
     if (state.status == TaskListStatus.error &&
         state.totalActiveTasks == 0 &&
         tasks.isEmpty) {
-      return Text(state.error ?? '');
+      return _EmptyHint(
+        title: context.l10n.dashboardAssignedToMe,
+        description: context.l10n.commonSomethingWentWrong,
+        icon: Icons.cloud_off_outlined,
+        tone: _Tone(
+          background: Theme.of(context).colorScheme.errorContainer.withValues(
+            alpha: 0.38,
+          ),
+          border: Theme.of(context).colorScheme.error.withValues(alpha: 0.16),
+          foreground: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
 
     if (state.totalActiveTasks == 0 || tasks.isEmpty) {
@@ -558,17 +593,19 @@ class _AssignedTasksBlock extends StatelessWidget {
 class _UpcomingEventsBlock extends StatelessWidget {
   const _UpcomingEventsBlock({
     required this.status,
+    required this.hasLoadedOnce,
     required this.error,
     required this.events,
   });
 
   final CalendarStatus status;
+  final bool hasLoadedOnce;
   final String? error;
   final List<CalendarEvent> events;
 
   @override
   Widget build(BuildContext context) {
-    if (status == CalendarStatus.loading && events.isEmpty) {
+    if (status == CalendarStatus.loading && !hasLoadedOnce) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
         child: Center(child: CircularProgressIndicator()),
@@ -576,7 +613,20 @@ class _UpcomingEventsBlock extends StatelessWidget {
     }
 
     if (status == CalendarStatus.error && events.isEmpty) {
-      return Text(error ?? '');
+      return _EmptyHint(
+        title: context.l10n.dashboardUpcomingEvents,
+        description: error?.trim().isNotEmpty == true
+            ? context.l10n.commonSomethingWentWrong
+            : context.l10n.commonSomethingWentWrong,
+        icon: Icons.cloud_off_outlined,
+        tone: _Tone(
+          background: Theme.of(context).colorScheme.errorContainer.withValues(
+            alpha: 0.38,
+          ),
+          border: Theme.of(context).colorScheme.error.withValues(alpha: 0.16),
+          foreground: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
 
     if (events.isEmpty) {
@@ -623,16 +673,12 @@ class _TaskRow extends StatelessWidget {
       accent.withValues(alpha: 0.1),
       theme.colorScheme.surfaceContainerLow,
     );
-    final iconBackground = Color.alphaBlend(
-      accent.withValues(alpha: 0.16),
-      theme.colorScheme.surfaceContainerHigh,
-    );
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(20),
+        color: background.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: accent.withValues(alpha: 0.28),
         ),
@@ -640,15 +686,15 @@ class _TaskRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(top: 4),
             decoration: BoxDecoration(
-              color: iconBackground,
-              borderRadius: BorderRadius.circular(14),
+              color: accent,
+              borderRadius: BorderRadius.circular(999),
             ),
-            child: Icon(Icons.task_alt_rounded, size: 18, color: accent),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,7 +703,7 @@ class _TaskRow extends StatelessWidget {
                   task.name ?? 'Untitled task',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
@@ -727,13 +773,13 @@ class _EventRow extends StatelessWidget {
               ' • ${DateFormat('HH:mm').format(start)}';
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Color.alphaBlend(
           accent.withValues(alpha: 0.08),
           theme.colorScheme.surfaceContainerLow,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: accent.withValues(alpha: 0.24),
         ),
@@ -741,22 +787,15 @@ class _EventRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(top: 4),
             decoration: BoxDecoration(
-              color: Color.alphaBlend(
-                accent.withValues(alpha: 0.16),
-                theme.colorScheme.surfaceContainerHigh,
-              ),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              Icons.event_rounded,
-              size: 18,
               color: accent,
+              borderRadius: BorderRadius.circular(999),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -765,7 +804,7 @@ class _EventRow extends StatelessWidget {
                   event.title ?? 'Untitled event',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
@@ -804,24 +843,16 @@ class _EmptyHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: tone.background,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: tone.border),
       ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: tone.foreground.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: tone.foreground),
-          ),
-          const SizedBox(width: 12),
+          Icon(icon, color: tone.foreground, size: 20),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -855,20 +886,14 @@ class _Tone {
   final Color foreground;
 }
 
-class _DashboardSurfaceTone {
-  const _DashboardSurfaceTone({
-    required this.background,
-    required this.backgroundSecondary,
-    required this.border,
-    required this.shadow,
-    required this.title,
-    required this.subtitle,
-  });
+class _RefreshStrip extends StatelessWidget {
+  const _RefreshStrip();
 
-  final Color background;
-  final Color backgroundSecondary;
-  final Color border;
-  final Color shadow;
-  final Color title;
-  final Color subtitle;
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: const LinearProgressIndicator(minHeight: 3),
+    );
+  }
 }
