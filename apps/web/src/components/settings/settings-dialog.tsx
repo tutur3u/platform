@@ -75,6 +75,7 @@ import { TaskSettings } from './tasks/task-settings';
 import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
 import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
+import { TimeTrackerRequestsSettings } from './time-tracker/time-tracker-requests-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import FeaturedGroupsSettings from './users/featured-groups-settings';
 import UsersManagementSettings from './users/users-management-settings';
@@ -477,6 +478,13 @@ export function SettingsDialog({
                 keywords: ['Time Tracker', 'Goals', 'Productivity'],
               },
               {
+                name: 'time_tracker_requests',
+                label: t('settings.time_tracker.requests'),
+                icon: ClipboardList,
+                description: t('settings.time_tracker.requests_description'),
+                keywords: ['Time Tracker', 'Requests', 'Threshold'],
+              },
+              {
                 name: 'break_types',
                 label: t('settings.time_tracker.break_types'),
                 icon: Coffee,
@@ -872,6 +880,13 @@ export function SettingsDialog({
 
         {activeTab === 'time_tracker_general' && wsId && (
           <TimeTrackerGeneralSettings wsId={wsId} />
+        )}
+
+        {activeTab === 'time_tracker_requests' && wsId && (
+          <TimeTrackerRequestsSettings
+            wsId={wsId}
+            canManageWorkspaceSettings={canManageWorkspaceSettings}
+          />
         )}
 
         {activeTab === 'attendance_display' && wsId && (

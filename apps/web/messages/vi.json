@@ -7513,6 +7513,8 @@
       "inactive": "Không hoạt động",
       "no_goals_description": "Thiết lập mục tiêu theo dõi thời gian để giám sát năng suất của bạn",
       "no_goals_title": "Chưa có mục tiêu nào được thiết lập",
+      "requests": "Yêu cầu",
+      "requests_description": "Cấu hình quy trình phê duyệt yêu cầu và ngưỡng nhập thiếu",
       "save": "Lưu thay đổi",
       "saving": "Đang lưu...",
       "select_goal_type": "Chọn loại mục tiêu",
