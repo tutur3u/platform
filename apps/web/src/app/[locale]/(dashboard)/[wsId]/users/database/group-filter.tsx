@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Check, MinusCircle, PlusCircle, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -24,6 +24,7 @@ interface GroupFilterProps {
   queryKey: 'includedGroups' | 'excludedGroups';
   pageKey: 'page';
   dependencyKey?: 'includedGroups';
+  effectiveSelectedGroupIds?: string[];
   className?: string;
 }
 
@@ -33,28 +34,92 @@ interface GroupOption {
   amount?: number | null;
 }
 
-async function fetchAllGroups(wsId: string): Promise<GroupOption[]> {
-  const response = await fetch(`/api/v1/workspaces/${wsId}/users/groups`, {
-    cache: 'no-store',
-  });
+interface GroupsPageResponse {
+  data: GroupOption[];
+  count: number;
+}
+
+const GROUPS_PAGE_SIZE = 50;
+
+async function fetchGroupsByIds(
+  wsId: string,
+  groupIds: string[]
+): Promise<GroupOption[]> {
+  if (groupIds.length === 0) {
+    return [];
+  }
+
+  const searchParams = new URLSearchParams();
+  searchParams.set('ids', groupIds.join(','));
+  searchParams.set('page', '1');
+  searchParams.set('pageSize', String(Math.max(groupIds.length, 1)));
+
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/users/groups?${searchParams.toString()}`,
+    { cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch selected workspace user groups');
+  }
+
+  const payload = (await response.json()) as {
+    data?: GroupOption[];
+  };
+
+  return payload.data ?? [];
+}
+
+async function fetchIncludedGroupsPage(
+  wsId: string,
+  page: number,
+  query: string
+): Promise<GroupsPageResponse> {
+  const searchParams = new URLSearchParams();
+  searchParams.set('page', String(page));
+  searchParams.set('pageSize', String(GROUPS_PAGE_SIZE));
+
+  if (query.trim()) {
+    searchParams.set('q', query.trim());
+  }
+
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/users/groups?${searchParams.toString()}`,
+    {
+      cache: 'no-store',
+    }
+  );
 
   if (!response.ok) {
     throw new Error('Failed to fetch workspace user groups');
   }
 
-  const { data } = await response.json();
-  return (data as GroupOption[]) || [];
+  const payload = (await response.json()) as GroupsPageResponse;
+  return {
+    data: payload.data ?? [],
+    count: payload.count ?? 0,
+  };
 }
 
-async function fetchExcludedGroups(
+async function fetchExcludedGroupsPage(
   wsId: string,
-  includedGroups: string[]
-): Promise<GroupOption[]> {
+  includedGroups: string[],
+  page: number,
+  query: string
+): Promise<GroupsPageResponse> {
   if (includedGroups.length === 0) {
-    return fetchAllGroups(wsId);
+    return fetchIncludedGroupsPage(wsId, page, query);
   }
 
   const searchParams = new URLSearchParams();
+  searchParams.set('page', String(page));
+  searchParams.set('pageSize', String(GROUPS_PAGE_SIZE));
+  searchParams.set('paginated', 'true');
+
+  if (query.trim()) {
+    searchParams.set('q', query.trim());
+  }
+
   includedGroups.forEach((group) => {
     searchParams.append('includedGroups', group);
   });
@@ -68,7 +133,11 @@ async function fetchExcludedGroups(
     throw new Error('Failed to fetch possible excluded groups');
   }
 
-  return (await response.json()) as GroupOption[];
+  const payload = (await response.json()) as GroupsPageResponse;
+  return {
+    data: payload.data ?? [],
+    count: payload.count ?? 0,
+  };
 }
 
 export function GroupFilter({
@@ -77,16 +146,23 @@ export function GroupFilter({
   queryKey,
   pageKey,
   dependencyKey,
+  effectiveSelectedGroupIds = [],
   className,
 }: GroupFilterProps) {
   const t = useTranslations('user-data-table');
+  const commonT = useTranslations('common');
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [selectedGroupIds, setSelectedGroupIds] = useQueryState(
     queryKey,
-    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
-      shallow: true,
-    })
+    queryKey === 'excludedGroups'
+      ? parseAsArrayOf(parseAsString).withOptions({
+          shallow: true,
+        })
+      : parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+          shallow: true,
+        })
   );
   const [dependencyGroups] = useQueryState(
     dependencyKey ?? 'includedGroups',
@@ -96,27 +172,92 @@ export function GroupFilter({
   );
   const [, setPage] = useQueryState(pageKey, { shallow: true });
 
+  const resolvedSelectedGroupIds =
+    selectedGroupIds ?? effectiveSelectedGroupIds;
+  const normalizedSelectedGroupIds = useMemo(
+    () => [...new Set(resolvedSelectedGroupIds.filter(Boolean))],
+    [resolvedSelectedGroupIds]
+  );
+
   const filterLabel =
     filterType === 'excluded' ? t('excluded_groups') : t('included_groups');
-  const hasActiveFilters = selectedGroupIds.length > 0;
+  const hasActiveFilters = resolvedSelectedGroupIds.length > 0;
 
   const {
-    data: groups = [],
+    data: pagedGroups,
     isLoading,
     error,
-  } = useQuery({
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey:
       filterType === 'excluded'
-        ? ['workspace-excluded-groups', wsId, dependencyGroups]
-        : ['workspace-user-groups', wsId],
-    queryFn: () =>
+        ? [
+            'workspace-excluded-groups-infinite',
+            wsId,
+            dependencyGroups,
+            searchQuery.trim(),
+          ]
+        : ['workspace-user-groups-infinite', wsId, searchQuery.trim()],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
       filterType === 'excluded'
-        ? fetchExcludedGroups(wsId, dependencyGroups)
-        : fetchAllGroups(wsId),
+        ? fetchExcludedGroupsPage(
+            wsId,
+            dependencyGroups,
+            pageParam,
+            searchQuery
+          )
+        : fetchIncludedGroupsPage(wsId, pageParam, searchQuery),
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (total, currentPage) => total + currentPage.data.length,
+        0
+      );
+
+      if (loadedCount >= lastPage.count) {
+        return undefined;
+      }
+
+      return allPages.length + 1;
+    },
+    enabled: !!wsId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    enabled: !!wsId,
   });
+
+  const {
+    data: selectedGroups = [],
+    isLoading: isLoadingSelectedGroups,
+    error: selectedGroupsError,
+  } = useQuery({
+    queryKey: [
+      'workspace-user-groups-selected',
+      wsId,
+      normalizedSelectedGroupIds,
+    ],
+    queryFn: () => fetchGroupsByIds(wsId, normalizedSelectedGroupIds),
+    enabled: !!wsId && normalizedSelectedGroupIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const groups = useMemo(() => {
+    const mergedGroups = new Map<string, GroupOption>();
+
+    selectedGroups.forEach((group) => {
+      mergedGroups.set(group.id, group);
+    });
+
+    (pagedGroups?.pages ?? []).forEach((currentPage) => {
+      currentPage.data.forEach((group) => {
+        mergedGroups.set(group.id, group);
+      });
+    });
+
+    return [...mergedGroups.values()];
+  }, [pagedGroups?.pages, selectedGroups]);
 
   const sortedGroups = useMemo(() => {
     const selectedSet = new Set(selectedGroupIds);
@@ -131,26 +272,44 @@ export function GroupFilter({
     });
   }, [groups, selectedGroupIds, t]);
 
+  const combinedError = error || selectedGroupsError;
+  const showInitialLoading = isLoading || isLoadingSelectedGroups;
+
   const handleToggle = useCallback(
     async (groupId: string) => {
-      const nextSelection = selectedGroupIds.includes(groupId)
-        ? selectedGroupIds.filter((id) => id !== groupId)
-        : [...selectedGroupIds, groupId];
+      const currentSelection = resolvedSelectedGroupIds;
+      const nextSelection = currentSelection.includes(groupId)
+        ? currentSelection.filter((id) => id !== groupId)
+        : [...currentSelection, groupId];
 
-      await setSelectedGroupIds(nextSelection.length > 0 ? nextSelection : []);
+      await setSelectedGroupIds(
+        nextSelection.length > 0
+          ? nextSelection
+          : queryKey === 'excludedGroups'
+            ? null
+            : []
+      );
       await setPage('1');
     },
-    [selectedGroupIds, setSelectedGroupIds, setPage]
+    [queryKey, resolvedSelectedGroupIds, setSelectedGroupIds, setPage]
   );
 
   const clearFilters = useCallback(async () => {
-    await setSelectedGroupIds([]);
+    await setSelectedGroupIds(queryKey === 'excludedGroups' ? null : []);
     await setPage('1');
-  }, [setSelectedGroupIds, setPage]);
+  }, [queryKey, setSelectedGroupIds, setPage]);
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) {
+            setSearchQuery('');
+          }
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             variant={hasActiveFilters ? 'secondary' : 'outline'}
@@ -165,61 +324,109 @@ export function GroupFilter({
             <span className="text-xs">{filterLabel}</span>
             {hasActiveFilters && (
               <span className="ml-1 rounded-full bg-background/60 px-1.5 font-semibold text-[10px] text-foreground">
-                {selectedGroupIds.length}
+                {resolvedSelectedGroupIds.length}
               </span>
             )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-70 p-0" align="start">
           <Command>
-            <CommandInput placeholder={t('search_groups')} />
-            <CommandList>
+            <CommandInput
+              placeholder={t('search_groups')}
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+            />
+            <CommandList
+              onScroll={(event) => {
+                if (!hasNextPage || isFetchingNextPage) return;
+
+                const element = event.currentTarget;
+                const remainingScrollDistance =
+                  element.scrollHeight -
+                  element.scrollTop -
+                  element.clientHeight;
+
+                if (remainingScrollDistance <= 48) {
+                  void fetchNextPage();
+                }
+              }}
+            >
               <CommandEmpty>
-                {isLoading ? t('loading') : t('common.no_results')}
+                {showInitialLoading ? t('loading') : t('common.no_results')}
               </CommandEmpty>
 
-              {error && (
+              {combinedError && (
                 <CommandGroup>
                   <CommandItem disabled className="text-destructive">
-                    {error instanceof Error ? error.message : t('common.error')}
+                    {combinedError instanceof Error
+                      ? combinedError.message
+                      : t('common.error')}
                   </CommandItem>
                 </CommandGroup>
               )}
 
-              {!isLoading && !error && sortedGroups.length > 0 && (
-                <CommandGroup>
-                  {sortedGroups.map((group) => {
-                    const isSelected = selectedGroupIds.includes(group.id);
-                    const label = group.name || t('common.unknown');
+              {!showInitialLoading &&
+                !combinedError &&
+                sortedGroups.length > 0 && (
+                  <CommandGroup>
+                    {sortedGroups.map((group) => {
+                      const isSelected = resolvedSelectedGroupIds.includes(
+                        group.id
+                      );
+                      const label = group.name || t('common.unknown');
 
-                    return (
-                      <CommandItem
-                        key={group.id}
-                        onSelect={() => handleToggle(group.id)}
-                        className="flex cursor-pointer items-center gap-2"
-                      >
-                        <div
-                          className={cn(
-                            'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-                            isSelected
-                              ? 'bg-primary text-primary-foreground'
-                              : 'opacity-50 [&_svg]:invisible'
-                          )}
+                      return (
+                        <CommandItem
+                          key={group.id}
+                          onSelect={() => handleToggle(group.id)}
+                          className="flex cursor-pointer items-center gap-2"
                         >
-                          <Check className="h-4 w-4" />
-                        </div>
-                        <div className="flex flex-1 flex-col">
-                          <span className="font-medium text-sm">{label}</span>
-                        </div>
-                        {typeof group.amount === 'number' && (
-                          <span className="text-muted-foreground text-xs">
-                            {group.amount}
-                          </span>
-                        )}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
+                          <div
+                            className={cn(
+                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                              isSelected
+                                ? 'bg-primary text-primary-foreground'
+                                : 'opacity-50 [&_svg]:invisible'
+                            )}
+                          >
+                            <Check className="h-4 w-4" />
+                          </div>
+                          <div className="flex flex-1 flex-col">
+                            <span className="font-medium text-sm">{label}</span>
+                          </div>
+                          {typeof group.amount === 'number' && (
+                            <span className="text-muted-foreground text-xs">
+                              {group.amount}
+                            </span>
+                          )}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                )}
+
+              {hasNextPage && !combinedError && !showInitialLoading && (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup>
+                    <CommandItem
+                      value="__group_filter_load_more__"
+                      onSelect={() => void fetchNextPage()}
+                      className="justify-center text-center font-medium text-primary"
+                    >
+                      {commonT('load_more')}
+                    </CommandItem>
+                  </CommandGroup>
+                </>
+              )}
+
+              {isFetchingNextPage && (
+                <>
+                  <CommandSeparator />
+                  <div className="px-2 py-2 text-center text-muted-foreground text-xs">
+                    {commonT('loading')}
+                  </div>
+                </>
               )}
 
               {hasActiveFilters && (

@@ -1,8 +1,13 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import {
+  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  getWorkspaceConfigIdList,
+  updateWorkspaceConfig,
+} from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import {
@@ -13,13 +18,12 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
-import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
+import { useInfiniteWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 import DefaultGroupSettings from './default-group-settings';
 
 interface Props {
@@ -32,19 +36,20 @@ const formSchema = z.object({
 
 export default function UsersManagementSettings({ wsId }: Props) {
   const t = useTranslations('settings.user_management');
+  const commonT = useTranslations('common');
   const queryClient = useQueryClient();
 
-  const { data: defaultExcludedConfig, isLoading: isLoadingConfig } =
-    useWorkspaceConfig<string | null>(
-      wsId,
-      'DATABASE_DEFAULT_EXCLUDED_GROUPS',
-      null
-    );
-
-  const { data: groupsData, isLoading: isLoadingGroups } =
-    useWorkspaceUserGroups(wsId);
-
-  const isLoading = isLoadingConfig || isLoadingGroups;
+  const { data: defaultExcludedGroupIds = [], isLoading: isLoadingConfig } =
+    useQuery({
+      queryKey: ['workspace-default-excluded-groups', wsId],
+      queryFn: () =>
+        getWorkspaceConfigIdList(
+          wsId,
+          DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID
+        ),
+      staleTime: 10 * 60 * 1000,
+    });
+  const [searchQuery, setSearchQuery] = useState('');
 
   type FormValues = z.infer<typeof formSchema>;
 
@@ -54,27 +59,49 @@ export default function UsersManagementSettings({ wsId }: Props) {
       default_excluded_groups: [],
     },
     values: useMemo(() => {
-      if (isLoading) return undefined;
-      const parseIds = (raw: string | null | undefined): string[] =>
-        (raw || '')
-          .split(',')
-          .map((v) => v.trim())
-          .filter(Boolean);
+      if (isLoadingConfig) return undefined;
 
-      // Filter out stale/deleted group IDs
-      const availableIds = new Set((groupsData || []).map((g) => g.id));
       return {
-        default_excluded_groups: parseIds(defaultExcludedConfig).filter((id) =>
-          availableIds.has(id)
-        ),
+        default_excluded_groups: defaultExcludedGroupIds,
       };
-    }, [isLoading, defaultExcludedConfig, groupsData]),
+    }, [defaultExcludedGroupIds, isLoadingConfig]),
     resetOptions: {
       keepDirtyValues: true,
     },
   });
 
   const selectedGroupIds = form.watch('default_excluded_groups') || [];
+
+  const {
+    data: groupsData,
+    isLoading: isLoadingGroups,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteWorkspaceUserGroups(wsId, {
+    query: searchQuery,
+    ensureGroupIds: [
+      ...new Set([...defaultExcludedGroupIds, ...selectedGroupIds]),
+    ],
+  });
+
+  const isLoading = isLoadingConfig || isLoadingGroups;
+
+  useEffect(() => {
+    if (isLoading || !groupsData) return;
+
+    const availableIds = new Set(groupsData.map((group) => group.id));
+    const currentSelection = form.getValues('default_excluded_groups') || [];
+    const filteredSelection = currentSelection.filter((id) =>
+      availableIds.has(id)
+    );
+
+    if (filteredSelection.length !== currentSelection.length) {
+      form.setValue('default_excluded_groups', filteredSelection, {
+        shouldDirty: false,
+      });
+    }
+  }, [form, groupsData, isLoading]);
 
   const groupOptions: ComboboxOption[] = useMemo(() => {
     const selectedSet = new Set(selectedGroupIds);
@@ -101,29 +128,13 @@ export default function UsersManagementSettings({ wsId }: Props) {
               .join(',')
           : '';
 
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/settings/DATABASE_DEFAULT_EXCLUDED_GROUPS`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            value: serializeIds(values.default_excluded_groups),
-          }),
-        }
+      return updateWorkspaceConfig(
+        wsId,
+        DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+        serializeIds(values.default_excluded_groups)
       );
-
-      if (!res.ok)
-        throw new Error('Failed to update DATABASE_DEFAULT_EXCLUDED_GROUPS');
-      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [
-          'workspace-config',
-          wsId,
-          'DATABASE_DEFAULT_EXCLUDED_GROUPS',
-        ],
-      });
       queryClient.invalidateQueries({
         queryKey: ['workspace-default-excluded-groups', wsId],
       });
@@ -167,6 +178,16 @@ export default function UsersManagementSettings({ wsId }: Props) {
                       placeholder={t('select_groups_placeholder')}
                       searchPlaceholder={t('search_groups')}
                       emptyText={t('no_groups_found')}
+                      onSearchChange={setSearchQuery}
+                      hasMore={Boolean(hasNextPage)}
+                      onLoadMore={() => {
+                        if (!isFetchingNextPage) {
+                          void fetchNextPage();
+                        }
+                      }}
+                      loadingMore={isFetchingNextPage}
+                      loadMoreText={commonT('load_more')}
+                      loadingMoreText={commonT('loading')}
                       label={
                         field.value && field.value.length > 2
                           ? t('selected_groups_count', {

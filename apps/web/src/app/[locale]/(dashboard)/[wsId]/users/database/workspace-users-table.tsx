@@ -11,7 +11,6 @@ import {
   Loader2,
   Users,
 } from '@tuturuuu/icons';
-import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   Select,
@@ -33,15 +32,14 @@ import { getUserColumns } from './columns';
 import Filters from './filters';
 import {
   useDefaultExcludedGroups,
+  useWorkspaceUserFields,
   useWorkspaceUsers,
-  type WorkspaceUsersResponse,
 } from './hooks';
 import { QuickGroupFilters } from './quick-group-filters';
 
 interface Props {
   wsId: string;
   locale: string;
-  extraFields: WorkspaceUserField[];
   permissions: {
     hasPrivateInfo: boolean;
     hasPublicInfo: boolean;
@@ -50,7 +48,8 @@ interface Props {
     canDeleteUsers: boolean;
     canCheckUserAttendance: boolean;
   };
-  initialData: WorkspaceUsersResponse;
+  initialDefaultExcludedGroups?: string[];
+  initialFeaturedGroupIds?: string[];
   toolbarImportContent?: React.ReactNode;
   toolbarExportContent?: React.ReactNode;
   toolbarActions?: React.ReactNode;
@@ -59,9 +58,9 @@ interface Props {
 export function WorkspaceUsersTable({
   wsId,
   locale,
-  extraFields,
   permissions,
-  initialData,
+  initialDefaultExcludedGroups = [],
+  initialFeaturedGroupIds = [],
   toolbarImportContent,
   toolbarExportContent,
   toolbarActions,
@@ -122,7 +121,11 @@ export function WorkspaceUsersTable({
   );
 
   const { data: defaultExcludedGroups, isLoading: isLoadingDefaults } =
-    useDefaultExcludedGroups(wsId);
+    useDefaultExcludedGroups(wsId, {
+      initialData: initialDefaultExcludedGroups,
+    });
+  const { data: extraFieldsData, isLoading: isLoadingFields } =
+    useWorkspaceUserFields(wsId);
 
   // Track if defaults have been applied (prevents re-apply on clear)
   const hasAppliedDefaults = useRef(false);
@@ -134,11 +137,11 @@ export function WorkspaceUsersTable({
     !!defaultExcludedGroups &&
     defaultExcludedGroups.length > 0;
 
-  const isInitialized =
-    !isLoadingDefaults &&
-    (excludedGroups !== null ||
-      !defaultExcludedGroups?.length ||
-      hasAppliedDefaults.current);
+  const effectiveExcludedGroups =
+    excludedGroups ??
+    (hasAppliedDefaults.current ? [] : (defaultExcludedGroups ?? []));
+
+  const isInitialized = !isLoadingDefaults;
 
   // Apply default excluded groups to URL state on mount if no exclusions set
   useEffect(() => {
@@ -162,26 +165,16 @@ export function WorkspaceUsersTable({
       page,
       pageSize,
       includedGroups,
-      excludedGroups: excludedGroups || [],
+      excludedGroups: effectiveExcludedGroups,
       status: status as 'active' | 'archived' | 'archived_until' | 'all',
       linkStatus: linkStatus as 'all' | 'linked' | 'virtual',
     },
     {
       enabled: isInitialized,
-      // Use initial data for first render (SSR hydration)
-      initialData:
-        isInitialized &&
-        !q &&
-        page === 1 &&
-        pageSize === 10 &&
-        includedGroups.length === 0 &&
-        (!excludedGroups || excludedGroups.length === 0) &&
-        status === 'active' &&
-        linkStatus === 'all'
-          ? initialData
-          : undefined,
     }
   );
+
+  const extraFields = extraFieldsData ?? [];
 
   // Add href for navigation to each user
   const users = data?.data
@@ -256,7 +249,8 @@ export function WorkspaceUsersTable({
   }
 
   // Show loading overlay when fetching new data (but not on initial load)
-  const showLoadingOverlay = (isFetching && !isLoading) || !isInitialized;
+  const showLoadingOverlay =
+    (isFetching && !isLoading) || !isInitialized || isLoadingFields;
 
   return (
     <div className="relative">
@@ -285,7 +279,11 @@ export function WorkspaceUsersTable({
         defaultQuery={q}
         filters={
           <div className="flex flex-wrap items-center gap-2">
-            <QuickGroupFilters wsId={wsId} />
+            <QuickGroupFilters
+              wsId={wsId}
+              initialFeaturedGroupIds={initialFeaturedGroupIds}
+              effectiveExcludedGroups={effectiveExcludedGroups}
+            />
             <Select
               value={status}
               onValueChange={(val) => {
@@ -354,7 +352,10 @@ export function WorkspaceUsersTable({
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Filters wsId={wsId} />
+            <Filters
+              wsId={wsId}
+              effectiveExcludedGroups={effectiveExcludedGroups}
+            />
           </div>
         }
         toolbarImportContent={toolbarImportContent}
@@ -368,11 +369,14 @@ export function WorkspaceUsersTable({
           status !== 'active' ||
           linkStatus !== 'all' ||
           includedGroups.length > 0 ||
-          (!!excludedGroups && excludedGroups.length > 0)
+          effectiveExcludedGroups.length > 0
         }
         onRefresh={() => {
           queryClient.invalidateQueries({
             queryKey: ['workspace-users', wsId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['workspace-user-fields', wsId],
           });
         }}
         defaultVisibility={{

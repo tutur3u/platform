@@ -20,6 +20,7 @@
     "./templates": "./src/templates.ts",
     "./time-tracking": "./src/time-tracking.ts",
     "./users": "./src/users.ts",
+    "./workspace-configs": "./src/workspace-configs.ts",
     "./workspaces": "./src/workspaces.ts"
   },
   "devDependencies": {

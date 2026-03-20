@@ -1,8 +1,13 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import {
+  DATABASE_FEATURED_GROUPS_CONFIG_ID,
+  getWorkspaceConfigIdList,
+  updateWorkspaceConfig,
+} from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import {
@@ -13,13 +18,12 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
-import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
+import { useInfiniteWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 
 const MAX_FEATURED_GROUPS = 3;
 
@@ -35,15 +39,16 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function FeaturedGroupsSettings({ wsId }: Props) {
   const t = useTranslations('settings.user_management');
+  const commonT = useTranslations('common');
   const queryClient = useQueryClient();
 
-  const { data: featuredConfig, isLoading: isLoadingConfig } =
-    useWorkspaceConfig<string | null>(wsId, 'DATABASE_FEATURED_GROUPS', null);
-
-  const { data: groupsData, isLoading: isLoadingGroups } =
-    useWorkspaceUserGroups(wsId);
-
-  const isLoading = isLoadingConfig || isLoadingGroups;
+  const { data: featuredGroupIds = [], isLoading: isLoadingConfig } = useQuery({
+    queryKey: ['workspace-featured-groups', wsId],
+    queryFn: () =>
+      getWorkspaceConfigIdList(wsId, DATABASE_FEATURED_GROUPS_CONFIG_ID),
+    staleTime: 10 * 60 * 1000,
+  });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -51,28 +56,47 @@ export default function FeaturedGroupsSettings({ wsId }: Props) {
       featured_groups: [],
     },
     values: useMemo(() => {
-      if (isLoading) return undefined;
+      if (isLoadingConfig) return undefined;
 
-      const parseIds = (raw: string | null | undefined): string[] =>
-        (raw || '')
-          .split(',')
-          .map((v) => v.trim())
-          .filter(Boolean);
-
-      // Filter out stale/deleted group IDs
-      const availableIds = new Set((groupsData || []).map((g) => g.id));
       return {
-        featured_groups: parseIds(featuredConfig).filter((id) =>
-          availableIds.has(id)
-        ),
+        featured_groups: featuredGroupIds,
       };
-    }, [isLoading, featuredConfig, groupsData]),
+    }, [featuredGroupIds, isLoadingConfig]),
     resetOptions: {
       keepDirtyValues: true,
     },
   });
 
   const selectedGroupIds = form.watch('featured_groups') || [];
+
+  const {
+    data: groupsData,
+    isLoading: isLoadingGroups,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteWorkspaceUserGroups(wsId, {
+    query: searchQuery,
+    ensureGroupIds: [...new Set([...featuredGroupIds, ...selectedGroupIds])],
+  });
+
+  const isLoading = isLoadingConfig || isLoadingGroups;
+
+  useEffect(() => {
+    if (isLoading || !groupsData) return;
+
+    const availableIds = new Set(groupsData.map((group) => group.id));
+    const currentSelection = form.getValues('featured_groups') || [];
+    const filteredSelection = currentSelection.filter((id) =>
+      availableIds.has(id)
+    );
+
+    if (filteredSelection.length !== currentSelection.length) {
+      form.setValue('featured_groups', filteredSelection, {
+        shouldDirty: false,
+      });
+    }
+  }, [form, groupsData, isLoading]);
 
   const groupOptions: ComboboxOption[] = useMemo(() => {
     const selectedSet = new Set(selectedGroupIds);
@@ -96,22 +120,13 @@ export default function FeaturedGroupsSettings({ wsId }: Props) {
         .filter(Boolean)
         .join(',');
 
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/settings/DATABASE_FEATURED_GROUPS`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: serialized }),
-        }
+      return updateWorkspaceConfig(
+        wsId,
+        DATABASE_FEATURED_GROUPS_CONFIG_ID,
+        serialized
       );
-
-      if (!res.ok) throw new Error('Failed to update DATABASE_FEATURED_GROUPS');
-      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['workspace-config', wsId, 'DATABASE_FEATURED_GROUPS'],
-      });
       queryClient.invalidateQueries({
         queryKey: ['workspace-featured-groups', wsId],
       });
@@ -162,6 +177,16 @@ export default function FeaturedGroupsSettings({ wsId }: Props) {
                       placeholder={t('select_groups_placeholder')}
                       searchPlaceholder={t('search_groups')}
                       emptyText={t('no_groups_found')}
+                      onSearchChange={setSearchQuery}
+                      hasMore={Boolean(hasNextPage)}
+                      onLoadMore={() => {
+                        if (!isFetchingNextPage) {
+                          void fetchNextPage();
+                        }
+                      }}
+                      loadingMore={isFetchingNextPage}
+                      loadMoreText={commonT('load_more')}
+                      loadingMoreText={commonT('loading')}
                       label={
                         field.value && field.value.length > 2
                           ? t('selected_groups_count', {

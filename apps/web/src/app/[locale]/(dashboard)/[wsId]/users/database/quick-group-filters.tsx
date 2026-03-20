@@ -19,15 +19,25 @@ import {
 
 interface Props {
   wsId: string;
+  initialFeaturedGroupIds?: string[];
+  effectiveExcludedGroups?: string[];
 }
 
-export function QuickGroupFilters({ wsId }: Props) {
+export function QuickGroupFilters({
+  wsId,
+  initialFeaturedGroupIds,
+  effectiveExcludedGroups = [],
+}: Props) {
   const t = useTranslations('user-data-table');
 
   const { data: featuredGroupIds, isLoading: isLoadingFeatured } =
-    useFeaturedGroups(wsId);
+    useFeaturedGroups(wsId, {
+      initialData: initialFeaturedGroupIds,
+    });
   const { data: allGroups, isLoading: isLoadingGroups } =
-    useWorkspaceUserGroups(wsId);
+    useWorkspaceUserGroups(wsId, {
+      ensureGroupIds: featuredGroupIds,
+    });
 
   const [includedGroups, setIncludedGroups] = useQueryState(
     'includedGroups',
@@ -38,7 +48,7 @@ export function QuickGroupFilters({ wsId }: Props) {
 
   const [excludedGroups] = useQueryState(
     'excludedGroups',
-    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+    parseAsArrayOf(parseAsString).withOptions({
       shallow: true,
     })
   );
@@ -76,7 +86,8 @@ export function QuickGroupFilters({ wsId }: Props) {
     wsId,
     featuredGroupIds ?? [],
     {
-      excludedGroups,
+      excludedGroups:
+        excludedGroups === null ? effectiveExcludedGroups : excludedGroups,
       searchQuery: q,
       status,
       linkStatus,

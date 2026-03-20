@@ -15,11 +15,19 @@ test.describe('Authentication (unauthenticated)', () => {
       .first();
     await expect(emailInput).toBeVisible({ timeout: 30_000 });
 
-    // There should be a sign-in button (password tab in dev mode) or continue button
-    const submitButton = page.getByRole('button', {
-      name: /sign in|continue/i,
+    // Auth layout can show either password-only sign in or OTP+password forms.
+    // Avoid broad regex that can match social buttons and trip strict mode.
+    const continueWithEmailButton = page.getByRole('button', {
+      name: /continue with email/i,
     });
-    await expect(submitButton).toBeVisible();
+
+    if ((await continueWithEmailButton.count()) > 0) {
+      await expect(continueWithEmailButton.first()).toBeVisible();
+    } else {
+      await expect(
+        page.getByRole('button', { name: /^sign in$/i })
+      ).toBeVisible();
+    }
   });
 
   test('root page is accessible to unauthenticated users (marketing page)', async ({

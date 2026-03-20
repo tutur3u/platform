@@ -14,8 +14,18 @@ import {
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
+function normalizeListParam(value: string | undefined) {
+  if (!value) return [];
+
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).optional(),
+  ids: z.string().optional(),
   userId: z.guid().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(10),
@@ -84,7 +94,11 @@ export async function GET(request: Request, { params }: Params) {
       queryBuilder.ilike('name', `%${escapedSearch}%`);
     }
 
-    if (sp.userId) {
+    const requestedGroupIds = normalizeListParam(sp.ids);
+
+    if (requestedGroupIds.length > 0) {
+      queryBuilder.in('id', requestedGroupIds);
+    } else if (sp.userId) {
       const { data: userGroups } = await supabase
         .from('workspace_user_groups_users')
         .select('group_id')

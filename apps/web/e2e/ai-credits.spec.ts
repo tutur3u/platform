@@ -532,8 +532,17 @@ test.describe('Error Handling', () => {
     await page
       .waitForSelector('text=AI Credits', { timeout: 30000 })
       .catch(() => {});
-    // Verification is that the page loads without errors
-    expect(page.url()).toContain('/tasks');
+
+    // Verification is route-agnostic because authenticated users can land on
+    // different workspace pages (for example /internal) based on role/shell.
+    await page.waitForURL(
+      (url) =>
+        !url.pathname.includes('/login') && !url.pathname.includes('/auth'),
+      { timeout: 30_000 }
+    );
+    const path = new URL(page.url()).pathname;
+    expect(path).not.toContain('/login');
+    expect(path).not.toContain('/auth');
   });
 
   test('Tasks page loads successfully with credit system active', async ({
