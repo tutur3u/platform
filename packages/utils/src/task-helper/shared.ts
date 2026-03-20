@@ -1,6 +1,5 @@
 import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
 export function getTicketIdentifier(
@@ -32,26 +31,14 @@ export function getTaskIdentifierForSearch(task: {
   return getTicketIdentifier(task.ticket_prefix, task.display_number);
 }
 
-export async function getMutationApiOptions(
-  supabase: TypedSupabaseClient
-): Promise<InternalApiClientOptions | undefined> {
+export async function getMutationApiOptions(): Promise<
+  InternalApiClientOptions | undefined
+> {
   if (typeof window !== 'undefined') {
     return { baseUrl: window.location.origin };
   }
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    return undefined;
-  }
-
-  return {
-    defaultHeaders: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  };
+  return undefined;
 }
 
 export function getBrowserApiOptions(): InternalApiClientOptions | undefined {

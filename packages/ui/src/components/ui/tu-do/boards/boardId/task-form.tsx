@@ -179,7 +179,7 @@ export function TaskForm({
         estimation_points: estimationPoints,
       };
 
-      const newTask = await createTask(supabase, wsId, listId, taskData);
+      const newTask = await createTask(wsId, listId, taskData);
 
       // Determine final assignees
       let finalAssignees = [...selectedAssignees];

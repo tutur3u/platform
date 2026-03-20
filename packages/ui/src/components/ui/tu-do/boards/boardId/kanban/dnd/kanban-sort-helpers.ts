@@ -3,7 +3,6 @@
  * Handles sort key calculation with automatic retry on gap exhaustion
  */
 
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
@@ -16,7 +15,6 @@ import {
  * Calculate sort key with automatic retry on gap exhaustion or inverted keys
  * If SortKeyGapExhaustedError is thrown (including for inverted keys), normalizes the list and retries once
  *
- * @param supabase - Supabase client for database operations
  * @param prevSortKey - Sort key of the previous task (null if inserting at beginning)
  * @param nextSortKey - Sort key of the next task (null if inserting at end)
  * @param listId - ID of the list where the task is being inserted
@@ -25,7 +23,6 @@ import {
  * @throws Error if calculation fails even after normalization
  */
 export async function calculateSortKeyWithRetry(
-  supabase: SupabaseClient,
   wsId: string,
   prevSortKey: number | null | undefined,
   nextSortKey: number | null | undefined,
@@ -49,7 +46,7 @@ export async function calculateSortKeyWithRetry(
       try {
         // Normalize the list sort keys to match visual order
         // If visual order is provided, use it; otherwise normalize by database order
-        await normalizeListSortKeys(supabase, wsId, listId, visualOrderTasks);
+        await normalizeListSortKeys(wsId, listId, visualOrderTasks);
         console.log('✅ List sort keys normalized, refetching...');
 
         // After normalization, we can't reuse the old prev/next values

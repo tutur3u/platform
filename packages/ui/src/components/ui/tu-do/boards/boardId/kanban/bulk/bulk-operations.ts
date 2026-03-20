@@ -444,7 +444,6 @@ function useBulkUpdateCustomDueDate(
  */
 function useBulkMoveToBoard(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -473,7 +472,6 @@ function useBulkMoveToBoard(
       for (const taskId of taskIds) {
         try {
           const result = await moveTaskToBoard(
-            supabase,
             boardId,
             taskId,
             targetListId,
@@ -1918,7 +1916,6 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   );
   const moveToBoardMutation = useBulkMoveToBoard(
     queryClient,
-    supabase,
     boardId,
     broadcast
   );

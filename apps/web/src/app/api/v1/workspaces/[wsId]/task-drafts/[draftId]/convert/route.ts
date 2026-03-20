@@ -98,7 +98,7 @@ export async function POST(
       ? (draft.priority as ValidPriority)
       : undefined;
 
-    const newTask = await createTask(supabase, wsId, listId, {
+    const newTask = await createTask(wsId, listId, {
       name: draft.name,
       description: draft.description || undefined,
       priority,

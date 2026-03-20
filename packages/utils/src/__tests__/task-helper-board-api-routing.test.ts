@@ -1,4 +1,3 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { createWorkspaceTaskBoardMock, getWorkspaceTaskBoardMock } = vi.hoisted(
@@ -40,12 +39,9 @@ describe('task-helper workspace board API routing', () => {
       board: { id: 'board-1', ws_id: 'ws-1', name: 'Board 1' },
     });
 
-    const result = await getTaskBoard(
-      {} as TypedSupabaseClient,
-      'board-1',
-      'ws-1',
-      { baseUrl: 'https://internal.example.com' }
-    );
+    const result = await getTaskBoard('board-1', 'ws-1', {
+      baseUrl: 'https://internal.example.com',
+    });
 
     expect(getWorkspaceTaskBoardMock).toHaveBeenCalledWith('ws-1', 'board-1', {
       baseUrl: 'https://internal.example.com',
@@ -54,12 +50,9 @@ describe('task-helper workspace board API routing', () => {
   });
 
   it('getTaskBoard skips internal API call when workspace id is omitted', async () => {
-    const result = await getTaskBoard(
-      {} as TypedSupabaseClient,
-      'board-1',
-      undefined,
-      { baseUrl: 'https://internal.example.com' }
-    );
+    const result = await getTaskBoard('board-1', undefined, {
+      baseUrl: 'https://internal.example.com',
+    });
 
     expect(getWorkspaceTaskBoardMock).not.toHaveBeenCalled();
     expect(result).toBeNull();

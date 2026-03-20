@@ -3,7 +3,6 @@ import {
   moveWorkspaceTask,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
 import { getBrowserApiOptions, listAllActiveTasksForList } from './shared';
@@ -193,21 +192,12 @@ export function useMoveAllTasksFromList(
 }
 
 export async function moveAllTasksFromList(
-  supabase: TypedSupabaseClient,
   wsId: string,
   sourceListId: string,
   targetListId: string,
   targetBoardId?: string
 ) {
-  const { data: tasksToMove, error: fetchError } = await supabase
-    .from('tasks')
-    .select('id, list_id, task_lists!inner(board_id)')
-    .eq('list_id', sourceListId)
-    .is('deleted_at', null);
-
-  if (fetchError) {
-    throw new Error(`Failed to fetch tasks: ${fetchError.message}`);
-  }
+  const tasksToMove = await listAllActiveTasksForList(wsId, sourceListId);
 
   if (!tasksToMove || tasksToMove.length === 0) {
     return { success: true, movedCount: 0, movedTaskIds: [] as string[] };
@@ -221,13 +211,7 @@ export async function moveAllTasksFromList(
 
   for (const task of tasksToMove) {
     try {
-      await moveTaskToBoard(
-        supabase,
-        wsId,
-        task.id,
-        targetListId,
-        targetBoardId
-      );
+      await moveTaskToBoard(wsId, task.id, targetListId, targetBoardId);
       results.push({
         status: 'fulfilled',
         value: { success: true, taskId: task.id },

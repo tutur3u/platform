@@ -4,14 +4,13 @@ import {
   createWorkspaceTaskBoard,
   getWorkspaceTaskBoard as getWorkspaceTaskBoardFromApi,
   listWorkspaceLabels,
+  updateWorkspaceTaskBoard,
   updateWorkspaceTaskList,
 } from '@tuturuuu/internal-api/tasks';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, WorkspaceTaskBoard } from '@tuturuuu/types';
 import { getMutationApiOptions } from './shared';
 
 export async function getTaskBoard(
-  _supabase: TypedSupabaseClient,
   boardId: string,
   workspaceId?: string,
   options?: InternalApiClientOptions
@@ -50,12 +49,11 @@ export async function createBoardWithTemplate(
 }
 
 export async function deleteTaskList(
-  supabase: TypedSupabaseClient,
   wsId: string,
   boardId: string,
   listId: string
 ) {
-  const options = await getMutationApiOptions(supabase);
+  const options = await getMutationApiOptions();
   const { list } = await updateWorkspaceTaskList(
     wsId,
     boardId,
@@ -108,23 +106,18 @@ export function useUpdateBoardWithTemplate(wsId: string) {
       name: string;
       icon: string | null;
     }) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/task-boards/${boardId}`,
+      return updateWorkspaceTaskBoard(
+        wsId,
+        boardId,
         {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name, icon }),
+          name,
+          icon: icon as Database['public']['Enums']['platform_icon'] | null,
+        },
+        {
+          baseUrl:
+            typeof window !== 'undefined' ? window.location.origin : undefined,
         }
       );
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.message ?? 'Failed to update board');
-      }
-
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['boards', wsId] });

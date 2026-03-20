@@ -6,7 +6,6 @@ import {
   getWorkspaceTaskRelationships,
   listWorkspaceTasks,
 } from '@tuturuuu/internal-api/tasks';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type {
@@ -27,7 +26,6 @@ import {
 } from './shared';
 
 export async function getTaskRelationships(
-  _supabase: TypedSupabaseClient,
   wsId: string,
   taskId: string
 ): Promise<TaskRelationshipsResponse> {
@@ -40,11 +38,10 @@ export async function getTaskRelationships(
 }
 
 export async function createTaskRelationship(
-  supabase: TypedSupabaseClient,
   wsId: string,
   input: CreateTaskRelationshipInput
 ): Promise<TaskRelationship> {
-  const options = await getMutationApiOptions(supabase);
+  const options = await getMutationApiOptions();
 
   try {
     const { relationship } = await createWorkspaceTaskRelationship(
@@ -75,27 +72,27 @@ export async function createTaskRelationship(
 }
 
 export async function deleteTaskRelationship(
-  supabase: TypedSupabaseClient,
   wsId: string,
-  relationshipId: string
+  relationshipId: string,
+  relationship?: Pick<
+    TaskRelationship,
+    'source_task_id' | 'target_task_id' | 'type'
+  >
 ): Promise<void> {
-  const options = await getMutationApiOptions(supabase);
-  const { data, error } = await supabase
-    .from('task_relationships')
-    .select('source_task_id, target_task_id, type')
-    .eq('id', relationshipId)
-    .maybeSingle();
+  if (!relationship) {
+    throw new Error(
+      `deleteTaskRelationship now requires relationship details for id ${relationshipId}. Provide source_task_id, target_task_id, and type.`
+    );
+  }
 
-  if (error) throw error;
-  if (!data) return;
-
+  const options = await getMutationApiOptions();
   await deleteWorkspaceTaskRelationship(
     wsId,
-    data.source_task_id,
+    relationship.source_task_id,
     {
-      source_task_id: data.source_task_id,
-      target_task_id: data.target_task_id,
-      type: data.type,
+      source_task_id: relationship.source_task_id,
+      target_task_id: relationship.target_task_id,
+      type: relationship.type,
     },
     options
   );

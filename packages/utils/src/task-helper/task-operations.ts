@@ -2,29 +2,26 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
 import {
   createWorkspaceTask,
+  getWorkspaceTask,
+  listWorkspaceBoardsWithLists,
   moveWorkspaceTask,
+  triggerWorkspaceTaskEmbedding,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Task, TaskAssignee } from '@tuturuuu/types/primitives/Task';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 
-import { getMutationApiOptions, toWorkspaceTaskUpdatePayload } from './shared';
+import {
+  getBrowserApiOptions,
+  getMutationApiOptions,
+  toWorkspaceTaskUpdatePayload,
+} from './shared';
 
-export async function getTaskAssignees(
-  supabase: TypedSupabaseClient,
-  taskId: string
-) {
-  const { data, error } = await supabase
-    .from('task_assignees')
-    .select('*')
-    .eq('task_id', taskId);
-
-  if (error) throw error;
-  return data as TaskAssignee[];
+export async function getTaskAssignees(wsId: string, taskId: string) {
+  const { task } = await getWorkspaceTask(wsId, taskId, getBrowserApiOptions());
+  return task.assignees ?? [];
 }
 
 export async function createTask(
-  supabase: TypedSupabaseClient,
   wsId: string,
   listId: string,
   task: Partial<Task> & {
@@ -42,31 +39,6 @@ export async function createTask(
     throw new Error('List ID is required');
   }
 
-  const {
-    data: { user: currentUser },
-    error: authError,
-  } = await supabase.auth.getUser();
-  if (authError || !currentUser) {
-    console.error('Authentication error:', authError);
-    throw new Error('User not authenticated');
-  }
-
-  const { data: listCheck, error: listError } = await supabase
-    .from('task_lists')
-    .select('id, name')
-    .eq('id', listId)
-    .single();
-
-  if (listError) {
-    throw new Error(
-      `List not found or access denied: ${listError.message || 'Unknown error'}`
-    );
-  }
-
-  if (!listCheck) {
-    throw new Error('List not found');
-  }
-
   if (!wsId) {
     throw new Error('Workspace ID is required');
   }
@@ -80,7 +52,7 @@ export async function createTask(
     auto_schedule: boolean | null;
   }>;
 
-  const options = await getMutationApiOptions(supabase);
+  const options = await getMutationApiOptions();
   const { task: createdTask } = await createWorkspaceTask(
     wsId,
     {
@@ -108,23 +80,19 @@ export async function createTask(
   );
 
   if (typeof window !== 'undefined' && createdTask) {
-    const pathParts = window.location.pathname.split('/');
-    const wsId = pathParts[2];
-
-    if (wsId) {
-      fetch(`/api/v1/workspaces/${wsId}/tasks/${createdTask.id}/embedding`, {
-        method: 'POST',
-      }).catch((err) => {
-        console.error('Failed to generate embedding:', err);
-      });
-    }
+    triggerWorkspaceTaskEmbedding(
+      wsId,
+      createdTask.id,
+      getBrowserApiOptions()
+    ).catch((err) => {
+      console.error('Failed to generate embedding:', err);
+    });
   }
 
   return createdTask as Task;
 }
 
 export async function updateTask(
-  supabase: TypedSupabaseClient,
   wsId: string,
   taskId: string,
   task: Partial<Task> & { completed?: boolean }
@@ -133,7 +101,7 @@ export async function updateTask(
     throw new Error('Workspace ID is required');
   }
 
-  const options = await getMutationApiOptions(supabase);
+  const options = await getMutationApiOptions();
   const { task: data } = await updateWorkspaceTask(
     wsId,
     taskId,
@@ -146,16 +114,11 @@ export async function updateTask(
     typeof window !== 'undefined' &&
     data
   ) {
-    const pathParts = window.location.pathname.split('/');
-    const wsId = pathParts[1];
-
-    if (wsId) {
-      fetch(`/api/v1/workspaces/${wsId}/tasks/${taskId}/embedding`, {
-        method: 'POST',
-      }).catch((err) => {
+    triggerWorkspaceTaskEmbedding(wsId, taskId, getBrowserApiOptions()).catch(
+      (err) => {
         console.error('Failed to regenerate embedding:', err);
-      });
-    }
+      }
+    );
   }
 
   return data as Task;
@@ -184,43 +147,35 @@ export async function invalidateTaskCaches(
 }
 
 export async function syncTaskArchivedStatus(
-  supabase: TypedSupabaseClient,
   wsId: string,
   taskId: string,
   listId: string
 ) {
-  const { data: list, error: listError } = await supabase
-    .from('task_lists')
-    .select('status')
-    .eq('id', listId)
-    .single();
+  const options = getBrowserApiOptions();
+  const [{ boards }, { task }] = await Promise.all([
+    listWorkspaceBoardsWithLists(wsId, options),
+    getWorkspaceTask(wsId, taskId, options),
+  ]);
 
-  if (listError) {
-    console.error('Error fetching list status:', listError);
+  const list = boards
+    .flatMap((board) => board.task_lists)
+    .find((entry) => entry.id === listId);
+
+  if (!list) {
+    console.error('Error fetching list status: list not found', { listId });
     return;
   }
 
   const shouldArchive = list.status === 'done' || list.status === 'closed';
 
-  const { data: task, error: taskError } = await supabase
-    .from('tasks')
-    .select('closed_at')
-    .eq('id', taskId)
-    .single();
-
-  if (taskError) {
-    console.error('Error fetching task status:', taskError);
-    return;
-  }
-
   if (!!task.closed_at !== shouldArchive) {
     try {
-      const options = await getMutationApiOptions(supabase);
+      const mutationOptions = await getMutationApiOptions();
       await updateWorkspaceTask(
         wsId,
         taskId,
         { closed_at: shouldArchive ? new Date().toISOString() : null },
-        options
+        mutationOptions
       );
     } catch (updateError) {
       console.error('Error syncing task archived status:', updateError);
@@ -247,7 +202,6 @@ export async function moveTask(
 }
 
 export async function moveTaskToBoard(
-  supabase: TypedSupabaseClient,
   wsId: string,
   taskId: string,
   newListId: string,
@@ -257,7 +211,7 @@ export async function moveTaskToBoard(
     throw new Error('Workspace ID is required');
   }
 
-  const options = await getMutationApiOptions(supabase);
+  const options = await getMutationApiOptions();
   const result = await moveWorkspaceTask(
     wsId,
     taskId,

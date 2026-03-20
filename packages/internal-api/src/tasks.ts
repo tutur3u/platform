@@ -677,6 +677,21 @@ export async function deleteWorkspaceTask(
   );
 }
 
+export async function triggerWorkspaceTaskEmbedding(
+  workspaceId: string,
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success?: true; message?: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/embedding`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function moveWorkspaceTask(
   workspaceId: string,
   taskId: string,

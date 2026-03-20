@@ -540,7 +540,6 @@ function TaskCardInner({
         };
 
         const newTask = await createTask(
-          supabase,
           effectiveWorkspaceId,
           sourceTask.list_id,
           taskData

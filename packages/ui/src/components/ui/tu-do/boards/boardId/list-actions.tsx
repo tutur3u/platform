@@ -85,8 +85,7 @@ export function ListActions({
       return;
     }
 
-    const supabase = createClient();
-    await deleteTaskList(supabase, wsId, boardId, listId);
+    await deleteTaskList(wsId, boardId, listId);
     setIsDeleteDialogOpen(false);
     onUpdate();
   }

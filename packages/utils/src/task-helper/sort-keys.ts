@@ -1,9 +1,8 @@
 import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
-import { getMutationApiOptions } from './shared';
+import { getMutationApiOptions, listAllActiveTasksForList } from './shared';
 
 export function priorityCompare(
   priorityA: TaskPriority | null | undefined,
@@ -212,7 +211,6 @@ export function normalizeSortKeys(tasks: Task[]): Task[] {
 }
 
 export async function normalizeListSortKeys(
-  supabase: TypedSupabaseClient,
   wsId: string,
   listId: string,
   visualOrderTasks?: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
@@ -227,25 +225,27 @@ export async function normalizeListSortKeys(
     );
     tasks = visualOrderTasks;
   } else {
-    const { data: fetchedTasks, error: fetchError } = await supabase
-      .from('tasks')
-      .select('id, sort_key, created_at')
-      .eq('list_id', listId)
-      .is('deleted_at', null)
-      .order('sort_key', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: true });
+    const fetchedTasks = await listAllActiveTasksForList(wsId, listId);
 
-    if (fetchError) {
-      console.error('Failed to fetch tasks for normalization:', fetchError);
-      throw fetchError;
-    }
-
-    if (!fetchedTasks || fetchedTasks.length === 0) {
+    if (!fetchedTasks.length) {
       console.log('No tasks to normalize');
       return;
     }
 
-    tasks = fetchedTasks as Pick<Task, 'id' | 'sort_key' | 'created_at'>[];
+    tasks = fetchedTasks
+      .map((task) => ({
+        id: task.id,
+        sort_key: task.sort_key ?? null,
+        created_at: task.created_at,
+      }))
+      .sort((a, b) => {
+        const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
+        const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
+        if (sortA !== sortB) return sortA - sortB;
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
   }
 
   if (tasks.length === 0) {
@@ -273,7 +273,7 @@ export async function normalizeListSortKeys(
     sort_key: (index + 1) * SORT_KEY_BASE_UNIT,
   }));
 
-  const options = await getMutationApiOptions(supabase);
+  const options = await getMutationApiOptions();
 
   await Promise.all(
     updates.map((update) =>

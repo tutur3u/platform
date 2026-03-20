@@ -7,7 +7,6 @@ import type {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
@@ -68,8 +67,6 @@ export function useKanbanDnd({
   const isDraggingRef = useRef(false);
 
   const queryClient = useQueryClient();
-  const supabase = createClient();
-
   // Use the extracted calculateSortKeyWithRetry helper
   const calculateSortKeyWithRetry = useCallback(
     (
@@ -79,14 +76,13 @@ export function useKanbanDnd({
       visualOrderTasks?: Pick<Task, 'id' | 'sort_key' | 'created_at'>[]
     ) =>
       createCalculateSortKeyWithRetry(
-        supabase,
         wsId,
         prevSortKey,
         nextSortKey,
         listId,
         visualOrderTasks
       ),
-    [supabase, wsId]
+    [wsId]
   );
 
   // Initialize auto-scroll
