@@ -55,7 +55,6 @@ export interface UseTaskCardRelationshipsReturn {
  */
 export function useTaskCardRelationships({
   taskId,
-  boardId,
   wsId,
   enabled = true,
 }: UseTaskCardRelationshipsProps): UseTaskCardRelationshipsReturn {
@@ -78,8 +77,8 @@ export function useTaskCardRelationships({
 
   // Mutations
   const resolvedWsId = wsId ?? '';
-  const createRelationship = useCreateTaskRelationship(resolvedWsId, boardId);
-  const deleteRelationship = useDeleteTaskRelationship(resolvedWsId, boardId);
+  const createRelationship = useCreateTaskRelationship(resolvedWsId);
+  const deleteRelationship = useDeleteTaskRelationship(resolvedWsId);
 
   const isSaving = createRelationship.isPending || deleteRelationship.isPending;
 

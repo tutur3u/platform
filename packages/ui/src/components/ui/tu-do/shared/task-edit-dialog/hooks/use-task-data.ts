@@ -127,7 +127,8 @@ export function useTaskData({
 
   // Board configuration - fetch first to get real workspace ID
   const { data: fetchedBoardConfig } = useBoardConfig(
-    hasSharedContext ? null : boardId
+    hasSharedContext ? null : boardId,
+    wsId
   );
   const boardConfig = sharedContext?.boardConfig || fetchedBoardConfig;
 

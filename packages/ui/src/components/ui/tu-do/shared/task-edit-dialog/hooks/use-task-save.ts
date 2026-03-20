@@ -788,7 +788,7 @@ async function handleCreateTask({
       // IMPORTANT: scheduling settings are personal and stored separately
       // (task_user_scheduling_settings). Do not persist them to the shared task row.
     };
-    const newTask = await createTask(supabase, selectedListId, {
+    const newTask = await createTask(wsId, selectedListId, {
       ...taskData,
       description_yjs_state: descriptionYjsState ?? undefined,
       label_ids: selectedLabels.map((label) => label.id),

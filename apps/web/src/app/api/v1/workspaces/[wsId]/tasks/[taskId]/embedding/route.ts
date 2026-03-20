@@ -1,7 +1,12 @@
 import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -14,7 +19,7 @@ interface Params {
  * Generate and update embedding for a specific task
  * Requires GOOGLE_GENERATIVE_AI_API_KEY to be set
  */
-export async function POST(_: Request, { params }: Params) {
+export async function POST(request: Request, { params }: Params) {
   try {
     // Check if API key is available
     const hasApiKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -26,26 +31,77 @@ export async function POST(_: Request, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
-    const { taskId } = await params;
+    const supabase = await createClient(request);
+    const { wsId: rawWsId, taskId } = await params;
 
     // Check authentication
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch the task
-    const { data: task, error: fetchError } = await supabase
-      .from('tasks')
-      .select('id, name, description')
-      .eq('id', taskId)
-      .single();
+    const parsedTaskId = z.guid().safeParse(taskId);
+    if (!parsedTaskId.success) {
+      return NextResponse.json({ message: 'Invalid task ID' }, { status: 400 });
+    }
 
-    if (fetchError || !task) {
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error(
+        'Error verifying workspace membership for embedding generation:',
+        membershipError
+      );
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    // Fetch the task
+    const { data: task, error: fetchError } = await sbAdmin
+      .from('tasks')
+      .select(
+        `
+        id,
+        name,
+        description,
+        task_lists!inner(
+          workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+      )
+      .eq('id', parsedTaskId.data)
+      .eq('task_lists.workspace_boards.ws_id', wsId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Error loading task for embedding generation:', fetchError);
+      return NextResponse.json(
+        { message: 'Failed to load task' },
+        { status: 500 }
+      );
+    }
+
+    if (!task) {
       return NextResponse.json({ message: 'Task not found' }, { status: 404 });
     }
 
@@ -80,10 +136,12 @@ export async function POST(_: Request, { params }: Params) {
     });
 
     // Update task with embedding
-    const { error: updateError } = await supabase
+    const { data: updatedTask, error: updateError } = await sbAdmin
       .from('tasks')
       .update({ embedding: JSON.stringify(embedding) })
-      .eq('id', taskId);
+      .eq('id', task.id)
+      .select('id')
+      .maybeSingle();
 
     if (updateError) {
       console.error('Error updating task embedding:', updateError);
@@ -93,9 +151,13 @@ export async function POST(_: Request, { params }: Params) {
       );
     }
 
+    if (!updatedTask) {
+      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
+    }
+
     return NextResponse.json({
       message: 'Embedding generated successfully',
-      taskId,
+      taskId: parsedTaskId.data,
     });
   } catch (error) {
     console.error('Error generating embedding:', error);

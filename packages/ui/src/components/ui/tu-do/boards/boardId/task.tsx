@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   ArrowUpCircle,
@@ -25,8 +25,10 @@ import {
   Timer,
   Trash2,
 } from '@tuturuuu/icons';
-import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceTaskLists,
+  listWorkspaceTaskProjects,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -191,7 +193,8 @@ function TaskCardInner({
   );
 
   // Use React Query hooks for shared data (cached across all task cards)
-  const { data: boardConfig } = useBoardConfig(boardId);
+  const workspaceContextWsId = workspaceId ?? wsId;
+  const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
   const effectiveWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
   const taskShareWsId = effectiveWorkspaceId;
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
@@ -310,19 +313,21 @@ function TaskCardInner({
   const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('task_lists')
-        .select('*')
-        .eq('board_id', boardId)
-        .eq('deleted', false)
-        .order('position')
-        .order('created_at');
+      if (!effectiveWorkspaceId) {
+        return [];
+      }
 
-      if (error) throw error;
-      return data as TaskList[];
+      const { lists } = await listWorkspaceTaskLists(
+        effectiveWorkspaceId,
+        boardId,
+        typeof window !== 'undefined'
+          ? { baseUrl: window.location.origin }
+          : undefined
+      );
+
+      return lists.filter((list) => !list.deleted) as TaskList[];
     },
-    enabled: !propAvailableLists, // Only fetch if not provided as prop
+    enabled: !propAvailableLists && !!effectiveWorkspaceId, // Only fetch if not provided as prop
     initialData: propAvailableLists,
     staleTime: 60 * 1000, // 1 minute - lists change less frequently
   });
@@ -333,6 +338,84 @@ function TaskCardInner({
     const closedList = availableLists.find((list) => list.status === 'closed');
     return doneList || closedList || null;
   };
+
+  const duplicateTaskMutation = useMutation({
+    mutationFn: async (tasksToDuplicate: Task[]) => {
+      if (!effectiveWorkspaceId) {
+        throw new Error('Workspace ID is required to duplicate tasks');
+      }
+
+      const duplicatedTasks: Task[] = [];
+
+      for (const sourceTask of tasksToDuplicate) {
+        const taskData: Parameters<typeof createTask>[2] = {
+          name: sourceTask.name.trim(),
+          description: sourceTask.description,
+          priority: sourceTask.priority,
+          start_date: sourceTask.start_date,
+          end_date: sourceTask.end_date,
+          estimation_points: sourceTask.estimation_points ?? null,
+          label_ids: sourceTask.labels?.map((label) => label.id) ?? [],
+          assignee_ids:
+            sourceTask.assignees?.map((assignee) => assignee.id) ?? [],
+          project_ids: sourceTask.projects?.map((project) => project.id) ?? [],
+        };
+
+        const newTask = await createTask(
+          effectiveWorkspaceId,
+          sourceTask.list_id,
+          taskData
+        );
+
+        duplicatedTasks.push({
+          ...newTask,
+          assignees: sourceTask.assignees,
+          labels: sourceTask.labels,
+          projects: sourceTask.projects,
+        });
+      }
+
+      return duplicatedTasks;
+    },
+    onSuccess: (duplicatedTasks) => {
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return duplicatedTasks;
+          const newTasks = duplicatedTasks.filter(
+            (newTask) => !old.some((task) => task.id === newTask.id)
+          );
+          return [...old, ...newTasks];
+        }
+      );
+
+      for (const duplicatedTask of duplicatedTasks) {
+        broadcast?.('task:upsert', { task: duplicatedTask });
+        if (
+          (duplicatedTask.assignees && duplicatedTask.assignees.length > 0) ||
+          (duplicatedTask.labels && duplicatedTask.labels.length > 0) ||
+          (duplicatedTask.projects && duplicatedTask.projects.length > 0)
+        ) {
+          broadcast?.('task:relations-changed', {
+            taskId: duplicatedTask.id,
+          });
+        }
+      }
+
+      toast.success(
+        t('tasks_duplicated_successfully', { count: duplicatedTasks.length })
+      );
+    },
+    onError: (error) => {
+      console.error('Error duplicating task(s):', error);
+      toast.error(
+        error instanceof Error ? error.message : t('please_try_again_later')
+      );
+    },
+    onSettled: () => {
+      setIsLoading(false);
+    },
+  });
 
   // Find specifically the closed list
   const getTargetClosedList = () => {
@@ -520,105 +603,9 @@ function TaskCardInner({
       : [task];
 
     try {
-      const supabase = createClient();
-      const duplicatedTasks: Task[] = [];
-
-      // Duplicate all tasks
-      for (const sourceTask of tasksToDuplicate) {
-        const taskData: Partial<Task> = {
-          name: sourceTask.name.trim(),
-          description: sourceTask.description,
-          priority: sourceTask.priority,
-          start_date: sourceTask.start_date,
-          end_date: sourceTask.end_date,
-          estimation_points: sourceTask.estimation_points ?? null,
-        };
-
-        const newTask = await createTask(
-          supabase,
-          sourceTask.list_id,
-          taskData
-        );
-
-        // Link existing labels one by one to ensure triggers fire
-        if (sourceTask.labels && sourceTask.labels.length > 0) {
-          for (const label of sourceTask.labels) {
-            const { error } = await supabase.from('task_labels').insert({
-              task_id: newTask.id,
-              label_id: label.id,
-            });
-            if (error) {
-              console.error(`Failed to add label ${label.id}:`, error);
-            }
-          }
-        }
-
-        // Link existing assignees one by one to ensure triggers fire
-        if (sourceTask.assignees && sourceTask.assignees.length > 0) {
-          for (const assignee of sourceTask.assignees) {
-            const { error } = await supabase.from('task_assignees').insert({
-              task_id: newTask.id,
-              user_id: assignee.id,
-            });
-            if (error) {
-              console.error(`Failed to add assignee ${assignee.id}:`, error);
-            }
-          }
-        }
-
-        // Link existing projects one by one to ensure triggers fire
-        if (sourceTask.projects && sourceTask.projects.length > 0) {
-          for (const project of sourceTask.projects) {
-            const { error } = await supabase.from('task_project_tasks').insert({
-              task_id: newTask.id,
-              project_id: project.id,
-            });
-            if (error) {
-              console.error(`Failed to add project ${project.id}:`, error);
-            }
-          }
-        }
-
-        duplicatedTasks.push({
-          ...newTask,
-          assignees: sourceTask.assignees,
-          labels: sourceTask.labels,
-          projects: sourceTask.projects,
-        });
-      }
-
-      // Add all duplicated tasks to cache at once
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return duplicatedTasks;
-          // Filter out any tasks that already exist (in case realtime already added them)
-          const newTasks = duplicatedTasks.filter(
-            (newTask) => !old.some((t) => t.id === newTask.id)
-          );
-          return [...old, ...newTasks];
-        }
-      );
-
-      // Broadcast duplicated tasks to other clients
-      for (const dup of duplicatedTasks) {
-        broadcast?.('task:upsert', { task: dup });
-        if (
-          (dup.assignees && dup.assignees.length > 0) ||
-          (dup.labels && dup.labels.length > 0) ||
-          (dup.projects && dup.projects.length > 0)
-        ) {
-          broadcast?.('task:relations-changed', { taskId: dup.id });
-        }
-      }
-
-      const taskCount = duplicatedTasks.length;
-      toast.success(t('tasks_duplicated_successfully', { count: taskCount }));
-    } catch (error: any) {
-      console.error('Error duplicating task(s):', error);
-      toast.error(error.message || t('please_try_again_later'));
-    } finally {
-      setIsLoading(false);
+      await duplicateTaskMutation.mutateAsync(tasksToDuplicate);
+    } catch {
+      // Error handling is centralized in the mutation callbacks.
     }
   };
 

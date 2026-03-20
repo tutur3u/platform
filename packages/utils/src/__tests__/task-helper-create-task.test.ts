@@ -1,4 +1,3 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +17,7 @@ vi.mock('@tuturuuu/internal-api/tasks', async () => {
   return {
     ...actual,
     createWorkspaceTask: mockCreateWorkspaceTask,
+    triggerWorkspaceTaskEmbedding: vi.fn().mockResolvedValue({ success: true }),
   };
 });
 
@@ -31,56 +31,6 @@ type TaskCreateInputWithScheduling = Partial<Task> & {
   calendar_hours?: Task['calendar_hours'];
   auto_schedule?: boolean | null;
 };
-
-function createSupabaseMock() {
-  const listQuery = {
-    eq: vi.fn(() => listQuery),
-    single: vi.fn(async () => ({
-      data: {
-        id: 'list-1',
-        name: 'Backlog',
-        board_id: 'board-1',
-        status: 'not_started',
-        workspace_boards: { ws_id: 'ws-1' },
-      },
-      error: null,
-    })),
-  };
-
-  const from = vi.fn((table: string) => {
-    if (table === 'task_lists') {
-      return {
-        select: vi.fn(() => listQuery),
-      };
-    }
-
-    throw new Error(`Unexpected table: ${table}`);
-  });
-
-  return {
-    supabase: {
-      auth: {
-        getUser: vi.fn(async () => ({
-          data: {
-            user: {
-              id: 'user-1',
-            },
-          },
-          error: null,
-        })),
-        getSession: vi.fn(async () => ({
-          data: {
-            session: {
-              access_token: 'token-1',
-            },
-          },
-          error: null,
-        })),
-      },
-      from,
-    } as unknown as TypedSupabaseClient,
-  };
-}
 
 describe('createTask scheduling persistence', () => {
   beforeEach(() => {
@@ -96,9 +46,7 @@ describe('createTask scheduling persistence', () => {
   });
 
   it('sends null scheduling fields when none are provided', async () => {
-    const { supabase } = createSupabaseMock();
-
-    await createTask(supabase, 'list-1', {
+    await createTask('ws-1', 'list-1', {
       name: 'Task title',
     });
 
@@ -126,8 +74,6 @@ describe('createTask scheduling persistence', () => {
   });
 
   it('forwards scheduling fields when they are provided', async () => {
-    const { supabase } = createSupabaseMock();
-
     const taskInput: TaskCreateInputWithScheduling = {
       name: 'Task title',
       total_duration: 2,
@@ -138,7 +84,7 @@ describe('createTask scheduling persistence', () => {
       auto_schedule: true,
     };
 
-    await createTask(supabase, 'list-1', taskInput);
+    await createTask('ws-1', 'list-1', taskInput);
 
     expect(mockCreateWorkspaceTask).toHaveBeenCalledTimes(1);
     expect(mockCreateWorkspaceTask).toHaveBeenCalledWith(
@@ -156,8 +102,6 @@ describe('createTask scheduling persistence', () => {
   });
 
   it('keeps explicit false/null scheduling values instead of forcing defaults', async () => {
-    const { supabase } = createSupabaseMock();
-
     const taskInput: TaskCreateInputWithScheduling = {
       name: 'Task title',
       total_duration: null,
@@ -168,7 +112,7 @@ describe('createTask scheduling persistence', () => {
       auto_schedule: false,
     };
 
-    await createTask(supabase, 'list-1', taskInput);
+    await createTask('ws-1', 'list-1', taskInput);
 
     expect(mockCreateWorkspaceTask).toHaveBeenCalledTimes(1);
     expect(mockCreateWorkspaceTask).toHaveBeenCalledWith(

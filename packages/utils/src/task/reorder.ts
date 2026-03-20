@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  getWorkspaceTaskRelationships,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { transformTaskRecord } from './transformers';
@@ -65,15 +67,18 @@ export function useReorderTask(boardId: string, wsId: string) {
       // Don't await here to avoid blocking the optimistic update
       let blockedTaskIdsPromise: Promise<string[]> | null = null;
       if (isCompletionList) {
-        const supabase = createClient();
+        const baseUrl =
+          typeof window !== 'undefined' ? window.location.origin : undefined;
         blockedTaskIdsPromise = Promise.resolve(
-          supabase
-            .from('task_relationships')
-            .select('target_task_id')
-            .eq('source_task_id', taskId)
-            .eq('type', 'blocks')
+          getWorkspaceTaskRelationships(
+            wsId,
+            taskId,
+            baseUrl ? { baseUrl } : undefined
+          )
         )
-          .then(({ data }) => data?.map((r) => r.target_task_id) || [])
+          .then((relationships) =>
+            (relationships?.blocking ?? []).map((task) => task.id)
+          )
           .catch((err: unknown) => {
             console.error('Failed to fetch blocked task IDs:', err);
             return []; // Return empty array on error to prevent breaking the flow

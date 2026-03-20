@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Database, TaskDraft } from '@tuturuuu/types';
 import { createTask } from '@tuturuuu/utils/task-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -19,14 +22,65 @@ const convertSchema = z.object({
   listId: uuidString,
 });
 
+type DraftRelationField = Pick<
+  TaskDraft,
+  'assignee_ids' | 'label_ids' | 'project_ids'
+>[keyof Pick<TaskDraft, 'assignee_ids' | 'label_ids' | 'project_ids'>];
+type TaskDraftInsert = Database['public']['Tables']['task_drafts']['Insert'];
+
+function normalizeDraftRelationIds(
+  value: DraftRelationField,
+  fieldName: 'assignee_ids' | 'label_ids' | 'project_ids'
+) {
+  if (value == null) {
+    return { ids: [] as string[] };
+  }
+
+  if (!Array.isArray(value)) {
+    return { error: `Invalid ${fieldName} on draft` };
+  }
+
+  const ids: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string') {
+      return { error: `Invalid ${fieldName} on draft` };
+    }
+
+    const trimmed = entry.trim();
+    if (trimmed.length > 0) {
+      ids.push(trimmed);
+    }
+  }
+
+  return { ids };
+}
+
+async function restoreDraft(sbAdmin: TypedSupabaseClient, draft: TaskDraft) {
+  const draftToRestore: TaskDraftInsert = {
+    ...draft,
+  };
+  const { error } = await sbAdmin.from('task_drafts').insert(draftToRestore);
+
+  if (error) {
+    console.error(
+      'Failed to restore task draft after conversion error:',
+      error
+    );
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; draftId: string }> }
 ) {
   try {
-    const { wsId, draftId } = await params;
-    const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
+    const { wsId: rawWsId, draftId } = await params;
+    const parsedDraftId = z.guid().safeParse(draftId);
+    if (!parsedDraftId.success) {
+      return NextResponse.json({ error: 'Invalid draft ID' }, { status: 400 });
+    }
+
+    const supabase = await createClient(request);
 
     const {
       data: { user },
@@ -36,28 +90,29 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    const sbAdmin = await createAdminClient();
+
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error(
+        'Failed to verify workspace membership for draft conversion:',
+        membershipError
+      );
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Fetch the draft
-    const { data: draft, error: draftError } = await sbAdmin
-      .from('task_drafts')
-      .select('*')
-      .eq('id', draftId)
-      .eq('ws_id', wsId)
-      .eq('creator_id', user.id)
-      .single();
-
-    if (draftError || !draft) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
     }
 
     const body = await request.json();
@@ -91,6 +146,29 @@ export async function POST(
       );
     }
 
+    const { data: claimedDraft, error: claimError } = await sbAdmin
+      .from('task_drafts')
+      .delete()
+      .eq('id', parsedDraftId.data)
+      .eq('ws_id', wsId)
+      .eq('creator_id', user.id)
+      .select('*')
+      .maybeSingle();
+
+    if (claimError) {
+      console.error('Failed to claim draft for conversion:', claimError);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+
+    if (!claimedDraft) {
+      return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
+    }
+
+    const draft = claimedDraft as TaskDraft;
+
     // Create the task from draft data
     const validPriorities = ['critical', 'high', 'normal', 'low'] as const;
     type ValidPriority = (typeof validPriorities)[number];
@@ -98,64 +176,54 @@ export async function POST(
       ? (draft.priority as ValidPriority)
       : undefined;
 
-    const newTask = await createTask(supabase, listId, {
-      name: draft.name,
-      description: draft.description || undefined,
-      priority,
-      start_date: draft.start_date || undefined,
-      end_date: draft.end_date || undefined,
-      estimation_points: draft.estimation_points ?? undefined,
-    });
+    const normalizedAssigneeIds = normalizeDraftRelationIds(
+      draft.assignee_ids,
+      'assignee_ids'
+    );
+    const normalizedLabelIds = normalizeDraftRelationIds(
+      draft.label_ids,
+      'label_ids'
+    );
+    const normalizedProjectIds = normalizeDraftRelationIds(
+      draft.project_ids,
+      'project_ids'
+    );
 
-    // Add assignees one by one to ensure triggers fire
-    const assigneeIds = (draft.assignee_ids as string[]) || [];
-    for (const userId of assigneeIds) {
-      const { error } = await supabase.from('task_assignees').insert({
-        task_id: newTask.id,
-        user_id: userId,
-      });
-      if (error) {
-        console.error(`Failed to add assignee ${userId}:`, error);
-      }
+    const invalidDraftRelationError =
+      normalizedAssigneeIds.error ??
+      normalizedLabelIds.error ??
+      normalizedProjectIds.error;
+
+    if (invalidDraftRelationError) {
+      await restoreDraft(sbAdmin, draft);
+      return NextResponse.json(
+        { error: invalidDraftRelationError },
+        { status: 400 }
+      );
     }
 
-    // Add labels one by one to ensure triggers fire
-    const labelIds = (draft.label_ids as string[]) || [];
-    for (const labelId of labelIds) {
-      const { error } = await supabase.from('task_labels').insert({
-        task_id: newTask.id,
-        label_id: labelId,
+    try {
+      const newTask = await createTask(wsId, listId, {
+        name: draft.name,
+        description: draft.description || undefined,
+        priority,
+        start_date: draft.start_date || undefined,
+        end_date: draft.end_date || undefined,
+        estimation_points: draft.estimation_points ?? undefined,
+        assignee_ids: normalizedAssigneeIds.ids,
+        label_ids: normalizedLabelIds.ids,
+        project_ids: normalizedProjectIds.ids,
       });
-      if (error) {
-        console.error(`Failed to add label ${labelId}:`, error);
-      }
-    }
 
-    // Add projects one by one to ensure triggers fire
-    const projectIds = ((draft as any).project_ids as string[]) || [];
-    for (const projectId of projectIds) {
-      const { error } = await supabase.from('task_project_tasks').insert({
-        task_id: newTask.id,
-        project_id: projectId,
+      return NextResponse.json({
+        success: true,
+        message: 'Draft converted to task successfully',
+        data: { taskId: newTask.id },
       });
-      if (error) {
-        console.error(`Failed to add project ${projectId}:`, error);
-      }
+    } catch (createError) {
+      await restoreDraft(sbAdmin, draft);
+      throw createError;
     }
-
-    // Delete the draft
-    await sbAdmin
-      .from('task_drafts')
-      .delete()
-      .eq('id', draftId)
-      .eq('ws_id', wsId)
-      .eq('creator_id', user.id);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Draft converted to task successfully',
-      data: { taskId: newTask.id },
-    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 });

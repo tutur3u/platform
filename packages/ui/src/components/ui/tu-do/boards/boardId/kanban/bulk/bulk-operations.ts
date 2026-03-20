@@ -10,6 +10,7 @@
  */
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -36,6 +37,7 @@ interface WorkspaceMember {
 interface BulkOperationsConfig {
   queryClient: QueryClient;
   supabase: SupabaseClient;
+  wsId: string;
   boardId: string;
   selectedTasks: Set<string>;
   columns: TaskList[];
@@ -444,7 +446,7 @@ function useBulkUpdateCustomDueDate(
  */
 function useBulkMoveToBoard(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -473,7 +475,7 @@ function useBulkMoveToBoard(
       for (const taskId of taskIds) {
         try {
           const result = await moveTaskToBoard(
-            supabase,
+            wsId,
             taskId,
             targetListId,
             targetBoardId
@@ -550,7 +552,7 @@ function useBulkMoveToBoard(
         );
       }
 
-      return { previousTasks, previousTargetTasks };
+      return { previousTasks, previousTargetTasks, tasksToMove };
     },
     onError: (error, variables, context) => {
       // Rollback both boards
@@ -566,12 +568,31 @@ function useBulkMoveToBoard(
       console.error('Bulk move to board failed', error);
       toast.error('Failed to move selected tasks to another board');
     },
-    onSuccess: (data) => {
+    onSuccess: (data, _variables, context) => {
       console.log(
         `✅ Moved ${data.count} tasks to board ${data.targetBoardId}`
       );
+      const movedIds = new Set(data.movedTasks.map((task) => task.id));
+      const failedTasks = (context?.tasksToMove ?? []).filter(
+        (task) => !movedIds.has(task.id)
+      );
+
+      if (failedTasks.length > 0) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            const existing = old ?? [];
+            const failedIdSet = new Set(failedTasks.map((task) => task.id));
+            const preserved = existing.filter(
+              (task) => !failedIdSet.has(task.id)
+            );
+            return [...preserved, ...failedTasks];
+          }
+        );
+      }
+
       // Broadcast task deletion from source board
-      for (const tid of data.taskIds) {
+      for (const tid of data.movedTasks.map((task) => task.id)) {
         broadcast?.('task:delete', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
@@ -589,11 +610,13 @@ function useBulkMoveToBoard(
         queryClient.setQueryData(
           ['tasks', data.targetBoardId],
           (old: Task[] | undefined) => {
-            if (!old) return [data.movedTasks];
+            if (!old) return data.movedTasks;
 
             // Remove any optimistic versions and add real ones
-            const movedIds = new Set(data.movedTasks.map((t) => t.id));
-            const filteredOld = old.filter((t) => !movedIds.has(t.id));
+            const failedIds = new Set(failedTasks.map((task) => task.id));
+            const filteredOld = old.filter(
+              (task) => !movedIds.has(task.id) && !failedIds.has(task.id)
+            );
 
             return [...filteredOld, ...data.movedTasks];
           }
@@ -1719,7 +1742,7 @@ function useBulkClearAssignees(
  */
 function useBulkDeleteTasks(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   clearSelection: () => void,
   setBulkDeleteOpen: (open: boolean) => void,
@@ -1732,14 +1755,24 @@ function useBulkDeleteTasks(
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ deleted_at: new Date().toISOString() })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { deleted: true },
+            {
+              baseUrl:
+                typeof window !== 'undefined'
+                  ? window.location.origin
+                  : undefined,
+            }
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1796,6 +1829,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   const {
     queryClient,
     supabase,
+    wsId,
     boardId,
     selectedTasks,
     columns,
@@ -1909,7 +1943,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   );
   const deleteMutation = useBulkDeleteTasks(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     clearSelection,
     setBulkDeleteOpen,
@@ -1917,7 +1951,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   );
   const moveToBoardMutation = useBulkMoveToBoard(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );

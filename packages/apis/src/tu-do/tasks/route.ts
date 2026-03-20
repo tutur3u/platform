@@ -99,6 +99,36 @@ const CreateTaskSchema = z.object({
 });
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 
+function parseTaskIdentifierQuery(identifier: string) {
+  const normalized = identifier.trim().toUpperCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (/^\d+$/.test(normalized)) {
+    return {
+      displayNumber: Number.parseInt(normalized, 10),
+      ticketPrefix: null,
+    };
+  }
+
+  const match = normalized.match(/^([A-Z][A-Z0-9_-]*)-(\d+)$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, ticketPrefix, displayNumber] = match;
+  if (!ticketPrefix || !displayNumber) {
+    return null;
+  }
+
+  return {
+    ticketPrefix,
+    displayNumber: Number.parseInt(displayNumber, 10),
+  };
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -159,11 +189,20 @@ export async function GET(
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
     const searchQuery = url.searchParams.get('q')?.trim();
+    const identifierQuery = url.searchParams.get('identifier')?.trim();
     const includeRelationshipSummaryParam = url.searchParams.get(
       'includeRelationshipSummary'
     );
     const includeRelationshipSummary =
       includeRelationshipSummaryParam !== 'false';
+    const includeDeletedParam = url.searchParams.get('includeDeleted');
+    const includeDeletedMode =
+      includeDeletedParam === 'only'
+        ? 'only'
+        : includeDeletedParam === 'all'
+          ? 'all'
+          : 'none';
+    const includeCount = url.searchParams.get('includeCount') === 'true';
 
     const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
 
@@ -221,12 +260,16 @@ export async function GET(
             status
           )
         )
-      `
+      `,
+        includeCount ? { count: 'exact' } : undefined
       )
-      .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId)
-      .is('deleted_at', null);
+      .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId);
 
-    query = query.eq('task_lists.deleted', false);
+    if (includeDeletedMode === 'none') {
+      query = query.is('deleted_at', null).eq('task_lists.deleted', false);
+    } else if (includeDeletedMode === 'only') {
+      query = query.not('deleted_at', 'is', null);
+    }
 
     if (forTimeTracking) {
       query = query
@@ -244,7 +287,22 @@ export async function GET(
       query = query.ilike('name', `%${searchQuery}%`);
     }
 
-    const { data, error } = await query
+    const parsedIdentifier = identifierQuery
+      ? parseTaskIdentifierQuery(identifierQuery)
+      : null;
+
+    if (parsedIdentifier) {
+      query = query.eq('display_number', parsedIdentifier.displayNumber);
+
+      if (parsedIdentifier.ticketPrefix) {
+        query = query.eq(
+          'task_lists.workspace_boards.ticket_prefix',
+          parsedIdentifier.ticketPrefix
+        );
+      }
+    }
+
+    const { data, error, count } = await query
       .order('sort_key', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -316,7 +374,10 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({ tasks: tasksWithRelationshipSummary });
+    return NextResponse.json({
+      tasks: tasksWithRelationshipSummary,
+      ...(includeCount ? { count: count ?? 0 } : {}),
+    });
   } catch (error) {
     console.error('Error fetching tasks:', error);
     return NextResponse.json(

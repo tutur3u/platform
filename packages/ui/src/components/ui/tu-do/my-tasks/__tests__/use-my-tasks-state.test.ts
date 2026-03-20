@@ -482,7 +482,7 @@ describe('useMyTasksState', () => {
       expect(result.current.pendingTaskTitle).toBe('New task');
     });
 
-    it('creates task via Supabase when destination is set', async () => {
+    it('creates task via task-helper when destination is set', async () => {
       mockCreateTaskFn.mockResolvedValue({ id: 'new-task-1' });
 
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
@@ -498,7 +498,7 @@ describe('useMyTasksState', () => {
       });
 
       expect(mockCreateTaskFn).toHaveBeenCalledWith(
-        expect.anything(), // supabase client
+        'ws-1',
         'list-1',
         expect.objectContaining({ name: 'New task' })
       );

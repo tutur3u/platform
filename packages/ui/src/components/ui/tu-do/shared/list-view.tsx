@@ -16,7 +16,6 @@ import {
   unicornHead,
   X,
 } from '@tuturuuu/icons';
-import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -43,9 +42,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -62,7 +59,7 @@ import { enUS, vi } from 'date-fns/locale';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
@@ -98,8 +95,6 @@ interface ColumnVisibility {
   actions: boolean;
 }
 
-const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
-
 export function ListView({
   workspaceId,
   boardId,
@@ -118,10 +113,11 @@ export function ListView({
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
-  const [isLoading, setIsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const previousWorkspaceIdRef = useRef(workspaceId);
+  const previousBoardIdRef = useRef(boardId);
   const { openTask } = useTaskDialog();
 
   // Infinite scroll
@@ -150,18 +146,20 @@ export function ListView({
 
   // Bulk operations hook
   const broadcast = useBoardBroadcast();
-  const { bulkUpdateDueDate, bulkUpdatePriority } = useBulkOperations({
-    queryClient,
-    supabase,
-    boardId,
-    selectedTasks,
-    columns: lists,
-    weekStartsOn,
-    setBulkWorking,
-    clearSelection,
-    setBulkDeleteOpen: setShowBulkDeleteDialog,
-    broadcast,
-  });
+  const { bulkDeleteTasks, bulkUpdateDueDate, bulkUpdatePriority } =
+    useBulkOperations({
+      queryClient,
+      supabase,
+      wsId: workspaceId,
+      boardId,
+      selectedTasks,
+      columns: lists,
+      weekStartsOn,
+      setBulkWorking,
+      clearSelection,
+      setBulkDeleteOpen: setShowBulkDeleteDialog,
+      broadcast,
+    });
 
   // Bulk delete function
   const handleBulkDelete = async () => {
@@ -170,46 +168,10 @@ export function ListView({
   };
 
   const handleBulkDeleteConfirmed = async () => {
-    setIsLoading(true);
     try {
-      const supabase = createClient();
-      const taskIds = Array.from(selectedTasks);
-      // Delete one by one to ensure triggers fire for each task
-      let successCount = 0;
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .delete()
-          .eq('id', taskId);
-        if (error) {
-          console.error(`Failed to delete task ${taskId}:`, error);
-        } else {
-          successCount++;
-        }
-      }
-      // Refresh the task list and invalidate cache
-      const { tasks: updatedTasks } = await listWorkspaceTasks(workspaceId, {
-        boardId,
-      });
-      setLocalTasks(updatedTasks);
-      queryClient.setQueryData(['tasks', boardId], updatedTasks);
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      setSelectedTasks(new Set());
-      setShowBulkDeleteDialog(false);
-      toast({
-        title: 'Tasks deleted',
-        description: `${successCount} task${successCount !== 1 ? 's' : ''} deleted successfully.`,
-        variant: 'default',
-      });
+      await bulkDeleteTasks();
     } catch (error) {
       console.error('Error deleting tasks:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete tasks.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -218,6 +180,27 @@ export function ListView({
     setLocalTasks(tasks);
     setDisplayCount(50); // Reset display count when tasks change
   }, [tasks]);
+
+  useEffect(() => {
+    const previousWorkspaceId = previousWorkspaceIdRef.current;
+    const previousBoardId = previousBoardIdRef.current;
+    const workspaceChanged = previousWorkspaceId !== workspaceId;
+    const boardChanged = previousBoardId !== boardId;
+
+    if (!workspaceChanged && !boardChanged) {
+      return;
+    }
+
+    previousWorkspaceIdRef.current = workspaceId;
+    previousBoardIdRef.current = boardId;
+    clearSelection();
+    if (previousBoardId) {
+      void queryClient.cancelQueries({ queryKey: ['tasks', previousBoardId] });
+      void queryClient.cancelQueries({
+        queryKey: ['deleted-tasks', previousBoardId],
+      });
+    }
+  }, [boardId, clearSelection, queryClient, workspaceId]);
 
   // Apply sorting only (filters are handled by parent)
   const sortedTasks = useMemo(() => {
@@ -362,7 +345,7 @@ export function ListView({
       const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
 
       // Load more when user scrolls to 80%
-      if (scrollPercentage > 0.8 && hasMore && !isLoading) {
+      if (scrollPercentage > 0.8 && hasMore) {
         setDisplayCount((prev) => prev + LOAD_MORE_COUNT);
       }
     };
@@ -372,7 +355,7 @@ export function ListView({
       scrollContainer.addEventListener('scroll', handleScroll);
       return () => scrollContainer.removeEventListener('scroll', handleScroll);
     }
-  }, [hasMore, isLoading]);
+  }, [hasMore]);
 
   function formatDate(date: string) {
     const dateObj = new Date(date);
@@ -432,21 +415,6 @@ export function ListView({
               : undefined
           }
         />
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="mt-2 flex h-full flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 flex-1" />
-        </div>
-        <div className="space-y-3">
-          {SKELETON_KEYS.map((key: string) => (
-            <Skeleton key={`loading-skeleton-${key}`} className="h-16 w-full" />
-          ))}
-        </div>
       </div>
     );
   }
@@ -974,7 +942,7 @@ export function ListView({
                   e.preventDefault();
                   handleBulkDeleteConfirmed();
                 }}
-                disabled={isLoading}
+                disabled={bulkWorking}
               >
                 {tc('delete')}
               </Button>

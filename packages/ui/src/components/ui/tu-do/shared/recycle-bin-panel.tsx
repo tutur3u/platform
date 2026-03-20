@@ -35,6 +35,7 @@ import { useCallback, useMemo, useState } from 'react';
 interface RecycleBinPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  wsId: string;
   boardId: string;
   lists: TaskList[];
   translations?: {
@@ -75,6 +76,7 @@ interface RecycleBinPanelProps {
 export function RecycleBinPanel({
   open,
   onOpenChange,
+  wsId,
   boardId,
   lists,
   translations,
@@ -137,12 +139,16 @@ export function RecycleBinPanel({
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const { data: deletedTasks = [], isLoading } = useDeletedTasks(boardId, {
-    enabled: open,
-    staleTime: 60000,
-  });
-  const restoreMutation = useRestoreTasks(boardId);
-  const deleteMutation = usePermanentlyDeleteTasks(boardId);
+  const { data: deletedTasks = [], isLoading } = useDeletedTasks(
+    boardId,
+    wsId,
+    {
+      enabled: open,
+      staleTime: 60000,
+    }
+  );
+  const restoreMutation = useRestoreTasks(boardId, wsId);
+  const deleteMutation = usePermanentlyDeleteTasks(boardId, wsId);
 
   // Get list name by ID for display
   const listMap = useMemo(() => {

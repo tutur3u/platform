@@ -412,7 +412,10 @@ export function useMyTasksState({
   });
 
   // Board config for estimation
-  const { data: boardConfig } = useBoardConfig(selectedBoardId || undefined);
+  const { data: boardConfig } = useBoardConfig(
+    selectedBoardId || undefined,
+    selectedWorkspaceId || undefined
+  );
 
   // Available lists for selected board
   const availableLists = useMemo(() => {
@@ -638,7 +641,7 @@ export function useMyTasksState({
         '@tuturuuu/utils/task-helper'
       );
 
-      const newTask = await createTaskFn(supabase, selectedListId, {
+      const newTask = await createTaskFn(selectedWorkspaceId, selectedListId, {
         name: title.trim(),
         description: undefined,
         priority: options?.priority || undefined,

@@ -106,7 +106,7 @@ export function KanbanBoard({
   const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
 
-  const { data: boardConfig } = useBoardConfig(boardId);
+  const { data: boardConfig } = useBoardConfig(boardId, workspaceId);
 
   // Move list mutation for reordering columns
   const moveListMutation = useMutation({
@@ -172,6 +172,7 @@ export function KanbanBoard({
   const bulkOps = useBulkOperations({
     queryClient,
     supabase,
+    wsId: workspaceId,
     boardId: boardId ?? '',
     selectedTasks,
     columns,
@@ -234,6 +235,7 @@ export function KanbanBoard({
     onDragOver,
     onDragEnd,
   } = useKanbanDnd({
+    wsId: workspaceId,
     boardId,
     columns,
     tasks,
@@ -362,7 +364,7 @@ export function KanbanBoard({
             columns={columns}
             tasks={tasks}
             boardId={boardId ?? ''}
-            workspaceId={workspace.id}
+            workspaceId={workspaceId}
             isPersonalWorkspace={workspace.personal}
             cursorsEnabled={!!workspaceTier && workspaceTier !== 'FREE'}
             disableSort={disableSort}
@@ -396,7 +398,7 @@ export function KanbanBoard({
               isMultiSelectMode={isMultiSelectMode}
               selectedTasks={selectedTasks}
               onUpdate={() => {}}
-              wsId={workspace.id}
+              wsId={workspaceId}
             />
           </DragOverlay>
         </DndContext>
