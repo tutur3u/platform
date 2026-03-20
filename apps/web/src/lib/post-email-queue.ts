@@ -388,6 +388,90 @@ export async function autoSkipOldPostEmails(
   return data?.length ?? 0;
 }
 
+export async function reconcileOrphanedApprovedPosts(
+  sbAdmin: any
+): Promise<{ enqueued: number; checked: number }> {
+  const cutoff = getPostEmailMaxAgeCutoff();
+
+  const { data: approvedChecks, error: checksError } = await sbAdmin
+    .from('user_group_post_checks')
+    .select(
+      'post_id, user_id, approved_by, user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
+    )
+    .eq('approval_status', 'APPROVED')
+    .not('is_completed', 'is', null)
+    .gte('user_group_posts.created_at', cutoff);
+
+  if (checksError) throw checksError;
+
+  const checks = (approvedChecks ?? []) as any[];
+  if (checks.length === 0) return { enqueued: 0, checked: 0 };
+
+  const postIds = [...new Set(checks.map((c: any) => c.post_id))];
+
+  const { data: existingQueue, error: queueError } = await getQueueTable(
+    sbAdmin
+  )
+    .select('post_id, user_id, status')
+    .in('post_id', postIds)
+    .in('status', ['queued', 'processing', 'sent']);
+
+  if (queueError) throw queueError;
+
+  const covered = new Set(
+    (existingQueue ?? []).map((r: any) => `${r.post_id}:${r.user_id}` as string)
+  );
+
+  const orphaned = checks.filter(
+    (c: any) => !covered.has(`${c.post_id}:${c.user_id}`)
+  );
+
+  if (orphaned.length === 0) return { enqueued: 0, checked: checks.length };
+
+  const byPost = new Map<
+    string,
+    {
+      group_id: string;
+      ws_id: string;
+      userIds: string[];
+      approved_by: string | null;
+    }
+  >();
+
+  for (const check of orphaned) {
+    const pg = check.user_group_posts;
+    const wsId = Array.isArray(pg.workspace_user_groups)
+      ? pg.workspace_user_groups[0]?.ws_id
+      : pg.workspace_user_groups?.ws_id;
+
+    const existing = byPost.get(check.post_id);
+    if (existing) {
+      existing.userIds.push(check.user_id);
+    } else {
+      byPost.set(check.post_id, {
+        group_id: pg.group_id,
+        ws_id: wsId,
+        userIds: [check.user_id],
+        approved_by: check.approved_by ?? null,
+      });
+    }
+  }
+
+  let totalEnqueued = 0;
+
+  for (const [postId, info] of byPost) {
+    const result = await enqueueApprovedPostEmails(sbAdmin, {
+      wsId: info.ws_id,
+      postId,
+      groupId: info.group_id,
+      userIds: info.userIds,
+    });
+    totalEnqueued += result.queued;
+  }
+
+  return { enqueued: totalEnqueued, checked: checks.length };
+}
+
 async function markQueueRow(
   sbAdmin: any,
   queueId: string,

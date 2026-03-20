@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import {
   autoSkipOldPostEmails,
   processPostEmailQueueBatch,
+  reconcileOrphanedApprovedPosts,
 } from '@/lib/post-email-queue';
 
 export async function GET(req: NextRequest) {
@@ -33,12 +34,15 @@ export async function GET(req: NextRequest) {
 
     await autoSkipOldPostEmails(sbAdmin);
 
+    const reconciliation = await reconcileOrphanedApprovedPosts(sbAdmin);
+
     const result = await processPostEmailQueueBatch(sbAdmin, {
       limit: Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 100) : 25,
     });
 
     return NextResponse.json({
       ok: true,
+      reconciliation,
       ...result,
     });
   } catch (error) {
