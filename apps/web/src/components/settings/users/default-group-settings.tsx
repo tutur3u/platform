@@ -2,19 +2,14 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { updateWorkspaceConfig } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
+import { useEffect, useMemo, useState } from 'react';
+import { useInfiniteWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 
 interface Props {
   wsId: string;
@@ -22,6 +17,7 @@ interface Props {
 
 export default function DefaultGroupSettings({ wsId }: Props) {
   const t = useTranslations('settings.user_management');
+  const commonT = useTranslations('common');
   const queryClient = useQueryClient();
 
   const { data: defaultGroupConfig, isLoading: isLoadingConfig } =
@@ -30,15 +26,38 @@ export default function DefaultGroupSettings({ wsId }: Props) {
       'DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS',
       null
     );
-
-  const { data: groupsData, isLoading: isLoadingGroups } =
-    useWorkspaceUserGroups(wsId);
-
-  const isLoading = isLoadingConfig || isLoadingGroups;
-
+  const [searchQuery, setSearchQuery] = useState('');
   const [initialized, setInitialized] = useState(false);
   const [initialValue, setInitialValue] = useState<string | null>(null);
   const [currentValue, setCurrentValue] = useState<string | null>(null);
+
+  const {
+    data: groupsData,
+    isLoading: isLoadingGroups,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteWorkspaceUserGroups(wsId, {
+    query: searchQuery,
+    ensureGroupIds: [
+      ...new Set(
+        [defaultGroupConfig, currentValue].filter((value): value is string =>
+          Boolean(value)
+        )
+      ),
+    ],
+  });
+
+  const isLoading = isLoadingConfig || isLoadingGroups;
+
+  const groupOptions: ComboboxOption[] = useMemo(
+    () =>
+      (groupsData || []).map((group) => ({
+        value: group.id,
+        label: group.name + (group.archived ? ' (Archived)' : ''),
+      })),
+    [groupsData]
+  );
 
   useEffect(() => {
     if (isLoading) return;
@@ -58,22 +77,12 @@ export default function DefaultGroupSettings({ wsId }: Props) {
   }, [isLoading, defaultGroupConfig, groupsData, initialized]);
 
   const updateMutation = useMutation({
-    mutationFn: async (value: string | null) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/settings/DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: value ?? '' }),
-        }
-      );
-
-      if (!res.ok)
-        throw new Error(
-          'Failed to update DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS'
-        );
-      return res.json();
-    },
+    mutationFn: async (value: string | null) =>
+      updateWorkspaceConfig(
+        wsId,
+        'DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS',
+        value ?? ''
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [
@@ -117,25 +126,32 @@ export default function DefaultGroupSettings({ wsId }: Props) {
             {t('default_group_help')}
           </div>
         </div>
-        <Select
-          value={currentValue ?? 'none'}
-          onValueChange={(value) =>
-            setCurrentValue(value === 'none' ? null : value)
-          }
-        >
-          <SelectTrigger className="w-64">
-            <SelectValue placeholder={t('default_group_placeholder')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">{t('no_default_group')}</SelectItem>
-            {(groupsData || []).map((group) => (
-              <SelectItem key={group.id} value={group.id}>
-                {group.name}
-                {group.archived ? ' (Archived)' : ''}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Combobox
+          options={groupOptions}
+          selected={currentValue ?? ''}
+          onChange={(value) => setCurrentValue((value as string) || null)}
+          placeholder={t('default_group_placeholder')}
+          searchPlaceholder={t('search_groups')}
+          emptyText={t('no_groups_found')}
+          onSearchChange={setSearchQuery}
+          hasMore={Boolean(hasNextPage)}
+          onLoadMore={() => {
+            if (!isFetchingNextPage) {
+              void fetchNextPage();
+            }
+          }}
+          loadingMore={isFetchingNextPage}
+          loadMoreText={commonT('load_more')}
+          loadingMoreText={commonT('loading')}
+          actions={[
+            {
+              key: 'clear-default-group',
+              label: t('no_default_group'),
+              onSelect: () => setCurrentValue(null),
+            },
+          ]}
+          className="w-64"
+        />
       </div>
 
       <Button

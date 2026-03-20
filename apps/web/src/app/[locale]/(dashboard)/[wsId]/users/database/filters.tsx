@@ -6,17 +6,25 @@ interface Props {
   wsId: string;
   noInclude?: boolean;
   noExclude?: boolean;
+  effectiveExcludedGroups?: string[];
 }
 
 export default function Filters({
   wsId,
   noInclude = false,
   noExclude = false,
+  effectiveExcludedGroups = [],
 }: Props) {
   return (
     <div className="flex items-center gap-2">
       {!noInclude && <GroupFilterWrapper wsId={wsId} filterType="included" />}
-      {!noExclude && <GroupFilterWrapper wsId={wsId} filterType="excluded" />}
+      {!noExclude && (
+        <GroupFilterWrapper
+          wsId={wsId}
+          filterType="excluded"
+          effectiveExcludedGroups={effectiveExcludedGroups}
+        />
+      )}
     </div>
   );
 }
@@ -24,9 +32,11 @@ export default function Filters({
 function GroupFilterWrapper({
   wsId,
   filterType,
+  effectiveExcludedGroups = [],
 }: {
   wsId: string;
   filterType: 'included' | 'excluded';
+  effectiveExcludedGroups?: string[];
 }) {
   const queryKey =
     filterType === 'excluded' ? 'excludedGroups' : 'includedGroups';
@@ -40,6 +50,9 @@ function GroupFilterWrapper({
       queryKey={queryKey}
       pageKey="page"
       dependencyKey={dependencyKey}
+      effectiveSelectedGroupIds={
+        filterType === 'excluded' ? effectiveExcludedGroups : undefined
+      }
     />
   );
 }

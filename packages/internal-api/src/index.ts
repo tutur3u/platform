@@ -94,6 +94,16 @@ export {
   updateUserConfig,
 } from './users';
 export {
+  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_FEATURED_GROUPS_CONFIG_ID,
+  getOptionalWorkspaceConfig,
+  getWorkspaceConfig,
+  getWorkspaceConfigIdList,
+  getWorkspaceUsersDatabaseFilterSettings,
+  parseWorkspaceConfigIdList,
+  updateWorkspaceConfig,
+} from './workspace-configs';
+export {
   getWorkspace,
   listWorkspaceMembers,
   listWorkspaces,

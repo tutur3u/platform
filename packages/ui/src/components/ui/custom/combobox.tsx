@@ -71,6 +71,18 @@ interface ComboboxProps {
   useFirstValueAsDefault?: boolean;
   /** Callback to create a new option from the search query */
   onCreate?: (value: string) => void;
+  /** Callback when search input changes */
+  onSearchChange?: (value: string) => void;
+  /** Whether there are more options to load */
+  hasMore?: boolean;
+  /** Callback when the options list scrolls near the end */
+  onLoadMore?: () => void;
+  /** Whether the next page is currently loading */
+  loadingMore?: boolean;
+  /** Text for the explicit load more action */
+  loadMoreText?: string;
+  /** Text shown while loading more results */
+  loadingMoreText?: string;
   /**
    * Translation function (legacy support)
    * @deprecated Use emptyText, createText props instead
@@ -94,6 +106,12 @@ export function Combobox({
   disabled,
   useFirstValueAsDefault = false,
   onCreate,
+  onSearchChange,
+  hasMore = false,
+  onLoadMore,
+  loadingMore = false,
+  loadMoreText = 'Load more',
+  loadingMoreText = 'Loading...',
   t,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
@@ -112,6 +130,21 @@ export function Combobox({
       setQuery('');
     }
   }, [open]);
+
+  const handleListScroll = React.useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      if (!hasMore || loadingMore || !onLoadMore) return;
+
+      const element = event.currentTarget;
+      const remainingScrollDistance =
+        element.scrollHeight - element.scrollTop - element.clientHeight;
+
+      if (remainingScrollDistance <= 48) {
+        onLoadMore();
+      }
+    },
+    [hasMore, loadingMore, onLoadMore]
+  );
 
   React.useEffect(() => {
     if (selected) return;
@@ -261,7 +294,10 @@ export function Combobox({
             <CommandInput
               placeholder={resolvedSearchPlaceholder}
               value={query}
-              onValueChange={(value: string) => setQuery(value)}
+              onValueChange={(value: string) => {
+                setQuery(value);
+                onSearchChange?.(value);
+              }}
             />
             <CommandEmpty className="flex flex-col items-center justify-center p-1">
               <div className="p-8 text-muted-foreground text-sm">
@@ -295,6 +331,7 @@ export function Combobox({
             </CommandEmpty>
             <CommandList
               className="max-h-50 overflow-y-auto overscroll-contain"
+              onScroll={handleListScroll}
               style={
                 {
                   touchAction: 'pan-y',
@@ -394,6 +431,28 @@ export function Combobox({
                 <>
                   <CommandSeparator />
                   {renderActions()}
+                </>
+              ) : null}
+              {hasMore && !loadingMore ? (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup>
+                    <CommandItem
+                      value="__combobox_load_more__"
+                      onSelect={() => onLoadMore?.()}
+                      className="justify-center text-center font-medium text-primary"
+                    >
+                      {loadMoreText}
+                    </CommandItem>
+                  </CommandGroup>
+                </>
+              ) : null}
+              {loadingMore ? (
+                <>
+                  <CommandSeparator />
+                  <div className="px-2 py-2 text-center text-muted-foreground text-xs">
+                    {loadingMoreText}
+                  </div>
                 </>
               ) : null}
             </CommandList>

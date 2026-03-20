@@ -13,7 +13,7 @@ import {
   FormItem,
   FormLabel,
 } from '@tuturuuu/ui/form';
-import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
+import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -32,12 +32,33 @@ const formSchema = z.object({
   enable_report_pending_watermark: z.boolean(),
 });
 
+const APPROVAL_CONFIG_IDS = [
+  'ENABLE_POST_APPROVAL',
+  'ENABLE_REPORT_APPROVAL',
+  'ENABLE_REPORT_EXPORT_ONLY_APPROVED',
+  'ENABLE_REPORT_PENDING_WATERMARK',
+] as const;
+
+function parseBooleanConfig(
+  value: string | null | undefined,
+  fallback: boolean
+) {
+  if (value == null) return fallback;
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === 'true') return true;
+  if (normalized === 'false') return false;
+
+  return fallback;
+}
+
 export function ApprovalsSettings({ wsId }: Props) {
   const t = useTranslations('settings.approvals');
   const queryClient = useQueryClient();
 
-  const { data: enablePostApprovalConfig, isLoading: isLoadingPostApproval } =
-    useWorkspaceConfig<string>(wsId, 'ENABLE_POST_APPROVAL', 'true');
+  const { data: approvalConfigs, isLoading: isLoadingApprovalConfigs } =
+    useWorkspaceConfigs(wsId, [...APPROVAL_CONFIG_IDS]);
 
   const {
     data: workspacePermissions,
@@ -71,35 +92,7 @@ export function ApprovalsSettings({ wsId }: Props) {
     staleTime: 30_000,
   });
 
-  const {
-    data: enableReportApprovalConfig,
-    isLoading: isLoadingReportApproval,
-  } = useWorkspaceConfig<string>(wsId, 'ENABLE_REPORT_APPROVAL', 'true');
-
-  const {
-    data: enableReportExportOnlyApprovedConfig,
-    isLoading: isLoadingReportExportOnlyApproved,
-  } = useWorkspaceConfig<string>(
-    wsId,
-    'ENABLE_REPORT_EXPORT_ONLY_APPROVED',
-    'false'
-  );
-
-  const {
-    data: enableReportPendingWatermarkConfig,
-    isLoading: isLoadingReportPendingWatermark,
-  } = useWorkspaceConfig<string>(
-    wsId,
-    'ENABLE_REPORT_PENDING_WATERMARK',
-    'false'
-  );
-
-  const isLoading =
-    isLoadingPermissions ||
-    isLoadingPostApproval ||
-    isLoadingReportApproval ||
-    isLoadingReportExportOnlyApproved ||
-    isLoadingReportPendingWatermark;
+  const isLoading = isLoadingPermissions || isLoadingApprovalConfigs;
 
   const canManageWorkspaceSettings =
     workspacePermissions?.manage_workspace_settings ?? false;
@@ -132,22 +125,24 @@ export function ApprovalsSettings({ wsId }: Props) {
     values: useMemo(() => {
       if (isLoading) return undefined;
       return {
-        enable_post_approval:
-          enablePostApprovalConfig?.trim().toLowerCase() === 'true',
-        enable_report_approval:
-          enableReportApprovalConfig?.trim().toLowerCase() === 'true',
-        enable_report_export_only_approved:
-          enableReportExportOnlyApprovedConfig?.trim().toLowerCase() === 'true',
-        enable_report_pending_watermark:
-          enableReportPendingWatermarkConfig?.trim().toLowerCase() === 'true',
+        enable_post_approval: parseBooleanConfig(
+          approvalConfigs?.ENABLE_POST_APPROVAL,
+          true
+        ),
+        enable_report_approval: parseBooleanConfig(
+          approvalConfigs?.ENABLE_REPORT_APPROVAL,
+          true
+        ),
+        enable_report_export_only_approved: parseBooleanConfig(
+          approvalConfigs?.ENABLE_REPORT_EXPORT_ONLY_APPROVED,
+          false
+        ),
+        enable_report_pending_watermark: parseBooleanConfig(
+          approvalConfigs?.ENABLE_REPORT_PENDING_WATERMARK,
+          false
+        ),
       };
-    }, [
-      isLoading,
-      enablePostApprovalConfig,
-      enableReportApprovalConfig,
-      enableReportExportOnlyApprovedConfig,
-      enableReportPendingWatermarkConfig,
-    ]),
+    }, [approvalConfigs, isLoading]),
     resetOptions: {
       keepDirtyValues: true,
     },
@@ -184,10 +179,14 @@ export function ApprovalsSettings({ wsId }: Props) {
     name: 'enable_report_approval',
   });
 
-  const currentPostApprovalEnabled =
-    enablePostApprovalConfig?.trim().toLowerCase() === 'true';
-  const currentReportApprovalEnabled =
-    enableReportApprovalConfig?.trim().toLowerCase() === 'true';
+  const currentPostApprovalEnabled = parseBooleanConfig(
+    approvalConfigs?.ENABLE_POST_APPROVAL,
+    true
+  );
+  const currentReportApprovalEnabled = parseBooleanConfig(
+    approvalConfigs?.ENABLE_REPORT_APPROVAL,
+    true
+  );
 
   const willDisablePostApproval =
     !isLoading && currentPostApprovalEnabled && enablePostApproval === false;
@@ -376,9 +375,9 @@ export function ApprovalsSettings({ wsId }: Props) {
                   <FormDescription>
                     {t('enable_report_export_only_approved_description')}
                     {isReportApprovalDisabled && (
-                      <p className="mt-1">
+                      <span className="mt-1 block">
                         {t('requires_report_approval_enabled')}
-                      </p>
+                      </span>
                     )}
                   </FormDescription>
                 </div>
@@ -409,9 +408,9 @@ export function ApprovalsSettings({ wsId }: Props) {
                   <FormDescription>
                     {t('enable_report_pending_watermark_description')}
                     {isReportApprovalDisabled && (
-                      <p className="mt-1">
+                      <span className="mt-1 block">
                         {t('requires_report_approval_enabled')}
-                      </p>
+                      </span>
                     )}
                   </FormDescription>
                 </div>

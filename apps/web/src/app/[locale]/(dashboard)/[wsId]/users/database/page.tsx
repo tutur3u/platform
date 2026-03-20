@@ -1,9 +1,3 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -102,59 +96,12 @@ export default async function WorkspaceUsersPage({
     canCheckUserAttendance,
   };
 
-  let usersContent: React.ReactNode;
-  let auditLogContent: React.ReactNode;
-
-  if (activeTab === 'users') {
-    const [{ data: initialUsers, count }, { data: extraFields }] =
-      await Promise.all([
-        getInitialData(
-          wsId,
-          {
-            hasPrivateInfo,
-            hasPublicInfo,
-            canCheckUserAttendance,
-          },
-          {
-            q: sp.q,
-            page: sp.page ? parseInt(sp.page, 10) : 1,
-            pageSize: clampPageSize(sp.pageSize, 10),
-            includedGroups: Array.isArray(sp.includedGroups)
-              ? sp.includedGroups
-              : sp.includedGroups
-                ? sp.includedGroups.split(',')
-                : [],
-            excludedGroups: Array.isArray(sp.excludedGroups)
-              ? sp.excludedGroups
-              : sp.excludedGroups
-                ? sp.excludedGroups.split(',')
-                : [],
-            status: sp.status as
-              | 'active'
-              | 'archived'
-              | 'archived_until'
-              | 'all',
-            linkStatus: sp.linkStatus as 'all' | 'linked' | 'virtual',
-          }
-        ),
-        getUserFields(wsId),
-      ]);
-
-    const users = initialUsers.map((u) => ({
-      ...u,
-      href: `/${wsId}/users/database/${u.id}`,
-    }));
-
-    usersContent = (
+  const usersContent =
+    activeTab === 'users' ? (
       <WorkspaceUsersTable
         wsId={wsId}
         locale={locale}
-        extraFields={extraFields}
         permissions={permissions}
-        initialData={{
-          data: users,
-          count: count,
-        }}
         toolbarActions={
           canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (
             <DuplicateUsersDialog wsId={wsId} />
@@ -173,9 +120,10 @@ export default async function WorkspaceUsersPage({
           )
         }
       />
-    );
-  } else {
-    auditLogContent = (
+    ) : undefined;
+
+  const auditLogContent =
+    activeTab === 'audit-log' ? (
       <AuditLogTable
         wsId={wsId}
         locale={locale}
@@ -187,8 +135,7 @@ export default async function WorkspaceUsersPage({
         pageSize={clampPageSize(sp.logPageSize, 10)}
         canExport={canExportUsers}
       />
-    );
-  }
+    ) : undefined;
 
   return (
     <>
@@ -216,141 +163,4 @@ export default async function WorkspaceUsersPage({
       />
     </>
   );
-}
-
-/**
- * Fetches initial page of users for SSR hydration
- */
-async function getInitialData(
-  wsId: string,
-  permissions: {
-    hasPrivateInfo: boolean;
-    hasPublicInfo: boolean;
-    canCheckUserAttendance: boolean;
-  },
-  searchParams: {
-    q?: string;
-    page?: number;
-    pageSize?: number;
-    includedGroups?: string[];
-    excludedGroups?: string[];
-    status?: 'active' | 'archived' | 'archived_until' | 'all';
-    linkStatus?: 'all' | 'linked' | 'virtual';
-  } = {}
-) {
-  const {
-    q = '',
-    page = 1,
-    pageSize = 10,
-    includedGroups = [],
-    excludedGroups = [],
-    status = 'active',
-    linkStatus = 'all',
-  } = searchParams;
-
-  const supabase = await createClient();
-
-  // Fetch data using RPC with link_status parameter for efficient filtering
-  let queryBuilder = supabase
-    .rpc(
-      'get_workspace_users',
-      {
-        _ws_id: wsId,
-        included_groups: includedGroups,
-        excluded_groups: excludedGroups,
-        search_query: q,
-        include_archived: status !== 'active',
-        link_status: linkStatus,
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false });
-
-  // Apply status filters (archived vs archived_until distinction)
-  if (status === 'archived') {
-    queryBuilder = queryBuilder.eq('archived', true).is('archived_until', null);
-  } else if (status === 'archived_until') {
-    queryBuilder = queryBuilder.gt('archived_until', new Date().toISOString());
-  }
-
-  const start = (page - 1) * pageSize;
-  const end = page * pageSize - 1;
-  queryBuilder = queryBuilder.range(start, end);
-
-  const { data, error, count } = await queryBuilder;
-
-  if (error) {
-    console.error('Error fetching initial users:', error);
-    return { data: [], count: 0 };
-  }
-
-  // Enrich each user with guest status
-  const withGuest = await Promise.all(
-    (data as unknown as WorkspaceUser[]).map(async (u) => {
-      const { data: isGuest } = await supabase.rpc('is_user_guest', {
-        user_uuid: u.id,
-      });
-
-      // Sanitize data based on permissions
-      const sanitized: Record<string, unknown> = {
-        ...u,
-        is_guest: Boolean(isGuest),
-      };
-
-      // Remove private fields if user doesn't have permission
-      if (!permissions.hasPrivateInfo) {
-        delete sanitized.email;
-        delete sanitized.phone;
-        delete sanitized.birthday;
-        delete sanitized.gender;
-        delete sanitized.ethnicity;
-        delete sanitized.guardian;
-        delete sanitized.national_id;
-        delete sanitized.address;
-        delete sanitized.note;
-      }
-
-      // Remove public fields if user doesn't have permission
-      if (!permissions.hasPublicInfo) {
-        delete sanitized.avatar_url;
-        delete sanitized.full_name;
-        delete sanitized.display_name;
-        delete sanitized.group_count;
-        delete sanitized.linked_users;
-        delete sanitized.created_at;
-        delete sanitized.updated_at;
-      }
-
-      if (!permissions.canCheckUserAttendance) {
-        delete sanitized.attendance_count;
-      }
-
-      return sanitized as unknown as WorkspaceUser & { is_guest?: boolean };
-    })
-  );
-
-  return {
-    data: withGuest,
-    count: count ?? 0,
-  };
-}
-
-async function getUserFields(wsId: string) {
-  const supabase = await createAdminClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_fields')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: WorkspaceUserField[]; count: number };
 }
