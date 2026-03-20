@@ -75,6 +75,13 @@ export function useTaskActions({
     return resolvedWorkspaceId;
   }, [boardId, task, workspaceId]);
 
+  const markLocallyMutatedTask = useCallback((taskRecord: Task): Task => {
+    return {
+      ...(taskRecord as Task & { _localMutationAt?: number }),
+      _localMutationAt: Date.now(),
+    } as Task;
+  }, []);
+
   const rollbackTaskIds = useCallback(
     (previousTasks: Task[] | undefined, failedTaskIds: string[]) => {
       if (!previousTasks || failedTaskIds.length === 0) {
@@ -163,11 +170,11 @@ export function useTaskActions({
             if (!old) return old;
             return old.map((t) =>
               t.id === task.id
-                ? {
+                ? markLocallyMutatedTask({
                     ...t,
                     list_id: targetCompletionList.id,
                     closed_at: new Date().toISOString(),
-                  }
+                  } as Task)
                 : t
             );
           }
@@ -215,10 +222,10 @@ export function useTaskActions({
           if (!old) return old;
           return old.map((t) =>
             t.id === task.id
-              ? {
+              ? markLocallyMutatedTask({
                   ...t,
                   closed_at: newClosedState ? new Date().toISOString() : null,
-                }
+                } as Task)
               : t
           );
         }
@@ -267,6 +274,7 @@ export function useTaskActions({
     task,
     broadcast,
     getWorkspaceId,
+    markLocallyMutatedTask,
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
@@ -294,7 +302,7 @@ export function useTaskActions({
           const now = new Date().toISOString();
           return old.map((t) =>
             tasksToMove.includes(t.id)
-              ? {
+              ? markLocallyMutatedTask({
                   ...t,
                   list_id: targetCompletionList.id,
                   closed_at: now,
@@ -302,7 +310,7 @@ export function useTaskActions({
                     targetCompletionList.status === 'done'
                       ? now
                       : t.completed_at,
-                }
+                } as Task)
               : t
           );
         }
@@ -389,6 +397,7 @@ export function useTaskActions({
     task,
     broadcast,
     getWorkspaceId,
+    markLocallyMutatedTask,
     rollbackTaskIds,
   ]);
 
@@ -417,11 +426,11 @@ export function useTaskActions({
           const now = new Date().toISOString();
           return old.map((t) =>
             tasksToMove.includes(t.id)
-              ? {
+              ? markLocallyMutatedTask({
                   ...t,
                   list_id: targetClosedList.id,
                   closed_at: now,
-                }
+                } as Task)
               : t
           );
         }
@@ -505,6 +514,7 @@ export function useTaskActions({
     task,
     broadcast,
     getWorkspaceId,
+    markLocallyMutatedTask,
     rollbackTaskIds,
   ]);
 
@@ -811,7 +821,7 @@ export function useTaskActions({
                   currentList?.status === 'done' ||
                   currentList?.status === 'closed';
 
-                return {
+                return markLocallyMutatedTask({
                   ...t,
                   list_id: targetListId,
                   // Set closed_at based on target list status
@@ -826,7 +836,7 @@ export function useTaskActions({
                       : wasInCompletionList
                         ? null
                         : t.completed_at,
-                };
+                } as Task);
               }
               return t;
             });
@@ -912,6 +922,7 @@ export function useTaskActions({
       task,
       broadcast,
       getWorkspaceId,
+      markLocallyMutatedTask,
       rollbackTaskIds,
     ]
   );

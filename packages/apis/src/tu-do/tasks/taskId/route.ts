@@ -401,7 +401,7 @@ export async function PUT(
     let targetListStatus: string | null = null;
 
     if (body.list_id) {
-      const { data: listCheck, error: listError } = await supabase
+      const { data: listCheck, error: listError } = await sbAdmin
         .from('task_lists')
         .select('id, status, workspace_boards!inner(ws_id)')
         .eq('id', body.list_id)

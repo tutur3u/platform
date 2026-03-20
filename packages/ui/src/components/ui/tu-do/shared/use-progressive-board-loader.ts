@@ -10,6 +10,7 @@ import type {
 } from './progressive-loader-context';
 
 const PAGE_SIZE = 50;
+const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 
 /**
  * Manages per-list pagination state and merges results into the shared
@@ -44,6 +45,7 @@ export function useProgressiveBoardLoader(
       });
 
       try {
+        const requestStartedAt = Date.now();
         const payload = await listWorkspaceTasks(wsId, {
           listId,
           limit: PAGE_SIZE,
@@ -70,8 +72,32 @@ export function useProgressiveBoardLoader(
             const mergedExisting = existing.map((task) => {
               const incomingTask = incomingById.get(task.id);
               if (!incomingTask) return task;
+
               incomingById.delete(task.id);
-              return { ...task, ...incomingTask };
+
+              // Guard against stale in-flight list responses overriding a task
+              // that was moved locally after this request started.
+              if (task.list_id !== incomingTask.list_id) {
+                const localTask = task as Task & {
+                  _localMutationAt?: number;
+                };
+                const localMutationAt = localTask._localMutationAt;
+                const hasFreshLocalMutation =
+                  typeof localMutationAt === 'number' &&
+                  localMutationAt > requestStartedAt &&
+                  Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS;
+
+                if (hasFreshLocalMutation) {
+                  return task;
+                }
+              }
+
+              const taskWithoutLocalMutationAt = {
+                ...(task as Task & { _localMutationAt?: number }),
+              };
+              delete taskWithoutLocalMutationAt._localMutationAt;
+
+              return { ...taskWithoutLocalMutationAt, ...incomingTask };
             });
 
             return [...mergedExisting, ...incomingById.values()];
