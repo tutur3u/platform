@@ -239,6 +239,7 @@ export async function GET(
     }
 
     const { data, error } = await query
+      .order('sort_key', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
