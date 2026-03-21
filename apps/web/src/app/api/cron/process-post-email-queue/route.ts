@@ -128,9 +128,8 @@ export async function GET(req: NextRequest) {
 
     const { count: queuedOrFailedCount } = await sbAdmin
       .from('post_email_queue')
-      .select('id', { count: 'exact', head: true })
-      .in('status', ['queued', 'failed'])
-      .limit(1);
+      .select('id', { count: 'exact' })
+      .in('status', ['queued', 'failed']);
 
     let result: {
       claimed: number;
@@ -141,7 +140,9 @@ export async function GET(req: NextRequest) {
     } = { claimed: 0, processed: 0, failed: 0, timedOut: false, results: [] };
 
     if (!queuedOrFailedCount) {
-      log('info', `[${requestId}] Phase 4 skipped — no queued/failed rows`, {});
+      log('info', `[${requestId}] Phase 4 skipped — no queued/failed rows`, {
+        queuedOrFailedCount,
+      });
       result = {
         claimed: 0,
         processed: 0,

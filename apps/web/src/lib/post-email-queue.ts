@@ -198,7 +198,7 @@ async function getEligibleRecipients(
     throw error;
   }
 
-  return (data ?? [])
+  const filtered = (data ?? [])
     .filter(
       (row: any) =>
         row.is_completed !== null && row.approval_status === 'APPROVED'
@@ -207,8 +207,21 @@ async function getEligibleRecipients(
       user_id: row.user_id as string,
       email: row.user?.email as string,
       approved_by: (row.approved_by as string | null) ?? null,
-    }))
-    .filter((row: EligibleRecipient) => isValidEmailAddress(row.email));
+    }));
+
+  const withValidEmail = filtered.filter((row: EligibleRecipient) =>
+    isValidEmailAddress(row.email)
+  );
+
+  console.log('[getEligibleRecipients]', {
+    postId,
+    totalRows: (data ?? []).length,
+    afterApprovalFilter: filtered.length,
+    afterEmailFilter: withValidEmail.length,
+    sample: withValidEmail.slice(0, 2),
+  });
+
+  return withValidEmail;
 }
 
 export async function enqueueApprovedPostEmails(
@@ -252,6 +265,11 @@ export async function enqueueApprovedPostEmails(
   });
 
   if (recipients.length === 0) {
+    console.log('[enqueueApprovedPostEmails] No eligible recipients', {
+      postId,
+      wsId,
+      userIds,
+    });
     return { queued: 0 };
   }
 
@@ -574,7 +592,7 @@ export async function reconcileOrphanedApprovedPosts(
   const { data: approvedChecks, error: checksError } = await sbAdmin
     .from('user_group_post_checks')
     .select(
-      'post_id, user_id, approved_by, user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
+      'post_id, user_id, approved_by, is_completed, user:workspace_users!user_id(id, email), user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
     )
     .eq('approval_status', 'APPROVED')
     .not('is_completed', 'is', null)
@@ -583,6 +601,16 @@ export async function reconcileOrphanedApprovedPosts(
   if (checksError) throw checksError;
 
   const checks = (approvedChecks ?? []) as any[];
+  console.log('[reconcileOrphanedApprovedPosts] Found checks', {
+    total: checks.length,
+    sample: checks.slice(0, 3).map((c: any) => ({
+      post_id: c.post_id,
+      user_id: c.user_id,
+      is_completed: c.is_completed,
+      email: c.user?.email,
+    })),
+  });
+
   if (checks.length === 0) return { enqueued: 0, checked: 0 };
 
   const postIds = [...new Set(checks.map((c: any) => c.post_id))];
@@ -603,6 +631,18 @@ export async function reconcileOrphanedApprovedPosts(
   const orphaned = checks.filter(
     (c: any) => !covered.has(`${c.post_id}:${c.user_id}`)
   );
+
+  console.log('[reconcileOrphanedApprovedPosts] Orphaned after queue check', {
+    totalChecks: checks.length,
+    existingQueueCount: (existingQueue ?? []).length,
+    orphanedCount: orphaned.length,
+    sampleOrphaned: orphaned.slice(0, 3).map((c: any) => ({
+      post_id: c.post_id,
+      user_id: c.user_id,
+      is_completed: c.is_completed,
+      email: c.user?.email,
+    })),
+  });
 
   if (orphaned.length === 0) return { enqueued: 0, checked: checks.length };
 
@@ -636,6 +676,7 @@ export async function reconcileOrphanedApprovedPosts(
   }
 
   let totalEnqueued = 0;
+  let postsWithZero = 0;
 
   for (const [postId, info] of byPost) {
     const result = await enqueueApprovedPostEmails(sbAdmin, {
@@ -644,8 +685,16 @@ export async function reconcileOrphanedApprovedPosts(
       groupId: info.group_id,
       userIds: info.userIds,
     });
+    if (result.queued === 0) postsWithZero++;
     totalEnqueued += result.queued;
   }
+
+  console.log('[reconcileOrphanedApprovedPosts] Enqueue loop complete', {
+    totalPosts: byPost.size,
+    postsWithZeroEnqueued: postsWithZero,
+    totalEnqueued,
+    checked: checks.length,
+  });
 
   return { enqueued: totalEnqueued, checked: checks.length };
 }
