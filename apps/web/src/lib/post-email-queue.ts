@@ -440,11 +440,35 @@ export async function autoSkipOldApprovedPostChecks(
     };
   });
 
+  const existingQueueRows = await getQueueTable(sbAdmin)
+    .select('post_id, user_id, sender_platform_user_id')
+    .in(
+      'post_id',
+      oldChecks.map((c: any) => c.post_id)
+    )
+    .in(
+      'user_id',
+      oldChecks.map((c: any) => c.user_id)
+    );
+
+  if (existingQueueRows.error) throw existingQueueRows.error;
+
+  const existingByPostUser = new Map<string, string>();
+  for (const row of existingQueueRows.data ?? []) {
+    existingByPostUser.set(
+      `${row.post_id}:${row.user_id}`,
+      row.sender_platform_user_id
+    );
+  }
+
   const queueRows = queueUpdates.map((u) => ({
     ws_id: u.ws_id,
     group_id: u.group_id,
     post_id: u.post_id,
     user_id: u.user_id,
+    sender_platform_user_id: existingByPostUser.get(
+      `${u.post_id}:${u.user_id}`
+    ),
     status: u.status,
     batch_id: u.batch_id,
     claimed_at: u.claimed_at,
@@ -452,14 +476,19 @@ export async function autoSkipOldApprovedPostChecks(
     last_error: u.last_error,
   }));
 
-  const { error: upsertError } = await getQueueTable(sbAdmin).upsert(
-    queueRows,
-    {
-      onConflict: 'post_id,user_id',
-    }
+  const rowsToUpsert = queueRows.filter(
+    (r) => r.sender_platform_user_id != null
   );
 
-  if (upsertError) throw upsertError;
+  if (rowsToUpsert.length > 0) {
+    const { error: upsertError } = await getQueueTable(sbAdmin).upsert(
+      rowsToUpsert,
+      {
+        onConflict: 'post_id,user_id',
+      }
+    );
+    if (upsertError) throw upsertError;
+  }
 
   const checkIds = oldChecks.map((c: any) => c.post_id);
   if (checkIds.length === 0) return 0;
