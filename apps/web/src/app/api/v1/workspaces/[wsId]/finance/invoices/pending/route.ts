@@ -1,11 +1,17 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const PendingInvoicesParamsSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_MEDIUM_TEXT_LENGTH)
+    .default(10),
   q: z.string().default(''),
   userIds: z
     .union([z.string(), z.array(z.string())])
