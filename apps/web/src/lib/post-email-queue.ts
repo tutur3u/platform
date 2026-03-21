@@ -588,9 +588,17 @@ async function prefetchBatchData(
   sbAdmin: any,
   rows: PostEmailQueueRow[]
 ): Promise<BatchPrefetch> {
+  const startTime = Date.now();
   const postIds = [...new Set(rows.map((r) => r.post_id))];
   const userIds = [...new Set(rows.map((r) => r.user_id))];
   const wsIds = [...new Set(rows.map((r) => r.ws_id))];
+
+  console.log('[PostEmailQueueBatch] Prefetching batch data', {
+    rowCount: rows.length,
+    uniquePosts: postIds.length,
+    uniqueUsers: userIds.length,
+    uniqueWorkspaces: wsIds.length,
+  });
 
   const [postsResult, checksResult, sentEmailsResult] = await Promise.all([
     sbAdmin
@@ -661,6 +669,14 @@ async function prefetchBatchData(
       sourceEmail: data?.source_email || 'notifications@tuturuuu.com',
     });
   }
+
+  console.log('[PostEmailQueueBatch] Prefetch complete', {
+    durationMs: Date.now() - startTime,
+    postsFound: posts.size,
+    checksFound: checks.size,
+    sentEmailsFound: existingSentEmails.size,
+    workspacesInitialized: emailServices.size,
+  });
 
   return { posts, checks, existingSentEmails, emailServices, sourceInfos };
 }
@@ -880,6 +896,12 @@ export async function processPostEmailQueueBatch(
 
   if (queuedError) throw queuedError;
 
+  console.log('[PostEmailQueueBatch] Fetched queued rows', {
+    queuedCount: (queuedData ?? []).length,
+    safeLimit,
+    elapsedMs: Date.now() - startTime,
+  });
+
   let rows = prioritizePostEmailQueueBatch(
     (queuedData ?? []) as PostEmailQueueRow[],
     [],
@@ -899,6 +921,12 @@ export async function processPostEmailQueueBatch(
 
     if (failedError) throw failedError;
 
+    console.log('[PostEmailQueueBatch] Fetched failed rows for fill', {
+      failedCount: (failedData ?? []).length,
+      remaining,
+      elapsedMs: Date.now() - startTime,
+    });
+
     rows = prioritizePostEmailQueueBatch(
       (queuedData ?? []) as PostEmailQueueRow[],
       (failedData ?? []) as PostEmailQueueRow[],
@@ -906,7 +934,13 @@ export async function processPostEmailQueueBatch(
     );
   }
 
+  console.log('[PostEmailQueueBatch] Total rows to process', {
+    totalRows: rows.length,
+    elapsedMs: Date.now() - startTime,
+  });
+
   if (rows.length === 0) {
+    console.log('[PostEmailQueueBatch] No rows to process, returning early');
     return {
       processed: 0,
       failed: 0,
@@ -948,7 +982,15 @@ export async function processPostEmailQueueBatch(
     }
   }
 
+  console.log('[PostEmailQueueBatch] Claiming complete', {
+    claimedCount: claimedRows.length,
+    targetSendLimit: safeSendLimit,
+    batchId,
+    elapsedMs: Date.now() - startTime,
+  });
+
   if (claimedRows.length === 0) {
+    console.log('[PostEmailQueueBatch] No rows claimed, returning early');
     return {
       claimed: 0,
       failed: 0,
@@ -956,7 +998,17 @@ export async function processPostEmailQueueBatch(
     };
   }
 
+  console.log('[PostEmailQueueBatch] Starting prefetch', {
+    rowsToFetch: claimedRows.length,
+    elapsedMs: Date.now() - startTime,
+  });
+
+  const prefetchStart = Date.now();
   const prefetch = await prefetchBatchData(sbAdmin, claimedRows);
+  console.log('[PostEmailQueueBatch] Prefetch done, starting email sends', {
+    prefetchDurationMs: Date.now() - prefetchStart,
+    elapsedMs: Date.now() - startTime,
+  });
 
   const { results, timedOut } = await processWithConcurrency(
     claimedRows,
@@ -967,6 +1019,14 @@ export async function processPostEmailQueueBatch(
   );
 
   const failed = results.filter((r) => r.status === 'failed').length;
+
+  console.log('[PostEmailQueueBatch] Processing complete', {
+    claimed: claimedRows.length,
+    processed: results.length,
+    failed,
+    timedOut,
+    totalDurationMs: Date.now() - startTime,
+  });
 
   return {
     claimed: claimedRows.length,
