@@ -24663,52 +24663,29 @@ export type Database = {
           ws_id: string;
         }[];
       };
-      get_workspace_post_email_status_summary:
-        | {
-            Args: {
-              p_cutoff?: string;
-              p_excluded_group_ids?: string[];
-              p_included_group_ids?: string[];
-              p_user_id?: string;
-              p_ws_id: string;
-            };
-            Returns: {
-              approved_count: number;
-              blocked_count: number;
-              cancelled_count: number;
-              failed_count: number;
-              pending_approval_count: number;
-              processing_count: number;
-              queued_count: number;
-              rejected_count: number;
-              sent_count: number;
-              skipped_count: number;
-              total_count: number;
-            }[];
-          }
-        | {
-            Args: {
-              p_cutoff?: string;
-              p_excluded_group_ids?: string[];
-              p_included_group_ids?: string[];
-              p_queue_status?: string;
-              p_user_id?: string;
-              p_ws_id: string;
-            };
-            Returns: {
-              approved_count: number;
-              blocked_count: number;
-              cancelled_count: number;
-              failed_count: number;
-              pending_approval_count: number;
-              processing_count: number;
-              queued_count: number;
-              rejected_count: number;
-              sent_count: number;
-              skipped_count: number;
-              total_count: number;
-            }[];
-          };
+      get_workspace_post_email_status_summary: {
+        Args: {
+          p_cutoff?: string;
+          p_excluded_group_ids?: string[];
+          p_included_group_ids?: string[];
+          p_queue_status?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approved_count: number;
+          blocked_count: number;
+          cancelled_count: number;
+          failed_count: number;
+          pending_approval_count: number;
+          processing_count: number;
+          queued_count: number;
+          rejected_count: number;
+          sent_count: number;
+          skipped_count: number;
+          total_count: number;
+        }[];
+      };
       get_workspace_products_count: {
         Args: { ws_id: string };
         Returns: number;

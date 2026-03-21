@@ -47,6 +47,7 @@ export class EmailService {
   private blacklistChecker: BlacklistChecker;
   private config: EmailServiceConfig;
   private supabase: SupabaseClient<Database> | null = null;
+  private bypassRateLimits: boolean = false;
 
   private shouldSkipSendingInDevMode(): boolean {
     const devModeEnabled = DEV_MODE || Boolean(this.config.devMode);
@@ -205,65 +206,70 @@ export class EmailService {
       }
     }
 
-    // 1. Check sender rate limits
-    const rateLimitResult = await this.rateLimiter.checkRateLimits(
-      params.metadata
-    );
-
-    if (!rateLimitResult.allowed) {
-      await logEmailAbuseEvent(
-        this.supabase,
-        'email_rate_limit_exceeded',
-        params.metadata,
-        {
-          additionalMetadata: {
-            limitType: rateLimitResult.limitType,
-            reason: rateLimitResult.reason,
-          },
-        }
+    // 1. Check sender rate limits (skip if bypassRateLimits is set)
+    if (this.bypassRateLimits) {
+      // Skip rate limiting for admin/system operations
+    } else {
+      const rateLimitResult = await this.rateLimiter.checkRateLimits(
+        params.metadata
       );
 
-      if (auditId) {
-        await updateAuditRecord(
+      if (!rateLimitResult.allowed) {
+        await logEmailAbuseEvent(
           this.supabase,
-          auditId,
-          'failed',
-          undefined,
-          rateLimitResult.reason || 'Rate limit exceeded',
-          { rateLimit: rateLimitResult }
+          'email_rate_limit_exceeded',
+          params.metadata,
+          {
+            additionalMetadata: {
+              limitType: rateLimitResult.limitType,
+              reason: rateLimitResult.reason,
+            },
+          }
         );
-      }
 
-      // If an IP-based limit is exceeded, escalate to a persistent block.
-      // This provides platform-wide enforcement (via blocked_ips) beyond Redis TTL.
-      if (
-        params.metadata.ipAddress &&
-        params.metadata.ipAddress !== 'unknown' &&
-        rateLimitResult.limitType?.startsWith('ip_')
-      ) {
-        void blockIP(params.metadata.ipAddress, 'manual', {
-          trigger: 'email_rate_limit_exceeded',
-          limitType: rateLimitResult.limitType,
-          reason: rateLimitResult.reason,
-          wsId: params.metadata.wsId,
-          userId: params.metadata.userId,
-          templateType: params.metadata.templateType,
-          entityType: params.metadata.entityType,
-          entityId: params.metadata.entityId,
-        });
-      }
+        if (auditId) {
+          await updateAuditRecord(
+            this.supabase,
+            auditId,
+            'failed',
+            undefined,
+            rateLimitResult.reason || 'Rate limit exceeded',
+            { rateLimit: rateLimitResult }
+          );
+        }
 
-      return {
-        success: false,
-        error: rateLimitResult.reason || 'Rate limit exceeded',
-        rateLimitInfo: rateLimitResult,
-        auditId: auditId || undefined,
-      };
+        // If an IP-based limit is exceeded, escalate to a persistent block.
+        // This provides platform-wide enforcement (via blocked_ips) beyond Redis TTL.
+        if (
+          params.metadata.ipAddress &&
+          params.metadata.ipAddress !== 'unknown' &&
+          rateLimitResult.limitType?.startsWith('ip_')
+        ) {
+          void blockIP(params.metadata.ipAddress, 'manual', {
+            trigger: 'email_rate_limit_exceeded',
+            limitType: rateLimitResult.limitType,
+            reason: rateLimitResult.reason,
+            wsId: params.metadata.wsId,
+            userId: params.metadata.userId,
+            templateType: params.metadata.templateType,
+            entityType: params.metadata.entityType,
+            entityId: params.metadata.entityId,
+          });
+        }
+
+        return {
+          success: false,
+          error: rateLimitResult.reason || 'Rate limit exceeded',
+          rateLimitInfo: rateLimitResult,
+          auditId: auditId || undefined,
+        };
+      }
     }
 
-    // 2. Check recipient rate limits
-    const recipientLimits =
-      await this.rateLimiter.checkRecipientLimits(allRecipients);
+    // 2. Check recipient rate limits (skip if bypassRateLimits is set)
+    const recipientLimits = this.bypassRateLimits
+      ? new Map()
+      : await this.rateLimiter.checkRecipientLimits(allRecipients);
 
     // 3. Check blacklist
     const blacklistResult = await this.blacklistChecker.checkEmails(
@@ -674,6 +680,24 @@ export class EmailService {
   static async fromRootWorkspace(): Promise<EmailService> {
     const { ROOT_WORKSPACE_ID } = await import('@tuturuuu/utils/constants');
     return EmailService.fromWorkspace(ROOT_WORKSPACE_ID);
+  }
+
+  /**
+   * Create EmailService for admin/system operations that bypass workspace rate limits.
+   * Uses workspace credentials but skips per-workspace and per-recipient rate limiting.
+   * Still performs blacklist checks and creates audit records.
+   */
+  static async fromWorkspaceAdmin(
+    wsId: string,
+    options?: {
+      devMode?: boolean;
+    }
+  ): Promise<EmailService> {
+    const service = await EmailService.fromWorkspace(wsId, {
+      devMode: options?.devMode,
+    });
+    service.bypassRateLimits = true;
+    return service;
   }
 
   /**
