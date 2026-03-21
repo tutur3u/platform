@@ -12493,8 +12493,10 @@
     "yes_no": "Có/Không"
   },
   "ws-post-emails": {
+    "approval_status": "Trạng thái phê duyệt",
     "clear_filters": "Xóa bộ lọc",
     "clear_status_filter": "Xóa bộ lọc trạng thái",
+    "delivery_status": "Trạng thái gửi",
     "description": "Theo dõi việc gửi email do hệ thống xử lý cho các bài viết nhóm người dùng đã được phê duyệt.",
     "failed_emails": "Thất bại / bị chặn",
     "matching_deliveries": "Hiển thị {filtered} trên {total} lượt gửi",

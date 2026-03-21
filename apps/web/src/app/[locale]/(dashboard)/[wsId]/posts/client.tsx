@@ -10,12 +10,13 @@ import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
 import { PostStatusSummary } from './status-summary';
 import type {
+  PostApprovalStatus,
   PostEmail,
   PostEmailQueueStatus,
   PostEmailStatusSummary,
   PostsSearchParams,
 } from './types';
-import { isPostEmailQueueStatus } from './types';
+import { isPostApprovalStatus, isPostEmailQueueStatus } from './types';
 import { createPostEmailKey, usePosts } from './use-posts';
 
 interface PostsClientProps {
@@ -41,6 +42,9 @@ export default function PostsClient({
   const activeQueueStatus = isPostEmailQueueStatus(searchParams.queueStatus)
     ? (searchParams.queueStatus as PostEmailQueueStatus)
     : undefined;
+  const activeApprovalStatus = isPostApprovalStatus(searchParams.approvalStatus)
+    ? (searchParams.approvalStatus as PostApprovalStatus)
+    : undefined;
 
   useEffect(() => {
     if (posts.selected && postsData?.data) {
@@ -64,6 +68,7 @@ export default function PostsClient({
 
       <PostStatusSummary
         activeQueueStatus={activeQueueStatus}
+        activeApprovalStatus={activeApprovalStatus}
         filteredCount={postsData?.count || 0}
         summary={postsStatus}
       />

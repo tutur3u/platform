@@ -12493,8 +12493,10 @@
     "yes_no": "Yes/No"
   },
   "ws-post-emails": {
+    "approval_status": "Approval status",
     "clear_filters": "Clear filters",
     "clear_status_filter": "Clear status filter",
+    "delivery_status": "Delivery status",
     "description": "Monitor system-managed email delivery for approved user group posts.",
     "failed_emails": "Failed / blocked",
     "matching_deliveries": "Showing {filtered} of {total} deliveries",
