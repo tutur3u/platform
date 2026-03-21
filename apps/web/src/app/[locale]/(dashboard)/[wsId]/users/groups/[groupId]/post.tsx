@@ -1,6 +1,6 @@
 import { useInViewport } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
-import { Check, CircleHelp, Send, X } from '@tuturuuu/icons';
+import { Check, CircleHelp, Send, SkipForward, X } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 
 interface PostStatusData {
@@ -9,6 +9,15 @@ interface PostStatusData {
   failed: number | null;
   tentative: number | null;
   count: number | null;
+  queue: {
+    queued: number;
+    processing: number;
+    sent: number;
+    failed: number;
+    blocked: number;
+    cancelled: number;
+    skipped: number;
+  };
 }
 
 export function PostEmailStatus({
@@ -69,6 +78,13 @@ export function PostEmailStatus({
         )}
       >
         {data?.tentative ?? '-'} <CircleHelp className="h-4 w-4" />
+      </div>
+      <div
+        className={cn(
+          'flex w-fit items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 px-2 py-1 font-semibold text-dynamic-purple text-xs'
+        )}
+      >
+        {data?.queue?.skipped ?? '-'} <SkipForward className="h-4 w-4" />
       </div>
     </div>
   );

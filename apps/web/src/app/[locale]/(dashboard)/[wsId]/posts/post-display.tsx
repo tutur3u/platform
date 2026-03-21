@@ -1,17 +1,29 @@
 'use client';
 
-import { Calendar, ExternalLink, Send, Users } from '@tuturuuu/icons';
+import {
+  Calendar,
+  Check,
+  ExternalLink,
+  FileText,
+  Mail,
+  Send,
+  Users,
+} from '@tuturuuu/icons';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { PostApprovalActions } from '@/components/post-approval-actions';
-import PostsRowActions from './row-actions';
+import {
+  getPostApprovalStatusAppearance,
+  getPostEmailStatusAppearance,
+} from './status-meta';
 import type { PostEmail } from './types';
 
 export function PostDisplay({
@@ -42,18 +54,12 @@ export function PostDisplay({
     );
   }
 
-  const approvalClassName =
-    postEmail.approval_status === 'APPROVED'
-      ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
-      : postEmail.approval_status === 'REJECTED'
-        ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
-        : 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow';
-  const approvalLabelKey =
-    postEmail.approval_status === 'APPROVED'
-      ? 'approved'
-      : postEmail.approval_status === 'REJECTED'
-        ? 'rejected'
-        : 'pending';
+  const approvalAppearance = postEmail.approval_status
+    ? getPostApprovalStatusAppearance(postEmail.approval_status)
+    : null;
+  const queueAppearance = postEmail.queue_status
+    ? getPostEmailStatusAppearance(postEmail.queue_status)
+    : null;
   const hasFollowUp = Boolean(
     postEmail.approval_rejection_reason || postEmail.queue_last_error
   );
@@ -63,11 +69,24 @@ export function PostDisplay({
       <div className="flex flex-col gap-3 rounded-t-lg border-b px-4 py-4 backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold text-lg">{t('details_title')}</h3>
-          <div className="flex flex-wrap items-center gap-2">
-            <PostsRowActions data={postEmail} />
-            <Badge variant="outline" className={approvalClassName}>
-              {t(approvalLabelKey)}
-            </Badge>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {approvalAppearance && (
+              <Badge variant="outline" className={approvalAppearance.className}>
+                <approvalAppearance.icon className="mr-1 h-3.5 w-3.5" />
+                {t(approvalAppearance.labelKey)}
+              </Badge>
+            )}
+            {queueAppearance && (
+              <Badge variant="outline" className={queueAppearance.className}>
+                <queueAppearance.icon
+                  className={cn(
+                    'mr-1 h-3.5 w-3.5',
+                    queueAppearance.iconClassName
+                  )}
+                />
+                {t(queueAppearance.labelKey)}
+              </Badge>
+            )}
           </div>
         </div>
         {canApprovePosts && postEmail.post_id && postEmail.user_id && (
@@ -75,6 +94,7 @@ export function PostDisplay({
             wsId={wsId}
             itemId={`${postEmail.post_id}:${postEmail.user_id}`}
             approvalStatus={postEmail.approval_status ?? 'PENDING'}
+            queueStatus={postEmail.queue_status}
             canRemoveApproval={postEmail.can_remove_approval}
             compact
           />
@@ -82,31 +102,31 @@ export function PostDisplay({
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-6 p-6">
-          <div className="space-y-4">
-            <div className="flex items-start gap-4">
-              <Avatar className="h-12 w-12 shadow-sm ring-2 ring-background">
-                <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
-                  {(postEmail.recipient ?? postEmail.email ?? 'U')
-                    .split(' ')
-                    .map((chunk: string) => chunk[0])
-                    .join('')
-                    .slice(0, 2)
-                    .toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+        <div className="space-y-5 p-5">
+          <div className="flex items-start gap-4">
+            <Avatar className="h-11 w-11 shadow-sm ring-2 ring-background">
+              <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
+                {(postEmail.recipient ?? postEmail.email ?? 'U')
+                  .split(' ')
+                  .map((chunk: string) => chunk[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
 
-              <div className="min-w-0 flex-1 space-y-2">
-                <div>
-                  <h4 className="font-semibold text-base text-foreground">
-                    {postEmail.recipient || '-'}
-                  </h4>
-                  <p className="text-muted-foreground text-sm">
-                    {postEmail.email || '-'}
-                  </p>
-                </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div>
+                <h4 className="font-semibold text-base text-foreground">
+                  {postEmail.recipient || '-'}
+                </h4>
+                <p className="text-muted-foreground text-sm">
+                  {postEmail.email || '-'}
+                </p>
+              </div>
 
-                <div className="flex flex-wrap gap-3 text-muted-foreground text-xs">
+              <div className="flex flex-wrap gap-3 text-muted-foreground text-xs">
+                {postEmail.group_id && (
                   <div className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
                     <Link
@@ -116,15 +136,28 @@ export function PostDisplay({
                       {postEmail.group_name || '-'}
                     </Link>
                   </div>
+                )}
+                {postEmail.post_created_at && (
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {postEmail.post_created_at
-                      ? dayjs(postEmail.post_created_at).format(
-                          'YYYY-MM-DD HH:mm'
-                        )
-                      : '-'}
+                    {dayjs(postEmail.post_created_at).format(
+                      'YYYY-MM-DD HH:mm'
+                    )}
                   </div>
-                </div>
+                )}
+                {postEmail.is_completed != null && (
+                  <div
+                    className={cn(
+                      'flex items-center gap-1',
+                      postEmail.is_completed
+                        ? 'text-dynamic-green'
+                        : 'text-dynamic-red'
+                    )}
+                  >
+                    <Check className="h-3 w-3" />
+                    {postEmail.is_completed ? t('completed') : t('pending')}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -134,7 +167,7 @@ export function PostDisplay({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h5 className="flex items-center gap-2 font-semibold text-base">
-                <Send className="h-4 w-4" />
+                <FileText className="h-4 w-4" />
                 {t('post_details')}
               </h5>
               {postEmail.post_id && postEmail.group_id && (
@@ -151,32 +184,46 @@ export function PostDisplay({
             </div>
 
             <div className="space-y-3">
-              <div>
-                <span className="font-medium text-muted-foreground text-sm">
-                  {t('post_title')}
-                </span>
-                <p className="mt-1 font-medium text-sm">
-                  {postEmail.post_title || '-'}
-                </p>
-              </div>
-
-              <div>
-                <span className="font-medium text-muted-foreground text-sm">
-                  {t('post_content')}
-                </span>
-                <div className="mt-1 rounded-lg border bg-muted/30 p-3">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {postEmail.post_content || '-'}
+              {postEmail.post_title && (
+                <div>
+                  <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                    {t('post_title')}
+                  </span>
+                  <p className="mt-1 font-medium text-sm">
+                    {postEmail.post_title}
                   </p>
                 </div>
-              </div>
+              )}
+
+              {postEmail.post_content && (
+                <div>
+                  <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                    {t('post_content')}
+                  </span>
+                  <div className="mt-1 rounded-lg border bg-muted/30 p-3">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {postEmail.post_content}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {postEmail.notes && (
                 <div>
-                  <span className="font-medium text-muted-foreground text-sm">
+                  <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
                     {t('notes')}
                   </span>
                   <p className="mt-1 text-sm">{postEmail.notes}</p>
+                </div>
+              )}
+
+              {postEmail.subject && (
+                <div>
+                  <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                    <Mail className="mr-1 inline h-3 w-3" />
+                    {t('subject')}
+                  </span>
+                  <p className="mt-1 text-sm">{postEmail.subject}</p>
                 </div>
               )}
             </div>
@@ -187,14 +234,24 @@ export function PostDisplay({
               <Separator />
 
               {postEmail.approval_rejection_reason && (
-                <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
-                  {postEmail.approval_rejection_reason}
+                <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-3">
+                  <p className="font-medium text-dynamic-red text-xs uppercase tracking-wide">
+                    {t('rejected')}
+                  </p>
+                  <p className="mt-1 text-dynamic-red text-sm">
+                    {postEmail.approval_rejection_reason}
+                  </p>
                 </div>
               )}
 
               {postEmail.queue_last_error && (
-                <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
-                  {postEmail.queue_last_error}
+                <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-3">
+                  <p className="font-medium text-dynamic-red text-xs uppercase tracking-wide">
+                    {t('failed')}
+                  </p>
+                  <p className="mt-1 text-dynamic-red text-sm">
+                    {postEmail.queue_last_error}
+                  </p>
                 </div>
               )}
             </>

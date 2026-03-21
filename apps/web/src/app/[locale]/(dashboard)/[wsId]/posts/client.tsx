@@ -10,13 +10,12 @@ import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
 import { PostStatusSummary } from './status-summary';
 import type {
-  PostApprovalStatus,
   PostEmail,
   PostEmailQueueStatus,
   PostEmailStatusSummary,
   PostsSearchParams,
 } from './types';
-import { isPostApprovalStatus, isPostEmailQueueStatus } from './types';
+import { isPostEmailQueueStatus } from './types';
 import { createPostEmailKey, usePosts } from './use-posts';
 
 interface PostsClientProps {
@@ -39,10 +38,7 @@ export default function PostsClient({
   const t = useTranslations();
   const [posts, setPosts] = usePosts();
   const [selectedPost, setSelectedPost] = useState<PostEmail | null>(null);
-  const activeApprovalStatus = isPostApprovalStatus(searchParams.approvalStatus)
-    ? (searchParams.approvalStatus as PostApprovalStatus)
-    : undefined;
-  const activeStatus = isPostEmailQueueStatus(searchParams.queueStatus)
+  const activeQueueStatus = isPostEmailQueueStatus(searchParams.queueStatus)
     ? (searchParams.queueStatus as PostEmailQueueStatus)
     : undefined;
 
@@ -67,15 +63,14 @@ export default function PostsClient({
       />
 
       <PostStatusSummary
-        activeApprovalStatus={activeApprovalStatus}
-        activeStatus={activeStatus}
+        activeQueueStatus={activeQueueStatus}
         filteredCount={postsData?.count || 0}
         summary={postsStatus}
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.95fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.95fr)] xl:items-start">
         <Card className="min-w-0 border-border/60 shadow-sm">
-          <CardHeader className="space-y-2">
+          <CardHeader className="space-y-1 pb-3">
             <CardTitle className="text-base">
               {t('ws-post-emails.matching_deliveries', {
                 filtered: postsData?.count || 0,
@@ -84,7 +79,7 @@ export default function PostsClient({
             </CardTitle>
           </CardHeader>
           <CardContent className="min-w-0">
-            <div className="min-h-[36rem] overflow-y-auto">
+            <div className="min-h-144 overflow-y-auto">
               <CustomDataTable
                 data={postsData?.data || []}
                 namespace="post-email-data-table"
@@ -107,6 +102,7 @@ export default function PostsClient({
                   created_at: false,
                   queue_attempt_count: false,
                   queue_status: false,
+                  approval_status: false,
                   post_title: false,
                   post_content: false,
                 }}
@@ -121,7 +117,7 @@ export default function PostsClient({
             </div>
           </CardContent>
         </Card>
-        <div className="xl:sticky xl:top-6">
+        <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
           <PostDisplay
             wsId={wsId}
             postEmail={selectedPost}

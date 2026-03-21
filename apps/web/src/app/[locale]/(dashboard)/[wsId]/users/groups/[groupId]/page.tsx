@@ -74,7 +74,7 @@ export default async function UserGroupDetailsPage({
 
         return (
           <>
-            <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
               <GroupMembers
                 wsId={wsId}
                 groupId={groupId}
@@ -84,15 +84,15 @@ export default async function UserGroupDetailsPage({
                 canUpdateUserGroups={canUpdateUserGroups}
               />
 
-              <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-                <div className="mb-2 flex flex-row items-center justify-between">
-                  <div className="font-semibold text-xl">
+              <div className="flex flex-col rounded-lg border border-border/60 bg-background p-5 shadow-sm">
+                <div className="mb-3 flex flex-row items-center justify-between">
+                  <div className="font-semibold text-lg">
                     {t('ws-user-group-details.schedule')}
                   </div>
                   {canUpdateUserGroups && (
                     <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
-                      <Button variant="default">
-                        <CalendarPlus className="h-5 w-5" />
+                      <Button variant="default" size="sm">
+                        <CalendarPlus className="h-4 w-4" />
                         {t('ws-user-group-details.modify_schedule')}
                       </Button>
                     </Link>
@@ -102,7 +102,7 @@ export default async function UserGroupDetailsPage({
                 <GroupSchedule wsId={wsId} groupId={groupId} />
               </div>
 
-              <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
+              <div className="flex flex-col rounded-lg border border-border/60 bg-background p-5 shadow-sm">
                 {canViewUserGroupsPosts && (
                   <PostsClient
                     wsId={wsId}
@@ -121,7 +121,7 @@ export default async function UserGroupDetailsPage({
                 canUpdateLinkedProducts={canUpdateUserGroups}
               />
             </div>
-            <Separator className="my-4" />
+            <Separator className="my-5" />
           </>
         );
       }}

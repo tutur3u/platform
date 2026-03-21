@@ -5,6 +5,7 @@ import {
   autoSkipOldPostEmails,
   processPostEmailQueueBatch,
   reconcileOrphanedApprovedPosts,
+  reEnqueueSkippedPostEmails,
 } from '@/lib/post-email-queue';
 
 export async function GET(req: NextRequest) {
@@ -27,21 +28,33 @@ export async function GET(req: NextRequest) {
     }
 
     const sbAdmin = await createAdminClient();
-    const limit = Number.parseInt(
-      req.nextUrl.searchParams.get('limit') || '25',
+    const batchLimit = Number.parseInt(
+      req.nextUrl.searchParams.get('limit') || '200',
+      10
+    );
+    const sendLimit = Number.parseInt(
+      req.nextUrl.searchParams.get('sendLimit') || '50',
       10
     );
 
     await autoSkipOldPostEmails(sbAdmin);
 
+    const reEnqueueResult = await reEnqueueSkippedPostEmails(sbAdmin);
+
     const reconciliation = await reconcileOrphanedApprovedPosts(sbAdmin);
 
     const result = await processPostEmailQueueBatch(sbAdmin, {
-      limit: Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 100) : 25,
+      limit: Number.isFinite(batchLimit)
+        ? Math.min(Math.max(batchLimit, 1), 500)
+        : 200,
+      sendLimit: Number.isFinite(sendLimit)
+        ? Math.min(Math.max(sendLimit, 1), 200)
+        : 50,
     });
 
     return NextResponse.json({
       ok: true,
+      reEnqueue: reEnqueueResult,
       reconciliation,
       ...result,
     });

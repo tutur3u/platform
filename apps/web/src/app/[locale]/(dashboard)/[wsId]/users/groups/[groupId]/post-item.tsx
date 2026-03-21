@@ -1,5 +1,9 @@
+import { useInViewport } from '@mantine/hooks';
+import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
+  Check,
+  CheckCircle2,
   Clock,
   Eye,
   Pencil,
@@ -25,6 +29,60 @@ import { useTranslations } from 'next-intl';
 import { memo } from 'react';
 import { PostEmailStatus } from './post';
 import type { UserGroupPost } from './use-posts';
+
+function PostCompletionBadge({
+  wsId,
+  groupId,
+  postId,
+}: {
+  wsId: string;
+  groupId: string;
+  postId: string;
+}) {
+  const { ref, inViewport } = useInViewport();
+
+  const { data } = useQuery<{
+    sent: number | null;
+    checked: number | null;
+    failed: number | null;
+    tentative: number | null;
+    count: number | null;
+  }>({
+    queryKey: ['user-group-post-email-status', groupId, postId],
+    enabled: Boolean(inViewport && wsId && groupId && postId),
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts/${postId}/status`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch post status');
+      return response.json();
+    },
+    staleTime: 30_000,
+  });
+
+  if (!data?.count) return <div ref={ref} />;
+
+  const completed = data.checked ?? 0;
+  const total = data.count;
+  const allDone = completed >= total;
+
+  return (
+    <div ref={ref}>
+      <div
+        className={cn(
+          'flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold text-xs',
+          allDone
+            ? 'bg-dynamic-green/15 text-dynamic-green'
+            : 'bg-foreground/5 text-foreground/60'
+        )}
+      >
+        <Check className="h-3 w-3" />
+        {completed}/{total}
+      </div>
+    </div>
+  );
+}
 
 interface PostItemProps {
   post: UserGroupPost;
@@ -103,6 +161,12 @@ export const PostItem = memo(function PostItem({
                 {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
               </div>
             )}
+            {post.post_approval_status === 'APPROVED' && (
+              <div className="flex w-fit items-center gap-0.5 rounded bg-dynamic-green px-2 py-1 text-background text-xs">
+                <CheckCircle2 className="h-3 w-3" />
+                {t('approvals.status.approved')}
+              </div>
+            )}
             {post.post_approval_status === 'PENDING' && (
               <div className="flex w-fit items-center gap-0.5 rounded bg-dynamic-orange px-2 py-1 text-background text-xs">
                 <Shield className="h-3 w-3" />
@@ -114,6 +178,13 @@ export const PostItem = memo(function PostItem({
                 <AlertCircle className="h-3 w-3" />
                 {t('ws-user-groups.post_rejected')}
               </div>
+            )}
+            {groupId && post.id && (
+              <PostCompletionBadge
+                wsId={wsId}
+                groupId={groupId}
+                postId={post.id}
+              />
             )}
           </div>
         </div>

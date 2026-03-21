@@ -6972,6 +6972,7 @@
     "approved": "Approved",
     "blocked": "Blocked",
     "cancelled": "Cancelled",
+    "completed": "Completed",
     "created_at": "Created At",
     "details_description": "Select a queued post delivery to inspect its current system status.",
     "details_title": "Post Delivery Details",

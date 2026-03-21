@@ -177,7 +177,15 @@ export const getPostEmailColumns = ({
     ),
     cell: ({ row }) => (
       <div className="flex items-center justify-center">
-        {row.getValue('is_completed') ? <Check /> : <X />}
+        {row.getValue('is_completed') ? (
+          <div className="rounded-full bg-dynamic-green/15 p-1 text-dynamic-green">
+            <Check className="h-3.5 w-3.5" />
+          </div>
+        ) : (
+          <div className="rounded-full bg-dynamic-red/15 p-1 text-dynamic-red">
+            <X className="h-3.5 w-3.5" />
+          </div>
+        )}
       </div>
     ),
   },

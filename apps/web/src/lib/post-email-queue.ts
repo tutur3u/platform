@@ -15,7 +15,7 @@ export type PostEmailQueueStatus =
   | 'cancelled'
   | 'skipped';
 
-export const POST_EMAIL_MAX_AGE_DAYS = 7;
+export const POST_EMAIL_MAX_AGE_DAYS = 60;
 
 export function getPostEmailMaxAgeCutoff(): string {
   return dayjs().subtract(POST_EMAIL_MAX_AGE_DAYS, 'day').toISOString();
@@ -282,7 +282,11 @@ export async function enqueueApprovedPostEmails(
     .filter((recipient) => {
       if (sentRecipientIds.has(recipient.user_id)) return false;
       const existing = existingByUserId.get(recipient.user_id);
-      return existing?.status !== 'sent' && existing?.status !== 'processing';
+      return (
+        existing?.status !== 'sent' &&
+        existing?.status !== 'processing' &&
+        existing?.status !== 'skipped'
+      );
     })
     .map(async (recipient) => {
       const resolvedSenderPlatformUserId = await resolveSenderPlatformUserId(
@@ -414,7 +418,7 @@ export async function reconcileOrphanedApprovedPosts(
   )
     .select('post_id, user_id, status')
     .in('post_id', postIds)
-    .in('status', ['queued', 'processing', 'sent']);
+    .in('status', ['queued', 'processing', 'sent', 'skipped']);
 
   if (queueError) throw queueError;
 
@@ -470,6 +474,95 @@ export async function reconcileOrphanedApprovedPosts(
   }
 
   return { enqueued: totalEnqueued, checked: checks.length };
+}
+
+export async function reEnqueueSkippedPostEmails(
+  sbAdmin: any,
+  { wsId }: { wsId?: string } = {}
+): Promise<{ reEnqueued: number; totalChecked: number }> {
+  const cutoff = getPostEmailMaxAgeCutoff();
+
+  let skippedQuery = getQueueTable(sbAdmin)
+    .select('id, post_id, user_id, ws_id, group_id, attempt_count')
+    .eq('status', 'skipped');
+
+  if (wsId) {
+    skippedQuery = skippedQuery.eq('ws_id', wsId);
+  }
+
+  const { data: skippedRows, error: skippedError } = await skippedQuery;
+
+  if (skippedError) throw skippedError;
+
+  const skipped = (skippedRows ?? []) as Array<{
+    id: string;
+    post_id: string;
+    user_id: string;
+    ws_id: string;
+    group_id: string;
+    attempt_count: number;
+  }>;
+
+  if (skipped.length === 0) {
+    return { reEnqueued: 0, totalChecked: 0 };
+  }
+
+  const postIds = [...new Set(skipped.map((r) => r.post_id))];
+
+  const { data: postData, error: postError } = await sbAdmin
+    .from('user_group_posts')
+    .select('id, created_at')
+    .in('id', postIds)
+    .gte('created_at', cutoff);
+
+  if (postError) throw postError;
+
+  const validPostIds = new Set(
+    (postData ?? []).map((p: any) => p.id as string)
+  );
+
+  const toRequeue = skipped.filter((r) => validPostIds.has(r.post_id));
+
+  if (toRequeue.length === 0) {
+    return { reEnqueued: 0, totalChecked: skipped.length };
+  }
+
+  const checksQuery = await sbAdmin
+    .from('user_group_post_checks')
+    .select('post_id, user_id, is_completed')
+    .in('post_id', [...new Set(toRequeue.map((r) => r.post_id))])
+    .not('is_completed', 'is', null);
+
+  if (checksQuery.error) throw checksQuery.error;
+
+  const eligibleChecks = new Set(
+    (checksQuery.data ?? []).map(
+      (c: any) => `${c.post_id}:${c.user_id}` as string
+    )
+  );
+
+  const eligibleToRequeue = toRequeue.filter((r) =>
+    eligibleChecks.has(`${r.post_id}:${r.user_id}`)
+  );
+
+  const { error: resetError } = await getQueueTable(sbAdmin)
+    .update({
+      status: 'queued',
+      batch_id: null,
+      claimed_at: null,
+      last_error: null,
+    })
+    .in(
+      'id',
+      eligibleToRequeue.map((r) => r.id)
+    );
+
+  if (resetError) throw resetError;
+
+  return {
+    reEnqueued: eligibleToRequeue.length,
+    totalChecked: skipped.length,
+  };
 }
 
 async function markQueueRow(
@@ -571,9 +664,10 @@ async function getWorkspaceSourceInfo(
 
 export async function processPostEmailQueueBatch(
   sbAdmin: any,
-  { limit = 25 }: { limit?: number } = {}
+  { limit = 200, sendLimit = 50 }: { limit?: number; sendLimit?: number } = {}
 ) {
   const safeLimit = Math.max(1, limit);
+  const safeSendLimit = Math.max(1, sendLimit);
   const { data: queuedData, error: queuedError } = await getQueueTable(sbAdmin)
     .select('*')
     .eq('status', 'queued')
@@ -621,6 +715,8 @@ export async function processPostEmailQueueBatch(
   const claimedRows: PostEmailQueueRow[] = [];
 
   for (const row of rows) {
+    if (claimedRows.length >= safeSendLimit) break;
+
     const { error: claimError } = await getQueueTable(sbAdmin)
       .update({
         status: 'processing',
@@ -815,7 +911,7 @@ export async function processPostEmailQueueBatch(
   }
 
   return {
-    processed: claimedRows.length,
+    claimed: claimedRows.length,
     failed,
     results,
   };

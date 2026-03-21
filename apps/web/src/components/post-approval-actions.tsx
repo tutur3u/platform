@@ -23,6 +23,7 @@ interface Props {
   wsId: string;
   itemId: string;
   approvalStatus: ApprovalStatus;
+  queueStatus?: string;
   canRemoveApproval?: boolean;
   compact?: boolean;
   onCompleted?: () => void;
@@ -32,10 +33,13 @@ export function PostApprovalActions({
   wsId,
   itemId,
   approvalStatus,
+  queueStatus,
   canRemoveApproval = false,
   compact = false,
   onCompleted,
 }: Props) {
+  const isSentOrProcessing =
+    queueStatus === 'sent' || queueStatus === 'processing';
   const t = useTranslations('approvals');
   const tCommon = useTranslations('common');
   const router = useRouter();
@@ -117,17 +121,18 @@ export function PostApprovalActions({
           </Button>
         )}
 
-        {approvalStatus !== 'REJECTED' && (
-          <Button
-            size={buttonSize}
-            variant="destructive"
-            onClick={() => setRejectOpen(true)}
-            disabled={mutation.isPending}
-          >
-            <X className="mr-1 h-4 w-4" />
-            {t('actions.reject')}
-          </Button>
-        )}
+        {approvalStatus !== 'REJECTED' &&
+          !(approvalStatus === 'APPROVED' && isSentOrProcessing) && (
+            <Button
+              size={buttonSize}
+              variant="destructive"
+              onClick={() => setRejectOpen(true)}
+              disabled={mutation.isPending}
+            >
+              <X className="mr-1 h-4 w-4" />
+              {t('actions.reject')}
+            </Button>
+          )}
 
         {approvalStatus === 'APPROVED' && canRemoveApproval && (
           <Button

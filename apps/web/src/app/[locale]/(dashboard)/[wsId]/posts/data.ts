@@ -145,6 +145,7 @@ export async function getPostsPageData(
       ? { p_excluded_group_ids: excludedGroupIds }
       : {}),
     ...(userId ? { p_user_id: userId } : {}),
+    ...(activeQueueStatus ? { p_queue_status: activeQueueStatus } : {}),
   };
 
   await autoSkipOldPostEmails(sbAdmin, { wsId });
