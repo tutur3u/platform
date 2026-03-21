@@ -6,7 +6,7 @@ import {
 } from '@tuturuuu/ui/custom/tables/data-table';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 function CustomDataTableInner<TData, TValue>({
   namespace,
@@ -38,6 +38,11 @@ function CustomDataTableInner<TData, TValue>({
   const currentSortOrder = mounted
     ? (searchParams.get('sortOrder') as 'asc' | 'desc') || undefined
     : undefined;
+
+  const defaultQuery = useMemo(
+    () => (mounted ? searchParams.get('q') || '' : ''),
+    [mounted, searchParams]
+  );
 
   const handleSearch = useCallback(
     (query: string) => {
@@ -96,7 +101,7 @@ function CustomDataTableInner<TData, TValue>({
       pageIndex={pageIndex || 0}
       pageSize={pageSize || 10}
       onRefresh={() => router.refresh()}
-      defaultQuery={mounted ? searchParams.get('q') || '' : ''}
+      defaultQuery={defaultQuery}
       onSearch={handleSearch}
       setParams={handleSetParams}
       resetParams={handleResetParams}
