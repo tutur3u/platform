@@ -539,92 +539,10 @@ export async function reconcileOrphanedApprovedPosts(
 }
 
 export async function reEnqueueSkippedPostEmails(
-  sbAdmin: any,
-  { wsId }: { wsId?: string } = {}
+  _sbAdmin: any,
+  _options?: { wsId?: string }
 ): Promise<{ reEnqueued: number; totalChecked: number }> {
-  const cutoff = getPostEmailMaxAgeCutoff();
-
-  let skippedQuery = getQueueTable(sbAdmin)
-    .select('id, post_id, user_id, ws_id, group_id, attempt_count')
-    .eq('status', 'skipped');
-
-  if (wsId) {
-    skippedQuery = skippedQuery.eq('ws_id', wsId);
-  }
-
-  const { data: skippedRows, error: skippedError } = await skippedQuery;
-
-  if (skippedError) throw skippedError;
-
-  const skipped = (skippedRows ?? []) as Array<{
-    id: string;
-    post_id: string;
-    user_id: string;
-    ws_id: string;
-    group_id: string;
-    attempt_count: number;
-  }>;
-
-  if (skipped.length === 0) {
-    return { reEnqueued: 0, totalChecked: 0 };
-  }
-
-  const postIds = [...new Set(skipped.map((r) => r.post_id))];
-
-  const { data: postData, error: postError } = await sbAdmin
-    .from('user_group_posts')
-    .select('id, created_at')
-    .in('id', postIds)
-    .gte('created_at', cutoff);
-
-  if (postError) throw postError;
-
-  const validPostIds = new Set(
-    (postData ?? []).map((p: any) => p.id as string)
-  );
-
-  const toRequeue = skipped.filter((r) => validPostIds.has(r.post_id));
-
-  if (toRequeue.length === 0) {
-    return { reEnqueued: 0, totalChecked: skipped.length };
-  }
-
-  const checksQuery = await sbAdmin
-    .from('user_group_post_checks')
-    .select('post_id, user_id, is_completed')
-    .in('post_id', [...new Set(toRequeue.map((r) => r.post_id))])
-    .not('is_completed', 'is', null);
-
-  if (checksQuery.error) throw checksQuery.error;
-
-  const eligibleChecks = new Set(
-    (checksQuery.data ?? []).map(
-      (c: any) => `${c.post_id}:${c.user_id}` as string
-    )
-  );
-
-  const eligibleToRequeue = toRequeue.filter((r) =>
-    eligibleChecks.has(`${r.post_id}:${r.user_id}`)
-  );
-
-  const { error: resetError } = await getQueueTable(sbAdmin)
-    .update({
-      status: 'queued',
-      batch_id: null,
-      claimed_at: null,
-      last_error: null,
-    })
-    .in(
-      'id',
-      eligibleToRequeue.map((r) => r.id)
-    );
-
-  if (resetError) throw resetError;
-
-  return {
-    reEnqueued: eligibleToRequeue.length,
-    totalChecked: skipped.length,
-  };
+  return { reEnqueued: 0, totalChecked: 0 };
 }
 
 async function markQueueRow(
