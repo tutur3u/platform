@@ -576,38 +576,225 @@ async function markQueueRow(
   if (error) throw error;
 }
 
-async function buildPostSendContext(
+interface BatchPrefetch {
+  posts: Map<string, (UserGroupPost & { group_name?: string | null }) | null>;
+  checks: Map<string, any>;
+  existingSentEmails: Map<string, { id: string; created_at: string }>;
+  emailServices: Map<string, EmailService>;
+  sourceInfos: Map<string, { sourceName: string; sourceEmail: string }>;
+}
+
+async function prefetchBatchData(
   sbAdmin: any,
-  queueRow: PostEmailQueueRow
-): Promise<PostSendContext | null> {
-  const { data: post, error: postError } = await sbAdmin
-    .from('user_group_posts')
-    .select(
-      'id, group_id, title, content, notes, created_at, workspace_user_groups!inner(ws_id, name)'
-    )
-    .eq('id', queueRow.post_id)
-    .maybeSingle();
+  rows: PostEmailQueueRow[]
+): Promise<BatchPrefetch> {
+  const postIds = [...new Set(rows.map((r) => r.post_id))];
+  const userIds = [...new Set(rows.map((r) => r.user_id))];
+  const wsIds = [...new Set(rows.map((r) => r.ws_id))];
 
-  if (postError) throw postError;
-  if (!post) return null;
+  const [postsResult, checksResult, sentEmailsResult] = await Promise.all([
+    sbAdmin
+      .from('user_group_posts')
+      .select(
+        'id, group_id, title, content, notes, created_at, workspace_user_groups!inner(ws_id, name)'
+      )
+      .in('id', postIds),
+    sbAdmin
+      .from('user_group_post_checks')
+      .select(
+        'post_id, user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
+      )
+      .in('post_id', postIds)
+      .in('user_id', userIds),
+    sbAdmin
+      .from('sent_emails')
+      .select('id, post_id, receiver_id, created_at')
+      .in('post_id', postIds)
+      .in('receiver_id', userIds),
+  ]);
 
-  if (post.created_at) {
-    const cutoff = getPostEmailMaxAgeCutoff();
-    if (post.created_at < cutoff) {
-      return null;
-    }
+  const posts = new Map<
+    string,
+    (UserGroupPost & { group_name?: string | null }) | null
+  >();
+  for (const p of postsResult.data ?? []) {
+    posts.set(p.id, {
+      ...p,
+      post_approval_status: 'APPROVED',
+      group_name: Array.isArray(p.workspace_user_groups)
+        ? p.workspace_user_groups[0]?.name
+        : p.workspace_user_groups?.name,
+    } as UserGroupPost & { group_name?: string | null });
   }
 
-  const { data: check, error: checkError } = await sbAdmin
-    .from('user_group_post_checks')
-    .select(
-      'user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
-    )
-    .eq('post_id', queueRow.post_id)
-    .eq('user_id', queueRow.user_id)
-    .maybeSingle();
+  const checks = new Map<string, any>();
+  for (const c of checksResult.data ?? []) {
+    checks.set(`${c.post_id}:${c.user_id}`, c);
+  }
 
-  if (checkError) throw checkError;
+  const existingSentEmails = new Map<
+    string,
+    { id: string; created_at: string }
+  >();
+  for (const e of sentEmailsResult.data ?? []) {
+    existingSentEmails.set(`${e.post_id}:${e.receiver_id}`, {
+      id: e.id,
+      created_at: e.created_at,
+    });
+  }
+
+  const emailServices = new Map<string, EmailService>();
+  const sourceInfos = new Map<
+    string,
+    { sourceName: string; sourceEmail: string }
+  >();
+
+  for (const wsId of wsIds) {
+    emailServices.set(wsId, await EmailService.fromWorkspace(wsId));
+    const { data } = await sbAdmin
+      .from('workspace_email_credentials')
+      .select('source_name, source_email')
+      .eq('ws_id', wsId)
+      .maybeSingle();
+    sourceInfos.set(wsId, {
+      sourceName: data?.source_name || 'Tuturuuu',
+      sourceEmail: data?.source_email || 'notifications@tuturuuu.com',
+    });
+  }
+
+  return { posts, checks, existingSentEmails, emailServices, sourceInfos };
+}
+
+async function processEmailWithContext(
+  sbAdmin: any,
+  row: PostEmailQueueRow,
+  prefetch: BatchPrefetch
+): Promise<Record<string, unknown>> {
+  const context = await buildPostSendContextFromPrefetch(row, prefetch);
+
+  if (!context) {
+    const post = prefetch.posts.get(row.post_id);
+    const isOld =
+      post &&
+      typeof post.created_at === 'string' &&
+      post.created_at < getPostEmailMaxAgeCutoff();
+
+    await markQueueRow(sbAdmin, row.id, {
+      status: isOld ? 'skipped' : 'cancelled',
+      batch_id: null,
+      cancelled_at: new Date().toISOString(),
+      last_error: isOld
+        ? `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days`
+        : 'Post is no longer approved or recipient is no longer eligible.',
+    });
+    return { id: row.id, status: isOld ? 'skipped' : 'cancelled' };
+  }
+
+  const existingSentEmail = prefetch.existingSentEmails.get(
+    `${row.post_id}:${row.user_id}`
+  );
+
+  if (existingSentEmail) {
+    await markQueueRow(sbAdmin, row.id, {
+      status: 'sent',
+      batch_id: null,
+      sent_at: existingSentEmail.created_at,
+      sent_email_id: existingSentEmail.id,
+      last_error: null,
+    });
+    return { id: row.id, status: 'sent', deduped: true };
+  }
+
+  const emailService = prefetch.emailServices.get(row.ws_id)!;
+  const sourceInfo = prefetch.sourceInfos.get(row.ws_id)!;
+
+  const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(
+    context.post.created_at
+  ).format('DD/MM/YYYY')} của ${context.recipient.username}`;
+
+  const htmlContent = await render(
+    PostEmailTemplate({
+      post: context.post,
+      groupName: context.post.group_name ?? undefined,
+      username: context.recipient.username,
+      isHomeworkDone: context.recipient.is_completed ?? undefined,
+      notes: context.recipient.notes ?? undefined,
+    })
+  );
+
+  const result = await emailService.send({
+    recipients: { to: [context.recipient.email] },
+    content: { subject, html: htmlContent },
+    metadata: {
+      wsId: row.ws_id,
+      userId: row.sender_platform_user_id,
+      templateType: 'user-group-post',
+      entityType: 'post',
+      entityId: row.post_id,
+      priority: 'normal',
+    },
+  });
+
+  if (!result.success) {
+    const blockedRecipient = result.blockedRecipients?.[0];
+    await markQueueRow(sbAdmin, row.id, {
+      status: blockedRecipient ? 'blocked' : 'failed',
+      batch_id: null,
+      blocked_reason: blockedRecipient?.reason ?? null,
+      last_error:
+        blockedRecipient?.reason ??
+        result.error ??
+        (result.rateLimitInfo && !result.rateLimitInfo.allowed
+          ? 'Rate limited'
+          : 'Unknown send failure'),
+    });
+    return { id: row.id, status: blockedRecipient ? 'blocked' : 'failed' };
+  }
+
+  const { data: sentEmail, error: sentInsertError } = await sbAdmin
+    .from('sent_emails')
+    .insert({
+      post_id: row.post_id,
+      ws_id: row.ws_id,
+      sender_id: row.sender_platform_user_id,
+      receiver_id: row.user_id,
+      email: context.recipient.email,
+      subject,
+      content: htmlContent,
+      source_name: sourceInfo.sourceName,
+      source_email: sourceInfo.sourceEmail,
+    })
+    .select('id')
+    .single();
+
+  if (sentInsertError) throw sentInsertError;
+
+  await sbAdmin
+    .from('user_group_post_checks')
+    .update({ email_id: sentEmail.id })
+    .eq('post_id', row.post_id)
+    .eq('user_id', row.user_id);
+
+  await markQueueRow(sbAdmin, row.id, {
+    status: 'sent',
+    batch_id: null,
+    sent_at: new Date().toISOString(),
+    sent_email_id: sentEmail.id,
+    last_error: null,
+    blocked_reason: null,
+  });
+
+  return { id: row.id, status: 'sent' };
+}
+
+function buildPostSendContextFromPrefetch(
+  queueRow: PostEmailQueueRow,
+  prefetch: BatchPrefetch
+): PostSendContext | null {
+  const post = prefetch.posts.get(queueRow.post_id);
+  if (!post) return null;
+
+  const check = prefetch.checks.get(`${queueRow.post_id}:${queueRow.user_id}`);
   if (
     !check ||
     check.is_completed === null ||
@@ -620,19 +807,7 @@ async function buildPostSendContext(
   if (!isValidEmailAddress(email)) return null;
 
   return {
-    post: {
-      id: post.id,
-      ws_id: queueRow.ws_id,
-      group_id: queueRow.group_id,
-      title: post.title,
-      content: post.content,
-      notes: post.notes,
-      created_at: post.created_at,
-      post_approval_status: 'APPROVED',
-      group_name: Array.isArray(post.workspace_user_groups)
-        ? post.workspace_user_groups[0]?.name
-        : post.workspace_user_groups?.name,
-    } as unknown as UserGroupPost & { group_name?: string | null },
+    post,
     recipient: {
       id: check.user_id,
       email,
@@ -646,28 +821,57 @@ async function buildPostSendContext(
   };
 }
 
-async function getWorkspaceSourceInfo(
-  sbAdmin: any,
-  wsId: string
-): Promise<{ sourceName: string; sourceEmail: string }> {
-  const { data } = await sbAdmin
-    .from('workspace_email_credentials')
-    .select('source_name, source_email')
-    .eq('ws_id', wsId)
-    .maybeSingle();
+async function processWithConcurrency(
+  items: PostEmailQueueRow[],
+  processor: (row: PostEmailQueueRow) => Promise<Record<string, unknown>>,
+  concurrency: number,
+  maxDurationMs: number,
+  startTime: number
+): Promise<{ results: Record<string, unknown>[]; timedOut: boolean }> {
+  const results: Record<string, unknown>[] = [];
+  let timedOut = false;
 
-  return {
-    sourceName: data?.source_name || 'Tuturuuu',
-    sourceEmail: data?.source_email || 'notifications@tuturuuu.com',
-  };
+  for (let i = 0; i < items.length; i += concurrency) {
+    if (Date.now() - startTime > maxDurationMs) {
+      timedOut = true;
+      break;
+    }
+
+    const batch = items.slice(i, i + concurrency);
+    const batchResults = await Promise.all(
+      batch.map((row) =>
+        processor(row).catch((error) => ({
+          id: row.id,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }))
+      )
+    );
+    results.push(...batchResults);
+  }
+
+  return { results, timedOut };
 }
 
 export async function processPostEmailQueueBatch(
   sbAdmin: any,
-  { limit = 200, sendLimit = 50 }: { limit?: number; sendLimit?: number } = {}
+  {
+    limit = 200,
+    sendLimit = 50,
+    concurrency = 10,
+    maxDurationMs = 150_000,
+  }: {
+    limit?: number;
+    sendLimit?: number;
+    concurrency?: number;
+    maxDurationMs?: number;
+  } = {}
 ) {
   const safeLimit = Math.max(1, limit);
   const safeSendLimit = Math.max(1, sendLimit);
+  const safeConcurrency = Math.max(1, Math.min(concurrency, 20));
+  const startTime = Date.now();
+
   const { data: queuedData, error: queuedError } = await getQueueTable(sbAdmin)
     .select('*')
     .eq('status', 'queued')
@@ -716,6 +920,7 @@ export async function processPostEmailQueueBatch(
 
   for (const row of rows) {
     if (claimedRows.length >= safeSendLimit) break;
+    if (Date.now() - startTime > maxDurationMs) break;
 
     const { error: claimError } = await getQueueTable(sbAdmin)
       .update({
@@ -743,176 +948,31 @@ export async function processPostEmailQueueBatch(
     }
   }
 
-  const serviceCache = new Map<string, EmailService>();
-  const sourceInfoCache = new Map<
-    string,
-    { sourceName: string; sourceEmail: string }
-  >();
-  const results: Array<Record<string, unknown>> = [];
-  let failed = 0;
-
-  for (const row of claimedRows) {
-    try {
-      const context = await buildPostSendContext(sbAdmin, row);
-
-      if (!context) {
-        const cutoff = getPostEmailMaxAgeCutoff();
-        const isOld = await sbAdmin
-          .from('user_group_posts')
-          .select('created_at')
-          .eq('id', row.post_id)
-          .lt('created_at', cutoff)
-          .maybeSingle()
-          .then(({ data }: any) => !!data);
-
-        await markQueueRow(sbAdmin, row.id, {
-          status: isOld ? 'skipped' : 'cancelled',
-          batch_id: null,
-          cancelled_at: new Date().toISOString(),
-          last_error: isOld
-            ? `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days`
-            : 'Post is no longer approved or recipient is no longer eligible.',
-        });
-        results.push({
-          id: row.id,
-          status: isOld ? 'skipped' : 'cancelled',
-        });
-        continue;
-      }
-
-      const { data: existingSentEmail, error: sentLookupError } = await sbAdmin
-        .from('sent_emails')
-        .select('id, created_at')
-        .eq('post_id', row.post_id)
-        .eq('receiver_id', row.user_id)
-        .maybeSingle();
-
-      if (sentLookupError) throw sentLookupError;
-
-      if (existingSentEmail) {
-        await markQueueRow(sbAdmin, row.id, {
-          status: 'sent',
-          batch_id: null,
-          sent_at: existingSentEmail.created_at,
-          sent_email_id: existingSentEmail.id,
-          last_error: null,
-        });
-        results.push({ id: row.id, status: 'sent', deduped: true });
-        continue;
-      }
-
-      let emailService = serviceCache.get(row.ws_id);
-      if (!emailService) {
-        emailService = await EmailService.fromWorkspace(row.ws_id);
-        serviceCache.set(row.ws_id, emailService);
-      }
-
-      let sourceInfo = sourceInfoCache.get(row.ws_id);
-      if (!sourceInfo) {
-        sourceInfo = await getWorkspaceSourceInfo(sbAdmin, row.ws_id);
-        sourceInfoCache.set(row.ws_id, sourceInfo);
-      }
-
-      const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(
-        context.post.created_at
-      ).format('DD/MM/YYYY')} của ${context.recipient.username}`;
-
-      const htmlContent = await render(
-        PostEmailTemplate({
-          post: context.post,
-          groupName: context.post.group_name ?? undefined,
-          username: context.recipient.username,
-          isHomeworkDone: context.recipient.is_completed ?? undefined,
-          notes: context.recipient.notes ?? undefined,
-        })
-      );
-
-      const result = await emailService.send({
-        recipients: { to: [context.recipient.email] },
-        content: { subject, html: htmlContent },
-        metadata: {
-          wsId: row.ws_id,
-          userId: row.sender_platform_user_id,
-          templateType: 'user-group-post',
-          entityType: 'post',
-          entityId: row.post_id,
-          priority: 'normal',
-        },
-      });
-
-      if (!result.success) {
-        const blockedRecipient = result.blockedRecipients?.[0];
-        await markQueueRow(sbAdmin, row.id, {
-          status: blockedRecipient ? 'blocked' : 'failed',
-          batch_id: null,
-          blocked_reason: blockedRecipient?.reason ?? null,
-          last_error:
-            blockedRecipient?.reason ??
-            result.error ??
-            (result.rateLimitInfo && !result.rateLimitInfo.allowed
-              ? 'Rate limited'
-              : 'Unknown send failure'),
-        });
-        failed += 1;
-        results.push({
-          id: row.id,
-          status: blockedRecipient ? 'blocked' : 'failed',
-        });
-        continue;
-      }
-
-      const { data: sentEmail, error: sentInsertError } = await sbAdmin
-        .from('sent_emails')
-        .insert({
-          post_id: row.post_id,
-          ws_id: row.ws_id,
-          sender_id: row.sender_platform_user_id,
-          receiver_id: row.user_id,
-          email: context.recipient.email,
-          subject,
-          content: htmlContent,
-          source_name: sourceInfo.sourceName,
-          source_email: sourceInfo.sourceEmail,
-        })
-        .select('id')
-        .single();
-
-      if (sentInsertError) throw sentInsertError;
-
-      await sbAdmin
-        .from('user_group_post_checks')
-        .update({ email_id: sentEmail.id })
-        .eq('post_id', row.post_id)
-        .eq('user_id', row.user_id);
-
-      await markQueueRow(sbAdmin, row.id, {
-        status: 'sent',
-        batch_id: null,
-        sent_at: new Date().toISOString(),
-        sent_email_id: sentEmail.id,
-        last_error: null,
-        blocked_reason: null,
-      });
-
-      results.push({ id: row.id, status: 'sent' });
-    } catch (error) {
-      failed += 1;
-      await markQueueRow(sbAdmin, row.id, {
-        status: 'failed',
-        batch_id: null,
-        last_error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      results.push({
-        id: row.id,
-        status: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+  if (claimedRows.length === 0) {
+    return {
+      claimed: 0,
+      failed: 0,
+      results: [] as Array<Record<string, unknown>>,
+    };
   }
+
+  const prefetch = await prefetchBatchData(sbAdmin, claimedRows);
+
+  const { results, timedOut } = await processWithConcurrency(
+    claimedRows,
+    async (row) => processEmailWithContext(sbAdmin, row, prefetch),
+    safeConcurrency,
+    maxDurationMs,
+    startTime
+  );
+
+  const failed = results.filter((r) => r.status === 'failed').length;
 
   return {
     claimed: claimedRows.length,
+    processed: results.length,
     failed,
+    timedOut,
     results,
   };
 }

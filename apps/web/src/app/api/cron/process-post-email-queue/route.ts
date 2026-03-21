@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
       sendLimit: Number.isFinite(sendLimit)
         ? Math.min(Math.max(sendLimit, 1), 200)
         : 50,
+      maxDurationMs: 165_000,
     });
 
     return NextResponse.json({
