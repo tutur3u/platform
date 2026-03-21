@@ -296,50 +296,75 @@ export async function enqueueApprovedPostEmails(
     ])
   );
 
-  const candidateRows = recipients
-    .filter((recipient) => {
-      if (sentRecipientIds.has(recipient.user_id)) return false;
-      const existing = existingByUserId.get(recipient.user_id);
-      return (
-        existing?.status !== 'sent' &&
-        existing?.status !== 'processing' &&
-        existing?.status !== 'skipped'
-      );
-    })
-    .map(async (recipient) => {
-      const resolvedSenderPlatformUserId = await resolveSenderPlatformUserId(
-        sbAdmin,
-        {
-          wsId,
-          approvedByWorkspaceUserId: recipient.approved_by,
-          fallbackSenderPlatformUserId: senderPlatformUserId,
-        }
-      );
+  const filteredRecipients = recipients.filter((recipient) => {
+    if (sentRecipientIds.has(recipient.user_id)) return false;
+    const existing = existingByUserId.get(recipient.user_id);
+    return (
+      existing?.status !== 'sent' &&
+      existing?.status !== 'processing' &&
+      existing?.status !== 'skipped'
+    );
+  });
 
-      if (!resolvedSenderPlatformUserId) {
-        return null;
+  console.log('[enqueueApprovedPostEmails] After dedup filter', {
+    postId,
+    recipientsCount: recipients.length,
+    sentCount: sentRecipientIds.size,
+    existingQueueCount: existingByUserId.size,
+    filteredCount: filteredRecipients.length,
+    existingStatuses: [...existingByUserId.entries()].slice(0, 5),
+  });
+
+  if (filteredRecipients.length === 0) {
+    return { queued: 0 };
+  }
+
+  const candidateRows = filteredRecipients.map(async (recipient) => {
+    const resolvedSenderPlatformUserId = await resolveSenderPlatformUserId(
+      sbAdmin,
+      {
+        wsId,
+        approvedByWorkspaceUserId: recipient.approved_by,
+        fallbackSenderPlatformUserId: senderPlatformUserId,
       }
+    );
 
-      return {
-        ws_id: wsId,
-        group_id: post.group_id,
-        post_id: postId,
+    if (!resolvedSenderPlatformUserId) {
+      console.log('[enqueueApprovedPostEmails] No sender resolved', {
+        postId,
         user_id: recipient.user_id,
-        sender_platform_user_id: resolvedSenderPlatformUserId,
-        status: 'queued',
-        batch_id: null,
-        attempt_count: 0,
-        last_error: null,
-        blocked_reason: null,
-        claimed_at: null,
-        last_attempt_at: null,
-        sent_at: null,
-        cancelled_at: null,
-        sent_email_id: null,
-      };
-    });
+        approved_by: recipient.approved_by,
+        fallback: senderPlatformUserId,
+      });
+      return null;
+    }
+
+    return {
+      ws_id: wsId,
+      group_id: post.group_id,
+      post_id: postId,
+      user_id: recipient.user_id,
+      sender_platform_user_id: resolvedSenderPlatformUserId,
+      status: 'queued',
+      batch_id: null,
+      attempt_count: 0,
+      last_error: null,
+      blocked_reason: null,
+      claimed_at: null,
+      last_attempt_at: null,
+      sent_at: null,
+      cancelled_at: null,
+      sent_email_id: null,
+    };
+  });
 
   const upsertRows = (await Promise.all(candidateRows)).filter(Boolean);
+
+  console.log('[enqueueApprovedPostEmails] After sender resolve', {
+    postId,
+    filteredCount: filteredRecipients.length,
+    upsertRowsCount: upsertRows.length,
+  });
 
   if (upsertRows.length === 0) {
     return { queued: 0 };
