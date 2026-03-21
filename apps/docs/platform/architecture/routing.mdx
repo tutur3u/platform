@@ -264,7 +264,7 @@ app/api/[wsId]/
 
 ```typescript
 // apps/web/src/app/api/[wsId]/task/create/route.ts
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
@@ -299,7 +299,7 @@ export async function POST(
 ### Workspace Resolution
 
 ```typescript
-import { resolveWorkspaceId, toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { resolveWorkspaceId, toWorkspaceSlug } from '@ncthub/utils/constants';
 
 // Convert identifier to UUID
 const uuid = resolveWorkspaceId('personal'); // Returns user's personal workspace UUID
@@ -314,7 +314,7 @@ const slug = toWorkspaceSlug(ROOT_WORKSPACE_ID); // Returns 'internal'
 ### Workspace Validation
 
 ```typescript
-import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { isPersonalWorkspace } from '@ncthub/utils/workspace-helper';
 
 // Check if workspace is personal
 const isPersonal = await isPersonalWorkspace('personal'); // true
@@ -324,7 +324,7 @@ const isPersonal = await isPersonalWorkspace('550e8400-e29b-41d4-a716-4466554400
 ### User Default Workspace
 
 ```typescript
-import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
+import { getUserDefaultWorkspace } from '@ncthub/utils/user-helper';
 
 // Get user's default workspace
 const defaultWorkspace = await getUserDefaultWorkspace();
