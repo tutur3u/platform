@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import '@ncthub/ui/globals.css';
 import './globals.css';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { BASE_URL } from '@/constants/configs';
 import JsonLd from '../components/json-ld';
 
@@ -127,7 +129,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <JsonLd />
-      <body className={`${poppins.className} antialiased`}>{children}</body>
+      <body className={`${poppins.className} antialiased`}>
+        <VercelAnalytics />
+        <VercelInsights />
+        {children}
+      </body>
     </html>
   );
 }
