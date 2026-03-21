@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
+  autoSkipOldApprovedPostChecks,
   autoSkipOldPostEmails,
   autoSkipRejectedPosts,
   cleanupStaleProcessingRows,
@@ -66,32 +67,50 @@ export async function GET(req: NextRequest) {
       10
     );
 
-    log('info', `[${requestId}] Phase 0: cleanupStaleProcessingRows`);
-    const cleanupStart = Date.now();
-    const cleanedUp = await cleanupStaleProcessingRows(sbAdmin);
-    log('info', `[${requestId}] Phase 0 complete`, {
-      durationMs: Date.now() - cleanupStart,
-      cleanedUp,
-    });
-
-    log('info', `[${requestId}] Phase 1: autoSkipOldPostEmails`);
-    const skipStart = Date.now();
-    await autoSkipOldPostEmails(sbAdmin);
-    log('info', `[${requestId}] Phase 1 complete`, {
-      durationMs: Date.now() - skipStart,
-    });
-
-    log('info', `[${requestId}] Phase 1.5: autoSkipRejectedPosts`);
-    const rejectStart = Date.now();
-    const rejectedSkipped = await autoSkipRejectedPosts(sbAdmin);
-    log('info', `[${requestId}] Phase 1.5 complete`, {
-      durationMs: Date.now() - rejectStart,
-      rejectedSkipped,
+    const phasesStart = Date.now();
+    await Promise.all([
+      (async () => {
+        const start = Date.now();
+        const cleanedUp = await cleanupStaleProcessingRows(sbAdmin);
+        log('info', `[${requestId}] Phase 0 complete`, {
+          durationMs: Date.now() - start,
+          cleanedUp,
+        });
+        return { cleanedUp };
+      })(),
+      (async () => {
+        const start = Date.now();
+        await autoSkipOldPostEmails(sbAdmin);
+        log('info', `[${requestId}] Phase 1 complete`, {
+          durationMs: Date.now() - start,
+        });
+      })(),
+      (async () => {
+        const start = Date.now();
+        const skipped = await autoSkipOldApprovedPostChecks(sbAdmin);
+        log('info', `[${requestId}] Phase 1.6 complete`, {
+          durationMs: Date.now() - start,
+          skipped,
+        });
+        return { skipped };
+      })(),
+      (async () => {
+        const start = Date.now();
+        const rejectedSkipped = await autoSkipRejectedPosts(sbAdmin);
+        log('info', `[${requestId}] Phase 1.5 complete`, {
+          durationMs: Date.now() - start,
+          rejectedSkipped,
+        });
+        return { rejectedSkipped };
+      })(),
+    ]);
+    log('info', `[${requestId}] Early phases complete`, {
+      durationMs: Date.now() - phasesStart,
     });
 
     log('info', `[${requestId}] Phase 2: reEnqueueSkippedPostEmails`);
     const reEnqueueStart = Date.now();
-    const reEnqueueResult = await reEnqueueSkippedPostEmails(sbAdmin);
+    const reEnqueueResult = await reEnqueueSkippedPostEmails(sbAdmin, {});
     log('info', `[${requestId}] Phase 2 complete`, {
       durationMs: Date.now() - reEnqueueStart,
       reEnqueued: reEnqueueResult.reEnqueued,
@@ -107,31 +126,56 @@ export async function GET(req: NextRequest) {
       checked: reconciliation.checked,
     });
 
-    log('info', `[${requestId}] Phase 4: processPostEmailQueueBatch`, {
-      batchLimit: Number.isFinite(batchLimit)
-        ? Math.min(Math.max(batchLimit, 1), 500)
-        : 200,
-      sendLimit: Number.isFinite(sendLimit)
-        ? Math.min(Math.max(sendLimit, 1), 200)
-        : 50,
-    });
-    const batchStart = Date.now();
-    const result = await processPostEmailQueueBatch(sbAdmin, {
-      limit: Number.isFinite(batchLimit)
-        ? Math.min(Math.max(batchLimit, 1), 500)
-        : 200,
-      sendLimit: Number.isFinite(sendLimit)
-        ? Math.min(Math.max(sendLimit, 1), 200)
-        : 50,
-      maxDurationMs: 165_000,
-    });
-    log('info', `[${requestId}] Phase 4 complete`, {
-      durationMs: Date.now() - batchStart,
-      claimed: result.claimed,
-      processed: result.processed,
-      failed: result.failed,
-      timedOut: result.timedOut,
-    });
+    const { count: queuedOrFailedCount } = await sbAdmin
+      .from('post_email_queue')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['queued', 'failed'])
+      .limit(1);
+
+    let result: {
+      claimed: number;
+      processed: number;
+      failed: number;
+      timedOut: boolean;
+      results: Array<Record<string, unknown>>;
+    } = { claimed: 0, processed: 0, failed: 0, timedOut: false, results: [] };
+
+    if (!queuedOrFailedCount) {
+      log('info', `[${requestId}] Phase 4 skipped — no queued/failed rows`, {});
+      result = {
+        claimed: 0,
+        processed: 0,
+        failed: 0,
+        timedOut: false,
+        results: [],
+      };
+    } else {
+      log('info', `[${requestId}] Phase 4: processPostEmailQueueBatch`, {
+        batchLimit: Number.isFinite(batchLimit)
+          ? Math.min(Math.max(batchLimit, 1), 500)
+          : 200,
+        sendLimit: Number.isFinite(sendLimit)
+          ? Math.min(Math.max(sendLimit, 1), 200)
+          : 50,
+      });
+      const batchStart = Date.now();
+      result = await processPostEmailQueueBatch(sbAdmin, {
+        limit: Number.isFinite(batchLimit)
+          ? Math.min(Math.max(batchLimit, 1), 500)
+          : 200,
+        sendLimit: Number.isFinite(sendLimit)
+          ? Math.min(Math.max(sendLimit, 1), 200)
+          : 50,
+        maxDurationMs: 165_000,
+      });
+      log('info', `[${requestId}] Phase 4 complete`, {
+        durationMs: Date.now() - batchStart,
+        claimed: result.claimed,
+        processed: result.processed,
+        failed: result.failed,
+        timedOut: result.timedOut,
+      });
+    }
 
     const totalDuration = Date.now() - startTime;
     log('info', `[${requestId}] Cron job completed successfully`, {

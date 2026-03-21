@@ -183,7 +183,7 @@ async function getEligibleRecipients(
   let query = sbAdmin
     .from('user_group_post_checks')
     .select(
-      'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id!inner(id, email, ws_id)'
+      'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id(id, email, ws_id)'
     )
     .eq('post_id', postId)
     .eq('user.ws_id', wsId);
@@ -392,6 +392,89 @@ export async function autoSkipOldPostEmails(
   return data?.length ?? 0;
 }
 
+export async function autoSkipOldApprovedPostChecks(
+  sbAdmin: any,
+  { wsId }: { wsId?: string } = {}
+): Promise<number> {
+  const cutoff = getPostEmailMaxAgeCutoff();
+
+  let checksQuery = sbAdmin
+    .from('user_group_post_checks')
+    .select(
+      'post_id, user_id, user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
+    )
+    .eq('approval_status', 'APPROVED')
+    .not('is_completed', 'is', null)
+    .lt('user_group_posts.created_at', cutoff);
+
+  if (wsId) {
+    checksQuery = checksQuery.eq(
+      'user_group_posts.workspace_user_groups.ws_id',
+      wsId
+    );
+  }
+
+  const { data: oldChecks, error: checksError } = await checksQuery;
+
+  if (checksError) throw checksError;
+  if (!oldChecks || oldChecks.length === 0) return 0;
+
+  const queueUpdates = (oldChecks as any[]).map((check) => {
+    const pg = check.user_group_posts;
+    const groupId = Array.isArray(pg.workspace_user_groups)
+      ? pg.workspace_user_groups[0]?.id
+      : pg.workspace_user_groups?.id;
+    const wsIdForRow = Array.isArray(pg.workspace_user_groups)
+      ? pg.workspace_user_groups[0]?.ws_id
+      : pg.workspace_user_groups?.ws_id;
+    return {
+      post_id: check.post_id,
+      user_id: check.user_id,
+      ws_id: wsIdForRow,
+      group_id: groupId,
+      status: 'skipped' as const,
+      batch_id: null,
+      claimed_at: null,
+      cancelled_at: new Date().toISOString(),
+      last_error: `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days — auto-skipped`,
+    };
+  });
+
+  const queueRows = queueUpdates.map((u) => ({
+    ws_id: u.ws_id,
+    group_id: u.group_id,
+    post_id: u.post_id,
+    user_id: u.user_id,
+    status: u.status,
+    batch_id: u.batch_id,
+    claimed_at: u.claimed_at,
+    cancelled_at: u.cancelled_at,
+    last_error: u.last_error,
+  }));
+
+  const { error: upsertError } = await getQueueTable(sbAdmin).upsert(
+    queueRows,
+    {
+      onConflict: 'post_id,user_id',
+    }
+  );
+
+  if (upsertError) throw upsertError;
+
+  const checkIds = oldChecks.map((c: any) => c.post_id);
+  if (checkIds.length === 0) return 0;
+
+  const { error: updateError } = await sbAdmin
+    .from('user_group_post_checks')
+    .update({ approval_status: 'SKIPPED' as const })
+    .in('post_id', checkIds)
+    .eq('approval_status', 'APPROVED');
+
+  if (updateError) throw updateError;
+
+  return queueUpdates.length;
+}
+
 export async function cleanupStaleProcessingRows(
   sbAdmin: any,
   { maxAgeMinutes = 10 }: { maxAgeMinutes?: number } = {}
@@ -539,10 +622,46 @@ export async function reconcileOrphanedApprovedPosts(
 }
 
 export async function reEnqueueSkippedPostEmails(
-  _sbAdmin: any,
-  _options?: { wsId?: string }
+  sbAdmin: any,
+  { wsId }: { wsId?: string } = {}
 ): Promise<{ reEnqueued: number; totalChecked: number }> {
-  return { reEnqueued: 0, totalChecked: 0 };
+  const SKIP_PREFIX = `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days`;
+
+  let query = getQueueTable(sbAdmin)
+    .select('id')
+    .eq('status', 'skipped')
+    .not('last_error', 'is', null)
+    .like('last_error', `${SKIP_PREFIX}%`);
+
+  if (wsId) {
+    query = query.eq('ws_id', wsId);
+  }
+
+  const { data: skippedRows, error: selectError } = await query;
+
+  if (selectError) throw selectError;
+  if (!skippedRows || skippedRows.length === 0) {
+    return { reEnqueued: 0, totalChecked: 0 };
+  }
+
+  const skippedIds = skippedRows.map((r: any) => r.id);
+  const { data: updatedRows, error: updateError } = await getQueueTable(sbAdmin)
+    .update({
+      status: 'queued',
+      cancelled_at: null,
+      last_error: null,
+      attempt_count: 0,
+    })
+    .in('id', skippedIds)
+    .eq('status', 'skipped')
+    .select('id');
+
+  if (updateError) throw updateError;
+
+  return {
+    reEnqueued: updatedRows?.length ?? 0,
+    totalChecked: skippedRows.length,
+  };
 }
 
 async function markQueueRow(
@@ -939,8 +1058,10 @@ export async function processPostEmailQueueBatch(
   if (rows.length === 0) {
     console.log('[PostEmailQueueBatch] No rows to process, returning early');
     return {
+      claimed: 0,
       processed: 0,
       failed: 0,
+      timedOut: false,
       results: [] as Array<Record<string, unknown>>,
     };
   }
@@ -990,7 +1111,9 @@ export async function processPostEmailQueueBatch(
     console.log('[PostEmailQueueBatch] No rows claimed, returning early');
     return {
       claimed: 0,
+      processed: 0,
       failed: 0,
+      timedOut: false,
       results: [] as Array<Record<string, unknown>>,
     };
   }

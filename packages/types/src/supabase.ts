@@ -25847,7 +25847,7 @@ export type Database = {
         | 'multi_choice_quiz'
         | 'paragraph_quiz'
         | 'flashcards';
-      approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SKIPPED';
       billing_reason:
         | 'purchase'
         | 'subscription_create'
@@ -27937,7 +27937,7 @@ export const Constants = {
         'paragraph_quiz',
         'flashcards',
       ],
-      approval_status: ['PENDING', 'APPROVED', 'REJECTED'],
+      approval_status: ['PENDING', 'APPROVED', 'REJECTED', 'SKIPPED'],
       billing_reason: [
         'purchase',
         'subscription_create',

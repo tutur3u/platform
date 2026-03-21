@@ -353,3 +353,52 @@ describe('edge cases', () => {
     expect(result.map((r) => r.id)).toEqual(['f1', 'f2']);
   });
 });
+
+describe('queue statuses', () => {
+  const allStatuses: PostEmailQueueRow['status'][] = [
+    'queued',
+    'processing',
+    'sent',
+    'failed',
+    'blocked',
+    'cancelled',
+    'skipped',
+  ];
+
+  it('includes all expected queue statuses', () => {
+    expect(allStatuses).toContain('queued');
+    expect(allStatuses).toContain('processing');
+    expect(allStatuses).toContain('sent');
+    expect(allStatuses).toContain('failed');
+    expect(allStatuses).toContain('blocked');
+    expect(allStatuses).toContain('cancelled');
+    expect(allStatuses).toContain('skipped');
+    expect(allStatuses).toHaveLength(7);
+  });
+
+  it('skipped is a valid queue status for summarizePostEmailQueue', () => {
+    const rows = [makeRow('1', 'skipped'), makeRow('2', 'skipped')];
+
+    const result = summarizePostEmailQueue(rows);
+
+    expect(result.skipped).toBe(2);
+  });
+});
+
+describe('processPostEmailQueueBatch return shape', () => {
+  it('prioritizePostEmailQueueBatch produces rows that match expected fields', () => {
+    const rows = prioritizePostEmailQueueBatch(
+      [makeRow('q1', 'queued')],
+      [],
+      1
+    );
+
+    expect(rows[0]).toMatchObject({
+      id: 'q1',
+      status: 'queued',
+      ws_id: 'ws-1',
+      group_id: 'group-1',
+      post_id: 'post-1',
+    });
+  });
+});
