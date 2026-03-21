@@ -392,6 +392,68 @@ export async function autoSkipOldPostEmails(
   return data?.length ?? 0;
 }
 
+export async function cleanupStaleProcessingRows(
+  sbAdmin: any,
+  { maxAgeMinutes = 10 }: { maxAgeMinutes?: number } = {}
+): Promise<number> {
+  const cutoff = new Date(Date.now() - maxAgeMinutes * 60 * 1000).toISOString();
+
+  const { data, error } = await getQueueTable(sbAdmin)
+    .update({
+      status: 'queued',
+      batch_id: null,
+      claimed_at: null,
+      last_error: null,
+      attempt_count: 0,
+    })
+    .eq('status', 'processing')
+    .lt('last_attempt_at', cutoff)
+    .select('id');
+
+  if (error) throw error;
+
+  return data?.length ?? 0;
+}
+
+export async function autoSkipRejectedPosts(sbAdmin: any): Promise<number> {
+  const { data: rejectedChecks, error } = await sbAdmin
+    .from('user_group_post_checks')
+    .select('post_id, user_id')
+    .eq('approval_status', 'REJECTED');
+
+  if (error) throw error;
+
+  if (!rejectedChecks || rejectedChecks.length === 0) return 0;
+
+  const updates = rejectedChecks.map(
+    (check: { post_id: string; user_id: string }) => ({
+      post_id: check.post_id,
+      user_id: check.user_id,
+      status: 'skipped' as const,
+      batch_id: null,
+      claimed_at: null,
+      cancelled_at: new Date().toISOString(),
+      last_error: 'Post was rejected - auto-skipped',
+    })
+  );
+
+  for (const update of updates) {
+    await getQueueTable(sbAdmin)
+      .update({
+        status: update.status,
+        batch_id: update.batch_id,
+        claimed_at: update.claimed_at,
+        cancelled_at: update.cancelled_at,
+        last_error: update.last_error,
+      })
+      .eq('post_id', update.post_id)
+      .eq('user_id', update.user_id)
+      .eq('status', 'queued');
+  }
+
+  return updates.length;
+}
+
 export async function reconcileOrphanedApprovedPosts(
   sbAdmin: any
 ): Promise<{ enqueued: number; checked: number }> {
@@ -753,18 +815,35 @@ async function processEmailWithContext(
 
   if (!result.success) {
     const blockedRecipient = result.blockedRecipients?.[0];
+    const isRateLimit = result.rateLimitInfo && !result.rateLimitInfo.allowed;
+
+    if (blockedRecipient) {
+      await markQueueRow(sbAdmin, row.id, {
+        status: 'skipped',
+        batch_id: null,
+        blocked_reason: blockedRecipient.reason ?? null,
+        last_error: `Blocked: ${blockedRecipient.reason ?? 'recipient blocked'}`,
+      });
+      return { id: row.id, status: 'skipped', reason: 'blocked' };
+    }
+
+    if (isRateLimit) {
+      await markQueueRow(sbAdmin, row.id, {
+        status: 'failed',
+        batch_id: null,
+        blocked_reason: null,
+        last_error: result.rateLimitInfo?.reason ?? 'Rate limited',
+      });
+      return { id: row.id, status: 'failed', reason: 'rate_limited' };
+    }
+
     await markQueueRow(sbAdmin, row.id, {
-      status: blockedRecipient ? 'blocked' : 'failed',
+      status: 'failed',
       batch_id: null,
-      blocked_reason: blockedRecipient?.reason ?? null,
-      last_error:
-        blockedRecipient?.reason ??
-        result.error ??
-        (result.rateLimitInfo && !result.rateLimitInfo.allowed
-          ? 'Rate limited'
-          : 'Unknown send failure'),
+      blocked_reason: null,
+      last_error: result.error ?? 'Unknown send failure',
     });
-    return { id: row.id, status: blockedRecipient ? 'blocked' : 'failed' };
+    return { id: row.id, status: 'failed' };
   }
 
   const { data: sentEmail, error: sentInsertError } = await sbAdmin

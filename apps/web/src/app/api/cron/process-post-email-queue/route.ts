@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
   autoSkipOldPostEmails,
+  autoSkipRejectedPosts,
+  cleanupStaleProcessingRows,
   processPostEmailQueueBatch,
   reconcileOrphanedApprovedPosts,
   reEnqueueSkippedPostEmails,
@@ -64,11 +66,27 @@ export async function GET(req: NextRequest) {
       10
     );
 
+    log('info', `[${requestId}] Phase 0: cleanupStaleProcessingRows`);
+    const cleanupStart = Date.now();
+    const cleanedUp = await cleanupStaleProcessingRows(sbAdmin);
+    log('info', `[${requestId}] Phase 0 complete`, {
+      durationMs: Date.now() - cleanupStart,
+      cleanedUp,
+    });
+
     log('info', `[${requestId}] Phase 1: autoSkipOldPostEmails`);
     const skipStart = Date.now();
     await autoSkipOldPostEmails(sbAdmin);
     log('info', `[${requestId}] Phase 1 complete`, {
       durationMs: Date.now() - skipStart,
+    });
+
+    log('info', `[${requestId}] Phase 1.5: autoSkipRejectedPosts`);
+    const rejectStart = Date.now();
+    const rejectedSkipped = await autoSkipRejectedPosts(sbAdmin);
+    log('info', `[${requestId}] Phase 1.5 complete`, {
+      durationMs: Date.now() - rejectStart,
+      rejectedSkipped,
     });
 
     log('info', `[${requestId}] Phase 2: reEnqueueSkippedPostEmails`);
