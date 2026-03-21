@@ -297,13 +297,16 @@ export async function enqueueApprovedPostEmails(
   );
 
   const filteredRecipients = recipients.filter((recipient) => {
-    if (sentRecipientIds.has(recipient.user_id)) return false;
     const existing = existingByUserId.get(recipient.user_id);
-    return (
-      existing?.status !== 'sent' &&
-      existing?.status !== 'processing' &&
-      existing?.status !== 'skipped'
-    );
+    if (existing) {
+      return (
+        existing.status !== 'sent' &&
+        existing.status !== 'processing' &&
+        existing.status !== 'skipped'
+      );
+    }
+    if (sentRecipientIds.has(recipient.user_id)) return false;
+    return true;
   });
 
   console.log('[enqueueApprovedPostEmails] After dedup filter', {
