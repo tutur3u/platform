@@ -77,7 +77,7 @@ describe('Post Approval Workflow', () => {
 
   describe('Approval Status Values', () => {
     it('should have correct approval status enum values', () => {
-      const expectedStatuses = ['PENDING', 'APPROVED', 'REJECTED'];
+      const expectedStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'SKIPPED'];
 
       // Verify all expected statuses are defined in the APPROVAL_STATUS object
       const actualStatuses = Object.values(APPROVAL_STATUS);

@@ -966,6 +966,7 @@
       "status_approved": "Đã duyệt",
       "status_pending": "Đang chờ",
       "status_rejected": "Từ chối",
+      "status_skipped": "Đã bỏ qua",
       "title": "Bộ lọc",
       "user": "Người dùng"
     },

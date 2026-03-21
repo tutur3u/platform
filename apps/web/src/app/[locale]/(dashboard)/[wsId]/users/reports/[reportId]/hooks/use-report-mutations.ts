@@ -18,7 +18,12 @@ export type UserReport = Partial<WorkspaceUserReport> & {
   user_note?: string | null;
   creator_name?: string;
   group_name?: string;
-  report_approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  report_approval_status?:
+    | 'PENDING'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'SKIPPED'
+    | null;
 };
 
 export function useReportMutations({

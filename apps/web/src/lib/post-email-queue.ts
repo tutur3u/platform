@@ -401,7 +401,7 @@ export async function autoSkipOldApprovedPostChecks(
   let checksQuery = sbAdmin
     .from('user_group_post_checks')
     .select(
-      'post_id, user_id, user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
+      'post_id, user_id, user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(id, ws_id))'
     )
     .eq('approval_status', 'APPROVED')
     .not('is_completed', 'is', null)

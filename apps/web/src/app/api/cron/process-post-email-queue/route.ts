@@ -195,8 +195,10 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     const totalDuration = Date.now() - startTime;
+    const errorMessage =
+      error instanceof Error ? error.message : String(error ?? 'Unknown error');
     log('error', `[${requestId}] Cron job failed after ${totalDuration}ms`, {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
     });
     return NextResponse.json(
@@ -204,7 +206,7 @@ export async function GET(req: NextRequest) {
         ok: false,
         requestId,
         totalDurationMs: totalDuration,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
       },
       { status: 500 }
     );

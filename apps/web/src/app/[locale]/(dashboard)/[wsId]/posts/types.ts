@@ -20,6 +20,7 @@ export const POST_APPROVAL_STATUSES = [
   'PENDING',
   'APPROVED',
   'REJECTED',
+  'SKIPPED',
 ] as const;
 
 export type PostApprovalStatus = (typeof POST_APPROVAL_STATUSES)[number];

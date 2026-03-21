@@ -30,7 +30,7 @@ export function useReportHistory({
 }: {
   wsId: string;
   reportId?: string;
-  reportApprovalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  reportApprovalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SKIPPED' | null;
   isNew: boolean;
 }): UseReportHistoryReturn {
   const locale = useLocale();

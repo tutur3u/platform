@@ -966,6 +966,7 @@
       "status_approved": "Approved",
       "status_pending": "Pending",
       "status_rejected": "Rejected",
+      "status_skipped": "Skipped",
       "title": "Filters",
       "user": "User"
     },
