@@ -75,14 +75,14 @@ class _AsyncDeleteConfirmationDialogState
 
   Future<void> _handleConfirm() async {
     final toastContext = widget.toastContext ?? context;
-    final navigator = Navigator.of(toastContext);
     setState(() => _isDeleting = true);
     try {
       await widget.onConfirm();
       if (!mounted) {
         return;
       }
-      navigator.pop(true);
+      // Pop the dialog with true result
+      Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (!mounted) {
         return;

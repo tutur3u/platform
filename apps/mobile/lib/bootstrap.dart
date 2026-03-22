@@ -45,10 +45,13 @@ Future<void> bootstrap(
   }
 
   // Pre-load the user's last routes so the router starts there directly.
-  // If a mini-app route exists, prefer it over the generic tab route.
+  // Prefer the more specific tab route if it's a sub-route of a mini-app,
+  // otherwise fall back to the app route or generic tab route.
   final lastTabRoute = await SettingsRepository().getLastTabRoute();
   final lastAppRoute = await SettingsRepository().getLastAppRoute();
-  final initialRoute = lastAppRoute ?? lastTabRoute;
+  // Use lastTabRoute if it's more specific (e.g., /timer/history vs /timer)
+  // otherwise fall back to lastAppRoute or lastTabRoute
+  final initialRoute = lastTabRoute ?? lastAppRoute;
   final hasSeenOnboarding = await SettingsRepository().hasSeenOnboarding();
 
   runApp(

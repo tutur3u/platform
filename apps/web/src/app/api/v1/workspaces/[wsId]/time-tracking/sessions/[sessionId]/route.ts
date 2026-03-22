@@ -86,16 +86,44 @@ export async function PATCH(
 
     const sbAdmin = await createAdminClient();
 
-    const { data: session, error: sessionError } = await sbAdmin
+    console.log('[DEBUG] Looking up session:', {
+      sessionId,
+      normalizedWsId,
+      userId: user.id,
+      originalWsId: wsId,
+    });
+
+    let session = await sbAdmin
       .from('time_tracking_sessions')
       .select('*')
       .eq('id', sessionId)
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .maybeSingle();
+      .maybeSingle()
+      .then(({ data }) => data);
 
-    if (sessionError || !session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    if (!session) {
+      // Fallback: try with original wsId (for sessions created before fix)
+      const { data: fallbackSession, error: fallbackError } = await sbAdmin
+        .from('time_tracking_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .eq('ws_id', wsId) // Use original wsId from URL
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (fallbackError || !fallbackSession) {
+        console.log(
+          '[DEBUG PATCH] Session not found with either normalized or original wsId'
+        );
+        return NextResponse.json(
+          { error: 'Session not found' },
+          { status: 404 }
+        );
+      }
+
+      console.log('[DEBUG PATCH] Found session with original wsId fallback');
+      session = fallbackSession;
     }
 
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
@@ -183,20 +211,44 @@ export async function DELETE(
     const { user, normalizedWsId } = authResult;
     const sbAdmin = await createAdminClient();
 
-    const { data: session, error: sessionError } = await sbAdmin
+    console.log('[DEBUG DELETE] Looking up session:', {
+      sessionId,
+      normalizedWsId,
+      userId: user.id,
+      originalWsId: wsId,
+    });
+
+    let session = await sbAdmin
       .from('time_tracking_sessions')
-      .select('id')
+      .select('id, ws_id, user_id')
       .eq('id', sessionId)
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (sessionError) {
-      throw sessionError;
-    }
+      .maybeSingle()
+      .then(({ data }) => data);
 
     if (!session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      // Fallback: try with original wsId (for sessions created before fix)
+      const { data: fallbackSession, error: fallbackError } = await sbAdmin
+        .from('time_tracking_sessions')
+        .select('id, ws_id, user_id')
+        .eq('id', sessionId)
+        .eq('ws_id', wsId) // Use original wsId from URL
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (fallbackError || !fallbackSession) {
+        console.log(
+          '[DEBUG DELETE] Session not found with either normalized or original wsId'
+        );
+        return NextResponse.json(
+          { error: 'Session not found' },
+          { status: 404 }
+        );
+      }
+
+      console.log('[DEBUG DELETE] Found session with original wsId fallback');
+      session = fallbackSession;
     }
 
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
@@ -206,15 +258,26 @@ export async function DELETE(
         { status: 403 }
       );
     }
+
+    // Use the session's actual ws_id for deletion (handles fallback case)
+    const sessionWsId = session.ws_id;
+
+    console.log('[DEBUG DELETE] Attempting delete with ws_id:', sessionWsId);
+
     const { data: deletedRows, error } = await sbAdmin
       .from('time_tracking_sessions')
       .delete()
       .select('id')
       .eq('id', sessionId)
-      .eq('ws_id', normalizedWsId)
+      .eq('ws_id', sessionWsId)
       .eq('user_id', user.id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('[DEBUG DELETE] Delete error:', error);
+      throw error;
+    }
+
+    console.log('[DEBUG DELETE] Deleted rows:', deletedRows);
 
     if (!deletedRows || deletedRows.length === 0) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
