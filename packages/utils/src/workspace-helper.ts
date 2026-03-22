@@ -9,6 +9,8 @@ import type {
   WorkspaceProductTier,
 } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import type { NextRequest } from 'next/server';
+import { validate as validateUUID } from 'uuid';
 import {
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
@@ -788,10 +790,18 @@ export async function isPersonalWorkspace(
 
 export async function normalizeWorkspaceId(
   wsId: string,
-  supabase?: TypedSupabaseClient
+  supabase?: TypedSupabaseClient,
+  request?: NextRequest
 ): Promise<string> {
-  const sb = supabase ?? (await createClient());
-  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+  // Use provided client, or create one from request (for mobile Bearer auth)
+  // or fall back to cookie-based client
+  const sb =
+    supabase ??
+    (request != null ? await createClient(request) : await createClient());
+  if (
+    wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG ||
+    wsId === ROOT_WORKSPACE_ID
+  ) {
     const {
       data: { user },
     } = await sb.auth.getUser();
@@ -829,7 +839,10 @@ export async function getWorkspaceConfig(
 ): Promise<string | null> {
   const sbAdmin = await createAdminClient();
 
-  const resolvedWorkspaceId = await normalizeWorkspaceId(wsId);
+  // Skip normalization if already a valid UUID (avoids auth check in admin context)
+  const resolvedWorkspaceId = validateUUID(wsId)
+    ? wsId
+    : await normalizeWorkspaceId(wsId);
 
   const { data, error } = await sbAdmin
     .from('workspace_configs')

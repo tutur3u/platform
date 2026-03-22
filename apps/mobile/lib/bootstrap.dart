@@ -44,8 +44,11 @@ Future<void> bootstrap(
     log('Failed to initialize Supabase: $e', stackTrace: st);
   }
 
-  // Pre-load the user's last tab route so the router starts there directly.
-  final initialRoute = await SettingsRepository().getLastTabRoute();
+  // Pre-load the user's last routes so the router starts there directly.
+  // If a mini-app route exists, prefer it over the generic tab route.
+  final lastTabRoute = await SettingsRepository().getLastTabRoute();
+  final lastAppRoute = await SettingsRepository().getLastAppRoute();
+  final initialRoute = lastAppRoute ?? lastTabRoute;
   final hasSeenOnboarding = await SettingsRepository().hasSeenOnboarding();
 
   runApp(

@@ -142,6 +142,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   Timer? _debounce;
+  bool _isSearchVisible = false;
 
   @override
   void initState() {
@@ -177,6 +178,18 @@ class _TransactionListViewState extends State<_TransactionListView> {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
       unawaited(context.read<TransactionListCubit>().setSearch(query));
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearchVisible = !_isSearchVisible;
+      if (!_isSearchVisible) {
+        _searchController.clear();
+        unawaited(
+          context.read<TransactionListCubit>().setSearch(''),
+        );
+      }
     });
   }
 
@@ -216,7 +229,18 @@ class _TransactionListViewState extends State<_TransactionListView> {
 
     return shad.Scaffold(
       headers: [
-        MobileSectionAppBar(title: l10n.financeTransactions),
+        MobileSectionAppBar(
+          title: l10n.financeTransactions,
+          actions: [
+            shad.IconButton.ghost(
+              icon: Icon(
+                _isSearchVisible ? Icons.close : Icons.search,
+                size: 20,
+              ),
+              onPressed: _toggleSearch,
+            ),
+          ],
+        ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
@@ -226,18 +250,21 @@ class _TransactionListViewState extends State<_TransactionListView> {
           children: [
             Column(
               children: [
-                // Search bar
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: shad.TextField(
-                    controller: _searchController,
-                    hintText: l10n.financeSearchTransactions,
-                    onChanged: _onSearchChanged,
-                    features: const [
-                      shad.InputFeature.leading(Icon(Icons.search, size: 18)),
-                    ],
+                // Search bar (only visible when toggled)
+                if (_isSearchVisible)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: shad.TextField(
+                      controller: _searchController,
+                      hintText: l10n.financeSearchTransactions,
+                      onChanged: _onSearchChanged,
+                      features: const [
+                        shad.InputFeature.leading(
+                          Icon(Icons.search, size: 18),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 Expanded(
                   child:
                       BlocBuilder<TransactionListCubit, TransactionListState>(

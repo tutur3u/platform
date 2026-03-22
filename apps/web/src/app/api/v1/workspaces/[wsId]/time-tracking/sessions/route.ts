@@ -367,7 +367,11 @@ async function createRunningSession({
 export const GET = withSessionAuth<{ wsId: string }>(
   async (request, { user, supabase }, { wsId }) => {
     try {
-      const normalizedWsId = await normalizeWorkspaceId(wsId);
+      const normalizedWsId = await normalizeWorkspaceId(
+        wsId,
+        supabase,
+        request
+      );
       const sbAdmin = await createAdminClient();
 
       // Verify workspace access
@@ -704,7 +708,11 @@ export const GET = withSessionAuth<{ wsId: string }>(
 export const POST = withSessionAuth<{ wsId: string }>(
   async (request, { user, supabase }, { wsId }) => {
     try {
-      const normalizedWsId = await normalizeWorkspaceId(wsId);
+      const normalizedWsId = await normalizeWorkspaceId(
+        wsId,
+        supabase,
+        request
+      );
 
       // Verify workspace access
       const { data: memberCheck } = await supabase

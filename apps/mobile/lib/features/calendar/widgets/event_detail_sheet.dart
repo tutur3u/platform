@@ -76,10 +76,13 @@ class _EventDetailContent extends StatelessWidget {
                   color: colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  _formatDateRange(dateFormat, timeFormat),
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                Expanded(
+                  child: Text(
+                    _formatDateRange(dateFormat, timeFormat),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -149,8 +152,14 @@ class _EventDetailContent extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 400),
             child: shad.AlertDialog(
               barrierColor: Colors.transparent,
-              title: Text(l10n.calendarDeleteEvent),
-              content: Text(l10n.calendarDeleteConfirm),
+              title: Text(
+                l10n.calendarDeleteEvent,
+                textAlign: TextAlign.center,
+              ),
+              content: Text(
+                l10n.calendarDeleteConfirm,
+                textAlign: TextAlign.center,
+              ),
               actions: [
                 shad.OutlineButton(
                   onPressed: () => Navigator.of(ctx).pop(),

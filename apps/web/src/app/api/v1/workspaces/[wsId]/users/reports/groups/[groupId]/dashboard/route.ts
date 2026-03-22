@@ -121,20 +121,38 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const { reportId, userId } = parsedSearchParams.data;
+
+    console.log(
+      `[Reports Dashboard] Request for group ${groupId}, user ${userId}, report ${reportId}`
+    );
+
     const permissions = await getPermissions({ wsId, request });
 
     if (!permissions) {
+      console.log(
+        `[Reports Dashboard] No permissions found for workspace ${wsId}`
+      );
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     const { containsPermission } = permissions;
     if (!containsPermission('view_user_groups_reports')) {
+      console.log(
+        `[Reports Dashboard] User lacks view_user_groups_reports permission`
+      );
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
     if (!containsPermission('manage_users')) {
       const accessibleGroupIds = await getUserGroupMemberships(wsId);
+      console.log(
+        `[Reports Dashboard] Non-manager user, accessible groups:`,
+        accessibleGroupIds
+      );
       if (!accessibleGroupIds.includes(groupId)) {
+        console.log(
+          `[Reports Dashboard] User doesn't have access to group ${groupId}`
+        );
         return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
       }
     }
@@ -259,6 +277,16 @@ export async function GET(request: Request, { params }: Params) {
     const reportDetail = reportDetailResult.data
       ? mapReportWithNames(reportDetailResult.data as any)
       : null;
+
+    if (reportId && reportId !== 'new' && !reportDetail) {
+      console.log(
+        `[Reports Dashboard] Report detail not found for reportId=${reportId}, userId=${userId}, groupId=${groupId}`
+      );
+      console.log(
+        `[Reports Dashboard] Available reports for user:`,
+        reports.map((r) => ({ id: r.id, title: r.title, user_id: r.user_id }))
+      );
+    }
     const healthcareVitals = (healthcareVitalsResult.data || [])
       .sort(
         (left: any, right: any) =>

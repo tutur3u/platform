@@ -48,6 +48,10 @@ class Env {
     'MOBILE_TASK_DESCRIPTION_EDITING_ENABLED',
   );
 
+  static const isCalendarIntegrationsEnabled = bool.fromEnvironment(
+    'MOBILE_CALENDAR_INTEGRATIONS_ENABLED',
+  );
+
   static bool get isTurnstileConfigured =>
       turnstileSiteKey.isNotEmpty && turnstileBaseUrl.isNotEmpty;
 

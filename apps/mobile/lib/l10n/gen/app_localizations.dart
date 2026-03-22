@@ -3883,6 +3883,42 @@ abstract class AppLocalizations {
   /// **'Net'**
   String get financeNet;
 
+  /// No description provided for @financeNetBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Net balance'**
+  String get financeNetBalance;
+
+  /// No description provided for @financeYourWallets.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallets'**
+  String get financeYourWallets;
+
+  /// No description provided for @financeQuickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick actions'**
+  String get financeQuickActions;
+
+  /// No description provided for @financeAddTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get financeAddTransaction;
+
+  /// No description provided for @financeAddFirstTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add first transaction'**
+  String get financeAddFirstTransaction;
+
+  /// No description provided for @financeCreateFirstWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Create first wallet'**
+  String get financeCreateFirstWallet;
+
   /// No description provided for @financeTransfer.
   ///
   /// In en, this message translates to:
@@ -3934,7 +3970,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerTitle.
   ///
   /// In en, this message translates to:
-  /// **'Time tracker'**
+  /// **'Timer'**
   String get timerTitle;
 
   /// No description provided for @timerStart.
@@ -4090,7 +4126,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerStatsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Stats'**
+  /// **'Statistics'**
   String get timerStatsTitle;
 
   /// No description provided for @timerStatsPersonal.

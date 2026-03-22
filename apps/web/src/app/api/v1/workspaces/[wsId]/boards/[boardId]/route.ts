@@ -1,9 +1,11 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const paramsSchema = z.object({
-  wsId: z.guid(),
+  wsId: z.string().min(1),
   boardId: z.guid(),
 });
 
@@ -30,7 +32,9 @@ async function verifyWorkspaceAccess(
 export const DELETE = withSessionAuth<BoardParams>(
   async (_req, { user, supabase }, rawParams) => {
     try {
-      const { wsId, boardId } = paramsSchema.parse(rawParams);
+      const rawWsId = paramsSchema.parse(rawParams).wsId;
+      const { boardId } = paramsSchema.parse(rawParams);
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
       if (!(await verifyWorkspaceAccess(supabase, wsId, user.id))) {
         return NextResponse.json(
@@ -39,7 +43,9 @@ export const DELETE = withSessionAuth<BoardParams>(
         );
       }
 
-      const { data: board, error: boardCheckError } = await supabase
+      const sbAdmin = await createAdminClient();
+
+      const { data: board, error: boardCheckError } = await sbAdmin
         .from('workspace_boards')
         .select('id, deleted_at')
         .eq('id', boardId)
@@ -57,7 +63,7 @@ export const DELETE = withSessionAuth<BoardParams>(
         );
       }
 
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await sbAdmin
         .from('workspace_boards')
         .delete()
         .eq('id', boardId);
@@ -89,7 +95,9 @@ const restoreBodySchema = z.object({
 export const PATCH = withSessionAuth<BoardParams>(
   async (req, { user, supabase }, rawParams) => {
     try {
-      const { wsId, boardId } = paramsSchema.parse(rawParams);
+      const rawWsId = paramsSchema.parse(rawParams).wsId;
+      const { boardId } = paramsSchema.parse(rawParams);
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
       if (!(await verifyWorkspaceAccess(supabase, wsId, user.id))) {
         return NextResponse.json(
@@ -105,7 +113,9 @@ export const PATCH = withSessionAuth<BoardParams>(
         return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
       }
 
-      const { data: board, error: boardCheckError } = await supabase
+      const sbAdmin = await createAdminClient();
+
+      const { data: board, error: boardCheckError } = await sbAdmin
         .from('workspace_boards')
         .select('id, deleted_at')
         .eq('id', boardId)
@@ -123,7 +133,7 @@ export const PATCH = withSessionAuth<BoardParams>(
         );
       }
 
-      const { error: restoreError } = await supabase
+      const { error: restoreError } = await sbAdmin
         .from('workspace_boards')
         .update({ deleted_at: null })
         .eq('id', boardId);
@@ -151,7 +161,9 @@ export const PATCH = withSessionAuth<BoardParams>(
 export const PUT = withSessionAuth<BoardParams>(
   async (_req, { user, supabase }, rawParams) => {
     try {
-      const { wsId, boardId } = paramsSchema.parse(rawParams);
+      const rawWsId = paramsSchema.parse(rawParams).wsId;
+      const { boardId } = paramsSchema.parse(rawParams);
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
       if (!(await verifyWorkspaceAccess(supabase, wsId, user.id))) {
         return NextResponse.json(
@@ -160,7 +172,9 @@ export const PUT = withSessionAuth<BoardParams>(
         );
       }
 
-      const { data: board, error: boardCheckError } = await supabase
+      const sbAdmin = await createAdminClient();
+
+      const { data: board, error: boardCheckError } = await sbAdmin
         .from('workspace_boards')
         .select('id, deleted_at')
         .eq('id', boardId)
@@ -178,7 +192,7 @@ export const PUT = withSessionAuth<BoardParams>(
         );
       }
 
-      const { error: softDeleteError } = await supabase
+      const { error: softDeleteError } = await sbAdmin
         .from('workspace_boards')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', boardId);

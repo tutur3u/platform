@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
@@ -57,24 +58,25 @@ class _CalendarView extends StatelessWidget {
         MobileSectionAppBar(
           title: l10n.calendarTitle,
           actions: [
-            Tooltip(
-              message: l10n.calendarConnectionsTitle,
-              child: shad.IconButton.ghost(
-                icon: const Icon(Icons.sync_alt),
-                onPressed: () {
-                  final wsId = context
-                      .read<WorkspaceCubit>()
-                      .state
-                      .currentWorkspace
-                      ?.id;
-                  if (wsId != null) {
-                    unawaited(
-                      showCalendarConnectionsSheet(context, wsId: wsId),
-                    );
-                  }
-                },
+            if (Env.isCalendarIntegrationsEnabled)
+              Tooltip(
+                message: l10n.calendarConnectionsTitle,
+                child: shad.IconButton.ghost(
+                  icon: const Icon(Icons.sync_alt),
+                  onPressed: () {
+                    final wsId = context
+                        .read<WorkspaceCubit>()
+                        .state
+                        .currentWorkspace
+                        ?.id;
+                    if (wsId != null) {
+                      unawaited(
+                        showCalendarConnectionsSheet(context, wsId: wsId),
+                      );
+                    }
+                  },
+                ),
               ),
-            ),
             Tooltip(
               message: l10n.calendarToday,
               child: shad.IconButton.ghost(
@@ -95,33 +97,9 @@ class _CalendarView extends StatelessWidget {
             BlocBuilder<CalendarCubit, CalendarState>(
               buildWhen: (prev, curr) => prev.viewMode != curr.viewMode,
               builder: (context, state) {
-                return PopupMenuButton<CalendarViewMode>(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 40,
-                    height: 40,
-                  ),
-                  iconSize: 22,
-                  icon: const Icon(Icons.view_agenda_outlined),
-                  onSelected: (mode) {
-                    context.read<CalendarCubit>().setViewMode(mode);
-                  },
-                  itemBuilder: (_) => [
-                    for (final mode in CalendarViewMode.values)
-                      PopupMenuItem(
-                        value: mode,
-                        child: Row(
-                          children: [
-                            if (state.viewMode == mode)
-                              const Icon(Icons.check, size: 18)
-                            else
-                              const SizedBox(width: 18),
-                            const SizedBox(width: 8),
-                            Text(_viewModeLabel(l10n, mode)),
-                          ],
-                        ),
-                      ),
-                  ],
+                return shad.IconButton.ghost(
+                  icon: Icon(_viewModeIcon(state.viewMode)),
+                  onPressed: () => _showViewModeMenu(context, state.viewMode),
                 );
               },
             ),
@@ -307,6 +285,42 @@ class _CalendarView extends StatelessWidget {
       case CalendarViewMode.agenda:
         return l10n.calendarAgendaView;
     }
+  }
+
+  IconData _viewModeIcon(CalendarViewMode mode) {
+    switch (mode) {
+      case CalendarViewMode.day:
+        return Icons.calendar_view_day;
+      case CalendarViewMode.threeDays:
+        return Icons.view_week_outlined;
+      case CalendarViewMode.week:
+        return Icons.calendar_view_week;
+      case CalendarViewMode.month:
+        return Icons.calendar_view_month;
+      case CalendarViewMode.agenda:
+        return Icons.view_agenda_outlined;
+    }
+  }
+
+  void _showViewModeMenu(BuildContext context, CalendarViewMode selected) {
+    final l10n = context.l10n;
+    final cubit = context.read<CalendarCubit>();
+    shad.showDropdown<void>(
+      context: context,
+      builder: (context) {
+        return shad.DropdownMenu(
+          children: CalendarViewMode.values.map((mode) {
+            return shad.MenuButton(
+              leading: selected == mode
+                  ? const Icon(Icons.check, size: 16)
+                  : const SizedBox(width: 16, height: 16),
+              onPressed: (_) => cubit.setViewMode(mode),
+              child: Text(_viewModeLabel(l10n, mode)),
+            );
+          }).toList(),
+        );
+      },
+    );
   }
 
   Future<void> _createEvent(

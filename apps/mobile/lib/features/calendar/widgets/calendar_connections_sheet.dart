@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/calendar_account.dart';
 import 'package:mobile/data/models/calendar_connection.dart';
@@ -435,37 +436,40 @@ class _LoadedBodyState extends State<_LoadedBody> {
         ],
 
         // Add account section.
-        _SectionHeader(label: l10n.calendarConnectionsAddAccount),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _AddAccountButton(
-                label: 'Google',
-                icon: Icons.g_mobiledata,
-                color: _kGoogleColor,
-                onTap: () => unawaited(
-                  context.read<CalendarConnectionsCubit>().connectGoogle(
-                    widget.wsId,
+        if (Env.isCalendarIntegrationsEnabled) ...[
+          _SectionHeader(label: l10n.calendarConnectionsAddAccount),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _AddAccountButton(
+                  label: 'Google',
+                  icon: Icons.g_mobiledata,
+                  color: _kGoogleColor,
+                  onTap: () => unawaited(
+                    context.read<CalendarConnectionsCubit>().connectGoogle(
+                      widget.wsId,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _AddAccountButton(
-                label: 'Outlook',
-                icon: Icons.window,
-                color: _kMicrosoftColor,
-                onTap: () => unawaited(
-                  context.read<CalendarConnectionsCubit>().connectMicrosoft(
-                    widget.wsId,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _AddAccountButton(
+                  label: 'Outlook',
+                  icon: Icons.window,
+                  color: _kMicrosoftColor,
+                  onTap: () => unawaited(
+                    context.read<CalendarConnectionsCubit>().connectMicrosoft(
+                      widget.wsId,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
 
         // Empty state.
         if (state.accounts.isEmpty) ...[

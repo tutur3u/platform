@@ -1974,6 +1974,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNet => 'Net';
 
   @override
+  String get financeNetBalance => 'Net balance';
+
+  @override
+  String get financeYourWallets => 'Your wallets';
+
+  @override
+  String get financeQuickActions => 'Quick actions';
+
+  @override
+  String get financeAddTransaction => 'Add';
+
+  @override
+  String get financeAddFirstTransaction => 'Add first transaction';
+
+  @override
+  String get financeCreateFirstWallet => 'Create first wallet';
+
+  @override
   String get financeTransfer => 'Transfer';
 
   @override
@@ -1998,7 +2016,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeInvertRate => 'Invert rate';
 
   @override
-  String get timerTitle => 'Time tracker';
+  String get timerTitle => 'Timer';
 
   @override
   String get timerStart => 'Start';
@@ -2076,7 +2094,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerStreak => 'Streak';
 
   @override
-  String get timerStatsTitle => 'Stats';
+  String get timerStatsTitle => 'Statistics';
 
   @override
   String get timerStatsPersonal => 'Personal';

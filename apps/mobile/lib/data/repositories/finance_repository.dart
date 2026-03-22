@@ -32,11 +32,12 @@ class FinanceRepository {
       final value = response['value'] as String?;
       if (value == null || value.trim().isEmpty) return 'USD';
       return value.trim().toUpperCase();
-    } on ApiException catch (error) {
-      if (error.statusCode == 404) {
-        return 'USD';
-      }
-      rethrow;
+    } on ApiException {
+      // Fallback to USD on API errors (e.g., 404)
+      return 'USD';
+    } on Exception {
+      // Fallback to USD on any unexpected error
+      return 'USD';
     }
   }
 

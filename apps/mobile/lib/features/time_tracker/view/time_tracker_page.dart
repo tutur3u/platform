@@ -83,27 +83,45 @@ class _TimeTrackerView extends StatefulWidget {
 }
 
 class _TimeTrackerViewState extends State<_TimeTrackerView> {
-  late final int _index;
+  late int _index;
 
   @override
   void initState() {
     super.initState();
     _index = widget.initialSection.index;
+    _loadData();
+  }
+
+  @override
+  void didUpdateWidget(_TimeTrackerView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialSection != oldWidget.initialSection) {
+      setState(() {
+        _index = widget.initialSection.index;
+      });
+    }
+  }
+
+  void _loadData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final workspaceCubit = context.read<WorkspaceCubit>();
       final timeTrackerCubit = context.read<TimeTrackerCubit>();
       final wsId = workspaceCubit.state.currentWorkspace?.id;
       final userId = supabase.auth.currentUser?.id;
-      if (wsId != null && userId != null) {
-        unawaited(
-          timeTrackerCubit.loadData(
-            wsId,
-            userId,
-            firstDayOfWeek: _firstDayOfWeek(context),
-          ),
-        );
+      // Avoid reloading if data is already loaded for this workspace
+      if (wsId == null ||
+          userId == null ||
+          timeTrackerCubit.state.status == TimeTrackerStatus.loaded) {
+        return;
       }
+      unawaited(
+        timeTrackerCubit.loadData(
+          wsId,
+          userId,
+          firstDayOfWeek: _firstDayOfWeek(context),
+        ),
+      );
     });
   }
 
@@ -127,40 +145,30 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           );
         }
       },
-      child: BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
-        buildWhen: (prev, curr) => prev.status != curr.status,
-        builder: (context, state) {
-          if (state.status == TimeTrackerStatus.loading) {
-            return shad.Scaffold(
-              headers: [
-                MobileSectionAppBar(title: l10n.timerTitle),
-              ],
-              child: const Center(child: shad.CircularProgressIndicator()),
-            );
-          }
-
-          if (state.status == TimeTrackerStatus.error) {
-            return shad.Scaffold(
-              headers: [
-                MobileSectionAppBar(title: l10n.timerTitle),
-              ],
-              child: _ErrorView(error: state.error),
-            );
-          }
-
-          return shad.Scaffold(
-            headers: [
-              MobileSectionAppBar(
-                title: l10n.timerTitle,
-                actions: [
-                  shad.IconButton.ghost(
-                    onPressed: () => _showPomodoroSettings(context),
-                    icon: const Icon(Icons.settings_outlined),
-                  ),
-                ],
+      child: shad.Scaffold(
+        headers: [
+          MobileSectionAppBar(
+            title: _getAppBarTitle(l10n),
+            actions: [
+              shad.IconButton.ghost(
+                onPressed: () => _showPomodoroSettings(context),
+                icon: const Icon(Icons.settings_outlined),
               ),
             ],
-            child: ResponsiveWrapper(
+          ),
+        ],
+        child: BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
+          buildWhen: (prev, curr) => prev.status != curr.status,
+          builder: (context, state) {
+            if (state.status == TimeTrackerStatus.loading) {
+              return const Center(child: shad.CircularProgressIndicator());
+            }
+
+            if (state.status == TimeTrackerStatus.error) {
+              return _ErrorView(error: state.error);
+            }
+
+            return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: IndexedStack(
                 index: _index,
@@ -170,11 +178,20 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                   StatsTab(initialScope: widget.initialStatsScope),
                 ],
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
+  }
+
+  String _getAppBarTitle(AppLocalizations l10n) {
+    // Show tab-specific title unless on the home (timer) tab
+    return switch (_index) {
+      1 => l10n.timerHistory,
+      2 => l10n.timerStatsTitle,
+      _ => l10n.timerTitle,
+    };
   }
 
   void _showPomodoroSettings(BuildContext context) {

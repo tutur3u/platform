@@ -330,7 +330,10 @@ class ApiClient {
     Map<String, dynamic>? parsed;
     if (response.body.isNotEmpty) {
       try {
-        parsed = jsonDecode(response.body) as Map<String, dynamic>;
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          parsed = decoded;
+        }
       } on FormatException {
         parsed = null;
       }

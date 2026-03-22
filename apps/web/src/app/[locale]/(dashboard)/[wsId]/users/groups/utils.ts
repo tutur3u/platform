@@ -9,14 +9,18 @@ export async function getUserGroupMemberships(wsId: string): Promise<string[]> {
   const supabase = await createClient();
   const workspaceUser = await getCurrentWorkspaceUser(wsId);
 
-  if (!workspaceUser?.virtual_user_id) {
+  // Try virtual_user_id first, fall back to platform_user_id
+  const userId =
+    workspaceUser?.virtual_user_id ?? workspaceUser?.platform_user_id;
+
+  if (!userId) {
     return [];
   }
 
   const { data: memberships, error } = await supabase
     .from('workspace_user_groups_users')
     .select('group_id')
-    .eq('user_id', workspaceUser.virtual_user_id);
+    .eq('user_id', userId);
 
   if (error) throw error;
 
@@ -29,15 +33,19 @@ export async function verifyGroupAccess(wsId: string, groupId: string) {
   const supabase = await createClient();
   const workspaceUser = await getCurrentWorkspaceUser(wsId);
 
-  if (!workspaceUser?.virtual_user_id) {
-    console.error('No virtual user ID found for current workspace user');
+  // Try virtual_user_id first, fall back to platform_user_id
+  const userId =
+    workspaceUser?.virtual_user_id ?? workspaceUser?.platform_user_id;
+
+  if (!userId) {
+    console.error('No user ID found for current workspace user');
     notFound();
   }
 
   const { data: membership, error } = await supabase
     .from('workspace_user_groups_users')
     .select('group_id')
-    .eq('user_id', workspaceUser.virtual_user_id)
+    .eq('user_id', userId)
     .eq('group_id', groupId)
     .maybeSingle();
 

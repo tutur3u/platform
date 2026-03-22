@@ -3,7 +3,10 @@
  * GET /api/v1/mira/calendar - Get user's upcoming calendar events
  */
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { NextResponse } from 'next/server';
 import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
@@ -21,6 +24,7 @@ export async function GET(request: Request) {
     }
 
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -29,12 +33,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get upcoming events (next 7 days)
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError || !membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const now = new Date();
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(now.getDate() + 7);
 
-    const { data: allEvents, error } = await supabase
+    const { data: allEvents, error } = await sbAdmin
       .from('workspace_calendar_events')
       .select('*')
       .eq('ws_id', wsId)

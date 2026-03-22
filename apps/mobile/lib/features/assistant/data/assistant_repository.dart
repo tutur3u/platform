@@ -74,38 +74,36 @@ class AssistantRepository {
   }
 
   Future<List<AssistantGatewayModel>> fetchGatewayModels() async {
-    final response = await supabase
-        .from('ai_gateway_models')
-        .select(
-          'id, name, provider, description, context_window, max_tokens, tags, is_enabled, input_price_per_token, output_price_per_token',
-        )
-        .eq('type', 'language')
-        .order('provider')
-        .order('name');
-
-    return (response as List<dynamic>)
-        .whereType<Map<String, dynamic>>()
-        .map(
-          (model) => AssistantGatewayModel(
-            value: model['id'] as String,
-            label: model['name'] as String? ?? model['id'] as String,
-            provider: model['provider'] as String? ?? 'google',
-            description: model['description'] as String?,
-            context: int.tryParse('${model['context_window'] ?? ''}'),
-            disabled: !(model['is_enabled'] as bool? ?? true),
-            tags: (model['tags'] as List<dynamic>? ?? const [])
-                .map((tag) => tag.toString())
-                .toList(),
-            inputPricePerToken: double.tryParse(
-              '${model['input_price_per_token'] ?? ''}',
+    try {
+      final response = await _apiClient.getJson(
+        '/api/v1/infrastructure/ai/models',
+      );
+      final models = response as List<dynamic>;
+      return models
+          .whereType<Map<String, dynamic>>()
+          .map(
+            (model) => AssistantGatewayModel(
+              value: model['id'] as String,
+              label: model['name'] as String? ?? model['id'] as String,
+              provider: model['provider'] as String? ?? 'google',
+              description: model['description'] as String?,
+              context: (model['context_window'] as num?)?.toInt(),
+              disabled: !(model['is_enabled'] as bool? ?? true),
+              tags: (model['tags'] as List<dynamic>? ?? const [])
+                  .map((tag) => tag.toString())
+                  .toList(),
+              inputPricePerToken: (model['input_price_per_token'] as num?)
+                  ?.toDouble(),
+              outputPricePerToken: (model['output_price_per_token'] as num?)
+                  ?.toDouble(),
+              maxTokens: (model['max_tokens'] as num?)?.toInt(),
             ),
-            outputPricePerToken: double.tryParse(
-              '${model['output_price_per_token'] ?? ''}',
-            ),
-            maxTokens: int.tryParse('${model['max_tokens'] ?? ''}'),
-          ),
-        )
-        .toList();
+          )
+          .toList();
+    } on Exception catch (_) {
+      // Return empty list on permission errors or API failures
+      return const [];
+    }
   }
 
   Future<List<AssistantChatRecord>> fetchRecentChats({int limit = 20}) async {

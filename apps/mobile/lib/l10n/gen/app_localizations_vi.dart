@@ -1974,6 +1974,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeNet => 'Ròng';
 
   @override
+  String get financeNetBalance => 'Số dư ròng';
+
+  @override
+  String get financeYourWallets => 'Ví của bạn';
+
+  @override
+  String get financeQuickActions => 'Thao tác nhanh';
+
+  @override
+  String get financeAddTransaction => 'Thêm';
+
+  @override
+  String get financeAddFirstTransaction => 'Thêm giao dịch đầu tiên';
+
+  @override
+  String get financeCreateFirstWallet => 'Tạo ví đầu tiên';
+
+  @override
   String get financeTransfer => 'Chuyển khoản';
 
   @override

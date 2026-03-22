@@ -563,7 +563,21 @@ export default function GroupReportsClient({
           canDeleteFeedback={canDeleteReports}
         />
       </>
-    ) : null
+    ) : (
+      <div className="flex min-h-100 w-full items-center justify-center rounded-lg border border-dashed py-20">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <AlertCircle className="h-8 w-8 text-dynamic-yellow" />
+          <p className="font-medium text-sm">
+            {t('ws-reports.no_report_selected')}
+          </p>
+          <p className="max-w-md text-muted-foreground text-sm">
+            {reportId && reportId !== 'new'
+              ? 'The selected report could not be loaded. Please try selecting a different report or user.'
+              : 'Select a report from the dropdown above to view details.'}
+          </p>
+        </div>
+      </div>
+    )
   ) : null;
 
   return (

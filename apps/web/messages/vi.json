@@ -12700,6 +12700,7 @@
     "new_report": "Báo cáo mới",
     "next_page": "Trang sau",
     "no_history": "Không có lịch sử",
+    "no_report_selected": "Chưa chọn báo cáo",
     "no_reports_found": "Không tìm thấy báo cáo nào",
     "no_scores": "Không có dữ liệu điểm",
     "no_scores_fetched_confirm": "Lần lấy điểm mới này không trả về kết quả nào. Bạn muốn sử dụng dữ liệu trống này hay giữ lại điểm cũ?",

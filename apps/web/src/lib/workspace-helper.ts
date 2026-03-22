@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
@@ -6,8 +7,10 @@ import {
   getWorkspace,
   getWorkspaceConfig as getWorkspaceConfigUtil,
   isPersonalWorkspace as isPersonalWorkspaceUtil,
+  normalizeWorkspaceId as normalizeWorkspaceIdUtil,
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import type { NextRequest } from 'next/server';
 
 /**
  * Normalizes a workspace identifier (slug or special keyword) into a UUID.
@@ -16,14 +19,22 @@ import { notFound } from 'next/navigation';
  * - All other identifiers (including "internal") -> delegated to resolveWorkspaceId()
  *
  * @param wsIdParam Raw workspace identifier from URL or request
+ * @param supabase Optional Supabase client for authenticated requests
+ * @param request Optional NextRequest for mobile Bearer token auth
  * @returns Resolved workspace UUID
  */
 export const normalizeWorkspaceId = async (
-  wsIdParam: string
+  wsIdParam: string,
+  supabase?: TypedSupabaseClient,
+  request?: NextRequest
 ): Promise<string> => {
   const normalized = wsIdParam.toLowerCase();
 
   if (normalized === PERSONAL_WORKSPACE_SLUG) {
+    // Use the util version with auth context if available
+    if (supabase || request) {
+      return normalizeWorkspaceIdUtil(wsIdParam, supabase, request);
+    }
     const workspace = await getWorkspace(wsIdParam);
     if (!workspace) notFound();
     return workspace.id;

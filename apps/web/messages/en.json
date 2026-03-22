@@ -12700,6 +12700,7 @@
     "new_report": "New Report",
     "next_page": "Next page",
     "no_history": "No history",
+    "no_report_selected": "No report selected",
     "no_reports_found": "No reports found",
     "no_scores": "No scores data",
     "no_scores_fetched_confirm": "The new fetch returned no scores. Do you want to use this empty data or keep your old scores?",

@@ -139,14 +139,26 @@ class _FinanceView extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 32),
                   children: [
+                    // Summary card
+                    _SummaryCard(
+                      totalBalance: state.totalBalance,
+                      workspaceCurrency: state.workspaceCurrency,
+                      showApproximateTotal: state.hasCrossCurrencyWallets,
+                      walletCount: state.wallets.length,
+                      transactionCount: state.recentTransactions.length,
+                    ),
+                    const shad.Gap(24),
+                    // Quick actions
+                    _QuickActionsSection(),
+                    const shad.Gap(24),
+                    // Wallets carousel
                     _WalletsSection(
                       wallets: state.wallets,
                       workspaceCurrency: state.workspaceCurrency,
                       exchangeRates: state.exchangeRates,
-                      totalBalance: state.totalBalance,
-                      showApproximateTotal: state.hasCrossCurrencyWallets,
                     ),
-                    const shad.Gap(8),
+                    const shad.Gap(24),
+                    // Recent transactions
                     _RecentTransactionsSection(
                       transactions: state.recentTransactions,
                     ),
@@ -155,6 +167,284 @@ class _FinanceView extends StatelessWidget {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// Summary Card - Hero section
+// ------------------------------------------------------------------
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.totalBalance,
+    required this.workspaceCurrency,
+    required this.showApproximateTotal,
+    required this.walletCount,
+    required this.transactionCount,
+  });
+
+  final double totalBalance;
+  final String workspaceCurrency;
+  final bool showApproximateTotal;
+  final int walletCount;
+  final int transactionCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: shad.Card(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.primary.withValues(alpha: 0.15),
+                colorScheme.primary.withValues(alpha: 0.05),
+              ],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        Icons.account_balance_wallet,
+                        color: colorScheme.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const shad.Gap(16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.financeNetBalance,
+                            style: theme.typography.textSmall.copyWith(
+                              color: colorScheme.mutedForeground,
+                            ),
+                          ),
+                          const shad.Gap(4),
+                          Text(
+                            '${showApproximateTotal ? '≈ ' : ''}'
+                            '${formatCurrency(
+                              totalBalance,
+                              workspaceCurrency,
+                            )}',
+                            style: theme.typography.h3.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.foreground,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const shad.Gap(16),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _StatPill(
+                        icon: Icons.wallet_outlined,
+                        label: '$walletCount',
+                      ),
+                      const shad.Gap(8),
+                      _StatPill(
+                        icon: Icons.receipt_outlined,
+                        label: '$transactionCount',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  const _StatPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.background.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.border.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: colorScheme.mutedForeground,
+          ),
+          const shad.Gap(6),
+          Text(
+            label,
+            style: theme.typography.textSmall.copyWith(
+              color: colorScheme.mutedForeground,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// Quick Actions Grid
+// ------------------------------------------------------------------
+
+class _QuickActionsSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    final actions = [
+      _QuickAction(
+        icon: Icons.swap_horiz,
+        label: l10n.financeTransactions,
+        route: Routes.transactions,
+        color: Colors.blue,
+      ),
+      _QuickAction(
+        icon: Icons.account_balance_wallet,
+        label: l10n.financeWallets,
+        route: Routes.wallets,
+        color: Colors.green,
+      ),
+      _QuickAction(
+        icon: Icons.category,
+        label: l10n.financeCategories,
+        route: Routes.categories,
+        color: Colors.orange,
+      ),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.financeQuickActions,
+            style: shad.Theme.of(context).typography.small.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const shad.Gap(12),
+          Row(
+            children: actions
+                .map(
+                  (action) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: _QuickActionButton(action: action),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAction {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.route,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String route;
+  final MaterialColor color;
+}
+
+class _QuickActionButton extends StatelessWidget {
+  const _QuickActionButton({required this.action});
+
+  final _QuickAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return shad.Card(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => context.push(action.route),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: action.color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  action.icon,
+                  color: action.color,
+                  size: 20,
+                ),
+              ),
+              const shad.Gap(6),
+              Text(
+                action.label,
+                style: theme.typography.textSmall.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.foreground,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -179,7 +469,7 @@ class _RecentTransactionsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: Row(
             children: [
               Expanded(
@@ -194,19 +484,38 @@ class _RecentTransactionsSection extends StatelessWidget {
                 onPressed: () => context.push(Routes.transactions),
                 child: Text(l10n.financeViewAll),
               ),
-              shad.GhostButton(
-                onPressed: () => context.push(Routes.categories),
-                child: Text(l10n.financeCategories),
-              ),
             ],
           ),
         ),
         if (transactions.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              l10n.financeNoTransactions,
-              style: theme.typography.textMuted,
+            child: shad.Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 48,
+                      color: theme.colorScheme.mutedForeground.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
+                    const shad.Gap(12),
+                    Text(
+                      l10n.financeNoTransactions,
+                      style: theme.typography.textMuted,
+                      textAlign: TextAlign.center,
+                    ),
+                    const shad.Gap(8),
+                    shad.SecondaryButton(
+                      onPressed: () => context.push(Routes.transactions),
+                      child: Text(l10n.financeAddFirstTransaction),
+                    ),
+                  ],
+                ),
+              ),
             ),
           )
         else
@@ -214,9 +523,9 @@ class _RecentTransactionsSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               children: [
-                for (var i = 0; i < transactions.length; i++) ...[
+                for (var i = 0; i < transactions.length && i < 5; i++) ...[
                   _TransactionTile(transactions[i]),
-                  if (i < transactions.length - 1) const shad.Gap(8),
+                  if (i < transactions.length - 1 && i < 4) const shad.Gap(2),
                 ],
               ],
             ),
@@ -245,7 +554,7 @@ class _TransactionTile extends StatelessWidget {
     final subtitle = [
       if (tx.categoryName != null && hasDescription) tx.categoryName!,
       if (tx.walletName != null) tx.walletName!,
-    ].join(' \u00b7 ');
+    ].join(' · ');
 
     final prefix = isExpense ? '' : '+';
     final formatted = formatCurrency(amount, currency);
@@ -253,7 +562,7 @@ class _TransactionTile extends StatelessWidget {
     return shad.Card(
       padding: EdgeInsets.zero,
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         onTap: () async {
           final wsId = context
               .read<WorkspaceCubit>()
@@ -276,27 +585,29 @@ class _TransactionTile extends StatelessWidget {
           _reload(context);
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: isExpense
                       ? colorScheme.destructive.withValues(alpha: 0.12)
                       : colorScheme.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  isExpense ? Icons.arrow_downward : Icons.arrow_upward,
-                  size: 18,
-                  color: isExpense
-                      ? colorScheme.destructive
-                      : colorScheme.primary,
+                child: Center(
+                  child: Icon(
+                    isExpense ? Icons.arrow_downward : Icons.arrow_upward,
+                    size: 20,
+                    color: isExpense
+                        ? colorScheme.destructive
+                        : colorScheme.primary,
+                  ),
                 ),
               ),
-              const shad.Gap(12),
+              const shad.Gap(14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,7 +630,7 @@ class _TransactionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const shad.Gap(8),
+              const shad.Gap(12),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -348,6 +659,101 @@ class _TransactionTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// Wallets section — horizontal scrollable cards
+// ------------------------------------------------------------------
+
+class _WalletsSection extends StatelessWidget {
+  const _WalletsSection({
+    required this.wallets,
+    required this.workspaceCurrency,
+    required this.exchangeRates,
+  });
+
+  final List<Wallet> wallets;
+  final String workspaceCurrency;
+  final List<ExchangeRate> exchangeRates;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.financeYourWallets,
+                  style: theme.typography.small.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              shad.GhostButton(
+                onPressed: () => context.push(Routes.wallets),
+                child: Text(l10n.financeViewAll),
+              ),
+            ],
+          ),
+        ),
+        if (wallets.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: shad.Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 48,
+                      color: theme.colorScheme.mutedForeground.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
+                    const shad.Gap(12),
+                    Text(
+                      l10n.financeNoWallets,
+                      style: theme.typography.textMuted,
+                      textAlign: TextAlign.center,
+                    ),
+                    const shad.Gap(8),
+                    shad.SecondaryButton(
+                      onPressed: () => context.push(Routes.wallets),
+                      child: Text(l10n.financeCreateFirstWallet),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: responsiveValue(context, compact: 160, medium: 176),
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: wallets.length,
+              separatorBuilder: (_, _) => const shad.Gap(12),
+              itemBuilder: (context, index) => _WalletCard(
+                wallet: wallets[index],
+                workspaceCurrency: workspaceCurrency,
+                exchangeRates: exchangeRates,
+                onTap: () =>
+                    context.push(Routes.walletDetailPath(wallets[index].id)),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -384,157 +790,95 @@ class _WalletCard extends StatelessWidget {
     return SizedBox(
       width: responsiveValue(
         context,
-        compact: 180,
-        medium: 200,
-        expanded: 220,
+        compact: 170,
+        medium: 190,
+        expanded: 210,
       ),
       child: shad.Card(
+        padding: EdgeInsets.zero,
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 18,
-                      color: colorScheme.primary,
-                    ),
-                    const shad.Gap(8),
-                    Expanded(
-                      child: Text(
-                        wallet.name ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.textSmall,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primary.withValues(alpha: 0.08),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.account_balance_wallet_outlined,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Text(
-                  formatCurrency(balance, currency),
-                  style: theme.typography.p.copyWith(
-                    fontWeight: FontWeight.w600,
+                      const Spacer(),
+                      if (showConverted)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.muted.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '≈ ${formatCurrency(converted, workspaceCurrency)}',
+                            style: theme.typography.xSmall.copyWith(
+                              color: colorScheme.mutedForeground,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  currency,
-                  style: theme.typography.textSmall.copyWith(
-                    color: colorScheme.mutedForeground,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (showConverted)
+                  const Spacer(),
                   Text(
-                    '≈ ${formatCurrency(converted, workspaceCurrency)}',
-                    style: theme.typography.xSmall.copyWith(
+                    wallet.name ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.textSmall.copyWith(
                       color: colorScheme.mutedForeground,
+                    ),
+                  ),
+                  const shad.Gap(4),
+                  Text(
+                    formatCurrency(balance, currency),
+                    style: theme.typography.h4.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  Text(
+                    currency,
+                    style: theme.typography.textSmall.copyWith(
+                      color: colorScheme.mutedForeground,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-// ------------------------------------------------------------------
-// Wallets section — horizontal scrollable cards
-// ------------------------------------------------------------------
-
-class _WalletsSection extends StatelessWidget {
-  const _WalletsSection({
-    required this.wallets,
-    required this.workspaceCurrency,
-    required this.exchangeRates,
-    required this.totalBalance,
-    required this.showApproximateTotal,
-  });
-
-  final List<Wallet> wallets;
-  final String workspaceCurrency;
-  final List<ExchangeRate> exchangeRates;
-  final double totalBalance;
-  final bool showApproximateTotal;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.financeWallets,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      '${l10n.financeNet}: '
-                      '${showApproximateTotal ? '≈ ' : ''}'
-                      '${formatCurrency(totalBalance, workspaceCurrency)}',
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              shad.GhostButton(
-                onPressed: () => context.push(Routes.wallets),
-                child: Text(l10n.financeViewAll),
-              ),
-            ],
-          ),
-        ),
-        if (wallets.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              l10n.financeNoWallets,
-              style: theme.typography.textMuted,
-            ),
-          )
-        else
-          SizedBox(
-            height: responsiveValue(context, compact: 156, medium: 172),
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: wallets.length,
-              separatorBuilder: (_, _) => const shad.Gap(12),
-              itemBuilder: (context, index) => _WalletCard(
-                wallet: wallets[index],
-                workspaceCurrency: workspaceCurrency,
-                exchangeRates: exchangeRates,
-                onTap: () =>
-                    context.push(Routes.walletDetailPath(wallets[index].id)),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }
