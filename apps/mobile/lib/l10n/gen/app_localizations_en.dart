@@ -216,7 +216,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSelectWorkspace => 'Select a workspace';
 
   @override
-  String get assistantWorkspaceAwareDescription => 'Workspace-aware Mira for planning, questions, and quick actions.';
+  String get assistantWorkspaceAwareDescription => 'Your AI assistant for planning, questions, and quick actions.';
 
   @override
   String get assistantHistoryTitle => 'Recent chats';
@@ -228,13 +228,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantPersonalWorkspace => 'Personal';
 
   @override
-  String get assistantSettingsTitle => 'Mira settings';
+  String get assistantSettingsTitle => 'Assistant settings';
 
   @override
-  String get assistantActionsTitle => 'Mira actions';
+  String get assistantActionsTitle => 'Assistant actions';
 
   @override
-  String get assistantRenameTitle => 'Rename Mira';
+  String get assistantRenameTitle => 'Rename Assistant';
 
   @override
   String get assistantRenameAction => 'Rename';
@@ -291,7 +291,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantReasoningLabel => 'Reasoning';
 
   @override
-  String get assistantAskPlaceholder => 'Ask Mira anything...';
+  String get assistantAskPlaceholder => 'Ask anything...';
 
   @override
   String get assistantQueuedPrefix => 'Queued:';
@@ -354,7 +354,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSeeLessLabel => 'See less';
 
   @override
-  String get assistantExportShareText => 'Mira chat export';
+  String get assistantExportShareText => 'Chat export';
 
   @override
   String get assistantContextUpdatedLabel => 'Workspace context updated';

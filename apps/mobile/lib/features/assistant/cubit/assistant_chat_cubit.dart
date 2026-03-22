@@ -508,6 +508,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
           },
           onDone: () async {
             _streamSubscription = null;
+            // Mark any tools still in streaming state as completed
+            _finalizeToolParts();
             emit(state.copyWith(status: AssistantChatStatus.idle));
             if (_flushAfterStop) {
               await _flushQueue(
@@ -526,6 +528,13 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }
 
   void _handleStreamEvent(AssistantStreamEvent event) {
+    // Debug: log all stream events
+    if (event is AssistantJsonStreamEvent) {
+      print('[ASSISTANT_STREAM] Event: ${event.payload}');
+    } else if (event is AssistantDoneStreamEvent) {
+      print('[ASSISTANT_STREAM] Done event');
+    }
+
     if (event is AssistantDoneStreamEvent) {
       emit(state.copyWith(status: AssistantChatStatus.idle));
       return;
@@ -534,11 +543,15 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
     final payload = event.payload;
     final type = payload['type'] as String? ?? '';
+    print('[ASSISTANT_STREAM] Type: $type, Payload: $payload');
 
     switch (type) {
       case 'start':
-        _activeAssistantMessageId = payload['messageId'] as String?;
-        if (_activeAssistantMessageId == null) return;
+        // Generate a message ID if not provided by the backend
+        _activeAssistantMessageId =
+            payload['messageId'] as String? ?? _repository.generateUuid();
+        _activeTextBlockId = null;
+        _activeReasoningBlockId = null;
         _ensureAssistantMessage(_activeAssistantMessageId!);
         emit(state.copyWith(status: AssistantChatStatus.streaming));
         break;
@@ -861,6 +874,34 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     emit(
       state.copyWith(messages: updated, status: AssistantChatStatus.streaming),
     );
+  }
+
+  void _finalizeToolParts() {
+    if ((_activeAssistantMessageId ?? '').isEmpty) return;
+
+    final updated = state.messages.map<AssistantMessage>((message) {
+      if (message.id != _activeAssistantMessageId) return message;
+
+      final parts = message.parts.map((part) {
+        if (part.type != 'dynamic-tool') return part;
+
+        // Mark any streaming tool as completed
+        final isStreaming =
+            part.state == 'input-streaming' ||
+            part.state == 'input-start' ||
+            part.state == 'output-streaming' ||
+            part.state == 'output-start';
+
+        if (isStreaming) {
+          return part.copyWith(state: 'completed');
+        }
+        return part;
+      }).toList();
+
+      return message.copyWith(parts: parts);
+    }).toList();
+
+    emit(state.copyWith(messages: updated));
   }
 
   @override

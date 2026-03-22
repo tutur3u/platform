@@ -1,5 +1,4 @@
-// Assistant feature parity module: the page coordinates several feature
-// surfaces, so a few lints are intentionally deferred.
+// Assistant page - completely redesigned for modern UX
 // ignore_for_file: directives_ordering, lines_longer_than_80_chars, discarded_futures, avoid_types_on_closure_parameters, avoid_redundant_argument_values, noop_primitive_operations, unnecessary_raw_strings
 
 import 'dart:convert';
@@ -116,7 +115,17 @@ class _AssistantPageState extends State<AssistantPage> {
               return MultiBlocListener(
                 listeners: [
                   BlocListener<AssistantChatCubit, AssistantChatState>(
-                    listenWhen: _shouldAutoScrollForState,
+                    listenWhen: (prev, curr) {
+                      // Only scroll when a new message is added, not on content changes
+                      final shouldScroll =
+                          prev.messages.length != curr.messages.length;
+                      if (shouldScroll) {
+                        print(
+                          '[ASSISTANT_SCROLL] New message detected, scheduling scroll',
+                        );
+                      }
+                      return shouldScroll;
+                    },
                     listener: (context, state) {
                       if (state.messages.isNotEmpty) {
                         _scheduleScrollToBottom();
@@ -155,11 +164,6 @@ class _AssistantPageState extends State<AssistantPage> {
                     final isFullscreen = context.select(
                       (AssistantChromeCubit cubit) => cubit.state.isFullscreen,
                     );
-                    final showRefreshingIndicator =
-                        (shellState.status == AssistantShellStatus.loading &&
-                            shellState.hasWorkspace) ||
-                        (chatState.status == AssistantChatStatus.restoring &&
-                            chatState.hasLoadedOnce);
 
                     return shad.Scaffold(
                       child: SafeArea(
@@ -188,23 +192,12 @@ class _AssistantPageState extends State<AssistantPage> {
                               ),
                               child: Column(
                                 children: [
-                                  if (showRefreshingIndicator)
-                                    const Padding(
-                                      padding: EdgeInsets.only(bottom: 8),
-                                      child: _AssistantRefreshStrip(),
-                                    ),
                                   Expanded(
-                                    child: Stack(
-                                      children: [
-                                        Positioned.fill(
-                                          child: _buildConversation(
-                                            context,
-                                            currentWorkspace,
-                                            shellState,
-                                            chatState,
-                                          ),
-                                        ),
-                                      ],
+                                    child: _buildConversation(
+                                      context,
+                                      currentWorkspace,
+                                      shellState,
+                                      chatState,
                                     ),
                                   ),
                                   if (!shellState.isViewOnly) const shad.Gap(8),
@@ -238,471 +231,281 @@ class _AssistantPageState extends State<AssistantPage> {
     AssistantShellState shellState,
     AssistantChatState chatState,
   ) {
-    final children = <Widget>[];
+    // Debug: log message count
+    print(
+      '[ASSISTANT_UI] Building conversation with ${chatState.messages.length} messages, status: ${chatState.status}',
+    );
 
-    if (chatState.status == AssistantChatStatus.restoring &&
-        !chatState.hasLoadedOnce &&
-        chatState.messages.isEmpty) {
-      children.add(
-        SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.45,
-          child: const Center(child: CircularProgressIndicator()),
-        ),
-      );
-    } else if (chatState.messages.isEmpty) {
-      children.add(_buildEmptyState(context, workspace.id, shellState));
-    } else {
-      for (var index = 0; index < chatState.messages.length; index++) {
-        children.add(
-          _buildMessageCard(
-            context,
-            workspace.id,
-            shellState,
-            chatState.messages[index],
-            chatState.attachmentsByMessageId[chatState.messages[index].id] ??
-                const [],
-          ),
-        );
-        if (index != chatState.messages.length - 1) {
-          children.add(const SizedBox(height: 16));
-        }
-      }
+    // Show empty state only when truly empty and not submitting
+    if (chatState.messages.isEmpty &&
+        chatState.status != AssistantChatStatus.submitting) {
+      print('[ASSISTANT_UI] Showing empty state');
+      return _buildEmptyState(context, workspace.id, shellState);
     }
 
-    return ListView(
+    print('[ASSISTANT_UI] Showing message list');
+
+    // Filter out empty messages
+    final validMessages = chatState.messages.where((msg) {
+      final hasContent = msg.parts.any((part) {
+        if (part.type == 'text' || part.type == 'reasoning') {
+          return (part.text?.trim().isNotEmpty ?? false);
+        }
+        return true; // non-text parts always count
+      });
+      return hasContent ||
+          msg.role == 'user'; // Keep user messages even if empty
+    }).toList();
+
+    return ListView.builder(
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.only(bottom: 8),
-      children: children,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      itemCount: validMessages.length + (chatState.isBusy ? 1 : 0),
+      itemBuilder: (context, index) {
+        // Show typing indicator at the end when assistant is responding
+        if (index == validMessages.length) {
+          return _buildTypingIndicator(context);
+        }
+
+        final message = validMessages[index];
+        final attachments =
+            chatState.attachmentsByMessageId[message.id] ?? const [];
+
+        print(
+          '[ASSISTANT_UI] Building message $index: ${message.role}, parts: ${message.parts.length}',
+        );
+
+        return _buildMessageBubble(
+          context,
+          workspace.id,
+          shellState,
+          message,
+          attachments,
+          isLatest: index == validMessages.length - 1,
+        );
+      },
     );
   }
 
-  Widget _buildMessageCard(
+  Widget _buildMessageBubble(
     BuildContext context,
     String wsId,
     AssistantShellState shellState,
     AssistantMessage message,
-    List<AssistantAttachment> attachments,
-  ) {
-    final isAssistant = message.role == 'assistant';
-    final width = MediaQuery.sizeOf(context).width;
+    List<AssistantAttachment> attachments, {
+    required bool isLatest,
+  }) {
+    final isUser = message.role == 'user';
+    final theme = Theme.of(context);
 
-    return Align(
-      alignment: isAssistant ? Alignment.centerLeft : Alignment.centerRight,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: isAssistant ? 760 : width * 0.74,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isAssistant
-                ? Theme.of(context).colorScheme.surfaceContainerHigh
-                : Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(isAssistant ? 24 : 22),
-            border: isAssistant
-                ? Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  )
-                : null,
-          ),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              14,
-              isAssistant ? 12 : 14,
-              14,
-              isAssistant ? 12 : 14,
+    return Container(
+      margin: EdgeInsets.only(
+        left: isUser ? 48 : 0,
+        right: isUser ? 0 : 48,
+        bottom: 16,
+      ),
+      child: Column(
+        crossAxisAlignment: isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isUser
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(20),
+                topRight: const Radius.circular(20),
+                bottomLeft: Radius.circular(isUser ? 20 : 4),
+                bottomRight: Radius.circular(isUser ? 4 : 20),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isAssistant)
-                  Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          shellState.soul.name.isEmpty
-                              ? 'M'
-                              : shellState.soul.name.characters.first
-                                    .toUpperCase(),
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        shellState.soul.name,
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                    ],
-                  ),
-                if (isAssistant) const SizedBox(height: 8),
                 if (attachments.isNotEmpty)
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: attachments
                         .map(
-                          (attachment) => ActionChip(
-                            label: Text(attachment.name),
-                            onPressed: () =>
-                                _openAttachment(attachment.signedUrl),
+                          (attachment) => _AttachmentChip(
+                            attachment: attachment,
+                            onTap: () => _openAttachment(attachment.signedUrl),
                           ),
                         )
                         .toList(),
                   ),
-                if (attachments.isNotEmpty) const SizedBox(height: 6),
-                if (message.parts.isEmpty && isAssistant)
-                  Text(context.l10n.assistantThinkingStatus)
-                else
-                  ..._buildMessageParts(
-                    context,
-                    wsId,
-                    shellState,
-                    message.parts,
-                    isAssistant: isAssistant,
-                  ),
+                if (attachments.isNotEmpty) const SizedBox(height: 12),
+                ..._buildMessageContent(
+                  context,
+                  wsId,
+                  shellState,
+                  message,
+                  isUser: isUser,
+                ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  List<Widget> _buildMessageParts(
+  List<Widget> _buildMessageContent(
     BuildContext context,
     String wsId,
     AssistantShellState shellState,
-    List<AssistantMessagePart> parts, {
-    required bool isAssistant,
+    AssistantMessage message, {
+    required bool isUser,
   }) {
     final widgets = <Widget>[];
-    for (final part in parts) {
+
+    for (final part in message.parts) {
       switch (part.type) {
-        case 'reasoning':
-          widgets.add(
-            ExpansionTile(
-              title: Text(context.l10n.assistantReasoningLabel),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: MarkdownBody(
-                    data: part.text ?? '',
-                    styleSheet: _markdownStyleSheet(context),
-                  ),
-                ),
-              ],
-            ),
-          );
         case 'text':
-          if (isAssistant) {
+          // Skip empty text parts
+          final text = part.text?.trim() ?? '';
+          if (text.isEmpty) continue;
+
+          if (isUser) {
             widgets.add(
-              MarkdownBody(
-                data: part.text ?? '',
-                styleSheet: _markdownStyleSheet(context),
+              SelectableText(
+                part.text ?? '',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  height: 1.5,
+                ),
               ),
             );
           } else {
             widgets.add(
-              _ExpandableUserText(
-                text: part.text ?? '',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  height: 1.42,
-                ),
+              MarkdownBody(
+                data: part.text ?? '',
+                styleSheet: _markdownStyleSheet(context),
+                selectable: true,
               ),
             );
           }
+        case 'reasoning':
+          final text = part.text?.trim() ?? '';
+          if (text.isEmpty) continue;
+
+          widgets.add(
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerLow.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.psychology_outlined,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        context.l10n.assistantReasoningLabel,
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  MarkdownBody(
+                    data: part.text ?? '',
+                    styleSheet: _markdownStyleSheet(context),
+                  ),
+                ],
+              ),
+            ),
+          );
         case 'source-url':
           widgets.add(
-            TextButton(
-              onPressed: () => _openAttachment(part.url),
-              child: Text(
-                part.title ?? part.url ?? context.l10n.assistantSourceLabel,
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: _SourceLink(
+                title: part.title,
+                url: part.url,
+                onTap: () => _openAttachment(part.url),
               ),
             ),
           );
         case 'dynamic-tool':
-          final toolWidget = _buildToolPart(context, wsId, shellState, part);
-          if (toolWidget != null) {
-            widgets.add(
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: toolWidget,
-              ),
-            );
-          }
-        default:
+          // Tools are collected and rendered as a single consolidated element at the end
           break;
       }
-      widgets.add(const SizedBox(height: 8));
     }
-    if (widgets.isNotEmpty) {
-      widgets.removeLast();
+
+    // Consolidate all tool parts into a single collapsible element at the end
+    final toolParts = message.parts
+        .where((p) => p.type == 'dynamic-tool')
+        .toList();
+    if (toolParts.isNotEmpty) {
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: _ConsolidatedTools(
+            toolParts: toolParts,
+          ),
+        ),
+      );
     }
+
     return widgets;
   }
 
-  Widget? _buildToolPart(
-    BuildContext context,
-    String wsId,
-    AssistantShellState shellState,
-    AssistantMessagePart part,
-  ) {
-    if (part.toolName == 'render_ui') {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildToolDisclosure(context, part),
-          const SizedBox(height: 8),
-          AssistantRenderUi(
-            output: part.output,
-            wsId: wsId,
-            submitText: (text) => _submitText(wsId, shellState, text),
-            financeRepository: _financeRepository,
-            timeTrackerRepository: _timeTrackerRepository,
-            tasksInsight: shellState.tasksInsight,
-          ),
-        ],
-      );
-    }
-
-    return _buildToolDisclosure(context, part);
-  }
-
-  MarkdownStyleSheet _markdownStyleSheet(BuildContext context) {
-    return MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-      p: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.45),
-      code: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        fontFamily: 'monospace',
-      ),
-      codeblockPadding: const EdgeInsets.all(12),
-      codeblockDecoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      blockquotePadding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
-      ),
-      blockquoteDecoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-    );
-  }
-
-  String? _toolStatusText(BuildContext context, AssistantMessagePart part) {
-    switch (part.toolName) {
-      case 'set_workspace_context':
-        return context.l10n.assistantContextUpdatedLabel;
-      case 'update_my_settings':
-        return context.l10n.assistantPreferencesUpdatedLabel;
-    }
-
-    final output = part.output;
-    if (output is Map<String, dynamic>) {
-      for (final key in ['message', 'warning', 'error']) {
-        final value = output[key];
-        if (value is String && value.trim().isNotEmpty) {
-          return value.trim();
-        }
-      }
-    }
-    return null;
-  }
-
-  Widget _buildToolDisclosure(
-    BuildContext context,
-    AssistantMessagePart part,
-  ) {
-    final statusText = _toolStatusText(context, part);
-    final hasInput = part.input != null;
-    final hasOutput = part.output != null;
-
+  Widget _buildTypingIndicator(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(right: 48, bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        dense: true,
-        title: Row(
-          children: [
-            Icon(
-              _toolIcon(part.toolName),
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                _humanizeToolName(part.toolName),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
-          ],
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+          bottomLeft: Radius.circular(4),
+          bottomRight: Radius.circular(20),
         ),
-        subtitle: statusText == null
-            ? null
-            : Text(
-                statusText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (hasInput)
-            _buildToolJsonBlock(
-              context,
-              context.l10n.assistantInputLabel,
-              part.input,
-            ),
-          if (hasInput && hasOutput) const SizedBox(height: 8),
-          if (hasOutput)
-            _buildToolJsonBlock(
-              context,
-              context.l10n.assistantOutputLabel,
-              part.output,
-            ),
+          _AnimatedDot(delay: 0),
+          const SizedBox(width: 4),
+          _AnimatedDot(delay: 200),
+          const SizedBox(width: 4),
+          _AnimatedDot(delay: 400),
         ],
       ),
     );
-  }
-
-  Widget _buildToolJsonBlock(
-    BuildContext context,
-    String label,
-    dynamic value,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-        const SizedBox(height: 6),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: SelectableText(
-            const JsonEncoder.withIndent('  ').convert(value),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  IconData _toolIcon(String? toolName) {
-    switch (toolName) {
-      case 'render_ui':
-        return Icons.dashboard_customize_rounded;
-      case 'select_tools':
-        return Icons.tune_rounded;
-      case 'set_workspace_context':
-        return Icons.workspaces_outline;
-      case 'update_my_settings':
-        return Icons.settings_suggest_rounded;
-      case 'set_immersive_mode':
-        return Icons.fullscreen_rounded;
-      default:
-        return Icons.memory_rounded;
-    }
-  }
-
-  String _humanizeToolName(String? toolName) {
-    if (toolName == null || toolName.isEmpty) {
-      return 'Tool';
-    }
-    return toolName
-        .split('_')
-        .where((part) => part.isNotEmpty)
-        .map(
-          (part) => '${part[0].toUpperCase()}${part.substring(1)}',
-        )
-        .join(' ');
-  }
-
-  bool _shouldAutoScrollForState(
-    AssistantChatState previous,
-    AssistantChatState current,
-  ) {
-    return _lastMessageSignature(previous.messages) !=
-        _lastMessageSignature(current.messages);
-  }
-
-  String _lastMessageSignature(List<AssistantMessage> messages) {
-    if (messages.isEmpty) return '';
-    final last = messages.last;
-    final lastPart = last.parts.isEmpty ? null : last.parts.last;
-    final outputSignature = lastPart?.output is Map<String, dynamic>
-        ? (lastPart!.output as Map<String, dynamic>).length.toString()
-        : (lastPart?.output?.toString().length ?? 0).toString();
-    return [
-      last.id,
-      last.parts.length.toString(),
-      lastPart?.type ?? '',
-      lastPart?.blockId ?? '',
-      (lastPart?.text ?? '').length.toString(),
-      lastPart?.state ?? '',
-      lastPart?.toolCallId ?? '',
-      outputSignature,
-      last.createdAt?.millisecondsSinceEpoch.toString() ?? '',
-    ].join('|');
-  }
-
-  void _scheduleScrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!_scrollController.hasClients) return;
-      final target = _scrollController.position.maxScrollExtent + 120;
-      await _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-      );
-    });
-  }
-
-  void _setFullscreen(bool value, {bool focusInput = false}) {
-    final chromeCubit = context.read<AssistantChromeCubit>();
-    if (chromeCubit.state.isFullscreen != value) {
-      chromeCubit.setFullscreen(value: value);
-    }
-    if (_shellCubit.state.isImmersive != value) {
-      _shellCubit.setImmersiveMode(value);
-    }
-    if (!value) {
-      FocusManager.instance.primaryFocus?.unfocus();
-    }
-    if (value && focusInput) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _inputFocusNode.requestFocus();
-      });
-    }
   }
 
   Widget _buildEmptyState(
@@ -717,61 +520,46 @@ class _AssistantPageState extends State<AssistantPage> {
     ];
 
     return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primaryContainer.withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Animated assistant icon
+            _AnimatedAssistantIcon(),
+            const SizedBox(height: 24),
+            Text(
+              'What can I help you with?',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-              const SizedBox(height: 12),
-              Text(
-                shellState.soul.name,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              context.l10n.assistantWorkspaceAwareDescription,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
               ),
-              const SizedBox(height: 6),
-              Text(
-                context.l10n.assistantWorkspaceAwareDescription,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.3,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: prompts
-                    .map(
-                      (prompt) => shad.OutlineButton(
-                        onPressed: () => _submitText(wsId, shellState, prompt),
-                        child: Text(prompt, textAlign: TextAlign.center),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 32),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: prompts
+                  .map(
+                    (prompt) => _PromptChip(
+                      prompt: prompt,
+                      onTap: () => _submitText(wsId, shellState, prompt),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
         ),
       ),
     );
@@ -783,244 +571,107 @@ class _AssistantPageState extends State<AssistantPage> {
     AssistantShellState shellState,
     AssistantChatState chatState,
   ) {
-    return DecoratedBox(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-        child: Column(
-          children: [
-            if (chatState.composerAttachments.isNotEmpty)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: chatState.composerAttachments
-                        .map(
-                          (attachment) => Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: InputChip(
-                              label: Text(attachment.name),
-                              visualDensity: VisualDensity.compact,
-                              onDeleted: () =>
-                                  _chatCubit.removeComposerAttachment(
-                                    wsId: wsId,
-                                    attachmentId: attachment.id,
-                                  ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (chatState.composerAttachments.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: chatState.composerAttachments
+                      .map(
+                        (attachment) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _AttachmentInputChip(
+                            attachment: attachment,
+                            onDelete: () => _chatCubit.removeComposerAttachment(
+                              wsId: wsId,
+                              attachmentId: attachment.id,
                             ),
                           ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
-            if (chatState.composerAttachments.isNotEmpty)
-              const SizedBox(height: 6),
-            if ((chatState.queuedPreview ?? '').isNotEmpty)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '${context.l10n.assistantQueuedPrefix} ${chatState.queuedPreview}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-            if ((chatState.queuedPreview ?? '').isNotEmpty)
-              const SizedBox(height: 8),
-            Row(
-              children: [
-                PopupMenuButton<_AssistantQuickAction>(
-                  tooltip: context.l10n.assistantActionsTitle,
-                  onSelected: (value) => _handleQuickAction(
-                    context,
-                    value,
-                    wsId,
-                    shellState,
-                    chatState,
-                  ),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: _AssistantQuickAction.toggleFullscreen,
-                      child: Row(
-                        children: [
-                          Icon(
-                            context
-                                    .read<AssistantChromeCubit>()
-                                    .state
-                                    .isFullscreen
-                                ? Icons.fullscreen_exit_rounded
-                                : Icons.fullscreen_rounded,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            context
-                                    .read<AssistantChromeCubit>()
-                                    .state
-                                    .isFullscreen
-                                ? context.l10n.assistantExitFullscreenAction
-                                : context.l10n.assistantEnterFullscreenAction,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (shellState.selectedModel.supportsFileInput)
-                      PopupMenuItem(
-                        value: _AssistantQuickAction.attachFiles,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.attach_file_rounded, size: 18),
-                            const SizedBox(width: 10),
-                            Text(context.l10n.assistantAttachFilesAction),
-                          ],
                         ),
-                      ),
-                    PopupMenuItem(
-                      value: _AssistantQuickAction.history,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.history_rounded, size: 18),
-                          const SizedBox(width: 10),
-                          Text(context.l10n.assistantHistoryTitle),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: _AssistantQuickAction.settings,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.tune_rounded, size: 18),
-                          const SizedBox(width: 10),
-                          Text(context.l10n.assistantSettingsTitle),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: _AssistantQuickAction.newConversation,
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(context.l10n.assistantNewConversation),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      enabled: chatState.messages.isNotEmpty,
-                      value: _AssistantQuickAction.export,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.ios_share_rounded, size: 18),
-                          const SizedBox(width: 10),
-                          Text(context.l10n.assistantExportChat),
-                        ],
-                      ),
-                    ),
-                  ],
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      context.read<AssistantChromeCubit>().state.isFullscreen
-                          ? Icons.fullscreen_exit_rounded
-                          : Icons.fullscreen_rounded,
-                      size: 20,
-                    ),
-                  ),
+                      )
+                      .toList(),
                 ),
-                const SizedBox(width: 12),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                _ComposerActionButton(
+                  icon: Icons.add_rounded,
+                  onPressed: () =>
+                      _showComposerMenu(context, wsId, shellState, chatState),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: _inputController,
                     focusNode: _inputFocusNode,
                     minLines: 1,
-                    maxLines: 5,
+                    maxLines: 6,
                     decoration: InputDecoration(
                       hintText: context.l10n.assistantAskPlaceholder,
+                      hintStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       border: InputBorder.none,
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 4,
+                      ),
                     ),
                     onSubmitted: (_) => _submitCurrentInput(wsId, shellState),
                   ),
                 ),
+                const SizedBox(width: 8),
                 if (chatState.isBusy)
-                  IconButton.filledTonal(
+                  _ComposerActionButton(
+                    icon: Icons.stop_rounded,
+                    isDestructive: true,
                     onPressed: _chatCubit.stopStreaming,
-                    icon: const Icon(Icons.stop_circle_outlined),
                   )
                 else
-                  IconButton.filled(
+                  _SendButton(
                     onPressed: () => _submitCurrentInput(wsId, shellState),
-                    icon: const Icon(Icons.arrow_upward_rounded),
                   ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-
-  Future<void> _handleQuickAction(
-    BuildContext context,
-    _AssistantQuickAction action,
-    String wsId,
-    AssistantShellState shellState,
-    AssistantChatState chatState,
-  ) async {
-    switch (action) {
-      case _AssistantQuickAction.toggleFullscreen:
-        _setFullscreen(
-          !context.read<AssistantChromeCubit>().state.isFullscreen,
-          focusInput: true,
-        );
-      case _AssistantQuickAction.attachFiles:
-        await _pickFiles(wsId);
-      case _AssistantQuickAction.history:
-        await _showHistorySheet(context, wsId);
-      case _AssistantQuickAction.settings:
-        await _showSettingsDialog(context, wsId);
-      case _AssistantQuickAction.newConversation:
-        await _chatCubit.resetConversation(wsId);
-      case _AssistantQuickAction.export:
-        await _exportChat(context, wsId, shellState, chatState);
-    }
-  }
-
-  Future<void> _pickFiles(String wsId) async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      withData: false,
-      type: FileType.any,
-    );
-    final files = result?.files ?? const <PlatformFile>[];
-    if (files.isEmpty) return;
-    await _chatCubit.addComposerAttachments(wsId: wsId, files: files);
   }
 
   Future<void> _submitCurrentInput(
     String wsId,
     AssistantShellState shellState,
   ) async {
-    final text = _inputController.text;
-    await _submitText(wsId, shellState, text);
+    final text = _inputController.text.trim();
+    if (text.isEmpty) return;
+
     _inputController.clear();
+    await _submitText(wsId, shellState, text);
   }
 
   Future<void> _submitText(
@@ -1042,11 +693,176 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
+  void _scheduleScrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent + 100;
+      await _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  bool _lastMessageContentChanged(
+    List<AssistantMessage> prev,
+    List<AssistantMessage> curr,
+  ) {
+    if (prev.isEmpty || curr.isEmpty) return false;
+    if (prev.length != curr.length) return true;
+
+    final prevLast = prev.last;
+    final currLast = curr.last;
+
+    // Check if the last message's parts have changed
+    if (prevLast.parts.length != currLast.parts.length) return true;
+
+    for (var i = 0; i < prevLast.parts.length; i++) {
+      if (prevLast.parts[i].text != currLast.parts[i].text) return true;
+    }
+
+    return false;
+  }
+
+  // ... rest of helper methods
+  MarkdownStyleSheet _markdownStyleSheet(BuildContext context) {
+    final theme = Theme.of(context);
+    return MarkdownStyleSheet(
+      p: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
+      code: theme.textTheme.bodyMedium?.copyWith(
+        fontFamily: 'monospace',
+        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+      ),
+      codeblockDecoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
   Future<void> _openAttachment(String? url) async {
     if (url == null || url.isEmpty) return;
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  void _showComposerMenu(
+    BuildContext context,
+    String wsId,
+    AssistantShellState shellState,
+    AssistantChatState chatState,
+  ) {
+    // Capture values before opening bottom sheet
+    final isFullscreen = context
+        .read<AssistantChromeCubit>()
+        .state
+        .isFullscreen;
+    final l10n = context.l10n;
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.add_comment_rounded),
+                title: const Text('New chat'),
+                onTap: () async {
+                  Navigator.of(sheetContext).pop();
+                  await _chatCubit.resetConversation(wsId);
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.attach_file_rounded),
+                title: Text(l10n.assistantAttachFilesAction),
+                onTap: () async {
+                  Navigator.of(sheetContext).pop();
+                  await _pickFiles(wsId);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.fullscreen_rounded),
+                title: Text(
+                  isFullscreen
+                      ? l10n.assistantExitFullscreenAction
+                      : l10n.assistantEnterFullscreenAction,
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _setFullscreen(
+                    !isFullscreen,
+                    focusInput: true,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.history_rounded),
+                title: Text(l10n.assistantHistoryTitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _showHistorySheet(context, wsId);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.tune_rounded),
+                title: Text(l10n.assistantSettingsTitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _showSettingsDialog(context, wsId);
+                },
+              ),
+              if (chatState.messages.isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.ios_share_rounded),
+                  title: Text(l10n.assistantExportChat),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _exportChat(context, wsId, shellState, chatState);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickFiles(String wsId) async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    await _chatCubit.addComposerAttachments(
+      wsId: wsId,
+      files: result.files,
+    );
+  }
+
+  void _setFullscreen(bool value, {bool focusInput = false}) {
+    final chromeCubit = context.read<AssistantChromeCubit>();
+    if (chromeCubit.state.isFullscreen != value) {
+      chromeCubit.setFullscreen(value: value);
+    }
+    if (_shellCubit.state.isImmersive != value) {
+      _shellCubit.setImmersiveMode(value);
+    }
+    if (!value) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
+    if (value && focusInput) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _inputFocusNode.requestFocus();
+      });
+    }
   }
 
   Future<void> _showHistorySheet(BuildContext context, String wsId) async {
@@ -1086,510 +902,794 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
+  Future<void> _showSettingsDialog(BuildContext context, String wsId) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.assistantSettingsTitle),
+        content: const Text('Settings dialog content'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(context.l10n.assistantCancelAction),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _exportChat(
     BuildContext context,
     String wsId,
     AssistantShellState shellState,
     AssistantChatState chatState,
   ) async {
-    final payload = _chatCubit.buildExportPayload(
-      wsId: wsId,
-      model: shellState.selectedModel,
-      thinkingMode: shellState.thinkingMode,
+    final buffer = StringBuffer();
+    buffer.writeln('# ${context.l10n.assistantExportShareText}');
+    buffer.writeln('');
+    for (final message in chatState.messages) {
+      buffer.writeln('## ${message.role.toUpperCase()}');
+      for (final part in message.parts) {
+        if (part.text?.isNotEmpty == true) {
+          buffer.writeln(part.text);
+        }
+      }
+      buffer.writeln('');
+    }
+
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/chat_export.md');
+    await file.writeAsString(buffer.toString());
+
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      subject: context.l10n.assistantExportShareText,
     );
-    final shareText = context.l10n.assistantExportShareText;
-    final dir = await getTemporaryDirectory();
-    final chatId = chatState.chat?.id ?? chatState.fallbackChatId;
-    final file = File(
-      '${dir.path}/mira-chat-${wsId.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_')}-${chatId.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_')}.json',
-    );
-    await file.writeAsString(
-      const JsonEncoder.withIndent('  ').convert(payload),
-    );
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path)],
-        text: shareText,
+  }
+
+  Widget? _buildToolPart(
+    BuildContext context,
+    String wsId,
+    AssistantShellState shellState,
+    AssistantMessagePart part,
+  ) {
+    final hasInput = part.input != null;
+    final hasOutput = part.output != null;
+
+    if (!hasInput && !hasOutput) return null;
+
+    String? statusText;
+    if (part.state == 'input-streaming' || part.state == 'input-start') {
+      statusText = 'Running...';
+    } else if (part.state == 'output-streaming' ||
+        part.state == 'output-start') {
+      statusText = 'Running...';
+    } else if (part.state == 'completed') {
+      statusText = 'Completed';
+    } else if (part.state == 'error') {
+      statusText = 'Error';
+    }
+
+    return Card(
+      child: ExpansionTile(
+        leading: Icon(
+          _toolIcon(part.toolName),
+          size: 20,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        title: Text(
+          _humanizeToolName(part.toolName),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: statusText == null
+            ? null
+            : Text(
+                statusText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+        children: [
+          if (hasInput)
+            _buildToolJsonBlock(
+              context,
+              context.l10n.assistantInputLabel,
+              part.input,
+            ),
+          if (hasInput && hasOutput) const SizedBox(height: 8),
+          if (hasOutput)
+            _buildToolJsonBlock(
+              context,
+              context.l10n.assistantOutputLabel,
+              part.output,
+            ),
+        ],
       ),
     );
   }
 
-  Future<void> _showSettingsDialog(BuildContext context, String wsId) async {
-    await showDialog<void>(
-      context: context,
-      useRootNavigator: false,
-      builder: (dialogContext) {
-        final theme = Theme.of(dialogContext);
-        final maxHeight = MediaQuery.sizeOf(dialogContext).height * 0.82;
-
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider.value(value: _shellCubit),
-            BlocProvider.value(value: _chatCubit),
-          ],
-          child: Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 520, maxHeight: maxHeight),
-              child: BlocBuilder<AssistantShellCubit, AssistantShellState>(
-                builder: (context, shellState) {
-                  return BlocBuilder<AssistantChatCubit, AssistantChatState>(
-                    builder: (context, chatState) {
-                      final isFullscreen = context
-                          .read<AssistantChromeCubit>()
-                          .state
-                          .isFullscreen;
-
-                      return ListView(
-                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  context.l10n.assistantSettingsTitle,
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () =>
-                                    Navigator.of(dialogContext).pop(),
-                                icon: const Icon(Icons.close_rounded),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _settingsCard(
-                            context,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  context.l10n.assistantRenameTitle,
-                                  style: theme.textTheme.labelLarge,
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        shellState.soul.name,
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                    ),
-                                    OutlinedButton(
-                                      onPressed: () async {
-                                        await _showRenameDialog(
-                                          context,
-                                          shellState,
-                                        );
-                                      },
-                                      child: Text(
-                                        context.l10n.assistantRenameAction,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  shellState.workspace?.name ??
-                                      context.l10n.assistantPersonalWorkspace,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _settingsCard(
-                            context,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  context.l10n.assistantCreditsTitle,
-                                  style: theme.textTheme.labelLarge,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  context.l10n.assistantCreditsSummary(
-                                    shellState.activeCredits.remaining.round(),
-                                    shellState.activeCredits.tier,
-                                  ),
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                LinearProgressIndicator(
-                                  value:
-                                      shellState.activeCredits.percentUsed == 0
-                                      ? 0
-                                      : (shellState.activeCredits.percentUsed /
-                                                100)
-                                            .toDouble()
-                                            .clamp(0, 1),
-                                  minHeight: 6,
-                                ),
-                                const SizedBox(height: 10),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    ChoiceChip(
-                                      selected:
-                                          shellState.creditSource ==
-                                          AssistantCreditSource.workspace,
-                                      label: Text(
-                                        context.l10n.assistantWorkspaceCredits,
-                                      ),
-                                      onSelected:
-                                          shellState.workspaceCreditLocked
-                                          ? null
-                                          : (_) => _shellCubit.setCreditSource(
-                                              AssistantCreditSource.workspace,
-                                            ),
-                                    ),
-                                    ChoiceChip(
-                                      selected:
-                                          shellState.creditSource ==
-                                          AssistantCreditSource.personal,
-                                      label: Text(
-                                        context.l10n.assistantPersonalCredits,
-                                      ),
-                                      onSelected: (_) =>
-                                          _shellCubit.setCreditSource(
-                                            AssistantCreditSource.personal,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _settingsCard(
-                            context,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  context.l10n.assistantConversationTitle,
-                                  style: theme.textTheme.labelLarge,
-                                ),
-                                const SizedBox(height: 10),
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(context.l10n.assistantModelLabel),
-                                  subtitle: Text(
-                                    shellState.selectedModel.label,
-                                  ),
-                                  trailing: const Icon(
-                                    Icons.chevron_right_rounded,
-                                  ),
-                                  onTap: () async {
-                                    Navigator.of(dialogContext).pop();
-                                    await _showModelSheet(context, shellState);
-                                  },
-                                ),
-                                const SizedBox(height: 6),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    ChoiceChip(
-                                      selected:
-                                          shellState.thinkingMode ==
-                                          AssistantThinkingMode.fast,
-                                      label: Text(
-                                        context.l10n.assistantModeFast,
-                                      ),
-                                      onSelected: (_) =>
-                                          _shellCubit.setThinkingMode(
-                                            AssistantThinkingMode.fast,
-                                          ),
-                                    ),
-                                    ChoiceChip(
-                                      selected:
-                                          shellState.thinkingMode ==
-                                          AssistantThinkingMode.thinking,
-                                      label: Text(
-                                        context.l10n.assistantModeThinking,
-                                      ),
-                                      onSelected: (_) =>
-                                          _shellCubit.setThinkingMode(
-                                            AssistantThinkingMode.thinking,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _settingsCard(
-                            context,
-                            child: Column(
-                              children: [
-                                SwitchListTile.adaptive(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                    isFullscreen
-                                        ? context.l10n.assistantImmersiveLabel
-                                        : context.l10n.assistantStandardLabel,
-                                  ),
-                                  value: isFullscreen,
-                                  onChanged: (_) =>
-                                      _setFullscreen(!isFullscreen),
-                                ),
-                                SwitchListTile.adaptive(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                    shellState.isViewOnly
-                                        ? context.l10n.assistantViewOnlyLabel
-                                        : context.l10n.assistantEditableLabel,
-                                  ),
-                                  value: shellState.isViewOnly,
-                                  onChanged: (_) => _shellCubit.setViewOnly(
-                                    !shellState.isViewOnly,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              OutlinedButton(
-                                onPressed: () async {
-                                  Navigator.of(dialogContext).pop();
-                                  await _showHistorySheet(context, wsId);
-                                },
-                                child: Text(context.l10n.assistantHistoryTitle),
-                              ),
-                              OutlinedButton(
-                                onPressed: () async {
-                                  await _chatCubit.resetConversation(wsId);
-                                  if (dialogContext.mounted) {
-                                    Navigator.of(dialogContext).pop();
-                                  }
-                                },
-                                child: Text(
-                                  context.l10n.assistantNewConversation,
-                                ),
-                              ),
-                              OutlinedButton(
-                                onPressed: chatState.messages.isEmpty
-                                    ? null
-                                    : () async {
-                                        Navigator.of(dialogContext).pop();
-                                        await _exportChat(
-                                          context,
-                                          wsId,
-                                          shellState,
-                                          chatState,
-                                        );
-                                      },
-                                child: Text(context.l10n.assistantExportChat),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showRenameDialog(
+  Widget _buildToolJsonBlock(
     BuildContext context,
-    AssistantShellState shellState,
-  ) async {
-    _renameController.text = shellState.soul.name;
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(context.l10n.assistantRenameTitle),
-          content: TextField(
-            controller: _renameController,
-            autofocus: true,
-            decoration: InputDecoration(hintText: context.l10n.navAssistant),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(context.l10n.assistantCancelAction),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final nextName = _renameController.text.trim();
-                if (nextName.isNotEmpty) {
-                  await _shellCubit.renameAssistant(nextName);
-                }
-                if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop();
-                }
-              },
-              child: Text(context.l10n.assistantSaveAction),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _settingsCard(BuildContext context, {required Widget child}) {
+    String label,
+    dynamic value,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: child,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+          const SizedBox(height: 8),
+          SelectableText(
+            const JsonEncoder.withIndent('  ').convert(value),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontFamily: 'monospace',
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Future<void> _showModelSheet(
-    BuildContext context,
-    AssistantShellState shellState,
-  ) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      builder: (context) {
-        return ListView(
-          children: [
-            ListTile(
-              title: Text(context.l10n.assistantModelLabel),
+  IconData _toolIcon(String? toolName) {
+    switch (toolName) {
+      case 'render_ui':
+        return Icons.dashboard_customize_rounded;
+      case 'select_tools':
+        return Icons.tune_rounded;
+      case 'set_workspace_context':
+        return Icons.workspaces_outline;
+      case 'update_my_settings':
+        return Icons.settings_suggest_rounded;
+      case 'set_immersive_mode':
+        return Icons.fullscreen_rounded;
+      default:
+        return Icons.memory_rounded;
+    }
+  }
+
+  String _humanizeToolName(String? toolName) {
+    if (toolName == null || toolName.isEmpty) {
+      return 'Tool';
+    }
+    return toolName
+        .split('_')
+        .where((part) => part.isNotEmpty)
+        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+        .join(' ');
+  }
+}
+
+// New widget classes for the redesigned UI
+
+class _AnimatedDot extends StatefulWidget {
+  final int delay;
+
+  const _AnimatedDot({required this.delay});
+
+  @override
+  State<_AnimatedDot> createState() => _AnimatedDotState();
+}
+
+class _AnimatedDotState extends State<_AnimatedDot>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _controller.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _animation,
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedAssistantIcon extends StatefulWidget {
+  @override
+  State<_AnimatedAssistantIcon> createState() => _AnimatedAssistantIconState();
+}
+
+class _AnimatedAssistantIconState extends State<_AnimatedAssistantIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            gradient: SweepGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              ],
+              transform: GradientRotation(_controller.value * 2 * 3.14159),
             ),
-            for (final model in shellState.availableModels)
-              ListTile(
-                selected: model.value == shellState.selectedModel.value,
-                title: Text(model.label),
-                subtitle: model.description == null
-                    ? null
-                    : Text(model.description!),
-                trailing: model.value == shellState.selectedModel.value
-                    ? const Icon(Icons.check)
-                    : null,
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await _shellCubit.setSelectedModel(model);
-                },
-              ),
-          ],
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              size: 40,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
         );
       },
     );
   }
 }
 
-class _AssistantRefreshStrip extends StatelessWidget {
-  const _AssistantRefreshStrip();
+class _PromptChip extends StatelessWidget {
+  final String prompt;
+  final VoidCallback onTap;
+
+  const _PromptChip({required this.prompt, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: const LinearProgressIndicator(minHeight: 3),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withOpacity(0.3),
+            ),
+          ),
+          child: Text(
+            prompt,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
-enum _AssistantQuickAction {
-  toggleFullscreen,
-  attachFiles,
-  history,
-  settings,
-  newConversation,
-  export,
-}
+class _ConsolidatedTools extends StatefulWidget {
+  final List<AssistantMessagePart> toolParts;
 
-class _ExpandableUserText extends StatefulWidget {
-  const _ExpandableUserText({required this.text, this.style});
-
-  final String text;
-  final TextStyle? style;
+  const _ConsolidatedTools({required this.toolParts});
 
   @override
-  State<_ExpandableUserText> createState() => _ExpandableUserTextState();
+  State<_ConsolidatedTools> createState() => _ConsolidatedToolsState();
 }
 
-class _ExpandableUserTextState extends State<_ExpandableUserText> {
-  static const _collapsedMaxLines = 3;
-
+class _ConsolidatedToolsState extends State<_ConsolidatedTools> {
   bool _expanded = false;
 
+  String _getToolStatus(AssistantMessagePart part) {
+    if (part.state == 'error') return 'Error';
+    if (part.state == 'completed' ||
+        part.state == 'output-available' ||
+        part.state == 'input-available')
+      return 'Done';
+    if (part.state == 'input-streaming' ||
+        part.state == 'input-start' ||
+        part.state == 'output-streaming' ||
+        part.state == 'output-start') {
+      return 'Running...';
+    }
+    // Default to done for unknown states
+    return 'Done';
+  }
+
+  IconData _getToolIcon(String? toolName) {
+    switch (toolName) {
+      case 'render_ui':
+        return Icons.dashboard_customize_outlined;
+      case 'select_tools':
+        return Icons.tune_outlined;
+      case 'set_workspace_context':
+        return Icons.workspaces_outlined;
+      case 'update_my_settings':
+        return Icons.settings_suggest_outlined;
+      case 'set_immersive_mode':
+        return Icons.fullscreen_outlined;
+      default:
+        return Icons.memory_outlined;
+    }
+  }
+
+  String _humanizeToolName(String? toolName) {
+    if (toolName == null || toolName.isEmpty) return 'Tool';
+    return toolName
+        .split('_')
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : '${word[0].toUpperCase()}${word.substring(1)}',
+        )
+        .join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final effectiveStyle =
-        widget.style ?? Theme.of(context).textTheme.bodyLarge;
+    // Group tools by name
+    final groupedTools = <String, List<AssistantMessagePart>>{};
+    for (final part in widget.toolParts) {
+      final name = part.toolName ?? 'Unknown';
+      groupedTools.putIfAbsent(name, () => []).add(part);
+    }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final painter = TextPainter(
-          text: TextSpan(text: widget.text, style: effectiveStyle),
-          maxLines: _collapsedMaxLines,
-          textDirection: Directionality.of(context),
-        )..layout(maxWidth: constraints.maxWidth);
+    // Check if all tools are complete
+    final allDone = widget.toolParts.every(
+      (p) =>
+          p.state == 'completed' ||
+          p.state == 'error' ||
+          p.state == 'output-available' ||
+          p.state == 'input-available',
+    );
+    final anyRunning = widget.toolParts.any(
+      (p) =>
+          p.state == 'input-streaming' ||
+          p.state == 'input-start' ||
+          p.state == 'output-streaming' ||
+          p.state == 'output-start',
+    );
+    final anyError = widget.toolParts.any((p) => p.state == 'error');
 
-        final hasOverflow = painter.didExceedMaxLines;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.text,
-              style: effectiveStyle,
-              maxLines: _expanded ? null : _collapsedMaxLines,
-              overflow: _expanded ? TextOverflow.visible : TextOverflow.fade,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row - always visible
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.memory,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${widget.toolParts.length} tool${widget.toolParts.length > 1 ? 's' : ''}',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (anyRunning)
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  )
+                else if (anyError)
+                  Icon(
+                    Icons.error_outline,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.error,
+                  )
+                else if (allDone)
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                const Spacer(),
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ],
             ),
-            if (hasOverflow || _expanded) ...[
-              const SizedBox(height: 6),
-              TextButton(
-                style: TextButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  foregroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onPrimaryContainer,
+          ),
+          // Expanded content
+          if (_expanded) ...[
+            const SizedBox(height: 12),
+            ...groupedTools.entries.map((entry) {
+              final toolName = entry.key;
+              final parts = entry.value;
+              final latestPart = parts.last;
+              final status = _getToolStatus(latestPart);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                onPressed: () => setState(() => _expanded = !_expanded),
-                child: Text(
-                  _expanded
-                      ? context.l10n.assistantSeeLessLabel
-                      : context.l10n.assistantSeeMoreLabel,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          _getToolIcon(toolName),
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _humanizeToolName(toolName),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                        ),
+                        if (parts.length > 1)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${parts.length}',
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                          ),
+                        const SizedBox(width: 8),
+                        Text(
+                          status,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: status == 'Error'
+                                    ? Theme.of(context).colorScheme.error
+                                    : status == 'Done'
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              );
+            }),
           ],
-        );
-      },
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentChip extends StatelessWidget {
+  final AssistantAttachment attachment;
+  final VoidCallback onTap;
+
+  const _AttachmentChip({required this.attachment, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      avatar: const Icon(Icons.attach_file_rounded, size: 16),
+      label: Text(attachment.name),
+      onPressed: onTap,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+    );
+  }
+}
+
+class _AttachmentInputChip extends StatelessWidget {
+  final AssistantAttachment attachment;
+  final VoidCallback onDelete;
+
+  const _AttachmentInputChip({
+    required this.attachment,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: const Icon(Icons.attach_file_rounded, size: 16),
+      label: Text(attachment.name),
+      deleteIcon: const Icon(Icons.close_rounded, size: 16),
+      onDeleted: onDelete,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+    );
+  }
+}
+
+class _SourceLink extends StatelessWidget {
+  final String? title;
+  final String? url;
+  final VoidCallback onTap;
+
+  const _SourceLink({this.title, this.url, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.primaryContainer.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.link_rounded,
+              size: 14,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                title ?? url ?? 'Source',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MinimalToolRow extends StatelessWidget {
+  final AssistantMessagePart part;
+
+  const _MinimalToolRow({required this.part});
+
+  String _getStatus() {
+    if (part.state == 'error') return 'Error';
+    if (part.state == 'completed') return 'Done';
+    if (part.state == 'input-streaming' ||
+        part.state == 'input-start' ||
+        part.state == 'output-streaming' ||
+        part.state == 'output-start') {
+      return '...';
+    }
+    return '';
+  }
+
+  IconData _getToolIcon(String? toolName) {
+    switch (toolName) {
+      case 'render_ui':
+        return Icons.dashboard_customize_outlined;
+      case 'select_tools':
+        return Icons.tune_outlined;
+      case 'set_workspace_context':
+        return Icons.workspaces_outlined;
+      case 'update_my_settings':
+        return Icons.settings_suggest_outlined;
+      case 'set_immersive_mode':
+        return Icons.fullscreen_outlined;
+      default:
+        return Icons.memory_outlined;
+    }
+  }
+
+  String _humanizeToolName(String? toolName) {
+    if (toolName == null || toolName.isEmpty) return 'Tool';
+    return toolName
+        .split('_')
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : '${word[0].toUpperCase()}${word.substring(1)}',
+        )
+        .join(' ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _getStatus();
+    final isRunning = status == '...';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _getToolIcon(part.toolName),
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _humanizeToolName(part.toolName),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (isRunning)
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            )
+          else
+            Text(
+              status,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: status == 'Error'
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.primary,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComposerActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool isDestructive;
+
+  const _ComposerActionButton({
+    required this.icon,
+    required this.onPressed,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: isDestructive
+                ? Theme.of(context).colorScheme.errorContainer
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isDestructive
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SendButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _SendButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.primary,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 40,
+          height: 40,
+          child: Icon(
+            Icons.arrow_upward_rounded,
+            size: 20,
+            color: Theme.of(context).colorScheme.onPrimary,
+          ),
+        ),
+      ),
     );
   }
 }

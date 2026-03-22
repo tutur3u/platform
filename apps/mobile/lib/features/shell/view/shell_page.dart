@@ -12,7 +12,6 @@ import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
-import 'package:mobile/features/apps/widgets/workspace_selector_button.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
@@ -758,7 +757,7 @@ class _ShellTopBarTitle extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final title = switch (matchedLocation) {
       Routes.home => context.l10n.navHome,
-      Routes.assistant => 'Mira',
+      Routes.assistant => 'Assistant',
       Routes.profileRoot => context.l10n.profileTitle,
       Routes.settings => context.l10n.settingsTitle,
       _ => null,
@@ -794,6 +793,7 @@ class _ShellTopBarTitle extends StatelessWidget {
       );
     }
 
+    // Apps tab - show Tuturuuu logo + "Apps" consistently
     return SizedBox(
       height: mobileSectionAppBarHeight,
       child: Row(
@@ -804,19 +804,20 @@ class _ShellTopBarTitle extends StatelessWidget {
             height: mobileSectionAppBarLogoSize,
             fit: BoxFit.contain,
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 11),
-            child: Text(
-              '/',
-              style: theme.typography.large.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.78),
-                fontWeight: FontWeight.w700,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                context.l10n.navApps,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.large.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
-          const Expanded(child: WorkspaceSelectorButton()),
         ],
       ),
     );

@@ -75,10 +75,9 @@ class AssistantRepository {
 
   Future<List<AssistantGatewayModel>> fetchGatewayModels() async {
     try {
-      final response = await _apiClient.getJson(
+      final models = await _apiClient.getJsonList(
         '/api/v1/infrastructure/ai/models',
       );
-      final models = response as List<dynamic>;
       return models
           .whereType<Map<String, dynamic>>()
           .map(
@@ -279,8 +278,12 @@ class AssistantRepository {
     }
 
     final parser = AssistantSseParser();
+    print('[ASSISTANT_REPO] Starting to read stream...');
     await for (final chunk in response.stream) {
-      for (final event in parser.addChunk(chunk)) {
+      print('[ASSISTANT_REPO] Received chunk: ${chunk.length} bytes');
+      final events = parser.addChunk(chunk);
+      print('[ASSISTANT_REPO] Parsed ${events.length} events');
+      for (final event in events) {
         yield event;
       }
     }

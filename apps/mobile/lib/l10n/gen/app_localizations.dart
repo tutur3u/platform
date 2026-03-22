@@ -508,7 +508,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantWorkspaceAwareDescription.
   ///
   /// In en, this message translates to:
-  /// **'Workspace-aware Mira for planning, questions, and quick actions.'**
+  /// **'Your AI assistant for planning, questions, and quick actions.'**
   String get assistantWorkspaceAwareDescription;
 
   /// No description provided for @assistantHistoryTitle.
@@ -532,19 +532,19 @@ abstract class AppLocalizations {
   /// No description provided for @assistantSettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Mira settings'**
+  /// **'Assistant settings'**
   String get assistantSettingsTitle;
 
   /// No description provided for @assistantActionsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Mira actions'**
+  /// **'Assistant actions'**
   String get assistantActionsTitle;
 
   /// No description provided for @assistantRenameTitle.
   ///
   /// In en, this message translates to:
-  /// **'Rename Mira'**
+  /// **'Rename Assistant'**
   String get assistantRenameTitle;
 
   /// No description provided for @assistantRenameAction.
@@ -658,7 +658,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantAskPlaceholder.
   ///
   /// In en, this message translates to:
-  /// **'Ask Mira anything...'**
+  /// **'Ask anything...'**
   String get assistantAskPlaceholder;
 
   /// No description provided for @assistantQueuedPrefix.
@@ -784,7 +784,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantExportShareText.
   ///
   /// In en, this message translates to:
-  /// **'Mira chat export'**
+  /// **'Chat export'**
   String get assistantExportShareText;
 
   /// No description provided for @assistantContextUpdatedLabel.

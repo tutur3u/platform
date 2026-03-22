@@ -5,8 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/user_profile.dart';
+import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -142,6 +144,12 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     final user = context.select<AuthCubit, User?>((cubit) => cubit.state.user);
     _ensureProfileLoaded(user?.id);
 
+    // Get current workspace info
+    final currentWorkspace = context.select<WorkspaceCubit, Workspace?>(
+      (cubit) => cubit.state.currentWorkspace,
+    );
+    final workspaceName = currentWorkspace?.name ?? l10n.workspacePickerTitle;
+
     final email = user?.email;
     final meta = user?.userMetadata;
     final fallbackAvatarUrl = _nonEmpty(meta?['avatar_url'] as String?);
@@ -173,6 +181,63 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
           ),
           color: theme.colorScheme.popover,
           itemBuilder: (context) => [
+            // Workspace section - prominently at the top
+            PopupMenuItem<String>(
+              value: 'workspace',
+              height: 56,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.workspaces_outlined,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.workspacePickerTitle,
+                            style: theme.typography.small.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                          ),
+                          Text(
+                            workspaceName,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.p.copyWith(
+                              color: theme.colorScheme.popoverForeground,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: theme.colorScheme.mutedForeground,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const PopupMenuDivider(),
+            // User profile section
             PopupMenuItem<String>(
               enabled: false,
               height: 64,
@@ -214,26 +279,6 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
                             ),
                           ),
                       ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const PopupMenuDivider(),
-            PopupMenuItem<String>(
-              value: 'workspace',
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.swap_horiz_rounded,
-                    size: 16,
-                    color: theme.colorScheme.popoverForeground,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.workspacePickerTitle,
-                    style: theme.typography.p.copyWith(
-                      color: theme.colorScheme.popoverForeground,
                     ),
                   ),
                 ],
