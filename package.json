@@ -24,6 +24,8 @@
     "lint:fix": "biome lint --write",
     "format-and-lint": "biome check",
     "format-and-lint:fix": "biome check --write",
+    "redis:start": "cd apps/redis && bun redis:start",
+    "redis:stop": "cd apps/redis && bun redis:stop",
     "stop": "cd apps/db && bun sb:stop",
     "sb:status": "cd apps/db && bun sb:status",
     "sb:start": "cd apps/db && bun sb:start",

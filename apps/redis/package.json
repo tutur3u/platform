@@ -1,0 +1,14 @@
+{
+  "name": "@tuturuuu/redis",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "redis:start": "docker compose up -d",
+    "redis:stop": "docker compose down"
+  },
+  "devDependencies": {
+    "@upstash/cli": "^0.3.0"
+  },
+  "packageManager": "bun@1.3.11"
+}
