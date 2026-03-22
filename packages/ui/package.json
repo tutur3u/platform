@@ -9,7 +9,7 @@
     "ui": "bunx shadcn-ui@latest",
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "node ../../scripts/run-tsgo-build.js --build"
+    "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

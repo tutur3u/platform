@@ -1,0 +1,16 @@
+{
+  "extends": "@tuturuuu/typescript-config/typecheck.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "next/server": ["./node_modules/next/server.d.ts"],
+      "next/headers": ["./node_modules/next/headers.d.ts"],
+      "*": ["./*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", ".turbo"]
+}

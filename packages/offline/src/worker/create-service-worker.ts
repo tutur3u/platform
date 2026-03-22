@@ -9,6 +9,14 @@ declare global {
   }
 }
 
+// ServiceWorkerGlobalScope is defined in lib.webworker.d.ts
+// This declaration ensures compatibility with TypeScript Go (tsgo)
+declare interface ServiceWorkerGlobalScope extends WorkerGlobalScope {
+  readonly clients: Clients;
+  readonly registration: ServiceWorkerRegistration;
+  skipWaiting(): Promise<void>;
+}
+
 declare const self: ServiceWorkerGlobalScope;
 
 /**

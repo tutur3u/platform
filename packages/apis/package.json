@@ -6,7 +6,7 @@
     "access": "public"
   },
   "scripts": {
-    "type-check": "node ../../scripts/run-tsgo-build.js --build"
+    "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.52",

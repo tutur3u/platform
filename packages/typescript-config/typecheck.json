@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Type Check Only",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "incremental": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "strictNullChecks": true,
+    "allowJs": false,
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleDetection": "force",
+    "moduleResolution": "NodeNext",
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "esnext",
+    "jsx": "react-jsx"
+  }
+}

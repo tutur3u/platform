@@ -1,0 +1,10 @@
+{
+  "extends": "@tuturuuu/typescript-config/typecheck.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "types": ["node", "react"]
+  },
+  "include": ["emails", "react"],
+  "exclude": ["node_modules", "dist", ".turbo"]
+}

@@ -278,11 +278,8 @@ class AssistantRepository {
     }
 
     final parser = AssistantSseParser();
-    print('[ASSISTANT_REPO] Starting to read stream...');
     await for (final chunk in response.stream) {
-      print('[ASSISTANT_REPO] Received chunk: ${chunk.length} bytes');
       final events = parser.addChunk(chunk);
-      print('[ASSISTANT_REPO] Parsed ${events.length} events');
       for (final event in events) {
         yield event;
       }

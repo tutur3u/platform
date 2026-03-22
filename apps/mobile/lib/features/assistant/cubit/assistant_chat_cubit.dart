@@ -528,13 +528,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }
 
   void _handleStreamEvent(AssistantStreamEvent event) {
-    // Debug: log all stream events
-    if (event is AssistantJsonStreamEvent) {
-      print('[ASSISTANT_STREAM] Event: ${event.payload}');
-    } else if (event is AssistantDoneStreamEvent) {
-      print('[ASSISTANT_STREAM] Done event');
-    }
-
     if (event is AssistantDoneStreamEvent) {
       emit(state.copyWith(status: AssistantChatStatus.idle));
       return;
@@ -543,7 +536,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
     final payload = event.payload;
     final type = payload['type'] as String? ?? '';
-    print('[ASSISTANT_STREAM] Type: $type, Payload: $payload');
 
     switch (type) {
       case 'start':

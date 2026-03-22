@@ -1,7 +1,6 @@
 // Assistant page - completely redesigned for modern UX
-// ignore_for_file: directives_ordering, lines_longer_than_80_chars, discarded_futures, avoid_types_on_closure_parameters, avoid_redundant_argument_values, noop_primitive_operations, unnecessary_raw_strings
+// ignore_for_file: directives_ordering, lines_longer_than_80_chars, discarded_futures, avoid_types_on_closure_parameters, avoid_redundant_argument_values
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -16,8 +15,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/data/repositories/finance_repository.dart';
-import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
@@ -25,7 +22,7 @@ import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/widgets/assistant_render_ui.dart';
+
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -40,8 +37,6 @@ class AssistantPage extends StatefulWidget {
 class _AssistantPageState extends State<AssistantPage> {
   final _repository = AssistantRepository();
   final _preferences = AssistantPreferences();
-  final _financeRepository = FinanceRepository();
-  final _timeTrackerRepository = TimeTrackerRepository();
   final _inputController = TextEditingController();
   final _inputFocusNode = FocusNode();
   final _renameController = TextEditingController();
@@ -117,14 +112,7 @@ class _AssistantPageState extends State<AssistantPage> {
                   BlocListener<AssistantChatCubit, AssistantChatState>(
                     listenWhen: (prev, curr) {
                       // Only scroll when a new message is added, not on content changes
-                      final shouldScroll =
-                          prev.messages.length != curr.messages.length;
-                      if (shouldScroll) {
-                        print(
-                          '[ASSISTANT_SCROLL] New message detected, scheduling scroll',
-                        );
-                      }
-                      return shouldScroll;
+                      return prev.messages.length != curr.messages.length;
                     },
                     listener: (context, state) {
                       if (state.messages.isNotEmpty) {
@@ -231,25 +219,17 @@ class _AssistantPageState extends State<AssistantPage> {
     AssistantShellState shellState,
     AssistantChatState chatState,
   ) {
-    // Debug: log message count
-    print(
-      '[ASSISTANT_UI] Building conversation with ${chatState.messages.length} messages, status: ${chatState.status}',
-    );
-
     // Show empty state only when truly empty and not submitting
     if (chatState.messages.isEmpty &&
         chatState.status != AssistantChatStatus.submitting) {
-      print('[ASSISTANT_UI] Showing empty state');
       return _buildEmptyState(context, workspace.id, shellState);
     }
-
-    print('[ASSISTANT_UI] Showing message list');
 
     // Filter out empty messages
     final validMessages = chatState.messages.where((msg) {
       final hasContent = msg.parts.any((part) {
         if (part.type == 'text' || part.type == 'reasoning') {
-          return (part.text?.trim().isNotEmpty ?? false);
+          return part.text?.trim().isNotEmpty ?? false;
         }
         return true; // non-text parts always count
       });
@@ -274,10 +254,6 @@ class _AssistantPageState extends State<AssistantPage> {
         final message = validMessages[index];
         final attachments =
             chatState.attachmentsByMessageId[message.id] ?? const [];
-
-        print(
-          '[ASSISTANT_UI] Building message $index: ${message.role}, parts: ${message.parts.length}',
-        );
 
         return _buildMessageBubble(
           context,
@@ -327,7 +303,7 @@ class _AssistantPageState extends State<AssistantPage> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: theme.colorScheme.shadow.withOpacity(0.05),
+                  color: theme.colorScheme.shadow.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -411,7 +387,7 @@ class _AssistantPageState extends State<AssistantPage> {
               decoration: BoxDecoration(
                 color: Theme.of(
                   context,
-                ).colorScheme.surfaceContainerLow.withOpacity(0.5),
+                ).colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.outlineVariant,
@@ -495,13 +471,13 @@ class _AssistantPageState extends State<AssistantPage> {
           bottomRight: Radius.circular(20),
         ),
       ),
-      child: Row(
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           _AnimatedDot(delay: 0),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           _AnimatedDot(delay: 200),
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           _AnimatedDot(delay: 400),
         ],
       ),
@@ -577,11 +553,13 @@ class _AssistantPageState extends State<AssistantPage> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -703,26 +681,6 @@ class _AssistantPageState extends State<AssistantPage> {
         curve: Curves.easeOutCubic,
       );
     });
-  }
-
-  bool _lastMessageContentChanged(
-    List<AssistantMessage> prev,
-    List<AssistantMessage> curr,
-  ) {
-    if (prev.isEmpty || curr.isEmpty) return false;
-    if (prev.length != curr.length) return true;
-
-    final prevLast = prev.last;
-    final currLast = curr.last;
-
-    // Check if the last message's parts have changed
-    if (prevLast.parts.length != currLast.parts.length) return true;
-
-    for (var i = 0; i < prevLast.parts.length; i++) {
-      if (prevLast.parts[i].text != currLast.parts[i].text) return true;
-    }
-
-    return false;
   }
 
   // ... rest of helper methods
@@ -924,9 +882,9 @@ class _AssistantPageState extends State<AssistantPage> {
     AssistantShellState shellState,
     AssistantChatState chatState,
   ) async {
-    final buffer = StringBuffer();
-    buffer.writeln('# ${context.l10n.assistantExportShareText}');
-    buffer.writeln('');
+    final buffer = StringBuffer()
+      ..writeln('# ${context.l10n.assistantExportShareText}')
+      ..writeln('');
     for (final message in chatState.messages) {
       buffer.writeln('## ${message.role.toUpperCase()}');
       for (final part in message.parts) {
@@ -941,144 +899,21 @@ class _AssistantPageState extends State<AssistantPage> {
     final file = File('${tempDir.path}/chat_export.md');
     await file.writeAsString(buffer.toString());
 
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: context.l10n.assistantExportShareText,
-    );
-  }
-
-  Widget? _buildToolPart(
-    BuildContext context,
-    String wsId,
-    AssistantShellState shellState,
-    AssistantMessagePart part,
-  ) {
-    final hasInput = part.input != null;
-    final hasOutput = part.output != null;
-
-    if (!hasInput && !hasOutput) return null;
-
-    String? statusText;
-    if (part.state == 'input-streaming' || part.state == 'input-start') {
-      statusText = 'Running...';
-    } else if (part.state == 'output-streaming' ||
-        part.state == 'output-start') {
-      statusText = 'Running...';
-    } else if (part.state == 'completed') {
-      statusText = 'Completed';
-    } else if (part.state == 'error') {
-      statusText = 'Error';
-    }
-
-    return Card(
-      child: ExpansionTile(
-        leading: Icon(
-          _toolIcon(part.toolName),
-          size: 20,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        title: Text(
-          _humanizeToolName(part.toolName),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: statusText == null
-            ? null
-            : Text(
-                statusText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-        children: [
-          if (hasInput)
-            _buildToolJsonBlock(
-              context,
-              context.l10n.assistantInputLabel,
-              part.input,
-            ),
-          if (hasInput && hasOutput) const SizedBox(height: 8),
-          if (hasOutput)
-            _buildToolJsonBlock(
-              context,
-              context.l10n.assistantOutputLabel,
-              part.output,
-            ),
-        ],
+    if (!context.mounted) return;
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        subject: context.l10n.assistantExportShareText,
       ),
     );
-  }
-
-  Widget _buildToolJsonBlock(
-    BuildContext context,
-    String label,
-    dynamic value,
-  ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
-          const SizedBox(height: 8),
-          SelectableText(
-            const JsonEncoder.withIndent('  ').convert(value),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontFamily: 'monospace',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _toolIcon(String? toolName) {
-    switch (toolName) {
-      case 'render_ui':
-        return Icons.dashboard_customize_rounded;
-      case 'select_tools':
-        return Icons.tune_rounded;
-      case 'set_workspace_context':
-        return Icons.workspaces_outline;
-      case 'update_my_settings':
-        return Icons.settings_suggest_rounded;
-      case 'set_immersive_mode':
-        return Icons.fullscreen_rounded;
-      default:
-        return Icons.memory_rounded;
-    }
-  }
-
-  String _humanizeToolName(String? toolName) {
-    if (toolName == null || toolName.isEmpty) {
-      return 'Tool';
-    }
-    return toolName
-        .split('_')
-        .where((part) => part.isNotEmpty)
-        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-        .join(' ');
   }
 }
 
 // New widget classes for the redesigned UI
 
 class _AnimatedDot extends StatefulWidget {
-  final int delay;
-
   const _AnimatedDot({required this.delay});
+  final int delay;
 
   @override
   State<_AnimatedDot> createState() => _AnimatedDotState();
@@ -1096,7 +931,7 @@ class _AnimatedDotState extends State<_AnimatedDot>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
+    _animation = Tween<double>(begin: 0.3, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
     Future.delayed(Duration(milliseconds: widget.delay), () {
@@ -1161,9 +996,9 @@ class _AnimatedAssistantIconState extends State<_AnimatedAssistantIcon>
           decoration: BoxDecoration(
             gradient: SweepGradient(
               colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
               ],
               transform: GradientRotation(_controller.value * 2 * 3.14159),
             ),
@@ -1183,10 +1018,9 @@ class _AnimatedAssistantIconState extends State<_AnimatedAssistantIcon>
 }
 
 class _PromptChip extends StatelessWidget {
+  const _PromptChip({required this.prompt, required this.onTap});
   final String prompt;
   final VoidCallback onTap;
-
-  const _PromptChip({required this.prompt, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1203,7 +1037,7 @@ class _PromptChip extends StatelessWidget {
             border: Border.all(
               color: Theme.of(
                 context,
-              ).colorScheme.outlineVariant.withOpacity(0.3),
+              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
             ),
           ),
           child: Text(
@@ -1219,9 +1053,8 @@ class _PromptChip extends StatelessWidget {
 }
 
 class _ConsolidatedTools extends StatefulWidget {
-  final List<AssistantMessagePart> toolParts;
-
   const _ConsolidatedTools({required this.toolParts});
+  final List<AssistantMessagePart> toolParts;
 
   @override
   State<_ConsolidatedTools> createState() => _ConsolidatedToolsState();
@@ -1234,8 +1067,9 @@ class _ConsolidatedToolsState extends State<_ConsolidatedTools> {
     if (part.state == 'error') return 'Error';
     if (part.state == 'completed' ||
         part.state == 'output-available' ||
-        part.state == 'input-available')
+        part.state == 'input-available') {
       return 'Done';
+    }
     if (part.state == 'input-streaming' ||
         part.state == 'input-start' ||
         part.state == 'output-streaming' ||
@@ -1307,7 +1141,9 @@ class _ConsolidatedToolsState extends State<_ConsolidatedTools> {
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -1443,10 +1279,9 @@ class _ConsolidatedToolsState extends State<_ConsolidatedTools> {
 }
 
 class _AttachmentChip extends StatelessWidget {
+  const _AttachmentChip({required this.attachment, required this.onTap});
   final AssistantAttachment attachment;
   final VoidCallback onTap;
-
-  const _AttachmentChip({required this.attachment, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1460,13 +1295,12 @@ class _AttachmentChip extends StatelessWidget {
 }
 
 class _AttachmentInputChip extends StatelessWidget {
-  final AssistantAttachment attachment;
-  final VoidCallback onDelete;
-
   const _AttachmentInputChip({
     required this.attachment,
     required this.onDelete,
   });
+  final AssistantAttachment attachment;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -1481,11 +1315,10 @@ class _AttachmentInputChip extends StatelessWidget {
 }
 
 class _SourceLink extends StatelessWidget {
+  const _SourceLink({required this.onTap, this.title, this.url});
   final String? title;
   final String? url;
   final VoidCallback onTap;
-
-  const _SourceLink({this.title, this.url, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1497,7 +1330,7 @@ class _SourceLink extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(
             context,
-          ).colorScheme.primaryContainer.withOpacity(0.3),
+          ).colorScheme.primaryContainer.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -1527,116 +1360,15 @@ class _SourceLink extends StatelessWidget {
   }
 }
 
-class _MinimalToolRow extends StatelessWidget {
-  final AssistantMessagePart part;
-
-  const _MinimalToolRow({required this.part});
-
-  String _getStatus() {
-    if (part.state == 'error') return 'Error';
-    if (part.state == 'completed') return 'Done';
-    if (part.state == 'input-streaming' ||
-        part.state == 'input-start' ||
-        part.state == 'output-streaming' ||
-        part.state == 'output-start') {
-      return '...';
-    }
-    return '';
-  }
-
-  IconData _getToolIcon(String? toolName) {
-    switch (toolName) {
-      case 'render_ui':
-        return Icons.dashboard_customize_outlined;
-      case 'select_tools':
-        return Icons.tune_outlined;
-      case 'set_workspace_context':
-        return Icons.workspaces_outlined;
-      case 'update_my_settings':
-        return Icons.settings_suggest_outlined;
-      case 'set_immersive_mode':
-        return Icons.fullscreen_outlined;
-      default:
-        return Icons.memory_outlined;
-    }
-  }
-
-  String _humanizeToolName(String? toolName) {
-    if (toolName == null || toolName.isEmpty) return 'Tool';
-    return toolName
-        .split('_')
-        .map(
-          (word) => word.isEmpty
-              ? ''
-              : '${word[0].toUpperCase()}${word.substring(1)}',
-        )
-        .join(' ');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final status = _getStatus();
-    final isRunning = status == '...';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            _getToolIcon(part.toolName),
-            size: 14,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _humanizeToolName(part.toolName),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (isRunning)
-            SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            )
-          else
-            Text(
-              status,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: status == 'Error'
-                    ? Theme.of(context).colorScheme.error
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ComposerActionButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-  final bool isDestructive;
-
   const _ComposerActionButton({
     required this.icon,
     required this.onPressed,
     this.isDestructive = false,
   });
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool isDestructive;
 
   @override
   Widget build(BuildContext context) {
@@ -1668,9 +1400,8 @@ class _ComposerActionButton extends StatelessWidget {
 }
 
 class _SendButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
   const _SendButton({required this.onPressed});
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -1680,7 +1411,7 @@ class _SendButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(20),
-        child: Container(
+        child: SizedBox(
           width: 40,
           height: 40,
           child: Icon(

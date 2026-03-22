@@ -87,7 +87,7 @@
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --build --watch",
-    "type-check": "node ../../scripts/run-tsgo-build.js --build",
+    "type-check": "tsgo --project tsconfig.typecheck.json",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",
