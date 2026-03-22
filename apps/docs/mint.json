@@ -2,8 +2,8 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "NCT Docs",
   "logo": {
-    "dark": "https://rmitnct.club/media/logos/transparent.png",
-    "light": "https://rmitnct.club/media/logos/transparent.png",
+    "dark": "logo/logo.png",
+    "light": "logo/logo.png",
     "href": "https://rmitnct.club/"
   },
   "favicon": "logo/logo.png",
