@@ -343,10 +343,10 @@ export const departments: DepartmentData[] = [
         },
       ],
       images: [
-        '/departments/human-resources/award-day-c-2025.jpg',
+        '/departments/human-resources/bonding-trip-2025c.jpeg',
         '/departments/human-resources/welcome-day-c-2025.jpg',
-        '/departments/human-resources/welcome-day-a-2025-2.jpg',
-        '/departments/human-resources/welcome-day-a-2025.jpg',
+        '/departments/human-resources/neo-award-2025c.jpg',
+        '/departments/human-resources/sportday-2025c.jpeg',
       ],
     },
   },
