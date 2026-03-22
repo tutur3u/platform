@@ -153,8 +153,7 @@ export default function LanyardSection() {
             >
               <div>
                 <p className="mb-1 font-mono text-brand-light-yellow text-xs uppercase tracking-[0.2em]">
-                  Variant{' '}
-                  {String(variantIndex + 1).padStart(2, '0')}
+                  Variant {String(variantIndex + 1).padStart(2, '0')}
                 </p>
                 <h3 className="font-semibold text-2xl tracking-tight md:text-3xl">
                   {variant.title}
