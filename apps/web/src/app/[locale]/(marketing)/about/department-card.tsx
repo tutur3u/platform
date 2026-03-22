@@ -171,18 +171,15 @@ export function DepartmentCard({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center gap-4">
-                      <p
-                        className={cn(
-                          'font-semibold text-lg leading-none md:text-xl',
-                          theme.text
-                        )}
-                      >
-                        {activity.title}
-                      </p>
-                    </div>
-
-                    <p className="max-w-xl text-foreground/75 text-sm leading-7 md:text-base">
+                    <p
+                      className={cn(
+                        'font-semibold text-lg leading-none md:text-xl',
+                        theme.text
+                      )}
+                    >
+                      {activity.title}
+                    </p>
+                    <p className="max-w-xl text-foreground/75 text-sm leading-normal md:text-base">
                       {activity.description}
                     </p>
                   </div>

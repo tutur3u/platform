@@ -265,7 +265,7 @@ export const departments: DepartmentData[] = [
     name: 'Technology',
     bio: 'The Technology department serves as the core technical engine of our organization, overseeing all software and hardware initiatives. We are dedicated to cultivating a rigorous and collaborative environment tailored for passionate technology enthusiasts and SSET students alike.',
     characteristics: {
-      bio: 'The mindset behind how this department works.',
+      bio: 'Develop tools for member use',
       badges: [
         'Creative',
         'Passionate in Technology',
@@ -308,7 +308,7 @@ export const departments: DepartmentData[] = [
     name: 'Human Resources',
     bio: 'The Human Resources department focuses on building a strong, inclusive community within the club. They organize team-building activities, provide support for members, and ensure a positive environment for everyone.',
     characteristics: {
-      bio: 'The mindset behind how this department works.',
+      bio: 'Connect & Support members',
       badges: [
         'Recruitment & Onboarding',
         'Operations',
@@ -354,7 +354,7 @@ export const departments: DepartmentData[] = [
     name: 'Marketing',
     bio: 'The Marketing department is responsible for promoting the club and its events to the wider community. They handle branding, communications, and outreach initiatives.',
     characteristics: {
-      bio: 'The mindset behind how this department works.',
+      bio: 'The face of NEO to the outside world',
       badges: [
         'Strategic',
         'Creative',

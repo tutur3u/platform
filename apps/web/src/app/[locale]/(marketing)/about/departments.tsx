@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { type CoreDepartmentName, departments } from './data';
 import { DepartmentCard } from './department-card';
 
@@ -20,35 +21,48 @@ const coreDepartments: { name: CoreDepartmentName; color: string }[] = [
 ];
 
 export default function Departments() {
+  const searchParams = useSearchParams();
   const [activeDepartmentCard, setActiveDepartmentCard] =
     useState<CoreDepartmentName>('Technology');
+
+  useEffect(() => {
+    const selectedDepartment = searchParams.get('department');
+
+    if (!selectedDepartment) return;
+
+    const matchedDepartment = coreDepartments.find(
+      (department) => department.name === selectedDepartment
+    );
+
+    if (matchedDepartment) {
+      setActiveDepartmentCard(matchedDepartment.name);
+    }
+  }, [searchParams]);
 
   const activeDepartments = departments.filter(
     (department) => department.name === activeDepartmentCard
   );
 
   return (
-    <div className="w-full">
-      <section id="about-departments" className="w-full">
-        <motion.h1
-          className="text-center font-extrabold text-5xl leading-tight md:text-6xl"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          Our{' '}
-          <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
-            Departments
-          </span>
-          <motion.div
-            className="ml-3 inline-block"
-            initial={{ rotate: 0 }}
-            whileInView={{ rotate: 360 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-          ></motion.div>
-        </motion.h1>
-      </section>
+    <section id="about-departments">
+      <motion.h1
+        className="text-center font-extrabold text-5xl leading-tight md:text-6xl"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        viewport={{ once: true }}
+      >
+        Our{' '}
+        <span className="border-brand-light-yellow border-b-4 text-brand-light-blue">
+          Departments
+        </span>
+        <motion.div
+          className="ml-3 inline-block"
+          initial={{ rotate: 0 }}
+          whileInView={{ rotate: 360 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        ></motion.div>
+      </motion.h1>
 
       <div className="relative mx-auto mt-4 mb-8 max-w-4xl rounded-lg border border-border bg-card p-4 text-center text-base text-foreground/80 tracking-wide md:p-6 md:text-lg">
         Behind every successful club initiative is a dedicated team of
@@ -101,6 +115,6 @@ export default function Departments() {
           </motion.div>
         ))}
       </motion.div>
-    </div>
+    </section>
   );
 }
