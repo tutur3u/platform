@@ -98,7 +98,7 @@ export default function Departments() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -50 }}
         transition={{ duration: 0.5 }}
-        className="mt-10 flex w-full justify-center px-4"
+        className="mt-10 flex w-full justify-center"
       >
         {activeDepartments.map((department) => (
           <motion.div

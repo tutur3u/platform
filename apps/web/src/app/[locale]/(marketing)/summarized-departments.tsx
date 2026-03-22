@@ -39,7 +39,7 @@ const departmentCards: {
 
 export default function SummarizedDepartments() {
   return (
-    <section id="about-departments" className="px-4 py-16 md:py-24">
+    <section id="about-departments" className="py-16 md:py-24">
       <motion.h1
         className="text-center font-extrabold text-5xl leading-tight md:text-6xl"
         initial={{ opacity: 0, y: 20 }}
