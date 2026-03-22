@@ -4,14 +4,6 @@ import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import type { CoreDepartmentName, DepartmentData } from './data';
 
-const badgeStyles = [
-  'border-dynamic-orange/80 bg-dynamic-orange/20 text-dynamic-orange',
-  'border-dynamic-green/80 bg-dynamic-green/20 text-dynamic-green',
-  'border-dynamic-purple/80 bg-dynamic-purple/20 text-dynamic-purple',
-  'border-dynamic-red/80 bg-dynamic-red/20 text-dynamic-red',
-  'border-dynamic-lime/80 bg-dynamic-lime/20 text-dynamic-lime',
-];
-
 const departmentThemes: Record<
   CoreDepartmentName,
   {
@@ -106,22 +98,15 @@ export function DepartmentCard({
             </div>
 
             <div className="flex flex-wrap gap-3">
-              {characteristics.badges.map((point, index) => {
-                const badgeClass = badgeStyles[index % badgeStyles.length];
-
-                return (
-                  <Badge
-                    key={index}
-                    variant="default"
-                    className={cn(
-                      'rounded-full px-3 py-1 font-semibold text-sm',
-                      badgeClass
-                    )}
-                  >
-                    {point}
-                  </Badge>
-                );
-              })}
+              {characteristics.badges.map((point, index) => (
+                <Badge
+                  key={index}
+                  variant="default"
+                  className="rounded-full border-brand-light-blue bg-brand-dark-blue px-3 py-1 font-semibold text-brand-light-yellow text-sm"
+                >
+                  {point}
+                </Badge>
+              ))}
             </div>
 
             <p className="max-w-2xl text-foreground/70 text-sm leading-7 md:text-base">
