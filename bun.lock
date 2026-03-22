@@ -45,6 +45,13 @@
         "typescript": "^5.9.3",
       },
     },
+    "apps/redis": {
+      "name": "@tuturuuu/redis",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@upstash/cli": "^0.3.0",
+      },
+    },
     "apps/web": {
       "name": "@ncthub/web",
       "version": "0.14.0",
@@ -611,6 +618,10 @@
     "@date-fns/tz": ["@date-fns/tz@1.4.1", "", {}, "sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA=="],
 
     "@deepgram/sdk": ["@deepgram/sdk@5.0.0", "", { "dependencies": { "ws": "^8.16.0" } }, "sha512-x1wMiOgDGqcLEaQpQBQLTtk5mLbXbYgcBEpp7cfJIyEtqdIGgijCZH+a/esiVp+xIcTYYroTxG47RVppZOHbWw=="],
+
+    "@deno/shim-deno": ["@deno/shim-deno@0.5.0", "", { "dependencies": { "@deno/shim-deno-test": "^0.3.2", "which": "^2.0.2" } }, "sha512-bx2TT/WwmpRlnk2Q0qe9xJMzbyKyl7Uyz9cdXEn756Obu15bRanLiVa/3+09Bg8HYL+mUXydWzh32/oxsVv6dw=="],
+
+    "@deno/shim-deno-test": ["@deno/shim-deno-test@0.3.3", "", {}, "sha512-Ge0Tnl7zZY0VvEfgsyLhjid8DzI1d0La0dgm+3m0/A8gZXgp5xwlyIyue5e4SCUuVB/3AH/0lun9LcJhhTwmbg=="],
 
     "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.12.0", "", {}, "sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow=="],
 
@@ -1496,6 +1507,8 @@
 
     "@turbo/windows-arm64": ["@turbo/windows-arm64@2.8.20", "", { "os": "win32", "cpu": "arm64" }, "sha512-voicVULvUV5yaGXo0Iue13BcHGYW3u0VgqSbfQwBaHbpj1zLjYV4KIe+7fYIo6DO8FVUJzxFps3ODCQG/Wy2Qw=="],
 
+    "@tuturuuu/redis": ["@tuturuuu/redis@workspace:apps/redis"],
+
     "@tweenjs/tween.js": ["@tweenjs/tween.js@23.1.3", "", {}, "sha512-vJmvvwFxYuGnF2axRtPYocag6Clbb5YS7kLL+SO/TeVFzHqDIWrNKYtcsPMibjDx9O+bu+psAy9NKfWklassUA=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
@@ -1647,6 +1660,8 @@
     "@ungap/structured-clone": ["@ungap/structured-clone@1.3.0", "", {}, "sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g=="],
 
     "@upsetjs/venn.js": ["@upsetjs/venn.js@2.0.0", "", { "optionalDependencies": { "d3-selection": "^3.0.0", "d3-transition": "^3.0.1" } }, "sha512-WbBhLrooyePuQ1VZxrJjtLvTc4NVfpOyKx0sKqioq9bX1C1m7Jgykkn8gLrtwumBioXIqam8DLxp88Adbue6Hw=="],
+
+    "@upstash/cli": ["@upstash/cli@0.3.0", "", { "dependencies": { "@deno/shim-deno": "~0.5.0", "node-fetch": "latest" }, "bin": { "upstash": "esm/mod.js" } }, "sha512-ugUpNwSfXLn+rDxilJtgPRVTOJj83sOEU8wFdqhafeqNz702rXeiUZO4eE/uxG2ZPQlUrasQfzNgwbkVGfTjKQ=="],
 
     "@upstash/core-analytics": ["@upstash/core-analytics@0.0.10", "", { "dependencies": { "@upstash/redis": "^1.28.3" } }, "sha512-7qJHGxpQgQr9/vmeS1PktEwvNAF7TI4iJDi8Pu2CFZ9YUGHZH4fOP5TfYlZ4aVxfopnELiE4BS4FBjyK7V1/xQ=="],
 
