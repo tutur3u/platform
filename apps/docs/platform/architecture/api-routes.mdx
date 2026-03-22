@@ -47,7 +47,7 @@ Use for public-facing APIs that external clients consume.
 
 ```typescript
 // app/api/v1/workspaces/route.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@ncthub/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -166,7 +166,7 @@ Use for workspace-specific operations with automatic workspace context.
 ```typescript
 // app/api/[wsId]/tasks/route.ts
 import { hasPermission } from '@/lib/permissions';
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@ncthub/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -340,7 +340,7 @@ Use for AI-specific operations with model selection and token tracking.
 ```typescript
 // app/api/ai/chat/route.ts
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@ncthub/supabase/server';
 import { streamText } from 'ai';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
@@ -445,7 +445,7 @@ Use edge runtime for auth endpoints.
 
 ```typescript
 // app/api/auth/otp/route.ts
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@ncthub/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -544,7 +544,7 @@ export async function POST(request: NextRequest) {
 ```typescript
 // lib/api/middleware.ts
 import { hasPermission } from '@/lib/permissions';
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@ncthub/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 type Handler = (

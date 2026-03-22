@@ -137,7 +137,7 @@ export default function Error({
 // app/[locale]/(dashboard)/[wsId]/tasks/actions.ts
 'use server';
 
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@ncthub/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
@@ -261,7 +261,7 @@ export function CreateTaskForm({ listId }: { listId: string }) {
 
 ```typescript
 // app/[locale]/(dashboard)/[wsId]/tasks/page.tsx
-import { createClient } from '@tuturuuu/supabase/server';
+import { createClient } from '@ncthub/supabase/server';
 import { TaskListClient } from './TaskListClient';
 
 export default async function TasksPage({
@@ -284,8 +284,8 @@ export default async function TasksPage({
 // app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Database } from '@tuturuuu/types';
+import { createClient } from '@ncthub/supabase/next/client';
+import type { Database } from '@ncthub/types';
 import { useEffect, useState } from 'react';
 
 // app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
@@ -512,8 +512,8 @@ utils.tasks.list.refetch({ wsId });
 ```tsx
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Database } from '@tuturuuu/types';
+import { createClient } from '@ncthub/supabase/next/client';
+import type { Database } from '@ncthub/types';
 import { useEffect, useState } from 'react';
 
 type Task = Database['public']['Tables']['workspace_tasks']['Row'];

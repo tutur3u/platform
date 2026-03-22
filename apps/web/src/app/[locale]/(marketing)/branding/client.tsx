@@ -4,6 +4,7 @@ import { Badge } from '@ncthub/ui/badge';
 import { Sparkles } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
 import ColorPaletteSection from './color-palette-section';
+import LanyardSection from './lanyard-section';
 import LogoSection from './logo-section';
 import TypographySection from './typography-section';
 import UniformSection from './uniform-section';
@@ -71,6 +72,8 @@ export default function BrandingContent() {
       <TypographySection />
 
       <UniformSection />
+
+      <LanyardSection />
     </div>
   );
 }
