@@ -129,6 +129,54 @@ extension _ShellPageLayout on _ShellPageState {
     );
   }
 
+  Widget _buildNavigationBarContainer({
+    required BuildContext context,
+    required bool isCompact,
+    required Widget child,
+  }) {
+    if (isCompact) {
+      return SizedBox(
+        width: double.infinity,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: child,
+          ),
+        ),
+      );
+    }
+
+    final maxWidth = MediaQuery.sizeOf(context).width - 24;
+
+    return SizedBox(
+      width: double.infinity,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth > 0 ? maxWidth : 0),
+          child: IntrinsicWidth(child: child),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBodyWithFloatingNav({
+    required Widget body,
+    required Widget navigationBar,
+  }) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        body,
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: SafeArea(top: false, child: navigationBar),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCompactLayout(
     BuildContext context,
     AppTabState state, {
@@ -150,60 +198,56 @@ extension _ShellPageLayout on _ShellPageState {
         !widget.matchedLocation.startsWith(Routes.assistant) ||
         !assistantChrome.isFullscreen;
     final isCompact = context.isCompact;
+    final navigationBar = _buildNavigationBarContainer(
+      context: context,
+      isCompact: isCompact,
+      child: _buildFloatingNavigationBar(
+        context: context,
+        isCompact: isCompact,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: _startLongPressTimer,
+          onPointerUp: _handlePointerUp,
+          onPointerCancel: _stopLongPressTimer,
+          child: isCompact
+              ? shad.NavigationBar(
+                  selectedKey: selectedKey,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  onSelected: (key) => _onItemTapped(
+                    _ShellPageState._indexForKey(key),
+                    context,
+                  ),
+                  children: items.map((item) => Expanded(child: item)).toList(),
+                )
+              : CustomNavigationBar(
+                  selectedKey: selectedKey,
+                  onSelected: (key) => _onItemTapped(
+                    _ShellPageState._indexForKey(key),
+                    context,
+                  ),
+                  expandItems: false,
+                  minItemWidth: _ShellPageState._floatingNavMinItemWidth,
+                  children: items,
+                ),
+        ),
+      ),
+    );
+    final globalBody = _buildGlobalBody();
 
     return shad.Scaffold(
       headers: [_buildAppBar(context)],
-      footers: showBottomNav
-          ? [
-              SafeArea(
-                top: false,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isCompact ? 560 : 720,
-                      ),
-                      child: _buildFloatingNavigationBar(
-                        context: context,
-                        isCompact: isCompact,
-                        child: Listener(
-                          behavior: HitTestBehavior.translucent,
-                          onPointerDown: _startLongPressTimer,
-                          onPointerUp: _handlePointerUp,
-                          onPointerCancel: _stopLongPressTimer,
-                          child: isCompact
-                              ? shad.NavigationBar(
-                                  selectedKey: selectedKey,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  onSelected: (key) => _onItemTapped(
-                                    _ShellPageState._indexForKey(key),
-                                    context,
-                                  ),
-                                  children: items
-                                      .map((item) => Expanded(child: item))
-                                      .toList(),
-                                )
-                              : CustomNavigationBar(
-                                  selectedKey: selectedKey,
-                                  onSelected: (key) => _onItemTapped(
-                                    _ShellPageState._indexForKey(key),
-                                    context,
-                                  ),
-                                  children: items,
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ]
+      footers: showBottomNav && isCompact
+          ? [SafeArea(top: false, child: navigationBar)]
           : const [],
-      child: _buildGlobalBody(),
+      child: showBottomNav && !isCompact
+          ? _buildBodyWithFloatingNav(
+              body: globalBody,
+              navigationBar: navigationBar,
+            )
+          : globalBody,
     );
   }
 
@@ -220,126 +264,119 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final isCompact = context.isCompact;
-
-    return shad.Scaffold(
-      footers: [
-        SafeArea(
-          top: false,
-          child: SizedBox(
-            width: double.infinity,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: isCompact ? 560 : 720,
-                ),
-                child: _buildFloatingNavigationBar(
-                  context: context,
-                  isCompact: isCompact,
-                  child: GestureDetector(
+    final navigationBar = _buildNavigationBarContainer(
+      context: context,
+      isCompact: isCompact,
+      child: _buildFloatingNavigationBar(
+        context: context,
+        isCompact: isCompact,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onHorizontalDragEnd: _onNavBarHorizontalDragEnd,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: _showMiniNav
+                ? (isCompact
+                      ? shad.NavigationBar(
+                          key: _ShellPageState._miniLayerKey,
+                          selectedKey: miniSelectedKey,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          onSelected: (key) =>
+                              _onMiniAppItemTapped(key, context, activeModule),
+                          children: miniItems
+                              .map((item) => Expanded(child: item))
+                              .toList(),
+                        )
+                      : CustomNavigationBar(
+                          key: _ShellPageState._miniLayerKey,
+                          selectedKey: miniSelectedKey,
+                          onSelected: (key) =>
+                              _onMiniAppItemTapped(key, context, activeModule),
+                          expandItems: false,
+                          minItemWidth:
+                              _ShellPageState._floatingNavMinItemWidth,
+                          children: miniItems,
+                        ))
+                : Listener(
                     behavior: HitTestBehavior.translucent,
-                    onHorizontalDragEnd: _onNavBarHorizontalDragEnd,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      child: _showMiniNav
-                          ? (isCompact
-                                ? shad.NavigationBar(
-                                    key: _ShellPageState._miniLayerKey,
-                                    selectedKey: miniSelectedKey,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    onSelected: (key) => _onMiniAppItemTapped(
-                                      key,
-                                      context,
-                                      activeModule,
-                                    ),
-                                    children: miniItems
-                                        .map((item) => Expanded(child: item))
-                                        .toList(),
-                                  )
-                                : CustomNavigationBar(
-                                    key: _ShellPageState._miniLayerKey,
-                                    selectedKey: miniSelectedKey,
-                                    onSelected: (key) => _onMiniAppItemTapped(
-                                      key,
-                                      context,
-                                      activeModule,
-                                    ),
-                                    children: miniItems,
-                                  ))
-                          : Listener(
-                              behavior: HitTestBehavior.translucent,
-                              onPointerDown: _startLongPressTimer,
-                              onPointerUp: _handlePointerUp,
-                              onPointerCancel: _stopLongPressTimer,
-                              child: isCompact
-                                  ? shad.NavigationBar(
-                                      key: _ShellPageState._globalLayerKey,
-                                      selectedKey: globalSelectedKey,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      onSelected: (key) => _onItemTapped(
-                                        _ShellPageState._indexForKey(key),
-                                        context,
-                                      ),
-                                      children:
-                                          _buildNavItems(
-                                                context,
-                                                state,
-                                                context.l10n,
-                                              )
-                                              .map(
-                                                (item) => Expanded(child: item),
-                                              )
-                                              .toList(),
-                                    )
-                                  : CustomNavigationBar(
-                                      key: _ShellPageState._globalLayerKey,
-                                      selectedKey: globalSelectedKey,
-                                      onSelected: (key) => _onItemTapped(
-                                        _ShellPageState._indexForKey(key),
-                                        context,
-                                      ),
-                                      children: _buildNavItems(
-                                        context,
-                                        state,
-                                        context.l10n,
-                                      ),
-                                    ),
+                    onPointerDown: _startLongPressTimer,
+                    onPointerUp: _handlePointerUp,
+                    onPointerCancel: _stopLongPressTimer,
+                    child: isCompact
+                        ? shad.NavigationBar(
+                            key: _ShellPageState._globalLayerKey,
+                            selectedKey: globalSelectedKey,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
-                    ),
+                            onSelected: (key) => _onItemTapped(
+                              _ShellPageState._indexForKey(key),
+                              context,
+                            ),
+                            children: _buildNavItems(
+                              context,
+                              state,
+                              context.l10n,
+                            ).map((item) => Expanded(child: item)).toList(),
+                          )
+                        : CustomNavigationBar(
+                            key: _ShellPageState._globalLayerKey,
+                            selectedKey: globalSelectedKey,
+                            onSelected: (key) => _onItemTapped(
+                              _ShellPageState._indexForKey(key),
+                              context,
+                            ),
+                            expandItems: false,
+                            minItemWidth:
+                                _ShellPageState._floatingNavMinItemWidth,
+                            children: _buildNavItems(
+                              context,
+                              state,
+                              context.l10n,
+                            ),
+                          ),
                   ),
-                ),
-              ),
-            ),
           ),
         ),
-      ],
-      child: PageView(
-        controller: _layerController,
-        physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: (page) {
-          _setShellState(() {
-            _activeLayerPage = page;
-            _syncingLayerPage = false;
-          });
-        },
-        children: [
-          KeyedSubtree(
-            key: _ShellPageState._globalLayerKey,
-            child: globalBody,
-          ),
-          KeyedSubtree(
-            key: _ShellPageState._miniLayerKey,
-            child: _buildNormalizedChild(),
-          ),
-        ],
       ),
+    );
+    final pageView = PageView(
+      controller: _layerController,
+      physics: const NeverScrollableScrollPhysics(),
+      onPageChanged: (page) {
+        _setShellState(() {
+          _activeLayerPage = page;
+          _syncingLayerPage = false;
+        });
+      },
+      children: [
+        KeyedSubtree(
+          key: _ShellPageState._globalLayerKey,
+          child: globalBody,
+        ),
+        KeyedSubtree(
+          key: _ShellPageState._miniLayerKey,
+          child: _buildNormalizedChild(),
+        ),
+      ],
+    );
+
+    return shad.Scaffold(
+      footers: isCompact
+          ? [SafeArea(top: false, child: navigationBar)]
+          : const [],
+      child: isCompact
+          ? pageView
+          : _buildBodyWithFloatingNav(
+              body: pageView,
+              navigationBar: navigationBar,
+            ),
     );
   }
 
