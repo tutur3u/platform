@@ -5,70 +5,118 @@ import type {
   WorkspaceUser,
 } from '@tuturuuu/types/db';
 import {
+  buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
-  POST_EMAIL_MAX_AGE_DAYS,
+  isPostEmailAgeSkipReason,
   POST_EMAIL_QUEUE_TABLE,
 } from './constants';
+import {
+  filterAgeSkippedRows,
+  filterRowsByRecentPosts,
+  getEligibleReenqueuePairIds,
+  getQueueIdsForOldPosts,
+  getQueueIdsToReenqueue,
+  getSentPairIds,
+} from './logic';
 import type {
   EligibleRecipient,
   EligibleRecipientCheckRow,
   ExistingQueueState,
   OldApprovedCheckRow,
   OrphanedApprovedCheckRow,
-  PostEmailQueueInsert,
   PostEmailQueueRow,
+  PostEmailQueueUpsertRow,
+  PostScopeRow,
+  QueueIdPostRow,
+  QueueIdPostUserRow,
+  QueueSenderRow,
+  QueueSkipTarget,
+  QueueSkipUpdate,
+  SentReceiverRow,
   WorkspaceUserGroupRow,
   WorkspaceUserLinkedUserRow,
 } from './types';
-import { isValidEmailAddress } from './utils';
+import { chunkArray, isValidEmailAddress } from './utils';
 
-type PostEmailQueueUpsertRow = Omit<
-  PostEmailQueueInsert,
-  'id' | 'created_at' | 'updated_at'
->;
-
-type QueueStatusUpdate = Pick<
-  Database['public']['Tables']['post_email_queue']['Update'],
-  'status' | 'batch_id' | 'claimed_at' | 'cancelled_at' | 'last_error'
->;
-
-type QueueSkipUpdate = QueueStatusUpdate & {
-  status: 'skipped';
-  batch_id: null;
-  claimed_at: null;
-  cancelled_at: string;
-  last_error: string;
-};
-
-type QueueSkipTarget = Pick<
-  PostEmailQueueRow,
-  'post_id' | 'user_id' | 'ws_id' | 'group_id'
->;
-
-type PostScopeRow = Pick<
-  Database['public']['Tables']['user_group_posts']['Row'],
-  'id' | 'group_id' | 'created_at'
+type CheckEligibilityRow = Pick<
+  GroupPostCheck,
+  'post_id' | 'user_id' | 'is_completed' | 'approval_status'
 > & {
-  workspace_user_groups: Pick<WorkspaceUserGroupRow, 'ws_id'> | null;
+  user: Pick<WorkspaceUser, 'id' | 'email' | 'ws_id'> | null;
 };
-
-type SentReceiverRow = Pick<
-  Database['public']['Tables']['sent_emails']['Row'],
-  'receiver_id'
->;
-
-type QueueSenderRow = Pick<
-  Database['public']['Tables']['post_email_queue']['Row'],
-  'post_id' | 'user_id' | 'sender_platform_user_id'
->;
-
-type QueueIdRow = Pick<
-  Database['public']['Tables']['post_email_queue']['Row'],
-  'id'
->;
 
 export function getQueueTable(sbAdmin: TypedSupabaseClient) {
   return sbAdmin.from(POST_EMAIL_QUEUE_TABLE);
+}
+
+async function getPostIdsOlderThanCutoff(
+  sbAdmin: TypedSupabaseClient,
+  postIds: string[],
+  cutoff: string
+): Promise<Set<string>> {
+  const oldPostIds = new Set<string>();
+
+  for (const postChunk of chunkArray([...new Set(postIds)])) {
+    const { data, error } = await sbAdmin
+      .from('user_group_posts')
+      .select('id')
+      .in('id', postChunk)
+      .lt('created_at', cutoff);
+
+    if (error) throw error;
+
+    for (const post of data ?? []) {
+      oldPostIds.add(post.id);
+    }
+  }
+
+  return oldPostIds;
+}
+
+async function getPostIdsAtOrAfterCutoff(
+  sbAdmin: TypedSupabaseClient,
+  postIds: string[],
+  cutoff: string
+): Promise<Set<string>> {
+  const recentPostIds = new Set<string>();
+
+  for (const postChunk of chunkArray([...new Set(postIds)])) {
+    const { data, error } = await sbAdmin
+      .from('user_group_posts')
+      .select('id')
+      .in('id', postChunk)
+      .gte('created_at', cutoff);
+
+    if (error) throw error;
+
+    for (const post of data ?? []) {
+      recentPostIds.add(post.id);
+    }
+  }
+
+  return recentPostIds;
+}
+
+async function updateQueueRowsInChunks(
+  sbAdmin: TypedSupabaseClient,
+  queueIds: string[],
+  patch: Database['public']['Tables']['post_email_queue']['Update'],
+  statuses: PostEmailQueueRow['status'][]
+): Promise<number> {
+  let totalUpdated = 0;
+
+  for (const idChunk of chunkArray([...new Set(queueIds)])) {
+    const { data, error } = await getQueueTable(sbAdmin)
+      .update(patch)
+      .in('id', idChunk)
+      .in('status', statuses)
+      .select('id');
+
+    if (error) throw error;
+    totalUpdated += data?.length ?? 0;
+  }
+
+  return totalUpdated;
 }
 
 function getWorkspaceGroupValue<K extends 'id' | 'ws_id'>(
@@ -394,25 +442,45 @@ export async function autoSkipOldPostEmails(
 ): Promise<number> {
   const cutoff = getPostEmailMaxAgeCutoff();
 
-  let query = getQueueTable(sbAdmin)
-    .update({
+  let candidatesQuery = getQueueTable(sbAdmin)
+    .select('id, post_id')
+    .in('status', ['queued', 'failed', 'blocked']);
+
+  if (wsId) {
+    candidatesQuery = candidatesQuery.eq('ws_id', wsId);
+  }
+
+  const { data: candidateRowsData, error: candidatesError } =
+    await candidatesQuery;
+  if (candidatesError) throw candidatesError;
+
+  const candidateRows = (candidateRowsData ?? []) as QueueIdPostRow[];
+  if (candidateRows.length === 0) return 0;
+
+  const oldPostIds = await getPostIdsOlderThanCutoff(
+    sbAdmin,
+    candidateRows.map((row) => row.post_id),
+    cutoff
+  );
+  if (oldPostIds.size === 0) return 0;
+
+  const queueIdsToSkip = getQueueIdsForOldPosts(candidateRows, oldPostIds);
+
+  if (queueIdsToSkip.length === 0) return 0;
+
+  return updateQueueRowsInChunks(
+    sbAdmin,
+    queueIdsToSkip,
+    {
       status: 'skipped',
       batch_id: null,
       claimed_at: null,
       cancelled_at: new Date().toISOString(),
-      last_error: `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days`,
-    })
-    .in('status', ['queued', 'failed', 'blocked'])
-    .lt('created_at', cutoff);
-
-  if (wsId) {
-    query = query.eq('ws_id', wsId);
-  }
-
-  const { data, error } = await query.select('id');
-  if (error) throw error;
-
-  return data?.length ?? 0;
+      blocked_reason: null,
+      last_error: buildPostEmailAgeSkipReason(),
+    },
+    ['queued', 'failed', 'blocked']
+  );
 }
 
 export async function autoSkipOldApprovedPostChecks(
@@ -465,7 +533,7 @@ export async function autoSkipOldApprovedPostChecks(
       batch_id: null,
       claimed_at: null,
       cancelled_at: new Date().toISOString(),
-      last_error: `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days - auto-skipped`,
+      last_error: buildPostEmailAgeSkipReason(' - auto-skipped'),
     });
   }
 
@@ -706,47 +774,152 @@ export async function reconcileOrphanedApprovedPosts(
   return { enqueued: totalEnqueued, checked: checks.length };
 }
 
+async function getEligibleReenqueuePairs(
+  sbAdmin: TypedSupabaseClient,
+  rows: QueueIdPostUserRow[],
+  wsId?: string
+): Promise<Set<string>> {
+  const candidatePairIds = new Set(
+    rows.map((row) => `${row.post_id}:${row.user_id}`)
+  );
+  const candidatePostIds = [...new Set(rows.map((row) => row.post_id))];
+
+  const eligibleCheckRows: Parameters<typeof getEligibleReenqueuePairIds>[0] =
+    [];
+  for (const postChunk of chunkArray(candidatePostIds)) {
+    let checksQuery = sbAdmin
+      .from('user_group_post_checks')
+      .select(
+        'post_id, user_id, is_completed, approval_status, user:workspace_users!user_id(id, email, ws_id)'
+      )
+      .in('post_id', postChunk)
+      .eq('approval_status', 'APPROVED')
+      .not('is_completed', 'is', null);
+
+    if (wsId) {
+      checksQuery = checksQuery.eq('user.ws_id', wsId);
+    }
+
+    const { data, error } = await checksQuery;
+    if (error) throw error;
+
+    for (const check of (data ?? []) as CheckEligibilityRow[]) {
+      const pairId = `${check.post_id}:${check.user_id}`;
+      if (candidatePairIds.has(pairId)) {
+        eligibleCheckRows.push({
+          post_id: check.post_id,
+          user_id: check.user_id,
+          approval_status: check.approval_status,
+          is_completed: check.is_completed,
+          email: check.user?.email ?? null,
+        });
+      }
+    }
+  }
+
+  const eligiblePairIds = getEligibleReenqueuePairIds(eligibleCheckRows);
+  if (eligiblePairIds.size === 0) return new Set();
+
+  const sentRows: Parameters<typeof getSentPairIds>[0] = [];
+  const eligibleUserIds = [...new Set(rows.map((row) => row.user_id))];
+  for (const postChunk of chunkArray(candidatePostIds)) {
+    for (const userChunk of chunkArray(eligibleUserIds)) {
+      const { data, error } = await sbAdmin
+        .from('sent_emails')
+        .select('post_id, receiver_id')
+        .in('post_id', postChunk)
+        .in('receiver_id', userChunk);
+
+      if (error) throw error;
+
+      for (const sent of data ?? []) {
+        if (!sent.post_id || !sent.receiver_id) continue;
+        sentRows.push({
+          post_id: sent.post_id,
+          receiver_id: sent.receiver_id,
+        });
+      }
+    }
+  }
+
+  const sentPairIds = getSentPairIds(sentRows);
+
+  return new Set(getQueueIdsToReenqueue(rows, eligiblePairIds, sentPairIds));
+}
+
 export async function reEnqueueSkippedPostEmails(
   sbAdmin: TypedSupabaseClient,
   { wsId }: { wsId?: string } = {}
 ): Promise<{ reEnqueued: number; totalChecked: number }> {
-  const skipPrefix = `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days`;
+  const cutoff = getPostEmailMaxAgeCutoff();
 
   let query = getQueueTable(sbAdmin)
-    .select('id')
+    .select('id, post_id, user_id, last_error')
     .eq('status', 'skipped')
-    .not('last_error', 'is', null)
-    .like('last_error', `${skipPrefix}%`);
+    .not('last_error', 'is', null);
 
   if (wsId) {
     query = query.eq('ws_id', wsId);
   }
 
   const { data: skippedRowsData, error: selectError } = await query;
-
   if (selectError) throw selectError;
 
-  const skippedRows = (skippedRowsData ?? []) as QueueIdRow[];
+  const skippedRows = filterAgeSkippedRows(
+    (skippedRowsData ?? []) as Array<
+      QueueIdPostUserRow & { last_error: string | null }
+    >,
+    isPostEmailAgeSkipReason
+  ) as QueueIdPostUserRow[];
+
   if (skippedRows.length === 0) {
     return { reEnqueued: 0, totalChecked: 0 };
   }
 
-  const skippedIds = skippedRows.map((row) => row.id);
-  const { data: updatedRows, error: updateError } = await getQueueTable(sbAdmin)
-    .update({
+  const recentPostIds = await getPostIdsAtOrAfterCutoff(
+    sbAdmin,
+    skippedRows.map((row) => row.post_id),
+    cutoff
+  );
+
+  const recentRows = filterRowsByRecentPosts(skippedRows, recentPostIds);
+  if (recentRows.length === 0) {
+    return { reEnqueued: 0, totalChecked: skippedRows.length };
+  }
+
+  const eligiblePairSet = await getEligibleReenqueuePairs(
+    sbAdmin,
+    recentRows,
+    wsId
+  );
+  const queueIdsToReenqueue = recentRows
+    .filter((row) => eligiblePairSet.has(row.id))
+    .map((row) => row.id);
+
+  if (queueIdsToReenqueue.length === 0) {
+    return { reEnqueued: 0, totalChecked: skippedRows.length };
+  }
+
+  const reEnqueued = await updateQueueRowsInChunks(
+    sbAdmin,
+    queueIdsToReenqueue,
+    {
       status: 'queued',
+      batch_id: null,
+      claimed_at: null,
       cancelled_at: null,
+      last_attempt_at: null,
       last_error: null,
       attempt_count: 0,
-    })
-    .in('id', skippedIds)
-    .eq('status', 'skipped')
-    .select('id');
-
-  if (updateError) throw updateError;
+      blocked_reason: null,
+      sent_at: null,
+      sent_email_id: null,
+    },
+    ['skipped']
+  );
 
   return {
-    reEnqueued: updatedRows?.length ?? 0,
+    reEnqueued,
     totalChecked: skippedRows.length,
   };
 }

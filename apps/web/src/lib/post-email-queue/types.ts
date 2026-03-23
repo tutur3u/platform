@@ -1,3 +1,4 @@
+import type { EmailService } from '@tuturuuu/email-service';
 import type {
   Database,
   EmailHistoryEntry,
@@ -98,4 +99,119 @@ export type BatchPrefetch = {
   posts: Map<PostEmailQueueRow['post_id'], PrefetchedPost | null>;
   checks: Map<string, PrefetchedPostCheck>;
   existingSentEmails: Map<string, PrefetchedSentEmail>;
+};
+
+export type PostEmailQueueUpsertRow = Omit<
+  PostEmailQueueInsert,
+  'id' | 'created_at' | 'updated_at'
+>;
+
+export type QueueStatusUpdate = Pick<
+  Database['public']['Tables']['post_email_queue']['Update'],
+  'status' | 'batch_id' | 'claimed_at' | 'cancelled_at' | 'last_error'
+>;
+
+export type QueueSkipUpdate = QueueStatusUpdate & {
+  status: 'skipped';
+  batch_id: null;
+  claimed_at: null;
+  cancelled_at: string;
+  last_error: string;
+};
+
+export type QueueSkipTarget = Pick<
+  PostEmailQueueRow,
+  'post_id' | 'user_id' | 'ws_id' | 'group_id'
+>;
+
+export type PostScopeRow = Pick<
+  Database['public']['Tables']['user_group_posts']['Row'],
+  'id' | 'group_id' | 'created_at'
+> & {
+  workspace_user_groups: Pick<WorkspaceUserGroupRow, 'ws_id'> | null;
+};
+
+export type SentReceiverRow = Pick<
+  Database['public']['Tables']['sent_emails']['Row'],
+  'receiver_id'
+>;
+
+export type QueueSenderRow = Pick<
+  Database['public']['Tables']['post_email_queue']['Row'],
+  'post_id' | 'user_id' | 'sender_platform_user_id'
+>;
+
+export type QueueIdPostRow = Pick<
+  Database['public']['Tables']['post_email_queue']['Row'],
+  'id' | 'post_id'
+>;
+
+export type QueueIdPostUserRow = Pick<
+  Database['public']['Tables']['post_email_queue']['Row'],
+  'id' | 'post_id' | 'user_id'
+>;
+
+export type BatchSourceInfo = Pick<
+  WorkspaceEmailCredentialRow,
+  'source_name' | 'source_email'
+>;
+
+export type BatchPrefetchContext = BatchPrefetch & {
+  emailServices: Map<string, EmailService>;
+  sourceInfos: Map<string, BatchSourceInfo>;
+};
+
+export type BatchProcessResult = {
+  id: PostEmailQueueRow['id'];
+  status: PostEmailQueueRow['status'];
+};
+
+export type QueuePatch = Pick<
+  PostEmailQueueUpdate,
+  | 'status'
+  | 'batch_id'
+  | 'cancelled_at'
+  | 'blocked_reason'
+  | 'last_error'
+  | 'sent_at'
+  | 'sent_email_id'
+>;
+
+export type PrefetchPostRow = Pick<
+  UserGroupPost,
+  'id' | 'group_id' | 'title' | 'content' | 'created_at'
+> & {
+  workspace_user_groups:
+    | Pick<WorkspaceUserGroupRow, 'ws_id' | 'name'>
+    | Array<Pick<WorkspaceUserGroupRow, 'ws_id' | 'name'>>
+    | null;
+};
+
+export type PrefetchCheckRow = Pick<
+  GroupPostCheck,
+  'post_id' | 'user_id' | 'notes' | 'is_completed' | 'approval_status'
+> & {
+  user: Pick<
+    WorkspaceUser,
+    'id' | 'email' | 'full_name' | 'display_name'
+  > | null;
+};
+
+export type PrefetchSentEmailRow = Pick<
+  EmailHistoryEntry,
+  'id' | 'post_id' | 'receiver_id' | 'created_at'
+>;
+
+export type QueueClaimUpdate = Pick<
+  PostEmailQueueUpdate,
+  | 'status'
+  | 'batch_id'
+  | 'claimed_at'
+  | 'last_attempt_at'
+  | 'attempt_count'
+  | 'cancelled_at'
+>;
+
+export type QueueClaimedRow = Omit<PostEmailQueueRow, 'status'> & {
+  status: 'processing';
 };

@@ -1,5 +1,7 @@
 import type { PostEmailQueueRow } from './types';
 
+export const POST_EMAIL_QUERY_CHUNK_SIZE = 500;
+
 export function isValidEmailAddress(
   email: string | null | undefined
 ): email is string {
@@ -26,6 +28,20 @@ export function prioritizePostEmailQueueBatch(
   limit: number
 ) {
   return queuedRows.concat(failedRows).slice(0, Math.max(1, limit));
+}
+
+export function chunkArray<T>(
+  values: T[],
+  chunkSize = POST_EMAIL_QUERY_CHUNK_SIZE
+): T[][] {
+  if (values.length === 0) return [];
+
+  const safeChunkSize = Math.max(1, chunkSize);
+  const chunks: T[][] = [];
+  for (let i = 0; i < values.length; i += safeChunkSize) {
+    chunks.push(values.slice(i, i + safeChunkSize));
+  }
+  return chunks;
 }
 
 export async function processWithConcurrency(

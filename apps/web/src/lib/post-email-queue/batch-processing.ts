@@ -1,26 +1,30 @@
 import { render } from '@react-email/render';
 import { EmailService } from '@tuturuuu/email-service';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
-import type {
-  Database,
-  EmailHistoryEntry,
-  GroupPostCheck,
-  UserGroupPost,
-  WorkspaceUser,
-} from '@tuturuuu/types/db';
+import type { Database } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
-import { getPostEmailMaxAgeCutoff, POST_EMAIL_MAX_AGE_DAYS } from './constants';
+import {
+  buildPostEmailAgeSkipReason,
+  getPostEmailMaxAgeCutoff,
+} from './constants';
 import { getQueueTable } from './queue-core';
 import type {
   BatchPrefetch,
+  BatchPrefetchContext,
+  BatchProcessResult,
+  BatchSourceInfo,
   PostEmailQueueRow,
-  PostEmailQueueUpdate,
   PostSendContext,
+  PrefetchCheckRow,
   PrefetchedPost,
   PrefetchedPostCheck,
   PrefetchedSentEmail,
-  WorkspaceEmailCredentialRow,
+  PrefetchPostRow,
+  PrefetchSentEmailRow,
+  QueueClaimedRow,
+  QueueClaimUpdate,
+  QueuePatch,
   WorkspaceUserGroupRow,
 } from './types';
 import {
@@ -28,71 +32,6 @@ import {
   prioritizePostEmailQueueBatch,
   processWithConcurrency,
 } from './utils';
-
-type BatchSourceInfo = Pick<
-  WorkspaceEmailCredentialRow,
-  'source_name' | 'source_email'
->;
-
-type BatchPrefetchContext = BatchPrefetch & {
-  emailServices: Map<string, EmailService>;
-  sourceInfos: Map<string, BatchSourceInfo>;
-};
-
-type BatchProcessResult = {
-  id: PostEmailQueueRow['id'];
-  status: PostEmailQueueRow['status'];
-};
-
-type QueuePatch = Pick<
-  PostEmailQueueUpdate,
-  | 'status'
-  | 'batch_id'
-  | 'cancelled_at'
-  | 'blocked_reason'
-  | 'last_error'
-  | 'sent_at'
-  | 'sent_email_id'
->;
-
-type PrefetchPostRow = Pick<
-  UserGroupPost,
-  'id' | 'group_id' | 'title' | 'content' | 'created_at'
-> & {
-  workspace_user_groups:
-    | Pick<WorkspaceUserGroupRow, 'ws_id' | 'name'>
-    | Array<Pick<WorkspaceUserGroupRow, 'ws_id' | 'name'>>
-    | null;
-};
-
-type PrefetchCheckRow = Pick<
-  GroupPostCheck,
-  'post_id' | 'user_id' | 'notes' | 'is_completed' | 'approval_status'
-> & {
-  user: Pick<
-    WorkspaceUser,
-    'id' | 'email' | 'full_name' | 'display_name'
-  > | null;
-};
-
-type PrefetchSentEmailRow = Pick<
-  EmailHistoryEntry,
-  'id' | 'post_id' | 'receiver_id' | 'created_at'
->;
-
-type QueueClaimUpdate = Pick<
-  PostEmailQueueUpdate,
-  | 'status'
-  | 'batch_id'
-  | 'claimed_at'
-  | 'last_attempt_at'
-  | 'attempt_count'
-  | 'cancelled_at'
->;
-
-type QueueClaimedRow = Omit<PostEmailQueueRow, 'status'> & {
-  status: 'processing';
-};
 
 function getWorkspaceGroupName(
   workspaceGroup:
@@ -272,7 +211,7 @@ async function processEmailWithContext(
       batch_id: null,
       cancelled_at: new Date().toISOString(),
       last_error: isOld
-        ? `Post older than ${POST_EMAIL_MAX_AGE_DAYS} days`
+        ? buildPostEmailAgeSkipReason()
         : 'Post is no longer approved or recipient is no longer eligible.',
     });
 
