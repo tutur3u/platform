@@ -137,6 +137,7 @@ class _AppState extends State<App> {
             return BlocBuilder<ThemeCubit, ThemeState>(
               builder: (context, themeState) {
                 return shad.ShadcnApp.router(
+                  debugShowCheckedModeBanner: false,
                   theme: shad.ThemeData(
                     colorScheme: shad.ColorSchemes.lightZinc,
                     typography: const shad.Typography.geist().copyWith(
