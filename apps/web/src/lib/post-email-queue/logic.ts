@@ -1,5 +1,5 @@
-import { isValidEmailAddress } from './utils';
 import type { QueueIdPostRow, QueueIdPostUserRow } from './types';
+import { isValidEmailAddress } from './utils';
 
 export type QueuePostRow = QueueIdPostRow;
 export type QueuePostUserRow = QueueIdPostUserRow;
