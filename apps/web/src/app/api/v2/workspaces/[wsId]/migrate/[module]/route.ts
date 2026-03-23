@@ -40,7 +40,10 @@ const MODULE_TABLE_MAP: Record<string, string> = {
   'workspace-user-group-tag-groups': 'workspace_user_group_tag_groups',
   'workspace-user-linked-users': 'workspace_user_linked_users',
   'workspace-user-status-changes': 'workspace_user_status_changes',
+  'user-group-post-checks': 'user_group_post_checks',
+  'sent-emails': 'sent_emails',
   'post-email-queue': 'post_email_queue',
+  'email-blacklist': 'email_blacklist',
   // Legacy mappings
   'payment-methods': 'wallet_types',
   roles: 'workspace_roles',
@@ -91,6 +94,7 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
   'workspace_user_group_tags',
   'workspace_user_linked_users',
   'workspace_user_status_changes',
+  'sent_emails',
   'post_email_queue',
   // Other tables
   'workspace_roles',
@@ -104,6 +108,7 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
 // Tables without workspace scoping (global lookup tables)
 const GLOBAL_TABLES: Set<string> = new Set([
   'wallet_types', // Just has 'id', no ws_id
+  'email_blacklist',
 ]);
 
 // Modules that have dedicated RPC functions for efficient pagination
@@ -591,6 +596,83 @@ export const GET = withApiAuth<Params>(
 
       if (error) {
         console.error('Error querying wallet_transactions:', error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount,
+        data: data ?? [],
+      });
+    }
+
+    // user_group_post_checks needs join via user_group_posts -> workspace_user_groups
+    if (tableName === 'user_group_post_checks') {
+      // First get group IDs for this workspace
+      const { data: groups, error: groupsError } = await supabase
+        .from('workspace_user_groups')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (groupsError) {
+        console.error('Error fetching workspace_user_groups:', groupsError);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch groups: ${groupsError.message}`,
+          500,
+          'GROUP_FETCH_ERROR'
+        );
+      }
+
+      const groupIds = groups?.map((g) => g.id) ?? [];
+      if (groupIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      // Fetch post IDs in batches to avoid oversized .in() queries
+      const postIds: string[] = [];
+      for (let i = 0; i < groupIds.length; i += MAX_IN_BATCH_SIZE) {
+        const batchGroupIds = groupIds.slice(i, i + MAX_IN_BATCH_SIZE);
+        const { data: posts, error: postsError } = await supabase
+          .from('user_group_posts')
+          .select('id')
+          .in('group_id', batchGroupIds);
+
+        if (postsError) {
+          console.error('Error fetching user_group_posts:', postsError);
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to fetch posts: ${postsError.message}`,
+            500,
+            'POST_FETCH_ERROR'
+          );
+        }
+
+        postIds.push(...(posts?.map((p) => p.id) ?? []));
+      }
+
+      if (postIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      const {
+        count: totalCount,
+        data,
+        error,
+      } = await batchedInQuery(
+        supabase,
+        'user_group_post_checks',
+        'post_id',
+        postIds,
+        { from, limit }
+      );
+
+      if (error) {
+        console.error('Error querying user_group_post_checks:', error);
         return createErrorResponse(
           'Internal Server Error',
           `Failed to fetch records: ${error.message}`,
