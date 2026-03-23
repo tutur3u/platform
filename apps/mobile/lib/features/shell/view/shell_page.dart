@@ -4,7 +4,6 @@ import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -82,29 +81,21 @@ class _ShellPageState extends State<ShellPage> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceClass = context.deviceClass;
     final location = widget.matchedLocation;
     final activeModule = AppRegistry.moduleFromLocation(location);
 
     return BlocBuilder<AppTabCubit, AppTabState>(
-      builder: (context, state) {
-        if (deviceClass == DeviceClass.compact) {
-          return _buildCompactLayout(
-            context,
-            state,
-            activeModule: activeModule,
-          );
-        }
-        return _buildSideNavLayout(context, state, deviceClass);
-      },
+      builder: (context, state) => _buildCompactLayout(
+        context,
+        state,
+        activeModule: activeModule,
+      ),
     );
   }
 
   Widget _buildNormalizedChild({bool preserveTop = false}) {
-    if (preserveTop) return widget.child;
-    return MediaQuery.removePadding(
-      context: context,
-      removeTop: true,
+    // Wrap in SizedBox.expand to ensure child fills available space
+    return SizedBox.expand(
       child: widget.child,
     );
   }
@@ -125,6 +116,55 @@ class _ShellPageState extends State<ShellPage> {
       );
     }
     return _buildNormalizedChild();
+  }
+
+  /// Build navigation bar with dynamic island styling for tablets.
+  Widget _buildFloatingNavigationBar({
+    required BuildContext context,
+    required bool isCompact,
+    required Widget child,
+  }) {
+    if (isCompact) {
+      return child;
+    }
+
+    final theme = shad.Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+            blurRadius: 40,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: -2,
+          ),
+        ],
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.08),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: child,
+        ),
+      ),
+    );
   }
 
   /// Compact: bottom NavigationBar inside Scaffold footers.
@@ -179,6 +219,7 @@ class _ShellPageState extends State<ShellPage> {
     final showBottomNav =
         !widget.matchedLocation.startsWith(Routes.assistant) ||
         !assistantChrome.isFullscreen;
+    final isCompact = context.isCompact;
 
     return shad.Scaffold(
       headers: [_buildAppBar(context)],
@@ -190,23 +231,42 @@ class _ShellPageState extends State<ShellPage> {
                   width: double.infinity,
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 560),
-                      child: Listener(
-                        behavior: HitTestBehavior.translucent,
-                        onPointerDown: _startLongPressTimer,
-                        onPointerUp: _handlePointerUp,
-                        onPointerCancel: _stopLongPressTimer,
-                        child: shad.NavigationBar(
-                          selectedKey: selectedKey,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          onSelected: (key) =>
-                              _onItemTapped(_indexForKey(key), context, state),
-                          children: items
-                              .map((i) => Expanded(child: i))
-                              .toList(),
+                      constraints: BoxConstraints(
+                        maxWidth: isCompact ? 560 : 720,
+                      ),
+                      child: _buildFloatingNavigationBar(
+                        context: context,
+                        isCompact: isCompact,
+                        child: Listener(
+                          behavior: HitTestBehavior.translucent,
+                          onPointerDown: _startLongPressTimer,
+                          onPointerUp: _handlePointerUp,
+                          onPointerCancel: _stopLongPressTimer,
+                          child: isCompact
+                              ? shad.NavigationBar(
+                                  selectedKey: selectedKey,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  onSelected: (key) => _onItemTapped(
+                                    _indexForKey(key),
+                                    context,
+                                    state,
+                                  ),
+                                  children: items
+                                      .map((i) => Expanded(child: i))
+                                      .toList(),
+                                )
+                              : _CustomNavigationBar(
+                                  selectedKey: selectedKey,
+                                  onSelected: (key) => _onItemTapped(
+                                    _indexForKey(key),
+                                    context,
+                                    state,
+                                  ),
+                                  children: items,
+                                ),
                         ),
                       ),
                     ),
@@ -249,6 +309,7 @@ class _ShellPageState extends State<ShellPage> {
       context,
       activeModule.miniAppNavItems,
     );
+    final isCompact = context.isCompact;
 
     return shad.Scaffold(
       footers: [
@@ -258,55 +319,83 @@ class _ShellPageState extends State<ShellPage> {
             width: double.infinity,
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onHorizontalDragEnd: _onNavBarHorizontalDragEnd,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    child: _showMiniNav
-                        ? shad.NavigationBar(
-                            key: _miniLayerKey,
-                            selectedKey: miniSelectedKey,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                constraints: BoxConstraints(
+                  maxWidth: isCompact ? 560 : 720,
+                ),
+                child: _buildFloatingNavigationBar(
+                  context: context,
+                  isCompact: isCompact,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragEnd: _onNavBarHorizontalDragEnd,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      child: _showMiniNav
+                          ? (isCompact
+                                ? shad.NavigationBar(
+                                    key: _miniLayerKey,
+                                    selectedKey: miniSelectedKey,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    onSelected: (key) => _onMiniAppItemTapped(
+                                      key,
+                                      context,
+                                      activeModule,
+                                    ),
+                                    children: miniItems,
+                                  )
+                                : _CustomNavigationBar(
+                                    key: _miniLayerKey,
+                                    selectedKey: miniSelectedKey,
+                                    onSelected: (key) => _onMiniAppItemTapped(
+                                      key,
+                                      context,
+                                      activeModule,
+                                    ),
+                                    children: miniItems,
+                                  ))
+                          : Listener(
+                              behavior: HitTestBehavior.translucent,
+                              onPointerDown: _startLongPressTimer,
+                              onPointerUp: _stopLongPressTimer,
+                              onPointerCancel: _stopLongPressTimer,
+                              child: isCompact
+                                  ? shad.NavigationBar(
+                                      key: _globalLayerKey,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      onSelected: (key) => _onItemTapped(
+                                        _indexForKey(key),
+                                        context,
+                                        state,
+                                      ),
+                                      children: _buildNavItems(
+                                        context,
+                                        state,
+                                        context.l10n,
+                                      ).map((i) => Expanded(child: i)).toList(),
+                                    )
+                                  : _CustomNavigationBar(
+                                      key: _globalLayerKey,
+                                      onSelected: (key) => _onItemTapped(
+                                        _indexForKey(key),
+                                        context,
+                                        state,
+                                      ),
+                                      children: _buildNavItems(
+                                        context,
+                                        state,
+                                        context.l10n,
+                                      ),
+                                    ),
                             ),
-                            onSelected: (key) => _onMiniAppItemTapped(
-                              key,
-                              context,
-                              activeModule,
-                            ),
-                            children: miniItems,
-                          )
-                        : Listener(
-                            behavior: HitTestBehavior.translucent,
-                            onPointerDown: _startLongPressTimer,
-                            onPointerUp: _stopLongPressTimer,
-                            onPointerCancel: _stopLongPressTimer,
-                            child: shad.NavigationBar(
-                              key: _globalLayerKey,
-                              // No selectedKey: none of the global tabs is
-                              // truly active while inside a mini-app, and
-                              // passing one would suppress taps on it.
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              onSelected: (key) => _onItemTapped(
-                                _indexForKey(key),
-                                context,
-                                state,
-                              ),
-                              children: _buildNavItems(
-                                context,
-                                state,
-                                context.l10n,
-                              ).map((i) => Expanded(child: i)).toList(),
-                            ),
-                          ),
+                    ),
                   ),
                 ),
               ),
@@ -329,54 +418,6 @@ class _ShellPageState extends State<ShellPage> {
           KeyedSubtree(
             key: _miniLayerKey,
             child: _buildNormalizedChild(preserveTop: true),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Medium / Expanded: side NavigationRail or NavigationSidebar.
-  Widget _buildSideNavLayout(
-    BuildContext context,
-    AppTabState state,
-    DeviceClass deviceClass,
-  ) {
-    final l10n = context.l10n;
-    final selectedKey = _selectedKeyForLocation(
-      widget.matchedLocation,
-      useGlobalKey: false,
-    );
-    final moduleRoute = _isModuleRoute(widget.matchedLocation);
-    void onSelected(Key? key) =>
-        _onItemTapped(_indexForKey(key), context, state);
-
-    // Use non-GlobalKey for rail/sidebar items (no long-press detection).
-    final items = _buildNavItems(context, state, l10n, useGlobalKey: false);
-
-    final Widget sideNav;
-    if (deviceClass == DeviceClass.expanded) {
-      sideNav = shad.NavigationSidebar(
-        selectedKey: selectedKey,
-        onSelected: onSelected,
-        children: items,
-      );
-    } else {
-      sideNav = shad.NavigationRail(
-        selectedKey: selectedKey,
-        onSelected: onSelected,
-        children: items,
-      );
-    }
-
-    return shad.Scaffold(
-      headers: moduleRoute ? const [] : [_buildAppBar(context)],
-      child: Row(
-        children: [
-          sideNav,
-          Expanded(
-            child: moduleRoute
-                ? _buildNormalizedChild(preserveTop: true)
-                : _buildGlobalBody(),
           ),
         ],
       ),
@@ -406,29 +447,69 @@ class _ShellPageState extends State<ShellPage> {
     final theme = shad.Theme.of(context);
     final labelStyle = theme.typography.p.copyWith(
       fontSize: 12,
-      fontWeight: FontWeight.normal,
+      fontWeight: FontWeight.w600,
     );
+    final isCompact = context.isCompact;
 
     return [
       shad.NavigationItem(
         key: _homeKey,
         spacing: _navItemSpacing,
-        label: _buildNavLabel(l10n.navHome, labelStyle),
-        child: const Icon(Icons.home_outlined, size: _navIconSize),
+        label: isCompact ? _buildNavLabel(l10n.navHome, labelStyle) : null,
+        child: isCompact
+            ? const Icon(Icons.home_outlined, size: _navIconSize)
+            : _buildHorizontalNavItem(
+                icon: Icons.home_outlined,
+                label: l10n.navHome,
+                style: labelStyle,
+              ),
       ),
       shad.NavigationItem(
         key: _assistantKey,
         spacing: _navItemSpacing,
-        label: _buildNavLabel(l10n.navAssistant, labelStyle),
-        child: const Icon(Icons.auto_awesome_outlined, size: _navIconSize),
+        label: isCompact ? _buildNavLabel(l10n.navAssistant, labelStyle) : null,
+        child: isCompact
+            ? const Icon(Icons.auto_awesome_outlined, size: _navIconSize)
+            : _buildHorizontalNavItem(
+                icon: Icons.auto_awesome_outlined,
+                label: l10n.navAssistant,
+                style: labelStyle,
+              ),
       ),
       shad.NavigationItem(
         key: useGlobalKey ? _appsTabKey : _appsKey,
         spacing: _navItemSpacing,
-        label: _buildNavLabel(l10n.navApps, labelStyle),
-        child: const Icon(Icons.apps_outlined, size: _navIconSize),
+        label: isCompact ? _buildNavLabel(l10n.navApps, labelStyle) : null,
+        child: isCompact
+            ? const Icon(Icons.apps_outlined, size: _navIconSize)
+            : _buildHorizontalNavItem(
+                icon: Icons.apps_outlined,
+                label: l10n.navApps,
+                style: labelStyle,
+              ),
       ),
     ];
+  }
+
+  Widget _buildHorizontalNavItem({
+    required IconData icon,
+    required String label,
+    required TextStyle style,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: _navIconSize),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        ),
+      ],
+    );
   }
 
   Widget _buildNavLabel(String text, TextStyle style) {
@@ -455,9 +536,10 @@ class _ShellPageState extends State<ShellPage> {
     final theme = shad.Theme.of(context);
     final labelStyle = theme.typography.p.copyWith(
       fontSize: 12,
-      fontWeight: FontWeight.normal,
+      fontWeight: FontWeight.w600,
     );
     final l10n = context.l10n;
+    final isCompact = context.isCompact;
 
     return [
       Expanded(
@@ -466,8 +548,14 @@ class _ShellPageState extends State<ShellPage> {
           spacing: _navItemSpacing,
           alignment: Alignment.center,
           marginAlignment: Alignment.center,
-          label: _buildNavLabel(l10n.navBack, labelStyle),
-          child: const Icon(Icons.chevron_left, size: _navIconSize),
+          label: isCompact ? _buildNavLabel(l10n.navBack, labelStyle) : null,
+          child: isCompact
+              ? const Icon(Icons.chevron_left, size: _navIconSize)
+              : _buildHorizontalNavItem(
+                  icon: Icons.chevron_left,
+                  label: l10n.navBack,
+                  style: labelStyle,
+                ),
         ),
       ),
       ...module.miniAppNavItems.map(
@@ -475,8 +563,16 @@ class _ShellPageState extends State<ShellPage> {
           child: shad.NavigationItem(
             key: _miniNavKey(module.id, item.id),
             spacing: _navItemSpacing,
-            label: _buildNavLabel(item.label(l10n), labelStyle),
-            child: Icon(item.icon, size: _navIconSize),
+            label: isCompact
+                ? _buildNavLabel(item.label(l10n), labelStyle)
+                : null,
+            child: isCompact
+                ? Icon(item.icon, size: _navIconSize)
+                : _buildHorizontalNavItem(
+                    icon: item.icon,
+                    label: item.label(l10n),
+                    style: labelStyle,
+                  ),
           ),
         ),
       ),
@@ -741,9 +837,139 @@ class _ShellPageState extends State<ShellPage> {
     if (AppRegistry.moduleFromLocation(location) != null) return 2;
     return 0; // home
   }
+}
 
-  static bool _isModuleRoute(String location) {
-    return AppRegistry.moduleFromLocation(location) != null;
+/// Custom navigation bar with pill-shaped selection indicators.
+/// Matches outer container border radius for first/last items.
+class _CustomNavigationBar extends StatelessWidget {
+  const _CustomNavigationBar({
+    required this.children,
+    super.key,
+    this.selectedKey,
+    this.onSelected,
+  });
+
+  final List<Widget> children;
+  final Key? selectedKey;
+  final ValueChanged<Key?>? onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(children.length, (index) {
+          final child = children[index];
+          final isFirst = index == 0;
+          final isLast = index == children.length - 1;
+
+          // Extract key from NavigationItem
+          Key? itemKey;
+          if (child is shad.NavigationItem) {
+            itemKey = child.key;
+          }
+
+          final isSelected = itemKey == selectedKey;
+
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: isFirst ? 0 : 2,
+                right: isLast ? 0 : 2,
+              ),
+              child: _CustomNavItem(
+                isFirst: isFirst,
+                isLast: isLast,
+                isSelected: isSelected,
+                theme: theme,
+                isDark: isDark,
+                onTap: () => onSelected?.call(itemKey),
+                child: child,
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _CustomNavItem extends StatelessWidget {
+  const _CustomNavItem({
+    required this.child,
+    required this.isFirst,
+    required this.isLast,
+    required this.isSelected,
+    required this.theme,
+    required this.isDark,
+    this.onTap,
+  });
+
+  final Widget child;
+  final bool isFirst;
+  final bool isLast;
+  final bool isSelected;
+  final shad.ThemeData theme;
+  final bool isDark;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // Extract content from NavigationItem
+    var content = child;
+    if (child is shad.NavigationItem) {
+      final navItem = child as shad.NavigationItem;
+      content = navItem.child;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: _getBorderRadius(),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.black.withValues(alpha: 0.08))
+                : Colors.transparent,
+            borderRadius: _getBorderRadius(),
+          ),
+          child: Center(child: content),
+        ),
+      ),
+    );
+  }
+
+  BorderRadius _getBorderRadius() {
+    // Pill shape: full radius on outer edges, smaller on inner edges
+    if (isFirst && isLast) {
+      // Single item - full pill
+      return BorderRadius.circular(20);
+    } else if (isFirst) {
+      // First item - rounded left, flat right
+      return const BorderRadius.horizontal(
+        left: Radius.circular(20),
+        right: Radius.circular(4),
+      );
+    } else if (isLast) {
+      // Last item - flat left, rounded right
+      return const BorderRadius.horizontal(
+        left: Radius.circular(4),
+        right: Radius.circular(20),
+      );
+    } else {
+      // Middle items - slightly rounded both sides
+      return BorderRadius.circular(4);
+    }
   }
 }
 
@@ -755,45 +981,26 @@ class _ShellTopBarTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+
+    // Check for module routes first
+    final module = AppRegistry.moduleFromLocation(matchedLocation);
+    if (module != null) {
+      return _buildTitleRow(theme, module.label(context.l10n));
+    }
+
     final title = switch (matchedLocation) {
       Routes.home => context.l10n.navHome,
       Routes.assistant => 'Assistant',
       Routes.profileRoot => context.l10n.profileTitle,
       Routes.settings => context.l10n.settingsTitle,
+      Routes.apps => context.l10n.navApps,
       _ => null,
     };
 
-    if (title != null) {
-      return SizedBox(
-        height: mobileSectionAppBarHeight,
-        child: Row(
-          children: [
-            Image.asset(
-              'assets/logos/transparent.png',
-              width: mobileSectionAppBarLogoSize,
-              height: mobileSectionAppBarLogoSize,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    return _buildTitleRow(theme, title ?? context.l10n.navApps);
+  }
 
-    // Apps tab - show Tuturuuu logo + "Apps" consistently
+  Widget _buildTitleRow(shad.ThemeData theme, String title) {
     return SizedBox(
       height: mobileSectionAppBarHeight,
       child: Row(
@@ -809,7 +1016,7 @@ class _ShellTopBarTitle extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                context.l10n.navApps,
+                title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.typography.large.copyWith(
