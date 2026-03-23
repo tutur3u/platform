@@ -346,7 +346,9 @@ class _ShellPageState extends State<ShellPage> {
                                       context,
                                       activeModule,
                                     ),
-                                    children: miniItems,
+                                    children: miniItems
+                                        .map((i) => Expanded(child: i))
+                                        .toList(),
                                   )
                                 : _CustomNavigationBar(
                                     key: _miniLayerKey,
@@ -529,7 +531,9 @@ class _ShellPageState extends State<ShellPage> {
     super.dispose();
   }
 
-  List<Widget> _buildMiniAppNavItems(
+  /// Mini-app nav entries. Do not wrap in [Expanded]; callers add flex as needed
+  /// ([shad.NavigationBar] vs [_CustomNavigationBar] each wrap items themselves).
+  List<shad.NavigationItem> _buildMiniAppNavItems(
     BuildContext context,
     AppModule module,
   ) {
@@ -542,38 +546,34 @@ class _ShellPageState extends State<ShellPage> {
     final isCompact = context.isCompact;
 
     return [
-      Expanded(
-        child: shad.NavigationItem(
-          key: _backToRootKey,
-          spacing: _navItemSpacing,
-          alignment: Alignment.center,
-          marginAlignment: Alignment.center,
-          label: isCompact ? _buildNavLabel(l10n.navBack, labelStyle) : null,
-          child: isCompact
-              ? const Icon(Icons.chevron_left, size: _navIconSize)
-              : _buildHorizontalNavItem(
-                  icon: Icons.chevron_left,
-                  label: l10n.navBack,
-                  style: labelStyle,
-                ),
-        ),
+      shad.NavigationItem(
+        key: _backToRootKey,
+        spacing: _navItemSpacing,
+        alignment: Alignment.center,
+        marginAlignment: Alignment.center,
+        label: isCompact ? _buildNavLabel(l10n.navBack, labelStyle) : null,
+        child: isCompact
+            ? const Icon(Icons.chevron_left, size: _navIconSize)
+            : _buildHorizontalNavItem(
+                icon: Icons.chevron_left,
+                label: l10n.navBack,
+                style: labelStyle,
+              ),
       ),
       ...module.miniAppNavItems.map(
-        (item) => Expanded(
-          child: shad.NavigationItem(
-            key: _miniNavKey(module.id, item.id),
-            spacing: _navItemSpacing,
-            label: isCompact
-                ? _buildNavLabel(item.label(l10n), labelStyle)
-                : null,
-            child: isCompact
-                ? Icon(item.icon, size: _navIconSize)
-                : _buildHorizontalNavItem(
-                    icon: item.icon,
-                    label: item.label(l10n),
-                    style: labelStyle,
-                  ),
-          ),
+        (item) => shad.NavigationItem(
+          key: _miniNavKey(module.id, item.id),
+          spacing: _navItemSpacing,
+          label: isCompact
+              ? _buildNavLabel(item.label(l10n), labelStyle)
+              : null,
+          child: isCompact
+              ? Icon(item.icon, size: _navIconSize)
+              : _buildHorizontalNavItem(
+                  icon: item.icon,
+                  label: item.label(l10n),
+                  style: labelStyle,
+                ),
         ),
       ),
     ];
@@ -859,9 +859,8 @@ class _CustomNavigationBar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(children.length, (index) {
           final child = children[index];
           final isFirst = index == 0;
@@ -934,7 +933,12 @@ class _CustomNavItem extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          padding: EdgeInsetsDirectional.fromSTEB(
+            isFirst ? 6 : 12,
+            10,
+            isLast ? 6 : 12,
+            10,
+          ),
           decoration: BoxDecoration(
             color: isSelected
                 ? (isDark
