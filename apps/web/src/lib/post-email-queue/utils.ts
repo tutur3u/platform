@@ -1,3 +1,4 @@
+import { POST_EMAIL_QUEUE_STATUSES } from './constants';
 import type { PostEmailQueueRow } from './types';
 
 export const POST_EMAIL_QUERY_CHUNK_SIZE = 500;
@@ -11,41 +12,19 @@ export function isValidEmailAddress(
 export function summarizePostEmailQueue(
   rows: Array<Pick<PostEmailQueueRow, 'status'>>
 ) {
-  const counts = {
-    queued: 0,
-    processing: 0,
-    sent: 0,
-    failed: 0,
-    blocked: 0,
-    cancelled: 0,
-    skipped: 0,
-  };
+  const counts = POST_EMAIL_QUEUE_STATUSES.reduce<
+    Record<(typeof POST_EMAIL_QUEUE_STATUSES)[number], number>
+  >(
+    (acc, status) => {
+      acc[status] = 0;
+      return acc;
+    },
+    {} as Record<(typeof POST_EMAIL_QUEUE_STATUSES)[number], number>
+  );
 
   for (const row of rows) {
-    switch (row.status) {
-      case 'queued':
-        counts.queued++;
-        break;
-      case 'processing':
-        counts.processing++;
-        break;
-      case 'sent':
-        counts.sent++;
-        break;
-      case 'failed':
-        counts.failed++;
-        break;
-      case 'blocked':
-        counts.blocked++;
-        break;
-      case 'cancelled':
-        counts.cancelled++;
-        break;
-      case 'skipped':
-        counts.skipped++;
-        break;
-      default:
-        break;
+    if (Object.hasOwn(counts, row.status)) {
+      counts[row.status as keyof typeof counts]++;
     }
   }
 

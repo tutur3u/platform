@@ -364,7 +364,15 @@ async function processEmailWithContext(
     .eq('post_id', row.post_id)
     .eq('user_id', row.user_id);
 
-  if (checkUpdateError) throw checkUpdateError;
+  if (checkUpdateError) {
+    console.warn('[PostEmailQueueBatch] Failed to link email_id to check', {
+      rowId: row.id,
+      postId: row.post_id,
+      userId: row.user_id,
+      emailId: sentEmail.id,
+      error: checkUpdateError,
+    });
+  }
 
   await markQueueRow(sbAdmin, row.id, {
     status: 'sent',

@@ -558,16 +558,18 @@ export async function autoSkipOldApprovedPostChecks(
 
   const oldPostIds = [...new Set(oldChecks.map((check) => check.post_id))];
   const oldUserIds = [...new Set(oldChecks.map((check) => check.user_id))];
+  const oldUserIdSet = new Set(oldUserIds);
   const existingQueueRowsData: QueueSenderRow[] = [];
   for (const postChunk of chunkArray(oldPostIds)) {
-    for (const userChunk of chunkArray(oldUserIds)) {
-      const { data, error } = await getQueueTable(sbAdmin)
-        .select('post_id, user_id, sender_platform_user_id')
-        .in('post_id', postChunk)
-        .in('user_id', userChunk);
+    const { data, error } = await getQueueTable(sbAdmin)
+      .select('post_id, user_id, sender_platform_user_id')
+      .in('post_id', postChunk);
 
-      if (error) throw error;
-      existingQueueRowsData.push(...((data ?? []) as QueueSenderRow[]));
+    if (error) throw error;
+    for (const row of (data ?? []) as QueueSenderRow[]) {
+      if (oldUserIdSet.has(row.user_id)) {
+        existingQueueRowsData.push(row);
+      }
     }
   }
 

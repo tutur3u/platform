@@ -10,8 +10,8 @@ const MAX_LESSON_TITLE_LENGTH = 512;
 function normalizeLessonPayload(data: unknown): unknown[] {
   if (!Array.isArray(data)) return [];
 
-  return data.map((row) => {
-    if (!row || typeof row !== 'object') return row;
+  return data.flatMap((row) => {
+    if (!row || typeof row !== 'object') return [];
 
     const record = row as Record<string, unknown>;
     const rawTitle = record.title;
@@ -25,11 +25,13 @@ function normalizeLessonPayload(data: unknown): unknown[] {
         ? rawContent.slice(0, MAX_LESSON_CONTENT_LENGTH)
         : rawContent;
 
-    return {
-      ...record,
-      title,
-      content,
-    };
+    return [
+      {
+        ...record,
+        title,
+        content,
+      },
+    ];
   });
 }
 
