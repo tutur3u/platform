@@ -502,6 +502,8 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
             'owner_id',
             'platform_user_id', // workspace_user_linked_users table
             'sender_platform_user_id', // post_email_queue table
+            'sender_id', // sent_emails table
+            'added_by_user_id', // email_blacklist table
           ];
 
           // Extract all unique platform user IDs from the data to sync
@@ -602,6 +604,8 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
               'user-coupons', // maps to user_linked_promotions
               'class-scores', // maps to user_indicators
               'student-feedbacks', // maps to user_feedbacks
+              'user-group-post-checks', // maps to user_group_post_checks (no ws_id)
+              'email-blacklist', // global table, no ws_id at all
             ];
             const hasNoWsIdColumn = tablesWithoutWsId.includes(module);
 
