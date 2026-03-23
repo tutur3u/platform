@@ -136,9 +136,7 @@ function buildPostUserPairFilter(
   pairs: Array<Pick<GroupPostCheck, 'post_id' | 'user_id'>>
 ): string {
   return pairs
-    .map(
-      (pair) => `and(post_id.eq.${pair.post_id},user_id.eq.${pair.user_id})`
-    )
+    .map((pair) => `and(post_id.eq.${pair.post_id},user_id.eq.${pair.user_id})`)
     .join(',');
 }
 
@@ -381,7 +379,7 @@ export async function enqueueApprovedPostEmails(
     const resolvedSenderPlatformUserId =
       senderPlatformUserId ??
       (recipient.approved_by
-        ? senderPlatformUserByApprover.get(recipient.approved_by) ?? null
+        ? (senderPlatformUserByApprover.get(recipient.approved_by) ?? null)
         : null);
 
     if (!resolvedSenderPlatformUserId) {

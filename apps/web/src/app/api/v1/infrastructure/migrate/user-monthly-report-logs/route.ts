@@ -118,7 +118,9 @@ export async function PUT(req: Request) {
     pairEntries.map(({ userId, groupId }) => `${userId}::${groupId}`)
   );
   const uniqueUserIds = [...new Set(pairEntries.map((entry) => entry.userId))];
-  const uniqueGroupIds = [...new Set(pairEntries.map((entry) => entry.groupId))];
+  const uniqueGroupIds = [
+    ...new Set(pairEntries.map((entry) => entry.groupId)),
+  ];
 
   const reportIdByCompositeKey = new Map<string, string>();
   for (const userChunk of chunkValues(uniqueUserIds)) {
