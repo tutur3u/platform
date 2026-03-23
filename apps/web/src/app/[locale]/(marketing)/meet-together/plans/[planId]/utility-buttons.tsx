@@ -1,21 +1,14 @@
 'use client';
 
+import type { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import CopyLinkButton from './copy-link-button';
 import EmailButton from './email-button';
 import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
-import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
-import { User } from '@ncthub/types/primitives/User';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
-export default function UtilityButtons({
-  plan,
-  platformUser,
-}: {
-  plan: MeetTogetherPlan;
-  platformUser: User | null;
-}) {
+export default function UtilityButtons({ plan }: { plan: MeetTogetherPlan }) {
   const pathname = usePathname();
   const [url, setUrl] = useState('');
 
@@ -32,7 +25,7 @@ export default function UtilityButtons({
         <ShowQRButton url={url} />
         <EmailButton plan={plan} url={url} />
       </div>
-      <LoggedInAsButton platformUser={platformUser} />
+      <LoggedInAsButton />
     </div>
   );
 }

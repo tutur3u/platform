@@ -6,7 +6,6 @@ export const APP_PUBLIC_PATHS = [
   '/branding',
   '/contributors',
   '/login',
-  '/meet-together',
   '/neo-generator',
   '/neo-meeting-agent',
   '/projects',

@@ -1,25 +1,27 @@
 'use client';
 
+import type { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import type { Timeblock } from '@ncthub/types/primitives/Timeblock';
+import type { User as PlatformUser } from '@ncthub/types/primitives/User';
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+import minMax from 'dayjs/plugin/minMax';
+import { useRouter } from 'next/navigation';
+import {
+  createContext,
+  type ReactNode,
+  type Touch,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   addTimeblocks,
   durationToTimeblocks,
   removeTimeblocks,
 } from '@/utils/timeblock-helper';
-import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@ncthub/types/primitives/Timeblock';
-import { User as PlatformUser } from '@ncthub/types/primitives/User';
-import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
-import minMax from 'dayjs/plugin/minMax';
-import {
-  ReactNode,
-  Touch,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
 
 dayjs.extend(isBetween);
 dayjs.extend(minMax);
@@ -41,6 +43,7 @@ interface EditingParams {
 
 const TimeBlockContext = createContext({
   user: null as PlatformUser | GuestUser | null,
+  originalPlatformUser: null as PlatformUser | null,
   planUsers: [] as (PlatformUser | GuestUser)[],
   filteredUserIds: [] as string[],
   previewDate: null as Date | null,
@@ -51,6 +54,8 @@ const TimeBlockContext = createContext({
     enabled: false,
   } as EditingParams,
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
+  isDirty: false,
+  isSaving: false,
 
   getPreviewUsers: (_: Timeblock[]) =>
     ({ available: [], unavailable: [] }) as {
@@ -58,6 +63,7 @@ const TimeBlockContext = createContext({
       unavailable: (PlatformUser | GuestUser)[];
     },
   getOpacityForDate: (_: Date, __: Timeblock[]) => 0 as number,
+  handleSave: async () => {},
 
   setUser: (_: string, __: PlatformUser | GuestUser | null) => {},
   setFilteredUserIds: (_: string[] | ((prev: string[]) => string[])) => {},
@@ -88,6 +94,7 @@ const TimeBlockingProvider = ({
   timeblocks: Timeblock[];
   children: ReactNode;
 }) => {
+  const router = useRouter();
   const [planUsers, setInternalUsers] = useState(users);
   const [filteredUserIds, setFilteredUserIds] = useState<string[]>([]);
 
@@ -172,20 +179,61 @@ const TimeBlockingProvider = ({
     data: timeblocks.filter((tb) => tb.user_id === user?.id),
   });
 
-  const setUser = (planId: string, user: PlatformUser | GuestUser | null) => {
-    setSelectedTimeBlocks({
-      planId,
-      data: timeblocks.filter(
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const initialTimeBlocksRef = useRef<Timeblock[]>([]);
+
+  const setUser = useCallback(
+    (planId: string, user: PlatformUser | GuestUser | null) => {
+      const nextTimeblocks = timeblocks.filter(
         (tb) =>
           tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
-      ),
-    });
-    setInternalUser(user);
-  };
+      );
+
+      initialTimeBlocksRef.current = nextTimeblocks;
+      setIsDirty(false);
+      setSelectedTimeBlocks({
+        planId,
+        data: nextTimeblocks,
+      });
+      setInternalUser(user);
+    },
+    [timeblocks]
+  );
 
   const [displayMode, setDisplayMode] = useState<
     'login' | 'account-switcher'
   >();
+
+  useEffect(() => {
+    const nextInitialTimeblocks = timeblocks.filter(
+      (tb) =>
+        tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
+    );
+
+    initialTimeBlocksRef.current = nextInitialTimeblocks;
+    setSelectedTimeBlocks({
+      planId: plan.id,
+      data: nextInitialTimeblocks,
+    });
+    setIsDirty(false);
+  }, [plan.id, timeblocks, user?.id, user?.is_guest]);
+
+  useEffect(() => {
+    const initialTimeblocks = initialTimeBlocksRef.current;
+
+    const currentSignature = [...selectedTimeBlocks.data]
+      .map((tb) => `${tb.date}-${tb.start_time}-${tb.end_time}`)
+      .sort()
+      .join('|');
+
+    const initialSignature = [...initialTimeblocks]
+      .map((tb) => `${tb.date}-${tb.start_time}-${tb.end_time}`)
+      .sort()
+      .join('|');
+
+    setIsDirty(currentSignature !== initialSignature);
+  }, [selectedTimeBlocks.data]);
 
   const edit = useCallback(
     ({ mode, date }: { mode: 'add' | 'remove'; date: Date }, event?: any) => {
@@ -272,13 +320,31 @@ const TimeBlockingProvider = ({
     });
   }, [plan.id, editing]);
 
-  useEffect(() => {
+  const fetchCurrentTimeBlocks = useCallback(
+    async (planId: string) => {
+      const res = await fetch(`/api/meet-together/plans/${planId}/timeblocks`);
+      if (!res.ok) return [];
+
+      const nextTimeblocks = (await res.json()) as Timeblock[];
+      return nextTimeblocks
+        .flat()
+        .filter(
+          (tb: Timeblock) =>
+            tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
+        );
+    },
+    [user?.id, user?.is_guest]
+  );
+
+  const syncTimeBlocks = useCallback(async () => {
+    if (!plan.id || !user?.id) return;
+
     const addTimeBlock = async (timeblock: Timeblock) => {
       if (plan.id !== selectedTimeBlocks.planId) return;
 
       const data = {
-        user_id: user?.id,
-        password_hash: user?.password_hash,
+        user_id: user.id,
+        password_hash: user.password_hash,
         timeblock,
       };
 
@@ -289,11 +355,11 @@ const TimeBlockingProvider = ({
     };
 
     const removeTimeBlock = async (timeblock: Timeblock) => {
-      if (plan.id !== selectedTimeBlocks.planId) return;
+      if (plan.id !== selectedTimeBlocks.planId || !timeblock.id) return;
 
       const data = {
-        user_id: user?.id,
-        password_hash: user?.password_hash,
+        user_id: user.id,
+        password_hash: user.password_hash,
       };
 
       await fetch(
@@ -305,129 +371,80 @@ const TimeBlockingProvider = ({
       );
     };
 
-    const fetchCurrentTimeBlocks = async (planId: string) => {
-      const res = await fetch(`/api/meet-together/plans/${planId}/timeblocks`);
-      if (!res.ok) return [];
+    const serverTimeblocks = await fetchCurrentTimeBlocks(plan.id);
+    const localTimeblocks = selectedTimeBlocks.data;
 
-      const timeblocks = (await res.json()) as Timeblock[];
-      return timeblocks
-        ?.flat()
-        .filter(
-          (tb: Timeblock) =>
-            tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
-        );
-    };
+    const timeblocksToRemove = serverTimeblocks.filter(
+      (serverTimeblock) =>
+        !localTimeblocks.some(
+          (localTimeblock) =>
+            localTimeblock.date === serverTimeblock.date &&
+            localTimeblock.start_time === serverTimeblock.start_time &&
+            localTimeblock.end_time === serverTimeblock.end_time
+        )
+    );
 
-    const syncTimeBlocks = async () => {
-      if (!plan.id || !user?.id) return;
+    const timeblocksToAdd = localTimeblocks.filter(
+      (localTimeblock) =>
+        !serverTimeblocks.some(
+          (serverTimeblock) =>
+            serverTimeblock.date === localTimeblock.date &&
+            serverTimeblock.start_time === localTimeblock.start_time &&
+            serverTimeblock.end_time === localTimeblock.end_time
+        )
+    );
 
-      const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-      const localTimeblocks = selectedTimeBlocks.data;
-
-      if (!serverTimeblocks || !localTimeblocks) return;
-      if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
-
-      // If server timeblocks are empty and local timeblocks are not,
-      // add all local timeblocks to server
-      if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
-        await Promise.all(
-          localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
-        );
-        return;
-      }
-
-      // If local timeblocks are empty, remove all server timeblocks
-      if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
-        await Promise.all(
-          serverTimeblocks.map((timeblock) => removeTimeBlock(timeblock))
-        );
-        return;
-      }
-
-      // If there are no timeblocks to sync (both local and server have
-      // the same timeblocks), return early
-      if (
-        serverTimeblocks.every((serverTimeblock: Timeblock) =>
-          localTimeblocks.some(
-            (localTimeblock: Timeblock) =>
-              localTimeblock.date === serverTimeblock.date &&
-              localTimeblock.start_time === serverTimeblock.start_time &&
-              localTimeblock.end_time === serverTimeblock.end_time
-          )
-        ) &&
-        localTimeblocks.every((localTimeblock: Timeblock) =>
-          serverTimeblocks.some(
-            (serverTimeblock: Timeblock) =>
-              serverTimeblock.date === localTimeblock.date &&
-              serverTimeblock.start_time === localTimeblock.start_time &&
-              serverTimeblock.end_time === localTimeblock.end_time
-          )
-        ) &&
-        serverTimeblocks.length === localTimeblocks.length
-      )
-        return;
-
-      // For each time block, remove timeblocks that are not on local
-      // and add timeblocks that are not on server
-      const timeblocksToRemove = serverTimeblocks.filter(
-        (serverTimeblock: Timeblock) =>
-          !localTimeblocks.some(
-            (localTimeblock: Timeblock) =>
-              localTimeblock.date === serverTimeblock.date &&
-              localTimeblock.start_time === serverTimeblock.start_time &&
-              localTimeblock.end_time === serverTimeblock.end_time
-          )
+    if (timeblocksToRemove.length > 0) {
+      await Promise.all(
+        timeblocksToRemove.map((timeblock) =>
+          timeblock.id ? removeTimeBlock(timeblock) : null
+        )
       );
+    }
 
-      const timeblocksToAdd = localTimeblocks.filter(
-        (localTimeblock: Timeblock) =>
-          !serverTimeblocks?.some(
-            (serverTimeblock: Timeblock) =>
-              serverTimeblock.date === localTimeblock.date &&
-              serverTimeblock.start_time === localTimeblock.start_time &&
-              serverTimeblock.end_time === localTimeblock.end_time
-          )
+    if (timeblocksToAdd.length > 0) {
+      await Promise.all(
+        timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
       );
+    }
 
-      if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0)
-        return;
+    const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan.id);
+    initialTimeBlocksRef.current = syncedServerTimeblocks;
+    setSelectedTimeBlocks({
+      planId: plan.id,
+      data: syncedServerTimeblocks,
+    });
+    setIsDirty(false);
+  }, [fetchCurrentTimeBlocks, plan.id, selectedTimeBlocks, user]);
 
-      if (timeblocksToRemove.length > 0)
-        await Promise.all(
-          timeblocksToRemove.map((timeblock) =>
-            timeblock.id ? removeTimeBlock(timeblock) : null
-          )
-        );
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
 
-      if (timeblocksToAdd.length > 0)
-        await Promise.all(
-          timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
-        );
-
-      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-      setSelectedTimeBlocks({
-        planId: plan.id,
-        data: syncedServerTimeblocks,
-      });
-    };
-
-    if (editing.enabled) return;
-    syncTimeBlocks();
-  }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
+    try {
+      await syncTimeBlocks();
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
+  }, [router, syncTimeBlocks]);
 
   return (
     <TimeBlockContext.Provider
       value={{
         user,
+        originalPlatformUser: platformUser,
         planUsers,
         filteredUserIds,
         previewDate,
         selectedTimeBlocks,
         editing,
         displayMode,
+        isDirty,
+        isSaving,
 
         getPreviewUsers,
         getOpacityForDate,
+        handleSave,
 
         setUser,
         setFilteredUserIds,

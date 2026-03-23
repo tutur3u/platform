@@ -1,17 +1,18 @@
-import AccountBadge from './account-badge';
-import { useTimeBlocking } from './time-blocking-provider';
-import { User as PlatformUser } from '@ncthub/types/primitives/User';
+'use client';
+
 import { Button } from '@ncthub/ui/button';
 import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
+import AccountBadge from './account-badge';
+import { useTimeBlocking } from './time-blocking-provider';
 
-export default function LoggedInAsButton({
-  platformUser,
-}: {
-  platformUser: PlatformUser | null;
-}) {
+export default function LoggedInAsButton() {
   const t = useTranslations();
-  const { user: guestUser, setDisplayMode } = useTimeBlocking();
+  const {
+    user: guestUser,
+    originalPlatformUser: platformUser,
+    setDisplayMode,
+  } = useTimeBlocking();
 
   const user = guestUser ?? platformUser;
 
@@ -23,7 +24,7 @@ export default function LoggedInAsButton({
           : t('meet-together-plan-details.viewing_as')}
       </div>
       <div
-        className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 font-semibold break-all`}
+        className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 break-all font-semibold`}
       >
         {user?.display_name ||
           platformUser?.email ||
@@ -35,7 +36,7 @@ export default function LoggedInAsButton({
           type={
             user?.is_guest === true
               ? 'GUEST'
-              : !!platformUser?.id
+              : platformUser?.id
                 ? 'PLATFORM'
                 : 'GUEST'
           }

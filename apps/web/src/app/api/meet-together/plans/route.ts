@@ -20,18 +20,22 @@ export async function GET(_: Request) {
 }
 
 export async function POST(req: Request) {
-  const sbAdmin = await createAdminClient();
-
-  const data = await req.json();
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user?.id) {
+    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient();
+  const data = await req.json();
+
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
-    .insert({ ...data, creator_id: user?.id })
+    .insert({ ...data, creator_id: user.id })
     .select('id')
     .single();
 
