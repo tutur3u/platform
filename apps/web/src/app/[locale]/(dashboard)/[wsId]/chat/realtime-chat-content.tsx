@@ -197,7 +197,7 @@ export default function RealtimeChatContent({
       ).catch(() => []);
       setParticipantCount(participants.length || 0);
     },
-    [userId, wsId]
+    [wsId]
   );
 
   const subscribeToMessages = useCallback(
@@ -397,7 +397,7 @@ export default function RealtimeChatContent({
       };
       updateReadStatus();
     }
-  }, [messages, selectedChannel, userId, wsId]);
+  }, [messages, selectedChannel, wsId]);
 
   const createChannel = async () => {
     if (!newChannelName.trim()) {
@@ -486,7 +486,7 @@ export default function RealtimeChatContent({
         () => undefined
       );
     }, 3000);
-  }, [selectedChannel, supabase, userId, wsId]);
+  }, [selectedChannel, wsId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

@@ -80,7 +80,7 @@ export function useTaskContextActions({
         setIsLoading(false);
       }
     },
-    [task.id, updateTaskInCache, invalidateQueries, t]
+    [task.id, taskWorkspaceId, updateTaskInCache, invalidateQueries, t]
   );
 
   const handleDueDateChange = useCallback(
@@ -104,7 +104,7 @@ export function useTaskContextActions({
         setIsLoading(false);
       }
     },
-    [task.id, updateTaskInCache, invalidateQueries, t]
+    [task.id, taskWorkspaceId, updateTaskInCache, invalidateQueries, t]
   );
 
   const handleToggleLabel = useCallback(
@@ -126,7 +126,7 @@ export function useTaskContextActions({
         setIsLoading(false);
       }
     },
-    [task.id, task.labels, invalidateQueries, t]
+    [task.id, task.labels, taskWorkspaceId, invalidateQueries, t]
   );
 
   const handleComplete = useCallback(async () => {
@@ -300,6 +300,7 @@ export function useTaskContextActions({
     onClose,
     invalidateQueries,
     t,
+    task.assignees,
   ]);
 
   const handleDelete = useCallback(async () => {
