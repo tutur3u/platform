@@ -8,6 +8,7 @@
 import { createHash } from 'node:crypto';
 import type { Redis } from '@upstash/redis';
 import { getUpstashRestRedisClient, hasUpstashRestEnv } from '../upstash-rest';
+import { generateRandomUUID } from '../uuid-helper';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
@@ -270,6 +271,7 @@ export async function blockIP(
         redis.set(
           REDIS_KEYS.IP_BLOCKED(ipAddress),
           JSON.stringify({
+            id: generateRandomUUID(),
             level: newLevel,
             reason,
             expiresAt: expiresAt.toISOString(),

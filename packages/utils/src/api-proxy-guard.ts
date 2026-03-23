@@ -306,13 +306,11 @@ export async function guardApiProxyRequest(
 
         const { success, limit, remaining, reset } = await limiter.limit(ip);
 
-        if (isDev) {
-          const consumed = limit - remaining;
-          const kind = isRead ? 'read' : 'mutate';
-          console.log(
-            `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | IP: ${ip} | path: ${req.nextUrl.pathname}`
-          );
-        }
+        const consumed = limit - remaining;
+        const kind = isRead ? 'read' : 'mutate';
+        console.log(
+          `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | IP: ${ip} | path: ${req.nextUrl.pathname}`
+        );
 
         if (!success) {
           const retryAfter = Math.max(
