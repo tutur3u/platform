@@ -1,13 +1,8 @@
 import { isValidEmailAddress } from './utils';
+import type { QueueIdPostRow, QueueIdPostUserRow } from './types';
 
-export type QueuePostRow = {
-  id: string;
-  post_id: string;
-};
-
-export type QueuePostUserRow = QueuePostRow & {
-  user_id: string;
-};
+export type QueuePostRow = QueueIdPostRow;
+export type QueuePostUserRow = QueueIdPostUserRow;
 
 export type QueueSkippedRow = QueuePostUserRow & {
   last_error: string | null;
