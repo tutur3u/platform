@@ -40,6 +40,7 @@ const MODULE_TABLE_MAP: Record<string, string> = {
   'workspace-user-group-tag-groups': 'workspace_user_group_tag_groups',
   'workspace-user-linked-users': 'workspace_user_linked_users',
   'workspace-user-status-changes': 'workspace_user_status_changes',
+  'post-email-queue': 'post_email_queue',
   // Legacy mappings
   'payment-methods': 'wallet_types',
   roles: 'workspace_roles',
@@ -90,6 +91,7 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
   'workspace_user_group_tags',
   'workspace_user_linked_users',
   'workspace_user_status_changes',
+  'post_email_queue',
   // Other tables
   'workspace_roles',
   'workspace_products',

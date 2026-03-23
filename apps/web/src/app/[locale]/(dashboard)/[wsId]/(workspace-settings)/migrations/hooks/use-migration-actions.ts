@@ -501,6 +501,7 @@ export function useMigrationActions({ state }: UseMigrationActionsProps) {
             'assigned_to',
             'owner_id',
             'platform_user_id', // workspace_user_linked_users table
+            'sender_platform_user_id', // post_email_queue table
           ];
 
           // Extract all unique platform user IDs from the data to sync

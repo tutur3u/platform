@@ -79,6 +79,9 @@ const availableModules = [
   // (target workspace may have auto-created settings with FK reference)
   'workspace-settings',
 
+  // Post email infrastructure queue - after posts/users migrations
+  'post-email-queue',
+
   // EXTERNAL/LEGACY MODULES
   'payment-methods',
   'roles',
@@ -425,6 +428,11 @@ export const generateModules = (): ModulePackage[] => {
 
       case 'workspace-settings':
         // Workspace settings - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'post-email-queue':
+        // Post email queue - 1:1 sync, Tuturuuu mode only
         baseModule.tuturuuuOnly = true;
         break;
 
