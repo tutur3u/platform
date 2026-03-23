@@ -28,8 +28,8 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "jsdom": "^29.0.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.0"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.1"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
