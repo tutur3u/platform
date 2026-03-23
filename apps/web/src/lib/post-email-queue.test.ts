@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildPostEmailAgeSkipReason,
+  chunkArray,
   getPostEmailMaxAgeCutoff,
+  isPostEmailAgeSkipReason,
   POST_EMAIL_MAX_AGE_DAYS,
+  POST_EMAIL_QUERY_CHUNK_SIZE,
   type PostEmailQueueRow,
   prioritizePostEmailQueueBatch,
   summarizePostEmailQueue,
@@ -204,6 +208,46 @@ describe('getPostEmailMaxAgeCutoff', () => {
 describe('POST_EMAIL_MAX_AGE_DAYS constant', () => {
   it('is set to 60 days', () => {
     expect(POST_EMAIL_MAX_AGE_DAYS).toBe(60);
+  });
+});
+
+describe('post email age skip reason helpers', () => {
+  it('builds age skip reason with optional suffix', () => {
+    expect(buildPostEmailAgeSkipReason()).toBe('Post older than 60 days');
+    expect(buildPostEmailAgeSkipReason(' - auto-skipped')).toBe(
+      'Post older than 60 days - auto-skipped'
+    );
+  });
+
+  it('matches age skip reasons by prefix', () => {
+    expect(isPostEmailAgeSkipReason('Post older than 60 days')).toBe(true);
+    expect(
+      isPostEmailAgeSkipReason('Post older than 60 days - auto-skipped')
+    ).toBe(true);
+    expect(isPostEmailAgeSkipReason('Blocked: blacklist')).toBe(false);
+    expect(isPostEmailAgeSkipReason(null)).toBe(false);
+  });
+});
+
+describe('chunkArray', () => {
+  it('chunks values by default query chunk size', () => {
+    const values = Array.from(
+      { length: POST_EMAIL_QUERY_CHUNK_SIZE + 2 },
+      (_, i) => i
+    );
+    const chunks = chunkArray(values);
+
+    expect(chunks).toHaveLength(2);
+    expect(chunks[0]).toHaveLength(POST_EMAIL_QUERY_CHUNK_SIZE);
+    expect(chunks[1]).toEqual([
+      POST_EMAIL_QUERY_CHUNK_SIZE,
+      POST_EMAIL_QUERY_CHUNK_SIZE + 1,
+    ]);
+  });
+
+  it('normalizes non-positive chunk sizes to 1', () => {
+    const chunks = chunkArray([1, 2, 3], 0);
+    expect(chunks).toEqual([[1], [2], [3]]);
   });
 });
 
