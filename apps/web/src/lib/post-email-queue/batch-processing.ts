@@ -28,10 +28,13 @@ import type {
   WorkspaceUserGroupRow,
 } from './types';
 import {
+  chunkArray,
   isValidEmailAddress,
   prioritizePostEmailQueueBatch,
   processWithConcurrency,
 } from './utils';
+
+const PREFETCH_QUERY_CHUNK_SIZE = 200;
 
 function getWorkspaceGroupName(
   workspaceGroup:
@@ -72,32 +75,49 @@ async function prefetchBatchData(
     uniqueWorkspaces: wsIds.length,
   });
 
-  const [postsResult, checksResult, sentEmailsResult] = await Promise.all([
-    sbAdmin
+  const postRows: PrefetchPostRow[] = [];
+  for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+    const { data, error } = await sbAdmin
       .from('user_group_posts')
       .select(
         'id, group_id, title, content, created_at, workspace_user_groups!inner(ws_id, name)'
       )
-      .in('id', postIds),
-    sbAdmin
-      .from('user_group_post_checks')
-      .select(
-        'post_id, user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
-      )
-      .in('post_id', postIds)
-      .in('user_id', userIds),
-    sbAdmin
-      .from('sent_emails')
-      .select('id, post_id, receiver_id, created_at')
-      .in('post_id', postIds)
-      .in('receiver_id', userIds),
-  ]);
+      .in('id', postChunk);
 
-  if (postsResult.error) throw postsResult.error;
-  if (checksResult.error) throw checksResult.error;
-  if (sentEmailsResult.error) throw sentEmailsResult.error;
+    if (error) throw error;
+    postRows.push(...((data ?? []) as PrefetchPostRow[]));
+  }
 
-  const postRows = (postsResult.data ?? []) as PrefetchPostRow[];
+  const checkRows: PrefetchCheckRow[] = [];
+  for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+    for (const userChunk of chunkArray(userIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+      const { data, error } = await sbAdmin
+        .from('user_group_post_checks')
+        .select(
+          'post_id, user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
+        )
+        .in('post_id', postChunk)
+        .in('user_id', userChunk);
+
+      if (error) throw error;
+      checkRows.push(...((data ?? []) as PrefetchCheckRow[]));
+    }
+  }
+
+  const sentEmailRows: PrefetchSentEmailRow[] = [];
+  for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+    for (const userChunk of chunkArray(userIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+      const { data, error } = await sbAdmin
+        .from('sent_emails')
+        .select('id, post_id, receiver_id, created_at')
+        .in('post_id', postChunk)
+        .in('receiver_id', userChunk);
+
+      if (error) throw error;
+      sentEmailRows.push(...((data ?? []) as PrefetchSentEmailRow[]));
+    }
+  }
+
   const posts = new Map<PostEmailQueueRow['post_id'], PrefetchedPost | null>();
   for (const post of postRows) {
     posts.set(post.id, {
@@ -110,13 +130,11 @@ async function prefetchBatchData(
     });
   }
 
-  const checkRows = (checksResult.data ?? []) as PrefetchCheckRow[];
   const checks = new Map<string, PrefetchedPostCheck>();
   for (const check of checkRows) {
     checks.set(`${check.post_id}:${check.user_id}`, check);
   }
 
-  const sentEmailRows = (sentEmailsResult.data ?? []) as PrefetchSentEmailRow[];
   const existingSentEmails = new Map<string, PrefetchedSentEmail>();
   for (const sentEmail of sentEmailRows) {
     existingSentEmails.set(`${sentEmail.post_id}:${sentEmail.receiver_id}`, {
@@ -340,11 +358,13 @@ async function processEmailWithContext(
 
   if (sentInsertError) throw sentInsertError;
 
-  await sbAdmin
+  const { error: checkUpdateError } = await sbAdmin
     .from('user_group_post_checks')
     .update({ email_id: sentEmail.id })
     .eq('post_id', row.post_id)
     .eq('user_id', row.user_id);
+
+  if (checkUpdateError) throw checkUpdateError;
 
   await markQueueRow(sbAdmin, row.id, {
     status: 'sent',
@@ -358,16 +378,33 @@ async function processEmailWithContext(
   return { id: row.id, status: 'sent' };
 }
 
-function normalizeQueueError(
+async function normalizeQueueError(
+  sbAdmin: TypedSupabaseClient,
   row: PostEmailQueueRow,
   error: Error
-): BatchProcessResult {
+): Promise<BatchProcessResult> {
   console.error('[PostEmailQueueBatch] Row processing failed', {
     rowId: row.id,
     postId: row.post_id,
     userId: row.user_id,
     error,
   });
+
+  try {
+    await markQueueRow(sbAdmin, row.id, {
+      status: 'failed',
+      batch_id: null,
+      blocked_reason: null,
+      last_error: error.message || 'Unknown processing error',
+    });
+  } catch (markError) {
+    console.error('[PostEmailQueueBatch] Failed to persist row failure', {
+      rowId: row.id,
+      postId: row.post_id,
+      userId: row.user_id,
+      error: markError,
+    });
+  }
 
   return {
     id: row.id,
@@ -468,14 +505,14 @@ export async function processPostEmailQueueBatch(
       cancelled_at: null,
     };
 
-    const { error: claimError } = await getQueueTable(sbAdmin)
+    const { data: claimData, error: claimError } = await getQueueTable(sbAdmin)
       .update(claimPatch)
       .eq('id', row.id)
       .eq('status', row.status)
       .select('id')
       .maybeSingle();
 
-    if (!claimError) {
+    if (!claimError && claimData) {
       claimedRows.push({
         ...row,
         status: 'processing',
@@ -502,7 +539,7 @@ export async function processPostEmailQueueBatch(
   const { results, timedOut } = await processWithConcurrency(
     claimedRows,
     (row) => processEmailWithContext(sbAdmin, row, prefetch),
-    normalizeQueueError,
+    (row, error) => normalizeQueueError(sbAdmin, row, error),
     safeConcurrency,
     maxDurationMs,
     startTime

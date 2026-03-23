@@ -11,15 +11,45 @@ export function isValidEmailAddress(
 export function summarizePostEmailQueue(
   rows: Array<Pick<PostEmailQueueRow, 'status'>>
 ) {
-  return {
-    queued: rows.filter((row) => row.status === 'queued').length,
-    processing: rows.filter((row) => row.status === 'processing').length,
-    sent: rows.filter((row) => row.status === 'sent').length,
-    failed: rows.filter((row) => row.status === 'failed').length,
-    blocked: rows.filter((row) => row.status === 'blocked').length,
-    cancelled: rows.filter((row) => row.status === 'cancelled').length,
-    skipped: rows.filter((row) => row.status === 'skipped').length,
+  const counts = {
+    queued: 0,
+    processing: 0,
+    sent: 0,
+    failed: 0,
+    blocked: 0,
+    cancelled: 0,
+    skipped: 0,
   };
+
+  for (const row of rows) {
+    switch (row.status) {
+      case 'queued':
+        counts.queued++;
+        break;
+      case 'processing':
+        counts.processing++;
+        break;
+      case 'sent':
+        counts.sent++;
+        break;
+      case 'failed':
+        counts.failed++;
+        break;
+      case 'blocked':
+        counts.blocked++;
+        break;
+      case 'cancelled':
+        counts.cancelled++;
+        break;
+      case 'skipped':
+        counts.skipped++;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return counts;
 }
 
 export function prioritizePostEmailQueueBatch(
@@ -52,7 +82,7 @@ export async function processWithConcurrency(
   onError: (
     row: PostEmailQueueRow,
     error: Error
-  ) => { id: string; status: string },
+  ) => Promise<{ id: string; status: string }> | { id: string; status: string },
   concurrency: number,
   maxDurationMs: number,
   startTime: number
@@ -75,7 +105,7 @@ export async function processWithConcurrency(
         processor(row).catch((error) => {
           const normalizedError =
             error instanceof Error ? error : new Error('Unknown error');
-          return onError(row, normalizedError);
+          return Promise.resolve(onError(row, normalizedError));
         })
       )
     );

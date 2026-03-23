@@ -4,8 +4,8 @@ import {
   requireDevMode,
 } from '../batch-upsert';
 
-const MAX_LESSON_CONTENT_LENGTH = 512;
-const MAX_LESSON_TITLE_LENGTH = 128;
+const MAX_LESSON_CONTENT_LENGTH = 65_536;
+const MAX_LESSON_TITLE_LENGTH = 512;
 
 function normalizeLessonPayload(data: unknown): unknown[] {
   if (!Array.isArray(data)) return [];

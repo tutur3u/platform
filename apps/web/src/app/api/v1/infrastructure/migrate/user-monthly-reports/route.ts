@@ -27,14 +27,7 @@ function normalizeMonthlyReportsPayload(data: unknown): unknown[] {
       typeof title === 'string'
     ) {
       dedupedByCompositeKey.set(`${userId}::${groupId}::${title}`, normalized);
-      continue;
     }
-
-    // Fallback for malformed rows: still pass through without id to avoid pkey conflicts.
-    dedupedByCompositeKey.set(
-      `__fallback__${dedupedByCompositeKey.size}`,
-      normalized
-    );
   }
 
   return Array.from(dedupedByCompositeKey.values());
