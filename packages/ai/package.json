@@ -39,7 +39,7 @@
     "@ai-sdk/replicate": "^2.0.26",
     "@ai-sdk/revai": "^2.0.26",
     "@ai-sdk/togetherai": "^2.0.41",
-    "@ai-sdk/xai": "^3.0.72",
+    "@ai-sdk/xai": "^3.0.73",
     "@chat-adapter/discord": "^4.20.2",
     "@chat-adapter/gchat": "^4.20.2",
     "@chat-adapter/github": "^4.20.2",
