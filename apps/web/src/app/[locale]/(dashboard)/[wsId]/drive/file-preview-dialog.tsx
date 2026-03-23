@@ -9,7 +9,7 @@ import {
   Music,
   Video,
 } from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { createWorkspaceStorageSignedUrl } from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -121,7 +121,6 @@ export function FilePreviewDialog({
   onOpenChange,
 }: FilePreviewDialogProps) {
   const t = useTranslations();
-  const supabase = createDynamicClient();
 
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -171,30 +170,22 @@ export function FilePreviewDialog({
           return;
         }
 
-        const { data, error } = await supabase.storage
-          .from('workspaces')
-          .createSignedUrl(fullPath, 3600);
-
-        if (error) {
-          console.error('Error creating signed URL:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to load file preview',
-            variant: 'destructive',
-          });
-          return;
-        }
+        const nextSignedUrl = await createWorkspaceStorageSignedUrl(
+          wsId,
+          joinPath(path, file.name),
+          3600
+        );
 
         if (cancelled) {
           return;
         }
 
-        setSignedUrl(data.signedUrl);
+        setSignedUrl(nextSignedUrl);
 
         // For text files, fetch content
         if (fileType === 'text' || fileType === 'code') {
           try {
-            const response = await fetch(data.signedUrl);
+            const response = await fetch(nextSignedUrl);
             if (response.ok && !cancelled) {
               const content = await response.text();
               if (!cancelled) {
@@ -219,7 +210,7 @@ export function FilePreviewDialog({
     return () => {
       cancelled = true;
     };
-  }, [file?.name, open, fileType, wsId, path, supabase.storage]);
+  }, [file?.name, open, fileType, wsId, path]);
 
   const handleDownload = async () => {
     if (!file?.name || !signedUrl) return;

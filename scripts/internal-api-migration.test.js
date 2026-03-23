@@ -39,10 +39,16 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/content/content-editor.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/client-quizzes.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/flashcards/client-flashcards.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/document-editor.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/drive/file-preview-dialog.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/drive/row-actions.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/drive/table.tsx',
     'packages/ui/src/components/ui/custom/education/modules/module-toggle.tsx',
     'packages/ui/src/components/ui/custom/education/modules/resources/delete-resource.tsx',
     'packages/ui/src/components/ui/custom/education/modules/resources/file-display.tsx',
     'packages/ui/src/components/ui/custom/education/modules/youtube/delete-link-button.tsx',
+    'packages/ui/src/components/ui/finance/transactions/transactionId/bill.tsx',
+    'packages/ui/src/components/ui/finance/transactions/transactionId/row-actions.tsx',
     'packages/ui/src/components/ui/finance/transactions/category-filter.tsx',
     'packages/ui/src/components/ui/finance/transactions/user-filter.tsx',
     'packages/ui/src/components/ui/finance/transactions/period-charts/category-donut-chart.tsx',
@@ -52,9 +58,30 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     'packages/ui/src/components/ui/finance/analytics/category-spending-chart.tsx',
     'packages/ui/src/components/ui/finance/recurring/form.tsx',
     'packages/ui/src/components/ui/finance/recurring/recurring-transactions-page.tsx',
+    'packages/ui/src/components/ui/calendar-app/components/quick-task-dialog.tsx',
+    'packages/ui/src/components/ui/calendar-app/components/task-form.tsx',
+    'packages/ui/src/components/ui/calendar-app/components/task-list-form.tsx',
     'packages/ui/src/components/ui/finance/wallets/walletId/wallet-role-access.tsx',
     'packages/ui/src/components/ui/legacy/calendar/settings/hour-settings.tsx',
+    'packages/ui/src/components/ui/tu-do/boards/boardId/task-form.tsx',
+    'packages/ui/src/components/ui/tu-do/boards/workspace-projects-client-page.tsx',
+    'packages/ui/src/components/ui/tu-do/drafts/draft-convert-dialog.tsx',
+    'packages/ui/src/components/ui/tu-do/my-tasks/task-list-with-completion.tsx',
+    'packages/ui/src/components/ui/tu-do/my-tasks/use-my-tasks-state.ts',
+    'packages/ui/src/components/ui/tu-do/my-tasks/use-task-context-actions.ts',
     'apps/track/src/app/[locale]/(dashboard)/[wsId]/components/workspace-select-dialog.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/components/use-workspace-tasks.ts',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/components/time-tracker-content.tsx',
+    'apps/track/src/app/[locale]/(dashboard)/[wsId]/components/use-workspace-tasks.ts',
+    'apps/track/src/app/[locale]/(dashboard)/[wsId]/components/time-tracker-content.tsx',
+    'apps/web/src/app/[locale]/(marketing)/contact/page.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/inquiries/inquiry-detail-modal.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/components/task-form.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/components/task-list-form.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/components/priority-view.tsx',
+    'packages/ui/src/components/ui/calendar-app/components/priority-view.tsx',
+    'apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/chat.tsx',
+    'apps/rewise/src/app/[locale]/(dashboard)/[wsId]/structure.tsx',
   ];
 
   for (const file of migratedFiles) {
@@ -66,8 +93,8 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     );
     assert.match(
       source,
-      /@tuturuuu\/internal-api\//,
-      `Expected ${file} to import the shared internal API package`
+      /@tuturuuu\/(internal-api(?:\/|')|utils\/task-helper')/,
+      `Expected ${file} to import the shared internal API package or helper wrapper`
     );
   }
 });

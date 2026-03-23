@@ -1,8 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { listWorkspaceTaskBoards } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceTaskBoards,
+  listWorkspaceTaskLists,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -53,8 +55,6 @@ export function DraftConvertDialog({
     }
   }, [draft]);
 
-  const supabase = createClient();
-
   const { data: boards = [] } = useQuery({
     queryKey: ['workspace-boards', wsId],
     queryFn: async () => {
@@ -91,14 +91,8 @@ export function DraftConvertDialog({
     queryKey: ['board-lists', selectedBoardId],
     queryFn: async () => {
       if (!selectedBoardId) return [];
-      const { data, error } = await supabase
-        .from('task_lists')
-        .select('id, name, status')
-        .eq('board_id', selectedBoardId)
-        .eq('deleted', false)
-        .order('position');
-      if (error) throw error;
-      return data;
+      const payload = await listWorkspaceTaskLists(wsId, selectedBoardId);
+      return payload.lists ?? [];
     },
     enabled: isOpen && !!selectedBoardId,
   });

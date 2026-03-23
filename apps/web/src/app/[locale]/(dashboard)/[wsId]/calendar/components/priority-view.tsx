@@ -20,8 +20,10 @@ import {
   User,
   unicornHead,
 } from '@tuturuuu/icons';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceTaskLists,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -435,8 +437,6 @@ export default function PriorityView({
     const completionTimestamp = new Date().toISOString();
 
     try {
-      const supabase = createClient();
-
       // If task has no list_id, just update closed_at directly
       if (!task.list_id) {
         await updateWorkspaceTask(taskWsId, taskId, {
@@ -449,24 +449,14 @@ export default function PriorityView({
         return;
       }
 
-      // Get the board_id from the task's list
-      const { data: taskList, error: listError } = await supabase
-        .from('task_lists')
-        .select('board_id')
-        .eq('id', task.list_id)
-        .single();
+      if (!task.board_id) {
+        throw new Error('Task board not found');
+      }
 
-      if (listError) throw listError;
-
-      // Fetch all lists for this board to find the done list
-      const { data: boardLists, error: boardListsError } = await supabase
-        .from('task_lists')
-        .select('id, name, status, position')
-        .eq('board_id', taskList.board_id)
-        .eq('deleted', false)
-        .order('position');
-
-      if (boardListsError) throw boardListsError;
+      const { lists: boardLists } = await listWorkspaceTaskLists(
+        taskWsId,
+        task.board_id
+      );
 
       // Find the first done or closed list (like task.tsx does)
       const doneList = boardLists?.find((list) => list.status === 'done');

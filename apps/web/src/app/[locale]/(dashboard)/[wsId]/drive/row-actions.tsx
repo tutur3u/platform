@@ -11,7 +11,7 @@ import {
   Share,
   Trash,
 } from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { createWorkspaceStorageSignedUrl } from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -51,7 +51,6 @@ export function StorageObjectRowActions({
   contextMenu = false,
   onRequestDelete,
 }: Props) {
-  const supabase = createDynamicClient();
   const t = useTranslations();
   const router = useRouter();
   const storageObj = row.original;
@@ -86,13 +85,13 @@ export function StorageObjectRowActions({
     if (!storageObj.name) return;
 
     try {
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .createSignedUrl(joinPath(wsId, path, storageObj.name), 3600);
+      const signedUrl = await createWorkspaceStorageSignedUrl(
+        wsId,
+        joinPath(path, storageObj.name),
+        3600
+      );
 
-      if (error) throw error;
-
-      await navigator.clipboard.writeText(data.signedUrl);
+      await navigator.clipboard.writeText(signedUrl);
       toast({
         title: t('common.success'),
         description: t('ws-storage-objects.share_link_copied'),
@@ -110,13 +109,13 @@ export function StorageObjectRowActions({
     if (!storageObj.name) return;
 
     try {
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .createSignedUrl(storageObj.name, 3600);
+      const signedUrl = await createWorkspaceStorageSignedUrl(
+        wsId,
+        joinPath(path, storageObj.name),
+        3600
+      );
 
-      if (error) throw error;
-
-      window.open(data.signedUrl, '_blank');
+      window.open(signedUrl, '_blank');
     } catch (_error) {
       toast({
         title: t('common.error'),
@@ -130,11 +129,14 @@ export function StorageObjectRowActions({
     if (!storageObj.name) return;
 
     try {
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .download(joinPath(wsId, path, storageObj.name));
-
-      if (error) throw error;
+      const signedUrl = await createWorkspaceStorageSignedUrl(
+        wsId,
+        joinPath(path, storageObj.name),
+        3600
+      );
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error('Download failed');
+      const data = await response.blob();
 
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');

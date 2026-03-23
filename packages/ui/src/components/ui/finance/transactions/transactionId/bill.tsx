@@ -1,7 +1,10 @@
 'use client';
 
 import { File, FileText, ImageIcon, X } from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceStorageObjects,
+  uploadWorkspaceStorageFile,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   FileUploader,
@@ -13,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { joinPath } from '@tuturuuu/utils/path-helper';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -223,33 +227,22 @@ export async function uploadBill(
     : '';
   let newFileName = fileName;
 
-  const supabase = createDynamicClient();
+  const existingObjects = await listWorkspaceStorageObjects(wsId, {
+    path: joinPath('finance', 'transactions', transactionId),
+    limit: 1000,
+    offset: 0,
+  });
+  const existingFileName = existingObjects.data.filter(
+    (entry) => entry.name === fileName
+  );
+  const existingFileNames = existingObjects.data.filter((entry) =>
+    entry.name.toLowerCase().startsWith(`${baseName.toLowerCase()}(`)
+  );
 
-  // Check if a file with the same name already exists
-  const { data: existingFileName } = await supabase
-    .schema('storage')
-    .from('objects')
-    .select('*')
-    .eq('bucket_id', 'workspaces')
-    .not('owner', 'is', null)
-    .eq('name', `${wsId}/finance/transactions/${transactionId}/${fileName}`)
-    .order('name', { ascending: true });
-
-  const { data: existingFileNames } = await supabase
-    .schema('storage')
-    .from('objects')
-    .select('*')
-    .eq('bucket_id', 'workspaces')
-    .not('owner', 'is', null)
-    .ilike(
-      'name',
-      `${wsId}/finance/transactions/${transactionId}/${baseName}(%).${fileExtension}`
-    )
-    .order('name', { ascending: true });
-
-  if (existingFileName && existingFileName.length > 0) {
-    if (existingFileNames && existingFileNames.length > 0) {
-      const lastFileName = existingFileNames[existingFileNames.length - 1].name;
+  if (existingFileName.length > 0) {
+    if (existingFileNames.length > 0) {
+      const lastFileName =
+        existingFileNames[existingFileNames.length - 1]!.name;
       const lastFileNameIndex = parseInt(
         lastFileName.substring(
           lastFileName.lastIndexOf('(') + 1,
@@ -263,12 +256,20 @@ export async function uploadBill(
     }
   }
 
-  const { data, error } = await supabase.storage
-    .from('workspaces')
-    .upload(
-      `${wsId}/finance/transactions/${transactionId}/${newFileName}`,
-      file.rawFile
-    );
+  try {
+    const renamedFile =
+      newFileName === file.rawFile.name
+        ? file.rawFile
+        : new globalThis.File([file.rawFile], newFileName, {
+            type: file.rawFile.type,
+          });
 
-  return { data, error };
+    const data = await uploadWorkspaceStorageFile(wsId, renamedFile, {
+      path: joinPath('finance', 'transactions', transactionId),
+    });
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
 }

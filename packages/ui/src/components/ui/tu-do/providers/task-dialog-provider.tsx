@@ -1,11 +1,14 @@
 'use client';
 
 import {
+  listWorkspaceLabels,
+  listWorkspaceMembers,
+} from '@tuturuuu/internal-api';
+import {
   getCurrentUserTask,
   listWorkspaceTaskProjectsByIds,
   resolveTaskProjectWorkspaceId,
 } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
@@ -232,73 +235,7 @@ export function TaskDialogProvider({
               }),
           });
         } catch {
-          const supabase = createClient();
-          const { data: task, error } = await supabase
-            .from('tasks')
-            .select(
-              `
-              *,
-              list:task_lists!inner(
-                id,
-                name,
-                board_id,
-                board:workspace_boards(
-                  id,
-                  ws_id,
-                  workspace:workspaces(personal)
-                )
-              ),
-              assignees:task_assignees(
-                user_id,
-                users(id, display_name, avatar_url)
-              ),
-              labels:task_labels(
-                label_id,
-                workspace_task_labels(id, name, color, created_at)
-              ),
-              projects:task_project_tasks(
-                project_id,
-                task_projects(id, name, status)
-              )
-            `
-            )
-            .eq('id', taskId)
-            .single();
-
-          if (error || !task) {
-            console.error('Failed to fetch task:', error);
-            return;
-          }
-
-          const { data: lists } = await supabase
-            .from('task_lists')
-            .select('*')
-            .eq('board_id', (task as any).list?.board_id)
-            .eq('deleted', false)
-            .order('position')
-            .order('created_at');
-
-          response = {
-            task: {
-              ...(task as unknown as Task),
-              assignees: (task as any).assignees?.map((assignee: any) => ({
-                id: assignee.users?.id || assignee.user_id,
-                user_id: assignee.user_id,
-                display_name: assignee.users?.display_name,
-                avatar_url: assignee.users?.avatar_url,
-              })),
-              labels: (task as any).labels
-                ?.map((label: any) => label.workspace_task_labels)
-                .filter(Boolean),
-              projects: (task as any).projects
-                ?.map((project: any) => project.task_projects)
-                .filter(Boolean),
-            },
-            availableLists: (lists as TaskList[]) || [],
-            taskWsId: (task as any).list?.board?.ws_id ?? '',
-            taskWorkspacePersonal:
-              (task as any).list?.board?.workspace?.personal ?? false,
-          };
+          return;
         }
 
         if (!response) {
@@ -453,7 +390,14 @@ export function TaskDialogProvider({
       assignee_ids?: string[];
       project_ids?: string[];
     }) => {
-      const supabase = createClient();
+      const workspaceId = await resolveTaskProjectWorkspaceId({
+        boardId: draft.board_id ?? undefined,
+        projectIds: draft.project_ids,
+      });
+
+      if (!workspaceId) {
+        throw new Error('Unable to resolve draft workspace');
+      }
 
       // Fetch label metadata so names/colors render correctly
       let labels: Array<{
@@ -463,16 +407,17 @@ export function TaskDialogProvider({
         created_at: string;
       }> = [];
       if (draft.label_ids && draft.label_ids.length > 0) {
-        const { data } = await supabase
-          .from('workspace_task_labels')
-          .select('id, name, color, created_at')
-          .in('id', draft.label_ids);
-        labels = (data || []).map((l) => ({
-          id: l.id,
-          name: l.name ?? '',
-          color: l.color ?? '',
-          created_at: l.created_at ?? '',
-        }));
+        const data = await listWorkspaceLabels(workspaceId);
+        labels = data
+          .filter((label: (typeof data)[number]) =>
+            draft.label_ids?.includes(label.id)
+          )
+          .map((l: (typeof data)[number]) => ({
+            id: l.id,
+            name: l.name ?? '',
+            color: l.color ?? '',
+            created_at: l.created_at ?? '',
+          }));
       }
 
       // Fetch assignee metadata so display names/avatars render correctly
@@ -483,16 +428,17 @@ export function TaskDialogProvider({
         avatar_url?: string | null;
       }> = [];
       if (draft.assignee_ids && draft.assignee_ids.length > 0) {
-        const { data } = await supabase
-          .from('users')
-          .select('id, display_name, avatar_url')
-          .in('id', draft.assignee_ids);
-        assignees = (data || []).map((u) => ({
-          id: u.id,
-          user_id: u.id,
-          display_name: u.display_name,
-          avatar_url: u.avatar_url,
-        }));
+        const data = await listWorkspaceMembers(workspaceId);
+        assignees = data
+          .filter((user: (typeof data)[number]) =>
+            Boolean(user.user_id && draft.assignee_ids?.includes(user.user_id))
+          )
+          .map((u: (typeof data)[number]) => ({
+            id: u.id,
+            user_id: u.user_id || u.id,
+            display_name: u.display_name,
+            avatar_url: u.avatar_url,
+          }));
       }
 
       // Fetch project metadata so names render correctly
@@ -502,37 +448,15 @@ export function TaskDialogProvider({
         status: string | null;
       }> = [];
       if (draft.project_ids && draft.project_ids.length > 0) {
-        let projectWorkspaceId: string | null = null;
-
-        try {
-          projectWorkspaceId = await resolveTaskProjectWorkspaceId({
-            boardId: draft.board_id ?? undefined,
-            projectIds: draft.project_ids,
-          });
-        } catch (error) {
-          console.error(
-            'Failed to resolve project workspace for draft:',
-            error
-          );
-          throw new Error('Unable to load project metadata for this draft');
-        }
-
-        if (projectWorkspaceId) {
-          try {
-            const workspaceProjects = await listWorkspaceTaskProjectsByIds(
-              projectWorkspaceId,
-              draft.project_ids
-            );
-            projects = workspaceProjects.map((project) => ({
-              id: project.id,
-              name: project.name,
-              status: project.status,
-            }));
-          } catch (error) {
-            console.error('Failed to load draft projects metadata:', error);
-            throw new Error('Unable to load project metadata for this draft');
-          }
-        }
+        const workspaceProjects = await listWorkspaceTaskProjectsByIds(
+          workspaceId,
+          draft.project_ids
+        );
+        projects = workspaceProjects.map((project) => ({
+          id: project.id,
+          name: project.name,
+          status: project.status,
+        }));
       }
 
       // Create a fake Task pre-populated with draft data + resolved metadata

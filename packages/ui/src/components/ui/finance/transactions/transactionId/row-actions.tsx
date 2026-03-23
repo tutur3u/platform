@@ -1,7 +1,11 @@
 'use client';
 
 import { Ellipsis } from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import {
+  createWorkspaceStorageSignedUrl,
+  deleteWorkspaceStorageObject,
+  renameWorkspaceStorageObject,
+} from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import {
   AlertDialog,
@@ -39,7 +43,6 @@ export function TransactionObjectRowActions({
   transactionId,
   storageObj,
 }: Props) {
-  const supabase = createDynamicClient();
   const t = useTranslations();
 
   const router = useRouter();
@@ -50,26 +53,12 @@ export function TransactionObjectRowActions({
 
     setIsDeleting(true);
     try {
-      const { error } = await supabase.storage
-        .from('workspaces')
-        .remove([
-          joinPath(
-            wsId,
-            'finance',
-            'transactions',
-            transactionId,
-            storageObj.name
-          ),
-        ]);
-
-      if (!error) {
-        toast.success(t('ws-transactions.file_deleted'));
-        router.refresh();
-      } else {
-        toast.error(
-          error.message || t('ws-transactions.failed_to_delete_file')
-        );
-      }
+      await deleteWorkspaceStorageObject(
+        wsId,
+        joinPath('finance', 'transactions', transactionId, storageObj.name)
+      );
+      toast.success(t('ws-transactions.file_deleted'));
+      router.refresh();
     } catch {
       toast.error(t('ws-transactions.failed_to_delete_file'));
     } finally {
@@ -94,56 +83,46 @@ export function TransactionObjectRowActions({
         : `${newName}.${storageObj.name.split('.').pop()}`
       : newName;
 
-    const { error } = await supabase.storage
-      .from('workspaces')
-      .move(
-        joinPath(
-          wsId,
-          'finance',
-          'transactions',
-          transactionId,
-          storageObj.name
-        ),
-        joinPath(wsId, 'finance', 'transactions', transactionId, safeNewName)
-      );
-
-    if (!error) {
+    try {
+      await renameWorkspaceStorageObject(wsId, {
+        path: joinPath('finance', 'transactions', transactionId),
+        currentName: storageObj.name,
+        newName: safeNewName,
+      });
       router.refresh();
-    } else {
-      toast.error(error.message || t('ws-transactions.failed_to_rename_file'));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws-transactions.failed_to_rename_file')
+      );
     }
   };
 
   const downloadStorageObject = async () => {
     if (!storageObj.name) return;
 
-    const { data, error } = await supabase.storage
-      .from('workspaces')
-      .download(
-        joinPath(
-          wsId,
-          'finance',
-          'transactions',
-          transactionId,
-          storageObj.name
-        )
+    try {
+      const signedUrl = await createWorkspaceStorageSignedUrl(
+        wsId,
+        joinPath('finance', 'transactions', transactionId, storageObj.name)
       );
+      const response = await fetch(signedUrl);
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+      const data = await response.blob();
+      const url = URL.createObjectURL(data);
 
-    if (error) {
-      toast.error(
-        error.message || t('ws-transactions.failed_to_download_file')
-      );
-      return;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = storageObj.name.split(`${wsId}/`).pop() || '';
+      a.click();
+
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error(t('ws-transactions.failed_to_download_file'));
     }
-
-    const url = URL.createObjectURL(data);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = storageObj.name.split(`${wsId}/`).pop() || '';
-    a.click();
-
-    URL.revokeObjectURL(url);
   };
 
   return (

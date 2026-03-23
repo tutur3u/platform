@@ -558,6 +558,7 @@ export function BoardViews({
       case 'timeline':
         return (
           <TimelineBoard
+            wsId={board.ws_id ?? workspace.id}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}

@@ -2,13 +2,18 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  createWorkspaceLabel,
   createWorkspaceTaskBoard,
+  createWorkspaceTaskProject,
   listWorkspaceBoardsWithLists,
+  listWorkspaceLabels,
+  listWorkspaceMembers,
   listWorkspaces,
   listWorkspaceTaskBoards,
+  listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
+  updateWorkspaceTaskList,
 } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { AI_CREDITS_QUERY_KEY } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -283,30 +288,21 @@ export function useMyTasksState({
 
     const autoCreateBoard = async () => {
       try {
-        const supabase = createClient();
         const { board: newBoard } = await createWorkspaceTaskBoard(wsId, {
           name: defaultBoardName,
         });
         if (!newBoard) return;
 
-        // Rename trigger-created default lists to translated names
-        const { data: lists } = await supabase
-          .from('task_lists')
-          .select('id, name')
-          .eq('board_id', newBoard.id);
-
-        if (lists) {
-          await Promise.all(
-            lists
-              .filter((l) => l.name && defaultListNames[l.name])
-              .map((l) =>
-                supabase
-                  .from('task_lists')
-                  .update({ name: defaultListNames[l.name!]! })
-                  .eq('id', l.id)
-              )
-          );
-        }
+        const { lists } = await listWorkspaceTaskLists(wsId, newBoard.id);
+        await Promise.all(
+          (lists ?? [])
+            .filter((list) => list.name && defaultListNames[list.name])
+            .map((list) =>
+              updateWorkspaceTaskList(wsId, newBoard.id, list.id, {
+                name: defaultListNames[list.name!]!,
+              })
+            )
+        );
 
         toast.info(t('ws-tasks.board_auto_created'));
 
@@ -361,11 +357,7 @@ export function useMyTasksState({
     queryKey: ['workspaceLabels', JSON.stringify(allWorkspaceIds)],
     queryFn: async () => {
       if (allWorkspaceIds.length === 0) return [];
-      const promises = allWorkspaceIds.map((id) =>
-        fetch(`/api/v1/workspaces/${id}/labels`, { cache: 'no-store' }).then(
-          (res) => res.json()
-        )
-      );
+      const promises = allWorkspaceIds.map((id) => listWorkspaceLabels(id));
       const results = await Promise.all(promises);
       return results.flat().filter(Boolean);
     },
@@ -397,11 +389,7 @@ export function useMyTasksState({
   const { data: workspaceMembers = [] } = useQuery({
     queryKey: ['workspace', wsId, 'members'],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/members`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) throw new Error('Failed to fetch members');
-      const data = await response.json();
+      const data = await listWorkspaceMembers(wsId);
       return (data || []).map((member: any) => ({
         id: member.id || member.user_id,
         display_name: member.display_name,
@@ -636,10 +624,12 @@ export function useMyTasksState({
 
     setCommandBarLoading(true);
     try {
-      const supabase = createClient();
       const { createTask: createTaskFn } = await import(
         '@tuturuuu/utils/task-helper'
       );
+
+      const mergedAssigneeIds = new Set(options?.assigneeIds ?? []);
+      if (autoAssignToMe) mergedAssigneeIds.add(userId);
 
       const newTask = await createTaskFn(selectedWorkspaceId, selectedListId, {
         name: title.trim(),
@@ -648,38 +638,10 @@ export function useMyTasksState({
         start_date: undefined,
         end_date: options?.dueDate?.toISOString() || undefined,
         estimation_points: options?.estimationPoints || undefined,
+        label_ids: options?.labelIds || [],
+        project_ids: options?.projectIds || [],
+        assignee_ids: [...mergedAssigneeIds],
       });
-
-      if (options?.labelIds && options.labelIds.length > 0 && newTask?.id) {
-        await supabase.from('task_labels').insert(
-          options.labelIds.map((labelId) => ({
-            task_id: newTask.id,
-            label_id: labelId,
-          }))
-        );
-      }
-
-      if (options?.projectIds && options.projectIds.length > 0 && newTask?.id) {
-        await supabase.from('task_project_tasks').insert(
-          options.projectIds.map((projectId) => ({
-            task_id: newTask.id,
-            project_id: projectId,
-          }))
-        );
-      }
-
-      // Merge autoAssignToMe with any manually-selected assignees
-      const mergedAssigneeIds = new Set(options?.assigneeIds ?? []);
-      if (autoAssignToMe) mergedAssigneeIds.add(userId);
-
-      if (mergedAssigneeIds.size > 0 && newTask?.id) {
-        await supabase.from('task_assignees').insert(
-          [...mergedAssigneeIds].map((assigneeId) => ({
-            task_id: newTask.id,
-            user_id: assigneeId,
-          }))
-        );
-      }
 
       if (newTask) {
         toast.success(t('ws-tasks.task_created_successfully'), {
@@ -832,16 +794,11 @@ export function useMyTasksState({
     if (!newLabelName.trim()) return;
     setCreatingLabel(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from('workspace_task_labels').insert({
-        ws_id: wsId,
+      await createWorkspaceLabel(wsId, {
         name: newLabelName.trim(),
         color: newLabelColor,
       });
-      if (error) throw error;
-      queryClient.invalidateQueries({
-        queryKey: ['workspace', wsId, 'labels'],
-      });
+      queryClient.invalidateQueries({ queryKey: ['workspaceLabels'] });
       toast.success(t('ws-tasks.label_created'));
       setNewLabelDialogOpen(false);
       setNewLabelName('');
@@ -859,15 +816,10 @@ export function useMyTasksState({
     if (!newProjectName.trim()) return;
     setCreatingProject(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from('task_projects').insert({
-        ws_id: wsId,
+      await createWorkspaceTaskProject(wsId, {
         name: newProjectName.trim(),
       });
-      if (error) throw error;
-      queryClient.invalidateQueries({
-        queryKey: ['workspace', wsId, 'projects'],
-      });
+      queryClient.invalidateQueries({ queryKey: ['workspaceProjects'] });
       toast.success(t('ws-tasks.project_created'));
       setNewProjectDialogOpen(false);
       setNewProjectName('');

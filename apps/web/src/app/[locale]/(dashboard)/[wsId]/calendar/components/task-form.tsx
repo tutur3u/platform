@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -16,6 +15,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { createTask } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
 import * as z from 'zod';
 
@@ -34,9 +34,8 @@ const FormSchema = z.object({
   end_date: z.string().optional(), // Changed from due_date
 });
 
-export function TaskForm({ listId, onSuccess }: TaskFormProps) {
+export function TaskForm({ wsId, listId, onSuccess }: TaskFormProps) {
   const router = useRouter();
-  const supabase = createClient(); // Initialize Supabase client
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -51,15 +50,11 @@ export function TaskForm({ listId, onSuccess }: TaskFormProps) {
 
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {
-      const { error } = await supabase.from('tasks').insert({
+      await createTask(wsId, listId, {
         name: values.name,
         description: values.description,
-        // priority: values.priority,
         end_date: values.end_date || null, // Handle optional date
-        list_id: listId,
       });
-
-      if (error) throw error;
 
       toast({
         title: 'Task created',

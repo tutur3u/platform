@@ -10,8 +10,19 @@ import {
   Send,
   Users,
 } from '@tuturuuu/icons';
+import {
+  createWorkspaceChatChannel,
+  createWorkspaceChatMessage,
+  deleteWorkspaceChatTyping,
+  listWorkspaceChatChannels,
+  listWorkspaceChatMessages,
+  listWorkspaceChatParticipants,
+  listWorkspaceMembers,
+  upsertWorkspaceChatParticipant,
+  upsertWorkspaceChatTyping,
+  type WorkspaceChatChannel,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Database } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -27,8 +38,16 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type Channel = Database['public']['Tables']['workspace_chat_channels']['Row'];
-type Message = Database['public']['Tables']['workspace_chat_messages']['Row'];
+type Channel = WorkspaceChatChannel;
+type Message = {
+  id: string;
+  channel_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string | null;
+  deleted_at: string | null;
+};
 type User = {
   id: string;
   display_name: string | null;
@@ -64,141 +83,121 @@ export default function RealtimeChatContent({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+  const [workspaceUsers, setWorkspaceUsers] = useState<Map<string, User>>(
+    new Map()
+  );
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   const loadChannels = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('workspace_chat_channels')
-      .select('*')
-      .eq('ws_id', wsId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
+    try {
+      const data = await listWorkspaceChatChannels(wsId);
+      const members = await listWorkspaceMembers(wsId).catch(() => []);
+      setWorkspaceUsers(
+        new Map(
+          members
+            .filter((member) => member.user_id)
+            .map(
+              (member) =>
+                [
+                  member.user_id as string,
+                  {
+                    id: member.user_id as string,
+                    display_name: member.display_name,
+                    avatar_url: member.avatar_url,
+                  },
+                ] as const
+            )
+        )
+      );
+      setChannels(data || []);
+      setSelectedChannel((prev: Channel | null) => {
+        if (!prev && data && data.length > 0) {
+          return data[0]!;
+        }
+        return prev;
+      });
+    } catch {
       toast.error('Failed to load channels');
-      return;
     }
-
-    setChannels(data || []);
-    // Only set selected channel if none is selected yet
-    setSelectedChannel((prev) => {
-      if (!prev && data && data.length > 0) {
-        return data[0]!;
-      }
-      return prev;
-    });
-  }, [supabase, wsId]);
+  }, [wsId]);
 
   const loadMessages = useCallback(
     async (channelId: string) => {
       setIsLoadingMessages(true);
-      const { data, error } = await supabase
-        .from('workspace_chat_messages')
-        .select('*')
-        .eq('channel_id', channelId)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: true });
+      try {
+        const [data, participants] = await Promise.all([
+          listWorkspaceChatMessages(wsId, channelId),
+          listWorkspaceChatParticipants(wsId, channelId),
+        ]);
 
-      setIsLoadingMessages(false);
+        setMessages(data || []);
 
-      if (error) {
-        toast.error('Failed to load messages');
-        return;
-      }
-
-      setMessages(data || []);
-
-      // Load user information for all unique user IDs
-      if (data && data.length > 0) {
-        const uniqueUserIds = [...new Set(data.map((msg) => msg.user_id))];
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, display_name, avatar_url')
-          .in('id', uniqueUserIds);
-
-        if (userData) {
-          setUsers(new Map(userData.map((u) => [u.id, u])));
-        }
-
-        // Load read receipts for each message
-        const { data: participants } = await supabase
-          .from('workspace_chat_participants')
-          .select('user_id, last_read_at')
-          .eq('channel_id', channelId)
-          .neq('user_id', userId);
-
-        if (participants) {
-          // Get unique user IDs from participants
-          const participantUserIds = [
-            ...new Set(participants.map((p) => p.user_id)),
-          ];
-          const { data: participantUsers } = await supabase
-            .from('users')
-            .select('id, display_name, avatar_url')
-            .in('id', participantUserIds);
-
-          const participantUserMap = new Map(
-            participantUsers?.map((u) => [u.id, u]) || []
+        const userMap = workspaceUsers;
+        if (data && data.length > 0) {
+          setUsers(
+            new Map(
+              [...new Set(data.map((msg) => msg.user_id))]
+                .map((id) => [id, userMap.get(id)])
+                .filter((entry): entry is [string, User] => Boolean(entry[1]))
+            )
           );
-
-          // Count how many participants have read each message and track who
-          const receipts = new Map<string, number>();
-          const readers = new Map<string, User[]>();
-
-          for (const msg of data) {
-            if (msg.user_id === userId && msg.created_at) {
-              const msgTime = new Date(msg.created_at).getTime();
-              const readParticipants = participants.filter((p) => {
-                if (!p.last_read_at) return false;
-                return new Date(p.last_read_at).getTime() >= msgTime;
-              });
-
-              receipts.set(msg.id, readParticipants.length);
-
-              // Get user info for readers
-              const readerUsers = readParticipants
-                .map((p) => participantUserMap.get(p.user_id))
-                .filter((u): u is User => u !== undefined);
-
-              readers.set(msg.id, readerUsers);
-            }
-          }
-          setReadReceipts(receipts);
-          setMessageReaders(readers);
         }
+
+        const otherParticipants = participants.filter(
+          (p) => p.user_id !== userId
+        );
+        const receipts = new Map<string, number>();
+        const readers = new Map<string, User[]>();
+
+        for (const msg of data) {
+          if (msg.user_id === userId && msg.created_at) {
+            const msgTime = new Date(msg.created_at).getTime();
+            const readParticipants = otherParticipants.filter((p) => {
+              if (!p.last_read_at) return false;
+              return new Date(p.last_read_at).getTime() >= msgTime;
+            });
+
+            receipts.set(msg.id, readParticipants.length);
+            readers.set(
+              msg.id,
+              readParticipants
+                .map((p) => userMap.get(p.user_id))
+                .filter((u): u is User => u !== undefined)
+            );
+          }
+        }
+
+        setReadReceipts(receipts);
+        setMessageReaders(readers);
+      } catch {
+        toast.error('Failed to load messages');
+      } finally {
+        setIsLoadingMessages(false);
       }
     },
-    [supabase, userId]
+    [userId, workspaceUsers, wsId]
   );
 
   const joinChannel = useCallback(
     async (channelId: string) => {
-      const { error } = await supabase
-        .from('workspace_chat_participants')
-        .upsert(
-          {
-            channel_id: channelId,
-            user_id: userId,
-            last_read_at: new Date().toISOString(),
-          },
-          { onConflict: 'channel_id,user_id' }
-        );
-
-      if (error) {
+      try {
+        await upsertWorkspaceChatParticipant(wsId, channelId, {
+          last_read_at: new Date().toISOString(),
+        });
+      } catch (error) {
         console.error('Failed to join channel:', error);
       }
 
-      // Load participant count
-      const { count } = await supabase
-        .from('workspace_chat_participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('channel_id', channelId);
-
-      setParticipantCount(count || 0);
+      const participants = await listWorkspaceChatParticipants(
+        wsId,
+        channelId
+      ).catch(() => []);
+      setParticipantCount(participants.length || 0);
     },
-    [supabase, userId]
+    [userId, wsId]
   );
 
   const subscribeToMessages = useCallback(
@@ -221,18 +220,10 @@ export default function RealtimeChatContent({
               // Check if user already exists
               if (!prevUsers.has(newMsg.user_id)) {
                 // Fetch user data asynchronously
-                supabase
-                  .from('users')
-                  .select('id, display_name, avatar_url')
-                  .eq('id', newMsg.user_id)
-                  .single()
-                  .then(({ data: userData }) => {
-                    if (userData) {
-                      setUsers((prev) =>
-                        new Map(prev).set(userData.id, userData)
-                      );
-                    }
-                  });
+                const userData = workspaceUsers.get(newMsg.user_id);
+                if (userData) {
+                  setUsers((prev) => new Map(prev).set(userData.id, userData));
+                }
               }
               return prevUsers;
             });
@@ -263,25 +254,12 @@ export default function RealtimeChatContent({
           },
           async () => {
             // Reload read receipts when someone updates their read status
-            const { data: participants } = await supabase
-              .from('workspace_chat_participants')
-              .select('user_id, last_read_at')
-              .eq('channel_id', channelId)
-              .neq('user_id', userId);
+            const participants = (
+              await listWorkspaceChatParticipants(wsId, channelId)
+            ).filter((participant) => participant.user_id !== userId);
 
             if (participants) {
-              // Get unique user IDs from participants
-              const participantUserIds = [
-                ...new Set(participants.map((p) => p.user_id)),
-              ];
-              const { data: participantUsers } = await supabase
-                .from('users')
-                .select('id, display_name, avatar_url')
-                .in('id', participantUserIds);
-
-              const participantUserMap = new Map(
-                participantUsers?.map((u) => [u.id, u]) || []
-              );
+              const participantUserMap = workspaceUsers;
 
               setMessages((msgs) => {
                 const receipts = new Map<string, number>();
@@ -332,18 +310,12 @@ export default function RealtimeChatContent({
               // Load user info if not already loaded
               setUsers((prevUsers) => {
                 if (!prevUsers.has(indicator.user_id)) {
-                  supabase
-                    .from('users')
-                    .select('id, display_name, avatar_url')
-                    .eq('id', indicator.user_id)
-                    .single()
-                    .then(({ data: userData }) => {
-                      if (userData) {
-                        setUsers((prev) =>
-                          new Map(prev).set(userData.id, userData)
-                        );
-                      }
-                    });
+                  const userData = workspaceUsers.get(indicator.user_id);
+                  if (userData) {
+                    setUsers((prev) =>
+                      new Map(prev).set(userData.id, userData)
+                    );
+                  }
                 }
                 return prevUsers;
               });
@@ -395,7 +367,7 @@ export default function RealtimeChatContent({
         supabase.removeChannel(channel);
       };
     },
-    [supabase, userId]
+    [supabase, userId, workspaceUsers, wsId]
   );
 
   useEffect(() => {
@@ -419,15 +391,13 @@ export default function RealtimeChatContent({
   useEffect(() => {
     if (selectedChannel && messages.length > 0) {
       const updateReadStatus = async () => {
-        await supabase
-          .from('workspace_chat_participants')
-          .update({ last_read_at: new Date().toISOString() })
-          .eq('channel_id', selectedChannel.id)
-          .eq('user_id', userId);
+        await upsertWorkspaceChatParticipant(wsId, selectedChannel.id, {
+          last_read_at: new Date().toISOString(),
+        }).catch(() => undefined);
       };
       updateReadStatus();
     }
-  }, [messages, selectedChannel, supabase, userId]);
+  }, [messages, selectedChannel, userId, wsId]);
 
   const createChannel = async () => {
     if (!newChannelName.trim()) {
@@ -435,26 +405,19 @@ export default function RealtimeChatContent({
       return;
     }
 
-    const { data, error } = await supabase
-      .from('workspace_chat_channels')
-      .insert({
-        ws_id: wsId,
-        name: newChannelName.trim(),
-        created_by: userId,
-      })
-      .select()
-      .single();
-
-    if (error) {
+    try {
+      const { channel: data } = await createWorkspaceChatChannel(
+        wsId,
+        newChannelName.trim()
+      );
+      setChannels((prev) => [data, ...prev]);
+      setNewChannelName('');
+      setShowCreateChannel(false);
+      setSelectedChannel(data);
+      toast.success('Channel created successfully');
+    } catch {
       toast.error('Failed to create channel');
-      return;
     }
-
-    setChannels((prev) => [data, ...prev]);
-    setNewChannelName('');
-    setShowCreateChannel(false);
-    setSelectedChannel(data);
-    toast.success('Channel created successfully');
   };
 
   const sendMessage = async () => {
@@ -471,11 +434,9 @@ export default function RealtimeChatContent({
     }
 
     // Remove typing indicator
-    await supabase
-      .from('workspace_chat_typing_indicators')
-      .delete()
-      .eq('channel_id', selectedChannel.id)
-      .eq('user_id', userId);
+    await deleteWorkspaceChatTyping(wsId, selectedChannel.id).catch(
+      () => undefined
+    );
 
     // Optimistic update: immediately add message to UI
     const optimisticMessage: Message = {
@@ -489,15 +450,15 @@ export default function RealtimeChatContent({
     };
     setMessages((prev) => [...prev, optimisticMessage]);
 
-    const { error } = await supabase.from('workspace_chat_messages').insert({
-      channel_id: selectedChannel.id,
-      user_id: userId,
-      content: messageContent,
-    });
-
     setIsSending(false);
 
-    if (error) {
+    try {
+      await createWorkspaceChatMessage(
+        wsId,
+        selectedChannel.id,
+        messageContent
+      );
+    } catch {
       toast.error('Failed to send message');
       // Remove optimistic message on error
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
@@ -515,24 +476,17 @@ export default function RealtimeChatContent({
     }
 
     // Upsert typing indicator
-    await supabase.from('workspace_chat_typing_indicators').upsert(
-      {
-        channel_id: selectedChannel.id,
-        user_id: userId,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'channel_id,user_id' }
+    await upsertWorkspaceChatTyping(wsId, selectedChannel.id).catch(
+      () => undefined
     );
 
     // Set timeout to remove typing indicator after 3 seconds of inactivity
     typingTimeoutRef.current = setTimeout(async () => {
-      await supabase
-        .from('workspace_chat_typing_indicators')
-        .delete()
-        .eq('channel_id', selectedChannel.id)
-        .eq('user_id', userId);
+      await deleteWorkspaceChatTyping(wsId, selectedChannel.id).catch(
+        () => undefined
+      );
     }, 3000);
-  }, [selectedChannel, supabase, userId]);
+  }, [selectedChannel, supabase, userId, wsId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

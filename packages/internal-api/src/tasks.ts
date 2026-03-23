@@ -290,6 +290,25 @@ export async function listWorkspaceLabels(
   );
 }
 
+export async function createWorkspaceLabel(
+  workspaceId: string,
+  payload: { name: string; color: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<InternalApiWorkspaceLabel>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function listWorkspaceTaskBoards(
   workspaceId: string,
   options?: ListWorkspaceTaskBoardsOptions,
@@ -565,6 +584,21 @@ export async function getCurrentUserTask(
   return client.json<CurrentUserTaskDialogResponse>(
     `/api/v1/users/me/tasks/${encodePathSegment(taskId)}`,
     {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function cleanupWorkspaceTaskMentions(
+  workspaceId: string,
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/mentions/cleanup`,
+    {
+      method: 'POST',
       cache: 'no-store',
     }
   );

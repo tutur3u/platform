@@ -1,6 +1,8 @@
 export {
+  listCurrentUserAiChats,
   listWorkspaceAiModelFavorites,
   toggleWorkspaceAiModelFavorite,
+  updateAiChat,
 } from './ai';
 export {
   applyWorkspaceCalendarSchedule,
@@ -24,6 +26,21 @@ export {
   type WorkspaceCalendarEventUpdatePayload,
 } from './calendar';
 export type {
+  WorkspaceChatChannel,
+  WorkspaceChatMessage,
+  WorkspaceChatParticipant,
+} from './chat';
+export {
+  createWorkspaceChatChannel,
+  createWorkspaceChatMessage,
+  deleteWorkspaceChatTyping,
+  listWorkspaceChatChannels,
+  listWorkspaceChatMessages,
+  listWorkspaceChatParticipants,
+  upsertWorkspaceChatParticipant,
+  upsertWorkspaceChatTyping,
+} from './chat';
+export type {
   InternalApiClientOptions,
   InternalApiFetchInit,
   InternalApiQuery,
@@ -38,7 +55,6 @@ export {
   deleteWorkspaceCourseModule,
   deleteWorkspaceFlashcard,
   deleteWorkspaceQuiz,
-  deleteWorkspaceStorageObject,
   linkQuizSetModules,
   unlinkQuizSetModule,
   updateWorkspaceCourseModule,
@@ -64,7 +80,9 @@ export {
   updateBudget,
   updateRecurringTransaction,
 } from './finance';
+export { listInquiryMediaUrls } from './inquiries';
 export { listWorkspaceEmails } from './mail';
+export { getCurrentUserNovaTeam } from './nova';
 export {
   updateWorkspaceReferralSettings,
   type WorkspaceReferralSettingsPayload,
@@ -80,10 +98,19 @@ export {
   updateWorkspaceCalendarHours,
 } from './settings';
 export {
+  createWorkspaceStorageFolder,
   createWorkspaceStorageSignedUrl,
+  deleteWorkspaceStorageFolder,
+  deleteWorkspaceStorageObject,
+  deleteWorkspaceStorageObjects,
+  listWorkspaceStorageObjects,
+  renameWorkspaceStorageObject,
   uploadWorkspaceStorageFile,
 } from './storage';
 export {
+  addWorkspaceTaskLabel,
+  cleanupWorkspaceTaskMentions,
+  createWorkspaceLabel,
   createWorkspaceTask,
   createWorkspaceTaskBoard,
   createWorkspaceTaskList,
@@ -108,6 +135,7 @@ export {
   listWorkspaceTaskProjects,
   listWorkspaceTasks,
   moveWorkspaceTask,
+  removeWorkspaceTaskLabel,
   resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
   updateWorkspaceTaskBoard,
@@ -125,10 +153,14 @@ export {
   createWorkspaceBreakType,
   deleteWorkspaceBreakType,
   getTimeTrackingRequestImageUrls,
+  listSessionBreakSummaries,
+  listSessionBreaks,
   listWorkspaceBreakTypes,
+  listWorkspaceTimeTrackingTasks,
   updateWorkspaceBreakType,
 } from './time-tracking';
 export {
+  createSupportInquiry,
   getCurrentUserProfile,
   getUserCalendarSettings,
   getUserConfig,

@@ -9,7 +9,7 @@ import {
   FileText,
   Loader2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -156,7 +156,6 @@ export function CreateListDialog({
     documents: t.documents,
   };
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   const [newListName, setNewListName] = useState('');
   const [newListStatus, setNewListStatus] = useState<TaskBoardStatus>('active');
@@ -185,32 +184,17 @@ export function CreateListDialog({
       status: TaskBoardStatus;
       color: SupportedColor;
     }) => {
-      // Get max position for this status
-      const { data: existingLists } = await supabase
-        .from('task_lists')
-        .select('position, status')
-        .eq('board_id', boardId)
-        .eq('status', status);
+      if (!wsId) {
+        throw new Error('Workspace ID is required');
+      }
 
-      const maxPosition = Math.max(
-        0,
-        ...(existingLists || []).map((l) => l.position || 0)
-      );
+      const { list } = await createWorkspaceTaskList(wsId, boardId, {
+        name,
+        status,
+        color,
+      });
 
-      const { data, error } = await supabase
-        .from('task_lists')
-        .insert({
-          name,
-          status,
-          color,
-          board_id: boardId,
-          position: maxPosition + 1,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      return list;
     },
     onSuccess: async (data) => {
       toast.success(t.listCreatedSuccessfully);

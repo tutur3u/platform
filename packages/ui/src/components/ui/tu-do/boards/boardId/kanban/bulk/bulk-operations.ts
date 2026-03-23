@@ -12,6 +12,7 @@
 import { type QueryClient, useMutation } from '@tanstack/react-query';
 import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -36,7 +37,7 @@ interface WorkspaceMember {
 
 interface BulkOperationsConfig {
   queryClient: QueryClient;
-  supabase: SupabaseClient;
+  supabase?: SupabaseClient;
   wsId: string;
   boardId: string;
   selectedTasks: Set<string>;
@@ -1828,7 +1829,7 @@ function useBulkDeleteTasks(
 export function useBulkOperations(config: BulkOperationsConfig) {
   const {
     queryClient,
-    supabase,
+    supabase: providedSupabase,
     wsId,
     boardId,
     selectedTasks,
@@ -1842,6 +1843,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     setBulkDeleteOpen,
     broadcast,
   } = config;
+  const supabase = providedSupabase ?? createClient();
 
   // Create all mutations (pass taskIds at call time, not hook creation time)
   const priorityMutation = useBulkUpdatePriority(

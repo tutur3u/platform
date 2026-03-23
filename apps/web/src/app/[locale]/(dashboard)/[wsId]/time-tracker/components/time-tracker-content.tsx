@@ -11,7 +11,7 @@ import {
   PlusCircle,
   Tag,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api';
 import type { TimeTrackingCategory, Workspace } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -440,19 +440,9 @@ export default function TimeTrackerContent({
 
         // If task is unassigned, assign to current user first
         if (isUnassigned) {
-          const supabase = createClient();
-
-          const { error: assignError } = await supabase
-            .from('task_assignees')
-            .insert({
-              task_id: task.id,
-              user_id: currentUserId,
-            });
-
-          if (assignError) {
-            console.error('Task assignment error:', assignError);
-            throw new Error(assignError.message || 'Failed to assign task');
-          }
+          await updateWorkspaceTask(wsId, task.id, {
+            assignee_ids: [currentUserId],
+          });
 
           toast.success(t('toast.assignedToYourself', { taskName: task.name }));
         }

@@ -1,6 +1,7 @@
 'use client';
 
 import type { JSONContent } from '@tiptap/react';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type React from 'react';
@@ -170,17 +171,12 @@ export function useTaskFormReset({
               return;
             }
 
-            // Fetch current user's details
-            const { data: userData } = await supabase
-              .from('users')
-              .select('id, display_name, avatar_url')
-              .eq('id', user.id)
-              .single();
+            const userData = await getCurrentUserProfile().catch(() => null);
 
             if (userData && isMountedRef.current) {
               setSelectedAssignees([
                 {
-                  user_id: userData.id,
+                  user_id: user.id,
                   id: userData.id,
                   display_name: userData.display_name,
                   avatar_url: userData.avatar_url,

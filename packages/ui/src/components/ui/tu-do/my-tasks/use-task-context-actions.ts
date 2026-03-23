@@ -1,7 +1,13 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  addWorkspaceTaskLabel,
+  deleteWorkspaceTask,
+  listWorkspaceTaskLists,
+  removeWorkspaceTaskLabel,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -29,6 +35,8 @@ export function useTaskContextActions({
   const t = useTranslations('ws-tasks');
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+  const taskWorkspaceId = task.list?.board?.ws_id ?? null;
+  const taskBoardId = task.list?.board?.id ?? null;
 
   const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [MY_TASKS_QUERY_KEY] });
@@ -62,12 +70,8 @@ export function useTaskContextActions({
       setIsLoading(true);
       updateTaskInCache({ priority });
       try {
-        const supabase = createClient();
-        const { error } = await supabase
-          .from('tasks')
-          .update({ priority })
-          .eq('id', task.id);
-        if (error) throw error;
+        if (!taskWorkspaceId) throw new Error('Task workspace not found');
+        await updateWorkspaceTask(taskWorkspaceId, task.id, { priority });
         invalidateQueries();
       } catch {
         toast.error(t('failed_to_update'));
@@ -88,12 +92,10 @@ export function useTaskContextActions({
           : null;
       updateTaskInCache({ end_date: newDate });
       try {
-        const supabase = createClient();
-        const { error } = await supabase
-          .from('tasks')
-          .update({ end_date: newDate })
-          .eq('id', task.id);
-        if (error) throw error;
+        if (!taskWorkspaceId) throw new Error('Task workspace not found');
+        await updateWorkspaceTask(taskWorkspaceId, task.id, {
+          end_date: newDate,
+        });
         invalidateQueries();
       } catch {
         toast.error(t('failed_to_update'));
@@ -110,19 +112,11 @@ export function useTaskContextActions({
       setIsLoading(true);
       const hasLabel = task.labels?.some((l) => l.label?.id === labelId);
       try {
-        const supabase = createClient();
+        if (!taskWorkspaceId) throw new Error('Task workspace not found');
         if (hasLabel) {
-          const { error } = await supabase
-            .from('task_labels')
-            .delete()
-            .eq('task_id', task.id)
-            .eq('label_id', labelId);
-          if (error) throw error;
+          await removeWorkspaceTaskLabel(taskWorkspaceId, task.id, labelId);
         } else {
-          const { error } = await supabase
-            .from('task_labels')
-            .insert({ task_id: task.id, label_id: labelId });
-          if (error) throw error;
+          await addWorkspaceTaskLabel(taskWorkspaceId, task.id, labelId);
         }
         invalidateQueries();
       } catch {
@@ -136,15 +130,13 @@ export function useTaskContextActions({
   );
 
   const handleComplete = useCallback(async () => {
-    if (!task.list?.board?.id) return;
+    if (!taskBoardId || !taskWorkspaceId) return;
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data: lists } = await supabase
-        .from('task_lists')
-        .select('id, status')
-        .eq('board_id', task.list.board.id)
-        .eq('deleted', false);
+      const { lists } = await listWorkspaceTaskLists(
+        taskWorkspaceId,
+        taskBoardId
+      );
 
       const doneList = lists?.find((l) => l.status === 'done');
       if (!doneList) {
@@ -152,11 +144,9 @@ export function useTaskContextActions({
         return;
       }
 
-      const { error } = await supabase
-        .from('tasks')
-        .update({ list_id: doneList.id })
-        .eq('id', task.id);
-      if (error) throw error;
+      await updateWorkspaceTask(taskWorkspaceId, task.id, {
+        list_id: doneList.id,
+      });
 
       // Clear redundant personal overrides when task is actually done
       if (
@@ -182,7 +172,15 @@ export function useTaskContextActions({
     } finally {
       setIsLoading(false);
     }
-  }, [task.id, task.list?.board?.id, task.overrides, onTaskUpdate, onClose, t]);
+  }, [
+    task.id,
+    taskBoardId,
+    taskWorkspaceId,
+    task.overrides,
+    onTaskUpdate,
+    onClose,
+    t,
+  ]);
 
   const handleDoneWithMyPart = useCallback(async () => {
     setIsLoading(true);
@@ -230,15 +228,13 @@ export function useTaskContextActions({
   }, [task.id, onTaskUpdate, onClose, t]);
 
   const handleUndoComplete = useCallback(async () => {
-    if (!task.list?.board?.id) return;
+    if (!taskBoardId || !taskWorkspaceId) return;
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data: lists } = await supabase
-        .from('task_lists')
-        .select('id, status')
-        .eq('board_id', task.list.board.id)
-        .eq('deleted', false);
+      const { lists } = await listWorkspaceTaskLists(
+        taskWorkspaceId,
+        taskBoardId
+      );
 
       const activeList =
         lists?.find((l) => l.status === 'active') ??
@@ -248,11 +244,9 @@ export function useTaskContextActions({
         return;
       }
 
-      const { error } = await supabase
-        .from('tasks')
-        .update({ list_id: activeList.id })
-        .eq('id', task.id);
-      if (error) throw error;
+      await updateWorkspaceTask(taskWorkspaceId, task.id, {
+        list_id: activeList.id,
+      });
 
       onTaskUpdate();
       onClose();
@@ -261,7 +255,7 @@ export function useTaskContextActions({
     } finally {
       setIsLoading(false);
     }
-  }, [task.id, task.list?.board?.id, onTaskUpdate, onClose, t]);
+  }, [task.id, taskBoardId, taskWorkspaceId, onTaskUpdate, onClose, t]);
 
   const handleUnassignMe = useCallback(async () => {
     setIsLoading(true);
@@ -281,13 +275,14 @@ export function useTaskContextActions({
       }
     );
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('task_assignees')
-        .delete()
-        .eq('task_id', task.id)
-        .eq('user_id', userId);
-      if (error) throw error;
+      if (!taskWorkspaceId) throw new Error('Task workspace not found');
+      await updateWorkspaceTask(taskWorkspaceId, task.id, {
+        assignee_ids: (task.assignees ?? [])
+          .map((assignee) => assignee.user?.id)
+          .filter((assigneeId): assigneeId is string =>
+            Boolean(assigneeId && assigneeId !== userId)
+          ),
+      });
       onTaskUpdate();
       onClose();
     } catch {
@@ -298,6 +293,7 @@ export function useTaskContextActions({
     }
   }, [
     task.id,
+    taskWorkspaceId,
     userId,
     queryClient,
     onTaskUpdate,
@@ -309,12 +305,8 @@ export function useTaskContextActions({
   const handleDelete = useCallback(async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', task.id);
-      if (error) throw error;
+      if (!taskWorkspaceId) throw new Error('Task workspace not found');
+      await deleteWorkspaceTask(taskWorkspaceId, task.id);
       onTaskUpdate();
       onClose();
     } catch {
@@ -322,7 +314,7 @@ export function useTaskContextActions({
     } finally {
       setIsLoading(false);
     }
-  }, [task.id, onTaskUpdate, onClose, t]);
+  }, [task.id, taskWorkspaceId, onTaskUpdate, onClose, t]);
 
   return {
     isLoading,

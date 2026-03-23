@@ -20,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -62,7 +62,6 @@ export function StatusGroupedBoard({
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeList, setActiveList] = useState<TaskList | null>(null);
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   // PointerSensor handles both mouse + pointer events; MouseSensor is redundant
   const sensors = useSensors(
@@ -120,15 +119,10 @@ export function StatusGroupedBoard({
       newStatus: TaskBoardStatus;
       newPosition: number;
     }) => {
-      const { error } = await supabase
-        .from('task_lists')
-        .update({
-          status: newStatus,
-          position: newPosition,
-        })
-        .eq('id', listId);
-
-      if (error) throw error;
+      await updateWorkspaceTaskList(wsId, boardId, listId, {
+        status: newStatus,
+        position: newPosition,
+      });
       return { listId, newStatus, newPosition };
     },
     onError: (error) => {
@@ -508,6 +502,7 @@ export function StatusGroupedBoard({
                   lists={statusLists}
                   tasksByList={hideTasksMode ? {} : tasksByList}
                   boardId={boardId}
+                  wsId={wsId}
                   onUpdate={onUpdate}
                   hideTasksMode={hideTasksMode}
                 />
@@ -534,6 +529,7 @@ export function StatusGroupedBoard({
                 list={activeList}
                 tasks={tasksByList[activeList.id] || []}
                 boardId={boardId}
+                wsId={wsId}
                 isOverlay
                 onUpdate={onUpdate}
                 hideTasksMode={hideTasksMode}

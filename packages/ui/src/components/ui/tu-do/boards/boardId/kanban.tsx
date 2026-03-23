@@ -14,7 +14,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -100,7 +100,6 @@ export function KanbanBoard({
   const boardRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   const reorderTaskMutation = useReorderTask(boardId ?? '', workspaceId);
   const { createTask } = useTaskDialog();
@@ -117,12 +116,9 @@ export function KanbanBoard({
       listId: string;
       newPosition: number;
     }) => {
-      const { error } = await supabase
-        .from('task_lists')
-        .update({ position: newPosition })
-        .eq('id', listId);
-
-      if (error) throw error;
+      await updateWorkspaceTaskList(workspaceId, boardId ?? '', listId, {
+        position: newPosition,
+      });
       return { listId, newPosition };
     },
     onError: (error) => {
@@ -171,7 +167,6 @@ export function KanbanBoard({
   const broadcast = useBoardBroadcast();
   const bulkOps = useBulkOperations({
     queryClient,
-    supabase,
     wsId: workspaceId,
     boardId: boardId ?? '',
     selectedTasks,

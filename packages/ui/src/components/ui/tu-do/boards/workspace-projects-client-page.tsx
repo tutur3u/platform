@@ -2,8 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from '@tuturuuu/icons';
-import { getWorkspace, getWorkspaceBoardsData } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  checkWorkspacePermission,
+  getWorkspace,
+  getWorkspaceBoardsData,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { useWorkspaceUser } from '@tuturuuu/ui/hooks/use-workspace-user';
@@ -31,7 +34,6 @@ export default function WorkspaceProjectsClientPage({
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const supabase = createClient();
   const routeWorkspaceId = typeof params.wsId === 'string' ? params.wsId : '';
 
   const q = searchParams.get('q') || '';
@@ -58,21 +60,9 @@ export default function WorkspaceProjectsClientPage({
       'manage_projects',
       workspaceUser?.id,
     ],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('has_workspace_permission', {
-        p_user_id: workspaceUser!.id,
-        p_ws_id: workspace!.id,
-        p_permission: 'manage_projects',
-      });
-
-      if (error) {
-        throw new Error(
-          `Failed to check workspace permission: ${error.message}`
-        );
-      }
-
-      return data ?? false;
-    },
+    queryFn: async () =>
+      (await checkWorkspacePermission(workspace!.id, 'manage_projects'))
+        .hasPermission,
     enabled: Boolean(workspace?.id && workspaceUser?.id),
     staleTime: 5 * 60 * 1000,
     retry: 1,

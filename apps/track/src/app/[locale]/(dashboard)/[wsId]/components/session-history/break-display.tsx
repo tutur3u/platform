@@ -3,10 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import * as Icons from '@tuturuuu/icons';
 import {
+  listSessionBreakSummaries,
+  listSessionBreaks,
   listWorkspaceBreakTypes,
   type WorkspaceBreakType,
 } from '@tuturuuu/internal-api/time-tracking';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import dayjs from 'dayjs';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -50,7 +51,6 @@ export const formatTime = (isoString: string): string => {
  */
 export function BreakDisplay({ sessionId }: BreakDisplayProps) {
   const t = useTranslations('time-tracker.breaks');
-  const supabase = createClient();
   const params = useParams<{ wsId: string | string[] }>();
   const wsId = Array.isArray(params.wsId) ? params.wsId[0] : params.wsId;
 
@@ -71,19 +71,11 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
   const { data: breaks, isLoading } = useQuery({
     queryKey: ['session-breaks', sessionId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('time_tracking_breaks')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('break_start', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching breaks:', error);
-        return [];
-      }
-      return data || [];
+      if (!wsId) return [];
+      return listSessionBreaks(wsId, sessionId);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: Boolean(wsId),
   });
 
   if (isLoading) {
@@ -203,39 +195,17 @@ export interface BreakSummaryData {
  * Prevents N+1 query issues by batching all session IDs
  */
 export function useSessionBreaksSummary(sessionIds: string[]) {
-  const supabase = createClient();
+  const params = useParams<{ wsId: string | string[] }>();
+  const wsId = Array.isArray(params.wsId) ? params.wsId[0] : params.wsId;
 
   return useQuery({
     queryKey: ['session-breaks-batch', sessionIds.sort().join(',')],
     queryFn: async () => {
-      if (sessionIds.length === 0) return {};
-
-      const { data, error } = await supabase
-        .from('time_tracking_breaks')
-        .select('session_id, break_duration_seconds')
-        .in('session_id', sessionIds)
-        .not('break_duration_seconds', 'is', null);
-
-      if (error) {
-        console.error('Error fetching break summaries:', error);
-        return {};
-      }
-
-      // Group breaks by session_id
-      const breaksBySession: Record<string, BreakSummaryData[]> = {};
-      for (const breakRecord of data || []) {
-        if (!breaksBySession[breakRecord.session_id]) {
-          breaksBySession[breakRecord.session_id] = [];
-        }
-        breaksBySession[breakRecord.session_id]?.push({
-          break_duration_seconds: breakRecord.break_duration_seconds ?? 0,
-        });
-      }
-
-      return breaksBySession;
+      if (sessionIds.length === 0 || !wsId) return {};
+      return listSessionBreakSummaries(wsId, sessionIds);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - same as other break queries
-    enabled: sessionIds.length > 0,
+    enabled: sessionIds.length > 0 && Boolean(wsId),
   });
 }
 
@@ -256,23 +226,21 @@ export function BreakSummary({
   breaks: prefetchedBreaks,
 }: BreakSummaryProps) {
   const t = useTranslations('time-tracker.breaks');
-  const supabase = createClient();
+  const params = useParams<{ wsId: string | string[] }>();
+  const wsId = Array.isArray(params.wsId) ? params.wsId[0] : params.wsId;
 
   // Only fetch if breaks weren't provided
   const { data: fetchedBreaks } = useQuery({
     queryKey: ['session-breaks-summary', sessionId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('time_tracking_breaks')
-        .select('break_duration_seconds')
-        .eq('session_id', sessionId)
-        .not('break_duration_seconds', 'is', null);
-
-      if (error) return [];
-      return (data || []) as BreakSummaryData[];
+      if (!wsId) return [];
+      const breaksBySession = await listSessionBreakSummaries(wsId, [
+        sessionId,
+      ]);
+      return breaksBySession[sessionId] ?? [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !prefetchedBreaks, // Skip query if data already provided
+    enabled: !prefetchedBreaks && Boolean(wsId), // Skip query if data already provided
   });
 
   // Use prefetched data if available, otherwise use fetched data

@@ -1,5 +1,6 @@
 'use client';
 
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -105,25 +106,21 @@ export function useWorkspacePresence({
 
         // Fetch user profile data once
         if (!userDataRef.current) {
-          const { data: userData, error: userDataError } = await supabase
-            .from('users')
-            .select('display_name, avatar_url')
-            .eq('id', user.id)
-            .single();
-
-          if (userDataError) {
+          const userData = await getCurrentUserProfile().catch((error) => {
             if (DEV_MODE) {
-              console.error('Error fetching user data:', userDataError);
+              console.error('Error fetching user data:', error);
             }
-            return false;
-          }
+            return null;
+          });
+
+          if (!userData) return false;
 
           setCurrentUserId(user.id);
           userDataRef.current = {
             id: user.id,
-            display_name: userData?.display_name,
-            email: user.email,
-            avatar_url: userData?.avatar_url,
+            display_name: userData.display_name,
+            email: userData.email,
+            avatar_url: userData.avatar_url,
           };
         }
 

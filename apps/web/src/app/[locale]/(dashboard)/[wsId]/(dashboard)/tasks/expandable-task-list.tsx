@@ -12,7 +12,10 @@ import {
   UserRound,
   UserRoundCog,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceTaskLists,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -186,7 +189,6 @@ export default function ExpandableTaskList({
       return;
     }
 
-    const supabase = createClient();
     setCompletingTasks((prev) => new Set(prev).add(task.id));
 
     // Store original task for rollback
@@ -194,11 +196,10 @@ export default function ExpandableTaskList({
 
     try {
       // Find the board's done list
-      const { data: lists } = await supabase
-        .from('task_lists')
-        .select('id, status')
-        .eq('board_id', task.list.board.id)
-        .eq('deleted', false);
+      const { lists } = await listWorkspaceTaskLists(
+        task.list.board.ws_id,
+        task.list.board.id
+      );
 
       const doneList = lists?.find((l) => l.status === 'done');
       const notStartedList = lists?.find((l) => l.status === 'not_started');
@@ -234,12 +235,9 @@ export default function ExpandableTaskList({
       );
 
       // Move task to appropriate list
-      const { error } = await supabase
-        .from('tasks')
-        .update({ list_id: targetListId })
-        .eq('id', task.id);
-
-      if (error) throw error;
+      await updateWorkspaceTask(task.list.board.ws_id, task.id, {
+        list_id: targetListId,
+      });
 
       toast.success(
         isCompleted ? t('task_marked_incomplete') : t('task_completed')

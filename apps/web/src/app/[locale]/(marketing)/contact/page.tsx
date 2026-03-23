@@ -16,7 +16,10 @@ import {
   Star,
   Zap,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  createSupportInquiry,
+  getCurrentUserProfile,
+} from '@tuturuuu/internal-api';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -86,7 +89,6 @@ const formSchema = z.object({
 
 export default function ContactPage() {
   const t = useTranslations('contact');
-  const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
 
@@ -104,27 +106,22 @@ export default function ContactPage() {
 
   useEffect(() => {
     const getUser = async () => {
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
+      const profile = await getCurrentUserProfile().catch(() => null);
+
+      const currentUser = profile
+        ? ({ id: profile.id, email: profile.email } as SupabaseUser)
+        : null;
+
       setUser(currentUser);
 
-      if (currentUser) {
+      if (profile) {
         // Set email from auth user
-        if (currentUser.email) {
-          form.setValue('email', currentUser.email);
+        if (profile.email) {
+          form.setValue('email', profile.email);
         }
 
-        // Get user profile data for name
-        const { data: profile } = await supabase
-          .from('users')
-          .select('display_name')
-          .eq('id', currentUser.id)
-          .single();
-
         // Use display_name, fall back to email username
-        const name =
-          profile?.display_name || currentUser.email?.split('@')[0] || '';
+        const name = profile.display_name || profile.email?.split('@')[0] || '';
 
         if (name) {
           form.setValue('name', name);
@@ -133,7 +130,7 @@ export default function ContactPage() {
     };
 
     getUser();
-  }, [form.setValue, supabase, form]);
+  }, [form.setValue, form]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
@@ -145,25 +142,16 @@ export default function ContactPage() {
 
     setIsLoading(true);
 
-    const { error } = await supabase.from('support_inquiries').insert({
-      name: values.name,
-      email: values.email,
-      type: values.type,
-      product: values.product,
-      subject: values.subject,
-      message: values.message,
-      creator_id: user.id,
-    });
-
-    if (error) {
-      console.error('Error submitting inquiry:', error);
-      toast.error('Something went wrong', {
-        description: 'Please try again later or contact us directly.',
-      });
-    } else {
+    try {
+      await createSupportInquiry(values);
       form.reset();
       toast.success('Message sent successfully!', {
         description: "We'll get back to you as soon as possible.",
+      });
+    } catch (error) {
+      console.error('Error submitting inquiry:', error);
+      toast.error('Something went wrong', {
+        description: 'Please try again later or contact us directly.',
       });
     }
     setIsLoading(false);

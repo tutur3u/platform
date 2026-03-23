@@ -1,8 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceLabels,
+  listWorkspaceTaskProjects,
+} from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 
@@ -19,13 +21,7 @@ export function useBulkResources({
   const { data: workspaceLabels = [] } = useQuery({
     queryKey: ['workspace_task_labels', workspace.id],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_task_labels')
-        .select('id, name, color, created_at, ws_id')
-        .eq('ws_id', workspace.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const data = await listWorkspaceLabels(workspace.id);
       return data as {
         id: string;
         name: string;

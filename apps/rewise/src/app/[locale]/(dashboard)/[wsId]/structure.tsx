@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, MessagesSquare } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listCurrentUserAiChats } from '@tuturuuu/internal-api';
 import {
   Accordion,
   AccordionContent,
@@ -79,14 +79,7 @@ export function Structure({
   // Load chats client-side using TanStack Query
   const { data: chats } = useQuery({
     queryKey: ['ai-chats'],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('ai_chats')
-        .select('*')
-        .order('created_at', { ascending: false });
-      return data ?? [];
-    },
+    queryFn: () => listCurrentUserAiChats(),
   });
 
   // Convert chats to ChatNavLink format for the Nav component

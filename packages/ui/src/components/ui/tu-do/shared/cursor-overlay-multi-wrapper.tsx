@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import type { User } from '@tuturuuu/types/primitives/User';
 import {
   type CursorPosition,
@@ -101,27 +101,15 @@ export default function CursorOverlayMultiWrapper({
   // Fetch current user
   useEffect(() => {
     const fetchUser = async () => {
-      const supabase = createClient();
-
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user?.id) return;
-
-        const { data: userData, error: userDataError } = await supabase
-          .from('users')
-          .select('id, display_name')
-          .eq('id', user.id)
-          .single();
-
-        if (userDataError) {
-          console.warn('Error fetching user data:', userDataError);
-          return;
-        }
-
-        setCurrentUser(userData);
+        const userData = await getCurrentUserProfile();
+        if (!userData?.id) return;
+        setCurrentUser({
+          id: userData.id,
+          display_name: userData.display_name,
+          email: userData.email,
+          avatar_url: userData.avatar_url,
+        });
       } catch (err) {
         console.warn('Error fetching user:', err);
       }

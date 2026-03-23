@@ -8,7 +8,10 @@ import {
   LayoutGrid,
   LayoutList,
 } from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import {
+  deleteWorkspaceStorageFolder,
+  deleteWorkspaceStorageObject,
+} from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import {
   AlertDialog,
@@ -123,47 +126,21 @@ export default function StorageObjectsTable({
 
   const handleDelete = async (storageObj: StorageObject | null) => {
     if (!storageObj?.name) return;
-    const supabase = createDynamicClient();
     try {
       if (storageObj.id) {
-        // File
-        const filePath =
-          wsId && path !== undefined && storageObj.name
-            ? joinPath(wsId, path, storageObj.name)
-            : '';
-        const { error } = await supabase.storage
-          .from('workspaces')
-          .remove([filePath]);
-        if (!error) {
-          router.refresh();
-          toast.success(t('ws-storage-objects.file_deleted'));
-        } else {
-          toast.error(error.message);
-        }
+        await deleteWorkspaceStorageObject(
+          wsId,
+          joinPath(path ?? '', storageObj.name)
+        );
+        router.refresh();
+        toast.success(t('ws-storage-objects.file_deleted'));
       } else {
-        // Folder
-        const folderPath =
-          wsId && path !== undefined && storageObj.name
-            ? joinPath(wsId, path, storageObj.name, '%')
-            : '';
-        const objects = await supabase
-          .schema('storage')
-          .from('objects')
-          .select()
-          .ilike('name', folderPath);
-        if (objects.error) {
-          toast.error(objects.error.message);
-          return;
-        }
-        const { error } = await supabase.storage
-          .from('workspaces')
-          .remove(objects.data.map((object: { name: string }) => object.name));
-        if (!error) {
-          router.refresh();
-          toast.success(t('ws-storage-objects.folder_deleted'));
-        } else {
-          toast.error(error.message);
-        }
+        await deleteWorkspaceStorageFolder(wsId, {
+          path,
+          name: storageObj.name,
+        });
+        router.refresh();
+        toast.success(t('ws-storage-objects.folder_deleted'));
       }
     } catch {
       toast.error('Failed to delete file or folder');
