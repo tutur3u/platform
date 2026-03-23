@@ -531,8 +531,10 @@ class _ShellPageState extends State<ShellPage> {
     super.dispose();
   }
 
-  /// Mini-app nav entries. Do not wrap in [Expanded]; callers add flex as needed
-  /// ([shad.NavigationBar] vs [_CustomNavigationBar] each wrap items themselves).
+  /// Mini-app nav entries. Do not wrap in [Expanded];
+  ///callers add flex as needed
+  /// ([shad.NavigationBar] vs [_CustomNavigationBar]
+  ///each wrap items themselves).
   List<shad.NavigationItem> _buildMiniAppNavItems(
     BuildContext context,
     AppModule module,
