@@ -845,7 +845,7 @@ export function BoardLayoutSettings({
         try {
           if (!wsId) throw new Error('Workspace ID is required');
           await updateWorkspaceTaskList(wsId, boardId, draggedList.id, {
-            status: targetStatus || undefined,
+            status: targetStatus,
             position: newPosition,
           });
           toast.success(
