@@ -36,9 +36,19 @@ export async function PUT(req: Request) {
   if (devModeError) return devModeError;
 
   const json = await req.json();
+  if (!Array.isArray(json?.data)) {
+    return NextResponse.json(
+      {
+        message: 'Invalid request body',
+        error: '`data` must be an array',
+      },
+      { status: 400 }
+    );
+  }
+
   const result = await batchUpsert({
     table: 'email_blacklist',
-    data: json?.data || [],
+    data: json.data,
     onConflict: 'entry_type,value',
   });
   return createMigrationResponse(result, 'email-blacklist');

@@ -122,6 +122,7 @@ const MODULE_RPC_MAP: Record<string, string> = {
 // Maximum number of IDs to use in a single .in() query
 // PostgREST/Supabase has limits on query size
 const MAX_IN_BATCH_SIZE = 500;
+const ID_FETCH_PAGE_SIZE = 1000;
 
 /**
  * Helper to batch .in() queries for large ID arrays
@@ -612,23 +613,37 @@ export const GET = withApiAuth<Params>(
 
     // user_group_post_checks needs join via user_group_posts -> workspace_user_groups
     if (tableName === 'user_group_post_checks') {
-      // First get group IDs for this workspace
-      const { data: groups, error: groupsError } = await supabase
-        .from('workspace_user_groups')
-        .select('id')
-        .eq('ws_id', wsId);
+      // Fetch all group IDs with pagination to avoid truncation on large workspaces.
+      const groupIds: string[] = [];
+      for (let groupOffset = 0; ; groupOffset += ID_FETCH_PAGE_SIZE) {
+        const { data: groups, error: groupsError } = await supabase
+          .from('workspace_user_groups')
+          .select('id')
+          .eq('ws_id', wsId)
+          .order('id', { ascending: true })
+          .range(groupOffset, groupOffset + ID_FETCH_PAGE_SIZE - 1);
 
-      if (groupsError) {
-        console.error('Error fetching workspace_user_groups:', groupsError);
-        return createErrorResponse(
-          'Internal Server Error',
-          `Failed to fetch groups: ${groupsError.message}`,
-          500,
-          'GROUP_FETCH_ERROR'
-        );
+        if (groupsError) {
+          console.error('Error fetching workspace_user_groups:', groupsError);
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to fetch groups: ${groupsError.message}`,
+            500,
+            'GROUP_FETCH_ERROR'
+          );
+        }
+
+        if (!groups || groups.length === 0) {
+          break;
+        }
+
+        groupIds.push(...groups.map((g) => g.id));
+
+        if (groups.length < ID_FETCH_PAGE_SIZE) {
+          break;
+        }
       }
 
-      const groupIds = groups?.map((g) => g.id) ?? [];
       if (groupIds.length === 0) {
         return NextResponse.json({ count: 0, data: [] });
       }
@@ -637,22 +652,35 @@ export const GET = withApiAuth<Params>(
       const postIds: string[] = [];
       for (let i = 0; i < groupIds.length; i += MAX_IN_BATCH_SIZE) {
         const batchGroupIds = groupIds.slice(i, i + MAX_IN_BATCH_SIZE);
-        const { data: posts, error: postsError } = await supabase
-          .from('user_group_posts')
-          .select('id')
-          .in('group_id', batchGroupIds);
 
-        if (postsError) {
-          console.error('Error fetching user_group_posts:', postsError);
-          return createErrorResponse(
-            'Internal Server Error',
-            `Failed to fetch posts: ${postsError.message}`,
-            500,
-            'POST_FETCH_ERROR'
-          );
+        for (let postOffset = 0; ; postOffset += ID_FETCH_PAGE_SIZE) {
+          const { data: posts, error: postsError } = await supabase
+            .from('user_group_posts')
+            .select('id')
+            .in('group_id', batchGroupIds)
+            .order('id', { ascending: true })
+            .range(postOffset, postOffset + ID_FETCH_PAGE_SIZE - 1);
+
+          if (postsError) {
+            console.error('Error fetching user_group_posts:', postsError);
+            return createErrorResponse(
+              'Internal Server Error',
+              `Failed to fetch posts: ${postsError.message}`,
+              500,
+              'POST_FETCH_ERROR'
+            );
+          }
+
+          if (!posts || posts.length === 0) {
+            break;
+          }
+
+          postIds.push(...posts.map((p) => p.id));
+
+          if (posts.length < ID_FETCH_PAGE_SIZE) {
+            break;
+          }
         }
-
-        postIds.push(...(posts?.map((p) => p.id) ?? []));
       }
 
       if (postIds.length === 0) {
