@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -30,6 +31,19 @@ Future<void> bootstrap(
   builder,
 ) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Ensure system UI is visible and properly configured
+  await SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+  );
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Color(0x00000000),
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Color(0x00000000),
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
 
   FlutterError.onError = (details) {
     log(details.exceptionAsString(), stackTrace: details.stack);

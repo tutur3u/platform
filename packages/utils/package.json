@@ -14,7 +14,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@noble/ciphers": "^2.1.1",
     "@noble/hashes": "^2.0.1",
-    "@tanstack/react-query": "^5.95.0",
+    "@tanstack/react-query": "^5.95.2",
     "@tiptap/core": "3.20.4",
     "@tiptap/react": "3.20.4",
     "@tuturuuu/google": "workspace:*",
@@ -26,7 +26,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.20",
-    "diff": "^8.0.3",
+    "diff": "^8.0.4",
     "moment": "^2.30.1",
     "next": "^16.2.1",
     "prosemirror-model": "^1.25.4",
@@ -45,9 +45,9 @@
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@vitejs/plugin-react": "^6.0.1",
-    "typescript": "^5.9.3",
-    "vite": "^8.0.1",
-    "vitest": "^4.1.0"
+    "typescript": "^6.0.2",
+    "vite": "^8.0.2",
+    "vitest": "^4.1.1"
   },
   "exports": {
     "./timezones": "./src/timezones.json",

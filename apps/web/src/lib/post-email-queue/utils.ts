@@ -1,3 +1,4 @@
+import { POST_EMAIL_QUEUE_STATUSES } from './constants';
 import type { PostEmailQueueRow } from './types';
 
 export const POST_EMAIL_QUERY_CHUNK_SIZE = 500;
@@ -11,15 +12,23 @@ export function isValidEmailAddress(
 export function summarizePostEmailQueue(
   rows: Array<Pick<PostEmailQueueRow, 'status'>>
 ) {
-  return {
-    queued: rows.filter((row) => row.status === 'queued').length,
-    processing: rows.filter((row) => row.status === 'processing').length,
-    sent: rows.filter((row) => row.status === 'sent').length,
-    failed: rows.filter((row) => row.status === 'failed').length,
-    blocked: rows.filter((row) => row.status === 'blocked').length,
-    cancelled: rows.filter((row) => row.status === 'cancelled').length,
-    skipped: rows.filter((row) => row.status === 'skipped').length,
-  };
+  const counts = POST_EMAIL_QUEUE_STATUSES.reduce<
+    Record<(typeof POST_EMAIL_QUEUE_STATUSES)[number], number>
+  >(
+    (acc, status) => {
+      acc[status] = 0;
+      return acc;
+    },
+    {} as Record<(typeof POST_EMAIL_QUEUE_STATUSES)[number], number>
+  );
+
+  for (const row of rows) {
+    if (Object.hasOwn(counts, row.status)) {
+      counts[row.status as keyof typeof counts]++;
+    }
+  }
+
+  return counts;
 }
 
 export function prioritizePostEmailQueueBatch(
@@ -52,7 +61,7 @@ export async function processWithConcurrency(
   onError: (
     row: PostEmailQueueRow,
     error: Error
-  ) => { id: string; status: string },
+  ) => Promise<{ id: string; status: string }> | { id: string; status: string },
   concurrency: number,
   maxDurationMs: number,
   startTime: number
@@ -75,7 +84,7 @@ export async function processWithConcurrency(
         processor(row).catch((error) => {
           const normalizedError =
             error instanceof Error ? error : new Error('Unknown error');
-          return onError(row, normalizedError);
+          return Promise.resolve(onError(row, normalizedError));
         })
       )
     );

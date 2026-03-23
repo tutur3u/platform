@@ -23,6 +23,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
+    "noEmit": true,
     "target": "esnext",
     "jsx": "react-jsx"
   }

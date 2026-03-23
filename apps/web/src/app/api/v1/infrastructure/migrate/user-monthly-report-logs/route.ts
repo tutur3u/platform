@@ -5,6 +5,8 @@ import {
   requireDevMode,
 } from '../batch-upsert';
 
+const IN_QUERY_BATCH_SIZE = 500;
+
 interface ReportLogRow {
   id?: string;
   report_id?: string;
@@ -26,10 +28,24 @@ function reportKey({
   group_id,
   title,
 }: Pick<ReportLogRow, 'user_id' | 'group_id' | 'title'>): string | null {
-  if (!user_id || !group_id || typeof title !== 'string') {
+  if (!user_id || !group_id) {
     return null;
   }
-  return `${user_id}::${group_id}::${title}`;
+  const normalizedTitle = typeof title === 'string' ? title : '';
+  return `${user_id}::${group_id}::${normalizedTitle}`;
+}
+
+function chunkValues<T>(values: T[], chunkSize = IN_QUERY_BATCH_SIZE): T[][] {
+  if (values.length === 0) return [];
+
+  const safeChunkSize = Math.max(1, chunkSize);
+  const chunks: T[][] = [];
+
+  for (let i = 0; i < values.length; i += safeChunkSize) {
+    chunks.push(values.slice(i, i + safeChunkSize));
+  }
+
+  return chunks;
 }
 
 export async function PUT(req: Request) {
@@ -50,26 +66,28 @@ export async function PUT(req: Request) {
 
   const existingReportIds = new Set<string>();
   if (incomingReportIds.length > 0) {
-    const { data: existingReports, error: existingReportsError } =
-      await supabase
-        .from('external_user_monthly_reports')
-        .select('id')
-        .in('id', incomingReportIds);
+    for (const idChunk of chunkValues(incomingReportIds)) {
+      const { data: existingReports, error: existingReportsError } =
+        await supabase
+          .from('external_user_monthly_reports')
+          .select('id')
+          .in('id', idChunk);
 
-    if (existingReportsError) {
-      return Response.json(
-        {
-          message: 'Error migrating user monthly report logs',
-          errorDetails: existingReportsError.message,
-          errorCode: existingReportsError.code,
-        },
-        { status: 500 }
-      );
-    }
+      if (existingReportsError) {
+        return Response.json(
+          {
+            message: 'Error migrating user monthly report logs',
+            errorDetails: existingReportsError.message,
+            errorCode: existingReportsError.code,
+          },
+          { status: 500 }
+        );
+      }
 
-    for (const report of existingReports ?? []) {
-      if (report.id) {
-        existingReportIds.add(report.id);
+      for (const report of existingReports ?? []) {
+        if (report.id) {
+          existingReportIds.add(report.id);
+        }
       }
     }
   }
@@ -84,36 +102,54 @@ export async function PUT(req: Request) {
       continue;
     }
 
-    if (row.user_id && row.group_id) {
+    if (typeof row.user_id === 'string' && typeof row.group_id === 'string') {
       pairKeys.add(`${row.user_id}::${row.group_id}`);
     }
   }
 
-  const reportIdByCompositeKey = new Map<string, string>();
-  for (const pairKey of pairKeys) {
+  const pairEntries = Array.from(pairKeys).flatMap((pairKey) => {
     const [userId, groupId] = pairKey.split('::');
     if (!userId || !groupId) {
-      continue;
+      return [];
     }
-    const { data: reports, error } = await supabase
-      .from('external_user_monthly_reports')
-      .select('id,user_id,group_id,title')
-      .eq('user_id', userId)
-      .eq('group_id', groupId);
+    return [{ userId, groupId }];
+  });
+  const pairEntrySet = new Set(
+    pairEntries.map(({ userId, groupId }) => `${userId}::${groupId}`)
+  );
+  const uniqueUserIds = [...new Set(pairEntries.map((entry) => entry.userId))];
+  const uniqueGroupIds = [
+    ...new Set(pairEntries.map((entry) => entry.groupId)),
+  ];
 
-    if (error) {
-      return Response.json(
-        {
-          message: 'Error migrating user monthly report logs',
-          errorDetails: error.message,
-          errorCode: error.code,
-        },
-        { status: 500 }
-      );
-    }
+  const reportIdByCompositeKey = new Map<string, string>();
+  for (const userChunk of chunkValues(uniqueUserIds)) {
+    for (const groupChunk of chunkValues(uniqueGroupIds)) {
+      const { data: reports, error } = await supabase
+        .from('external_user_monthly_reports')
+        .select('id,user_id,group_id,title')
+        .in('user_id', userChunk)
+        .in('group_id', groupChunk);
 
-    for (const report of reports ?? []) {
-      if (report.id && report.user_id && report.group_id) {
+      if (error) {
+        return Response.json(
+          {
+            message: 'Error migrating user monthly report logs',
+            errorDetails: error.message,
+            errorCode: error.code,
+          },
+          { status: 500 }
+        );
+      }
+
+      for (const report of reports ?? []) {
+        if (!report.id || !report.user_id || !report.group_id) {
+          continue;
+        }
+        if (!pairEntrySet.has(`${report.user_id}::${report.group_id}`)) {
+          continue;
+        }
+
         reportIdByCompositeKey.set(
           `${report.user_id}::${report.group_id}::${report.title ?? ''}`,
           report.id

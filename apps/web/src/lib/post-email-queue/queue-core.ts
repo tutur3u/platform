@@ -132,6 +132,14 @@ function getWorkspaceGroupValue<K extends 'id' | 'ws_id'>(
     : (groupValue[key] ?? null);
 }
 
+function buildPostUserPairFilter(
+  pairs: Array<Pick<GroupPostCheck, 'post_id' | 'user_id'>>
+): string {
+  return pairs
+    .map((pair) => `and(post_id.eq.${pair.post_id},user_id.eq.${pair.user_id})`)
+    .join(',');
+}
+
 export async function getPostEmailQueueRows(
   sbAdmin: TypedSupabaseClient,
   postIds: string[]
@@ -175,31 +183,36 @@ export async function hasPostEmailBeenSent(
   return (sentEmailsCount ?? 0) > 0 || (sentQueueRows.data?.length ?? 0) > 0;
 }
 
-async function resolveSenderPlatformUserId(
+async function resolveSenderPlatformUserIds(
   sbAdmin: TypedSupabaseClient,
   {
     wsId,
-    approvedByWorkspaceUserId,
-    fallbackSenderPlatformUserId,
+    approvedByWorkspaceUserIds,
   }: {
     wsId: string;
-    approvedByWorkspaceUserId?: string | null;
-    fallbackSenderPlatformUserId?: string | null;
+    approvedByWorkspaceUserIds: string[];
   }
-): Promise<string | null> {
-  if (fallbackSenderPlatformUserId) return fallbackSenderPlatformUserId;
-  if (!approvedByWorkspaceUserId) return null;
+): Promise<Map<string, string>> {
+  const resolved = new Map<string, string>();
+  const dedupedWorkspaceUserIds = [...new Set(approvedByWorkspaceUserIds)];
 
-  const { data, error } = await sbAdmin
-    .from('workspace_user_linked_users')
-    .select('platform_user_id')
-    .eq('ws_id', wsId)
-    .eq('virtual_user_id', approvedByWorkspaceUserId)
-    .maybeSingle<Pick<WorkspaceUserLinkedUserRow, 'platform_user_id'>>();
+  for (const workspaceUserIdChunk of chunkArray(dedupedWorkspaceUserIds)) {
+    const { data, error } = await sbAdmin
+      .from('workspace_user_linked_users')
+      .select('virtual_user_id, platform_user_id')
+      .eq('ws_id', wsId)
+      .in('virtual_user_id', workspaceUserIdChunk);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return data?.platform_user_id ?? null;
+    for (const row of (data ?? []) as Array<
+      Pick<WorkspaceUserLinkedUserRow, 'virtual_user_id' | 'platform_user_id'>
+    >) {
+      resolved.set(row.virtual_user_id, row.platform_user_id);
+    }
+  }
+
+  return resolved;
 }
 
 async function getEligibleRecipients(
@@ -352,16 +365,22 @@ export async function enqueueApprovedPostEmails(
 
   if (filteredRecipients.length === 0) return { queued: 0 };
 
+  const senderPlatformUserByApprover = senderPlatformUserId
+    ? new Map<string, string>()
+    : await resolveSenderPlatformUserIds(sbAdmin, {
+        wsId,
+        approvedByWorkspaceUserIds: filteredRecipients
+          .map((recipient) => recipient.approved_by)
+          .filter((approvedBy): approvedBy is string => Boolean(approvedBy)),
+      });
+
   const upsertRows: PostEmailQueueUpsertRow[] = [];
   for (const recipient of filteredRecipients) {
-    const resolvedSenderPlatformUserId = await resolveSenderPlatformUserId(
-      sbAdmin,
-      {
-        wsId,
-        approvedByWorkspaceUserId: recipient.approved_by,
-        fallbackSenderPlatformUserId: senderPlatformUserId,
-      }
-    );
+    const resolvedSenderPlatformUserId =
+      senderPlatformUserId ??
+      (recipient.approved_by
+        ? (senderPlatformUserByApprover.get(recipient.approved_by) ?? null)
+        : null);
 
     if (!resolvedSenderPlatformUserId) {
       console.log('[enqueueApprovedPostEmails] No sender resolved', {
@@ -537,21 +556,25 @@ export async function autoSkipOldApprovedPostChecks(
     });
   }
 
-  const existingQueueRows = await getQueueTable(sbAdmin)
-    .select('post_id, user_id, sender_platform_user_id')
-    .in(
-      'post_id',
-      oldChecks.map((c) => c.post_id)
-    )
-    .in(
-      'user_id',
-      oldChecks.map((c) => c.user_id)
-    );
+  const oldPostIds = [...new Set(oldChecks.map((check) => check.post_id))];
+  const oldUserIds = [...new Set(oldChecks.map((check) => check.user_id))];
+  const oldUserIdSet = new Set(oldUserIds);
+  const existingQueueRowsData: QueueSenderRow[] = [];
+  for (const postChunk of chunkArray(oldPostIds)) {
+    const { data, error } = await getQueueTable(sbAdmin)
+      .select('post_id, user_id, sender_platform_user_id')
+      .in('post_id', postChunk);
 
-  if (existingQueueRows.error) throw existingQueueRows.error;
+    if (error) throw error;
+    for (const row of (data ?? []) as QueueSenderRow[]) {
+      if (oldUserIdSet.has(row.user_id)) {
+        existingQueueRowsData.push(row);
+      }
+    }
+  }
 
   const existingByPostUser = new Map<string, string>();
-  for (const row of (existingQueueRows.data ?? []) as QueueSenderRow[]) {
+  for (const row of existingQueueRowsData) {
     existingByPostUser.set(
       `${row.post_id}:${row.user_id}`,
       row.sender_platform_user_id
@@ -589,18 +612,29 @@ export async function autoSkipOldApprovedPostChecks(
     if (upsertError) throw upsertError;
   }
 
-  const checkIds = oldChecks.map((c) => c.post_id);
-  if (checkIds.length === 0) return 0;
+  const oldCheckPairs = oldChecks.map((check) => ({
+    post_id: check.post_id,
+    user_id: check.user_id,
+  }));
+  if (oldCheckPairs.length === 0) return 0;
 
-  const { error: updateError } = await sbAdmin
-    .from('user_group_post_checks')
-    .update({ approval_status: 'SKIPPED' })
-    .in('post_id', checkIds)
-    .eq('approval_status', 'APPROVED');
+  let skippedCheckCount = 0;
+  for (const pairChunk of chunkArray(oldCheckPairs, 100)) {
+    const pairFilter = buildPostUserPairFilter(pairChunk);
+    if (!pairFilter) continue;
 
-  if (updateError) throw updateError;
+    const { data, error: updateError } = await sbAdmin
+      .from('user_group_post_checks')
+      .update({ approval_status: 'SKIPPED' })
+      .eq('approval_status', 'APPROVED')
+      .or(pairFilter)
+      .select('post_id,user_id');
 
-  return queueUpdates.length;
+    if (updateError) throw updateError;
+    skippedCheckCount += data?.length ?? 0;
+  }
+
+  return skippedCheckCount;
 }
 
 export async function cleanupStaleProcessingRows(
@@ -615,7 +649,6 @@ export async function cleanupStaleProcessingRows(
       batch_id: null,
       claimed_at: null,
       last_error: null,
-      attempt_count: 0,
     })
     .eq('status', 'processing')
     .lt('last_attempt_at', cutoff)
@@ -642,21 +675,35 @@ export async function autoSkipRejectedPosts(
   if (rejectedChecks.length === 0) return 0;
 
   const now = new Date().toISOString();
+  let updatedRows = 0;
+  const userIdsByPostId = new Map<string, Set<string>>();
   for (const check of rejectedChecks) {
-    await getQueueTable(sbAdmin)
-      .update({
-        status: 'skipped',
-        batch_id: null,
-        claimed_at: null,
-        cancelled_at: now,
-        last_error: 'Post was rejected - auto-skipped',
-      })
-      .eq('post_id', check.post_id)
-      .eq('user_id', check.user_id)
-      .eq('status', 'queued');
+    const existing = userIdsByPostId.get(check.post_id) ?? new Set<string>();
+    existing.add(check.user_id);
+    userIdsByPostId.set(check.post_id, existing);
   }
 
-  return rejectedChecks.length;
+  for (const [postId, userIds] of userIdsByPostId) {
+    for (const userIdChunk of chunkArray([...userIds])) {
+      const { data, error: updateError } = await getQueueTable(sbAdmin)
+        .update({
+          status: 'skipped',
+          batch_id: null,
+          claimed_at: null,
+          cancelled_at: now,
+          last_error: 'Post was rejected - auto-skipped',
+        })
+        .eq('post_id', postId)
+        .in('user_id', userIdChunk)
+        .eq('status', 'queued')
+        .select('id');
+
+      if (updateError) throw updateError;
+      updatedRows += data?.length ?? 0;
+    }
+  }
+
+  return updatedRows;
 }
 
 export async function reconcileOrphanedApprovedPosts(
@@ -690,18 +737,21 @@ export async function reconcileOrphanedApprovedPosts(
   if (checks.length === 0) return { enqueued: 0, checked: 0 };
 
   const postIds = [...new Set(checks.map((check) => check.post_id))];
+  const existingQueueData: Array<
+    Pick<PostEmailQueueRow, 'post_id' | 'user_id' | 'status'>
+  > = [];
+  for (const postChunk of chunkArray(postIds)) {
+    const { data, error: queueError } = await getQueueTable(sbAdmin)
+      .select('post_id, user_id, status')
+      .in('post_id', postChunk)
+      .in('status', ['queued', 'processing', 'sent', 'skipped']);
 
-  const { data: existingQueueData, error: queueError } = await getQueueTable(
-    sbAdmin
-  )
-    .select('post_id, user_id, status')
-    .in('post_id', postIds)
-    .in('status', ['queued', 'processing', 'sent', 'skipped']);
-
-  if (queueError) throw queueError;
+    if (queueError) throw queueError;
+    existingQueueData.push(...(data ?? []));
+  }
 
   const covered = new Set(
-    (existingQueueData ?? []).map((row) => `${row.post_id}:${row.user_id}`)
+    existingQueueData.map((row) => `${row.post_id}:${row.user_id}`)
   );
 
   const orphaned = checks.filter(
@@ -710,7 +760,7 @@ export async function reconcileOrphanedApprovedPosts(
 
   console.log('[reconcileOrphanedApprovedPosts] Orphaned after queue check', {
     totalChecks: checks.length,
-    existingQueueCount: (existingQueueData ?? []).length,
+    existingQueueCount: existingQueueData.length,
     orphanedCount: orphaned.length,
     sampleOrphaned: orphaned.slice(0, 3).map((check) => ({
       post_id: check.post_id,
@@ -821,19 +871,17 @@ async function getEligibleReenqueuePairs(
   if (eligiblePairIds.size === 0) return new Set();
 
   const sentRows: Parameters<typeof getSentPairIds>[0] = [];
-  const eligibleUserIds = [...new Set(rows.map((row) => row.user_id))];
   for (const postChunk of chunkArray(candidatePostIds)) {
-    for (const userChunk of chunkArray(eligibleUserIds)) {
-      const { data, error } = await sbAdmin
-        .from('sent_emails')
-        .select('post_id, receiver_id')
-        .in('post_id', postChunk)
-        .in('receiver_id', userChunk);
+    const { data, error } = await sbAdmin
+      .from('sent_emails')
+      .select('post_id, receiver_id')
+      .in('post_id', postChunk);
 
-      if (error) throw error;
+    if (error) throw error;
 
-      for (const sent of data ?? []) {
-        if (!sent.post_id || !sent.receiver_id) continue;
+    for (const sent of data ?? []) {
+      if (!sent.post_id || !sent.receiver_id) continue;
+      if (candidatePairIds.has(`${sent.post_id}:${sent.receiver_id}`)) {
         sentRows.push({
           post_id: sent.post_id,
           receiver_id: sent.receiver_id,

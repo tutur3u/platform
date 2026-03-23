@@ -1,12 +1,4 @@
-export const POST_EMAIL_QUEUE_STATUSES = [
-  'queued',
-  'processing',
-  'sent',
-  'failed',
-  'blocked',
-  'cancelled',
-  'skipped',
-] as const;
+import { POST_EMAIL_QUEUE_STATUSES } from '@/lib/post-email-queue/statuses';
 
 export type PostEmailQueueStatus = (typeof POST_EMAIL_QUEUE_STATUSES)[number];
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -42,11 +43,19 @@ class AppsHubPage extends StatelessWidget {
                     index: index,
                   );
                 }, childCount: modules.length),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: context.deviceClass == DeviceClass.expanded
+                      ? 4
+                      : context.deviceClass == DeviceClass.medium
+                      ? 3
+                      : 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.88,
+                  childAspectRatio: context.deviceClass == DeviceClass.expanded
+                      ? 1.1
+                      : context.deviceClass == DeviceClass.medium
+                      ? 1.0
+                      : 0.88,
                 ),
               ),
             ],
@@ -62,27 +71,9 @@ class _AppsIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.l10n.navApps,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          context.l10n.appsHubHeroSubtitle,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.84),
-            height: 1.35,
-          ),
-        ),
-      ],
-    );
+    // Shell already shows the title in the app bar, so we don't need to
+    // duplicate it here. Return empty widget.
+    return const SizedBox.shrink();
   }
 }
 
@@ -137,15 +128,9 @@ class _SubproductCard extends StatelessWidget {
                       size: 22,
                     ),
                   ),
-                  const Spacer(),
-                  Icon(
-                    Icons.arrow_outward_rounded,
-                    size: 18,
-                    color: palette.textColor.withValues(alpha: 0.72),
-                  ),
                 ],
               ),
-              const Spacer(),
+              const SizedBox(height: 8),
               Text(
                 module.label(context.l10n),
                 maxLines: 1,
@@ -162,7 +147,6 @@ class _SubproductCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: palette.textColor.withValues(alpha: 0.78),
-                  height: 1.32,
                 ),
               ),
             ],

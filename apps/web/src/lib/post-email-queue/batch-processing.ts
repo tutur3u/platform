@@ -28,10 +28,13 @@ import type {
   WorkspaceUserGroupRow,
 } from './types';
 import {
+  chunkArray,
   isValidEmailAddress,
   prioritizePostEmailQueueBatch,
   processWithConcurrency,
 } from './utils';
+
+const PREFETCH_QUERY_CHUNK_SIZE = 200;
 
 function getWorkspaceGroupName(
   workspaceGroup:
@@ -72,32 +75,49 @@ async function prefetchBatchData(
     uniqueWorkspaces: wsIds.length,
   });
 
-  const [postsResult, checksResult, sentEmailsResult] = await Promise.all([
-    sbAdmin
+  const postRows: PrefetchPostRow[] = [];
+  for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+    const { data, error } = await sbAdmin
       .from('user_group_posts')
       .select(
         'id, group_id, title, content, created_at, workspace_user_groups!inner(ws_id, name)'
       )
-      .in('id', postIds),
-    sbAdmin
-      .from('user_group_post_checks')
-      .select(
-        'post_id, user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
-      )
-      .in('post_id', postIds)
-      .in('user_id', userIds),
-    sbAdmin
-      .from('sent_emails')
-      .select('id, post_id, receiver_id, created_at')
-      .in('post_id', postIds)
-      .in('receiver_id', userIds),
-  ]);
+      .in('id', postChunk);
 
-  if (postsResult.error) throw postsResult.error;
-  if (checksResult.error) throw checksResult.error;
-  if (sentEmailsResult.error) throw sentEmailsResult.error;
+    if (error) throw error;
+    postRows.push(...((data ?? []) as PrefetchPostRow[]));
+  }
 
-  const postRows = (postsResult.data ?? []) as PrefetchPostRow[];
+  const checkRows: PrefetchCheckRow[] = [];
+  for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+    for (const userChunk of chunkArray(userIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+      const { data, error } = await sbAdmin
+        .from('user_group_post_checks')
+        .select(
+          'post_id, user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
+        )
+        .in('post_id', postChunk)
+        .in('user_id', userChunk);
+
+      if (error) throw error;
+      checkRows.push(...((data ?? []) as PrefetchCheckRow[]));
+    }
+  }
+
+  const sentEmailRows: PrefetchSentEmailRow[] = [];
+  for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+    for (const userChunk of chunkArray(userIds, PREFETCH_QUERY_CHUNK_SIZE)) {
+      const { data, error } = await sbAdmin
+        .from('sent_emails')
+        .select('id, post_id, receiver_id, created_at')
+        .in('post_id', postChunk)
+        .in('receiver_id', userChunk);
+
+      if (error) throw error;
+      sentEmailRows.push(...((data ?? []) as PrefetchSentEmailRow[]));
+    }
+  }
+
   const posts = new Map<PostEmailQueueRow['post_id'], PrefetchedPost | null>();
   for (const post of postRows) {
     posts.set(post.id, {
@@ -110,13 +130,11 @@ async function prefetchBatchData(
     });
   }
 
-  const checkRows = (checksResult.data ?? []) as PrefetchCheckRow[];
   const checks = new Map<string, PrefetchedPostCheck>();
   for (const check of checkRows) {
     checks.set(`${check.post_id}:${check.user_id}`, check);
   }
 
-  const sentEmailRows = (sentEmailsResult.data ?? []) as PrefetchSentEmailRow[];
   const existingSentEmails = new Map<string, PrefetchedSentEmail>();
   for (const sentEmail of sentEmailRows) {
     existingSentEmails.set(`${sentEmail.post_id}:${sentEmail.receiver_id}`, {
@@ -340,11 +358,21 @@ async function processEmailWithContext(
 
   if (sentInsertError) throw sentInsertError;
 
-  await sbAdmin
+  const { error: checkUpdateError } = await sbAdmin
     .from('user_group_post_checks')
     .update({ email_id: sentEmail.id })
     .eq('post_id', row.post_id)
     .eq('user_id', row.user_id);
+
+  if (checkUpdateError) {
+    console.warn('[PostEmailQueueBatch] Failed to link email_id to check', {
+      rowId: row.id,
+      postId: row.post_id,
+      userId: row.user_id,
+      emailId: sentEmail.id,
+      error: checkUpdateError,
+    });
+  }
 
   await markQueueRow(sbAdmin, row.id, {
     status: 'sent',
@@ -358,16 +386,33 @@ async function processEmailWithContext(
   return { id: row.id, status: 'sent' };
 }
 
-function normalizeQueueError(
+async function normalizeQueueError(
+  sbAdmin: TypedSupabaseClient,
   row: PostEmailQueueRow,
   error: Error
-): BatchProcessResult {
+): Promise<BatchProcessResult> {
   console.error('[PostEmailQueueBatch] Row processing failed', {
     rowId: row.id,
     postId: row.post_id,
     userId: row.user_id,
     error,
   });
+
+  try {
+    await markQueueRow(sbAdmin, row.id, {
+      status: 'failed',
+      batch_id: null,
+      blocked_reason: null,
+      last_error: error.message || 'Unknown processing error',
+    });
+  } catch (markError) {
+    console.error('[PostEmailQueueBatch] Failed to persist row failure', {
+      rowId: row.id,
+      postId: row.post_id,
+      userId: row.user_id,
+      error: markError,
+    });
+  }
 
   return {
     id: row.id,
@@ -454,28 +499,69 @@ export async function processPostEmailQueueBatch(
   const batchId = crypto.randomUUID();
   const now = new Date().toISOString();
   const claimedRows: QueueClaimedRow[] = [];
+  let rowIndex = 0;
 
-  for (const row of rows) {
-    if (claimedRows.length >= safeSendLimit) break;
+  while (claimedRows.length < safeSendLimit && rowIndex < rows.length) {
     if (Date.now() - startTime > maxDurationMs) break;
 
-    const claimPatch: QueueClaimUpdate = {
-      status: 'processing',
-      batch_id: batchId,
-      claimed_at: now,
-      last_attempt_at: now,
-      attempt_count: row.attempt_count + 1,
-      cancelled_at: null,
-    };
+    const slotsRemaining = safeSendLimit - claimedRows.length;
+    const claimWindow = rows.slice(rowIndex, rowIndex + slotsRemaining);
+    rowIndex += claimWindow.length;
+    if (claimWindow.length === 0) break;
 
-    const { error: claimError } = await getQueueTable(sbAdmin)
-      .update(claimPatch)
-      .eq('id', row.id)
-      .eq('status', row.status)
-      .select('id')
-      .maybeSingle();
+    const rowsByClaimGroup = new Map<
+      string,
+      {
+        rowIds: string[];
+        rowStatus: PostEmailQueueRow['status'];
+        nextAttempt: number;
+      }
+    >();
+    for (const row of claimWindow) {
+      const nextAttempt = row.attempt_count + 1;
+      const groupKey = `${row.status}:${nextAttempt}`;
+      const existing = rowsByClaimGroup.get(groupKey);
+      if (existing) {
+        existing.rowIds.push(row.id);
+        continue;
+      }
 
-    if (!claimError) {
+      rowsByClaimGroup.set(groupKey, {
+        rowIds: [row.id],
+        rowStatus: row.status,
+        nextAttempt,
+      });
+    }
+
+    const claimedIdSet = new Set<string>();
+    for (const group of rowsByClaimGroup.values()) {
+      const claimPatch: QueueClaimUpdate = {
+        status: 'processing',
+        batch_id: batchId,
+        claimed_at: now,
+        last_attempt_at: now,
+        attempt_count: group.nextAttempt,
+        cancelled_at: null,
+      };
+
+      const { data: claimData, error: claimError } = await getQueueTable(
+        sbAdmin
+      )
+        .update(claimPatch)
+        .in('id', group.rowIds)
+        .eq('status', group.rowStatus)
+        .select('id');
+
+      if (claimError) continue;
+      for (const claimed of claimData ?? []) {
+        if (claimed.id) {
+          claimedIdSet.add(claimed.id);
+        }
+      }
+    }
+
+    for (const row of claimWindow) {
+      if (!claimedIdSet.has(row.id)) continue;
       claimedRows.push({
         ...row,
         status: 'processing',
@@ -484,6 +570,7 @@ export async function processPostEmailQueueBatch(
         last_attempt_at: now,
         attempt_count: row.attempt_count + 1,
       });
+      if (claimedRows.length >= safeSendLimit) break;
     }
   }
 
@@ -502,7 +589,7 @@ export async function processPostEmailQueueBatch(
   const { results, timedOut } = await processWithConcurrency(
     claimedRows,
     (row) => processEmailWithContext(sbAdmin, row, prefetch),
-    normalizeQueueError,
+    (row, error) => normalizeQueueError(sbAdmin, row, error),
     safeConcurrency,
     maxDurationMs,
     startTime
