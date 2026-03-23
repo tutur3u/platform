@@ -2106,6 +2106,100 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerActivityHeatmap => 'Hoạt động';
 
   @override
+  String timerHeatmapTrackedThisYear(String duration) {
+    return 'Đã theo dõi $duration trong năm nay';
+  }
+
+  @override
+  String get timerHeatmapStartTracking => 'Bắt đầu theo dõi để xây dựng nhịp hoạt động của bạn';
+
+  @override
+  String get timerHeatmapViewOriginal => 'Gốc';
+
+  @override
+  String get timerHeatmapViewHybrid => 'Kết hợp';
+
+  @override
+  String get timerHeatmapViewCalendarOnly => 'Lịch';
+
+  @override
+  String get timerHeatmapViewCompactCards => 'Thẻ';
+
+  @override
+  String get timerHeatmapLegendLess => 'Ít';
+
+  @override
+  String get timerHeatmapLegendMore => 'Nhiều';
+
+  @override
+  String timerHeatmapMonthCompact(int month) {
+    return 'Thg $month';
+  }
+
+  @override
+  String timerHeatmapMonthNarrowColumn(int month) {
+    return '$month';
+  }
+
+  @override
+  String get timerHeatmapYearPattern => 'Mẫu hoạt động';
+
+  @override
+  String timerHeatmapActiveDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày hoạt động',
+      one: '$count ngày hoạt động',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerHeatmapMon => 'T2';
+
+  @override
+  String get timerHeatmapTue => 'T3';
+
+  @override
+  String get timerHeatmapWed => 'T4';
+
+  @override
+  String get timerHeatmapThu => 'T5';
+
+  @override
+  String get timerHeatmapFri => 'T6';
+
+  @override
+  String get timerHeatmapSat => 'T7';
+
+  @override
+  String get timerHeatmapSun => 'CN';
+
+  @override
+  String timerHeatmapSessions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count phiên',
+      one: '$count phiên',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerHeatmapTotal => 'Tổng';
+
+  @override
+  String get timerHeatmapSessionsLabel => 'Phiên';
+
+  @override
+  String get timerHeatmapActiveDaysLabel => 'Ngày hoạt động';
+
+  @override
+  String get timerHeatmapNoActivityYet => 'Chưa có hoạt động';
+
+  @override
   String get timerViewSessionDetails => 'Chi tiết phiên';
 
   @override
@@ -2570,8 +2664,8 @@ class AppLocalizationsVi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# ngày',
-      one: '# ngày',
+      other: '$count ngày',
+      one: '$count ngày',
     );
     return '$_temp0';
   }

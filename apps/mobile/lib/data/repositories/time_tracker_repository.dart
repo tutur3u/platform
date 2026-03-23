@@ -602,7 +602,6 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       _withQuery('/api/v1/workspaces/$wsId/time-tracker/stats', {
         if (userId != null && userId.isNotEmpty) 'userId': userId,
         'isPersonal': isPersonal.toString(),
-        'summaryOnly': 'true',
         if (timezone != null) 'timezone': timezone,
       }),
     );
@@ -612,6 +611,15 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       weekTime: data['weekTime'] as int? ?? 0,
       monthTime: data['monthTime'] as int? ?? 0,
       streak: data['streak'] as int? ?? 0,
+      dailyActivity:
+          (data['dailyActivity'] as List<dynamic>?)
+              ?.map(
+                (entry) => DailyActivity.fromJson(
+                  entry as Map<String, dynamic>,
+                ),
+              )
+              .toList() ??
+          const <DailyActivity>[],
     );
   }
 

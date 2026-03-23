@@ -15,6 +15,7 @@ class StatsCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -44,6 +45,11 @@ class StatsCards extends StatelessWidget {
                 child: _StatCard(
                   label: l10n.timerToday,
                   value: _formatSeconds(stats?.todayTime ?? 0),
+                  icon: shad.LucideIcons.calendar,
+                  iconColor: theme.colorScheme.primary,
+                  iconBackgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.16,
+                  ),
                 ),
               ),
               SizedBox(
@@ -51,6 +57,11 @@ class StatsCards extends StatelessWidget {
                 child: _StatCard(
                   label: l10n.timerThisWeek,
                   value: _formatSeconds(stats?.weekTime ?? 0),
+                  icon: shad.LucideIcons.trendingUp,
+                  iconColor: const Color(0xFF16A34A),
+                  iconBackgroundColor: const Color(0xFF16A34A).withValues(
+                    alpha: 0.16,
+                  ),
                 ),
               ),
               SizedBox(
@@ -58,6 +69,11 @@ class StatsCards extends StatelessWidget {
                 child: _StatCard(
                   label: l10n.timerThisMonth,
                   value: _formatSeconds(stats?.monthTime ?? 0),
+                  icon: shad.LucideIcons.zap,
+                  iconColor: const Color(0xFF7C3AED),
+                  iconBackgroundColor: const Color(0xFF7C3AED).withValues(
+                    alpha: 0.16,
+                  ),
                 ),
               ),
               SizedBox(
@@ -65,7 +81,11 @@ class StatsCards extends StatelessWidget {
                 child: _StatCard(
                   label: l10n.timerStreak,
                   value: l10n.timerDays(stats?.streak ?? 0),
-                  icon: shad.LucideIcons.flame,
+                  icon: shad.LucideIcons.clock,
+                  iconColor: theme.colorScheme.destructive,
+                  iconBackgroundColor: theme.colorScheme.destructive.withValues(
+                    alpha: 0.16,
+                  ),
                 ),
               ),
             ],
@@ -87,12 +107,16 @@ class _StatCard extends StatelessWidget {
   const _StatCard({
     required this.label,
     required this.value,
-    this.icon,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackgroundColor,
   });
 
   final String label;
   final String value;
-  final IconData? icon;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBackgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -106,15 +130,18 @@ class _StatCard extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: SizedBox(
-                height: 18,
-                child: icon == null
-                    ? const SizedBox.shrink()
-                    : Icon(
-                        icon,
-                        size: 18,
-                        color: theme.colorScheme.secondary,
-                      ),
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: iconBackgroundColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Icon(
+                  icon,
+                  size: 16,
+                  color: iconColor,
+                ),
               ),
             ),
             Text(
