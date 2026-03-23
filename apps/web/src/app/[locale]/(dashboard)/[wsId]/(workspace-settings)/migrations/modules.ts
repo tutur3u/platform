@@ -79,9 +79,6 @@ const availableModules = [
   // (target workspace may have auto-created settings with FK reference)
   'workspace-settings',
 
-  // Post email infrastructure queue - after posts/users migrations
-  'post-email-queue',
-
   // EXTERNAL/LEGACY MODULES
   'payment-methods',
   'roles',
@@ -92,6 +89,7 @@ const availableModules = [
   'bill-coupons',
   'user-coupons',
   'lessons',
+
   'score-names',
   'grouped-score-names',
   'class-scores',
@@ -107,6 +105,8 @@ const availableModules = [
   // TUTURUUU-RELATED MODULES (run last)
   'product-prices',
   'workspace-configs',
+  // Post email infrastructure queue - after posts/users migrations
+  'post-email-queue',
 ] as const;
 
 export type MigrationModule = (typeof availableModules)[number];
