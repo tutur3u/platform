@@ -16,7 +16,7 @@ dependencies:
   equatable: ^2.0.8
   file_picker: ^10.3.10
   firebase_analytics: ^12.1.3
-  firebase_crashlytics: ^5.0.8
+  firebase_crashlytics: ^5.1.0
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
