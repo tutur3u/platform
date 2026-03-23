@@ -1,5 +1,5 @@
 import { Plus } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceApiKey } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
@@ -117,9 +117,9 @@ async function getApiKeys(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('workspace_api_keys')
     .select('*', {
       count: 'exact',
@@ -143,7 +143,7 @@ async function getApiKeys(
   // Fetch last_used_at from usage logs for each API key
   if (data && data.length > 0) {
     const keyIds = data.map((key) => key.id);
-    const { data: lastUsedData } = await supabase
+    const { data: lastUsedData } = await sbAdmin
       .from('workspace_api_key_usage_logs')
       .select('api_key_id, created_at')
       .in('api_key_id', keyIds)
