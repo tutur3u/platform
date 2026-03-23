@@ -121,7 +121,6 @@ async function getApiKeys(
   }: { q?: string; page?: string; pageSize?: string }
 ) {
   const sbAdmin = await createAdminClient();
-  console.log(wsId);
 
   const queryBuilder = sbAdmin
     .from('workspace_api_keys')
@@ -142,7 +141,6 @@ async function getApiKeys(
   }
 
   const { data, error, count } = await queryBuilder;
-  console.log(data, error, count);
   if (error) throw error;
 
   // Fetch last_used_at from usage logs for each API key
