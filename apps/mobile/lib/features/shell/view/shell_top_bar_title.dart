@@ -21,7 +21,7 @@ class ShellTopBarTitle extends StatelessWidget {
 
     final title = switch (matchedLocation) {
       Routes.home => context.l10n.navHome,
-      Routes.assistant => 'Assistant',
+      Routes.assistant => context.l10n.navAssistant,
       Routes.profileRoot => context.l10n.profileTitle,
       Routes.settings => context.l10n.settingsTitle,
       Routes.apps => context.l10n.navApps,

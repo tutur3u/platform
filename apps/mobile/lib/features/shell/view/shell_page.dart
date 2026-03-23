@@ -86,6 +86,12 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   @override
+  void didUpdateWidget(covariant ShellPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncCompactLayoutState(oldMatchedLocation: oldWidget.matchedLocation);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final location = widget.matchedLocation;
     final activeModule = AppRegistry.moduleFromLocation(location);

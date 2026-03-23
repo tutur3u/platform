@@ -1,7 +1,68 @@
 part of 'shell_page.dart';
 
 extension _ShellPageLayout on _ShellPageState {
-  Widget _buildNormalizedChild({bool preserveTop = false}) {
+  void _syncCompactLayoutState({String? oldMatchedLocation}) {
+    final activeModule = AppRegistry.moduleFromLocation(widget.matchedLocation);
+    final wasMiniAppRoute =
+        oldMatchedLocation != null &&
+        AppRegistry.moduleFromLocation(oldMatchedLocation) != null;
+    final isMiniAppRoute = activeModule != null;
+
+    if (!isMiniAppRoute) {
+      _cachedGlobalBody = _buildGlobalBody();
+      _activeLayerPage = 0;
+      _showMiniNav = true;
+      _lastLayeredLocation = null;
+
+      if (_layerController.hasClients && _layerController.page?.round() != 0) {
+        _syncingLayerPage = true;
+        unawaited(
+          _layerController
+              .animateToPage(
+                0,
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+              )
+              .catchError((_) {})
+              .whenComplete(() {
+                if (!mounted) return;
+                _setShellState(() => _syncingLayerPage = false);
+              }),
+        );
+      } else {
+        _syncingLayerPage = false;
+      }
+
+      return;
+    }
+
+    _activeLayerPage = 1;
+    if (!wasMiniAppRoute || widget.matchedLocation != _lastLayeredLocation) {
+      _lastLayeredLocation = widget.matchedLocation;
+      _showMiniNav = true;
+    }
+
+    if (_layerController.hasClients && _layerController.page?.round() != 1) {
+      _syncingLayerPage = true;
+      unawaited(
+        _layerController
+            .animateToPage(
+              1,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+            )
+            .catchError((_) {})
+            .whenComplete(() {
+              if (!mounted) return;
+              _setShellState(() => _syncingLayerPage = false);
+            }),
+      );
+    } else {
+      _syncingLayerPage = false;
+    }
+  }
+
+  Widget _buildNormalizedChild() {
     return SizedBox.expand(child: widget.child);
   }
 
@@ -73,39 +134,8 @@ extension _ShellPageLayout on _ShellPageState {
     AppTabState state, {
     required AppModule? activeModule,
   }) {
-    final isMiniAppRoute = activeModule != null;
-    if (!isMiniAppRoute) {
-      _cachedGlobalBody = _buildGlobalBody();
-      _activeLayerPage = 0;
-      if (_layerController.hasClients && _layerController.page?.round() != 0) {
-        _syncingLayerPage = true;
-        unawaited(
-          _layerController
-              .animateToPage(
-                0,
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-              )
-              .catchError((_) {})
-              .whenComplete(() {
-                if (!mounted) return;
-                _setShellState(() => _syncingLayerPage = false);
-              }),
-        );
-      } else {
-        _syncingLayerPage = false;
-      }
-
+    if (activeModule == null) {
       return _buildGlobalCompactScaffold(context, state);
-    }
-
-    if (_activeLayerPage != 1) {
-      _activeLayerPage = 1;
-    }
-
-    if (widget.matchedLocation != _lastLayeredLocation) {
-      _lastLayeredLocation = widget.matchedLocation;
-      _showMiniNav = true;
     }
 
     return _buildLayeredCompactLayout(context, state, activeModule);
@@ -182,31 +212,13 @@ extension _ShellPageLayout on _ShellPageState {
     AppTabState state,
     AppModule activeModule,
   ) {
-    if (_layerController.hasClients && _layerController.page?.round() != 1) {
-      _syncingLayerPage = true;
-      unawaited(
-        _layerController
-            .animateToPage(
-              1,
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-            )
-            .catchError((_) {})
-            .whenComplete(() {
-              if (!mounted) return;
-              _setShellState(() => _syncingLayerPage = false);
-            }),
-      );
-    } else {
-      _syncingLayerPage = false;
-    }
-
     final globalBody = _cachedGlobalBody ?? const DashboardPage();
     final miniItems = _buildMiniAppNavItems(context, activeModule);
     final miniSelectedKey = _miniSelectedKey(
       context,
       activeModule.miniAppNavItems,
     );
+    final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final isCompact = context.isCompact;
 
     return shad.Scaffold(
@@ -261,11 +273,12 @@ extension _ShellPageLayout on _ShellPageState {
                           : Listener(
                               behavior: HitTestBehavior.translucent,
                               onPointerDown: _startLongPressTimer,
-                              onPointerUp: _stopLongPressTimer,
+                              onPointerUp: _handlePointerUp,
                               onPointerCancel: _stopLongPressTimer,
                               child: isCompact
                                   ? shad.NavigationBar(
                                       key: _ShellPageState._globalLayerKey,
+                                      selectedKey: globalSelectedKey,
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 8,
                                         vertical: 4,
@@ -287,6 +300,7 @@ extension _ShellPageLayout on _ShellPageState {
                                     )
                                   : CustomNavigationBar(
                                       key: _ShellPageState._globalLayerKey,
+                                      selectedKey: globalSelectedKey,
                                       onSelected: (key) => _onItemTapped(
                                         _ShellPageState._indexForKey(key),
                                         context,
@@ -322,7 +336,7 @@ extension _ShellPageLayout on _ShellPageState {
           ),
           KeyedSubtree(
             key: _ShellPageState._miniLayerKey,
-            child: _buildNormalizedChild(preserveTop: true),
+            child: _buildNormalizedChild(),
           ),
         ],
       ),

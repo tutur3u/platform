@@ -115,12 +115,10 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
 
-    if (index == 2) {
-      await _openAppsDrawerFromAppsTab();
-      return;
-    }
-
     final route = switch (index) {
+      2 =>
+        AppRegistry.moduleById(appTabCubit.state.selectedId)?.route ??
+            Routes.apps,
       1 => Routes.assistant,
       _ => Routes.home,
     };

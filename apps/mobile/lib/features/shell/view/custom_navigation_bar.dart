@@ -89,7 +89,7 @@ class _CustomNavItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: _getBorderRadius(),
+        borderRadius: _getBorderRadius(context),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
@@ -105,7 +105,7 @@ class _CustomNavItem extends StatelessWidget {
                       ? Colors.white.withValues(alpha: 0.12)
                       : Colors.black.withValues(alpha: 0.08))
                 : Colors.transparent,
-            borderRadius: _getBorderRadius(),
+            borderRadius: _getBorderRadius(context),
           ),
           child: Center(child: content),
         ),
@@ -113,19 +113,30 @@ class _CustomNavItem extends StatelessWidget {
     );
   }
 
-  BorderRadius _getBorderRadius() {
+  BorderRadius _getBorderRadius(BuildContext context) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     if (isFirst && isLast) {
       return BorderRadius.circular(20);
     } else if (isFirst) {
-      return const BorderRadius.horizontal(
-        left: Radius.circular(20),
-        right: Radius.circular(4),
-      );
+      return isRtl
+          ? const BorderRadius.horizontal(
+              left: Radius.circular(4),
+              right: Radius.circular(20),
+            )
+          : const BorderRadius.horizontal(
+              left: Radius.circular(20),
+              right: Radius.circular(4),
+            );
     } else if (isLast) {
-      return const BorderRadius.horizontal(
-        left: Radius.circular(4),
-        right: Radius.circular(20),
-      );
+      return isRtl
+          ? const BorderRadius.horizontal(
+              left: Radius.circular(20),
+              right: Radius.circular(4),
+            )
+          : const BorderRadius.horizontal(
+              left: Radius.circular(4),
+              right: Radius.circular(20),
+            );
     } else {
       return BorderRadius.circular(4);
     }
