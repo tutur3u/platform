@@ -1,6 +1,5 @@
 import Events from './events';
 import HeroSection from './hero-section';
-import SummarizedDepartments from './summarized-departments';
 import WhyUs from './why-us';
 
 export default function MarketingPage() {
@@ -9,7 +8,6 @@ export default function MarketingPage() {
       <HeroSection />
       <Events />
       <WhyUs />
-      <SummarizedDepartments />
     </div>
   );
 }
