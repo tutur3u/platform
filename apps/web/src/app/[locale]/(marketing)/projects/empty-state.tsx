@@ -11,7 +11,7 @@ export default function EmptyState({ onClearFilters }: EmptyStateProps) {
         <Search className="mx-auto h-16 w-16 text-yellow-400 md:h-20 md:w-20" />
       </div>
       <h3 className="mb-2 font-extrabold text-xl leading-normal md:text-4xl lg:text-5xl">
-        <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
+        <span className="whitespace-nowrap border-brand-light-yellow border-b-4 text-brand-light-blue">
           NEOThing's
         </span>{' '}
         <span className="text-foreground"> Here :(</span>
@@ -23,7 +23,7 @@ export default function EmptyState({ onClearFilters }: EmptyStateProps) {
       <button
         type="button"
         onClick={onClearFilters}
-        className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-[#5FC6E5] to-[#1AF4E6] px-6 py-3 font-bold text-lg text-primary-foreground transition-all duration-300 hover:scale-105 hover:shadow-lg"
+        className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-brand-light-blue to-[#1AF4E6] px-6 py-3 font-bold text-lg text-primary-foreground transition-all duration-300 hover:scale-105 hover:shadow-lg"
       >
         Clear Filters
       </button>

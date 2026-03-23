@@ -1,11 +1,9 @@
 'use client';
 
-import { timelineData } from './data';
-import { TimelineCard } from './timeline-card';
 import { Badge } from '@ncthub/ui/badge';
 import {
   Carousel,
-  CarouselApi,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
@@ -13,24 +11,23 @@ import {
 } from '@ncthub/ui/carousel';
 import { Award, Sparkles } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { timelineData } from './data';
+import { TimelineCard } from './timeline-card';
 
 export default function History() {
   const [emblaApi, setEmblaApi] = useState<CarouselApi | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(1);
 
-  const timelineDataWithNull = useMemo(
-    () => [null, ...timelineData, null],
-    [timelineData]
-  );
+  const timelineDataWithNull = useMemo(() => [null, ...timelineData, null], []);
 
-  const onSelect = () => {
+  const onSelect = useCallback(() => {
     if (!emblaApi) return;
 
     setSelectedIndex(emblaApi.selectedScrollSnap() + 1);
-  };
+  }, [emblaApi]);
 
-  const onScroll = () => {
+  const onScroll = useCallback(() => {
     if (!emblaApi) return;
 
     const root = emblaApi.rootNode();
@@ -71,14 +68,14 @@ export default function History() {
 
       return selectedIndex;
     });
-  };
+  }, [emblaApi]);
 
-  const onReInit = () => {
+  const onReInit = useCallback(() => {
     if (!emblaApi) return;
 
     emblaApi.scrollTo(0);
     setSelectedIndex(1);
-  };
+  }, [emblaApi]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -93,10 +90,10 @@ export default function History() {
       emblaApi.off('scroll', onScroll);
       emblaApi.off('reInit', onReInit);
     };
-  }, [emblaApi]);
+  }, [emblaApi, onReInit, onSelect, onScroll]);
 
   return (
-    <div className="space-y-10">
+    <section id="about-history" className="mx-auto max-w-6xl space-y-10">
       <div className="space-y-8 text-center">
         {/* Hero Badge */}
         <motion.div
@@ -106,14 +103,14 @@ export default function History() {
           viewport={{ once: true }}
           className="inline-flex items-center gap-2"
         >
-          <Sparkles className="h-5 w-5 text-[#FBC721]" />
+          <Sparkles className="h-5 w-5 text-brand-light-yellow" />
           <Badge
             variant="outline"
-            className="border-[#5FC6E5]/50 px-3 py-1 text-sm text-[#5FC6E5]"
+            className="border-brand-light-blue/50 px-3 py-1 text-brand-light-blue text-sm"
           >
             Our Journey
           </Badge>
-          <Sparkles className="h-5 w-5 text-[#FBC721]" />
+          <Sparkles className="h-5 w-5 text-brand-light-yellow" />
         </motion.div>
 
         {/* Main Title */}
@@ -122,15 +119,15 @@ export default function History() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
           viewport={{ once: true }}
-          className="text-4xl font-extrabold leading-tight md:text-5xl lg:text-6xl"
+          className="font-extrabold text-4xl leading-tight md:text-5xl lg:text-6xl"
         >
           NEO Culture Tech{' '}
           <span className="relative">
-            <span className="border-b-4 border-[#FBC721] text-[#5FC6E5]">
+            <span className="border-brand-light-yellow border-b-4 text-brand-light-blue">
               History
             </span>
             <motion.div
-              className="absolute -right-2 -top-2"
+              className="absolute -top-2 -right-2"
               animate={{
                 rotate: [0, 10, -10, 0],
                 scale: [1, 1.1, 1],
@@ -141,7 +138,7 @@ export default function History() {
                 repeatDelay: 3,
               }}
             >
-              <Award className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
+              <Award className="h-5 w-5 text-brand-light-yellow md:h-6 md:w-6" />
             </motion.div>
           </span>
         </motion.h1>
@@ -152,13 +149,14 @@ export default function History() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
           viewport={{ once: true }}
-          className="text-muted-foreground mx-auto max-w-3xl text-lg font-medium md:text-xl"
+          className="mx-auto max-w-3xl font-medium text-lg text-muted-foreground md:text-xl"
         >
-          A journey of innovation, community, and passion for technology.{' '}
-          <span className="relative font-semibold text-[#5FC6E5]">
+          A journey of innovation, community, and passion for technology.
+          <br />
+          <span className="relative font-semibold text-brand-light-blue">
             Step through our history
             <motion.span
-              className="bg-linear-to-r absolute -bottom-1 left-0 right-0 h-0.5 from-[#5FC6E5] to-[#FBC721]"
+              className="absolute right-0 -bottom-1 left-0 h-0.5 bg-linear-to-r from-brand-light-blue to-brand-light-yellow"
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
               transition={{ duration: 1, delay: 1 }}
@@ -218,6 +216,6 @@ export default function History() {
           <CarouselNext className="mr-16 h-12 w-12" />
         </Carousel>
       </motion.div>
-    </div>
+    </section>
   );
 }

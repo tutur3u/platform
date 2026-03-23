@@ -13,7 +13,7 @@ export default async function Footer() {
       {/* Client component with motion */}
       <FooterCTA />
 
-      <Separator className="mt-8 h-1 bg-linear-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" />
+      <Separator className="mt-8 h-1 bg-linear-to-r from-brand-light-blue to-[#FBC821] blur-sm" />
 
       <div className="flex flex-col items-center justify-between gap-12 px-4 py-8 md:px-32 md:py-24 lg:flex-row">
         <div className="flex w-fit flex-col items-center gap-6">

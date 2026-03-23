@@ -1,6 +1,5 @@
 'use client';
 
-import { textStyles } from './text-styles';
 import { Badge } from '@ncthub/ui/badge';
 import { Button } from '@ncthub/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
@@ -8,6 +7,7 @@ import { CheckIcon, CopyIcon, WandIcon } from '@ncthub/ui/icons';
 import { Textarea } from '@ncthub/ui/textarea';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { textStyles } from './text-styles';
 
 export function TextGeneratorClient() {
   const [inputText, setInputText] = useState('');
@@ -88,7 +88,7 @@ export function TextGeneratorClient() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <WandIcon className="h-5 w-5 text-[#5FC6E5]" />
+              <WandIcon className="h-5 w-5 text-brand-light-blue" />
               Input Text
             </CardTitle>
           </CardHeader>
@@ -104,7 +104,7 @@ export function TextGeneratorClient() {
               readOnly={isDemo}
             />
             <div className="mt-2 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Enter text to see it transformed into various Unicode styles
               </p>
               <Badge variant="secondary" className="text-xs">
@@ -132,7 +132,7 @@ export function TextGeneratorClient() {
               >
                 <Card className="h-full transition-shadow hover:shadow-md">
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center justify-between text-sm font-medium">
+                    <CardTitle className="flex items-center justify-between font-medium text-sm">
                       <span>{style.name}</span>
                       <Button
                         size="sm"
@@ -150,14 +150,14 @@ export function TextGeneratorClient() {
                         )}
                       </Button>
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {style.description}
                     </p>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="flex min-h-[60px] items-center rounded-lg border bg-muted/50 p-3">
                       <p
-                        className="w-full text-base break-words"
+                        className="w-full break-words text-base"
                         style={{ wordBreak: 'break-word' }}
                       >
                         {generatedText || 'Generated text will appear here...'}
@@ -182,7 +182,7 @@ export function TextGeneratorClient() {
             <CardContent className="pt-6">
               <div className="py-12 text-center">
                 <WandIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground/50" />
-                <h3 className="mb-2 text-lg font-semibold">
+                <h3 className="mb-2 font-semibold text-lg">
                   Start Generating Text
                 </h3>
                 <p className="mx-auto max-w-md text-muted-foreground">

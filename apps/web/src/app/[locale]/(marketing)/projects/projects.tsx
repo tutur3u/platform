@@ -64,19 +64,19 @@ export default function Projects() {
         transition={{ duration: 0.6, delay: 0.2 }}
       >
         <div className="mb-6 inline-flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-[#FBC721]" />
+          <Sparkles className="h-6 w-6 text-brand-light-yellow" />
           <Badge
             variant="outline"
-            className="border-[#5FC6E5]/50 px-4 py-2 text-[#5FC6E5] text-base"
+            className="border-brand-light-blue/50 px-4 py-2 text-base text-brand-light-blue"
           >
             Our Projects
           </Badge>
-          <Sparkles className="h-6 w-6 text-[#FBC721]" />
+          <Sparkles className="h-6 w-6 text-brand-light-yellow" />
         </div>
 
         <p className="font-extrabold text-2xl leading-normal md:text-3xl lg:text-4xl">
           <span className="text-foreground">Don't miss our</span>{' '}
-          <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
+          <span className="whitespace-nowrap border-brand-light-yellow border-b-4 text-brand-light-blue">
             other projects
           </span>
           <span className="text-foreground">!</span>
@@ -90,7 +90,7 @@ export default function Projects() {
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-border/30 bg-card/60 p-1 shadow-md backdrop-blur-sm">
               <motion.div
-                className="absolute inset-y-1 rounded-xl bg-linear-to-r from-[#5FC6E5] to-[#1AF4E6] shadow-sm"
+                className="absolute inset-y-1 rounded-xl bg-linear-to-r from-brand-light-blue to-[#1AF4E6] shadow-sm"
                 animate={{
                   x:
                     type === 'web'
@@ -129,7 +129,7 @@ export default function Projects() {
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-border/30 bg-card/60 p-1 shadow-md backdrop-blur-sm">
               <motion.div
-                className="absolute inset-y-1 rounded-xl bg-linear-to-r from-[#5FC6E5] to-[#1AF4E6] shadow-sm"
+                className="absolute inset-y-1 rounded-xl bg-linear-to-r from-brand-light-blue to-[#1AF4E6] shadow-sm"
                 animate={{
                   x:
                     status === 'planning'

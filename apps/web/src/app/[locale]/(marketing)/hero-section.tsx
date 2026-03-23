@@ -32,7 +32,7 @@ const stats = [
 
 export default function HeroSection() {
   return (
-    <motion.div
+    <motion.section
       className="my-4 md:my-16"
       initial={{ opacity: 0, y: 50 }}
       transition={{ duration: 1 }}
@@ -206,6 +206,6 @@ export default function HeroSection() {
           </div>
         </motion.div>
       </div>
-    </motion.div>
+    </motion.section>
   );
 }

@@ -5,6 +5,30 @@ export type DepartmentName =
   | 'Marketing'
   | 'Executive Board';
 
+export type CoreDepartmentName = Extract<
+  DepartmentName,
+  'Technology' | 'Human Resources' | 'Marketing'
+>;
+
+export interface DepartmentData {
+  name: DepartmentName;
+  bio: string;
+  characteristics: {
+    bio: string;
+    badges: string[];
+    quote: string;
+    image: string;
+  };
+  activities: {
+    bio: string;
+    items: {
+      title: string;
+      description: string;
+    }[];
+    images: string[];
+  };
+}
+
 export const timelineData: {
   year: string;
   title: string;
@@ -232,6 +256,144 @@ export const members: {
     socials: {
       facebook: 'https://www.facebook.com/kelly.candylovely',
       linkedin: 'https://www.linkedin.com/in/ngoc-khanh-dao-250693207/',
+    },
+  },
+];
+
+export const departments: DepartmentData[] = [
+  {
+    name: 'Technology',
+    bio: 'The Technology department serves as the core technical engine of our organization, overseeing all software and hardware initiatives. We are dedicated to cultivating a rigorous and collaborative environment tailored for passionate technology enthusiasts and SSET students alike.',
+    characteristics: {
+      bio: 'Develop tools for member use',
+      badges: [
+        'Creative',
+        'Passionate in Technology',
+        'Strive for improvement',
+        'Collaborative',
+        'Work Hard, Play Harder',
+      ],
+      quote:
+        'Technology at NEO is not only about building things well, but also about learning fast, sharing openly, and turning ideas into something people can actually use.',
+      image: '/departments/technology/competitive-programming-workshop.jpg',
+    },
+    activities: {
+      bio: 'What Technology does and no one else can do the same way.',
+      items: [
+        {
+          title: 'Project Development',
+          description:
+            'We turn club ideas into working products, from planning flows and building features to testing demos that members can present with confidence.',
+        },
+        {
+          title: 'Technical Workshops',
+          description:
+            'Hands-on sessions help members explore frameworks, hardware, and problem solving through guided practice instead of passive theory.',
+        },
+        {
+          title: 'Product Pitching',
+          description:
+            'We prepare teams to explain what they build, why it matters, and how a technical concept becomes a clear, compelling solution.',
+        },
+      ],
+      images: [
+        '/departments/technology/nextjs-workshop.jpg',
+        '/departments/technology/soldering-workshop.jpg',
+        '/departments/technology/soldering-workshop-2.jpg',
+        '/departments/technology/competitive-programming-workshop-2.jpg',
+      ],
+    },
+  },
+  {
+    name: 'Human Resources',
+    bio: 'The Human Resources department focuses on building a strong, inclusive community within the club. They organize team-building activities, provide support for members, and ensure a positive environment for everyone.',
+    characteristics: {
+      bio: 'Connect & Support members',
+      badges: [
+        'Recruitment & Onboarding',
+        'Operations',
+        'Event Management',
+        'Engagement',
+        'System & Data Management',
+        'Corporate Culture',
+        'Risk Management',
+        'Conflict Resolution',
+      ],
+      quote:
+        'Human Resources keeps the club human first by shaping the member experience, sustaining culture, and making sure every person feels they belong here.',
+      image: '/departments/human-resources/secret-santa-c-2025.jpg',
+    },
+    activities: {
+      bio: 'What Human Resources does and no one else can do the same way.',
+      items: [
+        {
+          title: 'Recruitment',
+          description:
+            'We design welcoming recruitment journeys, coordinate interviews, and help new members step into the club with clarity and confidence.',
+        },
+        {
+          title: 'Event Management',
+          description:
+            'From internal operations to club-wide experiences, we organize the people side of events so every activity runs smoothly and feels intentional.',
+        },
+        {
+          title: 'Bonding Days',
+          description:
+            'We create moments that bring members closer, strengthen trust across teams, and turn a student club into a community people genuinely enjoy being part of.',
+        },
+      ],
+      images: [
+        '/departments/human-resources/bonding-trip-2025c.jpeg',
+        '/departments/human-resources/welcome-day-c-2025.jpg',
+        '/departments/human-resources/neo-award-2025c.jpg',
+        '/departments/human-resources/sportday-2025c.jpeg',
+      ],
+    },
+  },
+  {
+    name: 'Marketing',
+    bio: 'The Marketing department is responsible for promoting the club and its events to the wider community. They handle branding, communications, and outreach initiatives.',
+    characteristics: {
+      bio: 'The face of NEO to the outside world',
+      badges: [
+        'Strategic',
+        'Creative',
+        'Promotional',
+        'Branding',
+        'Visualization',
+        'Collaborative',
+        'External Relations',
+        'Keo 502',
+      ],
+      quote:
+        'Marketing gives NEO a recognizable face by turning club energy into visuals, messages, and campaigns that people immediately remember.',
+      image: '/departments/marketing/nct-fanpage.png',
+    },
+    activities: {
+      bio: 'What Marketing does and no one else can do the same way.',
+      items: [
+        {
+          title: 'Design Production',
+          description:
+            'We create booth concepts, uniforms, and event visuals that give every campaign a polished look members can instantly recognize.',
+        },
+        {
+          title: 'Brand Building',
+          description:
+            "We shape the club's visual identity, refine how NEO appears to students, and make sure every touchpoint feels consistent and memorable.",
+        },
+        {
+          title: 'Social Media Content',
+          description:
+            'We turn activities into stories through posts and creative assets that keep the community updated, engaged, and excited to join in.',
+        },
+      ],
+      images: [
+        '/departments/marketing/logo-2026a.png',
+        '/departments/marketing/club-day-2025c.png',
+        '/departments/marketing/linkedin-posts.png',
+        '/departments/marketing/souvenirs.png',
+      ],
     },
   },
 ];

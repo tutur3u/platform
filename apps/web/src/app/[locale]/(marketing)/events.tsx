@@ -74,7 +74,7 @@ const eventImages: EventType[] = [
 
 export default function Events() {
   return (
-    <motion.div
+    <motion.section
       id="events"
       className="relative w-full py-8"
       initial={{ opacity: 0 }}
@@ -174,7 +174,7 @@ export default function Events() {
         <div className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute right-1/4 bottom-1/4 h-64 w-64 rounded-full bg-secondary/10 blur-3xl" />
       </div>
-    </motion.div>
+    </motion.section>
   );
 }
 

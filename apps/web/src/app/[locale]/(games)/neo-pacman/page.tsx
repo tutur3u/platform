@@ -16,11 +16,11 @@ export default function NeoPacman() {
           <h1 className="font-extrabold text-4xl leading-tight md:text-5xl lg:text-6xl">
             NEO{' '}
             <span className="relative">
-              <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
+              <span className="border-brand-light-yellow border-b-4 text-brand-light-blue">
                 PACMAN
               </span>
               <div className="absolute -top-2 -right-2">
-                <Gamepad2 className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
+                <Gamepad2 className="h-5 w-5 text-brand-light-yellow md:h-6 md:w-6" />
               </div>
             </span>
           </h1>

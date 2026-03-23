@@ -16,7 +16,7 @@ export default function MainProject() {
         <div className="flex flex-col items-center text-center">
           <div className="font-extrabold text-4xl leading-normal md:text-5xl lg:text-6xl">
             <span className="text-foreground">NEO Culture</span>{' '}
-            <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
+            <span className="whitespace-nowrap border-brand-light-yellow border-b-4 text-brand-light-blue">
               PROJECTS{' '}
               <motion.div
                 className="inline-block"
@@ -52,7 +52,7 @@ export default function MainProject() {
       >
         <p className="font-extrabold text-2xl leading-normal md:text-3xl lg:text-4xl">
           <span className="text-foreground">Our</span>{' '}
-          <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
+          <span className="whitespace-nowrap border-brand-light-yellow border-b-4 text-brand-light-blue">
             Flagship
           </span>{' '}
           <span className="text-foreground">Project</span>
@@ -96,7 +96,8 @@ export default function MainProject() {
             >
               <div>
                 <h3 className="mb-4 font-extrabold text-2xl text-foreground md:text-3xl lg:text-4xl">
-                  NCT <span className="text-[#5FC6E5]">Hub Platform</span>
+                  NCT{' '}
+                  <span className="text-brand-light-blue">Hub Platform</span>
                 </h3>
                 <p className="font-medium text-md text-muted-foreground leading-relaxed md:text-lg">
                   The official web-based platform for RMIT Neo Culture Tech

@@ -77,7 +77,7 @@ const reasons = [
 
 export default function WhyUs() {
   return (
-    <motion.div
+    <motion.section
       id="why-us"
       className="flex flex-col"
       initial={{ opacity: 0, y: 50 }}
@@ -94,19 +94,19 @@ export default function WhyUs() {
           viewport={{ once: true }}
           className="mb-6 inline-flex items-center gap-2"
         >
-          <Sparkles className="h-6 w-6 text-[#FBC721]" />
+          <Sparkles className="h-6 w-6 text-brand-light-yellow" />
           <Badge
             variant="outline"
-            className="border-[#5FC6E5]/50 px-4 py-2 text-[#5FC6E5] text-base"
+            className="border-brand-light-blue/50 px-4 py-2 text-base text-brand-light-blue"
           >
             Why Choose Us
           </Badge>
-          <Sparkles className="h-6 w-6 text-[#FBC721]" />
+          <Sparkles className="h-6 w-6 text-brand-light-yellow" />
         </motion.div>
 
         <h2 className="mb-4 pb-4 font-bold text-4xl md:text-6xl lg:text-8xl">
           Why{' '}
-          <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
+          <span className="whitespace-nowrap border-brand-light-yellow border-b-4 text-brand-light-blue">
             Us?
           </span>
         </h2>
@@ -201,6 +201,6 @@ export default function WhyUs() {
           </motion.div>
         ))}
       </div>
-    </motion.div>
+    </motion.section>
   );
 }
