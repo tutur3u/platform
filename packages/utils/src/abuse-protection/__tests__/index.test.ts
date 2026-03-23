@@ -378,6 +378,9 @@ describe('abuse-protection types', () => {
       'reauth_send',
       'reauth_verify_failed',
       'password_login_failed',
+      'api_auth_failed',
+      'api_rate_limited',
+      'api_abuse',
       'manual',
     ];
     // Just verify these are valid string values
