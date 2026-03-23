@@ -1,110 +1,102 @@
 import { generateApiKey, hashApiKey } from '@tuturuuu/auth/api-keys';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
-import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
+import { withSessionAuth } from '@/lib/api-auth';
 
-// Schema for validating route params
+import { assertWorkspaceApiKeysAccess } from '../../shared';
+
 const paramsSchema = z.object({
-  wsId: z.guid(),
+  wsId: z.string().min(1),
   keyId: z.guid(),
 });
 
-export const POST = withApiAuth(
-  async (_, { context, params }) => {
-    // Extract params from route
-    const { wsId: paramsWsId, keyId } = params as {
-      wsId: string;
-      keyId: string;
-    };
+interface RouteParams {
+  wsId: string;
+  keyId: string;
+}
 
-    // Validate params
-    const paramValidation = paramsSchema.safeParse({ wsId: paramsWsId, keyId });
-    if (!paramValidation.success) {
-      return createErrorResponse(
-        'Bad Request',
-        'Invalid workspace ID or key ID',
-        400,
-        'INVALID_PARAMS'
-      );
-    }
-
-    const { wsId: validatedWsId, keyId: validatedKeyId } = paramValidation.data;
-
-    // Ensure the workspace ID from params matches the authenticated workspace ID from context
-    if (validatedWsId !== context.wsId) {
-      return createErrorResponse(
-        'Forbidden',
-        'Workspace ID mismatch',
-        403,
-        'WORKSPACE_MISMATCH'
-      );
-    }
-
-    const wsId = validatedWsId;
-
-    const supabase = await createClient();
-
-    // Fetch the existing API key with workspace scoping
-    // SECURITY: Only select 'id' to verify existence, no need for sensitive fields
-    const { data: existingKey, error: fetchError } = await supabase
-      .from('workspace_api_keys')
-      .select('id')
-      .eq('id', validatedKeyId)
-      .eq('ws_id', wsId) // Ensure workspace scoping
-      .single();
-
-    if (fetchError || !existingKey) {
-      console.error('Error fetching API key for rotation:', fetchError);
-      return createErrorResponse(
-        'Not Found',
-        'API key not found',
-        404,
-        'API_KEY_NOT_FOUND'
-      );
-    }
-
-    // Generate new API key and hash
-    const { key, prefix } = generateApiKey();
-    const keyHash = await hashApiKey(key);
-
-    // Update the existing key record with new hash and prefix
-    const { error: updateError } = await supabase
-      .from('workspace_api_keys')
-      .update({
-        key_hash: keyHash,
-        key_prefix: prefix,
-        last_used_at: null, // Reset last used timestamp
-      })
-      .eq('id', validatedKeyId)
-      .eq('ws_id', wsId); // Ensure workspace scoping
-
-    if (updateError) {
-      console.error('Error rotating API key:', updateError);
-      return createErrorResponse(
-        'Internal Server Error',
-        'Error rotating API key',
-        500,
-        'API_KEY_ROTATION_ERROR'
-      );
-    }
-
-    // Return the new plaintext key to the user (only time they'll see it)
-    return NextResponse.json(
-      {
-        message: 'API key rotated successfully',
-        key,
-        prefix,
-      },
-      {
-        headers: {
-          'Cache-Control':
-            'no-store, no-cache, must-revalidate, proxy-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
-        },
+export const POST = withSessionAuth<RouteParams>(
+  async (_req, { user, supabase }, rawParams) => {
+    try {
+      const paramValidation = paramsSchema.safeParse(rawParams);
+      if (!paramValidation.success) {
+        return NextResponse.json(
+          { message: 'Invalid workspace ID or key ID' },
+          { status: 400 }
+        );
       }
-    );
-  },
-  { permissions: ['manage_api_keys'] }
+
+      const { wsId: rawWsId, keyId: validatedKeyId } = paramValidation.data;
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+      const denied = await assertWorkspaceApiKeysAccess(
+        supabase,
+        user.id,
+        wsId
+      );
+      if (denied) return denied;
+
+      const sbAdmin = await createAdminClient();
+
+      const { data: existingKey, error: fetchError } = await sbAdmin
+        .from('workspace_api_keys')
+        .select('id')
+        .eq('id', validatedKeyId)
+        .eq('ws_id', wsId)
+        .maybeSingle();
+
+      if (fetchError || !existingKey) {
+        console.error('Error fetching API key for rotation:', fetchError);
+        return NextResponse.json(
+          { message: 'API key not found' },
+          { status: 404 }
+        );
+      }
+
+      const { key, prefix } = generateApiKey();
+      const keyHash = await hashApiKey(key);
+
+      const { error: updateError } = await sbAdmin
+        .from('workspace_api_keys')
+        .update({
+          key_hash: keyHash,
+          key_prefix: prefix,
+          last_used_at: null,
+        })
+        .eq('id', validatedKeyId)
+        .eq('ws_id', wsId);
+
+      if (updateError) {
+        console.error('Error rotating API key:', updateError);
+        return NextResponse.json(
+          { message: 'Error rotating API key' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          message: 'API key rotated successfully',
+          key,
+          prefix,
+        },
+        {
+          headers: {
+            'Cache-Control':
+              'no-store, no-cache, must-revalidate, proxy-revalidate',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Error in POST rotate API key:', error);
+      return NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+  }
 );
