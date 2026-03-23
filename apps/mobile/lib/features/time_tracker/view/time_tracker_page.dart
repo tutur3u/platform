@@ -46,11 +46,15 @@ class TimeTrackerPage extends StatelessWidget {
     this.repository,
     this.initialSection = TimeTrackerSection.timer,
     this.initialStatsScope = TimeTrackerStatsScope.personal,
+    this.initialHistoryDate,
+    this.initialHistoryViewMode,
   });
 
   final ITimeTrackerRepository? repository;
   final TimeTrackerSection initialSection;
   final TimeTrackerStatsScope initialStatsScope;
+  final DateTime? initialHistoryDate;
+  final HistoryViewMode? initialHistoryViewMode;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +68,8 @@ class TimeTrackerPage extends StatelessWidget {
       child: _TimeTrackerView(
         initialSection: initialSection,
         initialStatsScope: initialStatsScope,
+        initialHistoryDate: initialHistoryDate,
+        initialHistoryViewMode: initialHistoryViewMode,
       ),
     );
   }
@@ -73,10 +79,14 @@ class _TimeTrackerView extends StatefulWidget {
   const _TimeTrackerView({
     required this.initialSection,
     required this.initialStatsScope,
+    this.initialHistoryDate,
+    this.initialHistoryViewMode,
   });
 
   final TimeTrackerSection initialSection;
   final TimeTrackerStatsScope initialStatsScope;
+  final DateTime? initialHistoryDate;
+  final HistoryViewMode? initialHistoryViewMode;
 
   @override
   State<_TimeTrackerView> createState() => _TimeTrackerViewState();
@@ -84,6 +94,7 @@ class _TimeTrackerView extends StatefulWidget {
 
 class _TimeTrackerViewState extends State<_TimeTrackerView> {
   late int _index;
+  var _hasAppliedInitialHistoryContext = false;
 
   @override
   void initState() {
@@ -109,6 +120,15 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       final timeTrackerCubit = context.read<TimeTrackerCubit>();
       final wsId = workspaceCubit.state.currentWorkspace?.id;
       final userId = supabase.auth.currentUser?.id;
+
+      if (!_hasAppliedInitialHistoryContext) {
+        timeTrackerCubit.setHistoryContext(
+          viewMode: widget.initialHistoryViewMode,
+          anchorDate: widget.initialHistoryDate,
+        );
+        _hasAppliedInitialHistoryContext = true;
+      }
+
       // Avoid reloading if data is already loaded for this workspace
       if (wsId == null ||
           userId == null ||

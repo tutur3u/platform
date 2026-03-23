@@ -267,6 +267,22 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     emit(state.copyWith(sessionTitle: title));
   }
 
+  void setHistoryContext({
+    HistoryViewMode? viewMode,
+    DateTime? anchorDate,
+  }) {
+    final normalizedAnchorDate = anchorDate == null
+        ? null
+        : DateTime(anchorDate.year, anchorDate.month, anchorDate.day);
+    emit(
+      state.copyWith(
+        historyViewMode: viewMode ?? state.historyViewMode,
+        historyAnchorDate:
+            normalizedAnchorDate ?? state.historyAnchorDate ?? DateTime.now(),
+      ),
+    );
+  }
+
   Future<void> setHistoryViewMode(
     String wsId,
     String userId,
