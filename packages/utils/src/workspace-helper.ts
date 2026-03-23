@@ -798,10 +798,13 @@ export async function normalizeWorkspaceId(
   const sb =
     supabase ??
     (request != null ? await createClient(request) : await createClient());
-  if (
-    wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG ||
-    wsId === ROOT_WORKSPACE_ID
-  ) {
+  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+
+  if (resolvedWorkspaceId === ROOT_WORKSPACE_ID) {
+    return ROOT_WORKSPACE_ID;
+  }
+
+  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
     const {
       data: { user },
     } = await sb.auth.getUser();
@@ -823,7 +826,8 @@ export async function normalizeWorkspaceId(
 
     return workspace.id;
   }
-  return resolveWorkspaceId(wsId);
+
+  return resolvedWorkspaceId;
 }
 
 /**

@@ -1,24 +1,28 @@
 import { generateApiKey, hashApiKey } from '@tuturuuu/auth/api-keys';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
+
+import { assertWorkspaceApiKeysAccess } from './shared';
 
 const ApiKeyCreateSchema = z.object({
   name: z.string().max(MAX_NAME_LENGTH).min(1),
-  description: z.string().max(MAX_LONG_TEXT_LENGTH).optional(), // Description is optional
+  description: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   role_id: z.string().max(MAX_LONG_TEXT_LENGTH).nullable(),
   expires_at: z
     .string()
     .refine(
       (val) => {
-        if (!val) return true; // null/empty is okay
+        if (!val) return true;
         try {
           const date = new Date(val);
-          // Validate it's a proper ISO 8601 datetime
           return date.toISOString() === val;
         } catch {
           return false;
@@ -29,89 +33,111 @@ const ApiKeyCreateSchema = z.object({
     .nullable(),
 });
 
-interface Params {
-  params: Promise<{
-    wsId: string;
-  }>;
+const SAFE_COLUMNS =
+  'id, ws_id, name, description, key_prefix, role_id, last_used_at, expires_at, created_at, updated_at, created_by';
+
+interface RouteParams {
+  wsId: string;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { wsId: id } = await params;
+export const GET = withSessionAuth<RouteParams>(
+  async (_req, { user, supabase }, rawParams) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawParams.wsId, supabase);
 
-  // SECURITY: Explicitly select only safe columns, excluding key_hash and value
-  const { data, error } = await supabase
-    .from('workspace_api_keys')
-    .select(
-      'id, ws_id, name, description, key_prefix, role_id, last_used_at, expires_at, created_at, updated_at, created_by'
-    )
-    .eq('ws_id', id)
-    .single();
+      const denied = await assertWorkspaceApiKeysAccess(
+        supabase,
+        user.id,
+        wsId
+      );
+      if (denied) return denied;
 
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching workspace API configs' },
-      { status: 500 }
-    );
+      const sbAdmin = await createAdminClient();
+
+      const { data, error } = await sbAdmin
+        .from('workspace_api_keys')
+        .select(SAFE_COLUMNS)
+        .eq('ws_id', wsId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return NextResponse.json(
+          { message: 'Error fetching workspace API configs' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(data ?? []);
+    } catch (error) {
+      console.error('Error in GET workspace API keys:', error);
+      return NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      );
+    }
   }
+);
 
-  return NextResponse.json(data);
-}
+export const POST = withSessionAuth<RouteParams>(
+  async (req: NextRequest, { user, supabase }, rawParams) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawParams.wsId, supabase);
 
-export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { wsId: id } = await params;
+      const denied = await assertWorkspaceApiKeysAccess(
+        supabase,
+        user.id,
+        wsId
+      );
+      if (denied) return denied;
 
-  // Get authenticated user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+      const body = await req.json();
+      const validation = ApiKeyCreateSchema.safeParse(body);
 
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      if (!validation.success) {
+        return NextResponse.json(
+          { message: 'Invalid request', errors: validation.error.issues },
+          { status: 400 }
+        );
+      }
+
+      const data = validation.data;
+
+      const { key, prefix } = generateApiKey();
+      const keyHash = await hashApiKey(key);
+
+      const sbAdmin = await createAdminClient();
+
+      const { error } = await sbAdmin.from('workspace_api_keys').insert({
+        ws_id: wsId,
+        name: data.name,
+        description: data.description,
+        role_id: data.role_id,
+        expires_at: data.expires_at,
+        key_hash: keyHash,
+        key_prefix: prefix,
+        created_by: user.id,
+      });
+
+      if (error) {
+        console.error('Error creating API key:', error);
+        return NextResponse.json(
+          { message: 'Error creating workspace API key' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        message: 'API key created successfully',
+        key,
+        prefix,
+      });
+    } catch (error) {
+      console.error('Error in POST workspace API keys:', error);
+      return NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      );
+    }
   }
-
-  // Parse and validate request body
-  const body = await req.json();
-  const validation = ApiKeyCreateSchema.safeParse(body);
-
-  if (!validation.success) {
-    return NextResponse.json(
-      { message: 'Invalid request', errors: validation.error.issues },
-      { status: 400 }
-    );
-  }
-
-  const data = validation.data;
-
-  // Generate secure API key and hash server-side
-  const { key, prefix } = generateApiKey();
-  const keyHash = await hashApiKey(key);
-
-  const { error } = await supabase.from('workspace_api_keys').insert({
-    ws_id: id,
-    name: data.name,
-    description: data.description,
-    role_id: data.role_id,
-    expires_at: data.expires_at,
-    key_hash: keyHash,
-    key_prefix: prefix,
-    created_by: user.id,
-  });
-
-  if (error) {
-    console.error('Error creating API key:', error);
-    return NextResponse.json(
-      { message: 'Error creating workspace API key' },
-      { status: 500 }
-    );
-  }
-
-  // Return the plaintext key to the user (only time they'll see it)
-  return NextResponse.json({
-    message: 'API key created successfully',
-    key,
-    prefix,
-  });
-}
+);

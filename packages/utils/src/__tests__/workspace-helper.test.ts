@@ -10,7 +10,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mockCreateClient,
 }));
 
-import { getWorkspace, getWorkspaces } from '../workspace-helper';
+import {
+  getWorkspace,
+  getWorkspaces,
+  normalizeWorkspaceId,
+} from '../workspace-helper';
 
 describe('workspace-helper tier lookup', () => {
   beforeEach(() => {
@@ -115,6 +119,90 @@ describe('workspace-helper tier lookup', () => {
       'ws-1',
       'ws-2',
     ]);
+  });
+});
+
+describe('normalizeWorkspaceId', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('keeps root workspace UUID unchanged without resolving personal workspace', async () => {
+    const rootWorkspaceId = '00000000-0000-0000-0000-000000000000';
+    const fromMock = vi.fn();
+    const getUserMock = vi.fn();
+
+    mockCreateClient.mockResolvedValue({
+      auth: { getUser: getUserMock },
+      from: fromMock,
+    });
+
+    const resolved = await normalizeWorkspaceId(rootWorkspaceId);
+
+    expect(resolved).toBe(rootWorkspaceId);
+    expect(getUserMock).not.toHaveBeenCalled();
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('maps internal slug to root workspace UUID without personal workspace lookup', async () => {
+    const rootWorkspaceId = '00000000-0000-0000-0000-000000000000';
+    const fromMock = vi.fn();
+    const getUserMock = vi.fn();
+
+    mockCreateClient.mockResolvedValue({
+      auth: { getUser: getUserMock },
+      from: fromMock,
+    });
+
+    const resolved = await normalizeWorkspaceId('internal');
+
+    expect(resolved).toBe(rootWorkspaceId);
+    expect(getUserMock).not.toHaveBeenCalled();
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('resolves personal slug to the authenticated user personal workspace', async () => {
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    query.maybeSingle.mockResolvedValue({
+      data: { id: 'personal-ws-id' },
+      error: null,
+    });
+
+    const getUserMock = vi.fn().mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+    });
+    const fromMock = vi.fn((table: string) => {
+      if (table !== 'workspaces') {
+        throw new Error(`Unexpected table lookup: ${table}`);
+      }
+      return query;
+    });
+
+    mockCreateClient.mockResolvedValue({
+      auth: { getUser: getUserMock },
+      from: fromMock,
+    });
+
+    const resolved = await normalizeWorkspaceId('personal');
+
+    expect(resolved).toBe('personal-ws-id');
+    expect(getUserMock).toHaveBeenCalledTimes(1);
+    expect(fromMock).toHaveBeenCalledWith('workspaces');
+    expect(query.select).toHaveBeenCalledWith(
+      'id, workspace_members!inner(user_id)'
+    );
+    expect(query.eq).toHaveBeenCalledWith('personal', true);
+    expect(query.eq).toHaveBeenCalledWith(
+      'workspace_members.user_id',
+      'user-1'
+    );
   });
 });
 
