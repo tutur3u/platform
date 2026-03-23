@@ -1,16 +1,8 @@
 import dayjs from 'dayjs';
 
-export const POST_EMAIL_QUEUE_TABLE = 'post_email_queue';
+export { POST_EMAIL_QUEUE_STATUSES } from './statuses';
 
-export const POST_EMAIL_QUEUE_STATUSES = [
-  'queued',
-  'processing',
-  'sent',
-  'failed',
-  'blocked',
-  'cancelled',
-  'skipped',
-] as const;
+export const POST_EMAIL_QUEUE_TABLE = 'post_email_queue';
 
 export const POST_EMAIL_MAX_AGE_DAYS = 60;
 

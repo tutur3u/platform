@@ -499,28 +499,69 @@ export async function processPostEmailQueueBatch(
   const batchId = crypto.randomUUID();
   const now = new Date().toISOString();
   const claimedRows: QueueClaimedRow[] = [];
+  let rowIndex = 0;
 
-  for (const row of rows) {
-    if (claimedRows.length >= safeSendLimit) break;
+  while (claimedRows.length < safeSendLimit && rowIndex < rows.length) {
     if (Date.now() - startTime > maxDurationMs) break;
 
-    const claimPatch: QueueClaimUpdate = {
-      status: 'processing',
-      batch_id: batchId,
-      claimed_at: now,
-      last_attempt_at: now,
-      attempt_count: row.attempt_count + 1,
-      cancelled_at: null,
-    };
+    const slotsRemaining = safeSendLimit - claimedRows.length;
+    const claimWindow = rows.slice(rowIndex, rowIndex + slotsRemaining);
+    rowIndex += claimWindow.length;
+    if (claimWindow.length === 0) break;
 
-    const { data: claimData, error: claimError } = await getQueueTable(sbAdmin)
-      .update(claimPatch)
-      .eq('id', row.id)
-      .eq('status', row.status)
-      .select('id')
-      .maybeSingle();
+    const rowsByClaimGroup = new Map<
+      string,
+      {
+        rowIds: string[];
+        rowStatus: PostEmailQueueRow['status'];
+        nextAttempt: number;
+      }
+    >();
+    for (const row of claimWindow) {
+      const nextAttempt = row.attempt_count + 1;
+      const groupKey = `${row.status}:${nextAttempt}`;
+      const existing = rowsByClaimGroup.get(groupKey);
+      if (existing) {
+        existing.rowIds.push(row.id);
+        continue;
+      }
 
-    if (!claimError && claimData) {
+      rowsByClaimGroup.set(groupKey, {
+        rowIds: [row.id],
+        rowStatus: row.status,
+        nextAttempt,
+      });
+    }
+
+    const claimedIdSet = new Set<string>();
+    for (const group of rowsByClaimGroup.values()) {
+      const claimPatch: QueueClaimUpdate = {
+        status: 'processing',
+        batch_id: batchId,
+        claimed_at: now,
+        last_attempt_at: now,
+        attempt_count: group.nextAttempt,
+        cancelled_at: null,
+      };
+
+      const { data: claimData, error: claimError } = await getQueueTable(
+        sbAdmin
+      )
+        .update(claimPatch)
+        .in('id', group.rowIds)
+        .eq('status', group.rowStatus)
+        .select('id');
+
+      if (claimError) continue;
+      for (const claimed of claimData ?? []) {
+        if (claimed.id) {
+          claimedIdSet.add(claimed.id);
+        }
+      }
+    }
+
+    for (const row of claimWindow) {
+      if (!claimedIdSet.has(row.id)) continue;
       claimedRows.push({
         ...row,
         status: 'processing',
@@ -529,6 +570,7 @@ export async function processPostEmailQueueBatch(
         last_attempt_at: now,
         attempt_count: row.attempt_count + 1,
       });
+      if (claimedRows.length >= safeSendLimit) break;
     }
   }
 
