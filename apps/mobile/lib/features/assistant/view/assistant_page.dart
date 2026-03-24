@@ -10,7 +10,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:mobile/core/responsive/responsive_padding.dart';
@@ -112,9 +111,7 @@ class _AssistantPageState extends State<AssistantPage> {
         builder: (context, workspaceState) {
           final currentWorkspace = workspaceState.personalWorkspaceOrCurrent;
           if (currentWorkspace == null) {
-            return shad.Scaffold(
-              child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
-            );
+            return Center(child: Text(context.l10n.assistantSelectWorkspace));
           }
 
           return BlocBuilder<AssistantShellCubit, AssistantShellState>(
@@ -178,55 +175,102 @@ class _AssistantPageState extends State<AssistantPage> {
                     final isFullscreen = context.select(
                       (AssistantChromeCubit cubit) => cubit.state.isFullscreen,
                     );
+                    final theme = Theme.of(context);
+                    final showBackdropOrbs =
+                        theme.brightness == Brightness.dark;
+                    final hasConversation =
+                        chatState.messages.isNotEmpty ||
+                        chatState.queuedMessages.isNotEmpty ||
+                        chatState.status == AssistantChatStatus.submitting;
+                    final composerInset = shellState.isViewOnly
+                        ? 0.0
+                        : hasConversation
+                        ? _composerDockHeight(chatState)
+                        : 0.0;
 
-                    return shad.Scaffold(
-                      child: SafeArea(
-                        top: false,
-                        bottom: isFullscreen,
-                        child: AnimatedPadding(
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOut,
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.viewInsetsOf(context).bottom,
-                          ),
-                          child: ResponsiveWrapper(
-                            maxWidth: ResponsivePadding.maxContentWidth(
-                              context.deviceClass,
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                ResponsivePadding.horizontal(
-                                  context.deviceClass,
-                                ),
-                                0,
-                                ResponsivePadding.horizontal(
-                                  context.deviceClass,
-                                ),
-                                isFullscreen ? 4 : 0,
+                    return DecoratedBox(
+                      decoration: _buildPageDecoration(theme),
+                      child: Stack(
+                        children: [
+                          if (showBackdropOrbs) ...[
+                            const Positioned(
+                              top: -72,
+                              right: -40,
+                              child: _BackdropOrb(
+                                size: 220,
+                                color: Color(0xFF7C3AED),
                               ),
-                              child: Column(
-                                children: [
-                                  Expanded(
-                                    child: _buildConversation(
-                                      context,
-                                      currentWorkspace,
-                                      shellState,
-                                      chatState,
-                                    ),
+                            ),
+                            const Positioned(
+                              top: 116,
+                              left: -54,
+                              child: _BackdropOrb(
+                                size: 176,
+                                color: Color(0xFF0EA5E9),
+                              ),
+                            ),
+                            const Positioned(
+                              bottom: 110,
+                              right: -36,
+                              child: _BackdropOrb(
+                                size: 188,
+                                color: Color(0xFFF97316),
+                              ),
+                            ),
+                          ],
+                          SafeArea(
+                            top: false,
+                            bottom: isFullscreen,
+                            child: ResponsiveWrapper(
+                              maxWidth: ResponsivePadding.maxContentWidth(
+                                context.deviceClass,
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  ResponsivePadding.horizontal(
+                                    context.deviceClass,
                                   ),
-                                  if (!shellState.isViewOnly) const shad.Gap(8),
-                                  if (!shellState.isViewOnly)
-                                    _buildComposer(
-                                      context,
-                                      currentWorkspace.id,
-                                      shellState,
-                                      chatState,
+                                  0,
+                                  ResponsivePadding.horizontal(
+                                    context.deviceClass,
+                                  ),
+                                  isFullscreen ? 4 : 0,
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Positioned.fill(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: hasConversation
+                                              ? composerInset
+                                              : 0,
+                                        ),
+                                        child: _buildConversation(
+                                          context,
+                                          currentWorkspace,
+                                          shellState,
+                                          chatState,
+                                        ),
+                                      ),
                                     ),
-                                ],
+                                    if (!shellState.isViewOnly)
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 8,
+                                        child: _buildComposer(
+                                          context,
+                                          currentWorkspace.id,
+                                          shellState,
+                                          chatState,
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     );
                   },
@@ -249,7 +293,12 @@ class _AssistantPageState extends State<AssistantPage> {
     if (chatState.messages.isEmpty &&
         chatState.queuedMessages.isEmpty &&
         chatState.status != AssistantChatStatus.submitting) {
-      return _buildEmptyState(context, workspace.id, shellState);
+      return _buildEmptyState(
+        context,
+        workspace,
+        shellState,
+        bottomInset: shellState.isViewOnly ? 0 : _composerDockHeight(chatState),
+      );
     }
 
     // Filter out empty messages
@@ -702,54 +751,134 @@ class _AssistantPageState extends State<AssistantPage> {
 
   Widget _buildEmptyState(
     BuildContext context,
-    String wsId,
-    AssistantShellState shellState,
-  ) {
+    Workspace workspace,
+    AssistantShellState shellState, {
+    required double bottomInset,
+  }) {
+    final l10n = context.l10n;
+    final workspaceLabel = workspace.name?.trim().isNotEmpty == true
+        ? workspace.name!.trim()
+        : l10n.assistantPersonalWorkspace;
     final prompts = [
-      context.l10n.assistantQuickPromptCalendar,
-      context.l10n.assistantQuickPromptTasks,
-      context.l10n.assistantQuickPromptFocus,
+      _PromptDescriptor(
+        label: l10n.assistantQuickPromptCalendar,
+        badge: l10n.assistantCalendarLabel,
+        icon: Icons.calendar_month_rounded,
+        color: const Color(0xFF0EA5E9),
+      ),
+      _PromptDescriptor(
+        label: l10n.assistantQuickPromptTasks,
+        badge: l10n.assistantTasksLabel,
+        icon: Icons.task_alt_rounded,
+        color: const Color(0xFFA78BFA),
+      ),
+      _PromptDescriptor(
+        label: l10n.assistantQuickPromptFocus,
+        badge: l10n.assistantModeThinking,
+        icon: Icons.center_focus_strong_rounded,
+        color: const Color(0xFFF97316),
+      ),
+      _PromptDescriptor(
+        label: l10n.assistantQuickPromptExpense,
+        badge: l10n.assistantActionsTitle,
+        icon: Icons.receipt_long_rounded,
+        color: const Color(0xFF10B981),
+      ),
     ];
+    final nextEvent = _nextCalendarEvent(shellState);
+    final topTask = _topPriorityTask(shellState);
 
-    return Center(
+    return Align(
+      alignment: Alignment.topCenter,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: EdgeInsets.fromLTRB(0, 20, 0, 28 + bottomInset),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Animated assistant icon
-            _AnimatedAssistantIcon(),
-            const SizedBox(height: 24),
-            Text(
-              'What can I help you with?',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+            _AssistantHero(
+              assistantName: shellState.soul.name,
+              title: 'What can I help you with?',
+              description: l10n.assistantWorkspaceAwareDescription,
+              workspaceLabel: workspaceLabel,
+              thinkingModeLabel: _thinkingModeLabel(context, shellState),
+              creditsLabel: _creditsSummaryLabel(context, shellState),
+              tasksTotal: shellState.tasksInsight.total,
+              completedToday: shellState.tasksInsight.completedToday,
+              overdueTotal: shellState.tasksInsight.overdue.length,
+              upcomingEvents: shellState.calendarInsight.events.length,
             ),
-            const SizedBox(height: 12),
-            Text(
-              context.l10n.assistantWorkspaceAwareDescription,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.5,
-              ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final stacked = constraints.maxWidth < 620;
+                final taskCard = _InsightSpotlightCard(
+                  icon: Icons.priority_high_rounded,
+                  color: const Color(0xFFA78BFA),
+                  title: topTask?.name ?? l10n.assistantQuickPromptTasks,
+                  subtitle: topTask != null
+                      ? _taskSubtitle(context, topTask)
+                      : '${shellState.tasksInsight.total} ${l10n.assistantTasksLabel} • ${shellState.tasksInsight.overdue.length} ${l10n.assistantActiveLabel}',
+                  onTap: () => _submitText(
+                    workspace.id,
+                    shellState,
+                    l10n.assistantQuickPromptTasks,
+                  ),
+                );
+                final eventCard = _InsightSpotlightCard(
+                  icon: Icons.event_available_rounded,
+                  color: const Color(0xFF0EA5E9),
+                  title: nextEvent?.title ?? l10n.assistantQuickPromptCalendar,
+                  subtitle: nextEvent != null
+                      ? _calendarSubtitle(context, nextEvent)
+                      : '${shellState.calendarInsight.events.length} ${l10n.assistantUpcomingLabel} • ${l10n.assistantCalendarLabel}',
+                  onTap: () => _submitText(
+                    workspace.id,
+                    shellState,
+                    l10n.assistantQuickPromptCalendar,
+                  ),
+                );
+
+                if (stacked) {
+                  return Column(
+                    children: [
+                      taskCard,
+                      const SizedBox(height: 12),
+                      eventCard,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: taskCard),
+                    const SizedBox(width: 12),
+                    Expanded(child: eventCard),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 32),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              alignment: WrapAlignment.center,
-              children: prompts
-                  .map(
-                    (prompt) => _PromptChip(
-                      prompt: prompt,
-                      onTap: () => _submitText(wsId, shellState, prompt),
-                    ),
-                  )
-                  .toList(),
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: prompts.length,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 260,
+                mainAxisExtent: 108,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+              ),
+              itemBuilder: (context, index) {
+                final prompt = prompts[index];
+                return _PromptChip(
+                  prompt: prompt,
+                  onTap: () => _submitText(
+                    workspace.id,
+                    shellState,
+                    prompt.label,
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -763,30 +892,73 @@ class _AssistantPageState extends State<AssistantPage> {
     AssistantShellState shellState,
     AssistantChatState chatState,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(
+              const Color(0xFFA78BFA).withValues(alpha: isDark ? 0.14 : 0.05),
+              theme.colorScheme.surface,
+            ),
+            Color.alphaBlend(
+              const Color(0xFF0EA5E9).withValues(alpha: isDark ? 0.12 : 0.04),
+              theme.colorScheme.surface,
+            ),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: Theme.of(
-            context,
-          ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF0F172A).withValues(
+              alpha: isDark ? 0.18 : 0.08,
+            ),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _ComposerContextChip(
+                    icon: Icons.model_training_outlined,
+                    label: shellState.selectedModel.label,
+                    color: const Color(0xFFA78BFA),
+                  ),
+                  const SizedBox(width: 8),
+                  _ComposerContextChip(
+                    icon: Icons.bolt_rounded,
+                    label: _thinkingModeLabel(context, shellState),
+                    color: const Color(0xFF0EA5E9),
+                  ),
+                  const SizedBox(width: 8),
+                  _ComposerContextChip(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: _creditSourceLabel(context, shellState),
+                    color: const Color(0xFFF97316),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (chatState.composerAttachments.isNotEmpty)
             Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -808,53 +980,193 @@ class _AssistantPageState extends State<AssistantPage> {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                _ComposerActionButton(
-                  icon: Icons.add_rounded,
-                  onPressed: () =>
-                      _showComposerMenu(context, wsId, shellState, chatState),
+            padding: const EdgeInsets.all(10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withValues(
+                  alpha: isDark ? 0.68 : 0.78,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _inputController,
-                    focusNode: _inputFocusNode,
-                    minLines: 1,
-                    maxLines: 6,
-                    decoration: InputDecoration(
-                      hintText: context.l10n.assistantAskPlaceholder,
-                      hintStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 4,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: isDark ? 0.34 : 0.4,
+                  ),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+                    child: _ComposerActionButton(
+                      icon: Icons.add_rounded,
+                      onPressed: () => _showComposerMenu(
+                        context,
+                        wsId,
+                        shellState,
+                        chatState,
                       ),
                     ),
-                    onSubmitted: (_) => _submitCurrentInput(wsId, shellState),
                   ),
-                ),
-                const SizedBox(width: 8),
-                if (chatState.isBusy)
-                  _ComposerActionButton(
-                    icon: Icons.stop_rounded,
-                    isDestructive: true,
-                    onPressed: _chatCubit.stopStreaming,
-                  )
-                else
-                  _SendButton(
-                    onPressed: () => _submitCurrentInput(wsId, shellState),
+                  Expanded(
+                    child: TextField(
+                      controller: _inputController,
+                      focusNode: _inputFocusNode,
+                      minLines: 1,
+                      maxLines: 6,
+                      decoration: InputDecoration(
+                        hintText: context.l10n.assistantAskPlaceholder,
+                        hintStyle: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 14,
+                        ),
+                      ),
+                      onSubmitted: (_) => _submitCurrentInput(wsId, shellState),
+                    ),
                   ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 8, 8),
+                    child: chatState.isBusy
+                        ? _ComposerActionButton(
+                            icon: Icons.stop_rounded,
+                            isDestructive: true,
+                            onPressed: _chatCubit.stopStreaming,
+                          )
+                        : _SendButton(
+                            onPressed: () =>
+                                _submitCurrentInput(wsId, shellState),
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _thinkingModeLabel(
+    BuildContext context,
+    AssistantShellState shellState,
+  ) => shellState.thinkingMode == AssistantThinkingMode.fast
+      ? context.l10n.assistantModeFast
+      : context.l10n.assistantModeThinking;
+
+  String _creditSourceLabel(
+    BuildContext context,
+    AssistantShellState shellState,
+  ) => shellState.creditSource == AssistantCreditSource.personal
+      ? context.l10n.assistantPersonalCredits
+      : context.l10n.assistantWorkspaceCredits;
+
+  String _creditsSummaryLabel(
+    BuildContext context,
+    AssistantShellState shellState,
+  ) {
+    return context.l10n.assistantCreditsSummary(
+      shellState.activeCredits.remaining.toInt(),
+      shellState.activeCredits.tier,
+    );
+  }
+
+  AssistantTaskInsight? _topPriorityTask(AssistantShellState shellState) {
+    if (shellState.tasksInsight.overdue.isNotEmpty) {
+      return shellState.tasksInsight.overdue.first;
+    }
+    if (shellState.tasksInsight.today.isNotEmpty) {
+      return shellState.tasksInsight.today.first;
+    }
+    if (shellState.tasksInsight.upcoming.isNotEmpty) {
+      return shellState.tasksInsight.upcoming.first;
+    }
+
+    return null;
+  }
+
+  AssistantCalendarEvent? _nextCalendarEvent(AssistantShellState shellState) {
+    final now = DateTime.now();
+    final events = [...shellState.calendarInsight.events]
+      ..sort((left, right) {
+        final leftTime =
+            left.startAt ??
+            left.endAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final rightTime =
+            right.startAt ??
+            right.endAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        return leftTime.compareTo(rightTime);
+      });
+
+    for (final event in events) {
+      final eventTime = event.endAt ?? event.startAt;
+      if (eventTime == null || eventTime.isAfter(now)) {
+        return event;
+      }
+    }
+
+    return events.isEmpty ? null : events.first;
+  }
+
+  String _taskSubtitle(
+    BuildContext context,
+    AssistantTaskInsight? task,
+  ) {
+    if (task == null) {
+      return context.l10n.assistantWorkspaceAwareDescription;
+    }
+
+    final segments = <String>[
+      if ((task.boardName ?? '').trim().isNotEmpty) task.boardName!.trim(),
+      if ((task.listName ?? '').trim().isNotEmpty) task.listName!.trim(),
+      if (task.endDate != null)
+        DateFormat('EEE, MMM d • HH:mm').format(task.endDate!),
+    ];
+
+    if (segments.isEmpty) {
+      return context.l10n.assistantTasksLabel;
+    }
+
+    return segments.join(' • ');
+  }
+
+  String _calendarSubtitle(
+    BuildContext context,
+    AssistantCalendarEvent? event,
+  ) {
+    if (event == null) {
+      return context.l10n.assistantWorkspaceAwareDescription;
+    }
+
+    final segments = <String>[
+      if (event.startAt != null)
+        DateFormat('EEE, MMM d • HH:mm').format(event.startAt!),
+      if ((event.location ?? '').trim().isNotEmpty) event.location!.trim(),
+    ];
+
+    if (segments.isEmpty) {
+      return context.l10n.assistantCalendarLabel;
+    }
+
+    return segments.join(' • ');
+  }
+
+  BoxDecoration _buildPageDecoration(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
+    return BoxDecoration(
+      color: isDark ? const Color(0xFF09090C) : const Color(0xFFFAFAF7),
+    );
+  }
+
+  double _composerDockHeight(AssistantChatState chatState) {
+    return chatState.composerAttachments.isNotEmpty ? 204 : 154;
   }
 
   Future<void> _submitCurrentInput(
@@ -1372,6 +1684,400 @@ class _AssistantPageState extends State<AssistantPage> {
 
 // New widget classes for the redesigned UI
 
+class _PromptDescriptor {
+  const _PromptDescriptor({
+    required this.label,
+    required this.badge,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String badge;
+  final IconData icon;
+  final Color color;
+}
+
+class _BackdropOrb extends StatelessWidget {
+  const _BackdropOrb({
+    required this.size,
+    required this.color,
+  });
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color.withValues(alpha: 0.18),
+              color.withValues(alpha: 0.04),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AssistantHero extends StatelessWidget {
+  const _AssistantHero({
+    required this.assistantName,
+    required this.title,
+    required this.description,
+    required this.workspaceLabel,
+    required this.thinkingModeLabel,
+    required this.creditsLabel,
+    required this.tasksTotal,
+    required this.completedToday,
+    required this.overdueTotal,
+    required this.upcomingEvents,
+  });
+
+  final String assistantName;
+  final String title;
+  final String description;
+  final String workspaceLabel;
+  final String thinkingModeLabel;
+  final String creditsLabel;
+  final int tasksTotal;
+  final int completedToday;
+  final int overdueTotal;
+  final int upcomingEvents;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    const accentPurple = Color(0xFFA78BFA);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(
+              accentPurple.withValues(alpha: 0.1),
+              theme.colorScheme.surface,
+            ),
+            Color.alphaBlend(
+              const Color(0xFF0EA5E9).withValues(alpha: 0.1),
+              theme.colorScheme.surface,
+            ),
+            Color.alphaBlend(
+              const Color(0xFFF59E0B).withValues(alpha: 0.08),
+              theme.colorScheme.surface,
+            ),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.46),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accentPurple.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const _AnimatedAssistantIcon(size: 56),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        assistantName,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        title,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          height: 1.05,
+                          letterSpacing: -0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _SurfaceTag(
+                  icon: Icons.workspaces_rounded,
+                  label: workspaceLabel,
+                  color: const Color(0xFF0EA5E9),
+                ),
+                _SurfaceTag(
+                  icon: Icons.bolt_rounded,
+                  label: thinkingModeLabel,
+                  color: accentPurple,
+                ),
+                _SurfaceTag(
+                  icon: Icons.toll_rounded,
+                  label: creditsLabel,
+                  color: const Color(0xFFF97316),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              description,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _OverviewMetricTile(
+                    icon: Icons.task_alt_rounded,
+                    label: l10n.assistantTasksLabel,
+                    value: '$tasksTotal',
+                    detail: '$completedToday ${l10n.assistantDoneTodayLabel}',
+                    color: accentPurple,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _OverviewMetricTile(
+                    icon: Icons.warning_amber_rounded,
+                    label: l10n.assistantActiveLabel,
+                    value: '$overdueTotal',
+                    detail: l10n.assistantTasksLabel,
+                    color: const Color(0xFFF97316),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _OverviewMetricTile(
+                    icon: Icons.calendar_month_rounded,
+                    label: l10n.assistantUpcomingLabel,
+                    value: '$upcomingEvents',
+                    detail: l10n.assistantCalendarLabel,
+                    color: const Color(0xFF0EA5E9),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SurfaceTag extends StatelessWidget {
+  const _SurfaceTag({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverviewMetricTile extends StatelessWidget {
+  const _OverviewMetricTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.detail,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String detail;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            detail,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightSpotlightCard extends StatelessWidget {
+  const _InsightSpotlightCard({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withValues(alpha: 0.74),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: color.withValues(alpha: 0.22)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AssistantLoadingSkeleton extends StatefulWidget {
   const _AssistantLoadingSkeleton({
     required this.lineFractions,
@@ -1455,6 +2161,10 @@ class _AssistantLoadingSkeletonState extends State<_AssistantLoadingSkeleton>
 }
 
 class _AnimatedAssistantIcon extends StatefulWidget {
+  const _AnimatedAssistantIcon({this.size = 80});
+
+  final double size;
+
   @override
   State<_AnimatedAssistantIcon> createState() => _AnimatedAssistantIconState();
 }
@@ -1483,25 +2193,32 @@ class _AnimatedAssistantIconState extends State<_AnimatedAssistantIcon>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        final iconSize = widget.size * 0.5;
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final accent = isDark
+            ? theme.colorScheme.primary
+            : const Color(0xFF9F8BFF);
+
         return Container(
-          width: 80,
-          height: 80,
+          width: widget.size,
+          height: widget.size,
           decoration: BoxDecoration(
             gradient: SweepGradient(
               colors: [
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                accent.withValues(alpha: isDark ? 0.2 : 0.18),
+                accent.withValues(alpha: isDark ? 0.5 : 0.38),
+                accent.withValues(alpha: isDark ? 0.2 : 0.18),
               ],
               transform: GradientRotation(_controller.value * 2 * 3.14159),
             ),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(widget.size * 0.3),
           ),
           child: Center(
             child: Icon(
               Icons.auto_awesome_rounded,
-              size: 40,
-              color: Theme.of(context).colorScheme.primary,
+              size: iconSize,
+              color: accent,
             ),
           ),
         );
@@ -1512,54 +2229,137 @@ class _AnimatedAssistantIconState extends State<_AnimatedAssistantIcon>
 
 class _PromptChip extends StatelessWidget {
   const _PromptChip({required this.prompt, required this.onTap});
-  final String prompt;
+  final _PromptDescriptor prompt;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 Color.alphaBlend(
-                  const Color(
-                    0xFF8B5CF6,
-                  ).withValues(alpha: isDark ? 0.24 : 0.12),
-                  theme.colorScheme.surfaceContainerHigh,
+                  prompt.color.withValues(alpha: 0.14),
+                  theme.colorScheme.surfaceContainerLow,
                 ),
                 Color.alphaBlend(
-                  const Color(
-                    0xFF0EA5E9,
-                  ).withValues(alpha: isDark ? 0.22 : 0.1),
-                  theme.colorScheme.surfaceContainerHighest,
+                  prompt.color.withValues(alpha: 0.04),
+                  theme.colorScheme.surface,
                 ),
               ],
             ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: const Color(
-                0xFF8B5CF6,
-              ).withValues(alpha: isDark ? 0.46 : 0.28),
-            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: prompt.color.withValues(alpha: 0.24)),
           ),
-          child: Text(
-            prompt,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: prompt.color.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(prompt.icon, size: 16, color: prompt.color),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface.withValues(
+                            alpha: 0.72,
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          prompt.badge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                prompt.label,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ComposerContextChip extends StatelessWidget {
+  const _ComposerContextChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2196,26 +2996,43 @@ class _ComposerActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: 40,
-          height: 40,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
-            color: isDestructive
-                ? Theme.of(context).colorScheme.errorContainer
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDestructive
+                  ? [
+                      theme.colorScheme.errorContainer,
+                      theme.colorScheme.error.withValues(alpha: 0.16),
+                    ]
+                  : [
+                      theme.colorScheme.surfaceContainerHighest,
+                      theme.colorScheme.surfaceContainerLow,
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isDestructive
+                  ? theme.colorScheme.error.withValues(alpha: 0.24)
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.36),
+            ),
           ),
           child: Icon(
             icon,
             size: 20,
             color: isDestructive
-                ? Theme.of(context).colorScheme.error
-                : Theme.of(context).colorScheme.onSurfaceVariant,
+                ? theme.colorScheme.error
+                : theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -2229,19 +3046,42 @@ class _SendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Material(
-      color: Theme.of(context).colorScheme.primary,
-      borderRadius: BorderRadius.circular(20),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: SizedBox(
-          width: 40,
-          height: 40,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.colorScheme.primary,
+                Color.alphaBlend(
+                  const Color(0xFF0EA5E9).withValues(alpha: 0.28),
+                  theme.colorScheme.primary,
+                ),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withValues(alpha: 0.24),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
           child: Icon(
             Icons.arrow_upward_rounded,
             size: 20,
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: theme.colorScheme.onPrimary,
           ),
         ),
       ),

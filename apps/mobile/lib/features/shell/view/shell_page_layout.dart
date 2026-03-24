@@ -214,9 +214,11 @@ extension _ShellPageLayout on _ShellPageState {
     final items = _buildNavItems(context, state, l10n);
     final selectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final showBottomNav =
-        !widget.matchedLocation.startsWith(Routes.assistant) ||
-        !assistantChrome.isFullscreen;
+        (!widget.matchedLocation.startsWith(Routes.assistant) ||
+            !assistantChrome.isFullscreen) &&
+        !keyboardVisible;
     final isCompact = context.isCompact;
     final navigationBar = _buildNavigationBarContainer(
       context: context,
@@ -288,6 +290,7 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final isCompact = context.isCompact;
+    final showBottomNav = MediaQuery.viewInsetsOf(context).bottom <= 0;
     final navigationBar = _buildNavigationBarContainer(
       context: context,
       isCompact: isCompact,
@@ -392,16 +395,16 @@ extension _ShellPageLayout on _ShellPageState {
     );
 
     return shad.Scaffold(
-      footers: isCompact
+      footers: showBottomNav && isCompact
           ? [SafeArea(top: false, child: navigationBar)]
           : const [],
-      child: isCompact
-          ? pageView
-          : _buildBodyWithFloatingNav(
+      child: showBottomNav && !isCompact
+          ? _buildBodyWithFloatingNav(
               body: pageView,
               navigationBar: navigationBar,
               bodyBottomInset: _floatingNavBodyInset(context),
-            ),
+            )
+          : pageView,
     );
   }
 
