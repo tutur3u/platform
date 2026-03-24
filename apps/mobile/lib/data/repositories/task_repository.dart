@@ -819,6 +819,39 @@ class TaskRepository {
         .toList(growable: false);
   }
 
+  Future<({List<TaskLinkOption> tasks, int totalCount})>
+  getTimeTrackingTaskLinkOptions(
+    String wsId, {
+    required int limit,
+    required int offset,
+    bool assignedToMe = true,
+    String? searchQuery,
+  }) async {
+    final normalizedLimit = limit.clamp(1, 100);
+    final normalizedOffset = offset < 0 ? 0 : offset;
+    final normalizedSearch = searchQuery?.trim();
+    final query = _encodeQueryParameters({
+      'forTimeTracking': 'true',
+      'includeCount': 'true',
+      'limit': '$normalizedLimit',
+      'offset': '$normalizedOffset',
+      'assignedToMe': assignedToMe.toString(),
+      if (normalizedSearch != null && normalizedSearch.isNotEmpty)
+        'q': normalizedSearch,
+    });
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/tasks?$query',
+    );
+    final tasksRaw = response['tasks'] as List<dynamic>? ?? const [];
+    final tasks = tasksRaw
+        .whereType<Map<String, dynamic>>()
+        .map(TaskLinkOption.fromJson)
+        .toList(growable: false);
+    final totalCount = (response['count'] as num?)?.toInt() ?? tasks.length;
+
+    return (tasks: tasks, totalCount: totalCount);
+  }
+
   Future<List<WorkspaceUserOption>> getWorkspaceUsers(String wsId) async {
     final response = await _apiClient.getJson(
       '/api/v1/workspaces/$wsId/members',

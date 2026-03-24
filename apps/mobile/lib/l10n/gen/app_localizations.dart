@@ -4021,6 +4021,18 @@ abstract class AppLocalizations {
   /// **'Running'**
   String get timerRunning;
 
+  /// No description provided for @timerRunningSessionNoDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'No category or task linked'**
+  String get timerRunningSessionNoDetails;
+
+  /// No description provided for @timerRunningSessionNoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled session'**
+  String get timerRunningSessionNoTitle;
+
   /// No description provided for @timerPaused.
   ///
   /// In en, this message translates to:
@@ -4032,6 +4044,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stopped'**
   String get timerStopped;
+
+  /// No description provided for @timerSessionPauseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session paused successfully.'**
+  String get timerSessionPauseSuccess;
+
+  /// No description provided for @timerSessionResumeSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session resumed successfully.'**
+  String get timerSessionResumeSuccess;
+
+  /// No description provided for @timerSessionStopSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session stopped successfully.'**
+  String get timerSessionStopSuccess;
 
   /// No description provided for @timerPause.
   ///
@@ -4074,6 +4104,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Category name'**
   String get timerCategoryName;
+
+  /// No description provided for @timerCategoryColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get timerCategoryColor;
+
+  /// No description provided for @timerCategoryColorLime.
+  ///
+  /// In en, this message translates to:
+  /// **'Lime'**
+  String get timerCategoryColorLime;
+
+  /// No description provided for @timerCategoryColorTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get timerCategoryColorTeal;
+
+  /// No description provided for @timerCategoryColorSky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sky'**
+  String get timerCategoryColorSky;
+
+  /// No description provided for @timerCategoryColorRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose'**
+  String get timerCategoryColorRose;
+
+  /// No description provided for @timerCategoryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get timerCategoryDescription;
+
+  /// No description provided for @timerCategoryColorNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get timerCategoryColorNone;
+
+  /// No description provided for @timerCreateCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Create category'**
+  String get timerCreateCategory;
+
+  /// No description provided for @timerCategoryCreateInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating category...'**
+  String get timerCategoryCreateInProgress;
+
+  /// No description provided for @timerCategoryCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Category created'**
+  String get timerCategoryCreateSuccess;
+
+  /// No description provided for @timerSelectCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select category'**
+  String get timerSelectCategory;
+
+  /// No description provided for @timerAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get timerAdvanced;
+
+  /// No description provided for @timerSessionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get timerSessionDescription;
+
+  /// No description provided for @timerLinkTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get timerLinkTask;
+
+  /// No description provided for @timerTaskPickerAllTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'All tasks'**
+  String get timerTaskPickerAllTasks;
+
+  /// No description provided for @timerTaskPickerAssignedToMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to me'**
+  String get timerTaskPickerAssignedToMe;
+
+  /// No description provided for @timerTaskPickerAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No assignees} one{{count} assignee} other{{count} assignees}}'**
+  String timerTaskPickerAssignees(int count);
+
+  /// No description provided for @timerTaskPickerNoMatchingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching tasks'**
+  String get timerTaskPickerNoMatchingTasks;
+
+  /// No description provided for @timerTaskPickerNoTask.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked task'**
+  String get timerTaskPickerNoTask;
+
+  /// No description provided for @timerTaskPickerResultCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No tasks} one{{count} task} other{{count} tasks}}'**
+  String timerTaskPickerResultCount(int count);
+
+  /// No description provided for @timerTaskPickerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get timerTaskPickerSearch;
+
+  /// No description provided for @timerTaskIdPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a task'**
+  String get timerTaskIdPlaceholder;
 
   /// No description provided for @timerRecentSessions.
   ///

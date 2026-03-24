@@ -780,8 +780,13 @@
     "timerStop": "Stop",
     "timerHistory": "History",
     "timerRunning": "Running",
+    "timerRunningSessionNoDetails": "No category or task linked",
+    "timerRunningSessionNoTitle": "Untitled session",
     "timerPaused": "Paused",
     "timerStopped": "Stopped",
+    "timerSessionPauseSuccess": "Session paused successfully.",
+    "timerSessionResumeSuccess": "Session resumed successfully.",
+    "timerSessionStopSuccess": "Session stopped successfully.",
     "timerPause": "Pause",
     "timerResume": "Resume",
     "timerSessionTitle": "Session title",
@@ -789,6 +794,42 @@
     "timerNoCategory": "No category",
     "timerAddCategory": "Add category",
     "timerCategoryName": "Category name",
+    "timerCategoryColor": "Color",
+    "timerCategoryColorLime": "Lime",
+    "timerCategoryColorTeal": "Teal",
+    "timerCategoryColorSky": "Sky",
+    "timerCategoryColorRose": "Rose",
+    "timerCategoryDescription": "Description",
+    "timerCategoryColorNone": "None",
+    "timerCreateCategory": "Create category",
+    "timerCategoryCreateInProgress": "Creating category...",
+    "timerCategoryCreateSuccess": "Category created",
+    "timerSelectCategory": "Select category",
+    "timerAdvanced": "Advanced",
+    "timerSessionDescription": "Description",
+    "timerLinkTask": "Task",
+    "timerTaskPickerAllTasks": "All tasks",
+    "timerTaskPickerAssignedToMe": "Assigned to me",
+    "timerTaskPickerAssignees": "{count, plural, =0{No assignees} one{{count} assignee} other{{count} assignees}}",
+    "@timerTaskPickerAssignees": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerTaskPickerNoMatchingTasks": "No matching tasks",
+    "timerTaskPickerNoTask": "No linked task",
+    "timerTaskPickerResultCount": "{count, plural, =0{No tasks} one{{count} task} other{{count} tasks}}",
+    "@timerTaskPickerResultCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerTaskPickerSearch": "Search tasks",
+    "timerTaskIdPlaceholder": "Select a task",
     "timerRecentSessions": "Recent sessions",
     "timerSeeAll": "See all",
     "timerNoSessions": "No sessions yet",

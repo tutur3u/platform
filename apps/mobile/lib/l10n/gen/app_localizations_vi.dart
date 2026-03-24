@@ -2043,10 +2043,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRunning => 'Đang chạy';
 
   @override
+  String get timerRunningSessionNoDetails => 'Chưa liên kết danh mục hoặc nhiệm vụ';
+
+  @override
+  String get timerRunningSessionNoTitle => 'Phiên không có tiêu đề';
+
+  @override
   String get timerPaused => 'Tạm dừng';
 
   @override
   String get timerStopped => 'Đã dừng';
+
+  @override
+  String get timerSessionPauseSuccess => 'Đã tạm dừng phiên thành công.';
+
+  @override
+  String get timerSessionResumeSuccess => 'Đã tiếp tục phiên thành công.';
+
+  @override
+  String get timerSessionStopSuccess => 'Đã dừng phiên thành công.';
 
   @override
   String get timerPause => 'Tạm dừng';
@@ -2068,6 +2083,90 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get timerCategoryName => 'Tên danh mục';
+
+  @override
+  String get timerCategoryColor => 'Màu sắc';
+
+  @override
+  String get timerCategoryColorLime => 'Xanh chanh';
+
+  @override
+  String get timerCategoryColorTeal => 'Xanh mòng két';
+
+  @override
+  String get timerCategoryColorSky => 'Xanh da trời';
+
+  @override
+  String get timerCategoryColorRose => 'Hồng hoa hồng';
+
+  @override
+  String get timerCategoryDescription => 'Mô tả';
+
+  @override
+  String get timerCategoryColorNone => 'Không';
+
+  @override
+  String get timerCreateCategory => 'Tạo danh mục';
+
+  @override
+  String get timerCategoryCreateInProgress => 'Đang tạo danh mục...';
+
+  @override
+  String get timerCategoryCreateSuccess => 'Đã tạo danh mục';
+
+  @override
+  String get timerSelectCategory => 'Chọn danh mục';
+
+  @override
+  String get timerAdvanced => 'Nâng cao';
+
+  @override
+  String get timerSessionDescription => 'Mô tả';
+
+  @override
+  String get timerLinkTask => 'Nhiệm vụ';
+
+  @override
+  String get timerTaskPickerAllTasks => 'Tất cả nhiệm vụ';
+
+  @override
+  String get timerTaskPickerAssignedToMe => 'Giao cho tôi';
+
+  @override
+  String timerTaskPickerAssignees(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count người phụ trách',
+      one: '$count người phụ trách',
+      zero: 'Không có người phụ trách',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerTaskPickerNoMatchingTasks => 'Không tìm thấy nhiệm vụ phù hợp';
+
+  @override
+  String get timerTaskPickerNoTask => 'Không liên kết nhiệm vụ';
+
+  @override
+  String timerTaskPickerResultCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nhiệm vụ',
+      one: '$count nhiệm vụ',
+      zero: 'Không có nhiệm vụ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerTaskPickerSearch => 'Tìm kiếm nhiệm vụ';
+
+  @override
+  String get timerTaskIdPlaceholder => 'Chọn nhiệm vụ';
 
   @override
   String get timerRecentSessions => 'Phiên gần đây';

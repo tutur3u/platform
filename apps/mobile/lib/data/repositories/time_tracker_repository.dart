@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
@@ -41,7 +42,9 @@ abstract class ITimeTrackerRepository {
   Future<TimeTrackingSession> startSession(
     String wsId, {
     String? title,
+    String? description,
     String? categoryId,
+    String? taskId,
     String? userId,
     String? parentSessionId,
     bool wasResumed = false,
@@ -216,6 +219,9 @@ abstract class ITimeTrackerRepository {
   Future<void> savePomodoroSettings(PomodoroSettings settings);
 
   Future<PomodoroSettings> loadPomodoroSettings();
+
+  /// Fetches minimal task display info (name, ticket label) for a single task.
+  Future<TaskLinkOption?> getTaskLinkOptionById(String wsId, String taskId);
 }
 
 /// Repository for time tracking operations using API endpoints.
@@ -415,7 +421,9 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   Future<TimeTrackingSession> startSession(
     String wsId, {
     String? title,
+    String? description,
     String? categoryId,
+    String? taskId,
     String? userId,
     String? parentSessionId,
     bool wasResumed = false,
@@ -424,7 +432,9 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       '/api/v1/workspaces/$wsId/time-tracking/sessions',
       {
         'title': title ?? 'Work session',
+        if (description != null) 'description': description,
         if (categoryId != null) 'categoryId': categoryId,
+        if (taskId != null) 'taskId': taskId,
         if (userId != null) 'userId': userId,
         if (parentSessionId != null) 'parentSessionId': parentSessionId,
         if (wasResumed) 'wasResumed': true,
@@ -1005,5 +1015,23 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     final raw = prefs.getString(_pomodoroKey);
     if (raw == null) return const PomodoroSettings();
     return PomodoroSettings.fromJsonString(raw);
+  }
+
+  @override
+  Future<TaskLinkOption?> getTaskLinkOptionById(
+    String wsId,
+    String taskId,
+  ) async {
+    try {
+      final response = await _api.getJson(
+        '/api/v1/workspaces/$wsId/tasks/$taskId',
+      );
+      final task = response['task'];
+      if (task is! Map<String, dynamic>) return null;
+      return TaskLinkOption.fromJson(task);
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
   }
 }
