@@ -14,7 +14,7 @@ Future<void> showTaskLinkPickerSheet({
   required TaskRepository taskRepository,
   required String wsId,
   required String? selectedTaskId,
-  required ValueChanged<String?> onSelected,
+  required ValueChanged<TaskLinkOption?> onSelected,
 }) async {
   showAdaptiveDrawer(
     context: context,
@@ -42,7 +42,7 @@ class TaskLinkPickerSheet extends StatefulWidget {
   final TaskRepository taskRepository;
   final String wsId;
   final String? selectedTaskId;
-  final ValueChanged<String?> onSelected;
+  final ValueChanged<TaskLinkOption?> onSelected;
 
   @override
   State<TaskLinkPickerSheet> createState() => _TaskLinkPickerSheetState();
@@ -103,8 +103,8 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
     await Navigator.maybePop(context);
   }
 
-  Future<void> _selectTask(BuildContext context, String? taskId) async {
-    widget.onSelected(taskId);
+  Future<void> _selectTask(BuildContext context, TaskLinkOption? task) async {
+    widget.onSelected(task);
     await _closeSheet(context);
   }
 
@@ -232,111 +232,127 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final screenH = MediaQuery.sizeOf(context).height;
 
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 4),
-            child: Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.timerLinkTask,
-                    style: theme.typography.h4,
-                  ),
-                ),
-                shad.IconButton.ghost(
-                  icon: const Icon(shad.LucideIcons.x, size: 18),
-                  onPressed: () => unawaited(_closeSheet(context)),
-                ),
-              ],
-            ),
-          ),
-          const shad.Divider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: shad.TextField(
-              controller: _searchController,
-              hintText: l10n.timerTaskPickerSearch,
-              onChanged: _onSearchChanged,
-              features: const [
-                shad.InputFeature.leading(Icon(Icons.search, size: 18)),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-            child: Row(
-              children: [
-                _QuickFilterChip(
-                  label: l10n.timerTaskPickerAssignedToMe,
-                  selected: _assignedToMeOnly,
-                  onTap: () => _toggleQuickFilter(true),
-                ),
-                const shad.Gap(8),
-                _QuickFilterChip(
-                  label: l10n.timerTaskPickerAllTasks,
-                  selected: !_assignedToMeOnly,
-                  onTap: () => _toggleQuickFilter(false),
-                ),
-                const Spacer(),
-                if (_isLoadingInitial)
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  Text(
-                    l10n.timerTaskPickerResultCount(_totalCount),
-                    style: theme.typography.xSmall.copyWith(
-                      color: colorScheme.mutedForeground,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.55,
-              minHeight: 220,
-            ),
-            child: _buildTaskList(context),
-          ),
-          const shad.Divider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Bottom drawers pass a finite max height; unbounded would overflow
+          // when combining fixed chrome + min list height + footer.
+          final sheetMaxH = constraints.hasBoundedHeight
+              ? constraints.maxHeight
+              : screenH * 0.92;
+
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: sheetMaxH),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                shad.OutlineButton(
-                  onPressed: () => unawaited(_selectTask(context, null)),
-                  child: Text(l10n.timerTaskPickerNoTask),
+                // Phone: shad.openDrawer already paints a drag handle.
+                // Dialog: show one.
+                if (!context.isCompact)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colorScheme.border,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.timerLinkTask,
+                          style: theme.typography.h4,
+                        ),
+                      ),
+                      shad.IconButton.ghost(
+                        icon: const Icon(shad.LucideIcons.x, size: 18),
+                        onPressed: () => unawaited(_closeSheet(context)),
+                      ),
+                    ],
+                  ),
                 ),
-                const shad.Gap(8),
-                shad.GhostButton(
-                  onPressed: () => unawaited(_closeSheet(context)),
-                  child: Text(l10n.commonCancel),
+                const shad.Divider(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: shad.TextField(
+                    controller: _searchController,
+                    hintText: l10n.timerTaskPickerSearch,
+                    onChanged: _onSearchChanged,
+                    features: const [
+                      shad.InputFeature.leading(Icon(Icons.search, size: 18)),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                  child: Row(
+                    children: [
+                      _QuickFilterChip(
+                        label: l10n.timerTaskPickerAssignedToMe,
+                        selected: _assignedToMeOnly,
+                        onTap: () => _toggleQuickFilter(true),
+                      ),
+                      const shad.Gap(8),
+                      _QuickFilterChip(
+                        label: l10n.timerTaskPickerAllTasks,
+                        selected: !_assignedToMeOnly,
+                        onTap: () => _toggleQuickFilter(false),
+                      ),
+                      const Spacer(),
+                      if (_isLoadingInitial)
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        Text(
+                          l10n.timerTaskPickerResultCount(_totalCount),
+                          style: theme.typography.xSmall.copyWith(
+                            color: colorScheme.mutedForeground,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: _buildTaskList(context),
+                ),
+                const shad.Divider(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      shad.OutlineButton(
+                        onPressed: () => unawaited(_selectTask(context, null)),
+                        child: Text(l10n.timerTaskPickerNoTask),
+                      ),
+                      const shad.Gap(8),
+                      shad.GhostButton(
+                        onPressed: () => unawaited(_closeSheet(context)),
+                        child: Text(l10n.commonCancel),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -415,7 +431,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
         return _TaskOptionCard(
           task: task,
           selected: selected,
-          onTap: () => unawaited(_selectTask(context, task.id)),
+          onTap: () => unawaited(_selectTask(context, task)),
         );
       },
     );

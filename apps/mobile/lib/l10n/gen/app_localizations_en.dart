@@ -2061,7 +2061,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerCategoryColor => 'Color';
 
   @override
-  String get timerCategoryDescription => 'Description (optional)';
+  String get timerCategoryDescription => 'Description';
 
   @override
   String get timerCategoryColorNone => 'None';
@@ -2082,10 +2082,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerAdvanced => 'Advanced';
 
   @override
-  String get timerSessionDescription => 'Description (optional)';
+  String get timerSessionDescription => 'Description';
 
   @override
-  String get timerLinkTask => 'Link task';
+  String get timerLinkTask => 'Task';
 
   @override
   String get timerTaskPickerAllTasks => 'All tasks';
@@ -2120,7 +2120,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerTaskPickerSearch => 'Search tasks';
 
   @override
-  String get timerTaskIdPlaceholder => 'Task ID';
+  String get timerTaskIdPlaceholder => 'Select a task';
 
   @override
   String get timerRecentSessions => 'Recent sessions';

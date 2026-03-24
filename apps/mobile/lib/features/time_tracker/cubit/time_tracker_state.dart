@@ -30,6 +30,8 @@ class TimeTrackerState extends Equatable {
     this.sessionTitle,
     this.sessionDescription,
     this.sessionTaskId,
+    this.sessionTaskName,
+    this.sessionTaskTicketLabel,
     this.thresholdDays,
     this.pomodoroSettings = const PomodoroSettings(),
     this.pomodoroPhase = PomodoroPhase.idle,
@@ -62,6 +64,8 @@ class TimeTrackerState extends Equatable {
   final String? sessionTitle;
   final String? sessionDescription;
   final String? sessionTaskId;
+  final String? sessionTaskName;
+  final String? sessionTaskTicketLabel;
   final int? thresholdDays;
   final PomodoroSettings pomodoroSettings;
   final PomodoroPhase pomodoroPhase;
@@ -107,6 +111,8 @@ class TimeTrackerState extends Equatable {
     String? sessionTitle,
     String? sessionDescription,
     String? sessionTaskId,
+    String? sessionTaskName,
+    String? sessionTaskTicketLabel,
     Object? thresholdDays = _sentinel,
     PomodoroSettings? pomodoroSettings,
     PomodoroPhase? pomodoroPhase,
@@ -127,6 +133,7 @@ class TimeTrackerState extends Equatable {
     bool clearSelectedCategory = false,
     bool clearSessionDescription = false,
     bool clearSessionTaskId = false,
+    bool clearSessionTaskMeta = false,
     bool clearThresholdDays = false,
     bool clearHistoryPeriodStats = false,
     bool clearHistoryNextCursor = false,
@@ -163,6 +170,12 @@ class TimeTrackerState extends Equatable {
     sessionTaskId: clearSessionTaskId
         ? null
         : (sessionTaskId ?? this.sessionTaskId),
+    sessionTaskName: (clearSessionTaskId || clearSessionTaskMeta)
+        ? null
+        : (sessionTaskName ?? this.sessionTaskName),
+    sessionTaskTicketLabel: (clearSessionTaskId || clearSessionTaskMeta)
+        ? null
+        : (sessionTaskTicketLabel ?? this.sessionTaskTicketLabel),
     thresholdDays: clearThresholdDays
         ? null
         : (thresholdDays == _sentinel
@@ -210,6 +223,8 @@ class TimeTrackerState extends Equatable {
     sessionTitle,
     sessionDescription,
     sessionTaskId,
+    sessionTaskName,
+    sessionTaskTicketLabel,
     thresholdDays,
     pomodoroSettings,
     pomodoroPhase,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
@@ -281,11 +282,19 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     }
   }
 
-  void setTaskId(String? taskId) {
-    if (taskId == null || taskId.isEmpty) {
+  void setTaskOption(TaskLinkOption? task) {
+    if (task == null) {
       emit(state.copyWith(clearSessionTaskId: true));
     } else {
-      emit(state.copyWith(sessionTaskId: taskId));
+      emit(
+        state.copyWith(
+          sessionTaskId: task.id,
+          sessionTaskName: task.name.trim().isNotEmpty
+              ? task.name.trim()
+              : null,
+          sessionTaskTicketLabel: task.ticketLabel,
+        ),
+      );
     }
   }
 

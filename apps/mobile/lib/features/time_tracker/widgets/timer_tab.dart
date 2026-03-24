@@ -9,7 +9,6 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
-import 'package:mobile/features/time_tracker/widgets/category_selector_button.dart';
 import 'package:mobile/features/time_tracker/widgets/category_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/missed_entry_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/task_link_picker_sheet.dart';
@@ -76,42 +75,36 @@ class TimerTab extends StatelessWidget {
                   ),
                 ),
               ),
-            const shad.Gap(16),
-            // Category selector
-            if (!state.isRunning && !state.isPaused)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: CategorySelectorButton(
+            // Advanced section (category, description, task link)
+            if (!state.isRunning && !state.isPaused) ...[
+              const shad.Gap(16),
+              TimerAdvancedSection(
+                categories: state.categories,
+                selectedCategoryId: state.selectedCategoryId,
+                onOpenCategoryPicker: () => showCategorySheet(
+                  context: context,
                   categories: state.categories,
                   selectedCategoryId: state.selectedCategoryId,
-                  onTap: () => showCategorySheet(
-                    context: context,
-                    categories: state.categories,
-                    selectedCategoryId: state.selectedCategoryId,
-                    onSelected: cubit.selectCategory,
-                    onCreateCategory:
-                        ({
-                          required name,
-                          color,
-                          description,
-                        }) => cubit.createCategory(
-                          wsId,
-                          name,
-                          color: color,
-                          description: description,
-                          throwOnError: true,
-                        ),
-                  ),
+                  onSelected: cubit.selectCategory,
+                  onCreateCategory:
+                      ({
+                        required name,
+                        color,
+                        description,
+                      }) => cubit.createCategory(
+                        wsId,
+                        name,
+                        color: color,
+                        description: description,
+                        throwOnError: true,
+                      ),
                 ),
-              ),
-            // Advanced section (description + task link)
-            if (!state.isRunning && !state.isPaused) ...[
-              const shad.Gap(4),
-              TimerAdvancedSection(
                 initialDescription: state.sessionDescription,
                 initialTaskId: state.sessionTaskId,
+                initialTaskName: state.sessionTaskName,
+                initialTaskTicketLabel: state.sessionTaskTicketLabel,
                 onDescriptionChanged: cubit.setDescription,
-                onTaskIdChanged: cubit.setTaskId,
+                onClearTask: () => cubit.setTaskOption(null),
                 onOpenTaskPicker: () {
                   if (wsId.isEmpty) {
                     return;
@@ -122,7 +115,7 @@ class TimerTab extends StatelessWidget {
                       taskRepository: TaskRepository(),
                       wsId: wsId,
                       selectedTaskId: state.sessionTaskId,
-                      onSelected: cubit.setTaskId,
+                      onSelected: cubit.setTaskOption,
                     ),
                   );
                 },

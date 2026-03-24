@@ -141,11 +141,11 @@ class TaskLinkOption extends Equatable {
     if (display == null) {
       return null;
     }
-    final prefix = ticketPrefix?.trim();
-    if (prefix != null && prefix.isNotEmpty) {
-      return '$prefix-$display';
-    }
-    return '#$display';
+    final rawPrefix = ticketPrefix?.trim();
+    final prefix = (rawPrefix != null && rawPrefix.isNotEmpty)
+        ? rawPrefix.toUpperCase()
+        : 'TASK';
+    return '$prefix-$display';
   }
 
   @override

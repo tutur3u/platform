@@ -207,10 +207,59 @@ export async function GET(
 
     const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
 
-    let query = sbAdmin
-      .from('tasks')
-      .select(
-        `
+    const timeTrackingSelect = `
+        id,
+        display_number,
+        name,
+        priority,
+        start_date,
+        end_date,
+        list_id,
+        task_lists!inner (
+          id,
+          name,
+          status,
+          deleted,
+          board_id,
+          workspace_boards!inner (
+            id,
+            name,
+            ticket_prefix,
+            ws_id
+          )
+        ),
+        assignees:task_assignees(
+          user_id
+        )
+      `;
+
+    const timeTrackingSelectAssignedToMe = `
+        id,
+        display_number,
+        name,
+        priority,
+        start_date,
+        end_date,
+        list_id,
+        task_lists!inner (
+          id,
+          name,
+          status,
+          deleted,
+          board_id,
+          workspace_boards!inner (
+            id,
+            name,
+            ticket_prefix,
+            ws_id
+          )
+        ),
+        assignees:task_assignees!inner(
+          user_id
+        )
+      `;
+
+    const fullSelect = `
         id,
         display_number,
         name,
@@ -261,9 +310,72 @@ export async function GET(
             status
           )
         )
-      `,
-        includeCount ? { count: 'exact' } : undefined
-      )
+      `;
+
+    const fullSelectAssignedToMe = `
+        id,
+        display_number,
+        name,
+        description,
+        priority,
+        completed,
+        completed_at,
+        sort_key,
+        start_date,
+        end_date,
+        estimation_points,
+        created_at,
+        list_id,
+        closed_at,
+        task_lists!inner (
+          id,
+          name,
+          status,
+          deleted,
+          board_id,
+          workspace_boards!inner (
+            id,
+            name,
+            ticket_prefix,
+            ws_id
+          )
+        ),
+        assignees:task_assignees!inner(
+          user_id,
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
+        ),
+        projects:task_project_tasks(
+          project:task_projects(
+            id,
+            name,
+            status
+          )
+        )
+      `;
+
+    const selectedColumns = forTimeTracking
+      ? assignedToMe
+        ? timeTrackingSelectAssignedToMe
+        : timeTrackingSelect
+      : assignedToMe
+        ? fullSelectAssignedToMe
+        : fullSelect;
+
+    let query = sbAdmin
+      .from('tasks')
+      .select(selectedColumns, includeCount ? { count: 'exact' } : undefined)
       .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId);
 
     if (includeDeletedMode === 'none') {
@@ -307,24 +419,30 @@ export async function GET(
       }
     }
 
-    const { data, error, count } = await query
+    const queryResult = await query
       .order('sort_key', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
+
+    const { data, error, count } = queryResult as unknown as {
+      data: TaskRecord[] | null;
+      error: unknown;
+      count: number | null;
+    };
 
     if (error) {
       console.error('Database error in tasks query:', error);
       throw new Error('TASKS_QUERY_FAILED');
     }
 
-    const tasks = (data as TaskRecord[] | null)?.map(normalizeTask) ?? [];
+    const tasks = data?.map(normalizeTask) ?? [];
 
     let relationshipSummaryByTaskId = new Map<
       string,
       TaskRelationshipSummary
     >();
 
-    if (includeRelationshipSummary) {
+    if (includeRelationshipSummary && !forTimeTracking) {
       const taskIds = tasks.map((task) => task.id).filter(Boolean);
 
       try {

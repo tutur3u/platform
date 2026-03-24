@@ -92,22 +92,22 @@ class CategorySheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag handle
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 4),
-            child: Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.border,
-                  borderRadius: BorderRadius.circular(2),
+          // Phone: shad.openDrawer already paints a drag handle.
+          // Dialog: show one.
+          if (!context.isCompact)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 4),
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
             ),
-          ),
-
-          // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(

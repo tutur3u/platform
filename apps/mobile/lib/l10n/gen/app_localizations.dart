@@ -4060,7 +4060,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerCategoryDescription.
   ///
   /// In en, this message translates to:
-  /// **'Description (optional)'**
+  /// **'Description'**
   String get timerCategoryDescription;
 
   /// No description provided for @timerCategoryColorNone.
@@ -4102,13 +4102,13 @@ abstract class AppLocalizations {
   /// No description provided for @timerSessionDescription.
   ///
   /// In en, this message translates to:
-  /// **'Description (optional)'**
+  /// **'Description'**
   String get timerSessionDescription;
 
   /// No description provided for @timerLinkTask.
   ///
   /// In en, this message translates to:
-  /// **'Link task'**
+  /// **'Task'**
   String get timerLinkTask;
 
   /// No description provided for @timerTaskPickerAllTasks.
@@ -4156,7 +4156,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerTaskIdPlaceholder.
   ///
   /// In en, this message translates to:
-  /// **'Task ID'**
+  /// **'Select a task'**
   String get timerTaskIdPlaceholder;
 
   /// No description provided for @timerRecentSessions.

@@ -2061,7 +2061,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerCategoryColor => 'Màu sắc';
 
   @override
-  String get timerCategoryDescription => 'Mô tả (tùy chọn)';
+  String get timerCategoryDescription => 'Mô tả';
 
   @override
   String get timerCategoryColorNone => 'Không';
@@ -2082,10 +2082,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerAdvanced => 'Nâng cao';
 
   @override
-  String get timerSessionDescription => 'Mô tả (tùy chọn)';
+  String get timerSessionDescription => 'Mô tả';
 
   @override
-  String get timerLinkTask => 'Liên kết nhiệm vụ';
+  String get timerLinkTask => 'Nhiệm vụ';
 
   @override
   String get timerTaskPickerAllTasks => 'Tất cả nhiệm vụ';
@@ -2120,7 +2120,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerTaskPickerSearch => 'Tìm kiếm nhiệm vụ';
 
   @override
-  String get timerTaskIdPlaceholder => 'ID nhiệm vụ';
+  String get timerTaskIdPlaceholder => 'Chọn nhiệm vụ';
 
   @override
   String get timerRecentSessions => 'Phiên gần đây';
