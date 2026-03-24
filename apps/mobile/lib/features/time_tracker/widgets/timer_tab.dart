@@ -262,7 +262,7 @@ class _TimerTabState extends State<TimerTab> {
     _setPendingAction(_TimerControlAction.resume);
 
     try {
-      await cubit.resumeSession();
+      await cubit.resumeSession(throwOnError: true);
       if (!toastContext.mounted) {
         return;
       }

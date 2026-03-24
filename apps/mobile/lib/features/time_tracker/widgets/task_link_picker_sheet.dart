@@ -148,11 +148,12 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
       if (!mounted || requestId != _requestVersion) {
         return;
       }
+      final message = error.message.trim();
       setState(() {
         _isLoadingInitial = false;
-        _errorMessage = error.message.trim().isEmpty
-            ? null
-            : error.message.trim();
+        _errorMessage = message.isNotEmpty
+            ? message
+            : context.l10n.commonSomethingWentWrong;
       });
     } on Exception {
       if (!mounted || requestId != _requestVersion) {
@@ -160,7 +161,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
       }
       setState(() {
         _isLoadingInitial = false;
-        _errorMessage = null;
+        _errorMessage = context.l10n.commonSomethingWentWrong;
       });
     }
   }

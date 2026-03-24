@@ -437,12 +437,15 @@ export async function GET(
 
     const tasks = data?.map(normalizeTask) ?? [];
 
+    const shouldIncludeRelationshipSummary =
+      includeRelationshipSummary && !forTimeTracking;
+
     let relationshipSummaryByTaskId = new Map<
       string,
       TaskRelationshipSummary
     >();
 
-    if (includeRelationshipSummary && !forTimeTracking) {
+    if (shouldIncludeRelationshipSummary) {
       const taskIds = tasks.map((task) => task.id).filter(Boolean);
 
       try {
@@ -483,7 +486,7 @@ export async function GET(
           task.ticket_prefix ??
           taskList?.workspace_boards?.ticket_prefix ??
           null,
-        ...(includeRelationshipSummary
+        ...(shouldIncludeRelationshipSummary
           ? {
               relationship_summary: {
                 parent_task_id: summary?.parentTaskId ?? null,

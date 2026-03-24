@@ -8,26 +8,25 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// The color tokens used for category color selection.
 const _kColorTokens = [
-  _ColorToken('RED', 'Red'),
-  _ColorToken('ORANGE', 'Orange'),
-  _ColorToken('YELLOW', 'Yellow'),
-  _ColorToken('LIME', 'Lime'),
-  _ColorToken('GREEN', 'Green'),
-  _ColorToken('TEAL', 'Teal'),
-  _ColorToken('CYAN', 'Cyan'),
-  _ColorToken('SKY', 'Sky'),
-  _ColorToken('BLUE', 'Blue'),
-  _ColorToken('INDIGO', 'Indigo'),
-  _ColorToken('PURPLE', 'Purple'),
-  _ColorToken('PINK', 'Pink'),
-  _ColorToken('ROSE', 'Rose'),
-  _ColorToken('GRAY', 'Gray'),
+  _ColorToken('RED'),
+  _ColorToken('ORANGE'),
+  _ColorToken('YELLOW'),
+  _ColorToken('LIME'),
+  _ColorToken('GREEN'),
+  _ColorToken('TEAL'),
+  _ColorToken('CYAN'),
+  _ColorToken('SKY'),
+  _ColorToken('BLUE'),
+  _ColorToken('INDIGO'),
+  _ColorToken('PURPLE'),
+  _ColorToken('PINK'),
+  _ColorToken('ROSE'),
+  _ColorToken('GRAY'),
 ];
 
 class _ColorToken {
-  const _ColorToken(this.value, this.label);
+  const _ColorToken(this.value);
   final String value;
-  final String label;
 }
 
 Color _tokenColor(BuildContext context, _ColorToken token) {
@@ -291,6 +290,7 @@ class _ColorGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     const dotSize = 32.0;
     return Wrap(
       spacing: 8,
@@ -299,7 +299,7 @@ class _ColorGrid extends StatelessWidget {
         final color = _tokenColor(context, token);
         final isSelected = selected == token.value;
         return Tooltip(
-          message: token.label,
+          message: _colorLabel(l10n, token),
           child: GestureDetector(
             onTap: () => onSelect(token.value),
             child: AnimatedContainer(
@@ -339,5 +339,25 @@ class _ColorGrid extends StatelessWidget {
         );
       }).toList(),
     );
+  }
+
+  String _colorLabel(AppLocalizations l10n, _ColorToken token) {
+    return switch (token.value) {
+      'RED' => l10n.taskBoardDetailColorRed,
+      'ORANGE' => l10n.taskBoardDetailColorOrange,
+      'YELLOW' => l10n.taskBoardDetailColorYellow,
+      'LIME' => l10n.timerCategoryColorLime,
+      'GREEN' => l10n.taskBoardDetailColorGreen,
+      'TEAL' => l10n.timerCategoryColorTeal,
+      'CYAN' => l10n.taskBoardDetailColorCyan,
+      'SKY' => l10n.timerCategoryColorSky,
+      'BLUE' => l10n.taskBoardDetailColorBlue,
+      'INDIGO' => l10n.taskBoardDetailColorIndigo,
+      'PURPLE' => l10n.taskBoardDetailColorPurple,
+      'PINK' => l10n.taskBoardDetailColorPink,
+      'ROSE' => l10n.timerCategoryColorRose,
+      'GRAY' => l10n.taskBoardDetailColorGray,
+      _ => token.value,
+    };
   }
 }

@@ -2076,6 +2076,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerCategoryColor => 'Màu sắc';
 
   @override
+  String get timerCategoryColorLime => 'Xanh chanh';
+
+  @override
+  String get timerCategoryColorTeal => 'Xanh mòng két';
+
+  @override
+  String get timerCategoryColorSky => 'Xanh da trời';
+
+  @override
+  String get timerCategoryColorRose => 'Hồng hoa hồng';
+
+  @override
   String get timerCategoryDescription => 'Mô tả';
 
   @override

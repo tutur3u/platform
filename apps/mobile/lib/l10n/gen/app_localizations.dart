@@ -4087,6 +4087,30 @@ abstract class AppLocalizations {
   /// **'Color'**
   String get timerCategoryColor;
 
+  /// No description provided for @timerCategoryColorLime.
+  ///
+  /// In en, this message translates to:
+  /// **'Lime'**
+  String get timerCategoryColorLime;
+
+  /// No description provided for @timerCategoryColorTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get timerCategoryColorTeal;
+
+  /// No description provided for @timerCategoryColorSky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sky'**
+  String get timerCategoryColorSky;
+
+  /// No description provided for @timerCategoryColorRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose'**
+  String get timerCategoryColorRose;
+
   /// No description provided for @timerCategoryDescription.
   ///
   /// In en, this message translates to:

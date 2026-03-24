@@ -262,7 +262,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     }
   }
 
-  Future<void> resumeSession() async {
+  Future<void> resumeSession({bool throwOnError = false}) async {
     if (state.runningSession == null) return;
 
     try {
@@ -289,6 +289,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       _startTick();
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
     }
   }
 

@@ -79,10 +79,12 @@ class _TaskLinkField extends StatelessWidget {
         children: [
           Expanded(
             child: InkWell(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                bottomLeft: Radius.circular(8),
-              ),
+              borderRadius: _hasTask
+                  ? const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      bottomLeft: Radius.circular(8),
+                    )
+                  : BorderRadius.circular(8),
               onTap: onTap,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -91,11 +93,23 @@ class _TaskLinkField extends StatelessWidget {
                 ),
                 child: _hasTask
                     ? _buildTaskLabel(context, theme, colorScheme)
-                    : Text(
-                        placeholder,
-                        style: theme.typography.small.copyWith(
-                          color: colorScheme.mutedForeground,
-                        ),
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              placeholder,
+                              style: theme.typography.small.copyWith(
+                                color: colorScheme.mutedForeground,
+                              ),
+                            ),
+                          ),
+                          const shad.Gap(8),
+                          Icon(
+                            shad.LucideIcons.chevronsUpDown,
+                            size: 14,
+                            color: colorScheme.mutedForeground,
+                          ),
+                        ],
                       ),
               ),
             ),
@@ -103,14 +117,7 @@ class _TaskLinkField extends StatelessWidget {
           if (_hasTask)
             _ClearButton(onClear: onClear, colorScheme: colorScheme)
           else
-            Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: Icon(
-                shad.LucideIcons.chevronsUpDown,
-                size: 14,
-                color: colorScheme.mutedForeground,
-              ),
-            ),
+            const SizedBox.shrink(),
         ],
       ),
     );
@@ -227,6 +234,21 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
     super.initState();
     _descController = TextEditingController(
       text: widget.initialDescription ?? '',
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant TimerAdvancedSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final nextDescription = widget.initialDescription ?? '';
+    if (nextDescription == _descController.text) {
+      return;
+    }
+
+    _descController.value = TextEditingValue(
+      text: nextDescription,
+      selection: TextSelection.collapsed(offset: nextDescription.length),
     );
   }
 

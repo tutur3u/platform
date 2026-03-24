@@ -171,13 +171,15 @@ class _InfoChip extends StatelessWidget {
             ),
             const shad.Gap(4),
           ],
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.xSmall.copyWith(
-              color: colorScheme.foreground,
-              fontWeight: FontWeight.w500,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.xSmall.copyWith(
+                color: colorScheme.foreground,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

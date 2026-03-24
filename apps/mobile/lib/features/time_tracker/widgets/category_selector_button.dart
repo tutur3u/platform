@@ -46,77 +46,72 @@ class CategorySelectorButton extends StatelessWidget {
       categoryLabel = (n != null && n.isNotEmpty) ? n : l10n.timerCategory;
     }
 
-    return Container(
-      decoration: BoxDecoration(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: hasCategory
-              ? colorScheme.primary.withValues(alpha: 0.6)
-              : colorScheme.border,
-        ),
-        color: hasCategory
-            ? colorScheme.primary.withValues(alpha: 0.05)
-            : colorScheme.background,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: InkWell(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                bottomLeft: Radius.circular(8),
-              ),
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                child: hasCategory
-                    ? Row(
-                        children: [
-                          if (dotColor != null) ...[
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: dotColor,
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: hasCategory
+                  ? colorScheme.primary.withValues(alpha: 0.6)
+                  : colorScheme.border,
+            ),
+            color: hasCategory
+                ? colorScheme.primary.withValues(alpha: 0.05)
+                : colorScheme.background,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: hasCategory
+                      ? Row(
+                          children: [
+                            if (dotColor != null) ...[
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: dotColor,
+                                ),
+                              ),
+                              const shad.Gap(8),
+                            ],
+                            Expanded(
+                              child: Text(
+                                categoryLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.small.copyWith(
+                                  color: colorScheme.foreground,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                            const shad.Gap(8),
                           ],
-                          Expanded(
-                            child: Text(
-                              categoryLabel,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.small.copyWith(
-                                color: colorScheme.foreground,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                        )
+                      : Text(
+                          categoryLabel,
+                          style: theme.typography.small.copyWith(
+                            color: colorScheme.mutedForeground,
                           ),
-                        ],
-                      )
-                    : Text(
-                        categoryLabel,
-                        style: theme.typography.small.copyWith(
-                          color: colorScheme.mutedForeground,
                         ),
-                      ),
-              ),
+                ),
+                const shad.Gap(8),
+                Icon(
+                  shad.LucideIcons.chevronsUpDown,
+                  size: 14,
+                  color: colorScheme.mutedForeground,
+                ),
+              ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Icon(
-              shad.LucideIcons.chevronsUpDown,
-              size: 14,
-              color: colorScheme.mutedForeground,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

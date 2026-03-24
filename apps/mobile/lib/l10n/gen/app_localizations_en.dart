@@ -2076,6 +2076,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerCategoryColor => 'Color';
 
   @override
+  String get timerCategoryColorLime => 'Lime';
+
+  @override
+  String get timerCategoryColorTeal => 'Teal';
+
+  @override
+  String get timerCategoryColorSky => 'Sky';
+
+  @override
+  String get timerCategoryColorRose => 'Rose';
+
+  @override
   String get timerCategoryDescription => 'Description';
 
   @override
