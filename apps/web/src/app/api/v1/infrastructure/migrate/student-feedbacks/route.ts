@@ -6,6 +6,28 @@ import {
   requireDevMode,
 } from '../batch-upsert';
 
+const MAX_FEEDBACK_CONTENT_LENGTH = 512;
+
+function normalizeFeedbackPayload(data: unknown): unknown[] {
+  if (!Array.isArray(data)) return [];
+
+  return data.map((row) => {
+    if (!row || typeof row !== 'object') return row;
+
+    const record = row as Record<string, unknown>;
+    const rawContent = record.content;
+    const content =
+      typeof rawContent === 'string'
+        ? rawContent.slice(0, MAX_FEEDBACK_CONTENT_LENGTH)
+        : rawContent;
+
+    return {
+      ...record,
+      content,
+    };
+  });
+}
+
 // user_feedbacks doesn't have ws_id - query via user_id -> workspace_users
 export async function GET(req: Request) {
   const devModeError = requireDevMode();
@@ -64,7 +86,7 @@ export async function PUT(req: Request) {
   const json = await req.json();
   const result = await batchUpsert({
     table: 'user_feedbacks',
-    data: json?.data || [],
+    data: normalizeFeedbackPayload(json?.data),
   });
   return createMigrationResponse(result, 'student feedbacks');
 }

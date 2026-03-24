@@ -168,15 +168,17 @@ class _DashboardView extends StatelessWidget {
                                               taskState.overdueTasks.length,
                                           nextEvents: upcomingEvents.length,
                                         ),
-                                        const SizedBox(height: 12),
-                                        _OverviewActionsRow(),
                                         const SizedBox(height: 14),
                                         _SectionCard(
                                           title: context
                                               .l10n
                                               .dashboardAssignedToMe,
+                                          icon: Icons.checklist_rounded,
+                                          accent: const Color(0xFF8B5CF6),
                                           actionLabel:
                                               context.l10n.dashboardOpenTasks,
+                                          actionIcon:
+                                              Icons.arrow_outward_rounded,
                                           onTap: () => context.go(Routes.tasks),
                                           child: _AssignedTasksBlock(
                                             state: taskState,
@@ -188,9 +190,13 @@ class _DashboardView extends StatelessWidget {
                                           title: context
                                               .l10n
                                               .dashboardUpcomingEvents,
+                                          icon: Icons.event_rounded,
+                                          accent: const Color(0xFF0EA5E9),
                                           actionLabel: context
                                               .l10n
                                               .dashboardOpenCalendar,
+                                          actionIcon:
+                                              Icons.arrow_outward_rounded,
                                           onTap: () =>
                                               context.go(Routes.calendar),
                                           child: _UpcomingEventsBlock(
@@ -300,6 +306,7 @@ class _TodaySummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateLabel = DateFormat('EEE, d MMM').format(DateTime.now());
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -307,13 +314,32 @@ class _TodaySummaryCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.96),
-            theme.colorScheme.surfaceContainer.withValues(alpha: 0.82),
-          ],
+          colors: isDark
+              ? const [
+                  Color(0xFF172337),
+                  Color(0xFF2A1E45),
+                  Color(0xFF14353E),
+                ]
+              : const [
+                  Color(0xFFEAF2FF),
+                  Color(0xFFF1E8FF),
+                  Color(0xFFE9FBF7),
+                ],
+          stops: const [0, 0.58, 1],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withValues(alpha: 0.16),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.16)
+              : theme.colorScheme.primary.withValues(alpha: 0.22),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,6 +364,13 @@ class _TodaySummaryCard extends StatelessWidget {
                 child: _MetricTile(
                   value: '$activeTasks',
                   label: context.l10n.dashboardTasksMetric(activeTasks),
+                  icon: Icons.task_alt_rounded,
+                  foreground: isDark
+                      ? const Color(0xFFF8FAFC)
+                      : const Color(0xFF0B2A55),
+                  background: isDark
+                      ? const Color(0xFF1D2A43)
+                      : const Color(0xFFD9EAFF),
                 ),
               ),
               const SizedBox(width: 8),
@@ -345,10 +378,13 @@ class _TodaySummaryCard extends StatelessWidget {
                 child: _MetricTile(
                   value: '$overdueTasks',
                   label: context.l10n.dashboardOverdueMetric(overdueTasks),
-                  foreground: theme.colorScheme.error,
-                  background: theme.colorScheme.errorContainer.withValues(
-                    alpha: 0.44,
-                  ),
+                  icon: Icons.warning_amber_rounded,
+                  foreground: isDark
+                      ? const Color(0xFFFFE3E3)
+                      : const Color(0xFF5F1111),
+                  background: isDark
+                      ? const Color(0xFF54202A)
+                      : const Color(0xFFFFDDE3),
                 ),
               ),
               const SizedBox(width: 8),
@@ -356,9 +392,13 @@ class _TodaySummaryCard extends StatelessWidget {
                 child: _MetricTile(
                   value: '$nextEvents',
                   label: context.l10n.dashboardEventsMetric(nextEvents),
-                  background: theme.colorScheme.secondaryContainer.withValues(
-                    alpha: 0.52,
-                  ),
+                  icon: Icons.calendar_month_rounded,
+                  foreground: isDark
+                      ? const Color(0xFFD3F4FF)
+                      : const Color(0xFF0D4258),
+                  background: isDark
+                      ? const Color(0xFF173A48)
+                      : const Color(0xFFD6F2FF),
                 ),
               ),
             ],
@@ -373,12 +413,14 @@ class _MetricTile extends StatelessWidget {
   const _MetricTile({
     required this.value,
     required this.label,
+    required this.icon,
     this.foreground,
     this.background,
   });
 
   final String value;
   final String label;
+  final IconData icon;
   final Color? foreground;
   final Color? background;
 
@@ -394,10 +436,19 @@ class _MetricTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: resolvedBackground,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: resolvedForeground.withValues(alpha: 0.18),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Icon(
+            icon,
+            size: 16,
+            color: resolvedForeground.withValues(alpha: 0.9),
+          ),
+          const SizedBox(height: 6),
           Text(
             value,
             style: theme.textTheme.titleLarge?.copyWith(
@@ -411,7 +462,7 @@ class _MetricTile extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: resolvedForeground.withValues(alpha: 0.84),
               fontWeight: FontWeight.w600,
               height: 1.2,
             ),
@@ -422,103 +473,151 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
-class _InlineActionButton extends StatelessWidget {
-  const _InlineActionButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return shad.OutlineButton(
-      onPressed: onPressed,
-      leading: Icon(icon, size: 16),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _OverviewActionsRow extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _InlineActionButton(
-            icon: Icons.checklist_rounded,
-            label: context.l10n.dashboardOpenTasks,
-            onPressed: () => context.go(Routes.tasks),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _InlineActionButton(
-            icon: Icons.calendar_today_rounded,
-            label: context.l10n.dashboardOpenCalendar,
-            onPressed: () => context.go(Routes.calendar),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.title,
+    required this.icon,
+    required this.accent,
     required this.actionLabel,
+    required this.actionIcon,
     required this.onTap,
     required this.child,
   });
 
   final String title;
+  final IconData icon;
+  final Color accent;
   final String actionLabel;
+  final IconData actionIcon;
   final VoidCallback onTap;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final surfaceBase = theme.colorScheme.surfaceContainerLow;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.76),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(
+              accent.withValues(alpha: isDark ? 0.2 : 0.12),
+              surfaceBase,
+            ),
+            Color.alphaBlend(
+              accent.withValues(alpha: isDark ? 0.1 : 0.06),
+              theme.colorScheme.surfaceContainerLowest,
+            ),
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant,
+          color: accent.withValues(alpha: isDark ? 0.36 : 0.26),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: isDark ? 0.24 : 0.12),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withValues(alpha: isDark ? 0.34 : 0.18),
+                  border: Border.all(
+                    color: accent.withValues(alpha: isDark ? 0.62 : 0.38),
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  size: 16,
+                  color: accent.withValues(alpha: isDark ? 0.96 : 0.84),
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              shad.GhostButton(onPressed: onTap, child: Text(actionLabel)),
+              _SectionActionChip(
+                label: actionLabel,
+                icon: actionIcon,
+                accent: accent,
+                onTap: onTap,
+              ),
             ],
           ),
           const SizedBox(height: 8),
           child,
         ],
+      ),
+    );
+  }
+}
+
+class _SectionActionChip extends StatelessWidget {
+  const _SectionActionChip({
+    required this.label,
+    required this.icon,
+    required this.accent,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color accent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            color: accent.withValues(alpha: isDark ? 0.28 : 0.16),
+            border: Border.all(
+              color: accent.withValues(alpha: isDark ? 0.56 : 0.34),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(icon, size: 14),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -766,7 +865,7 @@ class _EventRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final start = event.startAt;
     final theme = Theme.of(context);
-    final accent = theme.colorScheme.primary;
+    final accent = _resolveEventAccent(event);
     final dateLabel = start == null
         ? context.l10n.dashboardEventAllDay
         : '${DateFormat('EEE, d MMM').format(start)}'
@@ -825,6 +924,44 @@ class _EventRow extends StatelessWidget {
       ),
     );
   }
+
+  Color _resolveEventAccent(CalendarEvent event) {
+    final parsed = _parseHexColor(event.color);
+    if (parsed != null) {
+      return parsed;
+    }
+
+    const palette = [
+      Color(0xFF06B6D4),
+      Color(0xFF8B5CF6),
+      Color(0xFF3B82F6),
+      Color(0xFFEC4899),
+      Color(0xFF10B981),
+      Color(0xFFF59E0B),
+    ];
+
+    final seed = event.id.hashCode.abs();
+    return palette[seed % palette.length];
+  }
+
+  Color? _parseHexColor(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+
+    final normalized = value.trim().replaceFirst('#', '');
+    if (normalized.length != 6 && normalized.length != 8) {
+      return null;
+    }
+
+    final rgba = normalized.length == 6 ? 'FF$normalized' : normalized;
+    final parsed = int.tryParse(rgba, radix: 16);
+    if (parsed == null) {
+      return null;
+    }
+
+    return Color(parsed);
+  }
 }
 
 class _EmptyHint extends StatelessWidget {
@@ -842,10 +979,22 @@ class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: tone.background,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            tone.background,
+            Color.alphaBlend(
+              tone.foreground.withValues(alpha: isDark ? 0.08 : 0.04),
+              tone.background,
+            ),
+          ],
+        ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: tone.border),
       ),

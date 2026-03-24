@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide Badge, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -65,13 +66,24 @@ class _AssistantPageState extends State<AssistantPage> {
   );
 
   String? _loadedWorkspaceId;
+  bool _isNearBottom = true;
+  bool _pendingAutoScroll = false;
+  bool _isAnimatingToBottom = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_handleScrollChanged);
+  }
 
   @override
   void dispose() {
     _inputController.dispose();
     _inputFocusNode.dispose();
     _renameController.dispose();
-    _scrollController.dispose();
+    _scrollController
+      ..removeListener(_handleScrollChanged)
+      ..dispose();
     _shellCubit.close();
     _chatCubit.close();
     super.dispose();
@@ -111,12 +123,26 @@ class _AssistantPageState extends State<AssistantPage> {
                 listeners: [
                   BlocListener<AssistantChatCubit, AssistantChatState>(
                     listenWhen: (prev, curr) {
-                      // Only scroll when a new message is added, not on content changes
-                      return prev.messages.length != curr.messages.length;
+                      final countChanged =
+                          prev.messages.length != curr.messages.length;
+                      final streamUpdate =
+                          curr.status == AssistantChatStatus.streaming &&
+                          prev.messages != curr.messages;
+                      final queueChanged =
+                          prev.queuedMessages != curr.queuedMessages;
+                      final statusChanged = prev.status != curr.status;
+                      return countChanged ||
+                          streamUpdate ||
+                          queueChanged ||
+                          statusChanged;
                     },
                     listener: (context, state) {
-                      if (state.messages.isNotEmpty) {
-                        _scheduleScrollToBottom();
+                      if (state.messages.isNotEmpty ||
+                          state.queuedMessages.isNotEmpty) {
+                        _scheduleScrollToBottom(
+                          animated:
+                              state.status != AssistantChatStatus.streaming,
+                        );
                       }
                     },
                   ),
@@ -129,7 +155,7 @@ class _AssistantPageState extends State<AssistantPage> {
                         _shellCubit.setImmersiveMode(chromeState.isFullscreen);
                       }
                       if (chromeState.isFullscreen) {
-                        _scheduleScrollToBottom();
+                        _scheduleScrollToBottom(force: true);
                       }
                     },
                   ),
@@ -221,6 +247,7 @@ class _AssistantPageState extends State<AssistantPage> {
   ) {
     // Show empty state only when truly empty and not submitting
     if (chatState.messages.isEmpty &&
+        chatState.queuedMessages.isEmpty &&
         chatState.status != AssistantChatStatus.submitting) {
       return _buildEmptyState(context, workspace.id, shellState);
     }
@@ -237,32 +264,41 @@ class _AssistantPageState extends State<AssistantPage> {
           msg.role == 'user'; // Keep user messages even if empty
     }).toList();
 
+    final showQueue = chatState.queuedMessages.isNotEmpty;
+    final showTyping = chatState.isBusy;
+    final extraItems = (showQueue ? 1 : 0) + (showTyping ? 1 : 0);
+
     return ListView.builder(
       controller: _scrollController,
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
-      ),
+      physics: const ClampingScrollPhysics(),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      itemCount: validMessages.length + (chatState.isBusy ? 1 : 0),
+      padding: const EdgeInsets.fromLTRB(0, 16, 0, 20),
+      cacheExtent: 480,
+      itemCount: validMessages.length + extraItems,
       itemBuilder: (context, index) {
-        // Show typing indicator at the end when assistant is responding
-        if (index == validMessages.length) {
-          return _buildTypingIndicator(context);
+        if (index < validMessages.length) {
+          final message = validMessages[index];
+          final attachments =
+              chatState.attachmentsByMessageId[message.id] ?? const [];
+
+          return KeyedSubtree(
+            key: ValueKey('message_${message.id}'),
+            child: _buildMessageBubble(
+              context,
+              workspace.id,
+              shellState,
+              message,
+              attachments,
+            ),
+          );
         }
 
-        final message = validMessages[index];
-        final attachments =
-            chatState.attachmentsByMessageId[message.id] ?? const [];
+        final footerIndex = index - validMessages.length;
+        if (showQueue && footerIndex == 0) {
+          return _buildQueuedMessages(context, chatState.queuedMessages);
+        }
 
-        return _buildMessageBubble(
-          context,
-          workspace.id,
-          shellState,
-          message,
-          attachments,
-          isLatest: index == validMessages.length - 1,
-        );
+        return _buildTypingIndicator(context, chatState: chatState);
       },
     );
   }
@@ -272,70 +308,126 @@ class _AssistantPageState extends State<AssistantPage> {
     String wsId,
     AssistantShellState shellState,
     AssistantMessage message,
-    List<AssistantAttachment> attachments, {
-    required bool isLatest,
-  }) {
+    List<AssistantAttachment> attachments,
+  ) {
     final isUser = message.role == 'user';
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bubbleAccent = isUser
+        ? theme.colorScheme.primary
+        : const Color(0xFF06B6D4);
+
+    final bubbleDecoration = BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: isUser
+            ? [
+                bubbleAccent.withValues(alpha: isDark ? 0.54 : 0.3),
+                theme.colorScheme.primaryContainer.withValues(
+                  alpha: isDark ? 0.92 : 0.98,
+                ),
+              ]
+            : [
+                Color.alphaBlend(
+                  bubbleAccent.withValues(alpha: isDark ? 0.2 : 0.1),
+                  theme.colorScheme.surfaceContainerHigh,
+                ),
+                theme.colorScheme.surfaceContainerHighest,
+              ],
+      ),
+      borderRadius: BorderRadius.only(
+        topLeft: const Radius.circular(20),
+        topRight: const Radius.circular(20),
+        bottomLeft: Radius.circular(isUser ? 20 : 6),
+        bottomRight: Radius.circular(isUser ? 6 : 20),
+      ),
+      border: Border.all(
+        color: bubbleAccent.withValues(alpha: isUser ? 0.36 : 0.24),
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: bubbleAccent.withValues(alpha: isDark ? 0.22 : 0.12),
+          blurRadius: 14,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    );
+
+    final timeLabel = DateFormat.Hm().format(
+      message.createdAt ?? DateTime.now(),
+    );
 
     return Container(
-      margin: EdgeInsets.only(
-        left: isUser ? 48 : 0,
-        right: isUser ? 0 : 48,
-        bottom: 16,
-      ),
-      child: Column(
-        crossAxisAlignment: isUser
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isUser
-                  ? theme.colorScheme.primaryContainer
-                  : theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(20),
-                topRight: const Radius.circular(20),
-                bottomLeft: Radius.circular(isUser ? 20 : 4),
-                bottomRight: Radius.circular(isUser ? 4 : 20),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          if (!isUser)
+            _MessageAvatar(
+              icon: Icons.auto_awesome_rounded,
+              color: bubbleAccent,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (attachments.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: attachments
-                        .map(
-                          (attachment) => _AttachmentChip(
-                            attachment: attachment,
-                            onTap: () => _openAttachment(attachment.signedUrl),
+          if (!isUser) const SizedBox(width: 10),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: bubbleDecoration,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        timeLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: isUser ? 0.86 : 0.74,
                           ),
-                        )
-                        .toList(),
-                  ),
-                if (attachments.isNotEmpty) const SizedBox(height: 12),
-                ..._buildMessageContent(
-                  context,
-                  wsId,
-                  shellState,
-                  message,
-                  isUser: isUser,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (attachments.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: attachments
+                            .map(
+                              (attachment) => _AttachmentChip(
+                                attachment: attachment,
+                                onTap: () =>
+                                    _openAttachment(attachment.signedUrl),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    ..._buildMessageContent(
+                      context,
+                      wsId,
+                      shellState,
+                      message,
+                      isUser: isUser,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
+          if (isUser) const SizedBox(width: 10),
+          if (isUser)
+            _MessageAvatar(
+              icon: Icons.person_rounded,
+              color: theme.colorScheme.primary,
+            ),
         ],
       ),
     );
@@ -458,27 +550,151 @@ class _AssistantPageState extends State<AssistantPage> {
     return widgets;
   }
 
-  Widget _buildTypingIndicator(BuildContext context) {
+  Widget _buildTypingIndicator(
+    BuildContext context, {
+    required AssistantChatState chatState,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    const accent = Color(0xFF06B6D4);
+    final queuedCount = chatState.queuedMessages.length;
+
+    final phaseLabel = context.l10n.assistantThinkingStatus;
+
     return Container(
-      margin: const EdgeInsets.only(right: 48, bottom: 16),
+      margin: const EdgeInsets.only(right: 52, left: 44, bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(
+              accent.withValues(alpha: isDark ? 0.26 : 0.14),
+              theme.colorScheme.surfaceContainerHigh,
+            ),
+            theme.colorScheme.surfaceContainerHighest,
+          ],
+        ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
-          bottomLeft: Radius.circular(4),
+          bottomLeft: Radius.circular(6),
           bottomRight: Radius.circular(20),
         ),
+        border: Border.all(
+          color: accent.withValues(alpha: isDark ? 0.46 : 0.28),
+        ),
       ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _AnimatedDot(delay: 0),
-          SizedBox(width: 4),
-          _AnimatedDot(delay: 200),
-          SizedBox(width: 4),
-          _AnimatedDot(delay: 400),
+          Row(
+            children: [
+              const _MessageAvatar(
+                icon: Icons.auto_awesome_rounded,
+                color: accent,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  phaseLabel,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (queuedCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withValues(
+                      alpha: 0.58,
+                    ),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${context.l10n.assistantQueuedPrefix} $queuedCount',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const _AssistantLoadingSkeleton(lineFractions: [0.94, 0.78, 0.56]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQueuedMessages(
+    BuildContext context,
+    List<String> queuedMessages,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    const queueColor = Color(0xFFF59E0B);
+    final visible = queuedMessages.take(3).toList(growable: false);
+    final remaining = queuedMessages.length - visible.length;
+
+    return Container(
+      margin: const EdgeInsets.only(right: 52, left: 44, bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(
+              queueColor.withValues(alpha: isDark ? 0.3 : 0.16),
+              theme.colorScheme.surfaceContainerHigh,
+            ),
+            theme.colorScheme.surfaceContainerHighest,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: queueColor.withValues(alpha: 0.34)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.schedule_send_rounded,
+                size: 16,
+                color: queueColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                context.l10n.assistantQueuedPrefix,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: queueColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final queued in visible) ...[
+            _QueuedMessageLine(message: queued),
+            if (queued != visible.last) const SizedBox(height: 6),
+          ],
+          if (remaining > 0) ...[
+            const SizedBox(height: 6),
+            Text(
+              '+$remaining',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -649,6 +865,7 @@ class _AssistantPageState extends State<AssistantPage> {
     if (text.isEmpty) return;
 
     _inputController.clear();
+    _scheduleScrollToBottom(force: true, animated: false);
     await _submitText(wsId, shellState, text);
   }
 
@@ -671,15 +888,49 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
-  void _scheduleScrollToBottom() {
+  void _handleScrollChanged() {
+    if (!_scrollController.hasClients || _isAnimatingToBottom) return;
+
+    final position = _scrollController.position;
+    final remaining = position.maxScrollExtent - position.pixels;
+    _isNearBottom = remaining <= 84;
+  }
+
+  void _scheduleScrollToBottom({bool force = false, bool animated = true}) {
+    if (!force && !_isNearBottom) return;
+    if (_pendingAutoScroll) return;
+
+    _pendingAutoScroll = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _pendingAutoScroll = false;
       if (!_scrollController.hasClients) return;
-      final target = _scrollController.position.maxScrollExtent + 100;
-      await _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
+
+      final position = _scrollController.position;
+      final target = position.maxScrollExtent;
+      final delta = (target - position.pixels).abs();
+      if (delta <= 2) {
+        _isNearBottom = true;
+        return;
+      }
+
+      if (animated && delta <= 560) {
+        _isAnimatingToBottom = true;
+        try {
+          await _scrollController.animateTo(
+            target,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+          );
+        } on Exception catch (_) {
+          // Ignore race conditions when list metrics change mid-animation.
+        } finally {
+          _isAnimatingToBottom = false;
+        }
+      } else {
+        _scrollController.jumpTo(target);
+      }
+
+      _isNearBottom = true;
     });
   }
 
@@ -721,70 +972,103 @@ class _AssistantPageState extends State<AssistantPage> {
 
     showModalBottomSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.add_comment_rounded),
-                title: const Text('New chat'),
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  await _chatCubit.resetConversation(wsId);
-                },
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(sheetContext).colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Theme.of(
+                sheetContext,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.42),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _SheetHandle(),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        l10n.assistantActionsTitle,
+                        style: Theme.of(sheetContext).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _SheetActionTile(
+                    icon: Icons.add_comment_rounded,
+                    label: l10n.assistantNewConversation,
+                    color: const Color(0xFF8B5CF6),
+                    onTap: () async {
+                      Navigator.of(sheetContext).pop();
+                      await _chatCubit.resetConversation(wsId);
+                    },
+                  ),
+                  _SheetActionTile(
+                    icon: Icons.attach_file_rounded,
+                    label: l10n.assistantAttachFilesAction,
+                    color: const Color(0xFF0EA5E9),
+                    onTap: () async {
+                      Navigator.of(sheetContext).pop();
+                      await _pickFiles(wsId);
+                    },
+                  ),
+                  _SheetActionTile(
+                    icon: Icons.fullscreen_rounded,
+                    label: isFullscreen
+                        ? l10n.assistantExitFullscreenAction
+                        : l10n.assistantEnterFullscreenAction,
+                    color: const Color(0xFF10B981),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _setFullscreen(
+                        !isFullscreen,
+                        focusInput: true,
+                      );
+                    },
+                  ),
+                  _SheetActionTile(
+                    icon: Icons.history_rounded,
+                    label: l10n.assistantHistoryTitle,
+                    color: const Color(0xFFF59E0B),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _showHistorySheet(context, wsId);
+                    },
+                  ),
+                  _SheetActionTile(
+                    icon: Icons.tune_rounded,
+                    label: l10n.assistantSettingsTitle,
+                    color: const Color(0xFF3B82F6),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _showSettingsSheet(context);
+                    },
+                  ),
+                  if (chatState.messages.isNotEmpty)
+                    _SheetActionTile(
+                      icon: Icons.ios_share_rounded,
+                      label: l10n.assistantExportChat,
+                      color: const Color(0xFFEC4899),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _exportChat(context, wsId, shellState, chatState);
+                      },
+                    ),
+                ],
               ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.attach_file_rounded),
-                title: Text(l10n.assistantAttachFilesAction),
-                onTap: () async {
-                  Navigator.of(sheetContext).pop();
-                  await _pickFiles(wsId);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.fullscreen_rounded),
-                title: Text(
-                  isFullscreen
-                      ? l10n.assistantExitFullscreenAction
-                      : l10n.assistantEnterFullscreenAction,
-                ),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _setFullscreen(
-                    !isFullscreen,
-                    focusInput: true,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.history_rounded),
-                title: Text(l10n.assistantHistoryTitle),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _showHistorySheet(context, wsId);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.tune_rounded),
-                title: Text(l10n.assistantSettingsTitle),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _showSettingsDialog(context, wsId);
-                },
-              ),
-              if (chatState.messages.isNotEmpty)
-                ListTile(
-                  leading: const Icon(Icons.ios_share_rounded),
-                  title: Text(l10n.assistantExportChat),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    _exportChat(context, wsId, shellState, chatState);
-                  },
-                ),
-            ],
+            ),
           ),
         ),
       ),
@@ -827,31 +1111,80 @@ class _AssistantPageState extends State<AssistantPage> {
     await showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         return BlocProvider.value(
           value: _chatCubit,
           child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
             builder: (context, state) {
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Text(
-                    context.l10n.assistantHistoryTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  for (final chat in state.history)
-                    ListTile(
-                      title: Text(
-                        chat.title ?? context.l10n.assistantUntitledChat,
-                      ),
-                      subtitle: Text(chat.model ?? ''),
-                      onTap: () async {
-                        Navigator.of(sheetContext).pop();
-                        await _chatCubit.openChat(wsId, chat);
-                      },
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outlineVariant.withValues(alpha: 0.42),
                     ),
-                ],
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                    children: [
+                      const _SheetHandle(),
+                      const SizedBox(height: 8),
+                      Text(
+                        context.l10n.assistantHistoryTitle,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 12),
+                      if (state.history.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant
+                                  .withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            context.l10n.assistantUntitledChat,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ),
+                      for (final chat in state.history)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _HistoryChatTile(
+                            title:
+                                chat.title ??
+                                context.l10n.assistantUntitledChat,
+                            subtitle: chat.model ?? '',
+                            isActive: chat.id == state.chat?.id,
+                            createdAt: chat.createdAt,
+                            onTap: () async {
+                              Navigator.of(sheetContext).pop();
+                              await _chatCubit.openChat(wsId, chat);
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               );
             },
           ),
@@ -860,18 +1193,146 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
-  Future<void> _showSettingsDialog(BuildContext context, String wsId) async {
-    await showDialog<void>(
+  Future<void> _showSettingsSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.assistantSettingsTitle),
-        content: const Text('Settings dialog content'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.assistantCancelAction),
-          ),
-        ],
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => BlocProvider.value(
+        value: _shellCubit,
+        child: BlocBuilder<AssistantShellCubit, AssistantShellState>(
+          builder: (context, state) {
+            final l10n = context.l10n;
+            final modeOptions = [
+              (
+                value: AssistantThinkingMode.fast,
+                label: l10n.assistantModeFast,
+              ),
+              (
+                value: AssistantThinkingMode.thinking,
+                label: l10n.assistantModeThinking,
+              ),
+            ];
+            final sourceOptions = [
+              (
+                value: AssistantCreditSource.personal,
+                label: l10n.assistantPersonalCredits,
+              ),
+              (
+                value: AssistantCreditSource.workspace,
+                label: l10n.assistantWorkspaceCredits,
+              ),
+            ];
+
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.42),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _SheetHandle(),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.assistantSettingsTitle,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.model_training_outlined, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${l10n.assistantModelLabel}: ${state.selectedModel.label}',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: modeOptions
+                            .map(
+                              (option) => _SettingsChoiceChip(
+                                label: option.label,
+                                selected: state.thinkingMode == option.value,
+                                onTap: () => _shellCubit.setThinkingMode(
+                                  option.value,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: sourceOptions
+                            .map(
+                              (option) => _SettingsChoiceChip(
+                                label: option.label,
+                                selected: state.creditSource == option.value,
+                                enabled:
+                                    !state.workspaceCreditLocked ||
+                                    option.value ==
+                                        AssistantCreditSource.personal,
+                                onTap: () => _shellCubit.setCreditSource(
+                                  option.value,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile.adaptive(
+                        value: state.isViewOnly,
+                        onChanged: _shellCubit.setViewOnly,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                        ),
+                        title: Text(l10n.assistantViewOnlyLabel),
+                        subtitle: Text(
+                          state.isViewOnly
+                              ? l10n.assistantViewOnlyLabel
+                              : l10n.assistantEditableLabel,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -911,32 +1372,29 @@ class _AssistantPageState extends State<AssistantPage> {
 
 // New widget classes for the redesigned UI
 
-class _AnimatedDot extends StatefulWidget {
-  const _AnimatedDot({required this.delay});
-  final int delay;
+class _AssistantLoadingSkeleton extends StatefulWidget {
+  const _AssistantLoadingSkeleton({
+    required this.lineFractions,
+  });
+
+  final List<double> lineFractions;
 
   @override
-  State<_AnimatedDot> createState() => _AnimatedDotState();
+  State<_AssistantLoadingSkeleton> createState() =>
+      _AssistantLoadingSkeletonState();
 }
 
-class _AnimatedDotState extends State<_AnimatedDot>
+class _AssistantLoadingSkeletonState extends State<_AssistantLoadingSkeleton>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1450),
       vsync: this,
-    );
-    _animation = Tween<double>(begin: 0.3, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    Future.delayed(Duration(milliseconds: widget.delay), () {
-      if (mounted) _controller.repeat(reverse: true);
-    });
+    )..repeat();
   }
 
   @override
@@ -947,16 +1405,51 @@ class _AnimatedDotState extends State<_AnimatedDot>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _animation,
-      child: Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ),
+    final theme = Theme.of(context);
+    final base = theme.colorScheme.surfaceContainerHighest;
+    final highlight = Color.alphaBlend(
+      theme.colorScheme.primary.withValues(alpha: 0.32),
+      base,
+    );
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final progress = _controller.value;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < widget.lineFractions.length; i++) ...[
+              Builder(
+                builder: (_) {
+                  final wave = (progress + (i * 0.22)) % 1;
+                  final opacity = 0.5 + (0.4 * (1 - (wave - 0.5).abs() * 2));
+                  return FractionallySizedBox(
+                    widthFactor: widget.lineFractions[i],
+                    child: Container(
+                      height: i == 0 ? 10 : 8,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            base.withValues(alpha: opacity * 0.86),
+                            highlight.withValues(alpha: opacity),
+                            base.withValues(alpha: opacity * 0.86),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              if (i != widget.lineFractions.length - 1)
+                const SizedBox(height: 8),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -1024,26 +1517,293 @@ class _PromptChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  const Color(
+                    0xFF8B5CF6,
+                  ).withValues(alpha: isDark ? 0.24 : 0.12),
+                  theme.colorScheme.surfaceContainerHigh,
+                ),
+                Color.alphaBlend(
+                  const Color(
+                    0xFF0EA5E9,
+                  ).withValues(alpha: isDark ? 0.22 : 0.1),
+                  theme.colorScheme.surfaceContainerHighest,
+                ),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outlineVariant.withValues(alpha: 0.3),
+              color: const Color(
+                0xFF8B5CF6,
+              ).withValues(alpha: isDark ? 0.46 : 0.28),
             ),
           ),
           child: Text(
             prompt,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 44,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.65),
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetActionTile extends StatelessWidget {
+  const _SheetActionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.alphaBlend(
+                    color.withValues(alpha: isDark ? 0.3 : 0.16),
+                    theme.colorScheme.surfaceContainerHigh,
+                  ),
+                  theme.colorScheme.surfaceContainerHighest,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: color.withValues(alpha: isDark ? 0.52 : 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color.withValues(alpha: isDark ? 0.35 : 0.2),
+                  ),
+                  child: Icon(icon, size: 16, color: color),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 13,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryChatTile extends StatelessWidget {
+  const _HistoryChatTile({
+    required this.title,
+    required this.subtitle,
+    required this.isActive,
+    required this.onTap,
+    this.createdAt,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool isActive;
+  final DateTime? createdAt;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = isActive ? const Color(0xFF8B5CF6) : const Color(0xFF0EA5E9);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  accent.withValues(alpha: isDark ? 0.28 : 0.12),
+                  theme.colorScheme.surfaceContainerLow,
+                ),
+                theme.colorScheme.surfaceContainerHighest,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: accent.withValues(alpha: isActive ? 0.5 : 0.24),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withValues(alpha: isDark ? 0.32 : 0.2),
+                ),
+                child: Icon(
+                  isActive ? Icons.chat_rounded : Icons.history_rounded,
+                  size: 16,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      createdAt == null
+                          ? subtitle
+                          : [
+                              if (subtitle.isNotEmpty) subtitle,
+                              DateFormat('MMM d • HH:mm').format(createdAt!),
+                            ].join(' • '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsChoiceChip extends StatelessWidget {
+  const _SettingsChoiceChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final String label;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = selected ? const Color(0xFF8B5CF6) : const Color(0xFF3B82F6);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            color: selected
+                ? accent.withValues(alpha: 0.18)
+                : theme.colorScheme.surfaceContainerHighest,
+            border: Border.all(
+              color: selected
+                  ? accent.withValues(alpha: 0.48)
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: enabled
+                  ? theme.colorScheme.onSurface
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -1356,6 +2116,70 @@ class _SourceLink extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MessageAvatar extends StatelessWidget {
+  const _MessageAvatar({
+    required this.icon,
+    required this.color,
+  });
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: isDark ? 0.3 : 0.18),
+        border: Border.all(
+          color: color.withValues(alpha: isDark ? 0.52 : 0.3),
+        ),
+      ),
+      child: Icon(
+        icon,
+        size: 15,
+        color: color.withValues(alpha: isDark ? 0.92 : 0.78),
+      ),
+    );
+  }
+}
+
+class _QueuedMessageLine extends StatelessWidget {
+  const _QueuedMessageLine({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.circle,
+          size: 8,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            message,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
