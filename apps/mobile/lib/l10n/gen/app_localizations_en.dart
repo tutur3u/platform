@@ -2106,6 +2106,103 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerActivityHeatmap => 'Activity';
 
   @override
+  String timerHeatmapTrackedThisYear(String duration) {
+    return 'Tracked $duration this year';
+  }
+
+  @override
+  String get timerHeatmapStartTracking => 'Start tracking to build your activity pattern';
+
+  @override
+  String get timerHeatmapViewOriginal => 'Original';
+
+  @override
+  String get timerHeatmapViewHybrid => 'Hybrid';
+
+  @override
+  String get timerHeatmapViewCalendarOnly => 'Calendar';
+
+  @override
+  String get timerHeatmapViewCompactCards => 'Cards';
+
+  @override
+  String get timerHeatmapLegendLess => 'Less';
+
+  @override
+  String get timerHeatmapLegendMore => 'More';
+
+  @override
+  String timerHeatmapMonthCompact(int month) {
+    return '$month';
+  }
+
+  @override
+  String timerHeatmapMonthNarrowColumn(int month) {
+    return '$month';
+  }
+
+  @override
+  String get timerHeatmapYearPattern => 'Activity Pattern';
+
+  @override
+  String timerHeatmapActiveDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count active days',
+      one: '$count active day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerHeatmapMon => 'Mo';
+
+  @override
+  String get timerHeatmapTue => 'Tu';
+
+  @override
+  String get timerHeatmapWed => 'We';
+
+  @override
+  String get timerHeatmapThu => 'Th';
+
+  @override
+  String get timerHeatmapFri => 'Fr';
+
+  @override
+  String get timerHeatmapSat => 'Sa';
+
+  @override
+  String get timerHeatmapSun => 'Su';
+
+  @override
+  String timerHeatmapSessions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sessions',
+      one: '$count session',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerHeatmapTotal => 'Total';
+
+  @override
+  String get timerHeatmapSessionsLabel => 'Sessions';
+
+  @override
+  String get timerHeatmapActiveDaysLabel => 'Active days';
+
+  @override
+  String get timerHeatmapLessThanMinute => '<1m';
+
+  @override
+  String get timerHeatmapNoActivityYet => 'No activity yet';
+
+  @override
   String get timerViewSessionDetails => 'Session details';
 
   @override
@@ -2576,8 +2673,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# days',
-      one: '# day',
+      other: '$count days',
+      one: '$count day',
     );
     return '$_temp0';
   }
