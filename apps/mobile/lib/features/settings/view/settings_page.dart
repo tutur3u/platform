@@ -17,6 +17,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsPage extends StatelessWidget {
@@ -34,7 +35,7 @@ class SettingsPage extends StatelessWidget {
             ResponsivePadding.horizontal(context.deviceClass),
           ),
           children: [
-            _buildSettingsItem(
+            buildSettingsItem(
               context,
               icon: Icons.person_outline,
               title: l10n.settingsProfile,
@@ -43,7 +44,7 @@ class SettingsPage extends StatelessWidget {
             const shad.Divider(),
             BlocBuilder<LocaleCubit, LocaleState>(
               builder: (context, localeState) {
-                return _buildSettingsItem(
+                return buildSettingsItem(
                   context,
                   icon: Icons.language,
                   title: l10n.settingsLanguage,
@@ -55,7 +56,7 @@ class SettingsPage extends StatelessWidget {
             const shad.Divider(),
             BlocBuilder<ThemeCubit, ThemeState>(
               builder: (context, themeState) {
-                return _buildSettingsItem(
+                return buildSettingsItem(
                   context,
                   icon: Icons.palette_outlined,
                   title: l10n.settingsTheme,
@@ -69,7 +70,7 @@ class SettingsPage extends StatelessWidget {
               buildWhen: (prev, curr) =>
                   prev.currentWorkspace != curr.currentWorkspace,
               builder: (context, state) {
-                return _buildSettingsItem(
+                return buildSettingsItem(
                   context,
                   icon: Icons.swap_horiz,
                   title: l10n.settingsSwitchWorkspace,
@@ -79,7 +80,9 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             const shad.Divider(),
-            _buildSettingsItem(
+            const _AppVersionItem(),
+            const shad.Divider(),
+            buildSettingsItem(
               context,
               icon: Icons.logout,
               title: l10n.settingsSignOut,
@@ -92,13 +95,14 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsItem(
+  static Widget buildSettingsItem(
     BuildContext context, {
     required IconData icon,
     required String title,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
     String? subtitle,
     bool isDestructive = false,
+    bool showChevron = true,
   }) {
     final theme = shad.Theme.of(context);
     final color = isDestructive ? theme.colorScheme.destructive : null;
@@ -127,7 +131,7 @@ class SettingsPage extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 20),
+            if (showChevron) const Icon(Icons.chevron_right, size: 20),
           ],
         ),
       ),
@@ -316,5 +320,54 @@ class SettingsPage extends StatelessWidget {
       case shad.ThemeMode.system:
         return l10n.settingsThemeSystem;
     }
+  }
+}
+
+class _AppVersionItem extends StatefulWidget {
+  const _AppVersionItem();
+
+  @override
+  State<_AppVersionItem> createState() => _AppVersionItemState();
+}
+
+class _AppVersionItemState extends State<_AppVersionItem> {
+  late final Future<PackageInfo> _packageInfoFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _packageInfoFuture = PackageInfo.fromPlatform();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return FutureBuilder<PackageInfo>(
+      future: _packageInfoFuture,
+      builder: (context, snapshot) {
+        final packageInfo = snapshot.data;
+        final versionLabel = _formatVersionLabel(packageInfo);
+
+        return SettingsPage.buildSettingsItem(
+          context,
+          icon: Icons.info_outline,
+          title: l10n.settingsAppVersion,
+          subtitle: versionLabel,
+          showChevron: false,
+        );
+      },
+    );
+  }
+
+  String _formatVersionLabel(PackageInfo? packageInfo) {
+    if (packageInfo == null) return '...';
+
+    final buildNumber = packageInfo.buildNumber.trim();
+    if (buildNumber.isEmpty) {
+      return packageInfo.version;
+    }
+
+    return '${packageInfo.version} ($buildNumber)';
   }
 }

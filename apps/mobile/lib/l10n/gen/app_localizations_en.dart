@@ -2800,6 +2800,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguage => 'Language';
 
   @override
+  String get settingsAppVersion => 'App version';
+
+  @override
   String get settingsLanguageSystem => 'System default';
 
   @override

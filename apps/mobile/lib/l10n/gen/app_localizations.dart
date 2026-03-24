@@ -5371,6 +5371,12 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get settingsLanguage;
 
+  /// No description provided for @settingsAppVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get settingsAppVersion;
+
   /// No description provided for @settingsLanguageSystem.
   ///
   /// In en, this message translates to:
