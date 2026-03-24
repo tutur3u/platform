@@ -8,6 +8,8 @@ enum AuthActionStatus {
 enum AuthErrorCode {
   googleSignInFailed,
   googleBrowserLaunchFailed,
+  appleSignInFailed,
+  appleBrowserLaunchFailed,
 }
 
 class AuthActionResult {

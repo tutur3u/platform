@@ -9,8 +9,11 @@
     "loginTitle": "Chào mừng trở lại",
     "loginSubtitle": "Đăng nhập để tiếp tục",
     "loginSignIn": "Đăng nhập",
+    "authContinueWithApple": "Tiếp tục với Apple",
     "authContinueWithGoogle": "Tiếp tục với Google",
     "authContinueWithEmail": "hoặc tiếp tục với email",
+    "authAppleSignInFailed": "Đăng nhập Apple thất bại. Vui lòng thử lại.",
+    "authAppleBrowserLaunchFailed": "Không thể mở đăng nhập Apple lúc này.",
     "authGoogleSignInFailed": "Đăng nhập Google thất bại. Vui lòng thử lại.",
     "authGoogleBrowserLaunchFailed": "Không thể mở đăng nhập Google lúc này.",
     "authLogOut": "Đăng xuất",
@@ -21,6 +24,7 @@
 
     "signUpTitle": "Tạo tài khoản",
     "signUpButton": "Tạo tài khoản",
+    "signUpSubtitle": "Tạo tài khoản nhanh hơn với Apple, Google hoặc email.",
     "signUpConfirmPassword": "Xác nhận mật khẩu",
     "signUpPasswordMinLength": "Mật khẩu phải có ít nhất 8 ký tự",
     "signUpPasswordUppercase": "Mật khẩu phải chứa chữ hoa",
@@ -777,8 +781,13 @@
     "timerStop": "Dừng",
     "timerHistory": "Lịch sử",
     "timerRunning": "Đang chạy",
+    "timerRunningSessionNoDetails": "Chưa liên kết danh mục hoặc nhiệm vụ",
+    "timerRunningSessionNoTitle": "Phiên không có tiêu đề",
     "timerPaused": "Tạm dừng",
     "timerStopped": "Đã dừng",
+    "timerSessionPauseSuccess": "Đã tạm dừng phiên thành công.",
+    "timerSessionResumeSuccess": "Đã tiếp tục phiên thành công.",
+    "timerSessionStopSuccess": "Đã dừng phiên thành công.",
     "timerPause": "Tạm dừng",
     "timerResume": "Tiếp tục",
     "timerSessionTitle": "Tiêu đề phiên",
@@ -786,6 +795,42 @@
     "timerNoCategory": "Không có danh mục",
     "timerAddCategory": "Thêm danh mục",
     "timerCategoryName": "Tên danh mục",
+    "timerCategoryColor": "Màu sắc",
+    "timerCategoryColorLime": "Xanh chanh",
+    "timerCategoryColorTeal": "Xanh mòng két",
+    "timerCategoryColorSky": "Xanh da trời",
+    "timerCategoryColorRose": "Hồng hoa hồng",
+    "timerCategoryDescription": "Mô tả",
+    "timerCategoryColorNone": "Không",
+    "timerCreateCategory": "Tạo danh mục",
+    "timerCategoryCreateInProgress": "Đang tạo danh mục...",
+    "timerCategoryCreateSuccess": "Đã tạo danh mục",
+    "timerSelectCategory": "Chọn danh mục",
+    "timerAdvanced": "Nâng cao",
+    "timerSessionDescription": "Mô tả",
+    "timerLinkTask": "Nhiệm vụ",
+    "timerTaskPickerAllTasks": "Tất cả nhiệm vụ",
+    "timerTaskPickerAssignedToMe": "Giao cho tôi",
+    "timerTaskPickerAssignees": "{count, plural, =0{Không có người phụ trách} one{{count} người phụ trách} other{{count} người phụ trách}}",
+    "@timerTaskPickerAssignees": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerTaskPickerNoMatchingTasks": "Không tìm thấy nhiệm vụ phù hợp",
+    "timerTaskPickerNoTask": "Không liên kết nhiệm vụ",
+    "timerTaskPickerResultCount": "{count, plural, =0{Không có nhiệm vụ} one{{count} nhiệm vụ} other{{count} nhiệm vụ}}",
+    "@timerTaskPickerResultCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerTaskPickerSearch": "Tìm kiếm nhiệm vụ",
+    "timerTaskIdPlaceholder": "Chọn nhiệm vụ",
     "timerRecentSessions": "Phiên gần đây",
     "timerSeeAll": "Xem tất cả",
     "timerNoSessions": "Chưa có phiên nào",

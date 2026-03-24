@@ -45,33 +45,33 @@ PackageInfo _packageInfo() => PackageInfo(
 );
 
 void main() {
+  late SupabaseClient supabaseClient;
+  late GoTrueClient goTrueClient;
+  late GoogleIdentityClient googleIdentityClient;
+  late OAuthUrlLauncher oauthUrlLauncher;
+  late AuthRepository repository;
+
+  setUp(() {
+    supabaseClient = _MockSupabaseClient();
+    goTrueClient = _MockGoTrueClient();
+    googleIdentityClient = _MockGoogleIdentityClient();
+    oauthUrlLauncher = _MockOAuthUrlLauncher();
+
+    when(() => supabaseClient.auth).thenReturn(goTrueClient);
+    when(() => googleIdentityClient.signOut()).thenAnswer((_) async {});
+
+    repository = AuthRepository(
+      supabaseClient: supabaseClient,
+      googleIdentityClient: googleIdentityClient,
+      oauthUrlLauncher: oauthUrlLauncher,
+      packageInfoLoader: () async => _packageInfo(),
+      devicePlatform: const _AndroidPlatform(),
+      googleWebClientId: 'web-client-id',
+      googleIosClientId: 'ios-client-id',
+    );
+  });
+
   group('AuthRepository.signInWithGoogle', () {
-    late SupabaseClient supabaseClient;
-    late GoTrueClient goTrueClient;
-    late GoogleIdentityClient googleIdentityClient;
-    late OAuthUrlLauncher oauthUrlLauncher;
-    late AuthRepository repository;
-
-    setUp(() {
-      supabaseClient = _MockSupabaseClient();
-      goTrueClient = _MockGoTrueClient();
-      googleIdentityClient = _MockGoogleIdentityClient();
-      oauthUrlLauncher = _MockOAuthUrlLauncher();
-
-      when(() => supabaseClient.auth).thenReturn(goTrueClient);
-      when(() => googleIdentityClient.signOut()).thenAnswer((_) async {});
-
-      repository = AuthRepository(
-        supabaseClient: supabaseClient,
-        googleIdentityClient: googleIdentityClient,
-        oauthUrlLauncher: oauthUrlLauncher,
-        packageInfoLoader: () async => _packageInfo(),
-        devicePlatform: const _AndroidPlatform(),
-        googleWebClientId: 'web-client-id',
-        googleIosClientId: 'ios-client-id',
-      );
-    });
-
     test('returns success after native Google sign-in succeeds', () async {
       when(
         () => googleIdentityClient.initialize(
@@ -99,8 +99,9 @@ void main() {
 
       expect(result.status, AuthActionStatus.success);
       verifyNever(
-        () => oauthUrlLauncher.launchGoogleSignIn(
+        () => oauthUrlLauncher.launchProviderSignIn(
           authClient: goTrueClient,
+          provider: OAuthProvider.google,
           redirectTo: any(named: 'redirectTo'),
           queryParams: any(named: 'queryParams'),
         ),
@@ -127,8 +128,9 @@ void main() {
           ),
         );
         when(
-          () => oauthUrlLauncher.launchGoogleSignIn(
+          () => oauthUrlLauncher.launchProviderSignIn(
             authClient: goTrueClient,
+            provider: OAuthProvider.google,
             redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
             queryParams: const {
               'access_type': 'offline',
@@ -174,8 +176,9 @@ void main() {
 
         expect(result.status, AuthActionStatus.cancelled);
         verifyNever(
-          () => oauthUrlLauncher.launchGoogleSignIn(
+          () => oauthUrlLauncher.launchProviderSignIn(
             authClient: goTrueClient,
+            provider: OAuthProvider.google,
             redirectTo: any(named: 'redirectTo'),
             queryParams: any(named: 'queryParams'),
           ),
@@ -230,5 +233,38 @@ void main() {
         ).called(1);
       },
     );
+  });
+
+  group('AuthRepository.signInWithApple', () {
+    test('launches Apple OAuth in the browser', () async {
+      when(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.apple,
+          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+          queryParams: const {'prompt': 'consent'},
+        ),
+      ).thenAnswer((_) async => true);
+
+      final result = await repository.signInWithApple();
+
+      expect(result.status, AuthActionStatus.externalFlowStarted);
+    });
+
+    test('returns an Apple launch error when OAuth cannot start', () async {
+      when(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.apple,
+          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+          queryParams: const {'prompt': 'consent'},
+        ),
+      ).thenAnswer((_) async => false);
+
+      final result = await repository.signInWithApple();
+
+      expect(result.status, AuthActionStatus.failure);
+      expect(result.errorCode, AuthErrorCode.appleBrowserLaunchFailed);
+    });
   });
 }

@@ -199,6 +199,10 @@ class AuthRepository {
     return _launchBrowserGoogleSignIn();
   }
 
+  Future<AuthActionResult> signInWithApple() {
+    return _launchBrowserAppleSignIn();
+  }
+
   bool _shouldTryNativeGoogleSignIn() {
     if (!(_devicePlatform.isAndroid || _devicePlatform.isIOS)) {
       return false;
@@ -248,9 +252,10 @@ class AuthRepository {
 
   Future<AuthActionResult> _launchBrowserGoogleSignIn() async {
     try {
-      final redirectTo = await _buildGoogleRedirectUrl();
-      final launched = await _oauthUrlLauncher.launchGoogleSignIn(
+      final redirectTo = await _buildAuthRedirectUrl();
+      final launched = await _oauthUrlLauncher.launchProviderSignIn(
         authClient: _client.auth,
+        provider: OAuthProvider.google,
         redirectTo: redirectTo,
         queryParams: const {
           'access_type': 'offline',
@@ -272,7 +277,33 @@ class AuthRepository {
     }
   }
 
-  Future<String> _buildGoogleRedirectUrl() async {
+  Future<AuthActionResult> _launchBrowserAppleSignIn() async {
+    try {
+      final redirectTo = await _buildAuthRedirectUrl();
+      final launched = await _oauthUrlLauncher.launchProviderSignIn(
+        authClient: _client.auth,
+        provider: OAuthProvider.apple,
+        redirectTo: redirectTo,
+        queryParams: const {
+          'prompt': 'consent',
+        },
+      );
+
+      if (!launched) {
+        return const AuthActionResult.failure(
+          AuthErrorCode.appleBrowserLaunchFailed,
+        );
+      }
+
+      return const AuthActionResult.externalFlowStarted();
+    } on Exception {
+      return const AuthActionResult.failure(
+        AuthErrorCode.appleBrowserLaunchFailed,
+      );
+    }
+  }
+
+  Future<String> _buildAuthRedirectUrl() async {
     final packageInfo = await _packageInfoLoader();
     final packageName = packageInfo.packageName.trim();
     final scheme = packageName.isEmpty

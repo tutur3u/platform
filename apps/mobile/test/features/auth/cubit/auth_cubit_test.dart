@@ -31,6 +31,9 @@ void main() {
       );
       when(() => authRepository.dispose()).thenReturn(null);
       when(() => authRepository.checkMfaRequired()).thenReturn(false);
+      when(
+        () => authRepository.signInWithApple(),
+      ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());
     });
 
     blocTest<AuthCubit, AuthState>(
@@ -101,6 +104,33 @@ void main() {
           isLoading: false,
           error: null,
           errorCode: AuthErrorCode.googleBrowserLaunchFailed,
+        ),
+      ],
+    );
+
+    blocTest<AuthCubit, AuthState>(
+      'stores a localized error code when Apple sign-in fails',
+      build: () {
+        when(
+          () => authRepository.signInWithApple(),
+        ).thenAnswer(
+          (_) async => const AuthActionResult.failure(
+            AuthErrorCode.appleBrowserLaunchFailed,
+          ),
+        );
+        return AuthCubit(authRepository: authRepository);
+      },
+      act: (cubit) => cubit.signInWithApple(),
+      expect: () => <AuthState>[
+        const AuthState.unauthenticated().copyWith(
+          isLoading: true,
+          error: null,
+          errorCode: null,
+        ),
+        const AuthState.unauthenticated().copyWith(
+          isLoading: false,
+          error: null,
+          errorCode: AuthErrorCode.appleBrowserLaunchFailed,
         ),
       ],
     );

@@ -56,6 +56,10 @@ class _LoginPageState extends State<LoginPage> {
     return context.read<AuthCubit>().signInWithGoogle();
   }
 
+  Future<void> _handleAppleSignIn() {
+    return context.read<AuthCubit>().signInWithApple();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -92,9 +96,19 @@ class _LoginPageState extends State<LoginPage> {
                   BlocBuilder<AuthCubit, AuthState>(
                     buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
                     builder: (context, state) {
-                      return AuthGoogleButton(
-                        isLoading: state.isLoading,
-                        onPressed: _handleGoogleSignIn,
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AuthAppleButton(
+                            isLoading: state.isLoading,
+                            onPressed: _handleAppleSignIn,
+                          ),
+                          const shad.Gap(12),
+                          AuthGoogleButton(
+                            isLoading: state.isLoading,
+                            onPressed: _handleGoogleSignIn,
+                          ),
+                        ],
                       );
                     },
                   ),

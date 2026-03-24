@@ -27,10 +27,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSignIn => 'Sign in';
 
   @override
+  String get authContinueWithApple => 'Continue with Apple';
+
+  @override
   String get authContinueWithGoogle => 'Continue with Google';
 
   @override
   String get authContinueWithEmail => 'or continue with email';
+
+  @override
+  String get authAppleSignInFailed => 'Apple sign-in failed. Please try again.';
+
+  @override
+  String get authAppleBrowserLaunchFailed => 'Unable to open Apple sign-in right now.';
 
   @override
   String get authGoogleSignInFailed => 'Google sign-in failed. Please try again.';
@@ -58,6 +67,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signUpButton => 'Create account';
+
+  @override
+  String get signUpSubtitle => 'Create your account faster with Apple, Google, or email.';
 
   @override
   String get signUpConfirmPassword => 'Confirm password';
@@ -2031,10 +2043,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRunning => 'Running';
 
   @override
+  String get timerRunningSessionNoDetails => 'No category or task linked';
+
+  @override
+  String get timerRunningSessionNoTitle => 'Untitled session';
+
+  @override
   String get timerPaused => 'Paused';
 
   @override
   String get timerStopped => 'Stopped';
+
+  @override
+  String get timerSessionPauseSuccess => 'Session paused successfully.';
+
+  @override
+  String get timerSessionResumeSuccess => 'Session resumed successfully.';
+
+  @override
+  String get timerSessionStopSuccess => 'Session stopped successfully.';
 
   @override
   String get timerPause => 'Pause';
@@ -2056,6 +2083,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timerCategoryName => 'Category name';
+
+  @override
+  String get timerCategoryColor => 'Color';
+
+  @override
+  String get timerCategoryColorLime => 'Lime';
+
+  @override
+  String get timerCategoryColorTeal => 'Teal';
+
+  @override
+  String get timerCategoryColorSky => 'Sky';
+
+  @override
+  String get timerCategoryColorRose => 'Rose';
+
+  @override
+  String get timerCategoryDescription => 'Description';
+
+  @override
+  String get timerCategoryColorNone => 'None';
+
+  @override
+  String get timerCreateCategory => 'Create category';
+
+  @override
+  String get timerCategoryCreateInProgress => 'Creating category...';
+
+  @override
+  String get timerCategoryCreateSuccess => 'Category created';
+
+  @override
+  String get timerSelectCategory => 'Select category';
+
+  @override
+  String get timerAdvanced => 'Advanced';
+
+  @override
+  String get timerSessionDescription => 'Description';
+
+  @override
+  String get timerLinkTask => 'Task';
+
+  @override
+  String get timerTaskPickerAllTasks => 'All tasks';
+
+  @override
+  String get timerTaskPickerAssignedToMe => 'Assigned to me';
+
+  @override
+  String timerTaskPickerAssignees(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count assignees',
+      one: '$count assignee',
+      zero: 'No assignees',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerTaskPickerNoMatchingTasks => 'No matching tasks';
+
+  @override
+  String get timerTaskPickerNoTask => 'No linked task';
+
+  @override
+  String timerTaskPickerResultCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks',
+      one: '$count task',
+      zero: 'No tasks',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerTaskPickerSearch => 'Search tasks';
+
+  @override
+  String get timerTaskIdPlaceholder => 'Select a task';
 
   @override
   String get timerRecentSessions => 'Recent sessions';

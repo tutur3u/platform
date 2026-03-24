@@ -28,6 +28,12 @@ class TimeTrackerState extends Equatable {
     this.stats,
     this.selectedCategoryId,
     this.sessionTitle,
+    this.sessionDescription,
+    this.sessionTaskId,
+    this.sessionTaskName,
+    this.sessionTaskTicketLabel,
+    this.runningSessionTaskName,
+    this.runningSessionTaskTicketLabel,
     this.thresholdDays,
     this.pomodoroSettings = const PomodoroSettings(),
     this.pomodoroPhase = PomodoroPhase.idle,
@@ -58,6 +64,16 @@ class TimeTrackerState extends Equatable {
   final TimeTrackerStats? stats;
   final String? selectedCategoryId;
   final String? sessionTitle;
+  final String? sessionDescription;
+  final String? sessionTaskId;
+  final String? sessionTaskName;
+  final String? sessionTaskTicketLabel;
+
+  /// Task display name resolved separately from the running session task ID.
+  final String? runningSessionTaskName;
+
+  /// Task ticket label resolved separately from the running session task ID.
+  final String? runningSessionTaskTicketLabel;
   final int? thresholdDays;
   final PomodoroSettings pomodoroSettings;
   final PomodoroPhase pomodoroPhase;
@@ -101,6 +117,12 @@ class TimeTrackerState extends Equatable {
     TimeTrackerStats? stats,
     String? selectedCategoryId,
     String? sessionTitle,
+    String? sessionDescription,
+    String? sessionTaskId,
+    String? sessionTaskName,
+    String? sessionTaskTicketLabel,
+    String? runningSessionTaskName,
+    String? runningSessionTaskTicketLabel,
     Object? thresholdDays = _sentinel,
     PomodoroSettings? pomodoroSettings,
     PomodoroPhase? pomodoroPhase,
@@ -119,65 +141,101 @@ class TimeTrackerState extends Equatable {
     bool clearRunningSession = false,
     bool clearActiveBreak = false,
     bool clearSelectedCategory = false,
+    bool clearSessionDescription = false,
+    bool clearSessionTaskId = false,
+    bool clearSessionTaskMeta = false,
+    bool clearRunningSessionTask = false,
     bool clearThresholdDays = false,
     bool clearHistoryPeriodStats = false,
     bool clearHistoryNextCursor = false,
     bool clearGoals = false,
     bool clearGoalsLoaded = false,
     bool clearError = false,
-  }) => TimeTrackerState(
-    status: status ?? this.status,
-    runningSession: clearRunningSession
+  }) {
+    final nextRunningSession = clearRunningSession
         ? null
-        : (runningSession ?? this.runningSession),
-    activeBreak: clearActiveBreak ? null : (activeBreak ?? this.activeBreak),
-    elapsed: elapsed ?? this.elapsed,
-    recentSessions: recentSessions ?? this.recentSessions,
-    categories: categories ?? this.categories,
-    goals: clearGoals ? const [] : (goals ?? this.goals),
-    goalsWorkspaceId: clearGoals
+        : (runningSession ?? this.runningSession);
+    final nextSessionTaskId = clearSessionTaskId
         ? null
-        : (goalsWorkspaceId == _sentinel
-              ? this.goalsWorkspaceId
-              : goalsWorkspaceId as String?),
-    goalsLoadingByWs: goalsLoadingByWs ?? this.goalsLoadingByWs,
-    goalsLoadedByWs: clearGoalsLoaded
-        ? const {}
-        : (goalsLoadedByWs ?? this.goalsLoadedByWs),
-    stats: stats ?? this.stats,
-    selectedCategoryId: clearSelectedCategory
-        ? null
-        : (selectedCategoryId ?? this.selectedCategoryId),
-    sessionTitle: sessionTitle ?? this.sessionTitle,
-    thresholdDays: clearThresholdDays
-        ? null
-        : (thresholdDays == _sentinel
-              ? this.thresholdDays
-              : thresholdDays as int?),
-    pomodoroSettings: pomodoroSettings ?? this.pomodoroSettings,
-    pomodoroPhase: pomodoroPhase ?? this.pomodoroPhase,
-    pomodoroSessionCount: pomodoroSessionCount ?? this.pomodoroSessionCount,
-    isPaused: isPaused ?? this.isPaused,
-    historyViewMode: historyViewMode ?? this.historyViewMode,
-    historyAnchorDate: historyAnchorDate == _sentinel
-        ? this.historyAnchorDate
-        : historyAnchorDate as DateTime?,
-    historySessions: historySessions ?? this.historySessions,
-    historyPeriodStats: clearHistoryPeriodStats
-        ? null
-        : (historyPeriodStats ?? this.historyPeriodStats),
-    historyNextCursor: clearHistoryNextCursor
-        ? null
-        : (historyNextCursor == _sentinel
-              ? this.historyNextCursor
-              : historyNextCursor as String?),
-    historyHasMore: historyHasMore ?? this.historyHasMore,
-    isHistoryLoading: isHistoryLoading ?? this.isHistoryLoading,
-    isHistoryLoadingMore: isHistoryLoadingMore ?? this.isHistoryLoadingMore,
-    isHistoryStatsAccordionOpen:
-        isHistoryStatsAccordionOpen ?? this.isHistoryStatsAccordionOpen,
-    error: clearError ? null : (error ?? this.error),
-  );
+        : (sessionTaskId ?? this.sessionTaskId);
+    final shouldClearSessionTaskMeta =
+        clearSessionTaskId ||
+        clearSessionTaskMeta ||
+        nextSessionTaskId != this.sessionTaskId;
+    final shouldClearRunningSessionTaskMeta =
+        clearRunningSessionTask ||
+        clearRunningSession ||
+        nextRunningSession?.taskId != this.runningSession?.taskId;
+
+    return TimeTrackerState(
+      status: status ?? this.status,
+      runningSession: nextRunningSession,
+      activeBreak: clearActiveBreak ? null : (activeBreak ?? this.activeBreak),
+      elapsed: elapsed ?? this.elapsed,
+      recentSessions: recentSessions ?? this.recentSessions,
+      categories: categories ?? this.categories,
+      goals: clearGoals ? const [] : (goals ?? this.goals),
+      goalsWorkspaceId: clearGoals
+          ? null
+          : (goalsWorkspaceId == _sentinel
+                ? this.goalsWorkspaceId
+                : goalsWorkspaceId as String?),
+      goalsLoadingByWs: goalsLoadingByWs ?? this.goalsLoadingByWs,
+      goalsLoadedByWs: clearGoalsLoaded
+          ? const {}
+          : (goalsLoadedByWs ?? this.goalsLoadedByWs),
+      stats: stats ?? this.stats,
+      selectedCategoryId: clearSelectedCategory
+          ? null
+          : (selectedCategoryId ?? this.selectedCategoryId),
+      sessionTitle: sessionTitle ?? this.sessionTitle,
+      sessionDescription: clearSessionDescription
+          ? null
+          : (sessionDescription ?? this.sessionDescription),
+      sessionTaskId: nextSessionTaskId,
+      sessionTaskName: shouldClearSessionTaskMeta
+          ? sessionTaskName
+          : (sessionTaskName ?? this.sessionTaskName),
+      sessionTaskTicketLabel: shouldClearSessionTaskMeta
+          ? sessionTaskTicketLabel
+          : (sessionTaskTicketLabel ?? this.sessionTaskTicketLabel),
+      runningSessionTaskName: shouldClearRunningSessionTaskMeta
+          ? runningSessionTaskName
+          : (runningSessionTaskName ?? this.runningSessionTaskName),
+      runningSessionTaskTicketLabel: shouldClearRunningSessionTaskMeta
+          ? runningSessionTaskTicketLabel
+          : (runningSessionTaskTicketLabel ??
+                this.runningSessionTaskTicketLabel),
+      thresholdDays: clearThresholdDays
+          ? null
+          : (thresholdDays == _sentinel
+                ? this.thresholdDays
+                : thresholdDays as int?),
+      pomodoroSettings: pomodoroSettings ?? this.pomodoroSettings,
+      pomodoroPhase: pomodoroPhase ?? this.pomodoroPhase,
+      pomodoroSessionCount: pomodoroSessionCount ?? this.pomodoroSessionCount,
+      isPaused: isPaused ?? this.isPaused,
+      historyViewMode: historyViewMode ?? this.historyViewMode,
+      historyAnchorDate: historyAnchorDate == _sentinel
+          ? this.historyAnchorDate
+          : historyAnchorDate as DateTime?,
+      historySessions: historySessions ?? this.historySessions,
+      historyPeriodStats: clearHistoryPeriodStats
+          ? null
+          : (historyPeriodStats ?? this.historyPeriodStats),
+      historyNextCursor: clearHistoryNextCursor
+          ? null
+          : (historyNextCursor == _sentinel
+                ? this.historyNextCursor
+                : historyNextCursor as String?),
+      historyHasMore: historyHasMore ?? this.historyHasMore,
+      isHistoryLoading: isHistoryLoading ?? this.isHistoryLoading,
+      isHistoryLoadingMore: isHistoryLoadingMore ?? this.isHistoryLoadingMore,
+      isHistoryStatsAccordionOpen:
+          isHistoryStatsAccordionOpen ?? this.isHistoryStatsAccordionOpen,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -194,6 +252,12 @@ class TimeTrackerState extends Equatable {
     stats,
     selectedCategoryId,
     sessionTitle,
+    sessionDescription,
+    sessionTaskId,
+    sessionTaskName,
+    sessionTaskTicketLabel,
+    runningSessionTaskName,
+    runningSessionTaskTicketLabel,
     thresholdDays,
     pomodoroSettings,
     pomodoroPhase,

@@ -5,8 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 class OAuthUrlLauncher {
   const OAuthUrlLauncher();
 
-  Future<bool> launchGoogleSignIn({
+  Future<bool> launchProviderSignIn({
     required GoTrueClient authClient,
+    required OAuthProvider provider,
     required String redirectTo,
     required Map<String, String> queryParams,
   }) {
@@ -23,13 +24,14 @@ class SupabaseOAuthUrlLauncher extends OAuthUrlLauncher {
   final DevicePlatform _devicePlatform;
 
   @override
-  Future<bool> launchGoogleSignIn({
+  Future<bool> launchProviderSignIn({
     required GoTrueClient authClient,
+    required OAuthProvider provider,
     required String redirectTo,
     required Map<String, String> queryParams,
   }) async {
     final response = await authClient.getOAuthSignInUrl(
-      provider: OAuthProvider.google,
+      provider: provider,
       redirectTo: redirectTo,
       queryParams: queryParams,
     );

@@ -12,6 +12,10 @@ class TimerControls extends StatelessWidget {
     required this.onPause,
     required this.onResume,
     required this.onAddMissedEntry,
+    this.areActionButtonsDisabled = false,
+    this.isPauseLoading = false,
+    this.isStopLoading = false,
+    this.isResumeLoading = false,
     super.key,
   });
 
@@ -22,6 +26,10 @@ class TimerControls extends StatelessWidget {
   final VoidCallback onPause;
   final VoidCallback onResume;
   final VoidCallback onAddMissedEntry;
+  final bool areActionButtonsDisabled;
+  final bool isPauseLoading;
+  final bool isStopLoading;
+  final bool isResumeLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -32,14 +40,7 @@ class TimerControls extends StatelessWidget {
       medium: 80,
       expanded: 88,
     );
-    final double secondarySize = responsiveValue(
-      context,
-      compact: 56,
-      medium: 64,
-      expanded: 72,
-    );
     final primaryIconSize = primarySize / 2;
-    final secondaryIconSize = secondarySize / 2;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -51,42 +52,47 @@ class TimerControls extends StatelessWidget {
               // Stopped state: Start button
               _CircleButton(
                 icon: shad.LucideIcons.play,
-                onPressed: onStart,
+                onPressed: areActionButtonsDisabled ? null : onStart,
                 size: primarySize,
                 iconSize: primaryIconSize,
+                isLoading: isStopLoading,
               )
             else if (isRunning) ...[
-              // Running state: Pause + Stop
+              // Running state: Pause + Stop (same diameter so they align)
               _CircleButton(
                 icon: shad.LucideIcons.pause,
-                onPressed: onPause,
-                size: secondarySize,
-                iconSize: secondaryIconSize,
+                onPressed: areActionButtonsDisabled ? null : onPause,
+                size: primarySize,
+                iconSize: primaryIconSize,
                 secondary: true,
+                isLoading: isPauseLoading,
               ),
               const shad.Gap(24),
               _CircleButton(
                 icon: shad.LucideIcons.square,
-                onPressed: onStop,
+                onPressed: areActionButtonsDisabled ? null : onStop,
                 size: primarySize,
                 iconSize: primaryIconSize,
                 destructive: true,
+                isLoading: isStopLoading,
               ),
             ] else ...[
-              // Paused state: Resume + Stop
+              // Paused state: Resume + Stop (same diameter so they align)
               _CircleButton(
                 icon: shad.LucideIcons.play,
-                onPressed: onResume,
-                size: secondarySize,
-                iconSize: secondaryIconSize,
+                onPressed: areActionButtonsDisabled ? null : onResume,
+                size: primarySize,
+                iconSize: primaryIconSize,
+                isLoading: isResumeLoading,
               ),
               const shad.Gap(24),
               _CircleButton(
                 icon: shad.LucideIcons.square,
-                onPressed: onStop,
+                onPressed: areActionButtonsDisabled ? null : onStop,
                 size: primarySize,
                 iconSize: primaryIconSize,
                 destructive: true,
+                isLoading: isStopLoading,
               ),
             ],
           ],
@@ -94,7 +100,7 @@ class TimerControls extends StatelessWidget {
         if (!isRunning && !isPaused) ...[
           const shad.Gap(16),
           shad.OutlineButton(
-            onPressed: onAddMissedEntry,
+            onPressed: areActionButtonsDisabled ? null : onAddMissedEntry,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -118,14 +124,27 @@ class _CircleButton extends StatelessWidget {
     required this.iconSize,
     this.destructive = false,
     this.secondary = false,
+    this.isLoading = false,
   });
 
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final double size;
   final double iconSize;
   final bool destructive;
   final bool secondary;
+  final bool isLoading;
+
+  Widget _buildChild() {
+    if (isLoading) {
+      return SizedBox(
+        width: iconSize,
+        height: iconSize,
+        child: const CircularProgressIndicator(strokeWidth: 2.5),
+      );
+    }
+    return Icon(icon, size: iconSize);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +155,7 @@ class _CircleButton extends StatelessWidget {
         child: shad.DestructiveButton(
           onPressed: onPressed,
           shape: shad.ButtonShape.circle,
-          child: Icon(icon, size: iconSize),
+          child: _buildChild(),
         ),
       );
     }
@@ -147,7 +166,7 @@ class _CircleButton extends StatelessWidget {
         child: shad.SecondaryButton(
           onPressed: onPressed,
           shape: shad.ButtonShape.circle,
-          child: Icon(icon, size: iconSize),
+          child: _buildChild(),
         ),
       );
     }
@@ -157,7 +176,7 @@ class _CircleButton extends StatelessWidget {
       child: shad.PrimaryButton(
         onPressed: onPressed,
         shape: shad.ButtonShape.circle,
-        child: Icon(icon, size: iconSize),
+        child: _buildChild(),
       ),
     );
   }

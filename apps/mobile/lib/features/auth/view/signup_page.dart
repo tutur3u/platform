@@ -60,6 +60,10 @@ class _SignUpPageState extends State<SignUpPage> {
     return context.read<AuthCubit>().signInWithGoogle();
   }
 
+  Future<void> _handleAppleSignIn() {
+    return context.read<AuthCubit>().signInWithApple();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -121,6 +125,17 @@ class _SignUpPageState extends State<SignUpPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  l10n.signUpSubtitle,
+                  style: theme.typography.textMuted,
+                  textAlign: TextAlign.center,
+                ),
+                const shad.Gap(20),
+                AuthAppleButton(
+                  isLoading: state.isLoading,
+                  onPressed: _handleAppleSignIn,
+                ),
+                const shad.Gap(12),
                 AuthGoogleButton(
                   isLoading: state.isLoading,
                   onPressed: _handleGoogleSignIn,
