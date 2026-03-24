@@ -24,6 +24,7 @@ import {
   ContextMenuTrigger,
 } from '@tuturuuu/ui/context-menu';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -277,46 +278,56 @@ export default function StorageObjectsTable({
           }}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
           {/* Grid View */}
-          {data.map((item) => (
-            <ContextMenu key={item.id || item.name}>
-              <ContextMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="group relative w-full cursor-pointer rounded-lg border border-dynamic-border bg-card p-4 text-left transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => handleGridItemClick(item)}
-                  disabled={!item.id && !item.name}
-                >
-                  <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">
-                    <DriveGridThumbnail wsId={wsId} path={path} item={item} />
-                  </div>
-                  <h3 className="truncate font-medium text-sm">
-                    {item.name?.replace(
-                      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
-                      ''
-                    )}
-                  </h3>
-                  <p className="mt-1 text-muted-foreground text-xs">
-                    {item.metadata?.size &&
-                      `${Math.round(item.metadata.size / 1024)} KB`}
-                  </p>
-                </button>
-              </ContextMenuTrigger>
-              <ContextMenuContent forceMount>
-                <StorageObjectRowActions
-                  wsId={wsId}
-                  row={{ original: item } as Row<StorageObject>}
-                  path={path}
-                  setStorageObject={handleSetStorageObject}
-                  menuOnly={true}
-                  contextMenu={true}
-                  onRequestRename={handleRequestRename}
-                  onRequestDelete={handleRequestDelete}
-                />
-              </ContextMenuContent>
-            </ContextMenu>
-          ))}
+          {data.map((item) => {
+            const displayName =
+              item.name?.replace(
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
+                ''
+              ) || '';
+
+            return (
+              <ContextMenu key={item.id || item.name}>
+                <ContextMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="group relative w-full cursor-pointer rounded-lg border border-dynamic-border bg-card p-4 text-left transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => handleGridItemClick(item)}
+                    disabled={!item.id && !item.name}
+                  >
+                    <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">
+                      <DriveGridThumbnail wsId={wsId} path={path} item={item} />
+                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <h3 className="truncate font-medium text-sm">
+                          {displayName}
+                        </h3>
+                      </TooltipTrigger>
+                      <TooltipContent>{displayName}</TooltipContent>
+                    </Tooltip>
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      {item.metadata?.size &&
+                        `${Math.round(item.metadata.size / 1024)} KB`}
+                    </p>
+                  </button>
+                </ContextMenuTrigger>
+                <ContextMenuContent forceMount>
+                  <StorageObjectRowActions
+                    wsId={wsId}
+                    row={{ original: item } as Row<StorageObject>}
+                    path={path}
+                    setStorageObject={handleSetStorageObject}
+                    menuOnly={true}
+                    contextMenu={true}
+                    onRequestRename={handleRequestRename}
+                    onRequestDelete={handleRequestDelete}
+                  />
+                </ContextMenuContent>
+              </ContextMenu>
+            );
+          })}
 
           {data.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
