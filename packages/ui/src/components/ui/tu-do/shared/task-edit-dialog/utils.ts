@@ -19,6 +19,23 @@ function isErrorWithMessage(error: unknown): error is {
   return typeof error === 'object' && error !== null;
 }
 
+export function shouldPreserveNativeContextMenu(
+  target: EventTarget | null
+): boolean {
+  if (!(target instanceof Node)) return false;
+
+  const element =
+    target instanceof Element ? target : (target.parentElement ?? null);
+
+  if (!element) return false;
+
+  return Boolean(
+    element.closest(
+      'input, textarea, [contenteditable]:not([contenteditable="false"]), .ProseMirror'
+    )
+  );
+}
+
 export function serializeTaskDescriptionContent(
   content: JSONContent | null
 ): string | null {

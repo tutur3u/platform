@@ -11,6 +11,25 @@ import type {
   ProviderSendResult,
 } from '../types';
 
+type ServerDOMPurify = {
+  sanitize(
+    dirty: string,
+    config?: {
+      ALLOWED_ATTR?: string[];
+      ALLOWED_TAGS?: string[];
+      USE_PROFILES?: {
+        html?: boolean;
+      };
+    }
+  ): string;
+};
+
+const ISOMORPHIC_DOMPURIFY_MODULE = 'isomorphic-dompurify';
+
+async function loadServerDOMPurify(): Promise<ServerDOMPurify> {
+  return (await import(ISOMORPHIC_DOMPURIFY_MODULE)).default as ServerDOMPurify;
+}
+
 /**
  * Abstract base class for email providers.
  * Implement this class to add support for new email providers.
@@ -42,8 +61,8 @@ export abstract class BaseEmailProvider implements EmailProvider {
    */
   protected async sanitizeHtml(html: string): Promise<string> {
     // Dynamic imports to avoid bundling issues
-    const [{ default: DOMPurify }, { default: juice }] = await Promise.all([
-      import('isomorphic-dompurify'),
+    const [DOMPurify, { default: juice }] = await Promise.all([
+      loadServerDOMPurify(),
       import('juice'),
     ]);
 

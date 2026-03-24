@@ -75,6 +75,7 @@ import {
   saveAndVerifyYjsDescriptionToDatabase,
   saveYjsDescriptionToDatabase,
   serializeTaskDescriptionContent,
+  shouldPreserveNativeContextMenu,
 } from './task-edit-dialog/utils';
 import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
@@ -1388,6 +1389,10 @@ export function TaskEditDialog({
           showCloseButton={false}
           className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0"
           onContextMenu={(e) => {
+            if (shouldPreserveNativeContextMenu(e.target)) {
+              return;
+            }
+
             e.preventDefault();
             e.stopPropagation();
           }}

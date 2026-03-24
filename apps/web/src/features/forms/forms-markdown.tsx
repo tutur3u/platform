@@ -5,7 +5,7 @@ import { code } from '@streamdown/code';
 import { math } from '@streamdown/math';
 import { mermaid as mermaidPlugin } from '@streamdown/mermaid';
 import { cn } from '@tuturuuu/utils/format';
-import DOMPurify from 'isomorphic-dompurify';
+import DOMPurify from 'dompurify';
 import { Component, type ErrorInfo, type ReactNode, useMemo } from 'react';
 import { Streamdown } from 'streamdown';
 
