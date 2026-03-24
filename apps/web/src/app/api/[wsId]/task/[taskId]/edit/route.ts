@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 // Calendar hours type for task scheduling (matches database enum)
 type CalendarHoursType = 'work_hours' | 'personal_hours' | 'meeting_hours';
@@ -14,9 +15,23 @@ const VALID_CALENDAR_HOURS: CalendarHoursType[] = [
   'meeting_hours',
 ];
 
+const editTaskBodySchema = z
+  .object({
+    priority: z
+      .enum(VALID_PRIORITIES as [TaskPriority, ...TaskPriority[]])
+      .optional(),
+    total_duration: z.number().nonnegative().nullable().optional(),
+    is_splittable: z.boolean().nullable().optional(),
+    min_split_duration_minutes: z.number().nonnegative().nullable().optional(),
+    max_split_duration_minutes: z.number().nonnegative().nullable().optional(),
+    calendar_hours: z.enum(VALID_CALENDAR_HOURS).nullable().optional(),
+    auto_schedule: z.boolean().nullable().optional(),
+  })
+  .strict();
+
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ taskId: string }> }
+  { params }: { params: Promise<{ wsId: string; taskId: string }> }
 ) {
   try {
     const { taskId } = await params;
@@ -29,7 +44,18 @@ export async function PATCH(
     }
 
     // 2. Parse the request body
-    const body = await req.json();
+    const parsedBody = editTaskBodySchema.safeParse(await req.json());
+    if (!parsedBody.success) {
+      console.error('Validation error:', parsedBody.error);
+      return NextResponse.json(
+        {
+          error: parsedBody.error.issues[0]?.message ?? 'Invalid request body',
+        },
+        { status: 400 }
+      );
+    }
+
+    const body = parsedBody.data;
 
     // 3. Check if task exists and user has access to it
     const { data: existingTask, error: fetchError } = await supabase
@@ -63,92 +89,33 @@ export async function PATCH(
 
     // Priority
     if (body.priority !== undefined) {
-      if (
-        typeof body.priority !== 'string' ||
-        !VALID_PRIORITIES.includes(body.priority as TaskPriority)
-      ) {
-        return NextResponse.json(
-          { error: `Priority must be one of: ${VALID_PRIORITIES.join(', ')}` },
-          { status: 400 }
-        );
-      }
       taskUpdateData.priority = body.priority;
     }
 
     // Scheduling fields (per-user: task_user_scheduling_settings)
     if (body.total_duration !== undefined) {
-      if (typeof body.total_duration !== 'number' || body.total_duration < 0) {
-        return NextResponse.json(
-          { error: 'total_duration must be a non-negative number' },
-          { status: 400 }
-        );
-      }
       schedulingUpdateData.total_duration = body.total_duration;
     }
 
     if (body.is_splittable !== undefined) {
-      if (typeof body.is_splittable !== 'boolean') {
-        return NextResponse.json(
-          { error: 'is_splittable must be a boolean' },
-          { status: 400 }
-        );
-      }
       schedulingUpdateData.is_splittable = body.is_splittable;
     }
 
     if (body.min_split_duration_minutes !== undefined) {
-      if (
-        typeof body.min_split_duration_minutes !== 'number' ||
-        body.min_split_duration_minutes < 0
-      ) {
-        return NextResponse.json(
-          { error: 'min_split_duration_minutes must be a non-negative number' },
-          { status: 400 }
-        );
-      }
       schedulingUpdateData.min_split_duration_minutes =
         body.min_split_duration_minutes;
     }
 
     if (body.max_split_duration_minutes !== undefined) {
-      if (
-        typeof body.max_split_duration_minutes !== 'number' ||
-        body.max_split_duration_minutes < 0
-      ) {
-        return NextResponse.json(
-          { error: 'max_split_duration_minutes must be a non-negative number' },
-          { status: 400 }
-        );
-      }
       schedulingUpdateData.max_split_duration_minutes =
         body.max_split_duration_minutes;
     }
 
     if (body.calendar_hours !== undefined) {
-      if (
-        body.calendar_hours !== null &&
-        (typeof body.calendar_hours !== 'string' ||
-          !VALID_CALENDAR_HOURS.includes(
-            body.calendar_hours as CalendarHoursType
-          ))
-      ) {
-        return NextResponse.json(
-          {
-            error: `calendar_hours must be one of: ${VALID_CALENDAR_HOURS.join(', ')} or null`,
-          },
-          { status: 400 }
-        );
-      }
       schedulingUpdateData.calendar_hours = body.calendar_hours;
     }
 
     if (body.auto_schedule !== undefined) {
-      if (typeof body.auto_schedule !== 'boolean') {
-        return NextResponse.json(
-          { error: 'auto_schedule must be a boolean' },
-          { status: 400 }
-        );
-      }
       schedulingUpdateData.auto_schedule = body.auto_schedule;
     }
 
