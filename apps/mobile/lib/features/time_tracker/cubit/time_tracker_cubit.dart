@@ -200,7 +200,11 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     return exceedsThreshold(session.startTime, state.thresholdDays);
   }
 
-  Future<void> stopSession(String wsId, String userId) async {
+  Future<void> stopSession(
+    String wsId,
+    String userId, {
+    bool throwOnError = false,
+  }) async {
     if (state.runningSession == null) return;
 
     try {
@@ -225,6 +229,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       await loadHistoryInitial(wsId, userId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
     }
   }
 

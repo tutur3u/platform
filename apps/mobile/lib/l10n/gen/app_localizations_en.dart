@@ -2043,6 +2043,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerStopped => 'Stopped';
 
   @override
+  String get timerSessionPauseSuccess => 'Session paused successfully.';
+
+  @override
+  String get timerSessionResumeSuccess => 'Session resumed successfully.';
+
+  @override
+  String get timerSessionStopSuccess => 'Session added successfully.';
+
+  @override
   String get timerPause => 'Pause';
 
   @override

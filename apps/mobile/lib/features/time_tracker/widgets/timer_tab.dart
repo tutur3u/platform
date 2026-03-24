@@ -20,10 +20,30 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class TimerTab extends StatelessWidget {
+class TimerTab extends StatefulWidget {
   const TimerTab({this.onSeeAll, super.key});
 
   final VoidCallback? onSeeAll;
+
+  @override
+  State<TimerTab> createState() => _TimerTabState();
+}
+
+class _TimerTabState extends State<TimerTab> {
+  _TimerControlAction? _pendingAction;
+
+  bool get _isActionInProgress => _pendingAction != null;
+
+  bool _isActionLoading(_TimerControlAction action) => _pendingAction == action;
+
+  void _setPendingAction(_TimerControlAction? action) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _pendingAction = action;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +79,13 @@ class TimerTab extends StatelessWidget {
                   unawaited(_handleStop(context, cubit, wsId, userId)),
               onPause: () =>
                   unawaited(_handlePause(context, cubit, wsId, userId)),
-              onResume: () => unawaited(cubit.resumeSession()),
+              onResume: () => unawaited(_handleResume(context, cubit)),
               onAddMissedEntry: () =>
                   unawaited(_showMissedEntryDialog(context)),
+              areActionButtonsDisabled: _isActionInProgress,
+              isPauseLoading: _isActionLoading(_TimerControlAction.pause),
+              isStopLoading: _isActionLoading(_TimerControlAction.stop),
+              isResumeLoading: _isActionLoading(_TimerControlAction.resume),
             ),
             const shad.Gap(24),
             // Running session info card (read-only summary while running/paused)
@@ -146,23 +170,40 @@ class TimerTab extends StatelessWidget {
     String wsId,
     String userId,
   ) async {
-    final shouldContinue = await _handleThresholdAndMaybeShowMissedEntry(
-      context,
-      cubit,
-      wsId,
-      userId,
-    );
-    if (!shouldContinue) {
+    if (_isActionInProgress) {
       return;
     }
 
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    _setPendingAction(_TimerControlAction.stop);
+
     try {
-      await cubit.stopSession(wsId, userId);
-    } on Exception catch (error) {
-      if (!context.mounted) {
+      final shouldContinue = await _handleThresholdAndMaybeShowMissedEntry(
+        context,
+        cubit,
+        wsId,
+        userId,
+      );
+      if (!shouldContinue) {
         return;
       }
-      _showActionError(context, error);
+
+      await cubit.stopSession(wsId, userId, throwOnError: true);
+      if (!toastContext.mounted) {
+        return;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (ctx, overlay) =>
+            shad.Alert(content: Text(ctx.l10n.timerSessionStopSuccess)),
+      );
+    } on Exception catch (error) {
+      if (!toastContext.mounted) {
+        return;
+      }
+      _showActionError(toastContext, error);
+    } finally {
+      _setPendingAction(null);
     }
   }
 
@@ -172,23 +213,71 @@ class TimerTab extends StatelessWidget {
     String wsId,
     String userId,
   ) async {
-    final shouldContinue = await _handleThresholdAndMaybeShowMissedEntry(
-      context,
-      cubit,
-      wsId,
-      userId,
-    );
-    if (!shouldContinue) {
+    if (_isActionInProgress) {
       return;
     }
 
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    _setPendingAction(_TimerControlAction.pause);
+
     try {
-      await cubit.pauseSession();
-    } on Exception catch (error) {
-      if (!context.mounted) {
+      final shouldContinue = await _handleThresholdAndMaybeShowMissedEntry(
+        context,
+        cubit,
+        wsId,
+        userId,
+      );
+      if (!shouldContinue) {
         return;
       }
-      _showActionError(context, error);
+
+      await cubit.pauseSession();
+      if (!toastContext.mounted) {
+        return;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (ctx, overlay) =>
+            shad.Alert(content: Text(ctx.l10n.timerSessionPauseSuccess)),
+      );
+    } on Exception catch (error) {
+      if (!toastContext.mounted) {
+        return;
+      }
+      _showActionError(toastContext, error);
+    } finally {
+      _setPendingAction(null);
+    }
+  }
+
+  Future<void> _handleResume(
+    BuildContext context,
+    TimeTrackerCubit cubit,
+  ) async {
+    if (_isActionInProgress) {
+      return;
+    }
+
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    _setPendingAction(_TimerControlAction.resume);
+
+    try {
+      await cubit.resumeSession();
+      if (!toastContext.mounted) {
+        return;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (ctx, overlay) =>
+            shad.Alert(content: Text(ctx.l10n.timerSessionResumeSuccess)),
+      );
+    } on Exception catch (error) {
+      if (!toastContext.mounted) {
+        return;
+      }
+      _showActionError(toastContext, error);
+    } finally {
+      _setPendingAction(null);
     }
   }
 
@@ -400,3 +489,5 @@ class TimerTab extends StatelessWidget {
 }
 
 enum _ExceededSessionAction { discard, submitRequest }
+
+enum _TimerControlAction { pause, stop, resume }

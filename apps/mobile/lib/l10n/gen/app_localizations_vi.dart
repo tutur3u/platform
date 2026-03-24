@@ -2043,6 +2043,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerStopped => 'Đã dừng';
 
   @override
+  String get timerSessionPauseSuccess => 'Đã tạm dừng phiên thành công.';
+
+  @override
+  String get timerSessionResumeSuccess => 'Đã tiếp tục phiên thành công.';
+
+  @override
+  String get timerSessionStopSuccess => 'Đã thêm phiên thành công.';
+
+  @override
   String get timerPause => 'Tạm dừng';
 
   @override

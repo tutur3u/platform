@@ -4021,6 +4021,24 @@ abstract class AppLocalizations {
   /// **'Stopped'**
   String get timerStopped;
 
+  /// No description provided for @timerSessionPauseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session paused successfully.'**
+  String get timerSessionPauseSuccess;
+
+  /// No description provided for @timerSessionResumeSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session resumed successfully.'**
+  String get timerSessionResumeSuccess;
+
+  /// No description provided for @timerSessionStopSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Session added successfully.'**
+  String get timerSessionStopSuccess;
+
   /// No description provided for @timerPause.
   ///
   /// In en, this message translates to:
