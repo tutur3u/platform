@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   batchFetch,
   batchUpsert,
@@ -5,6 +6,38 @@ import {
   createMigrationResponse,
   requireDevMode,
 } from '../batch-upsert';
+
+const IN_QUERY_BATCH_SIZE = 500;
+
+interface QueueRow {
+  post_id?: string;
+  [key: string]: unknown;
+}
+
+async function getExistingPostIds(postIds: string[]): Promise<Set<string>> {
+  const supabase = await createAdminClient({ noCookie: true });
+  const existingPostIds = new Set<string>();
+
+  for (let i = 0; i < postIds.length; i += IN_QUERY_BATCH_SIZE) {
+    const batch = postIds.slice(i, i + IN_QUERY_BATCH_SIZE);
+    const { data, error } = await supabase
+      .from('user_group_posts')
+      .select('id')
+      .in('id', batch);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    for (const row of data ?? []) {
+      if (row.id) {
+        existingPostIds.add(row.id);
+      }
+    }
+  }
+
+  return existingPostIds;
+}
 
 export async function GET(req: Request) {
   const devModeError = requireDevMode();
@@ -33,12 +66,46 @@ export async function PUT(req: Request) {
   if (devModeError) return devModeError;
 
   const json = await req.json();
-  const sanitizedData = (json?.data || []).map(
-    (item: Record<string, unknown>) => ({
+  const incomingRows = Array.isArray(json?.data)
+    ? (json.data as QueueRow[])
+    : [];
+
+  const incomingPostIds = Array.from(
+    new Set(
+      incomingRows
+        .map((row) => row.post_id)
+        .filter(
+          (postId): postId is string =>
+            typeof postId === 'string' && postId.length > 0
+        )
+    )
+  );
+
+  let existingPostIds: Set<string>;
+  try {
+    existingPostIds = await getExistingPostIds(incomingPostIds);
+  } catch (error) {
+    return Response.json(
+      {
+        message: 'Error migrating post-email-queue',
+        errorDetails:
+          error instanceof Error
+            ? error.message
+            : 'Failed to validate post IDs',
+      },
+      { status: 500 }
+    );
+  }
+
+  const sanitizedData = incomingRows
+    .filter(
+      (item) =>
+        typeof item.post_id === 'string' && existingPostIds.has(item.post_id)
+    )
+    .map((item) => ({
       ...item,
       sent_email_id: null,
-    })
-  );
+    }));
 
   const result = await batchUpsert({
     table: 'post_email_queue',

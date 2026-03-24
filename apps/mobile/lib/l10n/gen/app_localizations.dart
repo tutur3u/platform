@@ -4147,6 +4147,156 @@ abstract class AppLocalizations {
   /// **'Activity'**
   String get timerActivityHeatmap;
 
+  /// No description provided for @timerHeatmapTrackedThisYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracked {duration} this year'**
+  String timerHeatmapTrackedThisYear(String duration);
+
+  /// No description provided for @timerHeatmapStartTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start tracking to build your activity pattern'**
+  String get timerHeatmapStartTracking;
+
+  /// No description provided for @timerHeatmapViewOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get timerHeatmapViewOriginal;
+
+  /// No description provided for @timerHeatmapViewHybrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Hybrid'**
+  String get timerHeatmapViewHybrid;
+
+  /// No description provided for @timerHeatmapViewCalendarOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get timerHeatmapViewCalendarOnly;
+
+  /// No description provided for @timerHeatmapViewCompactCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards'**
+  String get timerHeatmapViewCompactCards;
+
+  /// No description provided for @timerHeatmapLegendLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get timerHeatmapLegendLess;
+
+  /// No description provided for @timerHeatmapLegendMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get timerHeatmapLegendMore;
+
+  /// Compact month label for heatmap columns when locale needs a month number (e.g. Vietnamese). Not used for English; prefer DateFormat MMM elsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'{month}'**
+  String timerHeatmapMonthCompact(int month);
+
+  /// Month index 1-12 only for very narrow per-week heatmap columns (e.g. Vietnamese). Wider surfaces use timerHeatmapMonthCompact or MMM.
+  ///
+  /// In en, this message translates to:
+  /// **'{month}'**
+  String timerHeatmapMonthNarrowColumn(int month);
+
+  /// No description provided for @timerHeatmapYearPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity Pattern'**
+  String get timerHeatmapYearPattern;
+
+  /// No description provided for @timerHeatmapActiveDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} active day} other{{count} active days}}'**
+  String timerHeatmapActiveDays(int count);
+
+  /// No description provided for @timerHeatmapMon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mo'**
+  String get timerHeatmapMon;
+
+  /// No description provided for @timerHeatmapTue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tu'**
+  String get timerHeatmapTue;
+
+  /// No description provided for @timerHeatmapWed.
+  ///
+  /// In en, this message translates to:
+  /// **'We'**
+  String get timerHeatmapWed;
+
+  /// No description provided for @timerHeatmapThu.
+  ///
+  /// In en, this message translates to:
+  /// **'Th'**
+  String get timerHeatmapThu;
+
+  /// No description provided for @timerHeatmapFri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fr'**
+  String get timerHeatmapFri;
+
+  /// No description provided for @timerHeatmapSat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sa'**
+  String get timerHeatmapSat;
+
+  /// No description provided for @timerHeatmapSun.
+  ///
+  /// In en, this message translates to:
+  /// **'Su'**
+  String get timerHeatmapSun;
+
+  /// No description provided for @timerHeatmapSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} session} other{{count} sessions}}'**
+  String timerHeatmapSessions(int count);
+
+  /// No description provided for @timerHeatmapTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get timerHeatmapTotal;
+
+  /// No description provided for @timerHeatmapSessionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get timerHeatmapSessionsLabel;
+
+  /// No description provided for @timerHeatmapActiveDaysLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Active days'**
+  String get timerHeatmapActiveDaysLabel;
+
+  /// No description provided for @timerHeatmapLessThanMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'<1m'**
+  String get timerHeatmapLessThanMinute;
+
+  /// No description provided for @timerHeatmapNoActivityYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity yet'**
+  String get timerHeatmapNoActivityYet;
+
   /// No description provided for @timerViewSessionDetails.
   ///
   /// In en, this message translates to:
@@ -5014,7 +5164,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerDays.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one{# day} other{# days}}'**
+  /// **'{count, plural, one{{count} day} other{{count} days}}'**
   String timerDays(int count);
 
   /// No description provided for @settingsTitle.

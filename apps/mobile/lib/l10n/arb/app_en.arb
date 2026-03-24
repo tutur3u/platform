@@ -801,6 +801,68 @@
     "timerStatsPersonal": "Personal",
     "timerStatsWorkspace": "Workspace",
     "timerActivityHeatmap": "Activity",
+    "timerHeatmapTrackedThisYear": "Tracked {duration} this year",
+    "@timerHeatmapTrackedThisYear": {
+        "placeholders": {
+            "duration": {
+                "type": "String"
+            }
+        }
+    },
+    "timerHeatmapStartTracking": "Start tracking to build your activity pattern",
+    "timerHeatmapViewOriginal": "Original",
+    "timerHeatmapViewHybrid": "Hybrid",
+    "timerHeatmapViewCalendarOnly": "Calendar",
+    "timerHeatmapViewCompactCards": "Cards",
+    "timerHeatmapLegendLess": "Less",
+    "timerHeatmapLegendMore": "More",
+    "timerHeatmapMonthCompact": "{month}",
+    "@timerHeatmapMonthCompact": {
+        "description": "Compact month label for heatmap columns when locale needs a month number (e.g. Vietnamese). Not used for English; prefer DateFormat MMM elsewhere.",
+        "placeholders": {
+            "month": {
+                "type": "int"
+            }
+        }
+    },
+    "timerHeatmapMonthNarrowColumn": "{month}",
+    "@timerHeatmapMonthNarrowColumn": {
+        "description": "Month index 1-12 only for very narrow per-week heatmap columns (e.g. Vietnamese). Wider surfaces use timerHeatmapMonthCompact or MMM.",
+        "placeholders": {
+            "month": {
+                "type": "int"
+            }
+        }
+    },
+    "timerHeatmapYearPattern": "Activity Pattern",
+    "timerHeatmapActiveDays": "{count, plural, one{{count} active day} other{{count} active days}}",
+    "@timerHeatmapActiveDays": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerHeatmapMon": "Mo",
+    "timerHeatmapTue": "Tu",
+    "timerHeatmapWed": "We",
+    "timerHeatmapThu": "Th",
+    "timerHeatmapFri": "Fr",
+    "timerHeatmapSat": "Sa",
+    "timerHeatmapSun": "Su",
+    "timerHeatmapSessions": "{count, plural, one{{count} session} other{{count} sessions}}",
+    "@timerHeatmapSessions": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerHeatmapTotal": "Total",
+    "timerHeatmapSessionsLabel": "Sessions",
+    "timerHeatmapActiveDaysLabel": "Active days",
+    "timerHeatmapLessThanMinute": "<1m",
+    "timerHeatmapNoActivityYet": "No activity yet",
      "timerViewSessionDetails": "Session details",
      "timerEditSession": "Edit session",
      "timerSessionUpdated": "Session updated",
@@ -1009,7 +1071,7 @@
     },
     "timerHourUnitShort": "h",
     "timerMinuteUnitShort": "m",
-    "timerDays": "{count, plural, one{# day} other{# days}}",
+    "timerDays": "{count, plural, one{{count} day} other{{count} days}}",
     "@timerDays": {
         "placeholders": {
             "count": {

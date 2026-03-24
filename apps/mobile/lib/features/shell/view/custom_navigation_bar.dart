@@ -9,11 +9,15 @@ class CustomNavigationBar extends StatelessWidget {
     super.key,
     this.selectedKey,
     this.onSelected,
+    this.expandItems = true,
+    this.minItemWidth = 0,
   });
 
   final List<Widget> children;
   final Key? selectedKey;
   final ValueChanged<Key?>? onSelected;
+  final bool expandItems;
+  final double minItemWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +27,7 @@ class CustomNavigationBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
+        mainAxisSize: expandItems ? MainAxisSize.max : MainAxisSize.min,
         children: List.generate(children.length, (index) {
           final child = children[index];
           final isFirst = index == 0;
@@ -35,22 +40,29 @@ class CustomNavigationBar extends StatelessWidget {
 
           final isSelected = itemKey == selectedKey;
 
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: isFirst ? 0 : 2,
-                right: isLast ? 0 : 2,
-              ),
-              child: _CustomNavItem(
-                isFirst: isFirst,
-                isLast: isLast,
-                isSelected: isSelected,
-                theme: theme,
-                isDark: isDark,
-                onTap: () => onSelected?.call(itemKey),
-                child: child,
-              ),
+          final item = Padding(
+            padding: EdgeInsets.only(
+              left: isFirst ? 0 : 2,
+              right: isLast ? 0 : 2,
             ),
+            child: _CustomNavItem(
+              isFirst: isFirst,
+              isLast: isLast,
+              isSelected: isSelected,
+              theme: theme,
+              isDark: isDark,
+              onTap: () => onSelected?.call(itemKey),
+              child: child,
+            ),
+          );
+
+          if (expandItems) {
+            return Expanded(child: item);
+          }
+
+          return ConstrainedBox(
+            constraints: BoxConstraints(minWidth: minItemWidth),
+            child: item,
           );
         }),
       ),

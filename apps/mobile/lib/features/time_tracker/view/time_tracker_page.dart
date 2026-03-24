@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
@@ -24,20 +25,25 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerSection { timer, history, stats }
 
-int _firstDayOfWeek(BuildContext context) {
-  const weekdayByIndex = [
-    DateTime.sunday,
-    DateTime.monday,
-    DateTime.tuesday,
-    DateTime.wednesday,
-    DateTime.thursday,
-    DateTime.friday,
-    DateTime.saturday,
-  ];
-  final firstDayOfWeekIndex = MaterialLocalizations.of(
-    context,
-  ).firstDayOfWeekIndex;
-  return weekdayByIndex[firstDayOfWeekIndex % 7];
+const List<int> _weekdayByIndex = [
+  DateTime.sunday,
+  DateTime.monday,
+  DateTime.tuesday,
+  DateTime.wednesday,
+  DateTime.thursday,
+  DateTime.friday,
+  DateTime.saturday,
+];
+
+int _resolvedFirstDayOfWeek(
+  BuildContext context,
+  CalendarSettingsCubit calendarSettingsCubit,
+) {
+  final localeCode = Localizations.localeOf(context).languageCode;
+  final firstDayOfWeekIndex = calendarSettingsCubit.state.resolvedFirstDayIndex(
+    localeCode,
+  );
+  return _weekdayByIndex[firstDayOfWeekIndex % 7];
 }
 
 class TimeTrackerPage extends StatelessWidget {
@@ -46,11 +52,15 @@ class TimeTrackerPage extends StatelessWidget {
     this.repository,
     this.initialSection = TimeTrackerSection.timer,
     this.initialStatsScope = TimeTrackerStatsScope.personal,
+    this.initialHistoryDate,
+    this.initialHistoryViewMode,
   });
 
   final ITimeTrackerRepository? repository;
   final TimeTrackerSection initialSection;
   final TimeTrackerStatsScope initialStatsScope;
+  final DateTime? initialHistoryDate;
+  final HistoryViewMode? initialHistoryViewMode;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +74,8 @@ class TimeTrackerPage extends StatelessWidget {
       child: _TimeTrackerView(
         initialSection: initialSection,
         initialStatsScope: initialStatsScope,
+        initialHistoryDate: initialHistoryDate,
+        initialHistoryViewMode: initialHistoryViewMode,
       ),
     );
   }
@@ -73,10 +85,14 @@ class _TimeTrackerView extends StatefulWidget {
   const _TimeTrackerView({
     required this.initialSection,
     required this.initialStatsScope,
+    this.initialHistoryDate,
+    this.initialHistoryViewMode,
   });
 
   final TimeTrackerSection initialSection;
   final TimeTrackerStatsScope initialStatsScope;
+  final DateTime? initialHistoryDate;
+  final HistoryViewMode? initialHistoryViewMode;
 
   @override
   State<_TimeTrackerView> createState() => _TimeTrackerViewState();
@@ -84,6 +100,7 @@ class _TimeTrackerView extends StatefulWidget {
 
 class _TimeTrackerViewState extends State<_TimeTrackerView> {
   late int _index;
+  var _hasAppliedInitialHistoryContext = false;
 
   @override
   void initState() {
@@ -100,15 +117,57 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         _index = widget.initialSection.index;
       });
     }
+
+    final historyDateChanged =
+        widget.initialHistoryDate != oldWidget.initialHistoryDate;
+    final historyModeChanged =
+        widget.initialHistoryViewMode != oldWidget.initialHistoryViewMode;
+    if (historyDateChanged || historyModeChanged) {
+      _hasAppliedInitialHistoryContext = false;
+      _loadData();
+    }
   }
 
   void _loadData() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final workspaceCubit = context.read<WorkspaceCubit>();
+      final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
       final timeTrackerCubit = context.read<TimeTrackerCubit>();
       final wsId = workspaceCubit.state.currentWorkspace?.id;
       final userId = supabase.auth.currentUser?.id;
+
+      if (wsId != null) {
+        await calendarSettingsCubit.loadWorkspacePreference(wsId);
+        if (!mounted) return;
+      }
+      final firstDayOfWeek = _resolvedFirstDayOfWeek(
+        context,
+        calendarSettingsCubit,
+      );
+
+      if (!_hasAppliedInitialHistoryContext) {
+        timeTrackerCubit.setHistoryContext(
+          viewMode: widget.initialHistoryViewMode,
+          anchorDate: widget.initialHistoryDate,
+        );
+        _hasAppliedInitialHistoryContext = true;
+
+        if ((widget.initialHistoryDate != null ||
+                widget.initialHistoryViewMode != null) &&
+            timeTrackerCubit.state.status == TimeTrackerStatus.loaded &&
+            wsId != null &&
+            userId != null) {
+          unawaited(
+            timeTrackerCubit.loadHistoryInitial(
+              wsId,
+              userId,
+              firstDayOfWeek: firstDayOfWeek,
+            ),
+          );
+        }
+      }
+
       // Avoid reloading if data is already loaded for this workspace
       if (wsId == null ||
           userId == null ||
@@ -119,7 +178,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         timeTrackerCubit.loadData(
           wsId,
           userId,
-          firstDayOfWeek: _firstDayOfWeek(context),
+          firstDayOfWeek: firstDayOfWeek,
         ),
       );
     });
@@ -132,15 +191,22 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (prev, curr) =>
           prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-      listener: (context, wsState) {
+      listener: (context, wsState) async {
         final wsId = wsState.currentWorkspace?.id;
         final userId = supabase.auth.currentUser?.id;
         if (wsId != null && userId != null) {
+          final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
+          await calendarSettingsCubit.loadWorkspacePreference(wsId);
+          if (!context.mounted) return;
+          final firstDayOfWeek = _resolvedFirstDayOfWeek(
+            context,
+            calendarSettingsCubit,
+          );
           unawaited(
             context.read<TimeTrackerCubit>().loadData(
               wsId,
               userId,
-              firstDayOfWeek: _firstDayOfWeek(context),
+              firstDayOfWeek: firstDayOfWeek,
             ),
           );
         }
@@ -231,16 +297,23 @@ class _ErrorView extends StatelessWidget {
           ),
           const shad.Gap(16),
           shad.SecondaryButton(
-            onPressed: () {
+            onPressed: () async {
               final wsId =
                   context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
                   '';
               final userId = supabase.auth.currentUser?.id ?? '';
-              unawaited(
-                context.read<TimeTrackerCubit>().loadData(
-                  wsId,
-                  userId,
-                  firstDayOfWeek: _firstDayOfWeek(context),
+              final calendarSettingsCubit = context
+                  .read<CalendarSettingsCubit>();
+              if (wsId.isNotEmpty) {
+                await calendarSettingsCubit.loadWorkspacePreference(wsId);
+                if (!context.mounted) return;
+              }
+              await context.read<TimeTrackerCubit>().loadData(
+                wsId,
+                userId,
+                firstDayOfWeek: _resolvedFirstDayOfWeek(
+                  context,
+                  calendarSettingsCubit,
                 ),
               );
             },

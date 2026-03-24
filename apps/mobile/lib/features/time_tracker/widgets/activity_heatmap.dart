@@ -1,55 +1,130 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
+import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ActivityHeatmap extends StatelessWidget {
+part 'activity_heatmap/mode_controls.dart';
+part 'activity_heatmap/original_view.dart';
+part 'activity_heatmap/summary_views.dart';
+part 'activity_heatmap/shared_widgets.dart';
+part 'activity_heatmap/utils.dart';
+
+enum _HeatmapViewMode { original, hybrid, calendarOnly, compactCards }
+
+class ActivityHeatmap extends StatefulWidget {
   const ActivityHeatmap({required this.dailyActivity, super.key});
 
   final List<DailyActivity> dailyActivity;
 
   @override
+  State<ActivityHeatmap> createState() => _ActivityHeatmapState();
+}
+
+class _ActivityHeatmapState extends State<ActivityHeatmap> {
+  static const _viewPrefKey = 'time_tracker_heatmap_view_mode';
+
+  _HeatmapViewMode _viewMode = _HeatmapViewMode.hybrid;
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadViewMode());
+  }
+
+  Future<void> _loadViewMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_viewPrefKey);
+    final parsed = _HeatmapViewMode.values.firstWhere(
+      (value) => value.name == raw,
+      orElse: () => _HeatmapViewMode.hybrid,
+    );
+    if (!mounted) return;
+    setState(() => _viewMode = parsed);
+  }
+
+  Future<void> _setViewMode(_HeatmapViewMode mode) async {
+    setState(() => _viewMode = mode);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_viewPrefKey, mode.name);
+  }
+
+  void _navigateToHistoryDate(DateTime date) {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final formattedDate = DateFormat('yyyy-MM-dd').format(normalizedDate);
+    final targetUri = Uri(
+      path: Routes.timerHistory,
+      queryParameters: {
+        'historyPeriod': 'day',
+        'historyDate': formattedDate,
+      },
+    );
+    context.go(targetUri.toString());
+  }
+
+  String _modeLabel(AppLocalizations l10n, _HeatmapViewMode mode) {
+    switch (mode) {
+      case _HeatmapViewMode.original:
+        return l10n.timerHeatmapViewOriginal;
+      case _HeatmapViewMode.hybrid:
+        return l10n.timerHeatmapViewHybrid;
+      case _HeatmapViewMode.calendarOnly:
+        return l10n.timerHeatmapViewCalendarOnly;
+      case _HeatmapViewMode.compactCards:
+        return l10n.timerHeatmapViewCompactCards;
+    }
+  }
+
+  void _showViewModeSheet(BuildContext context) {
+    final l10n = context.l10n;
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetContext) => _ViewModeSheet(
+          currentMode: _viewMode,
+          modeLabel: (mode) => _modeLabel(l10n, mode),
+          onSelect: (mode) {
+            Navigator.of(sheetContext).pop();
+            unawaited(_setViewMode(mode));
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
 
-    final activityMap = <String, int>{};
-    for (final day in dailyActivity) {
-      final key = _dateKey(day.date);
-      activityMap[key] = day.duration;
+    final activityByDate = <String, DailyActivity>{};
+    for (final day in widget.dailyActivity) {
+      activityByDate[_dateKey(day.date)] = day;
     }
 
-    // Build 52 weeks × 7 days grid from today going back
-    final today = DateTime.now();
-    final weeks = <List<_DayData>>[];
-
-    for (var w = 51; w >= 0; w--) {
-      final week = <_DayData>[];
-      for (var d = 0; d < 7; d++) {
-        final date = today.subtract(Duration(days: w * 7 + (6 - d)));
-        final key = _dateKey(date);
-        week.add(_DayData(date: date, duration: activityMap[key] ?? 0));
-      }
-      weeks.add(week);
-    }
-
-    final maxDuration = activityMap.values.fold<int>(
+    final totalDuration = widget.dailyActivity.fold<int>(
+      0,
+      (sum, entry) => sum + entry.duration,
+    );
+    final maxDuration = math.max(
       1,
-      (max, v) => v > max ? v : max,
-    );
-
-    final double cellSize = responsiveValue(
-      context,
-      compact: 12,
-      medium: 14,
-      expanded: 16,
-    );
-    final double heatmapHeight = responsiveValue(
-      context,
-      compact: 110,
-      medium: 126,
-      expanded: 142,
+      widget.dailyActivity.fold<int>(
+        0,
+        (maxValue, entry) => math.max(maxValue, entry.duration),
+      ),
     );
 
     return Column(
@@ -57,90 +132,144 @@ class ActivityHeatmap extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            l10n.timerActivityHeatmap,
-            style: theme.typography.small.copyWith(fontWeight: FontWeight.w600),
-          ),
-        ),
-        SizedBox(
-          height: heatmapHeight,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Day labels
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Icon(
+                  shad.LucideIcons.calendar,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const shad.Gap(10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _dayLabel('', context),
-                    _dayLabel('M', context),
-                    _dayLabel('', context),
-                    _dayLabel('W', context),
-                    _dayLabel('', context),
-                    _dayLabel('F', context),
-                    _dayLabel('', context),
+                    Text(
+                      l10n.timerActivityHeatmap,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      totalDuration > 0
+                          ? l10n.timerHeatmapTrackedThisYear(
+                              _formatDuration(totalDuration, l10n),
+                            )
+                          : l10n.timerHeatmapStartTracking,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
                   ],
                 ),
-                const shad.Gap(4),
-                ...weeks.map(
-                  (week) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: week.map((day) {
-                      final intensity = day.duration / maxDuration;
-                      return Padding(
-                        padding: const EdgeInsets.all(1),
-                        child: Container(
-                          width: cellSize,
-                          height: cellSize,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(2),
-                            color: day.duration > 0
-                                ? theme.colorScheme.primary.withValues(
-                                    alpha: 0.2 + intensity * 0.8,
-                                  )
-                                : theme.colorScheme.muted,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const shad.Gap(8),
+              _ViewModeSelector(
+                label: _modeLabel(l10n, _viewMode),
+                onTap: () => _showViewModeSheet(context),
+              ),
+            ],
           ),
+        ),
+        if (_viewMode == _HeatmapViewMode.original)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: _LegendRow(maxDuration: maxDuration),
+          ),
+        _buildModeContent(
+          context,
+          activityByDate,
+          maxDuration,
+          localeTag,
         ),
       ],
     );
   }
 
-  String _dateKey(DateTime date) =>
-      '${date.year}-${date.month.toString().padLeft(2, '0')}'
-      '-${date.day.toString().padLeft(2, '0')}';
-}
+  Widget _buildModeContent(
+    BuildContext context,
+    Map<String, DailyActivity> activityByDate,
+    int maxDuration,
+    String localeTag,
+  ) {
+    final locale = Localizations.localeOf(context);
+    final firstDayOfWeekIndex = context
+        .watch<CalendarSettingsCubit>()
+        .state
+        .resolvedFirstDayIndex(locale.languageCode);
 
-Widget _dayLabel(String text, BuildContext context) {
-  final theme = shad.Theme.of(context);
-  final double labelHeight = responsiveValue(
-    context,
-    compact: 14,
-    medium: 16,
-    expanded: 18,
-  );
-  return SizedBox(
-    height: labelHeight,
-    child: text.isNotEmpty
-        ? Text(
-            text,
-            style: theme.typography.small.copyWith(fontSize: 9),
-          )
-        : null,
-  );
-}
-
-class _DayData {
-  const _DayData({required this.date, required this.duration});
-  final DateTime date;
-  final int duration;
+    switch (_viewMode) {
+      case _HeatmapViewMode.original:
+        return _OriginalHeatmapView(
+          activityByDate: activityByDate,
+          maxDuration: maxDuration,
+        );
+      case _HeatmapViewMode.hybrid:
+        return Column(
+          children: [
+            _YearOverview(
+              dailyActivity: widget.dailyActivity,
+              selectedMonth: _selectedMonth,
+              onSelectMonth: (month) => setState(() => _selectedMonth = month),
+              localeTag: localeTag,
+            ),
+            const shad.Gap(8),
+            _MonthlyCalendarView(
+              activityByDate: activityByDate,
+              selectedMonth: _selectedMonth,
+              maxDuration: maxDuration,
+              localeTag: localeTag,
+              firstDayOfWeekIndex: firstDayOfWeekIndex,
+              onSelectDate: _navigateToHistoryDate,
+              onPrevMonth: () => setState(
+                () => _selectedMonth = DateTime(
+                  _selectedMonth.year,
+                  _selectedMonth.month - 1,
+                ),
+              ),
+              onNextMonth: () => setState(
+                () => _selectedMonth = DateTime(
+                  _selectedMonth.year,
+                  _selectedMonth.month + 1,
+                ),
+              ),
+            ),
+          ],
+        );
+      case _HeatmapViewMode.calendarOnly:
+        return _MonthlyCalendarView(
+          activityByDate: activityByDate,
+          selectedMonth: _selectedMonth,
+          maxDuration: maxDuration,
+          localeTag: localeTag,
+          firstDayOfWeekIndex: firstDayOfWeekIndex,
+          onSelectDate: _navigateToHistoryDate,
+          onPrevMonth: () => setState(
+            () => _selectedMonth = DateTime(
+              _selectedMonth.year,
+              _selectedMonth.month - 1,
+            ),
+          ),
+          onNextMonth: () => setState(
+            () => _selectedMonth = DateTime(
+              _selectedMonth.year,
+              _selectedMonth.month + 1,
+            ),
+          ),
+        );
+      case _HeatmapViewMode.compactCards:
+        return _CompactCardsView(
+          dailyActivity: widget.dailyActivity,
+          localeTag: localeTag,
+        );
+    }
+  }
 }

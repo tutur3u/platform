@@ -40,7 +40,10 @@ const MODULE_TABLE_MAP: Record<string, string> = {
   'workspace-user-group-tag-groups': 'workspace_user_group_tag_groups',
   'workspace-user-linked-users': 'workspace_user_linked_users',
   'workspace-user-status-changes': 'workspace_user_status_changes',
+  'user-group-post-checks': 'user_group_post_checks',
+  'sent-emails': 'sent_emails',
   'post-email-queue': 'post_email_queue',
+  'email-blacklist': 'email_blacklist',
   // Legacy mappings
   'payment-methods': 'wallet_types',
   roles: 'workspace_roles',
@@ -91,6 +94,7 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
   'workspace_user_group_tags',
   'workspace_user_linked_users',
   'workspace_user_status_changes',
+  'sent_emails',
   'post_email_queue',
   // Other tables
   'workspace_roles',
@@ -104,6 +108,7 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
 // Tables without workspace scoping (global lookup tables)
 const GLOBAL_TABLES: Set<string> = new Set([
   'wallet_types', // Just has 'id', no ws_id
+  'email_blacklist',
 ]);
 
 // Modules that have dedicated RPC functions for efficient pagination
@@ -117,6 +122,7 @@ const MODULE_RPC_MAP: Record<string, string> = {
 // Maximum number of IDs to use in a single .in() query
 // PostgREST/Supabase has limits on query size
 const MAX_IN_BATCH_SIZE = 500;
+const ID_FETCH_PAGE_SIZE = 1000;
 
 /**
  * Helper to batch .in() queries for large ID arrays
@@ -591,6 +597,110 @@ export const GET = withApiAuth<Params>(
 
       if (error) {
         console.error('Error querying wallet_transactions:', error);
+        return createErrorResponse(
+          'Internal Server Error',
+          `Failed to fetch records: ${error.message}`,
+          500,
+          'FETCH_ERROR'
+        );
+      }
+
+      return NextResponse.json({
+        count: totalCount,
+        data: data ?? [],
+      });
+    }
+
+    // user_group_post_checks needs join via user_group_posts -> workspace_user_groups
+    if (tableName === 'user_group_post_checks') {
+      // Fetch all group IDs with pagination to avoid truncation on large workspaces.
+      const groupIds: string[] = [];
+      for (let groupOffset = 0; ; groupOffset += ID_FETCH_PAGE_SIZE) {
+        const { data: groups, error: groupsError } = await supabase
+          .from('workspace_user_groups')
+          .select('id')
+          .eq('ws_id', wsId)
+          .order('id', { ascending: true })
+          .range(groupOffset, groupOffset + ID_FETCH_PAGE_SIZE - 1);
+
+        if (groupsError) {
+          console.error('Error fetching workspace_user_groups:', groupsError);
+          return createErrorResponse(
+            'Internal Server Error',
+            `Failed to fetch groups: ${groupsError.message}`,
+            500,
+            'GROUP_FETCH_ERROR'
+          );
+        }
+
+        if (!groups || groups.length === 0) {
+          break;
+        }
+
+        groupIds.push(...groups.map((g) => g.id));
+
+        if (groups.length < ID_FETCH_PAGE_SIZE) {
+          break;
+        }
+      }
+
+      if (groupIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      // Fetch post IDs in batches to avoid oversized .in() queries
+      const postIds: string[] = [];
+      for (let i = 0; i < groupIds.length; i += MAX_IN_BATCH_SIZE) {
+        const batchGroupIds = groupIds.slice(i, i + MAX_IN_BATCH_SIZE);
+
+        for (let postOffset = 0; ; postOffset += ID_FETCH_PAGE_SIZE) {
+          const { data: posts, error: postsError } = await supabase
+            .from('user_group_posts')
+            .select('id')
+            .in('group_id', batchGroupIds)
+            .order('id', { ascending: true })
+            .range(postOffset, postOffset + ID_FETCH_PAGE_SIZE - 1);
+
+          if (postsError) {
+            console.error('Error fetching user_group_posts:', postsError);
+            return createErrorResponse(
+              'Internal Server Error',
+              `Failed to fetch posts: ${postsError.message}`,
+              500,
+              'POST_FETCH_ERROR'
+            );
+          }
+
+          if (!posts || posts.length === 0) {
+            break;
+          }
+
+          postIds.push(...posts.map((p) => p.id));
+
+          if (posts.length < ID_FETCH_PAGE_SIZE) {
+            break;
+          }
+        }
+      }
+
+      if (postIds.length === 0) {
+        return NextResponse.json({ count: 0, data: [] });
+      }
+
+      const {
+        count: totalCount,
+        data,
+        error,
+      } = await batchedInQuery(
+        supabase,
+        'user_group_post_checks',
+        'post_id',
+        postIds,
+        { from, limit }
+      );
+
+      if (error) {
+        console.error('Error querying user_group_post_checks:', error);
         return createErrorResponse(
           'Internal Server Error',
           `Failed to fetch records: ${error.message}`,

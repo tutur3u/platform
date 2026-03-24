@@ -18,7 +18,7 @@ class AssistantChatState extends Equatable {
     this.attachmentsByMessageId = const {},
     this.composerAttachments = const [],
     this.history = const [],
-    this.queuedPreview,
+    this.queuedMessages = const [],
     this.isComposerCollapsed = false,
     this.error,
   });
@@ -33,7 +33,7 @@ class AssistantChatState extends Equatable {
   final Map<String, List<AssistantAttachment>> attachmentsByMessageId;
   final List<AssistantAttachment> composerAttachments;
   final List<AssistantChatRecord> history;
-  final String? queuedPreview;
+  final List<String> queuedMessages;
   final bool isComposerCollapsed;
   final String? error;
 
@@ -52,7 +52,7 @@ class AssistantChatState extends Equatable {
     Map<String, List<AssistantAttachment>>? attachmentsByMessageId,
     List<AssistantAttachment>? composerAttachments,
     List<AssistantChatRecord>? history,
-    Object? queuedPreview = _assistantChatSentinel,
+    List<String>? queuedMessages,
     bool? isComposerCollapsed,
     Object? error = _assistantChatSentinel,
     bool clearError = false,
@@ -75,9 +75,7 @@ class AssistantChatState extends Equatable {
           attachmentsByMessageId ?? this.attachmentsByMessageId,
       composerAttachments: composerAttachments ?? this.composerAttachments,
       history: history ?? this.history,
-      queuedPreview: queuedPreview == _assistantChatSentinel
-          ? this.queuedPreview
-          : queuedPreview as String?,
+      queuedMessages: queuedMessages ?? this.queuedMessages,
       isComposerCollapsed: isComposerCollapsed ?? this.isComposerCollapsed,
       error: clearError
           ? null
@@ -99,7 +97,7 @@ class AssistantChatState extends Equatable {
     attachmentsByMessageId,
     composerAttachments,
     history,
-    queuedPreview,
+    queuedMessages,
     isComposerCollapsed,
     error,
   ];

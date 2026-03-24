@@ -1,0 +1,89 @@
+part of 'package:mobile/features/time_tracker/widgets/activity_heatmap.dart';
+
+String _dateKey(DateTime date) {
+  final normalized = DateTime(date.year, date.month, date.day);
+  final month = normalized.month.toString().padLeft(2, '0');
+  final day = normalized.day.toString().padLeft(2, '0');
+  return '${normalized.year}-$month-$day';
+}
+
+DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+DateTime _sundayOfWeekContaining(DateTime date) {
+  final n = _dateOnly(date);
+  final daysBack = n.weekday == DateTime.sunday ? 0 : n.weekday;
+  return n.subtract(Duration(days: daysBack));
+}
+
+String _formatHeatmapMonthLabel(
+  DateTime date,
+  String localeTag,
+  AppLocalizations l10n, {
+  required bool heatmapNarrowColumn,
+}) {
+  final lc = localeTag.toLowerCase();
+  if (lc.startsWith('vi')) {
+    return heatmapNarrowColumn
+        ? l10n.timerHeatmapMonthNarrowColumn(date.month)
+        : l10n.timerHeatmapMonthCompact(date.month);
+  }
+  return DateFormat('MMM', localeTag).format(date);
+}
+
+String? _heatmapMonthColumnLabel(
+  DateTime weekSunday,
+  DateTime? prevWeekSunday,
+  String localeTag,
+  AppLocalizations l10n,
+  Set<String> emittedMonthKeys,
+) {
+  DateTime? labelDate;
+
+  for (var i = 0; i < 7; i++) {
+    final d = weekSunday.add(Duration(days: i));
+    if (d.day == 1) {
+      labelDate = d;
+      break;
+    }
+  }
+
+  if (labelDate == null) {
+    final monthChanged =
+        prevWeekSunday == null ||
+        weekSunday.month != prevWeekSunday.month ||
+        weekSunday.year != prevWeekSunday.year;
+    if (!monthChanged) {
+      return null;
+    }
+    labelDate = weekSunday;
+  }
+
+  final key = '${labelDate.year}-${labelDate.month.toString().padLeft(2, '0')}';
+  if (emittedMonthKeys.contains(key)) {
+    return null;
+  }
+  emittedMonthKeys.add(key);
+
+  return _formatHeatmapMonthLabel(
+    labelDate,
+    localeTag,
+    l10n,
+    heatmapNarrowColumn: true,
+  );
+}
+
+String _formatDuration(int totalSeconds, AppLocalizations l10n) {
+  if (totalSeconds <= 0) {
+    return '0${l10n.timerMinuteUnitShort}';
+  }
+  final hours = totalSeconds ~/ 3600;
+  final minutes = (totalSeconds % 3600) ~/ 60;
+  if (hours > 0) {
+    return '$hours${l10n.timerHourUnitShort} '
+        '$minutes${l10n.timerMinuteUnitShort}';
+  }
+  if (minutes == 0) {
+    return l10n.timerHeatmapLessThanMinute;
+  }
+  return '$minutes${l10n.timerMinuteUnitShort}';
+}

@@ -57,7 +57,11 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       final runningSessionFuture = _repo.getRunningSession(wsId);
       final categoriesFuture = _repo.getCategories(wsId);
       final recentSessionsFuture = _repo.getSessions(wsId, limit: 5);
-      final statsFuture = _repo.getStats(wsId, userId);
+      final statsFuture = _repo.getStats(
+        wsId,
+        userId,
+        timezone: _currentTimezone(),
+      );
       final historyPageFuture = _repo.getHistorySessions(
         wsId,
         dateFrom: periodRange.start,
@@ -265,6 +269,22 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
 
   void setTitle(String title) {
     emit(state.copyWith(sessionTitle: title));
+  }
+
+  void setHistoryContext({
+    HistoryViewMode? viewMode,
+    DateTime? anchorDate,
+  }) {
+    final normalizedAnchorDate = anchorDate == null
+        ? null
+        : DateTime(anchorDate.year, anchorDate.month, anchorDate.day);
+    emit(
+      state.copyWith(
+        historyViewMode: viewMode ?? state.historyViewMode,
+        historyAnchorDate:
+            normalizedAnchorDate ?? state.historyAnchorDate ?? DateTime.now(),
+      ),
+    );
   }
 
   Future<void> setHistoryViewMode(
@@ -1063,10 +1083,12 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   ) async {
     final (recentSessions, stats) = await (
       _repo.getSessions(wsId, limit: 5),
-      _repo.getStats(wsId, userId),
+      _repo.getStats(wsId, userId, timezone: _currentTimezone()),
     ).wait;
     return (recentSessions, stats);
   }
+
+  String _currentTimezone() => DateTime.now().timeZoneName;
 
   @override
   Future<void> close() {

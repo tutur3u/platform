@@ -54,6 +54,7 @@ class _ShellPageState extends State<ShellPage> {
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
   static const double _navIconSize = 22;
   static const double _navItemSpacing = 2;
+  static const double _floatingNavMinItemWidth = 96;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;

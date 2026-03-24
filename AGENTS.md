@@ -93,6 +93,8 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Widget Consistency**: Preserve per-field validation when refactoring into shared editable widgets.
 - **Mobile API Error Surfacing**: In mobile form submit handlers, catch `ApiException` separately and surface `e.message` (with safe fallback) instead of only a generic toast; this prevents silent failures when backend rejects a request.
 - **iOS Lockstep**: After bumping FlutterFire or other iOS-backed Flutter dependencies in `apps/mobile/pubspec.yaml` or `apps/mobile/pubspec.lock`, refresh and commit `apps/mobile/ios/Podfile.lock` so CocoaPods snapshots do not drift and break iOS CI during `pod install`.
+- **iOS Podspec Snapshot Drift**: If a Flutter dependency bump changes an iOS plugin podspec constraint (for example `image_cropper` changing its `TOCropViewController` requirement), `pod install` can keep failing against the stale snapshot in `apps/mobile/ios/Podfile.lock`. Run `flutter pub get`, then refresh the affected pods with `cd apps/mobile/ios && pod update <affected pod/plugin>` and commit the updated lockfile.
+- **Latest image_cropper on Xcode 16 CI**: `image_cropper` 12 pulls `TOCropViewController` 3.1.1, whose iOS 26 toolbar code references `UIViewLayoutRegion` symbols that are unavailable on older Xcode SDKs even inside `@available(...)`. Keep the latest Flutter dependency, but patch the vendored `TOCropViewController.m` in `apps/mobile/ios/Podfile` `post_install` with a compile-time `#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000` guard instead of downgrading `image_cropper`.
 
 ## 6. Known Gotchas & Patterns
 

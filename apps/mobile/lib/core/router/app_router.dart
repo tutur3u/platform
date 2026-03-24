@@ -29,12 +29,33 @@ import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dar
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
 import 'package:mobile/features/tasks_estimates/view/task_estimates_page.dart';
+import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/view/workspace_select_page.dart';
+
+HistoryViewMode? _parseHistoryViewMode(String? value) {
+  switch (value) {
+    case 'day':
+      return HistoryViewMode.day;
+    case 'week':
+      return HistoryViewMode.week;
+    case 'month':
+      return HistoryViewMode.month;
+    default:
+      return null;
+  }
+}
+
+DateTime? _parseHistoryDate(String? value) {
+  if (value == null || value.isEmpty) return null;
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return null;
+  return DateTime(parsed.year, parsed.month, parsed.day);
+}
 
 /// Creates the app-level [GoRouter] with auth- and workspace-aware redirects.
 ///
@@ -255,9 +276,16 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.timerHistory,
-            builder: (context, state) => const TimeTrackerPage(
-              initialSection: TimeTrackerSection.history,
-            ),
+            builder: (context, state) {
+              final query = state.uri.queryParameters;
+              return TimeTrackerPage(
+                initialSection: TimeTrackerSection.history,
+                initialHistoryViewMode: _parseHistoryViewMode(
+                  query['historyPeriod'],
+                ),
+                initialHistoryDate: _parseHistoryDate(query['historyDate']),
+              );
+            },
           ),
           GoRoute(
             path: Routes.timerStats,
