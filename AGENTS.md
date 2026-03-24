@@ -26,6 +26,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Unified Verification**: Always end your session with a `bun check`. Ensure all checks pass (you may ignore ones that were not introduced by you). For mobile changes, run `bun check:mobile`.
 - **UI Preflight Hygiene**: For newly added/edited UI files, normalize import ordering and Tailwind class ordering before full checks to reduce avoidable `biome` failures.
 - **Formatting Workflow**: For fixing formatting issues, try `bun ff` first before making manual edits.
+- **UI Package Test Runner Parity**: For `packages/ui` tests that rely on Vitest features such as `@vitest-environment jsdom`, run them through the package Vitest script (for example `cd packages/ui && bun run test -- <path>`) rather than `bun test`, which bypasses Vitest environment handling and can produce false failures.
 - **Session Retrospective**: Conduct a retrospective at the end of every session to document mistakes and update these guidelines.
 
 ## 3. Repository Structure & Semantics
