@@ -18,6 +18,7 @@ interface StorageObjectExtraData {
   wsId: string;
   path?: string;
   onRequestDelete?: (obj: StorageObject) => void;
+  onRequestRename?: (obj: StorageObject) => void;
 }
 
 export const storageObjectsColumns = ({
@@ -164,6 +165,7 @@ export const storageObjectsColumns = ({
           row={row}
           path={extraData.path}
           setStorageObject={extraData.setStorageObject}
+          onRequestRename={extraData.onRequestRename}
           onRequestDelete={extraData.onRequestDelete}
         />
       ),

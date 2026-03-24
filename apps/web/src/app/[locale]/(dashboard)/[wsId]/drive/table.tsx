@@ -32,6 +32,7 @@ import { joinPath, popPath } from '@/utils/path-helper';
 import { storageObjectsColumns } from './columns';
 import { DriveGridThumbnail } from './drive-grid-thumbnail';
 import { FilePreviewDialog } from './file-preview-dialog';
+import { RenameStorageObjectDialog } from './rename-storage-object-dialog';
 import { StorageObjectRowActions } from './row-actions';
 
 interface Props {
@@ -54,6 +55,7 @@ export default function StorageObjectsTable({
   const [storageObj, setStorageObject] = useState<StorageObject | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [deleteTarget, setDeleteTarget] = useState<StorageObject | null>(null);
+  const [renameTarget, setRenameTarget] = useState<StorageObject | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const navigateToPath = (nextPath: string) => {
@@ -115,6 +117,7 @@ export default function StorageObjectsTable({
   };
 
   // Pass a callback to row actions to trigger the delete dialog
+  const handleRequestRename = (obj: StorageObject) => setRenameTarget(obj);
   const handleRequestDelete = (obj: StorageObject) => setDeleteTarget(obj);
 
   const handleDelete = async (storageObj: StorageObject | null) => {
@@ -190,6 +193,7 @@ export default function StorageObjectsTable({
             setStorageObject: handleSetStorageObject,
             wsId,
             path,
+            onRequestRename: handleRequestRename,
             onRequestDelete: handleRequestDelete,
           }}
           namespace="storage-object-data-table"
@@ -220,7 +224,7 @@ export default function StorageObjectsTable({
                       {(row.props as any)?.children}
                     </tr>
                   </ContextMenuTrigger>
-                  <ContextMenuContent>
+                  <ContextMenuContent forceMount>
                     <StorageObjectRowActions
                       wsId={wsId}
                       row={{ original: rowData } as Row<StorageObject>}
@@ -228,6 +232,7 @@ export default function StorageObjectsTable({
                       setStorageObject={handleSetStorageObject}
                       menuOnly={true}
                       contextMenu={true}
+                      onRequestRename={handleRequestRename}
                       onRequestDelete={handleRequestDelete}
                     />
                   </ContextMenuContent>
@@ -255,7 +260,7 @@ export default function StorageObjectsTable({
                 >
                   {row}
                 </ContextMenuTrigger>
-                <ContextMenuContent>
+                <ContextMenuContent forceMount>
                   <StorageObjectRowActions
                     wsId={wsId}
                     row={{ original: rowData } as Row<StorageObject>}
@@ -263,6 +268,7 @@ export default function StorageObjectsTable({
                     setStorageObject={handleSetStorageObject}
                     menuOnly={true}
                     contextMenu={true}
+                    onRequestRename={handleRequestRename}
                     onRequestDelete={handleRequestDelete}
                   />
                 </ContextMenuContent>
@@ -297,7 +303,7 @@ export default function StorageObjectsTable({
                   </p>
                 </button>
               </ContextMenuTrigger>
-              <ContextMenuContent>
+              <ContextMenuContent forceMount>
                 <StorageObjectRowActions
                   wsId={wsId}
                   row={{ original: item } as Row<StorageObject>}
@@ -305,6 +311,7 @@ export default function StorageObjectsTable({
                   setStorageObject={handleSetStorageObject}
                   menuOnly={true}
                   contextMenu={true}
+                  onRequestRename={handleRequestRename}
                   onRequestDelete={handleRequestDelete}
                 />
               </ContextMenuContent>
@@ -332,6 +339,19 @@ export default function StorageObjectsTable({
         file={storageObj}
         open={!!storageObj}
         onOpenChange={(open) => !open && setStorageObject(null)}
+      />
+
+      <RenameStorageObjectDialog
+        wsId={wsId}
+        path={path}
+        storageObject={renameTarget}
+        open={!!renameTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameTarget(null);
+          }
+        }}
+        onSuccess={() => router.refresh()}
       />
 
       {/* Render AlertDialog at the table level */}

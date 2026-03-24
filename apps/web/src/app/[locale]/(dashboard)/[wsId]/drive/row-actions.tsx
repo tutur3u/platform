@@ -39,6 +39,7 @@ interface Props {
   setStorageObject: (value: StorageObject | undefined) => void;
   menuOnly?: boolean;
   contextMenu?: boolean;
+  onRequestRename?: (obj: StorageObject) => void;
   onRequestDelete?: (obj: StorageObject) => void;
 }
 
@@ -49,12 +50,22 @@ export function StorageObjectRowActions({
   setStorageObject,
   menuOnly = false,
   contextMenu = false,
+  onRequestRename,
   onRequestDelete,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
   const storageObj = row.original;
   const [showRenameDialog, setShowRenameDialog] = useState(false);
+
+  const requestRename = () => {
+    if (onRequestRename) {
+      onRequestRename(storageObj);
+      return;
+    }
+
+    setShowRenameDialog(true);
+  };
 
   const previewFile = () => {
     if (storageObj) {
@@ -173,7 +184,7 @@ export function StorageObjectRowActions({
           <ContextMenuSeparator />
         </>
       )}
-      <ContextMenuItem onClick={() => setShowRenameDialog(true)}>
+      <ContextMenuItem onClick={requestRename}>
         <Edit3 className="mr-2 h-4 w-4" />
         {t('common.rename')}
       </ContextMenuItem>
@@ -220,7 +231,7 @@ export function StorageObjectRowActions({
           <DropdownMenuSeparator />
         </>
       )}
-      <DropdownMenuItem onClick={() => setShowRenameDialog(true)}>
+      <DropdownMenuItem onClick={requestRename}>
         <Edit3 className="mr-2 h-4 w-4" />
         {t('common.rename')}
       </DropdownMenuItem>
