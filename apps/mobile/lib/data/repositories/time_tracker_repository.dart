@@ -41,7 +41,9 @@ abstract class ITimeTrackerRepository {
   Future<TimeTrackingSession> startSession(
     String wsId, {
     String? title,
+    String? description,
     String? categoryId,
+    String? taskId,
     String? userId,
     String? parentSessionId,
     bool wasResumed = false,
@@ -415,7 +417,9 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   Future<TimeTrackingSession> startSession(
     String wsId, {
     String? title,
+    String? description,
     String? categoryId,
+    String? taskId,
     String? userId,
     String? parentSessionId,
     bool wasResumed = false,
@@ -424,7 +428,9 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       '/api/v1/workspaces/$wsId/time-tracking/sessions',
       {
         'title': title ?? 'Work session',
+        if (description != null) 'description': description,
         if (categoryId != null) 'categoryId': categoryId,
+        if (taskId != null) 'taskId': taskId,
         if (userId != null) 'userId': userId,
         if (parentSessionId != null) 'parentSessionId': parentSessionId,
         if (wasResumed) 'wasResumed': true,

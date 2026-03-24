@@ -152,7 +152,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       final session = await _repo.startSession(
         wsId,
         title: state.sessionTitle ?? 'Work session',
+        description: state.sessionDescription,
         categoryId: state.selectedCategoryId,
+        taskId: state.sessionTaskId,
       );
 
       emit(
@@ -269,6 +271,22 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
 
   void setTitle(String title) {
     emit(state.copyWith(sessionTitle: title));
+  }
+
+  void setDescription(String description) {
+    if (description.isEmpty) {
+      emit(state.copyWith(clearSessionDescription: true));
+    } else {
+      emit(state.copyWith(sessionDescription: description));
+    }
+  }
+
+  void setTaskId(String? taskId) {
+    if (taskId == null || taskId.isEmpty) {
+      emit(state.copyWith(clearSessionTaskId: true));
+    } else {
+      emit(state.copyWith(sessionTaskId: taskId));
+    }
   }
 
   void setHistoryContext({
@@ -682,13 +700,23 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     String wsId,
     String name, {
     String? color,
+    String? description,
+    bool throwOnError = false,
   }) async {
     try {
-      await _repo.createCategory(wsId, name, color: color);
+      await _repo.createCategory(
+        wsId,
+        name,
+        color: color,
+        description: description,
+      );
       final categories = await _repo.getCategories(wsId);
-      emit(state.copyWith(categories: categories));
+      emit(state.copyWith(categories: categories, clearError: true));
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
     }
   }
 

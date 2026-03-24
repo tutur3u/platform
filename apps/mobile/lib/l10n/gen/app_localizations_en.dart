@@ -2058,6 +2058,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerCategoryName => 'Category name';
 
   @override
+  String get timerCategoryColor => 'Color';
+
+  @override
+  String get timerCategoryDescription => 'Description (optional)';
+
+  @override
+  String get timerCategoryColorNone => 'None';
+
+  @override
+  String get timerCreateCategory => 'Create category';
+
+  @override
+  String get timerCategoryCreateInProgress => 'Creating category...';
+
+  @override
+  String get timerCategoryCreateSuccess => 'Category created';
+
+  @override
+  String get timerSelectCategory => 'Select category';
+
+  @override
+  String get timerAdvanced => 'Advanced';
+
+  @override
+  String get timerSessionDescription => 'Description (optional)';
+
+  @override
+  String get timerLinkTask => 'Link task';
+
+  @override
+  String get timerTaskIdPlaceholder => 'Task ID';
+
+  @override
   String get timerRecentSessions => 'Recent sessions';
 
   @override

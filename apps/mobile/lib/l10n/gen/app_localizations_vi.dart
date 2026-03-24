@@ -2058,6 +2058,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerCategoryName => 'Tên danh mục';
 
   @override
+  String get timerCategoryColor => 'Màu sắc';
+
+  @override
+  String get timerCategoryDescription => 'Mô tả (tùy chọn)';
+
+  @override
+  String get timerCategoryColorNone => 'Không';
+
+  @override
+  String get timerCreateCategory => 'Tạo danh mục';
+
+  @override
+  String get timerCategoryCreateInProgress => 'Đang tạo danh mục...';
+
+  @override
+  String get timerCategoryCreateSuccess => 'Đã tạo danh mục';
+
+  @override
+  String get timerSelectCategory => 'Chọn danh mục';
+
+  @override
+  String get timerAdvanced => 'Nâng cao';
+
+  @override
+  String get timerSessionDescription => 'Mô tả (tùy chọn)';
+
+  @override
+  String get timerLinkTask => 'Liên kết nhiệm vụ';
+
+  @override
+  String get timerTaskIdPlaceholder => 'ID nhiệm vụ';
+
+  @override
   String get timerRecentSessions => 'Phiên gần đây';
 
   @override

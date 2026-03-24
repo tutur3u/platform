@@ -28,6 +28,8 @@ class TimeTrackerState extends Equatable {
     this.stats,
     this.selectedCategoryId,
     this.sessionTitle,
+    this.sessionDescription,
+    this.sessionTaskId,
     this.thresholdDays,
     this.pomodoroSettings = const PomodoroSettings(),
     this.pomodoroPhase = PomodoroPhase.idle,
@@ -58,6 +60,8 @@ class TimeTrackerState extends Equatable {
   final TimeTrackerStats? stats;
   final String? selectedCategoryId;
   final String? sessionTitle;
+  final String? sessionDescription;
+  final String? sessionTaskId;
   final int? thresholdDays;
   final PomodoroSettings pomodoroSettings;
   final PomodoroPhase pomodoroPhase;
@@ -101,6 +105,8 @@ class TimeTrackerState extends Equatable {
     TimeTrackerStats? stats,
     String? selectedCategoryId,
     String? sessionTitle,
+    String? sessionDescription,
+    String? sessionTaskId,
     Object? thresholdDays = _sentinel,
     PomodoroSettings? pomodoroSettings,
     PomodoroPhase? pomodoroPhase,
@@ -119,6 +125,8 @@ class TimeTrackerState extends Equatable {
     bool clearRunningSession = false,
     bool clearActiveBreak = false,
     bool clearSelectedCategory = false,
+    bool clearSessionDescription = false,
+    bool clearSessionTaskId = false,
     bool clearThresholdDays = false,
     bool clearHistoryPeriodStats = false,
     bool clearHistoryNextCursor = false,
@@ -149,6 +157,12 @@ class TimeTrackerState extends Equatable {
         ? null
         : (selectedCategoryId ?? this.selectedCategoryId),
     sessionTitle: sessionTitle ?? this.sessionTitle,
+    sessionDescription: clearSessionDescription
+        ? null
+        : (sessionDescription ?? this.sessionDescription),
+    sessionTaskId: clearSessionTaskId
+        ? null
+        : (sessionTaskId ?? this.sessionTaskId),
     thresholdDays: clearThresholdDays
         ? null
         : (thresholdDays == _sentinel
@@ -194,6 +208,8 @@ class TimeTrackerState extends Equatable {
     stats,
     selectedCategoryId,
     sessionTitle,
+    sessionDescription,
+    sessionTaskId,
     thresholdDays,
     pomodoroSettings,
     pomodoroPhase,

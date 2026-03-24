@@ -8,8 +8,10 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
-import 'package:mobile/features/time_tracker/widgets/category_picker.dart';
+import 'package:mobile/features/time_tracker/widgets/category_selector_button.dart';
+import 'package:mobile/features/time_tracker/widgets/category_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/missed_entry_dialog.dart';
+import 'package:mobile/features/time_tracker/widgets/timer_advanced_section.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_controls.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_display.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -73,13 +75,43 @@ class TimerTab extends StatelessWidget {
                 ),
               ),
             const shad.Gap(16),
-            // Category picker
-            CategoryPicker(
-              categories: state.categories,
-              selectedCategoryId: state.selectedCategoryId,
-              onSelected: cubit.selectCategory,
-              onAddCategory: () => _showAddCategoryDialog(context, wsId),
-            ),
+            // Category selector
+            if (!state.isRunning && !state.isPaused)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: CategorySelectorButton(
+                  categories: state.categories,
+                  selectedCategoryId: state.selectedCategoryId,
+                  onTap: () => showCategorySheet(
+                    context: context,
+                    categories: state.categories,
+                    selectedCategoryId: state.selectedCategoryId,
+                    onSelected: cubit.selectCategory,
+                    onCreateCategory:
+                        ({
+                          required name,
+                          color,
+                          description,
+                        }) => cubit.createCategory(
+                          wsId,
+                          name,
+                          color: color,
+                          description: description,
+                          throwOnError: true,
+                        ),
+                  ),
+                ),
+              ),
+            // Advanced section (description + task link)
+            if (!state.isRunning && !state.isPaused) ...[
+              const shad.Gap(4),
+              TimerAdvancedSection(
+                initialDescription: state.sessionDescription,
+                initialTaskId: state.sessionTaskId,
+                onDescriptionChanged: cubit.setDescription,
+                onTaskIdChanged: cubit.setTaskId,
+              ),
+            ],
           ],
         );
       },
@@ -340,49 +372,6 @@ class TimerTab extends StatelessWidget {
                 throwOnError: true,
               );
             },
-      ),
-    );
-  }
-
-  void _showAddCategoryDialog(BuildContext context, String wsId) {
-    final cubit = context.read<TimeTrackerCubit>();
-    final controller = TextEditingController();
-
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (dialogCtx) => Center(
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.8,
-            child: shad.AlertDialog(
-              barrierColor: Colors.transparent,
-              title: Text(context.l10n.timerAddCategory),
-              content: shad.FormField(
-                key: const shad.FormKey<String>(#newCategory),
-                label: Text(context.l10n.timerCategoryName),
-                child: shad.TextField(
-                  controller: controller,
-                  autofocus: true,
-                ),
-              ),
-              actions: [
-                shad.OutlineButton(
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
-                  child: const Text('Cancel'),
-                ),
-                shad.PrimaryButton(
-                  onPressed: () {
-                    if (controller.text.isNotEmpty) {
-                      unawaited(cubit.createCategory(wsId, controller.text));
-                      Navigator.of(dialogCtx).pop();
-                    }
-                  },
-                  child: Text(context.l10n.timerSave),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

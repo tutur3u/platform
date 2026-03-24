@@ -4051,6 +4051,72 @@ abstract class AppLocalizations {
   /// **'Category name'**
   String get timerCategoryName;
 
+  /// No description provided for @timerCategoryColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get timerCategoryColor;
+
+  /// No description provided for @timerCategoryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get timerCategoryDescription;
+
+  /// No description provided for @timerCategoryColorNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get timerCategoryColorNone;
+
+  /// No description provided for @timerCreateCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Create category'**
+  String get timerCreateCategory;
+
+  /// No description provided for @timerCategoryCreateInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating category...'**
+  String get timerCategoryCreateInProgress;
+
+  /// No description provided for @timerCategoryCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Category created'**
+  String get timerCategoryCreateSuccess;
+
+  /// No description provided for @timerSelectCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select category'**
+  String get timerSelectCategory;
+
+  /// No description provided for @timerAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get timerAdvanced;
+
+  /// No description provided for @timerSessionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get timerSessionDescription;
+
+  /// No description provided for @timerLinkTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Link task'**
+  String get timerLinkTask;
+
+  /// No description provided for @timerTaskIdPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Task ID'**
+  String get timerTaskIdPlaceholder;
+
   /// No description provided for @timerRecentSessions.
   ///
   /// In en, this message translates to:
