@@ -3,7 +3,7 @@ import type { UserGroupPost } from '@tuturuuu/types/db';
 import { cn } from '@tuturuuu/utils/format';
 
 interface Props {
-  post: UserGroupPost;
+  post: Pick<UserGroupPost, 'title' | 'content'>;
   groupName: string | undefined;
   isHomeworkDone?: boolean;
   username: string | undefined;

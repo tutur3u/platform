@@ -79,9 +79,6 @@ const availableModules = [
   // (target workspace may have auto-created settings with FK reference)
   'workspace-settings',
 
-  // Post email infrastructure queue - after posts/users migrations
-  'post-email-queue',
-
   // EXTERNAL/LEGACY MODULES
   'payment-methods',
   'roles',
@@ -92,6 +89,7 @@ const availableModules = [
   'bill-coupons',
   'user-coupons',
   'lessons',
+
   'score-names',
   'grouped-score-names',
   'class-scores',
@@ -103,10 +101,18 @@ const availableModules = [
   'user-monthly-reports',
   'user-monthly-report-logs',
   'user-status-changes',
+  'sent-emails',
+  'user-group-post-checks',
 
   // TUTURUUU-RELATED MODULES (run last)
   'product-prices',
   'workspace-configs',
+
+  // Post email infrastructure queue - after posts/users migrations
+  'post-email-queue',
+
+  // Global email blacklist
+  'email-blacklist',
 ] as const;
 
 export type MigrationModule = (typeof availableModules)[number];
@@ -431,8 +437,23 @@ export const generateModules = (): ModulePackage[] => {
         baseModule.tuturuuuOnly = true;
         break;
 
+      case 'user-group-post-checks':
+        // User group post checks - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'sent-emails':
+        // Sent emails - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
       case 'post-email-queue':
         // Post email queue - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'email-blacklist':
+        // Email blacklist - 1:1 sync, Tuturuuu mode only
         baseModule.tuturuuuOnly = true;
         break;
 

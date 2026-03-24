@@ -898,6 +898,7 @@
     "timerHeatmapTotal": "Total",
     "timerHeatmapSessionsLabel": "Sessions",
     "timerHeatmapActiveDaysLabel": "Active days",
+    "timerHeatmapLessThanMinute": "<1m",
     "timerHeatmapNoActivityYet": "No activity yet",
      "timerViewSessionDetails": "Session details",
      "timerEditSession": "Edit session",

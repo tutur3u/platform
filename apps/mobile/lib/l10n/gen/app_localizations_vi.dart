@@ -2277,6 +2277,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerHeatmapActiveDaysLabel => 'Ngày hoạt động';
 
   @override
+  String get timerHeatmapLessThanMinute => '<1p';
+
+  @override
   String get timerHeatmapNoActivityYet => 'Chưa có hoạt động';
 
   @override

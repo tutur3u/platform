@@ -899,6 +899,7 @@
     "timerHeatmapTotal": "Tổng",
     "timerHeatmapSessionsLabel": "Phiên",
     "timerHeatmapActiveDaysLabel": "Ngày hoạt động",
+    "timerHeatmapLessThanMinute": "<1p",
     "timerHeatmapNoActivityYet": "Chưa có hoạt động",
      "timerViewSessionDetails": "Chi tiết phiên",
      "timerEditSession": "Sửa phiên",

@@ -52,14 +52,14 @@ PODS:
   - Firebase/Crashlytics (12.9.0):
     - Firebase/CoreOnly
     - FirebaseCrashlytics (~> 12.9.0)
-  - firebase_analytics (12.1.3):
+  - firebase_analytics (12.2.0):
     - firebase_core
     - FirebaseAnalytics (= 12.9.0)
     - Flutter
-  - firebase_core (4.5.0):
+  - firebase_core (4.6.0):
     - Firebase/CoreOnly (= 12.9.0)
     - Flutter
-  - firebase_crashlytics (5.0.8):
+  - firebase_crashlytics (5.1.0):
     - Firebase/Crashlytics (= 12.9.0)
     - firebase_core
     - Flutter
@@ -199,9 +199,9 @@ PODS:
   - GTMSessionFetcher/Core (3.5.0)
   - GTMSessionFetcher/Full (3.5.0):
     - GTMSessionFetcher/Core
-  - image_cropper (0.0.4):
+  - image_cropper (0.0.5):
     - Flutter
-    - TOCropViewController (~> 2.8.0)
+    - TOCropViewController (~> 3.1.1)
   - image_picker_ios (0.0.1):
     - Flutter
   - InternalCollectionsUtilities (1.1.1)
@@ -243,7 +243,7 @@ PODS:
   - swift-collections/OrderedCollections (1.1.1):
     - InternalCollectionsUtilities (= 1.1.1)
   - SwiftyGif (5.4.5)
-  - TOCropViewController (2.8.0)
+  - TOCropViewController (3.1.1)
   - url_launcher_ios (0.0.1):
     - Flutter
 
@@ -342,9 +342,9 @@ SPEC CHECKSUMS:
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
   Firebase: 065f2bb395062046623036d8e6dc857bc2521d56
-  firebase_analytics: 6903a46192a92993abde88152a14ce1df1c0de2f
-  firebase_core: afac1aac13c931e0401c7e74ed1276112030efab
-  firebase_crashlytics: a316d8dddba772359d93dc38d303ed964579b7a6
+  firebase_analytics: 8288e2480a2b2a5eb2cc3c474e4a4327e8dc520b
+  firebase_core: 8e6f58412ca227827c366b92e7cee047a2148c60
+  firebase_crashlytics: c399f9682c474beb06a89c11dfab04db537f3cd2
   FirebaseAnalytics: cd7d01d352f3c237c9a0e31552c257cd0b0c0352
   FirebaseCore: 428912f751178b06bef0a1793effeb4a5e09a9b8
   FirebaseCoreExtension: e911052d59cd0da237a45d706fc0f81654f035c1
@@ -364,7 +364,7 @@ SPEC CHECKSUMS:
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
-  image_cropper: 64567491beea6cd1bc4b11948e2babb590de5826
+  image_cropper: e405d3e44183f8e8edbec2e49b01ff9c819c7ac8
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   InternalCollectionsUtilities: af3f471602c4a67cbcb0bee0a80f6f55a33ae453
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
@@ -377,9 +377,9 @@ SPEC CHECKSUMS:
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   swift-collections: ba248ecaf44ef500b27d5cf94d304218c89892ff
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  TOCropViewController: 797deaf39c90e6e9ddd848d88817f6b9a8a09888
+  TOCropViewController: 9002a9b12d8104d7478cdc306d80f0efea7fe2c5
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
-PODFILE CHECKSUM: 5b3bd5bcb954890aeabe33c39dc531930edf606a
+PODFILE CHECKSUM: 8a50ee26462bf71ecbf2e6648bd5e394f2b0db42
 
 COCOAPODS: 1.16.2
