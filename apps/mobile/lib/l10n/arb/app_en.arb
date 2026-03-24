@@ -843,13 +843,13 @@
             }
         }
     },
-    "timerHeatmapMon": "M",
-    "timerHeatmapTue": "T",
-    "timerHeatmapWed": "W",
-    "timerHeatmapThu": "T",
-    "timerHeatmapFri": "F",
-    "timerHeatmapSat": "S",
-    "timerHeatmapSun": "S",
+    "timerHeatmapMon": "Mo",
+    "timerHeatmapTue": "Tu",
+    "timerHeatmapWed": "We",
+    "timerHeatmapThu": "Th",
+    "timerHeatmapFri": "Fr",
+    "timerHeatmapSat": "Sa",
+    "timerHeatmapSun": "Su",
     "timerHeatmapSessions": "{count, plural, one{{count} session} other{{count} sessions}}",
     "@timerHeatmapSessions": {
         "placeholders": {

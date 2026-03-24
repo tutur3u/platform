@@ -133,6 +133,7 @@ class _StatCard extends StatelessWidget {
               child: Container(
                 width: 28,
                 height: 28,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: iconBackgroundColor,
                   borderRadius: BorderRadius.circular(999),

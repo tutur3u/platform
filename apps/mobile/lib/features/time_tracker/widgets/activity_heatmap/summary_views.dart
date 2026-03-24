@@ -18,7 +18,10 @@ class _YearOverview extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final now = DateTime.now();
-    final year = now.year;
+    final year = selectedMonth.year;
+    final yearActivity = dailyActivity
+        .where((day) => day.date.year == year)
+        .toList();
 
     final monthly = List.generate(12, (index) {
       final month = index + 1;
@@ -27,7 +30,7 @@ class _YearOverview extends StatelessWidget {
 
       var totalDuration = 0;
       var activeDays = 0;
-      for (final day in dailyActivity) {
+      for (final day in yearActivity) {
         final normalized = DateTime(
           day.date.year,
           day.date.month,
@@ -47,7 +50,7 @@ class _YearOverview extends StatelessWidget {
       1,
       monthly.fold<int>(0, (maxValue, item) => math.max(maxValue, item.$2)),
     );
-    final activeDaysYear = dailyActivity.where((d) => d.duration > 0).length;
+    final activeDaysYear = yearActivity.where((d) => d.duration > 0).length;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -199,6 +202,7 @@ class _MonthlyCalendarView extends StatelessWidget {
     required this.selectedMonth,
     required this.maxDuration,
     required this.localeTag,
+    required this.firstDayOfWeekIndex,
     required this.onSelectDate,
     required this.onPrevMonth,
     required this.onNextMonth,
@@ -208,6 +212,7 @@ class _MonthlyCalendarView extends StatelessWidget {
   final DateTime selectedMonth;
   final int maxDuration;
   final String localeTag;
+  final int firstDayOfWeekIndex;
   final ValueChanged<DateTime> onSelectDate;
   final VoidCallback onPrevMonth;
   final VoidCallback onNextMonth;
@@ -234,10 +239,12 @@ class _MonthlyCalendarView extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final monthStart = DateTime(selectedMonth.year, selectedMonth.month);
     final monthEnd = DateTime(selectedMonth.year, selectedMonth.month + 1, 0);
-    final startOffset = (monthStart.weekday + 6) % 7;
-    final endOffset = 7 - monthEnd.weekday;
+    final monthStartWeekdayIndex = monthStart.weekday % 7;
+    final monthEndWeekdayIndex = monthEnd.weekday % 7;
+    final startOffset = (monthStartWeekdayIndex - firstDayOfWeekIndex + 7) % 7;
+    final endOffset = (firstDayOfWeekIndex + 6 - monthEndWeekdayIndex + 7) % 7;
     final calendarStart = monthStart.subtract(Duration(days: startOffset));
-    final calendarEnd = monthEnd.add(Duration(days: endOffset % 7));
+    final calendarEnd = monthEnd.add(Duration(days: endOffset));
 
     final days = <DateTime>[];
     var cursor = calendarStart;
@@ -247,31 +254,47 @@ class _MonthlyCalendarView extends StatelessWidget {
     }
 
     final monthDuration = days
-        .where((day) => day.month == selectedMonth.month)
+        .where(
+          (day) =>
+              day.year == selectedMonth.year &&
+              day.month == selectedMonth.month,
+        )
         .fold<int>(
           0,
           (sum, day) => sum + (activityByDate[_dateKey(day)]?.duration ?? 0),
         );
     final monthSessions = days
-        .where((day) => day.month == selectedMonth.month)
+        .where(
+          (day) =>
+              day.year == selectedMonth.year &&
+              day.month == selectedMonth.month,
+        )
         .fold<int>(
           0,
           (sum, day) => sum + (activityByDate[_dateKey(day)]?.sessions ?? 0),
         );
     final activeDays = days
-        .where((day) => day.month == selectedMonth.month)
+        .where(
+          (day) =>
+              day.year == selectedMonth.year &&
+              day.month == selectedMonth.month,
+        )
         .where((day) => (activityByDate[_dateKey(day)]?.duration ?? 0) > 0)
         .length;
 
-    final weekdayLabels = [
+    final localizedWeekdayLabels = [
+      l10n.timerHeatmapSun,
       l10n.timerHeatmapMon,
       l10n.timerHeatmapTue,
       l10n.timerHeatmapWed,
       l10n.timerHeatmapThu,
       l10n.timerHeatmapFri,
       l10n.timerHeatmapSat,
-      l10n.timerHeatmapSun,
     ];
+    final weekdayLabels = List.generate(
+      7,
+      (index) => localizedWeekdayLabels[(firstDayOfWeekIndex + index) % 7],
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -344,7 +367,9 @@ class _MonthlyCalendarView extends StatelessWidget {
                   final entry = activityByDate[key];
                   final dayDuration = entry?.duration ?? 0;
                   final daySessions = entry?.sessions ?? 0;
-                  final inMonth = day.month == selectedMonth.month;
+                  final inMonth =
+                      day.year == selectedMonth.year &&
+                      day.month == selectedMonth.month;
                   final backgroundColor = inMonth
                       ? _colorForDuration(context, dayDuration, maxDuration)
                       : _outOfMonthColor(context);
@@ -539,15 +564,26 @@ class _CompactCardsView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      '${l10n.timerHeatmapTotal}: '
-                      '${_formatDuration(data.duration, l10n)}',
-                    ),
-                    const shad.Gap(10),
-                    Text('${l10n.timerHeatmapSessionsLabel}: ${data.sessions}'),
-                    const shad.Gap(10),
-                    Text(
-                      '${l10n.timerHeatmapActiveDaysLabel}: ${data.activeDays}',
+                    Flexible(
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 6,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          Text(
+                            '${l10n.timerHeatmapTotal}: '
+                            '${_formatDuration(data.duration, l10n)}',
+                          ),
+                          Text(
+                            '${l10n.timerHeatmapSessionsLabel}: '
+                            '${data.sessions}',
+                          ),
+                          Text(
+                            '${l10n.timerHeatmapActiveDaysLabel}: '
+                            '${data.activeDays}',
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

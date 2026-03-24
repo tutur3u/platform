@@ -2156,25 +2156,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get timerHeatmapMon => 'M';
+  String get timerHeatmapMon => 'Mo';
 
   @override
-  String get timerHeatmapTue => 'T';
+  String get timerHeatmapTue => 'Tu';
 
   @override
-  String get timerHeatmapWed => 'W';
+  String get timerHeatmapWed => 'We';
 
   @override
-  String get timerHeatmapThu => 'T';
+  String get timerHeatmapThu => 'Th';
 
   @override
-  String get timerHeatmapFri => 'F';
+  String get timerHeatmapFri => 'Fr';
 
   @override
-  String get timerHeatmapSat => 'S';
+  String get timerHeatmapSat => 'Sa';
 
   @override
-  String get timerHeatmapSun => 'S';
+  String get timerHeatmapSun => 'Su';
 
   @override
   String timerHeatmapSessions(int count) {

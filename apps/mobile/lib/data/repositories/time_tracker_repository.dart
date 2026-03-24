@@ -598,11 +598,14 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     bool isPersonal = false,
     String? timezone,
   }) async {
+    final resolvedTimezone = (timezone != null && timezone.isNotEmpty)
+        ? timezone
+        : DateTime.now().timeZoneName;
     final data = await _api.getJson(
       _withQuery('/api/v1/workspaces/$wsId/time-tracker/stats', {
         if (userId != null && userId.isNotEmpty) 'userId': userId,
         'isPersonal': isPersonal.toString(),
-        if (timezone != null) 'timezone': timezone,
+        'timezone': resolvedTimezone,
       }),
     );
 

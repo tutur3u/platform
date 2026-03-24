@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
+import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -198,6 +200,12 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     int maxDuration,
     String localeTag,
   ) {
+    final locale = Localizations.localeOf(context);
+    final firstDayOfWeekIndex = context
+        .watch<CalendarSettingsCubit>()
+        .state
+        .resolvedFirstDayIndex(locale.languageCode);
+
     switch (_viewMode) {
       case _HeatmapViewMode.original:
         return _OriginalHeatmapView(
@@ -219,6 +227,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
               selectedMonth: _selectedMonth,
               maxDuration: maxDuration,
               localeTag: localeTag,
+              firstDayOfWeekIndex: firstDayOfWeekIndex,
               onSelectDate: _navigateToHistoryDate,
               onPrevMonth: () => setState(
                 () => _selectedMonth = DateTime(
@@ -241,6 +250,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
           selectedMonth: _selectedMonth,
           maxDuration: maxDuration,
           localeTag: localeTag,
+          firstDayOfWeekIndex: firstDayOfWeekIndex,
           onSelectDate: _navigateToHistoryDate,
           onPrevMonth: () => setState(
             () => _selectedMonth = DateTime(

@@ -4222,43 +4222,43 @@ abstract class AppLocalizations {
   /// No description provided for @timerHeatmapMon.
   ///
   /// In en, this message translates to:
-  /// **'M'**
+  /// **'Mo'**
   String get timerHeatmapMon;
 
   /// No description provided for @timerHeatmapTue.
   ///
   /// In en, this message translates to:
-  /// **'T'**
+  /// **'Tu'**
   String get timerHeatmapTue;
 
   /// No description provided for @timerHeatmapWed.
   ///
   /// In en, this message translates to:
-  /// **'W'**
+  /// **'We'**
   String get timerHeatmapWed;
 
   /// No description provided for @timerHeatmapThu.
   ///
   /// In en, this message translates to:
-  /// **'T'**
+  /// **'Th'**
   String get timerHeatmapThu;
 
   /// No description provided for @timerHeatmapFri.
   ///
   /// In en, this message translates to:
-  /// **'F'**
+  /// **'Fr'**
   String get timerHeatmapFri;
 
   /// No description provided for @timerHeatmapSat.
   ///
   /// In en, this message translates to:
-  /// **'S'**
+  /// **'Sa'**
   String get timerHeatmapSat;
 
   /// No description provided for @timerHeatmapSun.
   ///
   /// In en, this message translates to:
-  /// **'S'**
+  /// **'Su'**
   String get timerHeatmapSun;
 
   /// No description provided for @timerHeatmapSessions.

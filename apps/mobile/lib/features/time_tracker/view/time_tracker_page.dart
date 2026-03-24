@@ -111,6 +111,15 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         _index = widget.initialSection.index;
       });
     }
+
+    final historyDateChanged =
+        widget.initialHistoryDate != oldWidget.initialHistoryDate;
+    final historyModeChanged =
+        widget.initialHistoryViewMode != oldWidget.initialHistoryViewMode;
+    if (historyDateChanged || historyModeChanged) {
+      _hasAppliedInitialHistoryContext = false;
+      _loadData();
+    }
   }
 
   void _loadData() {
@@ -127,6 +136,19 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           anchorDate: widget.initialHistoryDate,
         );
         _hasAppliedInitialHistoryContext = true;
+
+        if ((widget.initialHistoryDate != null ||
+                widget.initialHistoryViewMode != null) &&
+            wsId != null &&
+            userId != null) {
+          unawaited(
+            timeTrackerCubit.loadHistoryInitial(
+              wsId,
+              userId,
+              firstDayOfWeek: _firstDayOfWeek(context),
+            ),
+          );
+        }
       }
 
       // Avoid reloading if data is already loaded for this workspace
