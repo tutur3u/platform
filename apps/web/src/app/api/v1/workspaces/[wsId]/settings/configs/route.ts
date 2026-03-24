@@ -50,18 +50,6 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-    const permissions = await getPermissions({ wsId, request: req });
-    if (!permissions) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
-
-    if (permissions.withoutPermission('manage_workspace_settings')) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions to manage workspace settings' },
-        { status: 403 }
-      );
-    }
-
     // Verify workspace access
     const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
