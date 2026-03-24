@@ -2197,6 +2197,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerHeatmapActiveDaysLabel => 'Active days';
 
   @override
+  String get timerHeatmapLessThanMinute => '<1m';
+
+  @override
   String get timerHeatmapNoActivityYet => 'No activity yet';
 
   @override

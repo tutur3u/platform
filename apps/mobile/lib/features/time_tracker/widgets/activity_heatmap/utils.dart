@@ -23,7 +23,9 @@ String _formatHeatmapMonthLabel(
 }) {
   final lc = localeTag.toLowerCase();
   if (lc.startsWith('vi')) {
-    return heatmapNarrowColumn ? '${date.month}' : 'Thg ${date.month}';
+    return heatmapNarrowColumn
+        ? l10n.timerHeatmapMonthNarrowColumn(date.month)
+        : l10n.timerHeatmapMonthCompact(date.month);
   }
   return DateFormat('MMM', localeTag).format(date);
 }
@@ -71,11 +73,17 @@ String? _heatmapMonthColumnLabel(
 }
 
 String _formatDuration(int totalSeconds, AppLocalizations l10n) {
+  if (totalSeconds <= 0) {
+    return '0${l10n.timerMinuteUnitShort}';
+  }
   final hours = totalSeconds ~/ 3600;
   final minutes = (totalSeconds % 3600) ~/ 60;
   if (hours > 0) {
     return '$hours${l10n.timerHourUnitShort} '
         '$minutes${l10n.timerMinuteUnitShort}';
+  }
+  if (minutes == 0) {
+    return l10n.timerHeatmapLessThanMinute;
   }
   return '$minutes${l10n.timerMinuteUnitShort}';
 }

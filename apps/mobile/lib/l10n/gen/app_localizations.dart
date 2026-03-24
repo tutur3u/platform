@@ -4285,6 +4285,12 @@ abstract class AppLocalizations {
   /// **'Active days'**
   String get timerHeatmapActiveDaysLabel;
 
+  /// No description provided for @timerHeatmapLessThanMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'<1m'**
+  String get timerHeatmapLessThanMinute;
+
   /// No description provided for @timerHeatmapNoActivityYet.
   ///
   /// In en, this message translates to:

@@ -44,4 +44,49 @@ post_install do |installer|
       config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
     end
   end
+
+  tocrop_file = File.join(
+    __dir__,
+    'Pods',
+    'TOCropViewController',
+    'Objective-C',
+    'TOCropViewController',
+    'TOCropViewController.m',
+  )
+
+  next unless File.exist?(tocrop_file)
+
+  contents = File.read(tocrop_file)
+  original = %r{
+    \s*//\sfix:\sOn\siOS\s26,\soverlay\swith\siPadOS\swindowingControl\sarea\.\n
+    \s*if\s\(@available\(iOS\s26\.0,\s\*\)\)\s\{\n
+    \s*if\s\(!verticalLayout\)\s\{\n
+    \s*UIViewLayoutRegion\s\*layoutRegion\s=\s\[UIViewLayoutRegion\ssafeAreaLayoutRegionWithCornerAdaptation:\sUIViewLayoutRegionAdaptivityAxisVertical\];\n
+    \s*UIEdgeInsets\sedgeInsets\s=\s\[self\.view\sedgeInsetsForLayoutRegion:layoutRegion\];\n
+    \s*insets\.top\s=\sedgeInsets\.top;\n
+    \s*insets\.left\s=\sedgeInsets\.left;\n
+    \s*insets\.bottom\s=\sedgeInsets\.bottom;\n
+    \s*\}\n
+    \s*\}
+  }x
+  patched = <<~'OBJC'.rstrip
+    // fix: On iOS 26, overlay with iPadOS windowingControl area.
+    #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
+    if (@available(iOS 26.0, *)) {
+      if (!verticalLayout) {
+        UIViewLayoutRegion *layoutRegion = [UIViewLayoutRegion safeAreaLayoutRegionWithCornerAdaptation:UIViewLayoutRegionAdaptivityAxisVertical];
+        UIEdgeInsets edgeInsets = [self.view edgeInsetsForLayoutRegion:layoutRegion];
+        insets.top = edgeInsets.top;
+        insets.left = edgeInsets.left;
+        insets.bottom = edgeInsets.bottom;
+      }
+    }
+    #endif
+  OBJC
+
+  updated = contents.sub(original, patched)
+  if updated != contents
+    File.chmod(0o644, tocrop_file)
+    File.write(tocrop_file, updated)
+  end
 end
