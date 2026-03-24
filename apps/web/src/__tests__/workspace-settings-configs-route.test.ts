@@ -109,7 +109,63 @@ describe('workspace settings configs route', () => {
       REPORT_CONFIG_A: 'enabled',
       REPORT_CONFIG_B: null,
     });
+    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
+      'ws-1',
+      mocks.sessionSupabase
+    );
     expect(mocks.getPermissions).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when workspace membership lookup fails in GET', async () => {
+    mocks.memberMaybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'membership lookup failed' },
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(mocks.memberMaybeSingle).toHaveBeenCalled();
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to verify workspace membership',
+    });
+  });
+
+  it('returns 403 in GET only when membership lookup succeeds with no row', async () => {
+    mocks.memberMaybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(mocks.memberMaybeSingle).toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Workspace access denied',
+    });
   });
 
   it('keeps config mutations guarded by manage_workspace_settings', async () => {
@@ -137,6 +193,46 @@ describe('workspace settings configs route', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Insufficient permissions to manage workspace settings',
     });
+    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
+      'ws-1',
+      mocks.sessionSupabase
+    );
     expect(mocks.getPermissions).toHaveBeenCalled();
+  });
+
+  it('returns 500 when workspace membership lookup fails in PUT', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      withoutPermission: vi.fn(() => false),
+    });
+    mocks.memberMaybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'membership lookup failed' },
+    });
+
+    const { PUT } = await import(
+      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs',
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ENABLE_REPORT_APPROVAL: 'true' }),
+        }
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(mocks.memberMaybeSingle).toHaveBeenCalled();
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to verify workspace membership',
+    });
   });
 });
