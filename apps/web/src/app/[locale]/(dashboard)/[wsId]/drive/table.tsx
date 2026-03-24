@@ -1,13 +1,7 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
-import {
-  ArrowLeft,
-  FileText,
-  Folder,
-  LayoutGrid,
-  LayoutList,
-} from '@tuturuuu/icons';
+import { ArrowLeft, LayoutGrid, LayoutList } from '@tuturuuu/icons';
 import {
   deleteWorkspaceStorageFolder,
   deleteWorkspaceStorageObject,
@@ -36,6 +30,7 @@ import { useState } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { joinPath, popPath } from '@/utils/path-helper';
 import { storageObjectsColumns } from './columns';
+import { DriveGridThumbnail } from './drive-grid-thumbnail';
 import { FilePreviewDialog } from './file-preview-dialog';
 import { StorageObjectRowActions } from './row-actions';
 
@@ -61,6 +56,27 @@ export default function StorageObjectsTable({
   const [deleteTarget, setDeleteTarget] = useState<StorageObject | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const navigateToPath = (nextPath: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (!nextPath || nextPath === '/' || nextPath === '') {
+      params.delete('path');
+    } else {
+      params.set('path', nextPath);
+    }
+
+    const queryString = params.toString();
+    router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
+      scroll: false,
+    });
+  };
+
+  const handleBack = () => {
+    const basePath = searchParams.get('path') ?? '';
+    const nextPath = popPath(basePath);
+    navigateToPath(nextPath);
+  };
+
   // Wrapper function to handle type mismatch
   const handleSetStorageObject = (value: StorageObject | undefined) => {
     setStorageObject(value || null);
@@ -74,23 +90,11 @@ export default function StorageObjectsTable({
       return;
     }
 
-    // If it's a folder or back button (no id), navigate
+    // If it's a folder (no id), navigate
     if (row.name) {
       const basePath = searchParams.get('path') ?? '';
-      const newPath =
-        row.name === '...' ? popPath(basePath) : joinPath(basePath, row.name);
-
-      // Navigate to the new path
-      const params = new URLSearchParams(searchParams.toString());
-      if (!newPath || newPath === '/' || newPath === '') {
-        params.delete('path');
-      } else {
-        params.set('path', newPath);
-      }
-      const queryString = params.toString();
-      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
-        scroll: false,
-      });
+      const newPath = joinPath(basePath, row.name);
+      navigateToPath(newPath);
     }
   };
 
@@ -106,18 +110,7 @@ export default function StorageObjectsTable({
     if (item.name) {
       const basePath = searchParams.get('path') ?? '';
       const newPath = joinPath(basePath, item.name);
-
-      // Navigate to the new path
-      const params = new URLSearchParams(searchParams.toString());
-      if (!newPath || newPath === '/' || newPath === '') {
-        params.delete('path');
-      } else {
-        params.set('path', newPath);
-      }
-      const queryString = params.toString();
-      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
-        scroll: false,
-      });
+      navigateToPath(newPath);
     }
   };
 
@@ -176,10 +169,22 @@ export default function StorageObjectsTable({
         </div>
       </div>
 
+      {path && path !== '/' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-fit"
+          onClick={handleBack}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t('common.back')}
+        </Button>
+      )}
+
       {/* Data Table/Grid */}
       {viewMode === 'list' ? (
         <CustomDataTable
-          data={!path || path === '/' ? data : [{ name: '...' }, ...data]}
+          data={data}
           columnGenerator={storageObjectsColumns}
           extraData={{
             setStorageObject: handleSetStorageObject,
@@ -199,32 +204,6 @@ export default function StorageObjectsTable({
             }
           }}
           rowWrapper={(row, rowData) => {
-            // Back row: just clickable, no context menu
-            if (rowData.name === '...') {
-              return (
-                <tr
-                  key={row.key}
-                  className="cursor-pointer hover:bg-muted/40"
-                  onClick={() => {
-                    const basePath = searchParams.get('path') ?? '';
-                    const nextPath = popPath(basePath);
-                    const params = new URLSearchParams(searchParams.toString());
-                    if (!nextPath || nextPath === '/' || nextPath === '') {
-                      params.delete('path');
-                    } else {
-                      params.set('path', nextPath);
-                    }
-                    const queryString = params.toString();
-                    router.push(
-                      `${pathname}${queryString ? `?${queryString}` : ''}`,
-                      { scroll: false }
-                    );
-                  }}
-                >
-                  {(row.props as any)?.children}
-                </tr>
-              );
-            }
             // Folder row: clickable and has context menu
             if (!rowData.id) {
               return (
@@ -235,19 +214,7 @@ export default function StorageObjectsTable({
                       onClick={() => {
                         const basePath = searchParams.get('path') ?? '';
                         const nextPath = joinPath(basePath, rowData.name || '');
-                        const params = new URLSearchParams(
-                          searchParams.toString()
-                        );
-                        if (!nextPath || nextPath === '/' || nextPath === '') {
-                          params.delete('path');
-                        } else {
-                          params.set('path', nextPath);
-                        }
-                        const queryString = params.toString();
-                        router.push(
-                          `${pathname}${queryString ? `?${queryString}` : ''}`,
-                          { scroll: false }
-                        );
+                        navigateToPath(nextPath);
                       }}
                     >
                       {(row.props as any)?.children}
@@ -305,41 +272,6 @@ export default function StorageObjectsTable({
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {/* Back button for grid view */}
-          {path && path !== '/' && (
-            <button
-              type="button"
-              className="group relative w-full cursor-pointer rounded-lg border border-dynamic-border bg-card p-4 text-left transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg"
-              onClick={() => {
-                const basePath = searchParams.get('path') ?? '';
-                const newPath = popPath(basePath);
-                const params = new URLSearchParams(searchParams.toString());
-                if (!newPath || newPath === '/' || newPath === '') {
-                  params.delete('path');
-                } else {
-                  params.set('path', newPath);
-                }
-                const queryString = params.toString();
-                router.push(
-                  `${pathname}${queryString ? `?${queryString}` : ''}`,
-                  { scroll: false }
-                );
-              }}
-            >
-              <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">
-                <div className="text-4xl text-muted-foreground">
-                  <ArrowLeft />
-                </div>
-              </div>
-              <h3 className="truncate font-medium text-sm">
-                {t('common.back')}
-              </h3>
-              <p className="mt-1 text-muted-foreground text-xs">
-                {t('ws-storage-objects.go_back')}
-              </p>
-            </button>
-          )}
-
           {/* Grid View */}
           {data.map((item) => (
             <ContextMenu key={item.id || item.name}>
@@ -351,10 +283,7 @@ export default function StorageObjectsTable({
                   disabled={!item.id && !item.name}
                 >
                   <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">
-                    {/* File type icon or preview thumbnail */}
-                    <div className="text-4xl text-muted-foreground">
-                      {item.id ? <FileText /> : <Folder />}
-                    </div>
+                    <DriveGridThumbnail wsId={wsId} path={path} item={item} />
                   </div>
                   <h3 className="truncate font-medium text-sm">
                     {item.name?.replace(

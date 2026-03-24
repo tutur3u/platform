@@ -83,9 +83,9 @@ export default async function WorkspaceStorageObjectsPage({
             <Separator className="my-6" />
 
             {/* Minimal Storage Usage Bar */}
-            <div className="mb-4">
-              <div className="mb-1 flex items-center justify-between">
-                <span className="flex items-center gap-1 font-medium text-muted-foreground text-xs">
+            <div className="mb-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1 font-medium text-muted-foreground text-sm">
                   Storage
                   {usagePercent >= 80 && usagePercent < 95 && (
                     <svg
@@ -112,25 +112,25 @@ export default async function WorkspaceStorageObjectsPage({
                     </svg>
                   )}
                 </span>
-                <span className="font-mono text-muted-foreground text-xs">
+                <span className="font-mono text-muted-foreground text-sm">
                   {formatBytes(totalSize)} / {storageLimitDisplay} (
                   {usagePercent}%)
                 </span>
               </div>
               <div
-                className="h-2 w-full overflow-hidden rounded-full bg-muted/50"
+                className="h-3 w-full overflow-hidden rounded-full bg-muted"
                 role="img"
                 aria-label={`Storage usage: ${formatBytes(totalSize)} of ${storageLimitDisplay} (${usagePercent}%)`}
               >
                 <div
-                  className={`h-2 rounded-full transition-all duration-500 ${usagePercent < 80 ? 'bg-dynamic-blue' : usagePercent < 95 ? 'bg-dynamic-orange' : 'bg-dynamic-red'}`}
+                  className={`h-full rounded-full transition-all duration-500 ${usagePercent < 80 ? 'bg-dynamic-blue' : usagePercent < 95 ? 'bg-dynamic-orange' : 'bg-dynamic-red'}`}
                   style={{ width: `${usagePercent}%` }}
                 />
               </div>
             </div>
 
             {/* Enhanced Statistics Dashboard */}
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-4 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
               <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-linear-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-6 transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg">
                 <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-blue/10 opacity-60 transition-transform group-hover:scale-110" />
                 <div className="relative">
