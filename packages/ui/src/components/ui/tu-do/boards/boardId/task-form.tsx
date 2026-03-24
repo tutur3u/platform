@@ -1,6 +1,5 @@
 'use client';
 import { FileEdit, Flag, Plus, Sparkles, Users, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -160,8 +159,6 @@ export function TaskForm({
 
     setIsSubmitting(true);
     try {
-      const supabase = createClient();
-
       // Create the task data
       const taskData: {
         name: string;
@@ -170,6 +167,8 @@ export function TaskForm({
         start_date?: string;
         end_date?: string;
         estimation_points?: number | null;
+        assignee_ids: string[];
+        label_ids: string[];
       } = {
         name: name.trim(),
         description: description.trim(),
@@ -177,59 +176,24 @@ export function TaskForm({
         start_date: startDate?.toISOString(),
         end_date: endDate?.toISOString(),
         estimation_points: estimationPoints,
+        assignee_ids:
+          isPersonal && members[0]?.id
+            ? [members[0].id]
+            : selectedAssignees.length > 0
+              ? selectedAssignees
+              : userTaskSettings?.task_auto_assign_to_self &&
+                  currentUserId &&
+                  !isPersonal
+                ? [currentUserId]
+                : [],
+        label_ids: selectedLabels.map((label: { id: string }) => label.id),
       };
 
       const newTask = await createTask(wsId, listId, taskData);
 
-      // Determine final assignees
-      let finalAssignees = [...selectedAssignees];
-
-      // Add assignees if any selected
-      if (isPersonal && members[0]?.id) {
-        await supabase.from('task_assignees').insert({
-          task_id: newTask.id,
-          user_id: members[0].id,
-        });
-      } else if (finalAssignees.length === 0) {
-        // Auto-assign to self if enabled and no assignees selected
-        if (
-          userTaskSettings?.task_auto_assign_to_self &&
-          currentUserId &&
-          !isPersonal
-        ) {
-          finalAssignees = [currentUserId];
-        }
-      }
-
-      // Add assignees one by one to ensure triggers fire for each
-      if (finalAssignees.length > 0) {
-        for (const userId of finalAssignees) {
-          const { error } = await supabase.from('task_assignees').insert({
-            task_id: newTask.id,
-            user_id: userId,
-          });
-          if (error) {
-            console.error(`Failed to add assignee ${userId}:`, error);
-          }
-        }
-      }
-
-      // Add label assignments one by one to ensure triggers fire for each
-      if (selectedLabels.length > 0) {
-        for (const label of selectedLabels) {
-          const { error } = await supabase.from('task_labels').insert({
-            task_id: newTask.id,
-            label_id: label.id,
-          });
-          if (error) {
-            console.error(`Failed to add label ${label.id}:`, error);
-          }
-        }
-      }
-
       // Broadcast new task to other clients
       broadcast?.('task:upsert', { task: newTask });
-      if (finalAssignees.length > 0 || selectedLabels.length > 0) {
+      if (taskData.assignee_ids.length > 0 || taskData.label_ids.length > 0) {
         broadcast?.('task:relations-changed', { taskId: newTask.id });
       }
 

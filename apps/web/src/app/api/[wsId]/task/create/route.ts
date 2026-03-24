@@ -5,16 +5,52 @@ import {
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import type { Task } from '@tuturuuu/ai/scheduling/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
+// Calendar hours type for task scheduling (matches database enum)
 type CalendarHoursType = 'work_hours' | 'personal_hours' | 'meeting_hours';
+
+// Valid values for validation
+const VALID_PRIORITIES: TaskPriority[] = ['critical', 'high', 'normal', 'low'];
 const VALID_CALENDAR_HOURS: CalendarHoursType[] = [
   'work_hours',
   'personal_hours',
   'meeting_hours',
 ];
-const VALID_PRIORITIES = ['critical', 'high', 'normal', 'low'] as const;
+
+const createTaskBodySchema = z
+  .object({
+    name: z.string().trim().min(1, 'Task name is required'),
+    description: z.string().optional().nullable(),
+    total_duration: z
+      .number()
+      .positive('Total duration must be a positive number'),
+    is_splittable: z.boolean().optional(),
+    min_split_duration_minutes: z.number().nonnegative().optional().nullable(),
+    max_split_duration_minutes: z.number().nonnegative().optional().nullable(),
+    calendar_hours: z.enum(VALID_CALENDAR_HOURS).optional().nullable(),
+    auto_schedule: z.boolean().optional(),
+    start_date: z.string().optional().nullable(),
+    end_date: z.string().optional().nullable(),
+    priority: z.enum(VALID_PRIORITIES).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.is_splittable &&
+      data.min_split_duration_minutes != null &&
+      data.max_split_duration_minutes != null &&
+      data.min_split_duration_minutes > data.max_split_duration_minutes
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Minimum split duration cannot be greater than maximum',
+        path: ['min_split_duration_minutes'],
+      });
+    }
+  });
 
 export async function POST(
   req: Request,
@@ -31,7 +67,16 @@ export async function POST(
     }
 
     // 2. Parse and validate the request body
-    const body = await req.json();
+    const parsedBody = createTaskBodySchema.safeParse(await req.json());
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        {
+          error: parsedBody.error.issues[0]?.message ?? 'Invalid request body',
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       name,
       description,
@@ -44,65 +89,7 @@ export async function POST(
       start_date,
       end_date,
       priority,
-    } = body;
-
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Task name is required' },
-        { status: 400 }
-      );
-    }
-
-    if (typeof total_duration !== 'number' || total_duration <= 0) {
-      return NextResponse.json(
-        { error: 'Total duration must be a positive number' },
-        { status: 400 }
-      );
-    }
-
-    if (is_splittable) {
-      if (min_split_duration_minutes > max_split_duration_minutes) {
-        return NextResponse.json(
-          { error: 'Minimum split duration cannot be greater than maximum' },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (
-      calendar_hours !== undefined &&
-      calendar_hours !== null &&
-      (typeof calendar_hours !== 'string' ||
-        !VALID_CALENDAR_HOURS.includes(calendar_hours as CalendarHoursType))
-    ) {
-      return NextResponse.json(
-        {
-          error: `calendar_hours must be one of: ${VALID_CALENDAR_HOURS.join(', ')} or null`,
-        },
-        { status: 400 }
-      );
-    }
-
-    if (priority !== undefined) {
-      if (
-        typeof priority !== 'string' ||
-        !(VALID_PRIORITIES as readonly string[]).includes(priority)
-      ) {
-        return NextResponse.json(
-          {
-            error: `priority must be one of: ${VALID_PRIORITIES.join(', ')}`,
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (auto_schedule !== undefined && typeof auto_schedule !== 'boolean') {
-      return NextResponse.json(
-        { error: 'auto_schedule must be a boolean' },
-        { status: 400 }
-      );
-    }
+    } = parsedBody.data;
 
     // 3. Prepare task data for insertion
     const taskToInsert = {
@@ -132,7 +119,7 @@ export async function POST(
     // Scheduling settings are per-user (task_user_scheduling_settings), not stored on tasks.
     // Best-effort: task creation shouldn't fail due to missing RLS/rollout.
     try {
-      await (supabase as any).from('task_user_scheduling_settings').upsert(
+      await supabase.from('task_user_scheduling_settings').upsert(
         {
           task_id: dbTask.id,
           user_id: user.id,

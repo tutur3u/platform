@@ -18,6 +18,27 @@ export type CurrentUserProfileResponse = {
   created_at: string;
 };
 
+export interface CreateSupportInquiryPayload {
+  name: string;
+  email: string;
+  type: 'bug' | 'feature-request' | 'support' | 'job-application';
+  product:
+    | 'web'
+    | 'nova'
+    | 'rewise'
+    | 'calendar'
+    | 'finance'
+    | 'tudo'
+    | 'tumeet'
+    | 'shortener'
+    | 'qr'
+    | 'drive'
+    | 'mail'
+    | 'other';
+  subject: string;
+  message: string;
+}
+
 export async function getUserConfig(
   configId: string,
   options?: InternalApiClientOptions
@@ -69,4 +90,22 @@ export async function getUserCalendarSettings(
   }>('/api/v1/users/calendar-settings', {
     cache: 'no-store',
   });
+}
+
+export async function createSupportInquiry(
+  payload: CreateSupportInquiryPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true; inquiryId: string }>(
+    '/api/v1/inquiries',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
 }

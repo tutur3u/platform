@@ -1,31 +1,29 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskContextActions } from '../use-task-context-actions';
 
 // Hoisted mocks — vi.hoisted() makes these available at vi.mock() hoist time
 const {
+  mockAddWorkspaceTaskLabel,
+  mockDeleteWorkspaceTask,
   mockInvalidateQueries,
+  mockListWorkspaceTaskLists,
+  mockRemoveWorkspaceTaskLabel,
   mockSetQueriesData,
-  mockFrom,
-  mockSelect,
-  mockUpdate,
-  mockDelete,
-  mockInsert,
-  mockEq,
   mockT,
   mockToastError,
+  mockUpdateWorkspaceTask,
 } = vi.hoisted(() => ({
+  mockAddWorkspaceTaskLabel: vi.fn(),
+  mockDeleteWorkspaceTask: vi.fn(),
   mockInvalidateQueries: vi.fn(),
+  mockListWorkspaceTaskLists: vi.fn(),
+  mockRemoveWorkspaceTaskLabel: vi.fn(),
   mockSetQueriesData: vi.fn(),
-  mockFrom: vi.fn(),
-  mockSelect: vi.fn(),
-  mockUpdate: vi.fn(),
-  mockDelete: vi.fn(),
-  mockInsert: vi.fn(),
-  mockEq: vi.fn(),
   mockT: vi.fn((key: string) => key),
   mockToastError: vi.fn(),
+  mockUpdateWorkspaceTask: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -36,7 +34,15 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => ({ from: mockFrom }),
+  createClient: () => ({ from: vi.fn() }),
+}));
+
+vi.mock('@tuturuuu/internal-api', () => ({
+  addWorkspaceTaskLabel: mockAddWorkspaceTaskLabel,
+  deleteWorkspaceTask: mockDeleteWorkspaceTask,
+  listWorkspaceTaskLists: mockListWorkspaceTaskLists,
+  removeWorkspaceTaskLabel: mockRemoveWorkspaceTaskLabel,
+  updateWorkspaceTask: mockUpdateWorkspaceTask,
 }));
 
 vi.mock('next-intl', () => ({
@@ -84,19 +90,16 @@ describe('useTaskContextActions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Setup default Supabase mock chain - each method must return a chainable object
-    mockEq.mockResolvedValue({ data: null, error: null });
-    mockSelect.mockReturnValue({ eq: mockEq });
-    mockUpdate.mockReturnValue({ eq: mockEq });
-    mockDelete.mockReturnValue({ eq: mockEq });
-    mockInsert.mockReturnValue({ eq: mockEq });
-    mockFrom.mockReturnValue({
-      select: mockSelect,
-      update: mockUpdate,
-      delete: mockDelete,
-      insert: mockInsert,
+    mockAddWorkspaceTaskLabel.mockResolvedValue({ taskLabel: null });
+    mockDeleteWorkspaceTask.mockResolvedValue({ success: true });
+    mockListWorkspaceTaskLists.mockResolvedValue({
+      lists: [
+        { id: 'list-1', status: 'active' },
+        { id: 'list-2', status: 'done' },
+      ],
     });
+    mockRemoveWorkspaceTaskLabel.mockResolvedValue({ success: true });
+    mockUpdateWorkspaceTask.mockResolvedValue({ task: null });
   });
 
   it('handleDoneWithMyPart sends PUT with personally_unassigned=true', async () => {
@@ -114,7 +117,9 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleDoneWithMyPart();
+    await act(async () => {
+      await result.current.handleDoneWithMyPart();
+    });
 
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/v1/users/me/tasks/${mockTask.id}/overrides`,
@@ -143,7 +148,9 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleUndoDoneWithMyPart();
+    await act(async () => {
+      await result.current.handleUndoDoneWithMyPart();
+    });
 
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/v1/users/me/tasks/${mockTask.id}/overrides`,
@@ -178,32 +185,6 @@ describe('useTaskContextActions', () => {
       },
     };
 
-    // Track all from() calls
-    const fromCalls: string[] = [];
-    mockFrom.mockImplementation((table: string) => {
-      fromCalls.push(table);
-      if (table === 'task_lists') {
-        // select().eq('board_id', ...).eq('deleted', false)
-        const eqDeleted = vi.fn().mockResolvedValue({
-          data: [
-            { id: 'list-1', status: 'active' },
-            { id: 'list-2', status: 'done' },
-          ],
-          error: null,
-        });
-        const eqBoardId = vi.fn().mockReturnValue({ eq: eqDeleted });
-        return { select: vi.fn().mockReturnValue({ eq: eqBoardId }) };
-      }
-      if (table === 'tasks') {
-        return {
-          update: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-        };
-      }
-      return { select: mockSelect, update: mockUpdate, delete: mockDelete };
-    });
-
     // Mock fetch for override cleanup
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
@@ -219,11 +200,14 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleComplete();
+    await act(async () => {
+      await result.current.handleComplete();
+    });
 
-    // Verify Supabase operations happened in order
-    expect(fromCalls).toContain('task_lists');
-    expect(fromCalls).toContain('tasks');
+    expect(mockListWorkspaceTaskLists).toHaveBeenCalledWith('ws-1', 'board-1');
+    expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-123', {
+      list_id: 'list-2',
+    });
 
     // Verify override cleanup
     expect(global.fetch).toHaveBeenCalledWith(
@@ -253,24 +237,8 @@ describe('useTaskContextActions', () => {
       },
     };
 
-    // Proper chained .eq() mocks: select().eq('board_id', ...).eq('deleted', false)
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'task_lists') {
-        const eqDeleted = vi.fn().mockResolvedValue({
-          data: [{ id: 'list-done', status: 'done' }],
-          error: null,
-        });
-        const eqBoardId = vi.fn().mockReturnValue({ eq: eqDeleted });
-        return { select: vi.fn().mockReturnValue({ eq: eqBoardId }) };
-      }
-      if (table === 'tasks') {
-        return {
-          update: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-        };
-      }
-      return { select: mockSelect, update: mockUpdate, delete: mockDelete };
+    mockListWorkspaceTaskLists.mockResolvedValueOnce({
+      lists: [{ id: 'list-done', status: 'done' }],
     });
 
     (global.fetch as any).mockResolvedValueOnce({
@@ -286,15 +254,15 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleComplete();
+    await act(async () => {
+      await result.current.handleComplete();
+    });
 
     expect(global.fetch).toHaveBeenCalled();
     expect(onTaskUpdate).toHaveBeenCalled();
   });
 
-  it('handleDelete sends update with deleted_at', async () => {
-    mockEq.mockResolvedValueOnce({ data: null, error: null });
-
+  it('handleDelete deletes the task via internal API', async () => {
     const { result } = renderHook(() =>
       useTaskContextActions({
         task: mockTask,
@@ -304,22 +272,16 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleDelete();
+    await act(async () => {
+      await result.current.handleDelete();
+    });
 
-    expect(mockFrom).toHaveBeenCalledWith('tasks');
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        deleted_at: expect.any(String),
-      })
-    );
-    expect(mockEq).toHaveBeenCalledWith('id', mockTask.id);
+    expect(mockDeleteWorkspaceTask).toHaveBeenCalledWith('ws-1', mockTask.id);
     expect(onTaskUpdate).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('handlePriorityChange updates task priority via Supabase', async () => {
-    mockEq.mockResolvedValueOnce({ data: null, error: null });
-
+  it('handlePriorityChange updates task priority via internal API', async () => {
     const { result } = renderHook(() =>
       useTaskContextActions({
         task: mockTask,
@@ -329,20 +291,17 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handlePriorityChange('high');
+    await act(async () => {
+      await result.current.handlePriorityChange('high');
+    });
 
-    expect(mockFrom).toHaveBeenCalledWith('tasks');
-    expect(mockUpdate).toHaveBeenCalledWith({ priority: 'high' });
-    expect(mockEq).toHaveBeenCalledWith('id', mockTask.id);
+    expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', mockTask.id, {
+      priority: 'high',
+    });
     expect(mockInvalidateQueries).toHaveBeenCalled();
   });
 
-  it('handleUnassignMe deletes from task_assignees', async () => {
-    // Setup chained mocks for delete operation with multiple .eq() calls
-    const mockEqChain2 = vi.fn().mockResolvedValue({ data: null, error: null });
-    const mockEqChain1 = vi.fn().mockReturnValue({ eq: mockEqChain2 });
-    mockDelete.mockReturnValue({ eq: mockEqChain1 });
-
+  it('handleUnassignMe updates assignee_ids via internal API', async () => {
     const { result } = renderHook(() =>
       useTaskContextActions({
         task: mockTask,
@@ -352,12 +311,13 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleUnassignMe();
+    await act(async () => {
+      await result.current.handleUnassignMe();
+    });
 
-    expect(mockFrom).toHaveBeenCalledWith('task_assignees');
-    expect(mockDelete).toHaveBeenCalled();
-    expect(mockEqChain1).toHaveBeenCalledWith('task_id', mockTask.id);
-    expect(mockEqChain2).toHaveBeenCalledWith('user_id', userId);
+    expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', mockTask.id, {
+      assignee_ids: [],
+    });
     expect(onTaskUpdate).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
@@ -374,7 +334,9 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleDoneWithMyPart();
+    await act(async () => {
+      await result.current.handleDoneWithMyPart();
+    });
 
     expect(mockToastError).toHaveBeenCalledWith('failed_to_update');
     expect(onTaskUpdate).not.toHaveBeenCalled();
@@ -382,12 +344,7 @@ describe('useTaskContextActions', () => {
   });
 
   it('handles error in handleDelete', async () => {
-    // Setup mock to return error
-    const mockEqWithError = vi.fn().mockResolvedValue({
-      data: null,
-      error: { message: 'Database error' },
-    });
-    mockUpdate.mockReturnValue({ eq: mockEqWithError });
+    mockDeleteWorkspaceTask.mockRejectedValueOnce(new Error('Database error'));
 
     const { result } = renderHook(() =>
       useTaskContextActions({
@@ -398,7 +355,9 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleDelete();
+    await act(async () => {
+      await result.current.handleDelete();
+    });
 
     expect(mockToastError).toHaveBeenCalledWith('failed_to_update');
     expect(onTaskUpdate).not.toHaveBeenCalled();
@@ -406,12 +365,7 @@ describe('useTaskContextActions', () => {
   });
 
   it('handles error in handlePriorityChange', async () => {
-    // Setup mock to return error
-    const mockEqWithError = vi.fn().mockResolvedValue({
-      data: null,
-      error: { message: 'Update failed' },
-    });
-    mockUpdate.mockReturnValue({ eq: mockEqWithError });
+    mockUpdateWorkspaceTask.mockRejectedValueOnce(new Error('Update failed'));
 
     const { result } = renderHook(() =>
       useTaskContextActions({
@@ -422,15 +376,15 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handlePriorityChange('low');
+    await act(async () => {
+      await result.current.handlePriorityChange('low');
+    });
 
     expect(mockToastError).toHaveBeenCalledWith('failed_to_update');
     expect(mockInvalidateQueries).toHaveBeenCalled();
   });
 
   it('optimistically updates cache when calling handleUnassignMe', async () => {
-    mockEq.mockResolvedValueOnce({ data: null, error: null });
-
     const { result } = renderHook(() =>
       useTaskContextActions({
         task: mockTask,
@@ -440,7 +394,9 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleUnassignMe();
+    await act(async () => {
+      await result.current.handleUnassignMe();
+    });
 
     expect(mockSetQueriesData).toHaveBeenCalled();
     const setQueriesDataCall = mockSetQueriesData.mock.calls[0]!;
@@ -448,8 +404,6 @@ describe('useTaskContextActions', () => {
   });
 
   it('handleDueDateChange updates end_date correctly', async () => {
-    mockEq.mockResolvedValueOnce({ data: null, error: null });
-
     const { result } = renderHook(() =>
       useTaskContextActions({
         task: mockTask,
@@ -459,10 +413,13 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleDueDateChange(7); // 7 days
+    await act(async () => {
+      await result.current.handleDueDateChange(7);
+    });
 
-    expect(mockFrom).toHaveBeenCalledWith('tasks');
-    expect(mockUpdate).toHaveBeenCalledWith(
+    expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+      'ws-1',
+      mockTask.id,
       expect.objectContaining({
         end_date: expect.any(String),
       })
@@ -471,8 +428,6 @@ describe('useTaskContextActions', () => {
   });
 
   it('handleToggleLabel adds label when not present', async () => {
-    mockEq.mockResolvedValueOnce({ data: null, error: null });
-
     const { result } = renderHook(() =>
       useTaskContextActions({
         task: mockTask,
@@ -482,13 +437,15 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleToggleLabel('label-1');
-
-    expect(mockFrom).toHaveBeenCalledWith('task_labels');
-    expect(mockInsert).toHaveBeenCalledWith({
-      task_id: mockTask.id,
-      label_id: 'label-1',
+    await act(async () => {
+      await result.current.handleToggleLabel('label-1');
     });
+
+    expect(mockAddWorkspaceTaskLabel).toHaveBeenCalledWith(
+      'ws-1',
+      mockTask.id,
+      'label-1'
+    );
     expect(mockInvalidateQueries).toHaveBeenCalled();
   });
 
@@ -507,13 +464,6 @@ describe('useTaskContextActions', () => {
       ],
     };
 
-    // Setup chained mocks for delete operation
-    const mockEqChain = vi.fn();
-    mockEqChain.mockReturnValueOnce({
-      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
-    });
-    mockDelete.mockReturnValue({ eq: mockEqChain });
-
     const { result } = renderHook(() =>
       useTaskContextActions({
         task: taskWithLabel,
@@ -523,39 +473,24 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleToggleLabel('label-1');
+    await act(async () => {
+      await result.current.handleToggleLabel('label-1');
+    });
 
-    expect(mockFrom).toHaveBeenCalledWith('task_labels');
-    expect(mockDelete).toHaveBeenCalled();
-    expect(mockEqChain).toHaveBeenCalledWith('task_id', taskWithLabel.id);
+    expect(mockRemoveWorkspaceTaskLabel).toHaveBeenCalledWith(
+      'ws-1',
+      taskWithLabel.id,
+      'label-1'
+    );
     expect(mockInvalidateQueries).toHaveBeenCalled();
   });
 
   it('handleUndoComplete moves task back to active list', async () => {
-    // Track all from() calls
-    const fromCalls: string[] = [];
-    mockFrom.mockImplementation((table: string) => {
-      fromCalls.push(table);
-      if (table === 'task_lists') {
-        // select().eq('board_id', ...).eq('deleted', false)
-        const eqDeleted = vi.fn().mockResolvedValue({
-          data: [
-            { id: 'list-active', status: 'active' },
-            { id: 'list-done', status: 'done' },
-          ],
-          error: null,
-        });
-        const eqBoardId = vi.fn().mockReturnValue({ eq: eqDeleted });
-        return { select: vi.fn().mockReturnValue({ eq: eqBoardId }) };
-      }
-      if (table === 'tasks') {
-        return {
-          update: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-        };
-      }
-      return { select: mockSelect, update: mockUpdate, delete: mockDelete };
+    mockListWorkspaceTaskLists.mockResolvedValueOnce({
+      lists: [
+        { id: 'list-active', status: 'active' },
+        { id: 'list-done', status: 'done' },
+      ],
     });
 
     const { result } = renderHook(() =>
@@ -567,11 +502,14 @@ describe('useTaskContextActions', () => {
       })
     );
 
-    await result.current.handleUndoComplete();
+    await act(async () => {
+      await result.current.handleUndoComplete();
+    });
 
-    // Verify the function called task_lists first, then tasks
-    expect(fromCalls).toContain('task_lists');
-    expect(fromCalls).toContain('tasks');
+    expect(mockListWorkspaceTaskLists).toHaveBeenCalledWith('ws-1', 'board-1');
+    expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', mockTask.id, {
+      list_id: 'list-active',
+    });
     expect(onTaskUpdate).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });

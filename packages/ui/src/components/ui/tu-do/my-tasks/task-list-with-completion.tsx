@@ -11,7 +11,10 @@ import {
   UserMinus,
   UserRoundCog,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceTaskLists,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { Task as PrimitiveTask } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -188,17 +191,15 @@ export default function TaskListWithCompletion({
       return;
     }
 
-    const supabase = createClient();
     setCompletingTasks((prev) => new Set(prev).add(task.id));
     const snapshot = snapshotCache();
 
     try {
       // Find the board's done list
-      const { data: lists } = await supabase
-        .from('task_lists')
-        .select('id, status')
-        .eq('board_id', task.list.board.id)
-        .eq('deleted', false);
+      const { lists } = await listWorkspaceTaskLists(
+        task.list.board.ws_id,
+        task.list.board.id
+      );
 
       const doneList = lists?.find((l) => l.status === 'done');
       const notStartedList = lists?.find((l) => l.status === 'not_started');
@@ -220,12 +221,9 @@ export default function TaskListWithCompletion({
       removeTaskFromCache(task.id);
 
       // Move task to appropriate list
-      const { error } = await supabase
-        .from('tasks')
-        .update({ list_id: targetListId })
-        .eq('id', task.id);
-
-      if (error) throw error;
+      await updateWorkspaceTask(task.list.board.ws_id, task.id, {
+        list_id: targetListId,
+      });
 
       // When completing a task, clear redundant personal overrides
       if (

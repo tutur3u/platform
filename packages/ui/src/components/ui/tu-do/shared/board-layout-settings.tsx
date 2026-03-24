@@ -30,7 +30,7 @@ import {
   Plus,
   Trash2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskList } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
@@ -84,6 +84,7 @@ interface BoardLayoutSettingsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   boardId: string;
+  wsId?: string;
   lists: WorkspaceTaskList[];
   onUpdate: () => void;
   translations?: {
@@ -443,6 +444,7 @@ export function BoardLayoutSettings({
   open,
   onOpenChange,
   boardId,
+  wsId,
   lists,
   onUpdate,
   translations,
@@ -582,8 +584,6 @@ export function BoardLayoutSettings({
     ],
     [t]
   );
-  const supabase = createClient();
-
   const [editingList, setEditingList] = useState<WorkspaceTaskList | null>(
     null
   );
@@ -624,12 +624,14 @@ export function BoardLayoutSettings({
       listId: string;
       updates: Partial<WorkspaceTaskList>;
     }) => {
-      const { error } = await supabase
-        .from('task_lists')
-        .update(updates)
-        .eq('id', listId);
-
-      if (error) throw error;
+      if (!wsId) throw new Error('Workspace ID is required');
+      await updateWorkspaceTaskList(wsId, boardId, listId, {
+        name: updates.name ?? undefined,
+        status: updates.status ?? undefined,
+        color: (updates.color as SupportedColor | undefined) ?? undefined,
+        position: updates.position ?? undefined,
+        deleted: updates.deleted ?? undefined,
+      });
     },
     onMutate: async ({ listId, updates }) => {
       await queryClient.cancelQueries({ queryKey: ['task_lists', boardId] });
@@ -670,12 +672,8 @@ export function BoardLayoutSettings({
       listId: string;
       color: SupportedColor;
     }) => {
-      const { error } = await supabase
-        .from('task_lists')
-        .update({ color })
-        .eq('id', listId);
-
-      if (error) throw error;
+      if (!wsId) throw new Error('Workspace ID is required');
+      await updateWorkspaceTaskList(wsId, boardId, listId, { color });
     },
     onMutate: async ({ listId, color }) => {
       await queryClient.cancelQueries({ queryKey: ['task_lists', boardId] });
@@ -709,12 +707,8 @@ export function BoardLayoutSettings({
 
   const deleteListMutation = useMutation({
     mutationFn: async (listId: string) => {
-      const { error } = await supabase
-        .from('task_lists')
-        .delete()
-        .eq('id', listId);
-
-      if (error) throw error;
+      if (!wsId) throw new Error('Workspace ID is required');
+      await updateWorkspaceTaskList(wsId, boardId, listId, { deleted: true });
     },
     onSuccess: () => {
       toast.success(t.listDeletedSuccessfully);
@@ -788,12 +782,12 @@ export function BoardLayoutSettings({
 
         // Persist changes
         try {
+          if (!wsId) throw new Error('Workspace ID is required');
           await Promise.all(
             newOrder.map((list, index) =>
-              supabase
-                .from('task_lists')
-                .update({ position: index })
-                .eq('id', list.id)
+              updateWorkspaceTaskList(wsId, boardId, list.id, {
+                position: index,
+              })
             )
           );
           toast.success(t.listsReordered);
@@ -849,15 +843,11 @@ export function BoardLayoutSettings({
 
         // Persist to database
         try {
-          const { error } = await supabase
-            .from('task_lists')
-            .update({
-              status: targetStatus || null,
-              position: newPosition,
-            })
-            .eq('id', draggedList.id);
-
-          if (error) throw error;
+          if (!wsId) throw new Error('Workspace ID is required');
+          await updateWorkspaceTaskList(wsId, boardId, draggedList.id, {
+            status: targetStatus,
+            position: newPosition,
+          });
           toast.success(
             t.movedToStatus.replace('{status}', statusLabels[targetStatus])
           );
@@ -874,7 +864,7 @@ export function BoardLayoutSettings({
         }
       }
     },
-    [boardId, groupedLists, lists, queryClient, statusLabels, supabase, t]
+    [boardId, groupedLists, lists, queryClient, statusLabels, t, wsId]
   );
 
   const handleColorChange = (listId: string, color: SupportedColor) => {

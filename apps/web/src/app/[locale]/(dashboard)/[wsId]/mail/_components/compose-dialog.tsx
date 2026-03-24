@@ -12,6 +12,7 @@ import { generateHTML } from '@tiptap/html';
 import type { JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ChevronDown, ChevronUp, Send, X } from '@tuturuuu/icons';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -210,22 +211,12 @@ export function ComposeDialog({
     async function fetchUser() {
       setUserLoading(true);
       try {
-        const { createClient } = await import('@tuturuuu/supabase/next/client');
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const profile = await getCurrentUserProfile();
 
-        if (user?.id) {
-          const { data: profile } = await supabase
-            .from('users')
-            .select('display_name')
-            .eq('id', user.id)
-            .single();
-
+        if (profile?.id) {
           setUser({
-            email: user.email,
-            display_name: profile?.display_name,
+            email: profile.email ?? undefined,
+            display_name: profile.display_name,
           });
         } else {
           setUser(null);

@@ -150,3 +150,115 @@ export async function POST(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  try {
+    const { wsId } = await params;
+    const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
+
+    if (!permissions) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (permissions.withoutPermission('manage_drive')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    const parsed = z
+      .object({
+        path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).default(''),
+        name: z.string().min(1).max(MAX_NAME_LENGTH),
+      })
+      .safeParse(await request.json());
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedPath = sanitizePath(parsed.data.path);
+    if (sanitizedPath === null) {
+      return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
+    }
+
+    const sanitizedName = sanitizeFolderName(parsed.data.name);
+    if (!sanitizedName) {
+      return NextResponse.json(
+        { message: 'Invalid folder name' },
+        { status: 400 }
+      );
+    }
+
+    const folderPrefix = sanitizedPath
+      ? posix.join(normalizedWsId, sanitizedPath, sanitizedName)
+      : posix.join(normalizedWsId, sanitizedName);
+
+    const { data: objects, error: listError } = await sbAdmin.storage
+      .from('workspaces')
+      .list(folderPrefix, {
+        limit: 1000,
+        offset: 0,
+      });
+
+    if (listError) {
+      return NextResponse.json(
+        { message: 'Failed to load folder contents' },
+        { status: 500 }
+      );
+    }
+
+    const paths = (objects || []).map((object) =>
+      posix.join(folderPrefix, object.name)
+    );
+
+    if (paths.length === 0) {
+      return NextResponse.json(
+        { message: 'Folder not found' },
+        { status: 404 }
+      );
+    }
+
+    const { error: removeError } = await sbAdmin.storage
+      .from('workspaces')
+      .remove(paths);
+
+    if (removeError) {
+      return NextResponse.json(
+        { message: 'Failed to delete folder' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: 'Folder deleted' });
+  } catch (error) {
+    console.error('Unexpected error deleting folder:', error);
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

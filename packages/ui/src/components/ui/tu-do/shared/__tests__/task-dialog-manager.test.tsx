@@ -28,6 +28,34 @@ vi.mock('next/navigation', () => ({
   useParams: () => ({ wsId: 'workspace-1' }),
 }));
 
+const {
+  mockGetCurrentUserProfile,
+  mockGetCurrentUserTask,
+  mockListWorkspaceLabels,
+  mockListWorkspaceMembers,
+  mockListWorkspaceTaskProjectsByIds,
+  mockResolveTaskProjectWorkspaceId,
+} = vi.hoisted(() => ({
+  mockGetCurrentUserProfile: vi.fn(),
+  mockGetCurrentUserTask: vi.fn(),
+  mockListWorkspaceLabels: vi.fn(),
+  mockListWorkspaceMembers: vi.fn(),
+  mockListWorkspaceTaskProjectsByIds: vi.fn(),
+  mockResolveTaskProjectWorkspaceId: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/internal-api', () => ({
+  getCurrentUserProfile: mockGetCurrentUserProfile,
+  listWorkspaceLabels: mockListWorkspaceLabels,
+  listWorkspaceMembers: mockListWorkspaceMembers,
+}));
+
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  getCurrentUserTask: mockGetCurrentUserTask,
+  listWorkspaceTaskProjectsByIds: mockListWorkspaceTaskProjectsByIds,
+  resolveTaskProjectWorkspaceId: mockResolveTaskProjectWorkspaceId,
+}));
+
 vi.mock('@tuturuuu/supabase/next/client', () => ({
   createClient: vi.fn(() => ({
     auth: {
@@ -183,10 +211,35 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 // Spy on window.history methods for URL manipulation tests
 let pushStateSpy: ReturnType<typeof vi.spyOn>;
 let replaceStateSpy: ReturnType<typeof vi.spyOn>;
+const fetchMock = vi.fn();
 
 beforeEach(() => {
   pushStateSpy = vi.spyOn(window.history, 'pushState');
   replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+  mockGetCurrentUserProfile.mockResolvedValue({
+    id: 'user-1',
+    display_name: 'Test User',
+    email: 'user@example.com',
+    avatar_url: null,
+  });
+  mockGetCurrentUserTask.mockResolvedValue({
+    task: {
+      ...mockTask,
+      list: { board_id: 'board-1' },
+    },
+    availableLists: [mockList],
+    taskWsId: 'workspace-1',
+    taskWorkspacePersonal: false,
+  });
+  mockListWorkspaceLabels.mockResolvedValue({ labels: [] });
+  mockListWorkspaceMembers.mockResolvedValue({ members: [] });
+  mockListWorkspaceTaskProjectsByIds.mockResolvedValue([]);
+  mockResolveTaskProjectWorkspaceId.mockResolvedValue('workspace-1');
+  fetchMock.mockResolvedValue({
+    ok: true,
+    json: async () => ({ value: 'false' }),
+  });
+  global.fetch = fetchMock as typeof fetch;
   // Set a known initial pathname for tests
   Object.defineProperty(window, 'location', {
     value: { ...window.location, pathname: '/workspace-1/tasks' },

@@ -9,7 +9,7 @@ import {
   XIcon,
   ZoomInIcon,
 } from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { listInquiryMediaUrls } from '@tuturuuu/internal-api';
 import type { Product, SupportType } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -43,7 +43,6 @@ function useSignedMediaUrls(
 } {
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createDynamicClient();
 
   const generateSignedUrls = useCallback(async () => {
     if (!mediaFiles || mediaFiles.length === 0) {
@@ -53,29 +52,16 @@ function useSignedMediaUrls(
     }
 
     setIsLoading(true);
-    const urls: Record<string, string> = {};
-
-    for (const mediaPath of mediaFiles) {
-      try {
-        const { data, error } = await supabase.storage
-          .from('support_inquiries')
-          .createSignedUrl(`${inquiryId}/${mediaPath}`, 300); // 5 minutes = 300 seconds
-
-        if (data?.signedUrl && !error) {
-          urls[mediaPath] = data.signedUrl;
-        }
-      } catch (error) {
-        console.error(
-          'Error generating signed URL for media:',
-          mediaPath,
-          error
-        );
+    const urls = await listInquiryMediaUrls(inquiryId, mediaFiles).catch(
+      (error) => {
+        console.error('Error generating signed URLs for inquiry media:', error);
+        return {} as Record<string, string>;
       }
-    }
+    );
 
     setMediaUrls(urls);
     setIsLoading(false);
-  }, [mediaFiles, supabase, inquiryId]);
+  }, [mediaFiles, inquiryId]);
 
   // Generate URLs when media files change
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createWorkspaceTaskList } from '@tuturuuu/internal-api';
 import { useRouter } from 'next/navigation';
 import * as z from 'zod';
 import { useForm } from '../../../../hooks/use-form';
@@ -27,9 +27,8 @@ const FormSchema = z.object({
   name: z.string().min(1, 'List name is required'),
 });
 
-export function TaskListForm({ boardId, onSuccess }: TaskListFormProps) {
+export function TaskListForm({ wsId, boardId, onSuccess }: TaskListFormProps) {
   const router = useRouter();
-  const supabase = createClient(); // Initialize Supabase client
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -40,17 +39,9 @@ export function TaskListForm({ boardId, onSuccess }: TaskListFormProps) {
 
   const onSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {
-      const { error } = await supabase
-        .from('task_lists') // Use Supabase client to insert
-        .insert({
-          name: values.name,
-          board_id: boardId,
-          // ws_id might be needed if your task_lists table has a direct ws_id column
-          // and RLS requires it, or if it's not automatically inferred via board_id
-        })
-        .select();
-
-      if (error) throw error;
+      await createWorkspaceTaskList(wsId, boardId, {
+        name: values.name,
+      });
 
       toast({
         title: 'Task list created',

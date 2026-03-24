@@ -11,7 +11,12 @@ import {
   ExternalLink,
   Trash2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  cleanupWorkspaceTaskMentions,
+  getCurrentUserTask,
+  listWorkspaceTaskLists,
+  listWorkspaceTaskProjects,
+} from '@tuturuuu/internal-api';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
@@ -114,110 +119,8 @@ const cleanupTaskMentionsGlobally = async (
   wsId: string,
   _queryClient: ReturnType<typeof useQueryClient>
 ): Promise<void> => {
-  const supabase = createClient();
-
   try {
-    // Query all tasks in workspace using a single join query
-    // tasks -> workspace_boards (via board_id) -> filter by ws_id
-    const { data: tasks, error } = await supabase
-      .from('tasks')
-      .select(
-        `
-        id, 
-        description, 
-        board_id,
-        workspace_boards!inner(ws_id)
-      `
-      )
-      .eq('workspace_boards.ws_id', wsId)
-      .is('deleted_at', null); // Only non-deleted tasks
-
-    if (error) {
-      console.error('Failed to fetch tasks for mention cleanup:', error);
-      return;
-    }
-
-    if (!tasks || tasks.length === 0) {
-      console.log('No tasks found for mention cleanup');
-      return;
-    }
-
-    console.log(
-      `Scanning ${tasks.length} tasks for mentions of deleted task ${deletedTaskId}`
-    );
-
-    // Process each task's description
-    for (const task of tasks) {
-      if (!task.description) continue;
-
-      try {
-        // Parse description JSON (Tiptap format)
-        const content =
-          typeof task.description === 'string'
-            ? JSON.parse(task.description)
-            : task.description;
-
-        // Check if it contains mentions of the deleted task
-        let hasMention = false;
-        const checkForMention = (node: any): void => {
-          if (
-            node.type === 'mention' &&
-            node.attrs?.entityType === 'task' &&
-            node.attrs?.entityId === deletedTaskId
-          ) {
-            hasMention = true;
-          }
-          if (node.content && Array.isArray(node.content)) {
-            node.content.forEach(checkForMention);
-          }
-        };
-        checkForMention(content);
-
-        if (!hasMention) continue;
-
-        // Remove mentions by filtering the content tree
-        const removeMentions = (node: any): any => {
-          if (
-            node.type === 'mention' &&
-            node.attrs?.entityType === 'task' &&
-            node.attrs?.entityId === deletedTaskId
-          ) {
-            return null; // Remove this node
-          }
-
-          if (node.content && Array.isArray(node.content)) {
-            return {
-              ...node,
-              content: node.content
-                .map(removeMentions)
-                .filter((n: any) => n !== null),
-            };
-          }
-
-          return node;
-        };
-
-        const cleanedContent = removeMentions(content);
-
-        // Update task with cleaned description
-        const { error: updateError } = await supabase
-          .from('tasks')
-          .update({ description: JSON.stringify(cleanedContent) })
-          .eq('id', task.id);
-
-        if (updateError) {
-          console.error(
-            `Failed to clean mentions from task ${task.id}:`,
-            updateError
-          );
-        }
-      } catch (parseError) {
-        console.error(
-          `Failed to parse description for task ${task.id}:`,
-          parseError
-        );
-      }
-    }
+    await cleanupWorkspaceTaskMentions(wsId, deletedTaskId);
   } catch (error) {
     console.error('Failed to clean up task mentions globally:', error);
   }
@@ -279,7 +182,6 @@ export function TaskMentionChip({
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
   const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
-  const supabase = createClient();
   const { resolvedTheme } = useTheme();
   const params = useParams();
   const routeWsId = params.wsId as string | undefined;
@@ -293,79 +195,21 @@ export function TaskMentionChip({
 
   // Fetch full task data - load immediately to show priority, assignees, and colors
   const {
-    data: task,
+    data: taskPayload,
     isLoading: taskLoading,
     error: taskError,
   } = useQuery({
     queryKey: ['task', entityId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select(
-          `
-          *,
-          task_lists:task_lists(
-            board_id
-          ),
-          assignees:task_assignees(
-            user_id,
-            user:users!inner(
-              id,
-              display_name,
-              avatar_url
-            )
-          ),
-          labels:task_labels(
-            label_id,
-            label:workspace_task_labels!inner(
-              id,
-              name,
-              color,
-              created_at
-            )
-          ),
-          projects:task_project_tasks(
-            project_id,
-            project:task_projects!inner(
-              id,
-              name,
-              status
-            )
-          )
-        `
-        )
-        .eq('id', entityId)
-        .single();
-
-      if (error) throw error;
-
-      // Transform the data to match TaskWithBoardId type
-      return {
-        ...data,
-        board_id: data.task_lists?.board_id || '',
-        assignees: data.assignees?.map((a: any) => ({
-          id: a.user.id,
-          user_id: a.user_id,
-          display_name: a.user.display_name,
-          avatar_url: a.user.avatar_url,
-        })),
-        labels: data.labels?.map((l: any) => ({
-          id: l.label.id,
-          name: l.label.name,
-          color: l.label.color,
-          created_at: l.label.created_at,
-        })),
-        projects: data.projects?.map((p: any) => ({
-          id: p.project.id,
-          name: p.project.name,
-          status: p.project.status,
-        })),
-      } as TaskWithBoardId;
+      const response = await getCurrentUserTask(entityId);
+      return response;
     },
     enabled: true, // Always load to show inline metadata
     staleTime: 30000,
     retry: false,
   });
+
+  const task = taskPayload?.task as TaskWithBoardId | undefined;
 
   // Get board config - only fetch when menu opens and we have task data
   const { data: boardConfig } = useBoardConfig(task?.board_id, routeWsId);
@@ -380,15 +224,8 @@ export function TaskMentionChip({
       queryKey: ['task_projects', boardConfig?.ws_id],
       queryFn: async () => {
         if (!boardConfig?.ws_id) return [];
-        const { data, error } = await supabase
-          .from('task_projects')
-          .select('id, name, status')
-          .eq('ws_id', boardConfig.ws_id)
-          .eq('deleted', false)
-          .order('name');
-
-        if (error) throw error;
-        return data || [];
+        const data = await listWorkspaceTaskProjects(boardConfig.ws_id);
+        return data.filter((project) => project.status !== 'deleted');
       },
       enabled: !!boardConfig?.ws_id && menuOpen,
       staleTime: 10 * 60 * 1000,
@@ -405,17 +242,15 @@ export function TaskMentionChip({
   const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', task?.board_id],
     queryFn: async () => {
-      if (!task?.board_id) return [];
-      const { data, error } = await supabase
-        .from('task_lists')
-        .select('*')
-        .eq('board_id', task.board_id)
-        .eq('deleted', false)
-        .order('position')
-        .order('created_at');
-
-      if (error) throw error;
-      return data as TaskList[];
+      if (taskPayload?.availableLists?.length) {
+        return taskPayload.availableLists as TaskList[];
+      }
+      if (!task?.board_id || !boardConfig?.ws_id) return [];
+      const payload = await listWorkspaceTaskLists(
+        boardConfig.ws_id,
+        task.board_id
+      );
+      return payload.lists as TaskList[];
     },
     enabled: !!task?.board_id, // Load when we have task data
     staleTime: 10 * 60 * 1000,

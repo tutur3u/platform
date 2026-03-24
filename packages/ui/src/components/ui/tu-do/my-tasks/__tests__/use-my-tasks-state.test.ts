@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Hoisted mocks ──────────────────────────────────────────────────────────
 const {
+  mockCreateWorkspaceLabel,
+  mockCreateWorkspaceTaskProject,
   mockInvalidateQueries,
   mockUseQuery,
   mockUseMutation,
@@ -22,6 +24,8 @@ const {
   mockCreateTaskFn,
   mockFetch,
 } = vi.hoisted(() => ({
+  mockCreateWorkspaceLabel: vi.fn(),
+  mockCreateWorkspaceTaskProject: vi.fn(),
   mockInvalidateQueries: vi.fn(),
   mockUseQuery: vi.fn(),
   mockUseMutation: vi.fn(),
@@ -48,6 +52,20 @@ vi.mock('@tanstack/react-query', () => ({
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
   keepPreviousData: Symbol('keepPreviousData'),
+}));
+
+vi.mock('@tuturuuu/internal-api', () => ({
+  createWorkspaceLabel: mockCreateWorkspaceLabel,
+  createWorkspaceTaskBoard: vi.fn(),
+  createWorkspaceTaskProject: mockCreateWorkspaceTaskProject,
+  listWorkspaceBoardsWithLists: vi.fn(),
+  listWorkspaceLabels: vi.fn(),
+  listWorkspaceMembers: vi.fn(),
+  listWorkspaces: vi.fn(),
+  listWorkspaceTaskBoards: vi.fn(),
+  listWorkspaceTaskLists: vi.fn(),
+  listWorkspaceTaskProjects: vi.fn(),
+  updateWorkspaceTaskList: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/client', () => ({
@@ -135,6 +153,15 @@ function setupDefaultMocks() {
   });
 }
 
+function setupInternalApiMocks() {
+  mockCreateWorkspaceLabel.mockResolvedValue({
+    label: { id: 'label-1', name: 'Bug', color: '#ff0000' },
+  });
+  mockCreateWorkspaceTaskProject.mockResolvedValue({
+    project: { id: 'project-1', name: 'New Project' },
+  });
+}
+
 function setupSupabaseMocks() {
   mockEq.mockResolvedValue({ data: null, error: null });
   mockIs.mockReturnValue({ order: mockOrder });
@@ -153,6 +180,7 @@ describe('useMyTasksState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupDefaultMocks();
+    setupInternalApiMocks();
     setupSupabaseMocks();
   });
 
@@ -504,9 +532,8 @@ describe('useMyTasksState', () => {
       );
     });
 
-    it('inserts assignee (auto-assign to me) after task creation', async () => {
+    it('passes auto-assignee ids into task creation', async () => {
       mockCreateTaskFn.mockResolvedValue({ id: 'new-task-1' });
-      mockInsert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
@@ -519,13 +546,15 @@ describe('useMyTasksState', () => {
         await result.current.handleCreateTask('New task');
       });
 
-      // Should have been called with task_assignees insert for auto-assign
-      expect(mockFrom).toHaveBeenCalledWith('task_assignees');
+      expect(mockCreateTaskFn).toHaveBeenCalledWith(
+        'ws-1',
+        'list-1',
+        expect.objectContaining({ assignee_ids: ['user-1'] })
+      );
     });
 
     it('auto-assign deduplicates when userId is already in assigneeIds', async () => {
       mockCreateTaskFn.mockResolvedValue({ id: 'new-task-1' });
-      mockInsert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
@@ -540,22 +569,11 @@ describe('useMyTasksState', () => {
         });
       });
 
-      // The mergedAssigneeIds uses Set, so user-1 should only appear once
-      const insertCalls = mockInsert.mock.calls;
-      const assigneeInsert = insertCalls.find((call: any[]) => {
-        const arg = call[0];
-        return Array.isArray(arg) && arg[0]?.user_id;
-      });
-
-      if (assigneeInsert) {
-        const assigneeData = assigneeInsert[0] as Array<{
-          task_id: string;
-          user_id: string;
-        }>;
-        const userIds = assigneeData.map((a) => a.user_id);
-        // No duplicates
-        expect(new Set(userIds).size).toBe(userIds.length);
-      }
+      expect(mockCreateTaskFn).toHaveBeenCalledWith(
+        'ws-1',
+        'list-1',
+        expect.objectContaining({ assignee_ids: ['user-1'] })
+      );
     });
 
     it('clears input on success and calls handleUpdate', async () => {
@@ -596,9 +614,8 @@ describe('useMyTasksState', () => {
       expect(mockToastError).toHaveBeenCalledWith('DB error');
     });
 
-    it('inserts labels when options.labelIds provided', async () => {
+    it('passes labels when options.labelIds provided', async () => {
       mockCreateTaskFn.mockResolvedValue({ id: 'new-task-1' });
-      mockInsert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
@@ -613,12 +630,15 @@ describe('useMyTasksState', () => {
         });
       });
 
-      expect(mockFrom).toHaveBeenCalledWith('task_labels');
+      expect(mockCreateTaskFn).toHaveBeenCalledWith(
+        'ws-1',
+        'list-1',
+        expect.objectContaining({ label_ids: ['label-a', 'label-b'] })
+      );
     });
 
-    it('inserts projects when options.projectIds provided', async () => {
+    it('passes projects when options.projectIds provided', async () => {
       mockCreateTaskFn.mockResolvedValue({ id: 'new-task-1' });
-      mockInsert.mockResolvedValue({ data: null, error: null });
 
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
@@ -633,7 +653,11 @@ describe('useMyTasksState', () => {
         });
       });
 
-      expect(mockFrom).toHaveBeenCalledWith('task_project_tasks');
+      expect(mockCreateTaskFn).toHaveBeenCalledWith(
+        'ws-1',
+        'list-1',
+        expect.objectContaining({ project_ids: ['proj-1'] })
+      );
     });
   });
 
@@ -770,14 +794,12 @@ describe('useMyTasksState', () => {
         await result.current.handleCreateNewLabel();
       });
 
-      expect(mockFrom).toHaveBeenCalledWith('workspace_task_labels');
-      expect(mockInsert).toHaveBeenCalledWith({
-        ws_id: 'ws-1',
+      expect(mockCreateWorkspaceLabel).toHaveBeenCalledWith('ws-1', {
         name: 'Bug',
         color: '#ff0000',
       });
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
-        queryKey: ['workspace', 'ws-1', 'labels'],
+        queryKey: ['workspaceLabels'],
       });
       expect(mockToastSuccess).toHaveBeenCalledWith('ws-tasks.label_created');
       expect(result.current.newLabelDialogOpen).toBe(false);
@@ -786,21 +808,9 @@ describe('useMyTasksState', () => {
     });
 
     it('shows error toast on failure', async () => {
-      mockInsert.mockResolvedValue({
-        data: null,
-        error: { message: 'Duplicate label' },
-      });
-      // Make the from() chain throw properly
-      mockFrom.mockImplementation((table: string) => {
-        if (table === 'workspace_task_labels') {
-          return {
-            insert: () => {
-              throw new Error('Duplicate label');
-            },
-          };
-        }
-        return { select: mockSelect, insert: mockInsert };
-      });
+      mockCreateWorkspaceLabel.mockRejectedValueOnce(
+        new Error('Duplicate label')
+      );
 
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
@@ -846,13 +856,11 @@ describe('useMyTasksState', () => {
         await result.current.handleCreateNewProject();
       });
 
-      expect(mockFrom).toHaveBeenCalledWith('task_projects');
-      expect(mockInsert).toHaveBeenCalledWith({
-        ws_id: 'ws-1',
+      expect(mockCreateWorkspaceTaskProject).toHaveBeenCalledWith('ws-1', {
         name: 'New Project',
       });
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
-        queryKey: ['workspace', 'ws-1', 'projects'],
+        queryKey: ['workspaceProjects'],
       });
       expect(mockToastSuccess).toHaveBeenCalledWith('ws-tasks.project_created');
       expect(result.current.newProjectDialogOpen).toBe(false);
@@ -860,16 +868,9 @@ describe('useMyTasksState', () => {
     });
 
     it('shows error toast on failure', async () => {
-      mockFrom.mockImplementation((table: string) => {
-        if (table === 'task_projects') {
-          return {
-            insert: () => {
-              throw new Error('Insert failed');
-            },
-          };
-        }
-        return { select: mockSelect, insert: mockInsert };
-      });
+      mockCreateWorkspaceTaskProject.mockRejectedValueOnce(
+        new Error('Insert failed')
+      );
 
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 

@@ -10,7 +10,10 @@ import {
   Lock,
   Share2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  createWorkspaceStorageSignedUrl,
+  uploadWorkspaceStorageFile,
+} from '@tuturuuu/internal-api';
 import type { WorkspaceDocument } from '@tuturuuu/types';
 import {
   AlertDialog,
@@ -301,32 +304,22 @@ export function DocumentEditor({
         throw new Error('Workspace ID not found');
       }
 
-      const supabase = createClient();
-
       // Generate unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${wsId}/documents/${fileName}`;
+      const uploadResult = await uploadWorkspaceStorageFile(
+        wsId,
+        new File([file], fileName, { type: file.type }),
+        {
+          path: 'documents',
+        }
+      );
 
-      // Upload to Supabase storage
-      const { data, error } = await supabase.storage
-        .from('workspaces')
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: false,
-        });
-
-      if (error) {
-        console.error('Upload error:', error);
-        throw error;
-      }
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('workspaces').getPublicUrl(data.path);
-
-      return publicUrl;
+      return createWorkspaceStorageSignedUrl(
+        wsId,
+        uploadResult.path,
+        31_536_000
+      );
     },
     [wsId]
   );

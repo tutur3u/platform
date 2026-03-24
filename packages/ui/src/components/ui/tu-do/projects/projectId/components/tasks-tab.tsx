@@ -141,6 +141,7 @@ export function TasksTab({
       case 'timeline':
         return (
           <TimelineBoard
+            wsId={workspace.id}
             boardId={projectBoardId}
             tasks={tasks}
             lists={lists}

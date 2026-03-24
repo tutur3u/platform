@@ -1,0 +1,87 @@
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
+
+async function requireWorkspaceUser(request: Request, wsId: string) {
+  const supabase = await createClient(request);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return {
+      error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', normalizedWsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (!membership) {
+    return {
+      error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
+    };
+  }
+  return { user, normalizedWsId };
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string; channelId: string }> }
+) {
+  const { wsId, channelId } = await params;
+  const auth = await requireWorkspaceUser(request, wsId);
+  if ('error' in auth) return auth.error;
+
+  const sbAdmin = await createAdminClient();
+  const { error } = await sbAdmin
+    .from('workspace_chat_typing_indicators')
+    .upsert(
+      {
+        channel_id: channelId,
+        user_id: auth.user.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'channel_id,user_id' }
+    );
+
+  if (error) {
+    return NextResponse.json(
+      { message: 'Failed to update typing indicator' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string; channelId: string }> }
+) {
+  const { wsId, channelId } = await params;
+  const auth = await requireWorkspaceUser(request, wsId);
+  if ('error' in auth) return auth.error;
+
+  const sbAdmin = await createAdminClient();
+  const { error } = await sbAdmin
+    .from('workspace_chat_typing_indicators')
+    .delete()
+    .eq('channel_id', channelId)
+    .eq('user_id', auth.user.id);
+
+  if (error) {
+    return NextResponse.json(
+      { message: 'Failed to clear typing indicator' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
+}

@@ -1,14 +1,11 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
+import { ArrowLeft, LayoutGrid, LayoutList } from '@tuturuuu/icons';
 import {
-  ArrowLeft,
-  FileText,
-  Folder,
-  LayoutGrid,
-  LayoutList,
-} from '@tuturuuu/icons';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+  deleteWorkspaceStorageFolder,
+  deleteWorkspaceStorageObject,
+} from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import {
   AlertDialog,
@@ -27,13 +24,16 @@ import {
   ContextMenuTrigger,
 } from '@tuturuuu/ui/context-menu';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { joinPath, popPath } from '@/utils/path-helper';
 import { storageObjectsColumns } from './columns';
+import { DriveGridThumbnail } from './drive-grid-thumbnail';
 import { FilePreviewDialog } from './file-preview-dialog';
+import { RenameStorageObjectDialog } from './rename-storage-object-dialog';
 import { StorageObjectRowActions } from './row-actions';
 
 interface Props {
@@ -56,7 +56,29 @@ export default function StorageObjectsTable({
   const [storageObj, setStorageObject] = useState<StorageObject | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [deleteTarget, setDeleteTarget] = useState<StorageObject | null>(null);
+  const [renameTarget, setRenameTarget] = useState<StorageObject | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const navigateToPath = (nextPath: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (!nextPath || nextPath === '/' || nextPath === '') {
+      params.delete('path');
+    } else {
+      params.set('path', nextPath);
+    }
+
+    const queryString = params.toString();
+    router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
+      scroll: false,
+    });
+  };
+
+  const handleBack = () => {
+    const basePath = searchParams.get('path') ?? '';
+    const nextPath = popPath(basePath);
+    navigateToPath(nextPath);
+  };
 
   // Wrapper function to handle type mismatch
   const handleSetStorageObject = (value: StorageObject | undefined) => {
@@ -71,23 +93,11 @@ export default function StorageObjectsTable({
       return;
     }
 
-    // If it's a folder or back button (no id), navigate
+    // If it's a folder (no id), navigate
     if (row.name) {
       const basePath = searchParams.get('path') ?? '';
-      const newPath =
-        row.name === '...' ? popPath(basePath) : joinPath(basePath, row.name);
-
-      // Navigate to the new path
-      const params = new URLSearchParams(searchParams.toString());
-      if (!newPath || newPath === '/' || newPath === '') {
-        params.delete('path');
-      } else {
-        params.set('path', newPath);
-      }
-      const queryString = params.toString();
-      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
-        scroll: false,
-      });
+      const newPath = joinPath(basePath, row.name);
+      navigateToPath(newPath);
     }
   };
 
@@ -103,67 +113,31 @@ export default function StorageObjectsTable({
     if (item.name) {
       const basePath = searchParams.get('path') ?? '';
       const newPath = joinPath(basePath, item.name);
-
-      // Navigate to the new path
-      const params = new URLSearchParams(searchParams.toString());
-      if (!newPath || newPath === '/' || newPath === '') {
-        params.delete('path');
-      } else {
-        params.set('path', newPath);
-      }
-      const queryString = params.toString();
-      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`, {
-        scroll: false,
-      });
+      navigateToPath(newPath);
     }
   };
 
   // Pass a callback to row actions to trigger the delete dialog
+  const handleRequestRename = (obj: StorageObject) => setRenameTarget(obj);
   const handleRequestDelete = (obj: StorageObject) => setDeleteTarget(obj);
 
   const handleDelete = async (storageObj: StorageObject | null) => {
     if (!storageObj?.name) return;
-    const supabase = createDynamicClient();
     try {
       if (storageObj.id) {
-        // File
-        const filePath =
-          wsId && path !== undefined && storageObj.name
-            ? joinPath(wsId, path, storageObj.name)
-            : '';
-        const { error } = await supabase.storage
-          .from('workspaces')
-          .remove([filePath]);
-        if (!error) {
-          router.refresh();
-          toast.success(t('ws-storage-objects.file_deleted'));
-        } else {
-          toast.error(error.message);
-        }
+        await deleteWorkspaceStorageObject(
+          wsId,
+          joinPath(path ?? '', storageObj.name)
+        );
+        router.refresh();
+        toast.success(t('ws-storage-objects.file_deleted'));
       } else {
-        // Folder
-        const folderPath =
-          wsId && path !== undefined && storageObj.name
-            ? joinPath(wsId, path, storageObj.name, '%')
-            : '';
-        const objects = await supabase
-          .schema('storage')
-          .from('objects')
-          .select()
-          .ilike('name', folderPath);
-        if (objects.error) {
-          toast.error(objects.error.message);
-          return;
-        }
-        const { error } = await supabase.storage
-          .from('workspaces')
-          .remove(objects.data.map((object: { name: string }) => object.name));
-        if (!error) {
-          router.refresh();
-          toast.success(t('ws-storage-objects.folder_deleted'));
-        } else {
-          toast.error(error.message);
-        }
+        await deleteWorkspaceStorageFolder(wsId, {
+          path,
+          name: storageObj.name,
+        });
+        router.refresh();
+        toast.success(t('ws-storage-objects.folder_deleted'));
       }
     } catch {
       toast.error('Failed to delete file or folder');
@@ -199,15 +173,28 @@ export default function StorageObjectsTable({
         </div>
       </div>
 
+      {path && path !== '/' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-fit"
+          onClick={handleBack}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t('common.back')}
+        </Button>
+      )}
+
       {/* Data Table/Grid */}
       {viewMode === 'list' ? (
         <CustomDataTable
-          data={!path || path === '/' ? data : [{ name: '...' }, ...data]}
+          data={data}
           columnGenerator={storageObjectsColumns}
           extraData={{
             setStorageObject: handleSetStorageObject,
             wsId,
             path,
+            onRequestRename: handleRequestRename,
             onRequestDelete: handleRequestDelete,
           }}
           namespace="storage-object-data-table"
@@ -222,32 +209,6 @@ export default function StorageObjectsTable({
             }
           }}
           rowWrapper={(row, rowData) => {
-            // Back row: just clickable, no context menu
-            if (rowData.name === '...') {
-              return (
-                <tr
-                  key={row.key}
-                  className="cursor-pointer hover:bg-muted/40"
-                  onClick={() => {
-                    const basePath = searchParams.get('path') ?? '';
-                    const nextPath = popPath(basePath);
-                    const params = new URLSearchParams(searchParams.toString());
-                    if (!nextPath || nextPath === '/' || nextPath === '') {
-                      params.delete('path');
-                    } else {
-                      params.set('path', nextPath);
-                    }
-                    const queryString = params.toString();
-                    router.push(
-                      `${pathname}${queryString ? `?${queryString}` : ''}`,
-                      { scroll: false }
-                    );
-                  }}
-                >
-                  {(row.props as any)?.children}
-                </tr>
-              );
-            }
             // Folder row: clickable and has context menu
             if (!rowData.id) {
               return (
@@ -258,25 +219,13 @@ export default function StorageObjectsTable({
                       onClick={() => {
                         const basePath = searchParams.get('path') ?? '';
                         const nextPath = joinPath(basePath, rowData.name || '');
-                        const params = new URLSearchParams(
-                          searchParams.toString()
-                        );
-                        if (!nextPath || nextPath === '/' || nextPath === '') {
-                          params.delete('path');
-                        } else {
-                          params.set('path', nextPath);
-                        }
-                        const queryString = params.toString();
-                        router.push(
-                          `${pathname}${queryString ? `?${queryString}` : ''}`,
-                          { scroll: false }
-                        );
+                        navigateToPath(nextPath);
                       }}
                     >
                       {(row.props as any)?.children}
                     </tr>
                   </ContextMenuTrigger>
-                  <ContextMenuContent>
+                  <ContextMenuContent forceMount>
                     <StorageObjectRowActions
                       wsId={wsId}
                       row={{ original: rowData } as Row<StorageObject>}
@@ -284,6 +233,7 @@ export default function StorageObjectsTable({
                       setStorageObject={handleSetStorageObject}
                       menuOnly={true}
                       contextMenu={true}
+                      onRequestRename={handleRequestRename}
                       onRequestDelete={handleRequestDelete}
                     />
                   </ContextMenuContent>
@@ -311,7 +261,7 @@ export default function StorageObjectsTable({
                 >
                   {row}
                 </ContextMenuTrigger>
-                <ContextMenuContent>
+                <ContextMenuContent forceMount>
                   <StorageObjectRowActions
                     wsId={wsId}
                     row={{ original: rowData } as Row<StorageObject>}
@@ -319,6 +269,7 @@ export default function StorageObjectsTable({
                     setStorageObject={handleSetStorageObject}
                     menuOnly={true}
                     contextMenu={true}
+                    onRequestRename={handleRequestRename}
                     onRequestDelete={handleRequestDelete}
                   />
                 </ContextMenuContent>
@@ -327,83 +278,56 @@ export default function StorageObjectsTable({
           }}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {/* Back button for grid view */}
-          {path && path !== '/' && (
-            <button
-              type="button"
-              className="group relative w-full cursor-pointer rounded-lg border border-dynamic-border bg-card p-4 text-left transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg"
-              onClick={() => {
-                const basePath = searchParams.get('path') ?? '';
-                const newPath = popPath(basePath);
-                const params = new URLSearchParams(searchParams.toString());
-                if (!newPath || newPath === '/' || newPath === '') {
-                  params.delete('path');
-                } else {
-                  params.set('path', newPath);
-                }
-                const queryString = params.toString();
-                router.push(
-                  `${pathname}${queryString ? `?${queryString}` : ''}`,
-                  { scroll: false }
-                );
-              }}
-            >
-              <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">
-                <div className="text-4xl text-muted-foreground">
-                  <ArrowLeft />
-                </div>
-              </div>
-              <h3 className="truncate font-medium text-sm">
-                {t('common.back')}
-              </h3>
-              <p className="mt-1 text-muted-foreground text-xs">
-                {t('ws-storage-objects.go_back')}
-              </p>
-            </button>
-          )}
-
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
           {/* Grid View */}
-          {data.map((item) => (
-            <ContextMenu key={item.id || item.name}>
-              <ContextMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="group relative w-full cursor-pointer rounded-lg border border-dynamic-border bg-card p-4 text-left transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => handleGridItemClick(item)}
-                  disabled={!item.id && !item.name}
-                >
-                  <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">
-                    {/* File type icon or preview thumbnail */}
-                    <div className="text-4xl text-muted-foreground">
-                      {item.id ? <FileText /> : <Folder />}
+          {data.map((item) => {
+            const displayName =
+              item.name?.replace(
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
+                ''
+              ) || '';
+
+            return (
+              <ContextMenu key={item.id || item.name}>
+                <ContextMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="group relative w-full cursor-pointer rounded-lg border border-dynamic-border bg-card p-4 text-left transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => handleGridItemClick(item)}
+                    disabled={!item.id && !item.name}
+                  >
+                    <div className="mb-3 flex aspect-square items-center justify-center rounded-lg bg-muted/50">
+                      <DriveGridThumbnail wsId={wsId} path={path} item={item} />
                     </div>
-                  </div>
-                  <h3 className="truncate font-medium text-sm">
-                    {item.name?.replace(
-                      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
-                      ''
-                    )}
-                  </h3>
-                  <p className="mt-1 text-muted-foreground text-xs">
-                    {item.metadata?.size &&
-                      `${Math.round(item.metadata.size / 1024)} KB`}
-                  </p>
-                </button>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <StorageObjectRowActions
-                  wsId={wsId}
-                  row={{ original: item } as Row<StorageObject>}
-                  path={path}
-                  setStorageObject={handleSetStorageObject}
-                  menuOnly={true}
-                  contextMenu={true}
-                  onRequestDelete={handleRequestDelete}
-                />
-              </ContextMenuContent>
-            </ContextMenu>
-          ))}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <h3 className="truncate font-medium text-sm">
+                          {displayName}
+                        </h3>
+                      </TooltipTrigger>
+                      <TooltipContent>{displayName}</TooltipContent>
+                    </Tooltip>
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      {item.metadata?.size &&
+                        `${Math.round(item.metadata.size / 1024)} KB`}
+                    </p>
+                  </button>
+                </ContextMenuTrigger>
+                <ContextMenuContent forceMount>
+                  <StorageObjectRowActions
+                    wsId={wsId}
+                    row={{ original: item } as Row<StorageObject>}
+                    path={path}
+                    setStorageObject={handleSetStorageObject}
+                    menuOnly={true}
+                    contextMenu={true}
+                    onRequestRename={handleRequestRename}
+                    onRequestDelete={handleRequestDelete}
+                  />
+                </ContextMenuContent>
+              </ContextMenu>
+            );
+          })}
 
           {data.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
@@ -426,6 +350,19 @@ export default function StorageObjectsTable({
         file={storageObj}
         open={!!storageObj}
         onOpenChange={(open) => !open && setStorageObject(null)}
+      />
+
+      <RenameStorageObjectDialog
+        wsId={wsId}
+        path={path}
+        storageObject={renameTarget}
+        open={!!renameTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameTarget(null);
+          }
+        }}
+        onSuccess={() => router.refresh()}
       />
 
       {/* Render AlertDialog at the table level */}

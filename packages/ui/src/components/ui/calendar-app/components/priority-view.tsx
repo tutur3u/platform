@@ -21,8 +21,10 @@ import {
   User,
   unicornHead,
 } from '@tuturuuu/icons';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  listWorkspaceTaskLists,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
@@ -408,15 +410,11 @@ export default function PriorityView({
   // Date handlers with optimistic updates
   const handleStartDateChange = async (taskId: string, date: Date | null) => {
     const dateString = date?.toISOString() || null;
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ start_date: dateString })
-        .eq('id', taskId);
-
-      if (error) throw error;
+      await updateWorkspaceTask(taskWsId, taskId, { start_date: dateString });
       toast.success(date ? 'Start date set' : 'Start date cleared');
       router.refresh();
     } catch (error) {
@@ -427,15 +425,11 @@ export default function PriorityView({
 
   const handleDueDateChange = async (taskId: string, date: Date | null) => {
     const dateString = date?.toISOString() || null;
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ end_date: dateString })
-        .eq('id', taskId);
-
-      if (error) throw error;
+      await updateWorkspaceTask(taskWsId, taskId, { end_date: dateString });
       toast.success(date ? 'Due date set' : 'Due date cleared');
       router.refresh();
     } catch (error) {
@@ -454,43 +448,27 @@ export default function PriorityView({
     const taskWsId = task.ws_id ?? wsId;
 
     try {
-      const supabase = createClient();
-
       // If task has no list_id, just update closed_at directly
       if (!task.list_id) {
         const timestamp = new Date().toISOString();
-        const { error } = await supabase
-          .from('tasks')
-          .update({
-            closed_at: timestamp,
-            completed_at: timestamp,
-            completed: true,
-          })
-          .eq('id', taskId);
-        if (error) throw error;
+        await updateWorkspaceTask(taskWsId, taskId, {
+          closed_at: timestamp,
+          completed_at: timestamp,
+          completed: true,
+        });
         toast.success('Task marked as done');
         router.refresh();
         return;
       }
 
-      // Get the board_id from the task's list
-      const { data: taskList, error: listError } = await supabase
-        .from('task_lists')
-        .select('board_id')
-        .eq('id', task.list_id)
-        .single();
+      if (!task.board_id) {
+        throw new Error('Task board not found');
+      }
 
-      if (listError) throw listError;
-
-      // Fetch all lists for this board to find the done list
-      const { data: boardLists, error: boardListsError } = await supabase
-        .from('task_lists')
-        .select('id, name, status, position')
-        .eq('board_id', taskList.board_id)
-        .eq('deleted', false)
-        .order('position');
-
-      if (boardListsError) throw boardListsError;
+      const { lists: boardLists } = await listWorkspaceTaskLists(
+        taskWsId,
+        task.board_id
+      );
 
       // Find the first done or closed list (like task.tsx does)
       const doneList = boardLists?.find((list) => list.status === 'done');
@@ -535,13 +513,9 @@ export default function PriorityView({
 
   const handleDelete = async (taskId: string) => {
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', taskId);
-
-      if (error) throw error;
+      const task = combinedTasks.find((candidate) => candidate.id === taskId);
+      const taskWsId = task?.ws_id ?? wsId;
+      await updateWorkspaceTask(taskWsId, taskId, { deleted: true });
 
       toast.success('Task moved to trash');
       router.refresh();

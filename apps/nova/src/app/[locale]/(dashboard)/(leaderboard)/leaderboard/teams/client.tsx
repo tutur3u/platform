@@ -9,7 +9,6 @@ import {
   Medal,
   Sparkles,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { motion } from 'framer-motion';
@@ -61,27 +60,21 @@ export default function TeamsLeaderboardClient({
   // Get the selected challenge from URL params
   const selectedChallenge = searchParams.get('challenge') || 'all';
 
-  const supabase = createClient();
-
   useEffect(() => {
     const getTeam = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user?.id) {
-        const { data: teamMember } = await supabase
-          .from('nova_team_members')
-          .select('team_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        setCurrentTeamId(teamMember?.team_id);
-      }
+      const payload = await fetch('/api/v1/nova/me/team', {
+        cache: 'no-store',
+      })
+        .then(async (response) => {
+          if (!response.ok) return null;
+          return (await response.json()) as { teamId: string | null };
+        })
+        .catch(() => null);
+      setCurrentTeamId(payload?.teamId ?? undefined);
     };
 
     getTeam();
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     let filtered = [...data];

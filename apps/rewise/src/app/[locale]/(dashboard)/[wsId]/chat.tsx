@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { updateAiChat } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -289,17 +290,17 @@ export default function Chat({
   const updateChat = async (newData: Partial<AIChat>) => {
     if (!chat?.id) return;
 
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('ai_chats')
-      .update(newData)
-      .eq('id', chat?.id);
-
-    if (error) {
+    try {
+      await updateAiChat(chat.id, {
+        is_public: newData.is_public,
+        title: newData.title,
+        pinned: newData.pinned,
+      });
+    } catch (error) {
       toast({
         title: t('ai_chat.something_went_wrong'),
-        description: error.message,
+        description:
+          error instanceof Error ? error.message : t('ai_chat.try_again_later'),
       });
       return;
     }

@@ -3,7 +3,7 @@
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateAiChat } from '@tuturuuu/internal-api';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { cn } from '@tuturuuu/utils/format';
@@ -266,23 +266,18 @@ export default function Chat({
   const updateChat = async (newData: Partial<AIChat>) => {
     if (!chat?.id) return;
 
-    const { is_public } = newData;
-    const supabase = await createClient();
-
-    const { error } = await supabase
-      .from('ai_chats')
-      .update({ is_public })
-      .eq('id', chat?.id);
-
-    if (error) {
+    try {
+      await updateAiChat(chat.id, { is_public: newData.is_public });
+    } catch (error) {
       toast({
         title: t('something_went_wrong'),
-        description: error.message,
+        description:
+          error instanceof Error ? error.message : t('try_again_later'),
       });
       return;
     }
 
-    setChat({ ...chat, is_public });
+    setChat({ ...chat, is_public: newData.is_public });
     toast({
       title: t('chat_updated'),
       description: t('visibility_updated_desc'),

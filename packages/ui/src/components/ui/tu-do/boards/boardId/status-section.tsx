@@ -23,6 +23,7 @@ interface Props {
   lists: TaskList[];
   tasksByList: Record<string, Task[]>;
   boardId: string;
+  wsId: string;
   onUpdate: () => void;
   hideTasksMode?: boolean;
   isPersonalWorkspace?: boolean;
@@ -89,6 +90,7 @@ export function StatusSection({
   lists,
   tasksByList,
   boardId,
+  wsId,
   onUpdate,
   hideTasksMode = false,
   isPersonalWorkspace,
@@ -215,6 +217,7 @@ export function StatusSection({
                   list={list}
                   tasks={tasksByList[list.id] || []}
                   boardId={boardId}
+                  wsId={wsId}
                   onUpdate={onUpdate}
                   hideTasksMode={hideTasksMode}
                   isPersonalWorkspace={isPersonalWorkspace}

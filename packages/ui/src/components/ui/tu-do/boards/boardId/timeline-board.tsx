@@ -13,7 +13,10 @@ import {
   Trash2,
   ZoomIn,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  deleteWorkspaceTask,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
@@ -71,6 +74,7 @@ export interface TimelineProps {
   tasks: Task[];
   lists: TaskList[];
   boardId?: string;
+  wsId?: string;
   className?: string;
   onTaskPartialUpdate?: (taskId: string, partial: Partial<Task>) => void;
 }
@@ -193,6 +197,7 @@ export function TimelineBoard({
   tasks,
   lists,
   boardId,
+  wsId,
   className,
   onTaskPartialUpdate,
 }: TimelineProps) {
@@ -262,25 +267,15 @@ export function TimelineBoard({
       taskId: string;
       changes: Record<string, unknown>;
     }) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update(changes)
-        .eq('id', taskId);
-
-      if (error) throw error;
+      if (!wsId) throw new Error('Workspace ID is required');
+      await updateWorkspaceTask(wsId, taskId, changes as any);
     },
   });
 
   const deleteTaskMutation = useMutation({
     mutationFn: async (taskId: string) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', taskId);
-
-      if (error) throw error;
+      if (!wsId) throw new Error('Workspace ID is required');
+      await deleteWorkspaceTask(wsId, taskId);
     },
   });
 

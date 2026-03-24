@@ -9,7 +9,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { GripVertical, Lock, MoreVertical, Trash2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  deleteWorkspaceTask,
+  updateWorkspaceTaskList,
+} from '@tuturuuu/internal-api';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -45,6 +48,7 @@ interface Props {
   list: TaskList;
   tasks: Task[];
   boardId: string;
+  wsId: string;
   onUpdate: () => void;
   isOverlay?: boolean;
   hideTasksMode?: boolean;
@@ -91,6 +95,7 @@ export function EnhancedTaskList({
   list,
   tasks,
   boardId,
+  wsId,
   onUpdate,
   isOverlay = false,
   hideTasksMode = false,
@@ -102,7 +107,6 @@ export function EnhancedTaskList({
   const [editName, setEditName] = useState(list.name);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
-  const supabase = createClient();
   const { createTask } = useTaskDialog();
   const broadcast = useBoardBroadcast();
 
@@ -151,12 +155,7 @@ export function EnhancedTaskList({
   // Update list name mutation
   const updateListMutation = useMutation({
     mutationFn: async (newName: string) => {
-      const { error } = await supabase
-        .from('task_lists')
-        .update({ name: newName })
-        .eq('id', list.id);
-
-      if (error) throw error;
+      await updateWorkspaceTaskList(wsId, boardId, list.id, { name: newName });
       return newName;
     },
     onSuccess: (newName) => {
@@ -183,12 +182,9 @@ export function EnhancedTaskList({
   // Update list color mutation
   const updateColorMutation = useMutation({
     mutationFn: async (newColor: SupportedColor) => {
-      const { error } = await supabase
-        .from('task_lists')
-        .update({ color: newColor })
-        .eq('id', list.id);
-
-      if (error) throw error;
+      await updateWorkspaceTaskList(wsId, boardId, list.id, {
+        color: newColor,
+      });
       return newColor;
     },
     onSuccess: (newColor) => {
@@ -219,21 +215,13 @@ export function EnhancedTaskList({
     mutationFn: async () => {
       // First, delete all tasks in this list
       if (tasks.length > 0) {
-        const { error: tasksError } = await supabase
-          .from('tasks')
-          .delete()
-          .eq('list_id', list.id);
-
-        if (tasksError) throw tasksError;
+        await Promise.all(
+          tasks.map((task) => deleteWorkspaceTask(wsId, task.id))
+        );
       }
 
       // Then delete the list itself
-      const { error } = await supabase
-        .from('task_lists')
-        .delete()
-        .eq('id', list.id);
-
-      if (error) throw error;
+      await updateWorkspaceTaskList(wsId, boardId, list.id, { deleted: true });
     },
     onSuccess: () => {
       // Use setQueryData for immediate UI update without flicker

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -125,36 +125,20 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   } | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-
     const fetchUser = async () => {
-      // Get session immediately (cached in localStorage)
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const profile = await getCurrentUserProfile().catch(() => null);
 
-      if (session?.user) {
-        // Set basic user info immediately
+      if (profile?.id) {
         setCurrentUser({
-          id: session.user.id,
-          email: session.user.email,
+          id: profile.id,
+          email: profile.email ?? undefined,
         });
-
-        // Fetch full user details in background
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, display_name, avatar_url')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userData) {
-          setCurrentUser({
-            id: userData.id,
-            display_name: userData.display_name || undefined,
-            email: session.user.email,
-            avatar_url: userData.avatar_url || undefined,
-          });
-        }
+        setCurrentUser({
+          id: profile.id,
+          display_name: profile.display_name || undefined,
+          email: profile.email ?? undefined,
+          avatar_url: profile.avatar_url || undefined,
+        });
       }
     };
 

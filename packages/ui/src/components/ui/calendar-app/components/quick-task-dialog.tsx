@@ -9,7 +9,7 @@ import {
   Loader2,
   Plus,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { listWorkspaceBoardsWithLists } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
@@ -35,21 +35,6 @@ import {
 import { toast } from '../../sonner';
 import { TaskBoardForm } from '../../tu-do/boards/form';
 
-interface TaskList {
-  id: string;
-  name: string;
-  status: string;
-  color: string | null;
-  position: number;
-}
-
-interface Board {
-  id: string;
-  name: string;
-  created_at: string;
-  task_lists: TaskList[];
-}
-
 interface QuickTaskDialogProps {
   wsId: string;
   open: boolean;
@@ -71,7 +56,6 @@ export function QuickTaskDialog({
 }: QuickTaskDialogProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   // Form state
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
@@ -90,15 +74,7 @@ export function QuickTaskDialog({
   // Fetch boards with lists
   const { data: boardsData, isLoading: isLoadingBoards } = useQuery({
     queryKey: ['boards-with-lists', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/boards`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch boards');
-      }
-      return response.json() as Promise<{ boards: Board[] }>;
-    },
+    queryFn: async () => listWorkspaceBoardsWithLists(wsId),
     enabled: open,
   });
 
@@ -157,16 +133,10 @@ export function QuickTaskDialog({
 
     setIsSubmitting(true);
     try {
-      const newTask = await createTask(wsId, selectedListId, {
+      await createTask(wsId, selectedListId, {
         name: taskName.trim(),
+        assignee_ids: userId && !isPersonalWorkspace ? [userId] : [],
       });
-
-      // Auto-assign the creator (unless personal workspace)
-      if (userId && !isPersonalWorkspace && newTask?.id) {
-        await supabase
-          .from('task_assignees')
-          .insert({ task_id: newTask.id, user_id: userId });
-      }
 
       toast.success('Task created successfully');
       queryClient.invalidateQueries({ queryKey: ['schedulable-tasks'] });
