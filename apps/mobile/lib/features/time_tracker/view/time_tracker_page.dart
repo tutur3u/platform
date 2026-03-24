@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
@@ -126,9 +127,14 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final workspaceCubit = context.read<WorkspaceCubit>();
+      final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
       final timeTrackerCubit = context.read<TimeTrackerCubit>();
       final wsId = workspaceCubit.state.currentWorkspace?.id;
       final userId = supabase.auth.currentUser?.id;
+
+      if (wsId != null) {
+        unawaited(calendarSettingsCubit.loadWorkspacePreference(wsId));
+      }
 
       if (!_hasAppliedInitialHistoryContext) {
         timeTrackerCubit.setHistoryContext(
@@ -139,6 +145,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
 
         if ((widget.initialHistoryDate != null ||
                 widget.initialHistoryViewMode != null) &&
+            timeTrackerCubit.state.status == TimeTrackerStatus.loaded &&
             wsId != null &&
             userId != null) {
           unawaited(
@@ -178,6 +185,9 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         final wsId = wsState.currentWorkspace?.id;
         final userId = supabase.auth.currentUser?.id;
         if (wsId != null && userId != null) {
+          unawaited(
+            context.read<CalendarSettingsCubit>().loadWorkspacePreference(wsId),
+          );
           unawaited(
             context.read<TimeTrackerCubit>().loadData(
               wsId,

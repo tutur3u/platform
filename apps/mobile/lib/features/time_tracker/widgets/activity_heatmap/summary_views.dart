@@ -487,16 +487,6 @@ class _MonthlyCalendarView extends StatelessWidget {
         ? Colors.white
         : const Color(0xFF0F172A);
   }
-
-  String _formatDuration(int totalSeconds, AppLocalizations l10n) {
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    if (hours > 0) {
-      return '$hours${l10n.timerHourUnitShort} '
-          '$minutes${l10n.timerMinuteUnitShort}';
-    }
-    return '$minutes${l10n.timerMinuteUnitShort}';
-  }
 }
 
 class _CompactCardsView extends StatelessWidget {
@@ -593,15 +583,5 @@ class _CompactCardsView extends StatelessWidget {
         }).toList(),
       ),
     );
-  }
-
-  String _formatDuration(int totalSeconds, AppLocalizations l10n) {
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    if (hours > 0) {
-      return '$hours${l10n.timerHourUnitShort} '
-          '$minutes${l10n.timerMinuteUnitShort}';
-    }
-    return '$minutes${l10n.timerMinuteUnitShort}';
   }
 }

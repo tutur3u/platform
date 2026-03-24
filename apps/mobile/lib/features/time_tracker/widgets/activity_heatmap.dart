@@ -272,14 +272,4 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         );
     }
   }
-
-  String _formatDuration(int totalSeconds, AppLocalizations l10n) {
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    if (hours > 0) {
-      return '$hours${l10n.timerHourUnitShort} '
-          '$minutes${l10n.timerMinuteUnitShort}';
-    }
-    return '$minutes${l10n.timerMinuteUnitShort}';
-  }
 }

@@ -1088,11 +1088,11 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     return (recentSessions, stats);
   }
 
+  String _currentTimezone() => DateTime.now().timeZoneName;
+
   @override
   Future<void> close() {
     _stopTick();
     return super.close();
   }
 }
-
-String _currentTimezone() => DateTime.now().timeZoneName;
