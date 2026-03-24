@@ -1,6 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+class AuthSocialButton extends StatelessWidget {
+  const AuthSocialButton({
+    required this.label,
+    required this.logoAssetPath,
+    required this.isLoading,
+    required this.onPressed,
+    this.logoColor,
+    super.key,
+  });
+
+  final String label;
+  final String logoAssetPath;
+  final bool isLoading;
+  final Color? logoColor;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: shad.OutlineButton(
+        onPressed: isLoading ? null : onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              logoAssetPath,
+              width: 20,
+              height: 20,
+              colorFilter: logoColor == null
+                  ? null
+                  : ColorFilter.mode(logoColor!, BlendMode.srcIn),
+            ),
+            const shad.Gap(10),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class AuthGoogleButton extends StatelessWidget {
   const AuthGoogleButton({
@@ -14,29 +63,35 @@ class AuthGoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: shad.OutlineButton(
-        onPressed: isLoading ? null : onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/logos/google-logo.png',
-              width: 20,
-              height: 20,
-            ),
-            const shad.Gap(10),
-            Flexible(
-              child: Text(
-                context.l10n.authContinueWithGoogle,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AuthSocialButton(
+      label: context.l10n.authContinueWithGoogle,
+      logoAssetPath: 'assets/logos/google.svg',
+      isLoading: isLoading,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class AuthAppleButton extends StatelessWidget {
+  const AuthAppleButton({
+    required this.isLoading,
+    required this.onPressed,
+    super.key,
+  });
+
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return AuthSocialButton(
+      label: context.l10n.authContinueWithApple,
+      logoAssetPath: 'assets/logos/apple.svg',
+      isLoading: isLoading,
+      onPressed: onPressed,
+      logoColor: theme.colorScheme.foreground,
     );
   }
 }

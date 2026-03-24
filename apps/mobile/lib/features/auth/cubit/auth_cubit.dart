@@ -87,7 +87,25 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> signInWithGoogle() async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.signInWithGoogle();
+    await _handleAuthActionResult(
+      result,
+      fallbackErrorCode: AuthErrorCode.googleSignInFailed,
+    );
+  }
 
+  Future<void> signInWithApple() async {
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    final result = await _repo.signInWithApple();
+    await _handleAuthActionResult(
+      result,
+      fallbackErrorCode: AuthErrorCode.appleSignInFailed,
+    );
+  }
+
+  Future<void> _handleAuthActionResult(
+    AuthActionResult result, {
+    required AuthErrorCode fallbackErrorCode,
+  }) async {
     switch (result.status) {
       case AuthActionStatus.success:
         final user = await _repo.getCurrentUser();
@@ -103,7 +121,7 @@ class AuthCubit extends Cubit<AuthState> {
           state.copyWith(
             isLoading: false,
             error: null,
-            errorCode: AuthErrorCode.googleSignInFailed,
+            errorCode: fallbackErrorCode,
           ),
         );
       case AuthActionStatus.externalFlowStarted:
@@ -114,7 +132,7 @@ class AuthCubit extends Cubit<AuthState> {
           state.copyWith(
             isLoading: false,
             error: null,
-            errorCode: result.errorCode ?? AuthErrorCode.googleSignInFailed,
+            errorCode: result.errorCode ?? fallbackErrorCode,
           ),
         );
     }

@@ -27,10 +27,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loginSignIn => 'Đăng nhập';
 
   @override
+  String get authContinueWithApple => 'Tiếp tục với Apple';
+
+  @override
   String get authContinueWithGoogle => 'Tiếp tục với Google';
 
   @override
   String get authContinueWithEmail => 'hoặc tiếp tục với email';
+
+  @override
+  String get authAppleSignInFailed => 'Đăng nhập Apple thất bại. Vui lòng thử lại.';
+
+  @override
+  String get authAppleBrowserLaunchFailed => 'Không thể mở đăng nhập Apple lúc này.';
 
   @override
   String get authGoogleSignInFailed => 'Đăng nhập Google thất bại. Vui lòng thử lại.';
@@ -58,6 +67,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get signUpButton => 'Tạo tài khoản';
+
+  @override
+  String get signUpSubtitle => 'Tạo tài khoản nhanh hơn với Apple, Google hoặc email.';
 
   @override
   String get signUpConfirmPassword => 'Xác nhận mật khẩu';

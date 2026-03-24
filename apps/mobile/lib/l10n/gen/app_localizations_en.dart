@@ -27,10 +27,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSignIn => 'Sign in';
 
   @override
+  String get authContinueWithApple => 'Continue with Apple';
+
+  @override
   String get authContinueWithGoogle => 'Continue with Google';
 
   @override
   String get authContinueWithEmail => 'or continue with email';
+
+  @override
+  String get authAppleSignInFailed => 'Apple sign-in failed. Please try again.';
+
+  @override
+  String get authAppleBrowserLaunchFailed => 'Unable to open Apple sign-in right now.';
 
   @override
   String get authGoogleSignInFailed => 'Google sign-in failed. Please try again.';
@@ -58,6 +67,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signUpButton => 'Create account';
+
+  @override
+  String get signUpSubtitle => 'Create your account faster with Apple, Google, or email.';
 
   @override
   String get signUpConfirmPassword => 'Confirm password';

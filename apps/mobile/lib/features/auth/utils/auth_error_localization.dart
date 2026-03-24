@@ -15,6 +15,10 @@ String? resolveAuthErrorMessage({
       return l10n.authGoogleSignInFailed;
     case AuthErrorCode.googleBrowserLaunchFailed:
       return l10n.authGoogleBrowserLaunchFailed;
+    case AuthErrorCode.appleSignInFailed:
+      return l10n.authAppleSignInFailed;
+    case AuthErrorCode.appleBrowserLaunchFailed:
+      return l10n.authAppleBrowserLaunchFailed;
     case null:
       return null;
   }

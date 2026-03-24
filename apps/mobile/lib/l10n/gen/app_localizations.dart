@@ -127,6 +127,12 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get loginSignIn;
 
+  /// No description provided for @authContinueWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get authContinueWithApple;
+
   /// No description provided for @authContinueWithGoogle.
   ///
   /// In en, this message translates to:
@@ -138,6 +144,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'or continue with email'**
   String get authContinueWithEmail;
+
+  /// No description provided for @authAppleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple sign-in failed. Please try again.'**
+  String get authAppleSignInFailed;
+
+  /// No description provided for @authAppleBrowserLaunchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open Apple sign-in right now.'**
+  String get authAppleBrowserLaunchFailed;
 
   /// No description provided for @authGoogleSignInFailed.
   ///
@@ -192,6 +210,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create account'**
   String get signUpButton;
+
+  /// No description provided for @signUpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account faster with Apple, Google, or email.'**
+  String get signUpSubtitle;
 
   /// No description provided for @signUpConfirmPassword.
   ///
