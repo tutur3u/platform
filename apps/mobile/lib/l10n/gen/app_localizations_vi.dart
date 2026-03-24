@@ -2088,6 +2088,38 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerLinkTask => 'Liên kết nhiệm vụ';
 
   @override
+  String get timerTaskPickerAllTasks => 'Tất cả nhiệm vụ';
+
+  @override
+  String get timerTaskPickerAssignedToMe => 'Giao cho tôi';
+
+  @override
+  String timerTaskPickerAssignees(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count người phụ trách',
+      one: '$count người phụ trách',
+      zero: 'Không có người phụ trách',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerTaskPickerNoMatchingTasks => 'Không tìm thấy nhiệm vụ phù hợp';
+
+  @override
+  String get timerTaskPickerNoTask => 'Không liên kết nhiệm vụ';
+
+  @override
+  String timerTaskPickerResultCount(int count) {
+    return '$count nhiệm vụ';
+  }
+
+  @override
+  String get timerTaskPickerSearch => 'Tìm kiếm nhiệm vụ';
+
+  @override
   String get timerTaskIdPlaceholder => 'ID nhiệm vụ';
 
   @override

@@ -4111,6 +4111,48 @@ abstract class AppLocalizations {
   /// **'Link task'**
   String get timerLinkTask;
 
+  /// No description provided for @timerTaskPickerAllTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'All tasks'**
+  String get timerTaskPickerAllTasks;
+
+  /// No description provided for @timerTaskPickerAssignedToMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to me'**
+  String get timerTaskPickerAssignedToMe;
+
+  /// No description provided for @timerTaskPickerAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No assignees} one{{count} assignee} other{{count} assignees}}'**
+  String timerTaskPickerAssignees(int count);
+
+  /// No description provided for @timerTaskPickerNoMatchingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching tasks'**
+  String get timerTaskPickerNoMatchingTasks;
+
+  /// No description provided for @timerTaskPickerNoTask.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked task'**
+  String get timerTaskPickerNoTask;
+
+  /// No description provided for @timerTaskPickerResultCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tasks'**
+  String timerTaskPickerResultCount(int count);
+
+  /// No description provided for @timerTaskPickerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get timerTaskPickerSearch;
+
   /// No description provided for @timerTaskIdPlaceholder.
   ///
   /// In en, this message translates to:

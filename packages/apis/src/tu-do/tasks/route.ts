@@ -203,6 +203,7 @@ export async function GET(
           ? 'all'
           : 'none';
     const includeCount = url.searchParams.get('includeCount') === 'true';
+    const assignedToMe = url.searchParams.get('assignedToMe') === 'true';
 
     const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
 
@@ -275,6 +276,10 @@ export async function GET(
       query = query
         .is('closed_at', null)
         .in('task_lists.status', ['not_started', 'active']);
+    }
+
+    if (assignedToMe) {
+      query = query.eq('assignees.user_id', user.id);
     }
 
     if (listId) {

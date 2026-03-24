@@ -2088,6 +2088,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerLinkTask => 'Link task';
 
   @override
+  String get timerTaskPickerAllTasks => 'All tasks';
+
+  @override
+  String get timerTaskPickerAssignedToMe => 'Assigned to me';
+
+  @override
+  String timerTaskPickerAssignees(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count assignees',
+      one: '$count assignee',
+      zero: 'No assignees',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timerTaskPickerNoMatchingTasks => 'No matching tasks';
+
+  @override
+  String get timerTaskPickerNoTask => 'No linked task';
+
+  @override
+  String timerTaskPickerResultCount(int count) {
+    return '$count tasks';
+  }
+
+  @override
+  String get timerTaskPickerSearch => 'Search tasks';
+
+  @override
   String get timerTaskIdPlaceholder => 'Task ID';
 
   @override

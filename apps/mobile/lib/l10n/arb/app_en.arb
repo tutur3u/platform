@@ -795,6 +795,27 @@
     "timerAdvanced": "Advanced",
     "timerSessionDescription": "Description (optional)",
     "timerLinkTask": "Link task",
+    "timerTaskPickerAllTasks": "All tasks",
+    "timerTaskPickerAssignedToMe": "Assigned to me",
+    "timerTaskPickerAssignees": "{count, plural, =0{No assignees} one{{count} assignee} other{{count} assignees}}",
+    "@timerTaskPickerAssignees": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerTaskPickerNoMatchingTasks": "No matching tasks",
+    "timerTaskPickerNoTask": "No linked task",
+    "timerTaskPickerResultCount": "{count} tasks",
+    "@timerTaskPickerResultCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerTaskPickerSearch": "Search tasks",
     "timerTaskIdPlaceholder": "Task ID",
     "timerRecentSessions": "Recent sessions",
     "timerSeeAll": "See all",

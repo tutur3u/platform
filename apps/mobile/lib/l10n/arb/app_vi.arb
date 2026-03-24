@@ -796,6 +796,27 @@
     "timerAdvanced": "Nâng cao",
     "timerSessionDescription": "Mô tả (tùy chọn)",
     "timerLinkTask": "Liên kết nhiệm vụ",
+    "timerTaskPickerAllTasks": "Tất cả nhiệm vụ",
+    "timerTaskPickerAssignedToMe": "Giao cho tôi",
+    "timerTaskPickerAssignees": "{count, plural, =0{Không có người phụ trách} one{{count} người phụ trách} other{{count} người phụ trách}}",
+    "@timerTaskPickerAssignees": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerTaskPickerNoMatchingTasks": "Không tìm thấy nhiệm vụ phù hợp",
+    "timerTaskPickerNoTask": "Không liên kết nhiệm vụ",
+    "timerTaskPickerResultCount": "{count} nhiệm vụ",
+    "@timerTaskPickerResultCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerTaskPickerSearch": "Tìm kiếm nhiệm vụ",
     "timerTaskIdPlaceholder": "ID nhiệm vụ",
     "timerRecentSessions": "Phiên gần đây",
     "timerSeeAll": "Xem tất cả",

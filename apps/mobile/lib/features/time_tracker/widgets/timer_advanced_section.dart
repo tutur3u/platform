@@ -10,6 +10,7 @@ class TimerAdvancedSection extends StatefulWidget {
   const TimerAdvancedSection({
     required this.onDescriptionChanged,
     required this.onTaskIdChanged,
+    required this.onOpenTaskPicker,
     this.initialDescription,
     this.initialTaskId,
     super.key,
@@ -17,6 +18,7 @@ class TimerAdvancedSection extends StatefulWidget {
 
   final ValueChanged<String> onDescriptionChanged;
   final ValueChanged<String?> onTaskIdChanged;
+  final VoidCallback onOpenTaskPicker;
   final String? initialDescription;
   final String? initialTaskId;
 
@@ -27,7 +29,6 @@ class TimerAdvancedSection extends StatefulWidget {
 class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
     with SingleTickerProviderStateMixin {
   late final TextEditingController _descController;
-  late final TextEditingController _taskController;
   bool _expanded = false;
 
   @override
@@ -36,15 +37,11 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
     _descController = TextEditingController(
       text: widget.initialDescription ?? '',
     );
-    _taskController = TextEditingController(
-      text: widget.initialTaskId ?? '',
-    );
   }
 
   @override
   void dispose() {
     _descController.dispose();
-    _taskController.dispose();
     super.dispose();
   }
 
@@ -133,11 +130,42 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
                         ),
                       ),
                       const shad.Gap(6),
-                      shad.TextField(
-                        controller: _taskController,
-                        hintText: l10n.timerTaskIdPlaceholder,
-                        onChanged: widget.onTaskIdChanged,
+                      shad.OutlineButton(
+                        onPressed: widget.onOpenTaskPicker,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.initialTaskId?.trim().isNotEmpty == true
+                                    ? widget.initialTaskId!.trim()
+                                    : l10n.timerTaskIdPlaceholder,
+                                style: theme.typography.small.copyWith(
+                                  color:
+                                      widget.initialTaskId?.trim().isNotEmpty ==
+                                          true
+                                      ? colorScheme.foreground
+                                      : colorScheme.mutedForeground,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              shad.LucideIcons.chevronsUpDown,
+                              size: 14,
+                              color: colorScheme.mutedForeground,
+                            ),
+                          ],
+                        ),
                       ),
+                      if (widget.initialTaskId?.trim().isNotEmpty == true) ...[
+                        const shad.Gap(6),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: shad.GhostButton(
+                            onPressed: () => widget.onTaskIdChanged(null),
+                            child: Text(l10n.timerTaskPickerNoTask),
+                          ),
+                        ),
+                      ],
                       const shad.Gap(12),
                     ],
                   )

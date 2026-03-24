@@ -4,6 +4,7 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
@@ -11,6 +12,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/category_selector_button.dart';
 import 'package:mobile/features/time_tracker/widgets/category_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/missed_entry_dialog.dart';
+import 'package:mobile/features/time_tracker/widgets/task_link_picker_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_advanced_section.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_controls.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_display.dart';
@@ -110,6 +112,20 @@ class TimerTab extends StatelessWidget {
                 initialTaskId: state.sessionTaskId,
                 onDescriptionChanged: cubit.setDescription,
                 onTaskIdChanged: cubit.setTaskId,
+                onOpenTaskPicker: () {
+                  if (wsId.isEmpty) {
+                    return;
+                  }
+                  unawaited(
+                    showTaskLinkPickerSheet(
+                      context: context,
+                      taskRepository: TaskRepository(),
+                      wsId: wsId,
+                      selectedTaskId: state.sessionTaskId,
+                      onSelected: cubit.setTaskId,
+                    ),
+                  );
+                },
               ),
             ],
           ],
