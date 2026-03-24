@@ -3997,6 +3997,18 @@ abstract class AppLocalizations {
   /// **'Running'**
   String get timerRunning;
 
+  /// No description provided for @timerRunningSessionNoDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'No category or task linked'**
+  String get timerRunningSessionNoDetails;
+
+  /// No description provided for @timerRunningSessionNoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled session'**
+  String get timerRunningSessionNoTitle;
+
   /// No description provided for @timerPaused.
   ///
   /// In en, this message translates to:

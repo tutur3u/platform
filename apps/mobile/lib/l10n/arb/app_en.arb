@@ -776,6 +776,8 @@
     "timerStop": "Stop",
     "timerHistory": "History",
     "timerRunning": "Running",
+    "timerRunningSessionNoDetails": "No category or task linked",
+    "timerRunningSessionNoTitle": "Untitled session",
     "timerPaused": "Paused",
     "timerStopped": "Stopped",
     "timerPause": "Pause",

@@ -2031,6 +2031,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRunning => 'Running';
 
   @override
+  String get timerRunningSessionNoDetails => 'No category or task linked';
+
+  @override
+  String get timerRunningSessionNoTitle => 'Untitled session';
+
+  @override
   String get timerPaused => 'Paused';
 
   @override

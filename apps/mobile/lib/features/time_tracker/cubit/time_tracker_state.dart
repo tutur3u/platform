@@ -32,6 +32,8 @@ class TimeTrackerState extends Equatable {
     this.sessionTaskId,
     this.sessionTaskName,
     this.sessionTaskTicketLabel,
+    this.runningSessionTaskName,
+    this.runningSessionTaskTicketLabel,
     this.thresholdDays,
     this.pomodoroSettings = const PomodoroSettings(),
     this.pomodoroPhase = PomodoroPhase.idle,
@@ -66,6 +68,12 @@ class TimeTrackerState extends Equatable {
   final String? sessionTaskId;
   final String? sessionTaskName;
   final String? sessionTaskTicketLabel;
+
+  /// Task display name resolved separately from the running session task ID.
+  final String? runningSessionTaskName;
+
+  /// Task ticket label resolved separately from the running session task ID.
+  final String? runningSessionTaskTicketLabel;
   final int? thresholdDays;
   final PomodoroSettings pomodoroSettings;
   final PomodoroPhase pomodoroPhase;
@@ -113,6 +121,8 @@ class TimeTrackerState extends Equatable {
     String? sessionTaskId,
     String? sessionTaskName,
     String? sessionTaskTicketLabel,
+    String? runningSessionTaskName,
+    String? runningSessionTaskTicketLabel,
     Object? thresholdDays = _sentinel,
     PomodoroSettings? pomodoroSettings,
     PomodoroPhase? pomodoroPhase,
@@ -134,6 +144,7 @@ class TimeTrackerState extends Equatable {
     bool clearSessionDescription = false,
     bool clearSessionTaskId = false,
     bool clearSessionTaskMeta = false,
+    bool clearRunningSessionTask = false,
     bool clearThresholdDays = false,
     bool clearHistoryPeriodStats = false,
     bool clearHistoryNextCursor = false,
@@ -176,6 +187,12 @@ class TimeTrackerState extends Equatable {
     sessionTaskTicketLabel: (clearSessionTaskId || clearSessionTaskMeta)
         ? null
         : (sessionTaskTicketLabel ?? this.sessionTaskTicketLabel),
+    runningSessionTaskName: clearRunningSessionTask
+        ? null
+        : (runningSessionTaskName ?? this.runningSessionTaskName),
+    runningSessionTaskTicketLabel: clearRunningSessionTask
+        ? null
+        : (runningSessionTaskTicketLabel ?? this.runningSessionTaskTicketLabel),
     thresholdDays: clearThresholdDays
         ? null
         : (thresholdDays == _sentinel
@@ -225,6 +242,8 @@ class TimeTrackerState extends Equatable {
     sessionTaskId,
     sessionTaskName,
     sessionTaskTicketLabel,
+    runningSessionTaskName,
+    runningSessionTaskTicketLabel,
     thresholdDays,
     pomodoroSettings,
     pomodoroPhase,

@@ -2031,6 +2031,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRunning => 'Đang chạy';
 
   @override
+  String get timerRunningSessionNoDetails => 'Chưa liên kết danh mục hoặc nhiệm vụ';
+
+  @override
+  String get timerRunningSessionNoTitle => 'Phiên không có tiêu đề';
+
+  @override
   String get timerPaused => 'Tạm dừng';
 
   @override

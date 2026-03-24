@@ -431,14 +431,14 @@ export const GET = withSessionAuth<{ wsId: string }>(
       }
 
       if (type === 'running') {
-        // Get current running session
+        // Get current running session - category basic info only; task resolved
+        // client-side by ID so we avoid fetching the full tasks row here.
         const { data, error } = await sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
           *,
-          category:time_tracking_categories(*),
-          task:tasks(*)
+          category:time_tracking_categories(id, name, color)
         `
           )
           .eq('ws_id', normalizedWsId)
@@ -472,14 +472,14 @@ export const GET = withSessionAuth<{ wsId: string }>(
           return NextResponse.json({ session: null });
         }
 
-        // Fetch the session with relations
+        // Fetch the session with category basic info only; task resolved
+        // client-side by ID so we avoid fetching the full tasks row here.
         const { data: session, error } = await sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
           *,
-          category:time_tracking_categories(*),
-          task:tasks(*)
+          category:time_tracking_categories(id, name, color)
         `
           )
           .eq('id', activeBreak.session_id)

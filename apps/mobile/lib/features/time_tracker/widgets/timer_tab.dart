@@ -11,6 +11,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/category_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/missed_entry_dialog.dart';
+import 'package:mobile/features/time_tracker/widgets/running_session_info_card.dart';
 import 'package:mobile/features/time_tracker/widgets/task_link_picker_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_advanced_section.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_controls.dart';
@@ -63,6 +64,18 @@ class TimerTab extends StatelessWidget {
                   unawaited(_showMissedEntryDialog(context)),
             ),
             const shad.Gap(24),
+            // Running session info card (read-only summary while running/paused)
+            if (state.isRunning || state.isPaused) ...[
+              RunningSessionInfoCard(
+                title: state.runningSession?.title,
+                description: state.runningSession?.description,
+                categoryName: state.runningSession?.categoryName,
+                categoryColor: state.runningSession?.categoryColor,
+                taskName: state.runningSessionTaskName,
+                taskTicketLabel: state.runningSessionTaskTicketLabel,
+              ),
+              const shad.Gap(8),
+            ],
             // Session title input
             if (!state.isRunning && !state.isPaused)
               Padding(

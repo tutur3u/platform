@@ -100,6 +100,21 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           ? DateTime.now().difference(runningSession!.startTime!)
           : Duration.zero;
 
+      // Fetch task display info separately if the running session has a task.
+      TaskLinkOption? runningTaskOption;
+      final taskId = runningSession?.taskId;
+      if (taskId != null && taskId.isNotEmpty) {
+        try {
+          runningTaskOption = await _repo.getTaskLinkOptionById(wsId, taskId);
+        } on Exception catch (e) {
+          developer.log(
+            'Failed to load running session task info',
+            name: 'TimeTrackerCubit',
+            error: e,
+          );
+        }
+      }
+
       emit(
         state.copyWith(
           status: TimeTrackerStatus.loaded,
@@ -126,6 +141,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           isPaused: isPaused,
           clearRunningSession: runningSession == null,
           clearActiveBreak: activeBreak == null,
+          runningSessionTaskName: runningTaskOption?.name,
+          runningSessionTaskTicketLabel: runningTaskOption?.ticketLabel,
+          clearRunningSessionTask: runningTaskOption == null,
           clearError: true,
         ),
       );
@@ -164,6 +182,10 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           elapsed: Duration.zero,
           isPaused: false,
           clearActiveBreak: true,
+          // Carry the pre-start task info into the running session display.
+          runningSessionTaskName: state.sessionTaskName,
+          runningSessionTaskTicketLabel: state.sessionTaskTicketLabel,
+          clearRunningSessionTask: state.sessionTaskId == null,
           clearError: true,
         ),
       );
@@ -196,6 +218,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           isPaused: false,
           clearRunningSession: true,
           clearActiveBreak: true,
+          clearRunningSessionTask: true,
           clearError: true,
         ),
       );
@@ -693,6 +716,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           isPaused: false,
           clearRunningSession: true,
           clearActiveBreak: true,
+          clearRunningSessionTask: true,
           clearError: true,
         ),
       );

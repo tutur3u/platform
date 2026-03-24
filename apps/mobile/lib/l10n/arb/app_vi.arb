@@ -777,6 +777,8 @@
     "timerStop": "Dừng",
     "timerHistory": "Lịch sử",
     "timerRunning": "Đang chạy",
+    "timerRunningSessionNoDetails": "Chưa liên kết danh mục hoặc nhiệm vụ",
+    "timerRunningSessionNoTitle": "Phiên không có tiêu đề",
     "timerPaused": "Tạm dừng",
     "timerStopped": "Đã dừng",
     "timerPause": "Tạm dừng",

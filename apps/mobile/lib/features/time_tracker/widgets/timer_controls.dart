@@ -32,20 +32,14 @@ class TimerControls extends StatelessWidget {
       medium: 80,
       expanded: 88,
     );
-    final double secondarySize = responsiveValue(
-      context,
-      compact: 56,
-      medium: 64,
-      expanded: 72,
-    );
     final primaryIconSize = primarySize / 2;
-    final secondaryIconSize = secondarySize / 2;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (!isRunning && !isPaused)
               // Stopped state: Start button
@@ -56,12 +50,12 @@ class TimerControls extends StatelessWidget {
                 iconSize: primaryIconSize,
               )
             else if (isRunning) ...[
-              // Running state: Pause + Stop
+              // Running state: Pause + Stop (same diameter so they align)
               _CircleButton(
                 icon: shad.LucideIcons.pause,
                 onPressed: onPause,
-                size: secondarySize,
-                iconSize: secondaryIconSize,
+                size: primarySize,
+                iconSize: primaryIconSize,
                 secondary: true,
               ),
               const shad.Gap(24),
@@ -73,12 +67,12 @@ class TimerControls extends StatelessWidget {
                 destructive: true,
               ),
             ] else ...[
-              // Paused state: Resume + Stop
+              // Paused state: Resume + Stop (same diameter so they align)
               _CircleButton(
                 icon: shad.LucideIcons.play,
                 onPressed: onResume,
-                size: secondarySize,
-                iconSize: secondaryIconSize,
+                size: primarySize,
+                iconSize: primaryIconSize,
               ),
               const shad.Gap(24),
               _CircleButton(
