@@ -2794,6 +2794,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsLanguage => 'Ngôn ngữ';
 
   @override
+  String get settingsAppVersion => 'Phiên bản ứng dụng';
+
+  @override
   String get settingsLanguageSystem => 'Mặc định hệ thống';
 
   @override
