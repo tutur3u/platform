@@ -121,11 +121,15 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
         return;
       }
 
+      final safeMessage = error.message.trim().isEmpty
+          ? l10n.commonSomethingWentWrong
+          : error.message;
+
       shad.showToast(
         context: toastContext,
         builder: (context, overlay) => shad.Alert.destructive(
           title: Text(l10n.commonSomethingWentWrong),
-          content: Text(error.message),
+          content: Text(safeMessage),
         ),
       );
 

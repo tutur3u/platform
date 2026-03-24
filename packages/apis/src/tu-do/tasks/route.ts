@@ -254,7 +254,10 @@ export async function GET(
             ws_id
           )
         ),
-        assignees:task_assignees!inner(
+        _currentUserAssignment:task_assignees!inner(
+          user_id
+        ),
+        assignees:task_assignees(
           user_id
         )
       `;
@@ -340,7 +343,10 @@ export async function GET(
             ws_id
           )
         ),
-        assignees:task_assignees!inner(
+        _currentUserAssignment:task_assignees!inner(
+          user_id
+        ),
+        assignees:task_assignees(
           user_id,
           user:users(
             id,
@@ -391,7 +397,7 @@ export async function GET(
     }
 
     if (assignedToMe) {
-      query = query.eq('assignees.user_id', user.id);
+      query = query.eq('_currentUserAssignment.user_id', user.id);
     }
 
     if (listId) {

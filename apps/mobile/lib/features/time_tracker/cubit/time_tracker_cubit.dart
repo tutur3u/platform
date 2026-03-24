@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:bloc/bloc.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
+import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
@@ -26,6 +27,8 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   Future<void>? _historyPreferencesLoadFuture;
   int _historyFirstDayOfWeek = DateTime.monday;
   int _goalsWorkspaceRequestToken = 0;
+  int _loadDataRequestToken = 0;
+  String? _activeWorkspaceId;
   final Map<String, int> _goalsRequestVersionByWs = <String, int>{};
 
   Map<String, bool> _setGoalFlag(
@@ -42,6 +45,8 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }) async {
     final effectiveFirstDayOfWeek = firstDayOfWeek ?? _historyFirstDayOfWeek;
     _historyFirstDayOfWeek = effectiveFirstDayOfWeek;
+    _activeWorkspaceId = wsId;
+    final loadDataRequestToken = ++_loadDataRequestToken;
     _goalsWorkspaceRequestToken++;
     _goalsRequestVersionByWs.clear();
     emit(state.copyWith(status: TimeTrackerStatus.loading, clearError: true));
@@ -106,6 +111,12 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       if (taskId != null && taskId.isNotEmpty) {
         try {
           runningTaskOption = await _repo.getTaskLinkOptionById(wsId, taskId);
+          final isStaleTaskRequest =
+              loadDataRequestToken != _loadDataRequestToken ||
+              _activeWorkspaceId != wsId;
+          if (isStaleTaskRequest) {
+            runningTaskOption = null;
+          }
         } on Exception catch (e) {
           developer.log(
             'Failed to load running session task info',
@@ -212,17 +223,23 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
 
       await _repo.stopSession(wsId, state.runningSession!.id);
 
-      final (recentSessions, stats) = await _loadRecentAndSummary(wsId, userId);
-
       emit(
         state.copyWith(
           elapsed: Duration.zero,
-          recentSessions: recentSessions,
-          stats: stats,
           isPaused: false,
           clearRunningSession: true,
           clearActiveBreak: true,
           clearRunningSessionTask: true,
+          clearError: true,
+        ),
+      );
+
+      final (recentSessions, stats) = await _loadRecentAndSummary(wsId, userId);
+
+      emit(
+        state.copyWith(
+          recentSessions: recentSessions,
+          stats: stats,
           clearError: true,
         ),
       );
@@ -607,7 +624,19 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     bool throwOnError = false,
   }) async {
     try {
+      final isDeletingRunningSession = state.runningSession?.id == sessionId;
       await _repo.deleteSession(wsId, sessionId);
+
+      emit(
+        state.copyWith(
+          elapsed: isDeletingRunningSession ? Duration.zero : null,
+          isPaused: isDeletingRunningSession ? false : null,
+          clearRunningSession: isDeletingRunningSession,
+          clearActiveBreak: isDeletingRunningSession,
+          clearRunningSessionTask: isDeletingRunningSession,
+          clearError: true,
+        ),
+      );
 
       final (recentSessions, stats) = await _loadRecentAndSummary(wsId, userId);
 
@@ -615,6 +644,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         state.copyWith(
           recentSessions: recentSessions,
           stats: stats,
+          clearError: true,
         ),
       );
       await loadHistoryInitial(wsId, userId);
@@ -747,14 +777,32 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     bool throwOnError = false,
   }) async {
     try {
-      await _repo.createCategory(
+      final createdCategory = await _repo.createCategory(
         wsId,
         name,
         color: color,
         description: description,
       );
-      final categories = await _repo.getCategories(wsId);
-      emit(state.copyWith(categories: categories, clearError: true));
+
+      final optimisticCategories = <TimeTrackingCategory>[
+        createdCategory,
+        ...state.categories.where(
+          (category) => category.id != createdCategory.id,
+        ),
+      ];
+      emit(state.copyWith(categories: optimisticCategories, clearError: true));
+
+      try {
+        final categories = await _repo.getCategories(wsId);
+        emit(state.copyWith(categories: categories, clearError: true));
+      } on Exception catch (error, stackTrace) {
+        developer.log(
+          'Failed to refresh categories after create',
+          name: 'TimeTrackerCubit',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
       if (throwOnError) {

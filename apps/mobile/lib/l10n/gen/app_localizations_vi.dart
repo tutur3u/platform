@@ -2049,7 +2049,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerSessionResumeSuccess => 'Đã tiếp tục phiên thành công.';
 
   @override
-  String get timerSessionStopSuccess => 'Đã thêm phiên thành công.';
+  String get timerSessionStopSuccess => 'Đã dừng phiên thành công.';
 
   @override
   String get timerPause => 'Tạm dừng';
@@ -2140,7 +2140,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String timerTaskPickerResultCount(int count) {
-    return '$count nhiệm vụ';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nhiệm vụ',
+      one: '$count nhiệm vụ',
+      zero: 'Không có nhiệm vụ',
+    );
+    return '$_temp0';
   }
 
   @override

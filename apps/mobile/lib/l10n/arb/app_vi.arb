@@ -783,7 +783,7 @@
     "timerStopped": "Đã dừng",
     "timerSessionPauseSuccess": "Đã tạm dừng phiên thành công.",
     "timerSessionResumeSuccess": "Đã tiếp tục phiên thành công.",
-    "timerSessionStopSuccess": "Đã thêm phiên thành công.",
+    "timerSessionStopSuccess": "Đã dừng phiên thành công.",
     "timerPause": "Tạm dừng",
     "timerResume": "Tiếp tục",
     "timerSessionTitle": "Tiêu đề phiên",
@@ -817,7 +817,7 @@
     },
     "timerTaskPickerNoMatchingTasks": "Không tìm thấy nhiệm vụ phù hợp",
     "timerTaskPickerNoTask": "Không liên kết nhiệm vụ",
-    "timerTaskPickerResultCount": "{count} nhiệm vụ",
+    "timerTaskPickerResultCount": "{count, plural, =0{Không có nhiệm vụ} one{{count} nhiệm vụ} other{{count} nhiệm vụ}}",
     "@timerTaskPickerResultCount": {
         "placeholders": {
             "count": {

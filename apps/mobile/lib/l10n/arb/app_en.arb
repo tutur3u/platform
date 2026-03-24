@@ -782,7 +782,7 @@
     "timerStopped": "Stopped",
     "timerSessionPauseSuccess": "Session paused successfully.",
     "timerSessionResumeSuccess": "Session resumed successfully.",
-    "timerSessionStopSuccess": "Session added successfully.",
+    "timerSessionStopSuccess": "Session stopped successfully.",
     "timerPause": "Pause",
     "timerResume": "Resume",
     "timerSessionTitle": "Session title",
@@ -816,7 +816,7 @@
     },
     "timerTaskPickerNoMatchingTasks": "No matching tasks",
     "timerTaskPickerNoTask": "No linked task",
-    "timerTaskPickerResultCount": "{count} tasks",
+    "timerTaskPickerResultCount": "{count, plural, =0{No tasks} one{{count} task} other{{count} tasks}}",
     "@timerTaskPickerResultCount": {
         "placeholders": {
             "count": {

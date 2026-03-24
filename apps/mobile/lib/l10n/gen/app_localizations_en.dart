@@ -2049,7 +2049,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerSessionResumeSuccess => 'Session resumed successfully.';
 
   @override
-  String get timerSessionStopSuccess => 'Session added successfully.';
+  String get timerSessionStopSuccess => 'Session stopped successfully.';
 
   @override
   String get timerPause => 'Pause';
@@ -2140,7 +2140,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String timerTaskPickerResultCount(int count) {
-    return '$count tasks';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks',
+      one: '$count task',
+      zero: 'No tasks',
+    );
+    return '$_temp0';
   }
 
   @override

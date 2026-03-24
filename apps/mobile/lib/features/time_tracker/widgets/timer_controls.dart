@@ -52,9 +52,10 @@ class TimerControls extends StatelessWidget {
               // Stopped state: Start button
               _CircleButton(
                 icon: shad.LucideIcons.play,
-                onPressed: onStart,
+                onPressed: areActionButtonsDisabled ? null : onStart,
                 size: primarySize,
                 iconSize: primaryIconSize,
+                isLoading: isStopLoading,
               )
             else if (isRunning) ...[
               // Running state: Pause + Stop (same diameter so they align)
@@ -99,7 +100,7 @@ class TimerControls extends StatelessWidget {
         if (!isRunning && !isPaused) ...[
           const shad.Gap(16),
           shad.OutlineButton(
-            onPressed: onAddMissedEntry,
+            onPressed: areActionButtonsDisabled ? null : onAddMissedEntry,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

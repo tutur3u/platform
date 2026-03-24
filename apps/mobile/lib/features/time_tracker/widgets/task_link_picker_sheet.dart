@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/task_link_option.dart';
@@ -579,7 +580,9 @@ class _TaskOptionCard extends StatelessWidget {
                 ],
               ),
               const shad.Gap(8),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   if (priorityText != null)
                     _metaCaption(
@@ -589,7 +592,7 @@ class _TaskOptionCard extends StatelessWidget {
                     ),
                   if (priorityText != null && timeHint != null)
                     const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 2),
                       child: Text('•'),
                     ),
                   if (timeHint != null)
@@ -598,7 +601,6 @@ class _TaskOptionCard extends StatelessWidget {
                       icon: Icons.schedule_outlined,
                       text: timeHint,
                     ),
-                  const Spacer(),
                   _metaCaption(
                     context,
                     icon: Icons.group_outlined,
@@ -622,6 +624,7 @@ class _TaskOptionCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
+      constraints: const BoxConstraints(maxWidth: 220),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
@@ -632,11 +635,15 @@ class _TaskOptionCard extends StatelessWidget {
         children: [
           Icon(icon, size: 12, color: colorScheme.mutedForeground),
           const shad.Gap(4),
-          Text(
-            label,
-            style: theme.typography.xSmall.copyWith(
-              color: colorScheme.mutedForeground,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.xSmall.copyWith(
+                color: colorScheme.mutedForeground,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -656,10 +663,15 @@ class _TaskOptionCard extends StatelessWidget {
       children: [
         Icon(icon, size: 12, color: colorScheme.mutedForeground),
         const shad.Gap(3),
-        Text(
-          text,
-          style: theme.typography.xSmall.copyWith(
-            color: colorScheme.mutedForeground,
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 220),
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.xSmall.copyWith(
+              color: colorScheme.mutedForeground,
+            ),
           ),
         ),
       ],
@@ -679,19 +691,19 @@ class _TaskOptionCard extends StatelessWidget {
   static String? _timeHint(TaskLinkOption task, AppLocalizations l10n) {
     final endDate = task.endDate;
     if (endDate != null) {
-      return l10n.taskBoardDetailDueAt(_formatDate(endDate));
+      return l10n.taskBoardDetailDueAt(_formatDate(endDate, l10n.localeName));
     }
     final startDate = task.startDate;
     if (startDate != null) {
-      return l10n.taskBoardDetailStartsAt(_formatDate(startDate));
+      return l10n.taskBoardDetailStartsAt(
+        _formatDate(startDate, l10n.localeName),
+      );
     }
     return null;
   }
 
-  static String _formatDate(DateTime date) {
+  static String _formatDate(DateTime date, String locale) {
     final local = date.toLocal();
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    return '$month/$day';
+    return DateFormat.Md(locale).format(local);
   }
 }

@@ -4036,7 +4036,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerSessionStopSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Session added successfully.'**
+  /// **'Session stopped successfully.'**
   String get timerSessionStopSuccess;
 
   /// No description provided for @timerPause.
@@ -4198,7 +4198,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerTaskPickerResultCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} tasks'**
+  /// **'{count, plural, =0{No tasks} one{{count} task} other{{count} tasks}}'**
   String timerTaskPickerResultCount(int count);
 
   /// No description provided for @timerTaskPickerSearch.
