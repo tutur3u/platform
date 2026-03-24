@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  createAdminClient: vi.fn(),
+  createClient: vi.fn(),
+  isPersonalWorkspace: vi.fn(),
+  getUserDefaultWorkspace: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
@@ -18,14 +22,38 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: vi.fn(),
+  createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
+    mocks.createAdminClient(...args),
+  createClient: (...args: Parameters<typeof mocks.createClient>) =>
+    mocks.createClient(...args),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  isPersonalWorkspace: (
+    ...args: Parameters<typeof mocks.isPersonalWorkspace>
+  ) => mocks.isPersonalWorkspace(...args),
+}));
+
+vi.mock('@tuturuuu/utils/user-helper', () => ({
+  getUserDefaultWorkspace: (
+    ...args: Parameters<typeof mocks.getUserDefaultWorkspace>
+  ) => mocks.getUserDefaultWorkspace(...args),
 }));
 
 describe('web proxy api handling', () => {
   beforeEach(() => {
     vi.resetModules();
-    mocks.authProxy.mockReset();
-    mocks.guardApiProxyRequest.mockReset();
+    vi.clearAllMocks();
+    mocks.authProxy.mockResolvedValue(NextResponse.next());
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.createAdminClient.mockRejectedValue(new Error('not configured'));
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+      },
+    });
+    mocks.isPersonalWorkspace.mockResolvedValue(false);
+    mocks.getUserDefaultWorkspace.mockResolvedValue(null);
   });
 
   it('returns proxy guard responses for API requests before auth', async () => {

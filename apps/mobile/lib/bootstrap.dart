@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
@@ -37,11 +38,8 @@ Future<void> bootstrap(
     SystemUiMode.edgeToEdge,
   );
   SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Color(0x00000000),
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Color(0x00000000),
-      systemNavigationBarIconBrightness: Brightness.dark,
+    AppTheme.systemUiOverlayStyleFor(
+      WidgetsBinding.instance.platformDispatcher.platformBrightness,
     ),
   );
 

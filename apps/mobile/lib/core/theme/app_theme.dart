@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/colors.dart';
 
 /// Material 3 theme data for light and dark modes.
 abstract final class AppTheme {
+  static SystemUiOverlayStyle systemUiOverlayStyleFor(
+    Brightness brightness,
+  ) {
+    final isDark = brightness == Brightness.dark;
+
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: isDark
+          ? Brightness.light
+          : Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
+    );
+  }
+
   static ColorScheme get _lightScheme =>
       ColorScheme.fromSeed(
         seedColor: AppColors.primary,
@@ -40,6 +58,14 @@ abstract final class AppTheme {
       foregroundColor: AppColors.textPrimaryLight,
       elevation: 0,
       scrolledUnderElevation: 0.5,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
     ),
     dividerTheme: const DividerThemeData(
       color: AppColors.borderLight,
@@ -61,6 +87,14 @@ abstract final class AppTheme {
       foregroundColor: AppColors.textPrimaryDark,
       elevation: 0,
       scrolledUnderElevation: 0.5,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
     ),
     dividerTheme: const DividerThemeData(
       color: AppColors.borderDark,

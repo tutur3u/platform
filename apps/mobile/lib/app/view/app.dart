@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, ThemeData, ThemeMode;
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
@@ -194,11 +195,18 @@ class _ShadcnMaterialBridge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final overlayStyle = AppTheme.systemUiOverlayStyleFor(
+      theme.brightness,
+    );
+
     return Theme(
       data: theme.brightness == Brightness.light
           ? AppTheme.light
           : AppTheme.dark,
-      child: child,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: overlayStyle,
+        child: child,
+      ),
     );
   }
 }
