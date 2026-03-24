@@ -64,7 +64,7 @@
     "@tiptap/extension-superscript": "3.20.4",
     "@tiptap/extension-text-align": "3.20.4",
     "@tiptap/extension-underline": "3.20.4",
-    "@tiptap/html": "3.20.4",
+    "@tiptap/html": "3.20.5",
     "@tiptap/react": "3.20.4",
     "@tiptap/starter-kit": "3.20.4",
     "@trpc/client": "^11.15.0",
