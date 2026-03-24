@@ -47,7 +47,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   Timer? _queueDebounce;
   StreamSubscription<AssistantStreamEvent>? _streamSubscription;
   final List<AssistantQueuedSubmission> _queue = [];
-  bool _flushAfterStop = false;
   int _workspaceVersion = 0;
   String? _activeAssistantMessageId;
   String? _activeTextBlockId;
@@ -59,7 +58,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     await _streamSubscription?.cancel();
     _queueDebounce?.cancel();
     _queue.clear();
-    _flushAfterStop = false;
     _activeAssistantMessageId = null;
     _activeTextBlockId = null;
     _activeReasoningBlockId = null;
@@ -70,7 +68,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
           workspaceId: wsId,
           fallbackChatId: _repository.generateUuid(),
           composerAttachments: const [],
-          queuedPreview: null,
+          queuedMessages: const [],
           status: AssistantChatStatus.restoring,
           clearError: true,
         ),
@@ -298,18 +296,18 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
     emit(
       state.copyWith(
-        queuedPreview: _queue.map((item) => item.message).join('\n\n'),
+        queuedMessages: _queue
+            .map((item) => item.message)
+            .toList(growable: false),
       ),
     );
 
     if (state.isBusy) {
-      _flushAfterStop = true;
       await stopStreaming();
-      return;
     }
 
     _queueDebounce?.cancel();
-    _queueDebounce = Timer(const Duration(milliseconds: 500), () {
+    _queueDebounce = Timer(const Duration(milliseconds: 220), () {
       unawaited(
         _flushQueue(
           wsId: wsId,
@@ -366,7 +364,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   Future<void> resetConversation(String wsId) async {
     await stopStreaming();
     _queue.clear();
-    _flushAfterStop = false;
     await _preferences.clearChatId(wsId);
     await _preferences.saveWorkspaceContextId(wsId, 'personal');
     emit(
@@ -378,7 +375,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         attachmentsByMessageId: const {},
         composerAttachments: const [],
         fallbackChatId: _repository.generateUuid(),
-        queuedPreview: null,
+        queuedMessages: const [],
       ),
     );
     await _onWorkspaceContextChanged('personal');
@@ -429,7 +426,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     }
     final attachments = _queue.expand((item) => item.attachments).toList();
     _queue..clear();
-    _flushAfterStop = false;
 
     final combined = unique.join('\n\n');
     var chat = state.chat;
@@ -438,7 +434,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     emit(
       state.copyWith(
         status: AssistantChatStatus.submitting,
-        queuedPreview: null,
+        queuedMessages: const [],
         clearError: true,
       ),
     );
@@ -511,17 +507,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
             // Mark any tools still in streaming state as completed
             _finalizeToolParts();
             emit(state.copyWith(status: AssistantChatStatus.idle));
-            if (_flushAfterStop) {
-              await _flushQueue(
-                wsId: wsId,
-                modelId: modelId,
-                thinkingMode: thinkingMode,
-                creditSource: creditSource,
-                workspaceContextId: workspaceContextId,
-                timezone: timezone,
-                creditWsId: creditWsId,
-              );
-            }
           },
           cancelOnError: false,
         );

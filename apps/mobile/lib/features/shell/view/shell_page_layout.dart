@@ -162,11 +162,27 @@ extension _ShellPageLayout on _ShellPageState {
   Widget _buildBodyWithFloatingNav({
     required Widget body,
     required Widget navigationBar,
+    double bodyBottomInset = 0,
   }) {
+    final mediaQuery = MediaQuery.of(context);
+    final effectiveBody = bodyBottomInset > 0
+        ? MediaQuery(
+            data: mediaQuery.copyWith(
+              padding: mediaQuery.padding.copyWith(
+                bottom: mediaQuery.padding.bottom + bodyBottomInset,
+              ),
+              viewPadding: mediaQuery.viewPadding.copyWith(
+                bottom: mediaQuery.viewPadding.bottom + bodyBottomInset,
+              ),
+            ),
+            child: body,
+          )
+        : body;
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        body,
+        effectiveBody,
         Positioned(
           left: 0,
           right: 0,
@@ -175,6 +191,10 @@ extension _ShellPageLayout on _ShellPageState {
         ),
       ],
     );
+  }
+
+  double _floatingNavBodyInset(BuildContext context) {
+    return 132 + MediaQuery.paddingOf(context).bottom;
   }
 
   Widget _buildCompactLayout(
@@ -236,6 +256,9 @@ extension _ShellPageLayout on _ShellPageState {
       ),
     );
     final globalBody = _buildGlobalBody();
+    final floatingNavInset = !isCompact && showBottomNav
+        ? _floatingNavBodyInset(context)
+        : 0.0;
 
     return shad.Scaffold(
       headers: [_buildAppBar(context)],
@@ -246,6 +269,7 @@ extension _ShellPageLayout on _ShellPageState {
           ? _buildBodyWithFloatingNav(
               body: globalBody,
               navigationBar: navigationBar,
+              bodyBottomInset: floatingNavInset,
             )
           : globalBody,
     );
@@ -376,6 +400,7 @@ extension _ShellPageLayout on _ShellPageState {
           : _buildBodyWithFloatingNav(
               body: pageView,
               navigationBar: navigationBar,
+              bodyBottomInset: _floatingNavBodyInset(context),
             ),
     );
   }
