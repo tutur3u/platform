@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,7 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
@@ -27,7 +29,7 @@ export async function GET(
     const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -45,7 +47,10 @@ export async function GET(
       );
     }
 
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
@@ -73,7 +78,7 @@ export async function GET(
         )
       `
       )
-      .eq('workspace_id', wsId);
+      .eq('workspace_id', normalizedWsId);
 
     if (error) throw error;
 

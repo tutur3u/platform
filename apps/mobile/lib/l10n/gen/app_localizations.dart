@@ -4615,6 +4615,48 @@ abstract class AppLocalizations {
   /// **'Requests'**
   String get timerRequestsTitle;
 
+  /// No description provided for @timerRequestsFilterAllStatuses.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get timerRequestsFilterAllStatuses;
+
+  /// No description provided for @timerRequestsFilterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter requests'**
+  String get timerRequestsFilterTitle;
+
+  /// No description provided for @timerRequestsFilterStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get timerRequestsFilterStatusLabel;
+
+  /// No description provided for @timerRequestsFilterUserLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get timerRequestsFilterUserLabel;
+
+  /// No description provided for @timerRequestsFilterAllUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'All users'**
+  String get timerRequestsFilterAllUsers;
+
+  /// No description provided for @timerRequestsFilterClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get timerRequestsFilterClear;
+
+  /// No description provided for @timerRequestsFilterApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply filters'**
+  String get timerRequestsFilterApply;
+
   /// No description provided for @timerRequestPending.
   ///
   /// In en, this message translates to:

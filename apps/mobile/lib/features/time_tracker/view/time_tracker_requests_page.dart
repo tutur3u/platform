@@ -8,6 +8,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
+import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -33,18 +34,9 @@ class TimeTrackerRequestsPage extends StatelessWidget {
       create: (_) => repository ?? TimeTrackerRepository(),
       child: BlocProvider(
         create: (context) {
-          final cubit = TimeTrackerRequestsCubit(
+          return TimeTrackerRequestsCubit(
             repository: context.read<ITimeTrackerRepository>(),
           );
-          final wsId = context
-              .read<WorkspaceCubit>()
-              .state
-              .currentWorkspace
-              ?.id;
-          if (wsId != null) {
-            unawaited(cubit.loadRequests(wsId));
-          }
-          return cubit;
         },
         child: const _RequestsView(),
       ),
@@ -69,10 +61,51 @@ class _RequestsViewState extends State<_RequestsView> {
   String? _permissionsWorkspaceId;
   bool _canManageRequests = false;
   bool _canManageThresholdSettings = false;
+  String? _selectedUserId;
+  List<WorkspaceUserOption> _availableRequestUsers =
+      const <WorkspaceUserOption>[];
   int? _missedEntryDateThreshold;
   int _statusChangeGracePeriodMinutes = 0;
   bool _isThresholdLoading = false;
   int _permissionLoadToken = 0;
+
+  String? _currentUserId() => context.read<AuthCubit>().state.user?.id;
+
+  String? _requestUserFilterId() {
+    if (_canManageRequests) {
+      return _selectedUserId;
+    }
+    return _currentUserId();
+  }
+
+  Future<void> _loadRequests() async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null || wsId.isEmpty) {
+      return;
+    }
+
+    await context.read<TimeTrackerRequestsCubit>().loadRequests(
+      wsId,
+      userId: _requestUserFilterId(),
+    );
+
+    if (!mounted || !_canManageRequests) {
+      return;
+    }
+
+    final availableRequestUsers = _buildAvailableRequestUsers();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _availableRequestUsers = availableRequestUsers;
+      if (_selectedUserId != null &&
+          !availableRequestUsers.any((user) => user.id == _selectedUserId)) {
+        _selectedUserId = null;
+      }
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -90,14 +123,21 @@ class _RequestsViewState extends State<_RequestsView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final wsId =
-        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
 
     return shad.Scaffold(
       headers: [
         MobileSectionAppBar(
           title: l10n.timerRequestsTitle,
           actions: [
+            shad.IconButton.ghost(
+              onPressed: () => unawaited(_showFilterSheet()),
+              icon: Icon(
+                Icons.filter_alt_outlined,
+                color: _hasActiveFilters()
+                    ? shad.Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+            ),
             if (_canManageThresholdSettings)
               shad.IconButton.ghost(
                 onPressed: _isThresholdLoading
@@ -112,72 +152,6 @@ class _RequestsViewState extends State<_RequestsView> {
                     : const Icon(Icons.settings_outlined),
               ),
           ],
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-          child: shad.OutlineButton(
-            onPressed: () {
-              shad.showDropdown<void>(
-                context: context,
-                builder: (context) {
-                  return shad.DropdownMenu(
-                    children: [
-                      shad.MenuButton(
-                        leading: const Icon(Icons.hourglass_empty, size: 16),
-                        onPressed: (context) => _applyFilter(
-                          _RequestStatusFilter.pending,
-                          wsId,
-                        ),
-                        child: Text(l10n.timerRequestPending),
-                      ),
-                      shad.MenuButton(
-                        leading: const Icon(
-                          Icons.check_circle_outline,
-                          size: 16,
-                        ),
-                        onPressed: (context) => _applyFilter(
-                          _RequestStatusFilter.approved,
-                          wsId,
-                        ),
-                        child: Text(l10n.timerRequestApproved),
-                      ),
-                      shad.MenuButton(
-                        leading: const Icon(Icons.cancel_outlined, size: 16),
-                        onPressed: (context) => _applyFilter(
-                          _RequestStatusFilter.rejected,
-                          wsId,
-                        ),
-                        child: Text(l10n.timerRequestRejected),
-                      ),
-                      shad.MenuButton(
-                        leading: const Icon(Icons.help_outline, size: 16),
-                        onPressed: (context) => _applyFilter(
-                          _RequestStatusFilter.needsInfo,
-                          wsId,
-                        ),
-                        child: Text(l10n.timerRequestNeedsInfo),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-            child: Row(
-              children: [
-                const Icon(Icons.filter_list, size: 16),
-                const shad.Gap(8),
-                Expanded(
-                  child: Text(
-                    _filterLabel(context, _selectedFilter),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const shad.Gap(8),
-                const Icon(Icons.keyboard_arrow_down, size: 16),
-              ],
-            ),
-          ),
         ),
       ],
       child: ResponsiveWrapper(
@@ -202,11 +176,7 @@ class _RequestsViewState extends State<_RequestsView> {
                     Text(state.error ?? 'Error'),
                     const shad.Gap(16),
                     shad.SecondaryButton(
-                      onPressed: () => unawaited(
-                        context.read<TimeTrackerRequestsCubit>().loadRequests(
-                          wsId,
-                        ),
-                      ),
+                      onPressed: () => unawaited(_loadRequests()),
                       child: Text(l10n.commonRetry),
                     ),
                   ],
@@ -224,8 +194,7 @@ class _RequestsViewState extends State<_RequestsView> {
             }
 
             return RefreshIndicator(
-              onRefresh: () =>
-                  context.read<TimeTrackerRequestsCubit>().loadRequests(wsId),
+              onRefresh: _loadRequests,
               child: ListView.builder(
                 itemCount: state.requests.length,
                 padding: const EdgeInsets.only(bottom: 32),
@@ -270,10 +239,13 @@ class _RequestsViewState extends State<_RequestsView> {
       setState(() {
         _canManageRequests = false;
         _canManageThresholdSettings = false;
+        _selectedUserId = null;
+        _availableRequestUsers = const <WorkspaceUserOption>[];
         _missedEntryDateThreshold = null;
         _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
+      unawaited(_loadRequests());
       return;
     }
 
@@ -283,8 +255,9 @@ class _RequestsViewState extends State<_RequestsView> {
 
     final repository = context.read<ITimeTrackerRepository>();
 
-    bool canManageRequests;
-    bool canManageThresholdSettings;
+    var canManageRequests = false;
+    var canManageThresholdSettings = false;
+    final availableRequestUsers = <WorkspaceUserOption>[];
     int? threshold;
     var statusChangeGracePeriodMinutes = 0;
     try {
@@ -354,10 +327,13 @@ class _RequestsViewState extends State<_RequestsView> {
       setState(() {
         _canManageRequests = false;
         _canManageThresholdSettings = false;
+        _selectedUserId = null;
+        _availableRequestUsers = const <WorkspaceUserOption>[];
         _missedEntryDateThreshold = null;
         _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
+      unawaited(_loadRequests());
       return;
     }
 
@@ -367,10 +343,15 @@ class _RequestsViewState extends State<_RequestsView> {
     setState(() {
       _canManageRequests = canManageRequests;
       _canManageThresholdSettings = canManageThresholdSettings;
+      if (!canManageRequests) {
+        _selectedUserId = null;
+      }
+      _availableRequestUsers = availableRequestUsers;
       _missedEntryDateThreshold = threshold;
       _statusChangeGracePeriodMinutes = statusChangeGracePeriodMinutes;
       _isThresholdLoading = false;
     });
+    unawaited(_loadRequests());
   }
 
   Future<void> _showThresholdSettingsDialog() async {
@@ -527,6 +508,7 @@ class _RequestsViewState extends State<_RequestsView> {
   String _filterLabel(BuildContext context, _RequestStatusFilter filter) {
     final l10n = context.l10n;
     return switch (filter) {
+      _RequestStatusFilter.all => l10n.timerRequestsFilterAllStatuses,
       _RequestStatusFilter.pending => l10n.timerRequestPending,
       _RequestStatusFilter.approved => l10n.timerRequestApproved,
       _RequestStatusFilter.rejected => l10n.timerRequestRejected,
@@ -534,22 +516,276 @@ class _RequestsViewState extends State<_RequestsView> {
     };
   }
 
-  void _applyFilter(_RequestStatusFilter filter, String wsId) {
-    setState(() => _selectedFilter = filter);
-
-    final cubit = context.read<TimeTrackerRequestsCubit>();
-    final status = switch (filter) {
+  ApprovalStatus? _statusFromFilter(_RequestStatusFilter filter) {
+    return switch (filter) {
+      _RequestStatusFilter.all => null,
       _RequestStatusFilter.pending => ApprovalStatus.pending,
       _RequestStatusFilter.approved => ApprovalStatus.approved,
       _RequestStatusFilter.rejected => ApprovalStatus.rejected,
       _RequestStatusFilter.needsInfo => ApprovalStatus.needsInfo,
     };
+  }
 
-    unawaited(cubit.filterByStatus(status, wsId));
+  bool _hasActiveFilters() {
+    if (_selectedFilter != _RequestStatusFilter.all) {
+      return true;
+    }
+
+    if (_canManageRequests && _selectedUserId != null) {
+      return true;
+    }
+
+    return false;
+  }
+
+  String _selectedUserFilterLabel(BuildContext context, String? userId) {
+    if (userId == null || userId.isEmpty) {
+      return context.l10n.timerRequestsFilterAllUsers;
+    }
+
+    for (final user in _availableRequestUsers) {
+      if (user.id == userId) {
+        return user.label;
+      }
+    }
+
+    return context.l10n.timerRequestsFilterAllUsers;
+  }
+
+  List<WorkspaceUserOption> _buildAvailableRequestUsers() {
+    final requests = context.read<TimeTrackerRequestsCubit>().state.requests;
+    final usersById = <String, WorkspaceUserOption>{};
+
+    for (final request in requests) {
+      final userId = request.userId;
+      if (userId == null || userId.isEmpty) {
+        continue;
+      }
+
+      usersById[userId] = WorkspaceUserOption(
+        id: userId,
+        displayName: request.userDisplayName ?? userId,
+      );
+    }
+
+    final users = usersById.values.toList()
+      ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
+    return users;
+  }
+
+  Future<void> _showFilterSheet() async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null || wsId.isEmpty) {
+      return;
+    }
+
+    final l10n = context.l10n;
+    var tempFilter = _selectedFilter;
+    var tempUserId = _selectedUserId;
+    if (_canManageRequests &&
+        tempUserId != null &&
+        !_availableRequestUsers.any((user) => user.id == tempUserId)) {
+      tempUserId = null;
+    }
+
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final theme = shad.Theme.of(context);
+            return Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.background,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  MediaQuery.of(context).viewPadding.bottom + 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.timerRequestsFilterTitle,
+                      style: shad.Theme.of(context).typography.h4,
+                    ),
+                    const shad.Gap(16),
+                    Text(
+                      l10n.timerRequestsFilterStatusLabel,
+                      style: shad.Theme.of(context).typography.small,
+                    ),
+                    const shad.Gap(8),
+                    shad.OutlineButton(
+                      onPressed: () {
+                        shad.showDropdown<void>(
+                          context: context,
+                          builder: (context) {
+                            return shad.DropdownMenu(
+                              children: _RequestStatusFilter.values
+                                  .map(
+                                    (filter) => shad.MenuButton(
+                                      leading: tempFilter == filter
+                                          ? const Icon(Icons.check, size: 16)
+                                          : const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                            ),
+                                      onPressed: (context) {
+                                        setSheetState(
+                                          () => tempFilter = filter,
+                                        );
+                                      },
+                                      child: Text(
+                                        _filterLabel(context, filter),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            );
+                          },
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(_filterLabel(context, tempFilter)),
+                          ),
+                          const shad.Gap(8),
+                          const Icon(Icons.keyboard_arrow_down, size: 16),
+                        ],
+                      ),
+                    ),
+                    if (_canManageRequests) ...[
+                      const shad.Gap(16),
+                      Text(
+                        l10n.timerRequestsFilterUserLabel,
+                        style: shad.Theme.of(context).typography.small,
+                      ),
+                      const shad.Gap(8),
+                      shad.OutlineButton(
+                        onPressed: () {
+                          shad.showDropdown<void>(
+                            context: context,
+                            builder: (context) {
+                              return shad.DropdownMenu(
+                                children: [
+                                  shad.MenuButton(
+                                    leading: tempUserId == null
+                                        ? const Icon(Icons.check, size: 16)
+                                        : const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                          ),
+                                    onPressed: (context) {
+                                      setSheetState(() => tempUserId = null);
+                                    },
+                                    child: Text(
+                                      l10n.timerRequestsFilterAllUsers,
+                                    ),
+                                  ),
+                                  ..._availableRequestUsers.map(
+                                    (user) => shad.MenuButton(
+                                      leading: tempUserId == user.id
+                                          ? const Icon(Icons.check, size: 16)
+                                          : const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                            ),
+                                      onPressed: (context) {
+                                        setSheetState(
+                                          () => tempUserId = user.id,
+                                        );
+                                      },
+                                      child: Text(user.label),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _selectedUserFilterLabel(context, tempUserId),
+                              ),
+                            ),
+                            const shad.Gap(8),
+                            const Icon(Icons.keyboard_arrow_down, size: 16),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const shad.Gap(20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: shad.OutlineButton(
+                            onPressed: () {
+                              setSheetState(() {
+                                tempFilter = _RequestStatusFilter.all;
+                                tempUserId = null;
+                              });
+                            },
+                            child: Text(l10n.timerRequestsFilterClear),
+                          ),
+                        ),
+                        const shad.Gap(8),
+                        Expanded(
+                          child: shad.PrimaryButton(
+                            onPressed: () {
+                              Navigator.of(sheetContext).pop();
+                              _applyFilters(
+                                tempFilter,
+                                wsId,
+                                userId: tempUserId,
+                              );
+                            },
+                            child: Text(l10n.timerRequestsFilterApply),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _applyFilters(
+    _RequestStatusFilter filter,
+    String wsId, {
+    String? userId,
+  }) {
+    setState(() {
+      _selectedFilter = filter;
+      _selectedUserId = _canManageRequests ? userId : null;
+    });
+
+    final cubit = context.read<TimeTrackerRequestsCubit>();
+
+    unawaited(
+      cubit.filterByStatus(
+        _statusFromFilter(filter),
+        wsId,
+        userId: _requestUserFilterId(),
+      ),
+    );
   }
 }
 
-enum _RequestStatusFilter { pending, approved, rejected, needsInfo }
+enum _RequestStatusFilter { all, pending, approved, rejected, needsInfo }
 
 class _RequestTile extends StatelessWidget {
   const _RequestTile({required this.request, this.onTap});

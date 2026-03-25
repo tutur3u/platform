@@ -11,7 +11,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
   final ITimeTrackerRepository _repo;
   int _latestLoadToken = 0;
 
-  Future<void> loadRequests(String wsId) async {
+  Future<void> loadRequests(String wsId, {String? userId}) async {
     final loadToken = ++_latestLoadToken;
 
     emit(
@@ -26,7 +26,11 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
           ? approvalStatusToString(state.selectedStatus!)
           : null;
 
-      final requests = await _repo.getRequests(wsId, status: statusFilter);
+      final requests = await _repo.getRequests(
+        wsId,
+        status: statusFilter,
+        userId: userId,
+      );
 
       if (loadToken != _latestLoadToken) {
         return;
@@ -52,13 +56,17 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
     }
   }
 
-  Future<void> filterByStatus(ApprovalStatus? status, String wsId) async {
+  Future<void> filterByStatus(
+    ApprovalStatus? status,
+    String wsId, {
+    String? userId,
+  }) async {
     if (status == null) {
       emit(state.copyWith(clearSelectedStatus: true));
     } else {
       emit(state.copyWith(selectedStatus: status));
     }
-    await loadRequests(wsId);
+    await loadRequests(wsId, userId: userId);
   }
 
   Future<void> approveRequest(String requestId, String wsId) async {
