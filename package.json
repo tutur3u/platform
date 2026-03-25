@@ -6,7 +6,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@typescript/native-preview": "^7.0.0-dev.20260324.1",
     "@vitest/coverage-v8": "^4.1.1",
-    "lucide-static": "^1.0.1",
+    "lucide-static": "^1.6.0",
     "turbo": "^2.8.20",
     "typescript": "^6.0.2",
     "vite": "^8.0.2",
