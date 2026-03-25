@@ -427,7 +427,7 @@ class _TimerTabState extends State<TimerTab> {
       return;
     }
 
-    showAdaptiveDrawer(
+    unawaited(showAdaptiveDrawer(
       context: context,
       builder: (_) => MissedEntryDialog(
         categories: cubit.state.categories,
@@ -484,7 +484,7 @@ class _TimerTabState extends State<TimerTab> {
               );
             },
       ),
-    );
+    ));
   }
 }
 

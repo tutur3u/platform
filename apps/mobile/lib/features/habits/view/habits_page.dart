@@ -372,7 +372,7 @@ class _HabitsViewState extends State<_HabitsView> {
       return;
     }
 
-    showAdaptiveDrawer(
+    unawaited(showAdaptiveDrawer(
       context: context,
       maxDialogWidth: 920,
       builder: (sheetContext) => BlocProvider.value(
@@ -418,7 +418,7 @@ class _HabitsViewState extends State<_HabitsView> {
           },
         ),
       ),
-    );
+    ));
   }
 }
 

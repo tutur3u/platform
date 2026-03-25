@@ -364,7 +364,7 @@ class _RequestsViewState extends State<_RequestsView> {
     }
     final repo = context.read<ITimeTrackerRepository>();
 
-    await shad.showDialog<void>(
+    await showAdaptiveSheet<void>(
       context: context,
       builder: (dialogContext) {
         return ThresholdSettingsDialog(
@@ -448,7 +448,7 @@ class _RequestsViewState extends State<_RequestsView> {
     final currentUserId = currentUser?.id;
     final currentUserDisplayName = _extractUserDisplayName(currentUser);
 
-    showAdaptiveDrawer(
+    unawaited(showAdaptiveDrawer(
       context: context,
       builder: (_) => RequestDetailSheet(
         request: request,
@@ -486,7 +486,7 @@ class _RequestsViewState extends State<_RequestsView> {
               newImageLocalPaths: newImageLocalPaths,
             ),
       ),
-    );
+    ));
   }
 
   String? _extractUserDisplayName(User? user) {

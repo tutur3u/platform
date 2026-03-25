@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -505,51 +506,50 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   }
 
   void _showFilterMenu(BuildContext context, TaskBoardsFilter selected) {
-    shad.showDropdown<void>(
-      context: context,
-      builder: (context) {
-        return shad.DropdownMenu(
-          children: [
-            _buildFilterMenuButton(
-              context: context,
-              selected: selected,
-              filter: TaskBoardsFilter.all,
+    final cubit = context.read<TaskBoardsCubit>();
+    unawaited(
+      showAdaptiveDrawer(
+        context: context,
+        builder: (drawerContext) {
+          return SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: TaskBoardsFilter.values.map((filter) {
+                return InkWell(
+                  onTap: () {
+                    cubit.setFilter(filter);
+                    if (drawerContext.isCompact) {
+                      unawaited(shad.closeOverlay<void>(drawerContext));
+                    } else {
+                      Navigator.pop(drawerContext);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        if (selected == filter)
+                          const Icon(Icons.check, size: 16)
+                        else
+                          const SizedBox(width: 16, height: 16),
+                        const shad.Gap(12),
+                        Text(
+                          _filterLabel(drawerContext, filter),
+                          style: shad.Theme.of(drawerContext).typography.base,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-            _buildFilterMenuButton(
-              context: context,
-              selected: selected,
-              filter: TaskBoardsFilter.active,
-            ),
-            _buildFilterMenuButton(
-              context: context,
-              selected: selected,
-              filter: TaskBoardsFilter.archived,
-            ),
-            _buildFilterMenuButton(
-              context: context,
-              selected: selected,
-              filter: TaskBoardsFilter.recentlyDeleted,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  shad.MenuButton _buildFilterMenuButton({
-    required BuildContext context,
-    required TaskBoardsFilter selected,
-    required TaskBoardsFilter filter,
-  }) {
-    final cubit = this.context.read<TaskBoardsCubit>();
-    return shad.MenuButton(
-      leading: selected == filter
-          ? const Icon(Icons.check, size: 16)
-          : const SizedBox(width: 16, height: 16),
-      onPressed: (_) {
-        cubit.setFilter(filter);
-      },
-      child: Text(_filterLabel(context, filter)),
+          );
+        },
+      ),
     );
   }
 }
