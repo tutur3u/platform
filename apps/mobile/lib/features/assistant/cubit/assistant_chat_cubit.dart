@@ -52,6 +52,13 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   String? _activeTextBlockId;
   String? _activeReasoningBlockId;
 
+  void _emitIfOpen(AssistantChatState nextState) {
+    if (isClosed) {
+      return;
+    }
+    emit(nextState);
+  }
+
   Future<void> loadWorkspace(String wsId) async {
     final workspaceVersion = ++_workspaceVersion;
     final preserveState = state.workspaceId == wsId && state.hasLoadedOnce;
@@ -63,7 +70,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     _activeReasoningBlockId = null;
 
     if (preserveState) {
-      emit(
+      _emitIfOpen(
         state.copyWith(
           workspaceId: wsId,
           fallbackChatId: _repository.generateUuid(),
@@ -74,7 +81,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         ),
       );
     } else {
-      emit(
+      _emitIfOpen(
         AssistantChatState(
           workspaceId: wsId,
           fallbackChatId: _repository.generateUuid(),
@@ -88,8 +95,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       final history = await _repository.fetchRecentChats();
 
       if (storedChatId == null) {
-        if (workspaceVersion != _workspaceVersion) return;
-        emit(
+        if (isClosed || workspaceVersion != _workspaceVersion) return;
+        _emitIfOpen(
           state.copyWith(
             status: AssistantChatStatus.idle,
             hasLoadedOnce: true,
@@ -105,11 +112,11 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         wsId: wsId,
         chatId: storedChatId,
       );
-      if (workspaceVersion != _workspaceVersion) return;
+      if (isClosed || workspaceVersion != _workspaceVersion) return;
 
       if (restored == null) {
         await _preferences.clearChatId(wsId);
-        emit(
+        _emitIfOpen(
           state.copyWith(
             status: AssistantChatStatus.idle,
             hasLoadedOnce: true,
@@ -124,7 +131,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         return;
       }
 
-      emit(
+      _emitIfOpen(
         state.copyWith(
           status: AssistantChatStatus.idle,
           hasLoadedOnce: true,
@@ -137,8 +144,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       );
       await _onChatRestored(restored.chat?.model);
     } on Exception catch (error) {
-      if (workspaceVersion != _workspaceVersion) return;
-      emit(
+      if (isClosed || workspaceVersion != _workspaceVersion) return;
+      _emitIfOpen(
         state.copyWith(
           status: AssistantChatStatus.error,
           error: error.toString(),

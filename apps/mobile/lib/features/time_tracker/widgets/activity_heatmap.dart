@@ -69,7 +69,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
         'historyDate': formattedDate,
       },
     );
-    context.go(targetUri.toString());
+    unawaited(context.push(targetUri.toString()));
   }
 
   String _modeLabel(AppLocalizations l10n, _HeatmapViewMode mode) {

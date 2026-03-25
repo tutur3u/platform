@@ -3398,6 +3398,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonRetry => 'Retry';
 
   @override
+  String get commonPressBackAgainToExit => 'Press back again to exit';
+
+  @override
+  String get commonPressBackAgainToExitHint => 'Press back again within 2 seconds to close the app.';
+
+  @override
   String get commonPrevious => 'Previous';
 
   @override
