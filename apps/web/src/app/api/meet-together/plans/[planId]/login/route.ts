@@ -2,6 +2,7 @@ import { createAdminClient } from '@ncthub/supabase/next/server';
 import { generateSalt, hashPassword } from '@ncthub/utils/crypto';
 import { NextResponse } from 'next/server';
 import z from 'zod';
+import { GUEST_LIMIT } from '@/constants/common';
 
 const GuestLoginInputSchema = z.object({
   planId: z.string().uuid(),
@@ -14,8 +15,6 @@ interface Params {
     planId: string;
   }>;
 }
-
-const GUEST_LIMIT = 30;
 
 export async function POST(req: Request, { params }: Params) {
   const { planId: rawPlanId } = await params;

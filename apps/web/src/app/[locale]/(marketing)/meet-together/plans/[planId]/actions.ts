@@ -3,14 +3,13 @@
 import { createAdminClient } from '@ncthub/supabase/next/server';
 import { generateSalt, hashPassword } from '@ncthub/utils/crypto';
 import z from 'zod';
+import { GUEST_LIMIT } from '@/constants/common';
 
 const GuestLoginInputSchema = z.object({
   planId: z.string().uuid(),
   name: z.string(),
   password: z.string(),
 });
-
-const GUEST_LIMIT = 30;
 
 export async function guestLogin(
   rawPlanId: string,

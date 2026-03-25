@@ -1,8 +1,10 @@
 'use client';
 
 import { ShieldCheck } from '@ncthub/ui/icons';
+import { Progress } from '@ncthub/ui/progress';
 import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
+import { GUEST_LIMIT } from '@/constants/common';
 import { useTimeBlocking } from './time-blocking-provider';
 
 export default function PlanUserFilter({
@@ -14,6 +16,8 @@ export default function PlanUserFilter({
 }) {
   const t = useTranslations('meet-together-plan-details');
   const { filteredUserIds, setFilteredUserIds } = useTimeBlocking();
+  const guestCount = users.filter((user) => user.is_guest).length;
+  const guestProgress = Math.min((guestCount / GUEST_LIMIT) * 100, 100);
 
   const containerClassName = compact
     ? 'flex w-full flex-col rounded-2xl border border-foreground/10 bg-background/90 p-4 shadow-sm'
@@ -46,6 +50,32 @@ export default function PlanUserFilter({
     <div className={containerClassName}>
       <div className={headingClassName}>{t('plan_users')}</div>
       <div className={descriptionClassName}>{t('select_users_to_filter')}.</div>
+
+      <div
+        className={
+          compact
+            ? 'mb-4 w-full rounded-xl border border-foreground/10 bg-foreground/5 p-3'
+            : 'mb-6 w-full max-w-6xl rounded-xl border border-foreground/10 bg-foreground/5 p-4'
+        }
+      >
+        <div className="mb-2 flex items-center justify-between gap-3 font-medium text-sm">
+          <span>{t('guest')}</span>
+          <span className="text-muted-foreground">
+            {guestCount}/{GUEST_LIMIT}
+          </span>
+        </div>
+        <Progress
+          value={guestProgress}
+          className="h-2"
+          indicatorClassName={
+            guestProgress >= 90
+              ? 'bg-dynamic-red'
+              : guestProgress >= 75
+                ? 'bg-dynamic-yellow'
+                : ''
+          }
+        />
+      </div>
 
       <div className={listClassName}>
         {users.length > 0 ? (
