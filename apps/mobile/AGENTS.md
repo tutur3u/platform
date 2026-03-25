@@ -50,6 +50,7 @@ Global repo rules still apply from the root `AGENTS.md`.
 
 - **iOS Lockstep**: After bumping FlutterFire or other iOS-backed Flutter dependencies in `apps/mobile/pubspec.yaml` or `apps/mobile/pubspec.lock`, refresh and commit `apps/mobile/ios/Podfile.lock`.
 - **iOS Podspec Snapshot Drift**: If dependency bumps change iOS plugin podspec constraints, run `flutter pub get`, then `cd apps/mobile/ios && pod update <affected pod/plugin>`, and commit the updated lockfile.
+- **iOS Native Asset Archive Sanitization**: If App Store validation reports `Runner.app/Frameworks/*` binaries built for `IOSSIMULATOR`, add or preserve a post-embed archive script that scans Flutter native-asset frameworks and swaps in the matching `iphoneos` dylib from `.dart_tool/hooks_runner/shared` before signing.
 - **Latest image_cropper on Xcode 16 CI**: Keep latest `image_cropper`, but patch vendored `TOCropViewController.m` in `apps/mobile/ios/Podfile` `post_install` with `#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000` guard instead of downgrading.
 - **Dart Part Imports**: For Dart `part` files, add library imports only in the parent file that declares `part ...`.
 - **Flutter View File Splits**: When a Flutter page/view exceeds module boundary threshold, keep the entry file as library root and split into sibling `part` files by concern.
