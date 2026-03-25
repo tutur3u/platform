@@ -104,9 +104,16 @@ class _AppVersionLoadingScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const shad.CircularProgressIndicator(),
-            const shad.Gap(16),
-            Text(context.l10n.appUpdateChecking),
+            Image.asset(
+              'assets/logos/transparent.png',
+              width: 96,
+              height: 96,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
+            ),
+            const shad.Gap(20),
+            const shad.CircularProgressIndicator(size: 32),
           ],
         ),
       ),

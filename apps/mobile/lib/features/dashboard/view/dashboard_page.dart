@@ -91,9 +91,16 @@ class _DashboardView extends StatelessWidget {
         builder: (context, workspaceState) {
           final workspace = workspaceState.currentWorkspace;
           if (workspace == null) {
-            return shad.Scaffold(
-              child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
-            );
+            final isWorkspaceLoading =
+                workspaceState.status == WorkspaceStatus.initial ||
+                workspaceState.status == WorkspaceStatus.loading;
+            if (isWorkspaceLoading) {
+              return const shad.Scaffold(
+                child: Center(child: shad.CircularProgressIndicator()),
+              );
+            }
+
+            return _workspaceUnavailableState(context, workspaceState);
           }
 
           return BlocBuilder<TaskListCubit, TaskListState>(
@@ -234,6 +241,44 @@ class _DashboardView extends StatelessWidget {
       ),
       context.read<CalendarCubit>().loadEvents(workspace.id),
     ]);
+  }
+
+  Widget _workspaceUnavailableState(
+    BuildContext context,
+    WorkspaceState workspaceState,
+  ) {
+    final isError = workspaceState.status == WorkspaceStatus.error;
+    final theme = Theme.of(context);
+
+    return shad.Scaffold(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: _EmptyHint(
+            title: isError
+                ? context.l10n.commonSomethingWentWrong
+                : context.l10n.workspaceSelectEmpty,
+            description: isError
+                ? context.l10n.commonSomethingWentWrong
+                : context.l10n.workspaceSelectTitle,
+            icon: isError ? Icons.cloud_off_outlined : Icons.workspaces_outline,
+            tone: isError
+                ? _Tone(
+                    background: theme.colorScheme.errorContainer.withValues(
+                      alpha: 0.38,
+                    ),
+                    border: theme.colorScheme.error.withValues(alpha: 0.16),
+                    foreground: theme.colorScheme.error,
+                  )
+                : _Tone(
+                    background: theme.colorScheme.surfaceContainer,
+                    border: theme.colorScheme.outline.withValues(alpha: 0.22),
+                    foreground: theme.colorScheme.onSurface,
+                  ),
+          ),
+        ),
+      ),
+    );
   }
 
   List<UserTask> _focusTasks(TaskListState state) {
