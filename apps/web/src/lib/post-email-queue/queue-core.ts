@@ -311,23 +311,25 @@ async function getEligibleRecipients(
     isValidEmailAddress(row.email)
   );
 
-  // Log diagnostics when there are discrepancies
+  // Log diagnostics - always log when users are skipped due to missing emails
+  const hasSkippedUsers = diagnostics.missingEmail.length > 0;
   const hasDiagnostics =
     allCheckRows.length !== rows.length ||
     diagnostics.missingIsCompleted.length > 0 ||
     diagnostics.notApproved.length > 0 ||
     diagnostics.missingUserObject.length > 0 ||
-    diagnostics.missingEmail.length > 0;
+    hasSkippedUsers;
 
   if (hasDiagnostics || allCheckRows.length !== withValidEmail.length) {
-    console.log('[getEligibleRecipients] Detailed diagnostics', {
+    console.log('[getEligibleRecipients] Processing results', {
       postId,
       wsId,
-      totalCheckRows: diagnostics.totalCheckRows,
-      rowsWithUserData: diagnostics.rowsWithUserData,
-      missingFromUserTable: diagnostics.missingFromUserTable,
-      finalFilteredCount: filtered.length,
-      afterEmailFilter: withValidEmail.length,
+      summary: {
+        totalCheckRows: diagnostics.totalCheckRows,
+        rowsWithUserData: diagnostics.rowsWithUserData,
+        eligibleForEmail: withValidEmail.length,
+        skippedNoEmail: diagnostics.missingEmail.length,
+      },
       filters: {
         missingIsCompleted: diagnostics.missingIsCompleted.length,
         notApproved: diagnostics.notApproved.length,
@@ -335,11 +337,12 @@ async function getEligibleRecipients(
         missingEmail: diagnostics.missingEmail.length,
         kept: diagnostics.kept.length,
       },
-      sampleMissingFromUserTable: missingFromUserTable.slice(0, 5),
-      sampleNotApproved: diagnostics.notApproved.slice(0, 3),
-      sampleMissingEmail: diagnostics.missingEmail.slice(0, 3),
+      // Sample of users skipped due to missing email
+      sampleSkippedNoEmail: diagnostics.missingEmail
+        .slice(0, 5)
+        .map((m) => m.userId),
       sampleKept: diagnostics.kept.slice(0, 3),
-      sample: withValidEmail.slice(0, 2),
+      sampleEligible: withValidEmail.slice(0, 2),
     });
   }
 

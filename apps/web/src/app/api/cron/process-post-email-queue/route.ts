@@ -126,10 +126,44 @@ export async function GET(req: NextRequest) {
       checked: reconciliation.checked,
     });
 
-    const { count: queuedOrFailedCount } = await sbAdmin
+    // Debug: Check all statuses in the queue
+    const { data: statusCounts, error: statusError } = await sbAdmin
+      .from('post_email_queue')
+      .select('status');
+
+    if (statusError) {
+      log('error', `[${requestId}] Failed to fetch status counts`, {
+        error: statusError,
+      });
+    } else {
+      const statusSummary = (statusCounts ?? []).reduce(
+        (acc, row) => {
+          acc[row.status] = (acc[row.status] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+      log('info', `[${requestId}] Queue status summary`, {
+        statusSummary,
+        totalRows: statusCounts?.length ?? 0,
+      });
+    }
+
+    const { count: queuedOrFailedCount, error: countError } = await sbAdmin
       .from('post_email_queue')
       .select('id', { count: 'exact' })
       .in('status', ['queued', 'failed']);
+
+    if (countError) {
+      log('error', `[${requestId}] Failed to count queued/failed rows`, {
+        error: countError,
+      });
+    }
+
+    log('info', `[${requestId}] Queue count check`, {
+      queuedOrFailedCount,
+      countError: countError ? countError.message : null,
+    });
 
     let result: {
       claimed: number;
@@ -139,9 +173,10 @@ export async function GET(req: NextRequest) {
       results: Array<Record<string, unknown>>;
     } = { claimed: 0, processed: 0, failed: 0, timedOut: false, results: [] };
 
-    if (!queuedOrFailedCount) {
+    if (!queuedOrFailedCount || queuedOrFailedCount === 0) {
       log('info', `[${requestId}] Phase 4 skipped — no queued/failed rows`, {
         queuedOrFailedCount,
+        hasError: !!countError,
       });
       result = {
         claimed: 0,
