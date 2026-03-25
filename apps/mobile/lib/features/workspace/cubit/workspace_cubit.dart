@@ -41,7 +41,10 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
         }
       }
 
-      // 3. Auto-select if only one workspace
+      // 3. Fallback to personal workspace
+      current ??= workspaces.where((w) => w.personal).firstOrNull;
+
+      // 4. Auto-select if only one workspace
       current ??= workspaces.length == 1 ? workspaces.first : null;
 
       emit(

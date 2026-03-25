@@ -97,8 +97,8 @@ class _DashboardView extends StatelessWidget {
         builder: (context, workspaceState) {
           final workspace = workspaceState.personalWorkspaceOrCurrent;
           if (workspace == null) {
-            return shad.Scaffold(
-              child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
+            return const shad.Scaffold(
+              child: Center(child: shad.CircularProgressIndicator()),
             );
           }
 
