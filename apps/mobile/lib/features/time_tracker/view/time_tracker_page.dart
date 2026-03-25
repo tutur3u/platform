@@ -262,11 +262,14 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
 
   void _showPomodoroSettings(BuildContext context) {
     final cubit = context.read<TimeTrackerCubit>();
-    showAdaptiveDrawer(
-      context: context,
-      builder: (_) => PomodoroSettingsDialog(
-        settings: cubit.state.pomodoroSettings,
-        onSave: (settings) => unawaited(cubit.updatePomodoroSettings(settings)),
+    unawaited(
+      showAdaptiveDrawer(
+        context: context,
+        builder: (_) => PomodoroSettingsDialog(
+          settings: cubit.state.pomodoroSettings,
+          onSave: (settings) =>
+              unawaited(cubit.updatePomodoroSettings(settings)),
+        ),
       ),
     );
   }

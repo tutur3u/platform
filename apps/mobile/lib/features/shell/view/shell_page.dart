@@ -140,6 +140,15 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   @override
   Future<bool> didPopRoute() async {
     _debugBack('WidgetsBinding.didPopRoute');
+    if (!mounted) {
+      return true;
+    }
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    if (rootNav.canPop()) {
+      _debugBack('WidgetsBinding.didPopRoute.popNavigatorDialog');
+      rootNav.pop();
+      return true;
+    }
     _dispatchBackNavigation(context, source: 'didPopRoute');
     return true;
   }
@@ -164,6 +173,15 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     return BackButtonListener(
       onBackButtonPressed: () async {
         _debugBack('BackButtonListener.pressed');
+        if (!context.mounted) {
+          return true;
+        }
+        final rootNav = Navigator.of(context, rootNavigator: true);
+        if (rootNav.canPop()) {
+          _debugBack('BackButtonListener.popNavigatorDialog');
+          rootNav.pop();
+          return true;
+        }
         _dispatchBackNavigation(context, source: 'backButtonListener');
         return true;
       },

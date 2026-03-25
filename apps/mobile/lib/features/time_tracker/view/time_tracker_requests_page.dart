@@ -448,45 +448,47 @@ class _RequestsViewState extends State<_RequestsView> {
     final currentUserId = currentUser?.id;
     final currentUserDisplayName = _extractUserDisplayName(currentUser);
 
-    unawaited(showAdaptiveDrawer(
-      context: context,
-      builder: (_) => RequestDetailSheet(
-        request: request,
-        wsId: wsId,
-        repository: repository,
-        currentUserId: currentUserId,
-        currentUserDisplayName: currentUserDisplayName,
-        isManager: _canManageRequests,
-        statusChangeGracePeriodMinutes: _statusChangeGracePeriodMinutes,
-        onApprove: () => cubit.approveRequest(request.id, wsId),
-        onReject: (reason) =>
-            cubit.rejectRequest(request.id, wsId, reason: reason),
-        onRequestInfo: (reason) =>
-            cubit.requestMoreInfo(request.id, wsId, reason: reason),
-        onResubmit: () => cubit.resubmitRequest(request.id, wsId),
-        canEdit:
-            request.approvalStatus == ApprovalStatus.pending ||
-            request.approvalStatus == ApprovalStatus.needsInfo,
-        onEdit:
-            (
-              title,
-              startTime,
-              endTime, {
-              description,
-              removedImages,
-              newImageLocalPaths,
-            }) => cubit.updateRequest(
-              wsId,
-              request.id,
-              title,
-              startTime,
-              endTime,
-              description: description,
-              removedImages: removedImages,
-              newImageLocalPaths: newImageLocalPaths,
-            ),
+    unawaited(
+      showAdaptiveDrawer(
+        context: context,
+        builder: (_) => RequestDetailSheet(
+          request: request,
+          wsId: wsId,
+          repository: repository,
+          currentUserId: currentUserId,
+          currentUserDisplayName: currentUserDisplayName,
+          isManager: _canManageRequests,
+          statusChangeGracePeriodMinutes: _statusChangeGracePeriodMinutes,
+          onApprove: () => cubit.approveRequest(request.id, wsId),
+          onReject: (reason) =>
+              cubit.rejectRequest(request.id, wsId, reason: reason),
+          onRequestInfo: (reason) =>
+              cubit.requestMoreInfo(request.id, wsId, reason: reason),
+          onResubmit: () => cubit.resubmitRequest(request.id, wsId),
+          canEdit:
+              request.approvalStatus == ApprovalStatus.pending ||
+              request.approvalStatus == ApprovalStatus.needsInfo,
+          onEdit:
+              (
+                title,
+                startTime,
+                endTime, {
+                description,
+                removedImages,
+                newImageLocalPaths,
+              }) => cubit.updateRequest(
+                wsId,
+                request.id,
+                title,
+                startTime,
+                endTime,
+                description: description,
+                removedImages: removedImages,
+                newImageLocalPaths: newImageLocalPaths,
+              ),
+        ),
       ),
-    ));
+    );
   }
 
   String? _extractUserDisplayName(User? user) {

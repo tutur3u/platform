@@ -17,7 +17,7 @@ Future<void> showTaskLinkPickerSheet({
   required String? selectedTaskId,
   required ValueChanged<TaskLinkOption?> onSelected,
 }) async {
-  showAdaptiveDrawer(
+  await showAdaptiveDrawer(
     context: context,
     builder: (_) => TaskLinkPickerSheet(
       hostContext: context,

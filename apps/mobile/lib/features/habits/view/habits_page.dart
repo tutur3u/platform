@@ -372,53 +372,57 @@ class _HabitsViewState extends State<_HabitsView> {
       return;
     }
 
-    unawaited(showAdaptiveDrawer(
-      context: context,
-      maxDialogWidth: 920,
-      builder: (sheetContext) => BlocProvider.value(
-        value: cubit,
-        child: BlocBuilder<HabitsCubit, HabitsState>(
-          builder: (context, state) {
-            return HabitTrackerDetailSheet(
-              detail: state.detail?.tracker.id == trackerId
-                  ? state.detail
-                  : null,
-              detailStatus: state.detailStatus,
-              detailError: state.detailError,
-              isSubmittingEntry: state.isSubmittingEntry,
-              isSubmittingStreakAction: state.isSubmittingStreakAction,
-              isArchivingTracker: state.isArchivingTracker,
-              showLeaderboard: !isPersonalWorkspace,
-              onRetry: () => cubit.loadTrackerDetail(trackerId, refresh: true),
-              onLogEntry: () async {
-                final detail = state.detail;
-                if (detail == null) {
-                  return;
-                }
-                await showAdaptiveSheet<void>(
-                  context: context,
-                  maxDialogWidth: 760,
-                  builder: (sheetContext) => HabitTrackerEntrySheet(
-                    detail: detail,
-                    onSubmit: (input) => cubit.createEntry(trackerId, input),
-                  ),
-                );
-              },
-              onEditTracker: () async {
-                final tracker = state.detail?.tracker;
-                if (tracker != null) {
-                  await _openEditTracker(tracker);
-                }
-              },
-              onDeleteEntry: (entryId) => cubit.deleteEntry(trackerId, entryId),
-              onApplyStreakAction: (input) =>
-                  cubit.createStreakAction(trackerId, input),
-              onArchiveTracker: () => cubit.archiveTracker(trackerId),
-            );
-          },
+    unawaited(
+      showAdaptiveDrawer(
+        context: context,
+        maxDialogWidth: 920,
+        builder: (sheetContext) => BlocProvider.value(
+          value: cubit,
+          child: BlocBuilder<HabitsCubit, HabitsState>(
+            builder: (context, state) {
+              return HabitTrackerDetailSheet(
+                detail: state.detail?.tracker.id == trackerId
+                    ? state.detail
+                    : null,
+                detailStatus: state.detailStatus,
+                detailError: state.detailError,
+                isSubmittingEntry: state.isSubmittingEntry,
+                isSubmittingStreakAction: state.isSubmittingStreakAction,
+                isArchivingTracker: state.isArchivingTracker,
+                showLeaderboard: !isPersonalWorkspace,
+                onRetry: () =>
+                    cubit.loadTrackerDetail(trackerId, refresh: true),
+                onLogEntry: () async {
+                  final detail = state.detail;
+                  if (detail == null) {
+                    return;
+                  }
+                  await showAdaptiveSheet<void>(
+                    context: context,
+                    maxDialogWidth: 760,
+                    builder: (sheetContext) => HabitTrackerEntrySheet(
+                      detail: detail,
+                      onSubmit: (input) => cubit.createEntry(trackerId, input),
+                    ),
+                  );
+                },
+                onEditTracker: () async {
+                  final tracker = state.detail?.tracker;
+                  if (tracker != null) {
+                    await _openEditTracker(tracker);
+                  }
+                },
+                onDeleteEntry: (entryId) =>
+                    cubit.deleteEntry(trackerId, entryId),
+                onApplyStreakAction: (input) =>
+                    cubit.createStreakAction(trackerId, input),
+                onArchiveTracker: () => cubit.archiveTracker(trackerId),
+              );
+            },
+          ),
         ),
       ),
-    ));
+    );
   }
 }
 

@@ -427,29 +427,53 @@ class _TimerTabState extends State<TimerTab> {
       return;
     }
 
-    unawaited(showAdaptiveDrawer(
-      context: context,
-      builder: (_) => MissedEntryDialog(
-        categories: cubit.state.categories,
-        canBypassRequestApproval: canBypassApproval,
-        thresholdDays: state.thresholdDays,
-        initialStartTime: initialStartTime,
-        initialEndTime: initialEndTime,
-        initialTitle: initialTitle,
-        initialDescription: initialDescription,
-        initialCategoryId: initialCategoryId,
-        onSave:
-            ({
-              required title,
-              required startTime,
-              required endTime,
-              required shouldSubmitAsRequest,
-              required imageLocalPaths,
-              categoryId,
-              description,
-            }) async {
-              if (shouldSubmitAsRequest) {
-                await cubit.createMissedEntryAsRequest(
+    unawaited(
+      showAdaptiveDrawer(
+        context: context,
+        builder: (_) => MissedEntryDialog(
+          categories: cubit.state.categories,
+          canBypassRequestApproval: canBypassApproval,
+          thresholdDays: state.thresholdDays,
+          initialStartTime: initialStartTime,
+          initialEndTime: initialEndTime,
+          initialTitle: initialTitle,
+          initialDescription: initialDescription,
+          initialCategoryId: initialCategoryId,
+          onSave:
+              ({
+                required title,
+                required startTime,
+                required endTime,
+                required shouldSubmitAsRequest,
+                required imageLocalPaths,
+                categoryId,
+                description,
+              }) async {
+                if (shouldSubmitAsRequest) {
+                  await cubit.createMissedEntryAsRequest(
+                    wsId,
+                    userId,
+                    title: title,
+                    categoryId: categoryId,
+                    startTime: startTime,
+                    endTime: endTime,
+                    description: description,
+                    imageLocalPaths: imageLocalPaths,
+                    throwOnError: true,
+                  );
+
+                  if (discardRunningSessionOnSave) {
+                    await cubit.discardRunningSession(
+                      wsId,
+                      userId,
+                      throwOnError: true,
+                    );
+                  }
+
+                  return;
+                }
+
+                await cubit.createMissedEntry(
                   wsId,
                   userId,
                   title: title,
@@ -457,34 +481,12 @@ class _TimerTabState extends State<TimerTab> {
                   startTime: startTime,
                   endTime: endTime,
                   description: description,
-                  imageLocalPaths: imageLocalPaths,
                   throwOnError: true,
                 );
-
-                if (discardRunningSessionOnSave) {
-                  await cubit.discardRunningSession(
-                    wsId,
-                    userId,
-                    throwOnError: true,
-                  );
-                }
-
-                return;
-              }
-
-              await cubit.createMissedEntry(
-                wsId,
-                userId,
-                title: title,
-                categoryId: categoryId,
-                startTime: startTime,
-                endTime: endTime,
-                description: description,
-                throwOnError: true,
-              );
-            },
+              },
+        ),
       ),
-    ));
+    );
   }
 }
 
