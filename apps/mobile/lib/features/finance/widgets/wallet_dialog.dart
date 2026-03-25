@@ -7,6 +7,7 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/utils/wallet_images.dart';
 import 'package:mobile/features/finance/widgets/currency_picker_dialog.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/wallet_image_picker_sheet.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -77,251 +78,11 @@ class _WalletDialogState extends State<WalletDialog> {
       fallback: Icons.wallet_outlined,
     );
 
-    return shad.AlertDialog(
-      title: Text(
-        widget.wallet == null
-            ? l10n.financeCreateWallet
-            : l10n.financeEditWallet,
-      ),
-      content: Form(
-        key: _formKey,
-        child: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(l10n.financeWalletName),
-                const shad.Gap(4),
-                TextFormField(
-                  controller: _nameController,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return context.l10n.financeWalletNameRequired;
-                    }
-                    return null;
-                  },
-                ),
-                const shad.Gap(12),
-                Text(l10n.financeDescription),
-                const shad.Gap(4),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                  validator: (value) {
-                    if (value != null && value.length > 500) {
-                      return context.l10n.financeWalletDescriptionTooLong;
-                    }
-                    return null;
-                  },
-                ),
-                const shad.Gap(12),
-                Text(l10n.financeType),
-                const shad.Gap(4),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _type == 'STANDARD'
-                          ? shad.PrimaryButton(
-                              onPressed: () =>
-                                  setState(() => _type = 'STANDARD'),
-                              child: Text(l10n.financeWalletTypeStandard),
-                            )
-                          : shad.OutlineButton(
-                              onPressed: () =>
-                                  setState(() => _type = 'STANDARD'),
-                              child: Text(l10n.financeWalletTypeStandard),
-                            ),
-                    ),
-                    const shad.Gap(8),
-                    Expanded(
-                      child: _type == 'CREDIT'
-                          ? shad.PrimaryButton(
-                              child: Text(l10n.financeWalletTypeCredit),
-                            )
-                          : shad.OutlineButton(
-                              child: Text(l10n.financeWalletTypeCredit),
-                            ),
-                    ),
-                  ],
-                ),
-                const shad.Gap(12),
-                Text(l10n.financeWalletCurrency),
-                const shad.Gap(4),
-                shad.OutlineButton(
-                  onPressed: _pickCurrency,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${_currencyLabel(_currency)} ($_currency)',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const Icon(Icons.expand_more, size: 16),
-                    ],
-                  ),
-                ),
-                const shad.Gap(12),
-                Text(l10n.financeWalletIconOrImage),
-                const shad.Gap(6),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: shad.Theme.of(context).colorScheme.border,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      WalletVisualAvatar(
-                        icon: _icon,
-                        imageSrc: _imageSrc,
-                        fallbackIcon: previewIcon,
-                        size: 34,
-                      ),
-                      const shad.Gap(10),
-                      Expanded(
-                        child: Text(
-                          visualName ?? _icon ?? l10n.financeWalletNoVisual,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: shad.Theme.of(context).typography.small,
-                        ),
-                      ),
-                      shad.OutlineButton(
-                        onPressed: _pickWalletImage,
-                        child: Text(l10n.financeWalletPickImage),
-                      ),
-                    ],
-                  ),
-                ),
-                const shad.Gap(8),
-                PlatformIconPickerField(
-                  value: _icon,
-                  title: l10n.financeSelectIcon,
-                  searchPlaceholder: l10n.financeSearchIcons,
-                  emptyText: l10n.financeNoIconsFound,
-                  onChanged: (value) {
-                    setState(() {
-                      _icon = value;
-                      if (value != null) {
-                        _imageSrc = null;
-                      }
-                    });
-                  },
-                ),
-                if (_icon != null || _imageSrc != null) ...[
-                  const shad.Gap(8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: shad.GhostButton(
-                      onPressed: () {
-                        setState(() {
-                          _icon = null;
-                          _imageSrc = null;
-                        });
-                      },
-                      child: Text(l10n.financeWalletClearVisual),
-                    ),
-                  ),
-                ],
-                if (_type == 'CREDIT') ...[
-                  const shad.Gap(12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: shad.Theme.of(context).colorScheme.border,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          l10n.financeWalletCreditDetails,
-                          style: shad.Theme.of(context).typography.small
-                              .copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        const shad.Gap(8),
-                        Text(l10n.financeWalletCreditLimit),
-                        const shad.Gap(4),
-                        TextFormField(
-                          controller: _limitController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (_type != 'CREDIT') return null;
-                            final parsed = double.tryParse(value?.trim() ?? '');
-                            if (parsed == null || parsed <= 0) {
-                              return context
-                                  .l10n
-                                  .financeWalletCreditLimitRequired;
-                            }
-                            return null;
-                          },
-                        ),
-                        const shad.Gap(8),
-                        Text(l10n.financeWalletStatementDate),
-                        const shad.Gap(4),
-                        TextFormField(
-                          controller: _statementDateController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (_type != 'CREDIT') return null;
-                            final parsed = int.tryParse(value?.trim() ?? '');
-                            if (parsed == null || parsed < 1 || parsed > 31) {
-                              return context.l10n.financeWalletDateRequired;
-                            }
-                            return null;
-                          },
-                        ),
-                        const shad.Gap(8),
-                        Text(l10n.financeWalletPaymentDate),
-                        const shad.Gap(4),
-                        TextFormField(
-                          controller: _paymentDateController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (_type != 'CREDIT') return null;
-                            final parsed = int.tryParse(value?.trim() ?? '');
-                            if (parsed == null || parsed < 1 || parsed > 31) {
-                              return context.l10n.financeWalletDateRequired;
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
+    return FinanceModalScaffold(
+      title: widget.wallet == null
+          ? l10n.financeCreateWallet
+          : l10n.financeEditWallet,
+      subtitle: l10n.financeWalletDialogSubtitle,
       actions: [
         shad.OutlineButton(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
@@ -342,6 +103,241 @@ class _WalletDialogState extends State<WalletDialog> {
                 ),
         ),
       ],
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l10n.financeWalletName),
+              const shad.Gap(4),
+              TextFormField(
+                controller: _nameController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return context.l10n.financeWalletNameRequired;
+                  }
+                  return null;
+                },
+              ),
+              const shad.Gap(12),
+              Text(l10n.financeDescription),
+              const shad.Gap(4),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+                validator: (value) {
+                  if (value != null && value.length > 500) {
+                    return context.l10n.financeWalletDescriptionTooLong;
+                  }
+                  return null;
+                },
+              ),
+              const shad.Gap(12),
+              Text(l10n.financeType),
+              const shad.Gap(4),
+              Row(
+                children: [
+                  Expanded(
+                    child: _type == 'STANDARD'
+                        ? shad.PrimaryButton(
+                            onPressed: () => setState(() => _type = 'STANDARD'),
+                            child: Text(l10n.financeWalletTypeStandard),
+                          )
+                        : shad.OutlineButton(
+                            onPressed: () => setState(() => _type = 'STANDARD'),
+                            child: Text(l10n.financeWalletTypeStandard),
+                          ),
+                  ),
+                  const shad.Gap(8),
+                  Expanded(
+                    child: _type == 'CREDIT'
+                        ? shad.PrimaryButton(
+                            onPressed: () => setState(() => _type = 'CREDIT'),
+                            child: Text(l10n.financeWalletTypeCredit),
+                          )
+                        : shad.OutlineButton(
+                            onPressed: () => setState(() => _type = 'CREDIT'),
+                            child: Text(l10n.financeWalletTypeCredit),
+                          ),
+                  ),
+                ],
+              ),
+              const shad.Gap(12),
+              Text(l10n.financeWalletCurrency),
+              const shad.Gap(4),
+              shad.OutlineButton(
+                onPressed: _pickCurrency,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${_currencyLabel(_currency)} ($_currency)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const Icon(Icons.expand_more, size: 16),
+                  ],
+                ),
+              ),
+              const shad.Gap(12),
+              Text(l10n.financeWalletIconOrImage),
+              const shad.Gap(6),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: shad.Theme.of(context).colorScheme.border,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    WalletVisualAvatar(
+                      icon: _icon,
+                      imageSrc: _imageSrc,
+                      fallbackIcon: previewIcon,
+                      size: 34,
+                    ),
+                    const shad.Gap(10),
+                    Expanded(
+                      child: Text(
+                        visualName ?? _icon ?? l10n.financeWalletNoVisual,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: shad.Theme.of(context).typography.small,
+                      ),
+                    ),
+                    shad.OutlineButton(
+                      onPressed: _pickWalletImage,
+                      child: Text(l10n.financeWalletPickImage),
+                    ),
+                  ],
+                ),
+              ),
+              const shad.Gap(8),
+              PlatformIconPickerField(
+                value: _icon,
+                title: l10n.financeSelectIcon,
+                searchPlaceholder: l10n.financeSearchIcons,
+                emptyText: l10n.financeNoIconsFound,
+                onChanged: (value) {
+                  setState(() {
+                    _icon = value;
+                    if (value != null) {
+                      _imageSrc = null;
+                    }
+                  });
+                },
+              ),
+              if (_icon != null || _imageSrc != null) ...[
+                const shad.Gap(8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: shad.GhostButton(
+                    onPressed: () {
+                      setState(() {
+                        _icon = null;
+                        _imageSrc = null;
+                      });
+                    },
+                    child: Text(l10n.financeWalletClearVisual),
+                  ),
+                ),
+              ],
+              if (_type == 'CREDIT') ...[
+                const shad.Gap(12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: shad.Theme.of(context).colorScheme.border,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        l10n.financeWalletCreditDetails,
+                        style: shad.Theme.of(context).typography.small.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const shad.Gap(8),
+                      Text(l10n.financeWalletCreditLimit),
+                      const shad.Gap(4),
+                      TextFormField(
+                        controller: _limitController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (_type != 'CREDIT') return null;
+                          final parsed = double.tryParse(value?.trim() ?? '');
+                          if (parsed == null || parsed <= 0) {
+                            return context
+                                .l10n
+                                .financeWalletCreditLimitRequired;
+                          }
+                          return null;
+                        },
+                      ),
+                      const shad.Gap(8),
+                      Text(l10n.financeWalletStatementDate),
+                      const shad.Gap(4),
+                      TextFormField(
+                        controller: _statementDateController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (_type != 'CREDIT') return null;
+                          final parsed = int.tryParse(value?.trim() ?? '');
+                          if (parsed == null || parsed < 1 || parsed > 31) {
+                            return context.l10n.financeWalletDateRequired;
+                          }
+                          return null;
+                        },
+                      ),
+                      const shad.Gap(8),
+                      Text(l10n.financeWalletPaymentDate),
+                      const shad.Gap(4),
+                      TextFormField(
+                        controller: _paymentDateController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (_type != 'CREDIT') return null;
+                          final parsed = int.tryParse(value?.trim() ?? '');
+                          if (parsed == null || parsed < 1 || parsed > 31) {
+                            return context.l10n.financeWalletDateRequired;
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -460,7 +456,7 @@ class _WalletDialogState extends State<WalletDialog> {
   }
 
   Future<void> _pickCurrency() async {
-    final selected = await shad.showDialog<String>(
+    final selected = await showFinanceModal<String>(
       context: context,
       builder: (_) => CurrencyPickerDialog(
         initialCurrencyCode: _currency,

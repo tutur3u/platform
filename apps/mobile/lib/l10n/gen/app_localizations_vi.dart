@@ -237,6 +237,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsTitle => 'Thói quen';
 
   @override
+  String get habitsOverviewLabel => 'Tổng quan';
+
+  @override
+  String get habitsActivityLabel => 'Hoạt động';
+
+  @override
+  String get habitsActivityTitle => 'Hoạt động';
+
+  @override
+  String get habitsActivitySubtitle => 'Xem các lượt ghi nhận thói quen mới nhất trên mọi bộ theo dõi trong không gian làm việc này.';
+
+  @override
   String get habitsLoadError => 'Không thể tải thói quen lúc này';
 
   @override
@@ -557,6 +569,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get habitsNoLeaderboard => 'Chưa có dữ liệu bảng xếp hạng';
+
+  @override
+  String get habitsActivityEmptyTitle => 'Chưa có nhật ký';
+
+  @override
+  String get habitsActivityEmptyBody => 'Khi ai đó ghi nhận một lượt nhập thói quen, nó sẽ xuất hiện ở đây.';
+
+  @override
+  String get habitsActivityNoTrackers => 'Hãy tạo bộ theo dõi thói quen trước để bắt đầu thu thập hoạt động.';
 
   @override
   String habitsStreakChip(int count) {
@@ -2048,6 +2069,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeTitle => 'Tài chính';
 
   @override
+  String get financeOverviewLabel => 'Tổng quan';
+
+  @override
+  String get financeActivityLabel => 'Hoạt động';
+
+  @override
+  String get financeManageLabel => 'Quản lý';
+
+  @override
+  String get financeOverviewEyebrow => 'Tóm tắt không gian làm việc';
+
+  @override
+  String financeOverviewCrossCurrencyHint(String currency) {
+    return 'Bao gồm số dư đã quy đổi giữa các ví. Tiền tệ gốc: $currency.';
+  }
+
+  @override
+  String financeOverviewSingleCurrencyHint(String currency) {
+    return 'Mọi số dư đều đang được theo dõi bằng $currency.';
+  }
+
+  @override
   String get financeWallets => 'Ví';
 
   @override
@@ -2058,6 +2101,36 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeRecentTransactions => 'Giao dịch gần đây';
+
+  @override
+  String get financeOverviewActionsSubtitle => 'Đi thẳng vào thao tác bạn cần làm tiếp theo.';
+
+  @override
+  String get financeOverviewCreateTransactionHint => 'Ghi nhanh thu, chi hoặc chuyển khoản.';
+
+  @override
+  String get financeOverviewWalletsHint => 'Xem số dư và tinh chỉnh từng ví.';
+
+  @override
+  String get financeOverviewManageHint => 'Quản lý danh mục, thẻ và cấu trúc tài chính.';
+
+  @override
+  String get financeOverviewWalletSectionTitle => 'Danh sách ví';
+
+  @override
+  String get financeOverviewWalletSectionSubtitle => 'Nhìn nhanh các số dư quan trọng nhất của bạn.';
+
+  @override
+  String get financeOverviewNoWalletsBody => 'Tạo ví đầu tiên để bắt đầu theo dõi số dư, chuyển khoản và danh mục.';
+
+  @override
+  String get financeOverviewActivityTitle => 'Hoạt động gần đây';
+
+  @override
+  String get financeOverviewActivitySubtitle => 'Biến động mới nhất trên tất cả ví của bạn.';
+
+  @override
+  String get financeOverviewNoTransactionsBody => 'Các giao dịch sẽ xuất hiện ở đây khi bạn bắt đầu ghi nhận dòng tiền vào ra.';
 
   @override
   String get financeNoWallets => 'Chưa có ví';
@@ -2105,6 +2178,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeWalletSearchCurrency => 'Tìm tiền tệ';
 
   @override
+  String get financeCurrencyPickerSubtitle => 'Chọn mã tiền tệ phù hợp nhất với cách ví này được theo dõi.';
+
+  @override
   String get financeWalletCurrencyRequired => 'Nhập mã tiền tệ 3 ký tự hợp lệ';
 
   @override
@@ -2118,6 +2194,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeWalletClearVisual => 'Xóa hình đại diện';
+
+  @override
+  String get financeWalletDialogSubtitle => 'Thiết lập cách ví này hiển thị và hoạt động trong phần tài chính.';
 
   @override
   String get financeWalletCreditDetails => 'Thông tin tín dụng';
@@ -2174,6 +2253,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeNoTags => 'Chưa có thẻ';
 
   @override
+  String get financeManageCategoriesTitle => 'Danh mục';
+
+  @override
+  String get financeManageCategoriesSubtitle => 'Nhóm giao dịch vào các nhóm thu và chi rõ ràng.';
+
+  @override
+  String get financeManageTagsTitle => 'Thẻ';
+
+  @override
+  String get financeManageTagsSubtitle => 'Dùng thẻ cho các nhãn linh hoạt và báo cáo nhanh.';
+
+  @override
+  String get financeManageCategoriesEmptyBody => 'Tạo danh mục cho các mẫu thu nhập và chi tiêu lặp lại.';
+
+  @override
+  String get financeManageTagsEmptyBody => 'Tạo thẻ cho nhãn linh hoạt như chuyến đi, đăng ký hoặc dự án.';
+
+  @override
   String get financeCreateTag => 'Tạo thẻ';
 
   @override
@@ -2192,6 +2289,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeTagNameRequired => 'Vui lòng nhập tên thẻ';
 
   @override
+  String get financeTagDialogSubtitle => 'Đặt tên nhãn và chọn màu để dễ nhận biết.';
+
+  @override
   String get financeIncome => 'Thu nhập';
 
   @override
@@ -2207,6 +2307,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeNoSearchResults => 'Không tìm thấy giao dịch';
 
   @override
+  String get financeActivityDefaultHint => 'Tìm kiếm và rà soát dòng tiền theo từng ngày.';
+
+  @override
+  String get financeActivitySearchHint => 'Tìm kiếm đang mở. Lọc theo nơi chi tiêu, ví hoặc danh mục.';
+
+  @override
+  String get financeActivitySearchEmptyBody => 'Hãy thử từ khóa khác, tên ví hoặc tên danh mục khác.';
+
+  @override
+  String get financeActivityClearSearch => 'Xóa tìm kiếm';
+
+  @override
+  String financeActivitySearchResults(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Khớp $count giao dịch',
+      one: 'Khớp 1 giao dịch',
+      zero: 'Chưa có kết quả',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get financeTransactionDetails => 'Chi tiết giao dịch';
 
   @override
@@ -2214,6 +2338,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeEditTransaction => 'Sửa giao dịch';
+
+  @override
+  String get financeTransactionDialogSubtitle => 'Ghi lại số tiền, nguồn và thiết lập hiển thị trong một nơi.';
 
   @override
   String get financeDeleteTransaction => 'Xóa giao dịch';
@@ -2244,6 +2371,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeWallet => 'Ví';
+
+  @override
+  String get financePickerWalletSubtitle => 'Chọn ví mà giao dịch này sẽ tác động.';
+
+  @override
+  String get financePickerCategorySubtitle => 'Chọn nhóm phù hợp nhất cho giao dịch này.';
+
+  @override
+  String get financePickerTagSubtitle => 'Chọn nhãn tùy chọn để thêm ngữ cảnh.';
+
+  @override
+  String get financeNoTag => 'Không gắn thẻ';
 
   @override
   String get financeDestinationWallet => 'Ví đích';
@@ -2309,6 +2448,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeCategoryNameRequired => 'Vui lòng nhập tên danh mục';
 
   @override
+  String get financeCategoryDialogSubtitle => 'Xác định cách danh mục này hiển thị và nó là thu hay chi.';
+
+  @override
   String get financeType => 'Loại';
 
   @override
@@ -2355,6 +2497,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeQuickActions => 'Thao tác nhanh';
+
+  @override
+  String financeWalletSummaryHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã có $count ví sẵn sàng sử dụng',
+      one: 'Đã có 1 ví sẵn sàng sử dụng',
+      zero: 'Chưa cấu hình ví nào',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get financeAddTransaction => 'Thêm';

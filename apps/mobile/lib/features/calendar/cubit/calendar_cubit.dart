@@ -3,32 +3,70 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/features/calendar/calendar_cache.dart';
 
 part 'calendar_state.dart';
 
 const _sentinel = Object();
 
 class CalendarCubit extends Cubit<CalendarState> {
-  CalendarCubit({required CalendarRepository calendarRepository})
-    : _repo = calendarRepository,
-      super(CalendarState(selectedDate: DateTime.now()));
+  CalendarCubit({
+    required CalendarRepository calendarRepository,
+    CalendarState? initialState,
+  }) : _repo = calendarRepository,
+       super(initialState ?? CalendarState(selectedDate: DateTime.now()));
 
   final CalendarRepository _repo;
+  static final Map<String, _CalendarCacheEntry> _cache = {};
   String? _wsId;
 
+  static CalendarState? cachedStateForWorkspace(String wsId) {
+    return _cache[wsId]?.state;
+  }
+
+  static void clearCache() {
+    _cache.clear();
+  }
+
   /// Loads events within a 3-month window around the selected date.
-  Future<void> loadEvents(String wsId) async {
-    final preserveEvents = _wsId == wsId && state.hasLoadedOnce;
+  Future<void> loadEvents(String wsId, {bool forceRefresh = false}) async {
+    final cached = _cache[wsId];
+    final hasVisibleData = _wsId == wsId && state.hasLoadedOnce;
     _wsId = wsId;
-    emit(
-      state.copyWith(
-        status: CalendarStatus.loading,
-        hasLoadedOnce: preserveEvents && state.hasLoadedOnce,
-        events: preserveEvents ? null : const [],
-        fetchedRange: preserveEvents ? _sentinel : null,
-        clearError: true,
-      ),
-    );
+
+    if (cached != null && !hasVisibleData) {
+      emit(cached.state);
+      if (!forceRefresh && isCalendarCacheFresh(cached.fetchedAt)) {
+        return;
+      }
+    }
+
+    if (!forceRefresh &&
+        cached != null &&
+        isCalendarCacheFresh(cached.fetchedAt) &&
+        (hasVisibleData || cached.state.hasLoadedOnce)) {
+      return;
+    }
+
+    if (hasVisibleData || cached != null) {
+      emit(
+        state.copyWith(
+          status: CalendarStatus.loading,
+          hasLoadedOnce: true,
+          clearError: true,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: CalendarStatus.loading,
+          hasLoadedOnce: false,
+          events: const [],
+          fetchedRange: null,
+          clearError: true,
+        ),
+      );
+    }
 
     try {
       final center = state.effectiveSelectedDate;
@@ -37,19 +75,26 @@ class CalendarCubit extends Cubit<CalendarState> {
 
       final events = await _repo.getEvents(wsId, start: start, end: end);
 
-      emit(
-        state.copyWith(
-          status: CalendarStatus.loaded,
-          hasLoadedOnce: true,
-          events: events,
-          fetchedRange: DateTimeRange(start: start, end: end),
-          clearError: true,
-        ),
+      final nextState = state.copyWith(
+        status: CalendarStatus.loaded,
+        hasLoadedOnce: true,
+        events: events,
+        fetchedRange: DateTimeRange(start: start, end: end),
+        clearError: true,
       );
+      emit(nextState);
+      _storeCache(nextState);
     } on Exception catch (e) {
-      emit(
-        state.copyWith(status: CalendarStatus.error, error: e.toString()),
-      );
+      if (cached != null || hasVisibleData) {
+        emit(
+          state.copyWith(
+            status: CalendarStatus.loaded,
+            clearError: true,
+          ),
+        );
+        return;
+      }
+      emit(state.copyWith(status: CalendarStatus.error, error: e.toString()));
     }
   }
 
@@ -91,10 +136,12 @@ class CalendarCubit extends Cubit<CalendarState> {
           .toList();
 
       emit(
-        state.copyWith(
-          events: [...state.events, ...uniqueNew],
-          fetchedRange: DateTimeRange(start: range.start, end: newEnd),
-          isLoadingMore: false,
+        _storeAndReturn(
+          state.copyWith(
+            events: [...state.events, ...uniqueNew],
+            fetchedRange: DateTimeRange(start: range.start, end: newEnd),
+            isLoadingMore: false,
+          ),
         ),
       );
     } on Exception catch (e) {
@@ -104,9 +151,11 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   void selectDate(DateTime date) {
     emit(
-      state.copyWith(
-        selectedDate: date,
-        focusedMonth: DateTime(date.year, date.month),
+      _storeAndReturn(
+        state.copyWith(
+          selectedDate: date,
+          focusedMonth: DateTime(date.year, date.month),
+        ),
       ),
     );
   }
@@ -114,9 +163,11 @@ class CalendarCubit extends Cubit<CalendarState> {
   void goToToday() {
     final now = DateTime.now();
     emit(
-      state.copyWith(
-        selectedDate: now,
-        focusedMonth: DateTime(now.year, now.month),
+      _storeAndReturn(
+        state.copyWith(
+          selectedDate: now,
+          focusedMonth: DateTime(now.year, now.month),
+        ),
       ),
     );
   }
@@ -127,11 +178,11 @@ class CalendarCubit extends Cubit<CalendarState> {
   }
 
   void setViewMode(CalendarViewMode mode) {
-    emit(state.copyWith(viewMode: mode));
+    emit(_storeAndReturn(state.copyWith(viewMode: mode)));
   }
 
   void setFocusedMonth(DateTime month) {
-    emit(state.copyWith(focusedMonth: month));
+    emit(_storeAndReturn(state.copyWith(focusedMonth: month)));
   }
 
   /// Creates a new event.
@@ -157,7 +208,9 @@ class CalendarCubit extends Cubit<CalendarState> {
       });
 
       // Optimistic add.
-      emit(state.copyWith(events: [...state.events, newEvent]));
+      emit(
+        _storeAndReturn(state.copyWith(events: [...state.events, newEvent])),
+      );
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
     }
@@ -192,7 +245,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       );
     }).toList();
 
-    emit(state.copyWith(events: updatedEvents));
+    emit(_storeAndReturn(state.copyWith(events: updatedEvents)));
 
     try {
       await _repo.updateEvent(wsId, eventId, data);
@@ -205,8 +258,10 @@ class CalendarCubit extends Cubit<CalendarState> {
   Future<void> deleteEvent(String wsId, String eventId) async {
     final previousEvents = state.events;
     emit(
-      state.copyWith(
-        events: state.events.where((e) => e.id != eventId).toList(),
+      _storeAndReturn(
+        state.copyWith(
+          events: state.events.where((e) => e.id != eventId).toList(),
+        ),
       ),
     );
 
@@ -217,4 +272,31 @@ class CalendarCubit extends Cubit<CalendarState> {
       emit(state.copyWith(events: previousEvents, error: e.toString()));
     }
   }
+
+  CalendarState _storeAndReturn(CalendarState nextState) {
+    _storeCache(nextState);
+    return nextState;
+  }
+
+  void _storeCache(CalendarState nextState) {
+    final wsId = _wsId;
+    if (wsId == null || wsId.isEmpty) {
+      return;
+    }
+
+    _cache[wsId] = _CalendarCacheEntry(
+      state: nextState,
+      fetchedAt: DateTime.now(),
+    );
+  }
+}
+
+class _CalendarCacheEntry {
+  const _CalendarCacheEntry({
+    required this.state,
+    required this.fetchedAt,
+  });
+
+  final CalendarState state;
+  final DateTime fetchedAt;
 }

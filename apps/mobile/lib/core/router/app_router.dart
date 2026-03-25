@@ -202,6 +202,11 @@ GoRouter createAppRouter(
             builder: (context, state) => const HabitsPage(),
           ),
           GoRoute(
+            path: Routes.habitsActivity,
+            builder: (context, state) =>
+                const HabitsPage(initialSection: HabitsSection.activity),
+          ),
+          GoRoute(
             path: Routes.taskBoards,
             builder: (context, state) => const TaskBoardsPage(),
           ),
