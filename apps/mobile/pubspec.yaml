@@ -42,7 +42,7 @@ dependencies:
   shadcn_flutter: ^0.0.52
   share_plus: ^12.0.1
   shared_preferences: ^2.5.4
-  supabase_flutter: ^2.12.0
+  supabase_flutter: ^2.12.2
   url_launcher: ^6.3.2
 
 dev_dependencies:
