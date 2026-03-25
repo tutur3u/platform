@@ -87,6 +87,9 @@ class _RequestsViewState extends State<_RequestsView> {
     await context.read<TimeTrackerRequestsCubit>().loadRequests(
       wsId,
       userId: _requestUserFilterId(),
+      statusOverride: _selectedFilter == _RequestStatusFilter.all
+          ? 'all'
+          : approvalStatusToString(_statusFromFilter(_selectedFilter)!),
     );
 
     if (!mounted || !_canManageRequests) {
@@ -780,6 +783,9 @@ class _RequestsViewState extends State<_RequestsView> {
         _statusFromFilter(filter),
         wsId,
         userId: _requestUserFilterId(),
+        statusOverride: filter == _RequestStatusFilter.all
+            ? 'all'
+            : approvalStatusToString(_statusFromFilter(filter)!),
       ),
     );
   }
