@@ -92,7 +92,13 @@ class AppRegistry {
       id: 'habits_home',
       route: Routes.habits,
       icon: Icons.repeat_rounded,
-      labelBuilder: _labelHabits,
+      labelBuilder: _labelHabitsOverview,
+    ),
+    MiniAppNavItem(
+      id: 'habits_activity',
+      route: Routes.habitsActivity,
+      icon: Icons.history_rounded,
+      labelBuilder: _labelHabitsActivity,
     ),
   ];
 
@@ -110,13 +116,13 @@ class AppRegistry {
       id: 'finance_home',
       route: Routes.finance,
       icon: Icons.home_outlined,
-      labelBuilder: _labelHome,
+      labelBuilder: _labelFinanceOverview,
     ),
     MiniAppNavItem(
       id: 'finance_history',
       route: Routes.transactions,
       icon: Icons.receipt_long_outlined,
-      labelBuilder: _labelHistory,
+      labelBuilder: _labelFinanceActivity,
     ),
     MiniAppNavItem(
       id: 'finance_wallets',
@@ -127,8 +133,8 @@ class AppRegistry {
     MiniAppNavItem(
       id: 'finance_more',
       route: Routes.categories,
-      icon: Icons.more_horiz,
-      labelBuilder: _labelMore,
+      icon: Icons.tune_rounded,
+      labelBuilder: _labelFinanceManage,
     ),
   ];
 
@@ -201,6 +207,10 @@ class AppRegistry {
 
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
   static String _labelHabits(AppLocalizations l10n) => l10n.navHabits;
+  static String _labelHabitsOverview(AppLocalizations l10n) =>
+      l10n.habitsOverviewLabel;
+  static String _labelHabitsActivity(AppLocalizations l10n) =>
+      l10n.habitsActivityLabel;
   static String _labelTaskEstimates(AppLocalizations l10n) =>
       l10n.taskPlanningTitle;
   static String _labelTaskBoards(AppLocalizations l10n) => l10n.taskBoardsTitle;
@@ -208,11 +218,14 @@ class AppRegistry {
       l10n.taskPortfolioTitle;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
+  static String _labelFinanceOverview(AppLocalizations l10n) =>
+      l10n.financeOverviewLabel;
+  static String _labelFinanceActivity(AppLocalizations l10n) =>
+      l10n.financeActivityLabel;
+  static String _labelFinanceManage(AppLocalizations l10n) =>
+      l10n.financeManageLabel;
   static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
-  static String _labelHome(AppLocalizations l10n) => l10n.navHome;
-  static String _labelHistory(AppLocalizations l10n) => l10n.timerHistory;
-  static String _labelMore(AppLocalizations l10n) => l10n.navMore;
   static String _labelTimerHistory(AppLocalizations l10n) => l10n.timerHistory;
   static String _labelTimerStats(AppLocalizations l10n) => l10n.timerStatsTitle;
   static String _timerRequestsTitle(AppLocalizations l10n) =>

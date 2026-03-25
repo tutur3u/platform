@@ -229,6 +229,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				8E837E79D5DAB9DA7E2E5A5C /* [CP] Embed Pods Frameworks */,
+				5A9B0E1C6D1A4D3A9B5C7E11 /* Fix Native Asset Framework Platforms */,
 				4C3651E0961AE44CA79F8ED4 /* FlutterFire: "flutterfire upload-crashlytics-symbols" */,
 				39E73A02078E6A4CE204F684 /* [CP] Copy Pods Resources */,
 				A4992B8CF2989EDA19B88042 /* FlutterFire: "flutterfire bundle-service-file" */,
@@ -377,6 +378,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		5A9B0E1C6D1A4D3A9B5C7E11 /* Fix Native Asset Framework Platforms */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Fix Native Asset Framework Platforms";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"${PROJECT_DIR}/Runner/fix_native_asset_framework_platform.sh\"";
 			showEnvVarsInLog = 0;
 		};
 		845192D4B704CDF3C8795531 /* [CP] Check Pods Manifest.lock */ = {

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
+import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -113,6 +114,10 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
           entryDate: '2026-03-25',
           values: const {'glasses': 2.0},
           tags: const ['morning'],
+          member: const HabitTrackerMember(
+            userId: 'user-1',
+            displayName: 'Alex',
+          ),
           createdAt: DateTime(2026, 3, 25),
           updatedAt: DateTime(2026, 3, 25),
         ),
@@ -212,6 +217,7 @@ void main() {
   late _FakeHabitTrackerRepository repository;
 
   setUp(() {
+    HabitsCubit.clearCache();
     workspaceCubit = _MockWorkspaceCubit();
     repository = _FakeHabitTrackerRepository();
     when(() => workspaceCubit.state).thenReturn(
@@ -261,6 +267,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('View member'), findsOneWidget);
+  });
+
+  testWidgets('renders aggregated activity entries in activity section', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      BlocProvider<WorkspaceCubit>.value(
+        value: workspaceCubit,
+        child: HabitsPage(
+          repository: repository,
+          initialSection: HabitsSection.activity,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Alex'), findsOneWidget);
+    expect(find.text('Glasses'), findsOneWidget);
+    expect(find.text('2 glass'), findsOneWidget);
   });
 
   testWidgets('search is hidden by default and toggles from the app bar', (

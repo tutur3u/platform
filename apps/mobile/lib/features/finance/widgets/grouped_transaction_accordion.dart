@@ -6,18 +6,12 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/features/finance/utils/transaction_icon.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 typedef TransactionTapCallback = Future<void> Function(Transaction transaction);
-
-Color _resolveIncomeColor(BuildContext context) {
-  final materialTheme = Theme.of(context);
-  return materialTheme.brightness == Brightness.dark
-      ? Colors.green.shade300
-      : Colors.green.shade700;
-}
 
 class GroupedTransactionAccordion extends StatefulWidget {
   const GroupedTransactionAccordion({
@@ -339,8 +333,8 @@ class _DayGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final l10n = context.l10n;
+    final palette = FinancePalette.of(context);
     final colorScheme = theme.colorScheme;
-    final incomeColor = _resolveIncomeColor(context);
     final stats = group.stats;
     final approximatePrefix = stats.hasConvertedAmounts ? '≈ ' : '';
     final incomeFormatted = formatCurrency(stats.income, workspaceCurrency);
@@ -355,171 +349,115 @@ class _DayGroup extends StatelessWidget {
     final netText = stats.netTotal >= 0
         ? '$approximatePrefix+$netFormatted'
         : '$approximatePrefix$netFormatted';
-    final netColor = stats.netTotal >= 0
-        ? colorScheme.primary
-        : colorScheme.destructive;
+    final netColor = stats.netTotal >= 0 ? palette.positive : palette.negative;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-      child: shad.Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InkWell(
-                onTap: onToggle,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(2, 2, 2, 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              group.fullLabel,
-                              style: theme.typography.small.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.foreground,
-                              ),
+      padding: const EdgeInsets.only(top: 10),
+      child: FinancePanel(
+        padding: const EdgeInsets.all(16),
+        backgroundColor: FinancePalette.of(context).elevatedPanel,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            group.fullLabel,
+                            style: theme.typography.large.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.foreground,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.muted,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${stats.count} '
-                              '${l10n.financeTransactionCountShort}',
-                              style: theme.typography.xSmall.copyWith(
-                                color: colorScheme.mutedForeground,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
                           ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            isExpanded ? Icons.expand_less : Icons.expand_more,
-                            size: 18,
-                            color: colorScheme.mutedForeground,
+                          decoration: BoxDecoration(
+                            color: colorScheme.muted.withValues(alpha: 0.28),
+                            borderRadius: BorderRadius.circular(999),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 2,
-                              children: [
-                                if (incomeText != null)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.arrow_upward,
-                                        size: 12,
-                                        color: incomeColor,
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        incomeText,
-                                        style: theme.typography.xSmall.copyWith(
-                                          color: incomeColor,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                if (expenseText != null)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.arrow_downward,
-                                        size: 12,
-                                        color: colorScheme.destructive,
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        expenseText,
-                                        style: theme.typography.xSmall.copyWith(
-                                          color: colorScheme.destructive,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                              ],
+                          child: Text(
+                            '${stats.count} '
+                            '${l10n.financeTransactionCountShort}',
+                            style: theme.typography.xSmall.copyWith(
+                              color: colorScheme.mutedForeground,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '${l10n.financeNet}  ',
-                                style: theme.typography.xSmall.copyWith(
-                                  color: colorScheme.mutedForeground,
-                                ),
-                              ),
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 112,
-                                ),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerRight,
-                                  child: Text(
-                                    netText,
-                                    style: theme.typography.xSmall.copyWith(
-                                      color: netColor,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          isExpanded
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                          size: 22,
+                          color: colorScheme.mutedForeground,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (incomeText != null)
+                          _SummaryPill(
+                            icon: Icons.arrow_upward_rounded,
+                            label: incomeText,
+                            color: palette.positive,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        if (expenseText != null)
+                          _SummaryPill(
+                            icon: Icons.arrow_downward_rounded,
+                            label: expenseText,
+                            color: palette.negative,
+                          ),
+                        _SummaryPill(
+                          icon: Icons.show_chart_rounded,
+                          label: '${l10n.financeNet} $netText',
+                          color: netColor,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeInOut,
-                child: isExpanded
-                    ? ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: group.transactions.length,
-                        padding: const EdgeInsets.only(bottom: 4),
-                        itemBuilder: (context, index) {
-                          final transaction = group.transactions[index];
-                          return _TransactionTile(
-                            transaction: transaction,
-                            workspaceCurrency: workspaceCurrency,
-                            exchangeRates: exchangeRates,
-                            onTap: () => onTransactionTap(transaction),
-                          );
-                        },
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 8),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
-          ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeInOut,
+              child: isExpanded
+                  ? ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: group.transactions.length,
+                      padding: const EdgeInsets.only(top: 14),
+                      itemBuilder: (context, index) {
+                        final transaction = group.transactions[index];
+                        return _TransactionTile(
+                          transaction: transaction,
+                          workspaceCurrency: workspaceCurrency,
+                          exchangeRates: exchangeRates,
+                          onTap: () => onTransactionTap(transaction),
+                        );
+                      },
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 10),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
         ),
       ),
     );
@@ -553,8 +491,8 @@ class _TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final palette = FinancePalette.of(context);
     final colorScheme = theme.colorScheme;
-    final incomeColor = _resolveIncomeColor(context);
     final amount = transaction.amount ?? 0;
     final isExpense = amount < 0;
     final currency = transaction.walletCurrency ?? workspaceCurrency;
@@ -575,7 +513,7 @@ class _TransactionTile extends StatelessWidget {
 
     final categoryColor =
         _parseHex(transaction.categoryColor) ??
-        (isExpense ? colorScheme.destructive : colorScheme.primary);
+        (isExpense ? palette.negative : palette.positive);
 
     final amountText = isExpense
         ? formatCurrency(amount, currency)
@@ -597,172 +535,191 @@ class _TransactionTile extends StatelessWidget {
 
     final categoryIcon = resolveTransactionCategoryIcon(transaction);
 
-    return shad.Card(
-      padding: EdgeInsets.zero,
-      borderColor: categoryColor.withValues(alpha: 0.35),
-      borderWidth: 1,
-      child: shad.GhostButton(
-        onPressed: onTap,
-        child: Semantics(
-          button: true,
-          onTap: onTap,
-          label: semanticsLabel,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: categoryColor.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      categoryIcon,
-                      size: 17,
-                      color: categoryColor,
+    return Semantics(
+      button: true,
+      onTap: onTap,
+      label: semanticsLabel,
+      child: FinancePanel(
+        radius: 20,
+        onTap: onTap,
+        borderColor: categoryColor.withValues(alpha: 0.28),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: categoryColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(
+                categoryIcon,
+                size: 18,
+                color: categoryColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.small.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
-                      Text(
-                        title,
-                        maxLines: 2,
+                      if (transaction.categoryName != null)
+                        _Chip(
+                          label: transaction.categoryName!,
+                          icon: categoryIcon,
+                          color: categoryColor,
+                        ),
+                      if (transaction.walletName != null)
+                        _Chip(
+                          label: transaction.walletName!,
+                          leading: WalletVisualAvatar(
+                            icon: transaction.walletIcon,
+                            imageSrc: transaction.walletImageSrc,
+                            fallbackIcon: lucide.LucideIcons.walletCards,
+                            size: 14,
+                          ),
+                        ),
+                      if (transaction.isTransfer &&
+                          transaction.transfer != null)
+                        _Chip(
+                          label: transaction.transfer!.linkedWalletName,
+                          icon: lucide.LucideIcons.repeat2,
+                          color: FinancePalette.of(context).accent,
+                        ),
+                    ],
+                  ),
+                  if (transaction.tags.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: transaction.tags.map((tag) {
+                        final tagColor =
+                            _parseHex(tag.color) ??
+                            FinancePalette.of(context).accent;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tagColor.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            tag.name,
+                            style: theme.typography.xSmall.copyWith(
+                              color: tagColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 118),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      amountText,
+                      maxLines: 1,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: isExpense ? palette.negative : palette.positive,
+                      ),
+                    ),
+                  ),
+                  if (transaction.isTransfer)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        context.l10n.financeTransfer,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.p.copyWith(
-                          fontWeight: FontWeight.w500,
-                          height: 1.3,
+                        style: theme.typography.xSmall.copyWith(
+                          color: colorScheme.mutedForeground,
                         ),
                       ),
-                      const SizedBox(height: 5),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: [
-                          if (transaction.categoryName != null)
-                            _Chip(
-                              label: transaction.categoryName!,
-                              icon: categoryIcon,
-                              color: categoryColor,
-                            ),
-                          if (transaction.walletName != null)
-                            _Chip(
-                              label: transaction.walletName!,
-                              leading: WalletVisualAvatar(
-                                icon: transaction.walletIcon,
-                                imageSrc: transaction.walletImageSrc,
-                                fallbackIcon: lucide.LucideIcons.walletCards,
-                                size: 14,
-                              ),
-                            ),
-                          if (transaction.isTransfer &&
-                              transaction.transfer != null)
-                            _Chip(
-                              label: transaction.transfer!.linkedWalletName,
-                              icon: lucide.LucideIcons.repeat2,
-                              color: colorScheme.ring,
-                            ),
-                        ],
-                      ),
-                      if (transaction.tags.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 2,
-                          children: transaction.tags.map((tag) {
-                            final tagColor = _parseHex(tag.color);
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: (tagColor ?? colorScheme.ring)
-                                    .withValues(
-                                      alpha: 0.12,
-                                    ),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: (tagColor ?? colorScheme.ring)
-                                      .withValues(
-                                        alpha: 0.3,
-                                      ),
-                                ),
-                              ),
-                              child: Text(
-                                tag.name,
-                                style: theme.typography.xSmall.copyWith(
-                                  color:
-                                      tagColor ?? colorScheme.mutedForeground,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 110),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          amountText,
-                          maxLines: 1,
-                          style: theme.typography.p.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: isExpense
-                                ? colorScheme.destructive
-                                : incomeColor,
-                          ),
+                    ),
+                  if (convertedAmountText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        convertedAmountText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.xSmall.copyWith(
+                          color: colorScheme.mutedForeground,
                         ),
                       ),
-                      if (transaction.isTransfer)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            context.l10n.financeTransfer,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.xSmall.copyWith(
-                              color: colorScheme.mutedForeground,
-                            ),
-                          ),
-                        ),
-                      if (convertedAmountText != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            convertedAmountText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.xSmall.copyWith(
-                              color: colorScheme.mutedForeground,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryPill extends StatelessWidget {
+  const _SummaryPill({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: shad.Theme.of(context).typography.xSmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
             ),
           ),
-        ),
+        ],
       ),
     );
   }

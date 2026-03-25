@@ -2,15 +2,34 @@ import 'package:bloc/bloc.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
+import 'package:mobile/features/habits/habits_cache.dart';
 
 class HabitsCubit extends Cubit<HabitsState> {
-  HabitsCubit({required IHabitTrackerRepository repository})
-    : _repository = repository,
-      super(const HabitsState());
+  HabitsCubit({
+    required IHabitTrackerRepository repository,
+    HabitsState? initialState,
+  }) : _repository = repository,
+       super(initialState ?? const HabitsState());
 
   final IHabitTrackerRepository _repository;
+  static final Map<String, _HabitsCacheEntry> _cache = {};
+  static final Map<String, String> _latestCacheKeyByWorkspace = {};
   int _listRequestToken = 0;
   int _detailRequestToken = 0;
+  int _activityRequestToken = 0;
+
+  static HabitsState? cachedStateForWorkspace(String wsId) {
+    final key = _latestCacheKeyByWorkspace[wsId];
+    if (key == null) {
+      return null;
+    }
+    return _cache[key]?.state;
+  }
+
+  static void clearCache() {
+    _cache.clear();
+    _latestCacheKeyByWorkspace.clear();
+  }
 
   Future<void> loadWorkspace(
     String wsId, {
@@ -22,25 +41,58 @@ class HabitsCubit extends Cubit<HabitsState> {
     final requestedMemberId = effectiveScope == HabitTrackerScope.member
         ? state.selectedMemberId
         : null;
-    if (!refresh &&
+    final cacheKey = _cacheKeyFor(wsId, effectiveScope, requestedMemberId);
+    final cached = _cache[cacheKey];
+    var hasVisibleData =
         isSameWorkspace &&
-        state.status == HabitsStatus.loaded &&
         state.listResponse != null &&
-        effectiveScope == state.selectedScope) {
+        effectiveScope == state.selectedScope &&
+        requestedMemberId == _scopeUserIdFor(effectiveScope, state);
+
+    if (cached != null && !hasVisibleData) {
+      emit(cached.state);
+      hasVisibleData = true;
+      if (!refresh && isHabitsCacheFresh(cached.fetchedAt)) {
+        return;
+      }
+    }
+
+    if (!refresh &&
+        hasVisibleData &&
+        state.status == HabitsStatus.loaded &&
+        cached != null &&
+        isHabitsCacheFresh(cached.fetchedAt)) {
       return;
     }
 
     final requestToken = ++_listRequestToken;
-    emit(
-      state.copyWith(
-        status: HabitsStatus.loading,
-        activeWorkspaceId: wsId,
-        selectedScope: effectiveScope,
-        selectedMemberId: requestedMemberId,
-        error: null,
-        detailError: null,
-      ),
-    );
+    if (hasVisibleData) {
+      emit(
+        state.copyWith(
+          status: HabitsStatus.loading,
+          activeWorkspaceId: wsId,
+          selectedScope: effectiveScope,
+          selectedMemberId: requestedMemberId,
+          error: null,
+          detailError: null,
+          activityError: null,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: HabitsStatus.loading,
+          activityStatus: HabitsStatus.initial,
+          activeWorkspaceId: wsId,
+          selectedScope: effectiveScope,
+          selectedMemberId: requestedMemberId,
+          activityEntries: const [],
+          error: null,
+          detailError: null,
+          activityError: null,
+        ),
+      );
+    }
 
     try {
       final previousMemberId = state.selectedMemberId;
@@ -66,16 +118,16 @@ class HabitsCubit extends Cubit<HabitsState> {
         searchQuery: state.searchQuery,
       );
 
-      emit(
-        state.copyWith(
-          status: HabitsStatus.loaded,
-          listResponse: response,
-          selectedScope: effectiveScope,
-          selectedMemberId: nextMemberId,
-          selectedTrackerId: nextTrackerId,
-          error: null,
-        ),
+      final nextState = state.copyWith(
+        status: HabitsStatus.loaded,
+        listResponse: response,
+        selectedScope: effectiveScope,
+        selectedMemberId: nextMemberId,
+        selectedTrackerId: nextTrackerId,
+        error: null,
       );
+      emit(nextState);
+      _storeCache(nextState);
 
       if (effectiveScope == HabitTrackerScope.member &&
           nextMemberId != previousMemberId &&
@@ -91,15 +143,18 @@ class HabitsCubit extends Cubit<HabitsState> {
       if (nextTrackerId != null) {
         await loadTrackerDetail(nextTrackerId);
       } else {
-        emit(
-          state.copyWith(
-            detailStatus: HabitsStatus.initial,
-            detail: null,
-            detailError: null,
-            detailScope: null,
-            detailScopeUserId: null,
-          ),
+        final nextState = state.copyWith(
+          detailStatus: HabitsStatus.initial,
+          detail: null,
+          detailError: null,
+          detailScope: null,
+          detailScopeUserId: null,
+          activityStatus: HabitsStatus.initial,
+          activityEntries: const [],
+          activityError: null,
         );
+        emit(nextState);
+        _storeCache(nextState);
       }
     } on Exception catch (error) {
       if (_isStaleListRequest(wsId, requestToken)) {
@@ -108,14 +163,143 @@ class HabitsCubit extends Cubit<HabitsState> {
 
       emit(
         state.copyWith(
-          status: HabitsStatus.error,
-          error: error.toString(),
-          listResponse: null,
-          selectedTrackerId: null,
-          detail: null,
-          detailStatus: HabitsStatus.initial,
-          detailScope: null,
-          detailScopeUserId: null,
+          status: hasVisibleData ? HabitsStatus.loaded : HabitsStatus.error,
+          error: hasVisibleData ? null : error.toString(),
+          listResponse: hasVisibleData ? state.listResponse : null,
+          selectedTrackerId: hasVisibleData ? state.selectedTrackerId : null,
+          detail: hasVisibleData ? state.detail : null,
+          detailStatus: hasVisibleData
+              ? state.detailStatus
+              : HabitsStatus.initial,
+          detailScope: hasVisibleData ? state.detailScope : null,
+          detailScopeUserId: hasVisibleData ? state.detailScopeUserId : null,
+          activityStatus: hasVisibleData
+              ? state.activityStatus
+              : HabitsStatus.initial,
+          activityEntries: hasVisibleData ? state.activityEntries : const [],
+          activityError: hasVisibleData ? state.activityError : null,
+        ),
+      );
+    }
+  }
+
+  Future<void> loadActivity({bool refresh = false}) async {
+    final wsId = state.activeWorkspaceId;
+    if (wsId == null || wsId.isEmpty) {
+      return;
+    }
+    final cacheKey = _cacheKeyFor(
+      wsId,
+      state.selectedScope,
+      _scopeUserIdFor(state.selectedScope, state),
+    );
+    final cached = _cache[cacheKey];
+    final hasVisibleEntries =
+        state.activityEntries.isNotEmpty ||
+        state.activityStatus == HabitsStatus.loaded;
+
+    if (cached != null && !hasVisibleEntries) {
+      emit(cached.state);
+      if (!refresh &&
+          cached.state.activityStatus == HabitsStatus.loaded &&
+          isHabitsCacheFresh(cached.fetchedAt)) {
+        return;
+      }
+    }
+
+    if (!refresh &&
+        state.activityStatus == HabitsStatus.loaded &&
+        cached != null &&
+        isHabitsCacheFresh(cached.fetchedAt)) {
+      return;
+    }
+    if (state.listResponse == null) {
+      await loadWorkspace(wsId, refresh: refresh);
+      if (state.listResponse == null) {
+        return;
+      }
+    }
+
+    final requestToken = ++_activityRequestToken;
+    final activityScope = state.selectedScope;
+    final activityUserId = activityScope == HabitTrackerScope.member
+        ? state.selectedMemberId
+        : null;
+
+    emit(
+      state.copyWith(
+        activityStatus: HabitsStatus.loading,
+        activityError: null,
+      ),
+    );
+
+    try {
+      final trackers = state.trackers;
+      if (trackers.isEmpty) {
+        emit(
+          state.copyWith(
+            activityStatus: HabitsStatus.loaded,
+            activityEntries: const [],
+            activityError: null,
+          ),
+        );
+        return;
+      }
+
+      final details = await Future.wait(
+        trackers.map(
+          (summary) => _repository.getTrackerDetail(
+            wsId,
+            summary.tracker.id,
+            scope: activityScope,
+            userId: activityUserId,
+          ),
+        ),
+      );
+
+      if (_isStaleActivityRequest(
+        wsId,
+        requestToken,
+        activityScope,
+        activityUserId,
+      )) {
+        return;
+      }
+
+      final entries =
+          details
+              .expand(
+                (detail) => detail.entries.map(
+                  (entry) => HabitActivityEntry(
+                    tracker: detail.tracker,
+                    entry: entry,
+                  ),
+                ),
+              )
+              .toList(growable: false)
+            ..sort((left, right) => right.timestamp.compareTo(left.timestamp));
+
+      final nextState = state.copyWith(
+        activityStatus: HabitsStatus.loaded,
+        activityEntries: entries,
+        activityError: null,
+      );
+      emit(nextState);
+      _storeCache(nextState);
+    } on Exception catch (error) {
+      if (_isStaleActivityRequest(
+        wsId,
+        requestToken,
+        activityScope,
+        activityUserId,
+      )) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          activityStatus: HabitsStatus.error,
+          activityError: error.toString(),
         ),
       );
     }
@@ -163,15 +347,15 @@ class HabitsCubit extends Cubit<HabitsState> {
         return;
       }
 
-      emit(
-        state.copyWith(
-          detail: detail,
-          detailStatus: HabitsStatus.loaded,
-          detailError: null,
-          detailScope: detailScope,
-          detailScopeUserId: detailScopeUserId,
-        ),
+      final nextState = state.copyWith(
+        detail: detail,
+        detailStatus: HabitsStatus.loaded,
+        detailError: null,
+        detailScope: detailScope,
+        detailScopeUserId: detailScopeUserId,
       );
+      emit(nextState);
+      _storeCache(nextState);
     } on Exception catch (error) {
       if (_isStaleDetailRequest(wsId, trackerId, requestToken)) {
         return;
@@ -236,12 +420,19 @@ class HabitsCubit extends Cubit<HabitsState> {
       searchQuery: value,
     );
 
-    emit(state.copyWith(searchQuery: value, selectedTrackerId: nextTrackerId));
+    final nextState = state.copyWith(
+      searchQuery: value,
+      selectedTrackerId: nextTrackerId,
+    );
+    emit(nextState);
+    _storeCache(nextState);
   }
 
   void setQuickLogDraft(String trackerId, String value) {
     final drafts = <String, String>{...state.quickLogDrafts, trackerId: value};
-    emit(state.copyWith(quickLogDrafts: drafts));
+    final nextState = state.copyWith(quickLogDrafts: drafts);
+    emit(nextState);
+    _storeCache(nextState);
   }
 
   Future<void> createTracker(HabitTrackerInput input) async {
@@ -355,10 +546,19 @@ class HabitsCubit extends Cubit<HabitsState> {
       return;
     }
 
-    emit(state.copyWith(selectedTrackerId: selectTrackerId));
+    final shouldRefreshActivity =
+        state.activityStatus != HabitsStatus.initial ||
+        state.activityEntries.isNotEmpty;
+
+    final nextState = state.copyWith(selectedTrackerId: selectTrackerId);
+    emit(nextState);
+    _storeCache(nextState);
     await loadWorkspace(wsId, refresh: true);
     if (selectTrackerId != null) {
       await loadTrackerDetail(selectTrackerId, refresh: true);
+    }
+    if (shouldRefreshActivity) {
+      await loadActivity(refresh: true);
     }
   }
 
@@ -370,6 +570,56 @@ class HabitsCubit extends Cubit<HabitsState> {
     return state.activeWorkspaceId != wsId ||
         state.selectedTrackerId != trackerId ||
         requestToken != _detailRequestToken;
+  }
+
+  bool _isStaleActivityRequest(
+    String wsId,
+    int requestToken,
+    HabitTrackerScope scope,
+    String? userId,
+  ) {
+    if (state.activeWorkspaceId != wsId ||
+        requestToken != _activityRequestToken) {
+      return true;
+    }
+    if (state.selectedScope != scope) {
+      return true;
+    }
+    if (scope == HabitTrackerScope.member && state.selectedMemberId != userId) {
+      return true;
+    }
+    return false;
+  }
+
+  static String? _scopeUserIdFor(HabitTrackerScope scope, HabitsState state) {
+    return scope == HabitTrackerScope.member ? state.selectedMemberId : null;
+  }
+
+  static String _cacheKeyFor(
+    String wsId,
+    HabitTrackerScope scope,
+    String? userId,
+  ) {
+    return '$wsId::${scope.apiValue}::${userId ?? ''}';
+  }
+
+  void _storeCache(HabitsState nextState) {
+    final wsId = nextState.activeWorkspaceId;
+    final listResponse = nextState.listResponse;
+    if (wsId == null || wsId.isEmpty || listResponse == null) {
+      return;
+    }
+
+    final cacheKey = _cacheKeyFor(
+      wsId,
+      nextState.selectedScope,
+      _scopeUserIdFor(nextState.selectedScope, nextState),
+    );
+    _cache[cacheKey] = _HabitsCacheEntry(
+      state: nextState,
+      fetchedAt: DateTime.now(),
+    );
+    _latestCacheKeyByWorkspace[wsId] = cacheKey;
   }
 
   String? _resolveSelectedMemberId({
@@ -425,4 +675,14 @@ class HabitsCubit extends Cubit<HabitsState> {
         })
         .toList(growable: false);
   }
+}
+
+class _HabitsCacheEntry {
+  const _HabitsCacheEntry({
+    required this.state,
+    required this.fetchedAt,
+  });
+
+  final HabitsState state;
+  final DateTime fetchedAt;
 }

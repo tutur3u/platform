@@ -295,7 +295,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<void> _pickWallet() async {
-    final selectedWalletId = await shad.showDialog<String?>(
+    final selectedWalletId = await showFinanceModal<String?>(
       context: context,
       builder: (_) => _WalletPickerDialog(
         wallets: _wallets,
@@ -315,7 +315,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<void> _pickDestinationWallet() async {
-    final selectedWalletId = await shad.showDialog<String?>(
+    final selectedWalletId = await showFinanceModal<String?>(
       context: context,
       builder: (_) => _WalletPickerDialog(
         wallets: _wallets,
@@ -333,7 +333,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<void> _pickCategory() async {
-    final selectedCategoryId = await shad.showDialog<String?>(
+    final selectedCategoryId = await showFinanceModal<String?>(
       context: context,
       builder: (_) => _CategoryPickerDialog(
         categories: _categories,
@@ -346,7 +346,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<void> _pickTag() async {
-    final selectedTagId = await shad.showDialog<String?>(
+    final selectedTagId = await showFinanceModal<String?>(
       context: context,
       builder: (_) => _TagPickerDialog(
         tags: _tags,
