@@ -6,6 +6,11 @@ extension _ShellPageInteractions on _ShellPageState {
     BuildContext context,
     AppModule activeModule,
   ) async {
+    _debugBack(
+      'miniAppNav.tap',
+      'key=$key activeModule=${activeModule.id} '
+          'current=${_normalizeRouteLocation(widget.matchedLocation)}',
+    );
     if (key == _ShellPageState._backToRootKey) {
       await _openAppsDrawerFromAppsTab();
       return;
@@ -20,7 +25,20 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
 
-    context.go(selected.route);
+    final currentRoute = _normalizeRouteLocation(widget.matchedLocation);
+    final selectedRoute = _normalizeRouteLocation(selected.route);
+    if (currentRoute == selectedRoute) {
+      return;
+    }
+
+    final isMiniAppRoot =
+        selectedRoute == _normalizeRouteLocation(activeModule.route);
+    _debugBack(
+      isMiniAppRoot ? 'miniAppNav.go' : 'miniAppNav.goChild',
+      selectedRoute,
+    );
+    context.go(selectedRoute);
+
     await context.read<AppTabCubit>().setLastTabRoute(selected.route);
 
     if (_activeLayerPage == 0) {
@@ -85,6 +103,7 @@ extension _ShellPageInteractions on _ShellPageState {
 
   void _handleAppsLongPress() {
     if (!mounted) return;
+    _debugBack('rootNav.longPressApps');
     unawaited(context.read<AppTabCubit>().openWithSearch());
     context.go(Routes.apps);
   }
@@ -92,6 +111,8 @@ extension _ShellPageInteractions on _ShellPageState {
   Future<void> _openAppsDrawerFromAppsTab() async {
     final currentContext = context;
     final appTabCubit = currentContext.read<AppTabCubit>();
+    _debugBack('rootNav.openAppsDrawer');
+    _suppressPointerEventsDuringTransition();
     await appTabCubit.clearSelection();
     if (!currentContext.mounted) {
       return;
@@ -116,12 +137,17 @@ extension _ShellPageInteractions on _ShellPageState {
     }
 
     final route = switch (index) {
-      2 =>
-        AppRegistry.moduleById(appTabCubit.state.selectedId)?.route ??
-            Routes.apps,
+      2 => Routes.apps,
       1 => Routes.assistant,
       _ => Routes.home,
     };
+    _debugBack(
+      'rootNav.tap',
+      'index=$index route=$route selectedApp=${appTabCubit.state.selectedId}',
+    );
+    if (route == Routes.apps) {
+      _suppressPointerEventsDuringTransition();
+    }
     if (!context.mounted) {
       return;
     }

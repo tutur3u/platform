@@ -13,15 +13,22 @@ class AppTabCubit extends Cubit<AppTabState> {
       super(const AppTabState());
 
   final SettingsRepository _settings;
+  int _selectionRequestVersion = 0;
+
+  void _bumpSelectionVersion() {
+    _selectionRequestVersion += 1;
+  }
 
   Future<void> clearSelection() async {
-    if (state.selectedId == null) return;
-    emit(
-      state.copyWith(
-        selectedId: () => null,
-        shouldAutoFocus: false,
-      ),
-    );
+    _bumpSelectionVersion();
+    if (state.selectedId != null || state.shouldAutoFocus) {
+      emit(
+        state.copyWith(
+          selectedId: () => null,
+          shouldAutoFocus: false,
+        ),
+      );
+    }
     try {
       await _settings.clearLastAppRoute();
       await _settings.setLastTabRoute(Routes.apps);
@@ -35,6 +42,7 @@ class AppTabCubit extends Cubit<AppTabState> {
   }
 
   Future<void> loadLastApp() async {
+    final requestVersion = ++_selectionRequestVersion;
     String? route;
     try {
       route = await _settings.getLastAppRoute();
@@ -43,6 +51,9 @@ class AppTabCubit extends Cubit<AppTabState> {
       return;
     }
     if (route == null) return;
+    if (isClosed || requestVersion != _selectionRequestVersion) {
+      return;
+    }
     final module = AppRegistry.moduleFromLocation(route);
     if (module != null) {
       emit(state.copyWith(selectedId: () => module.id));
@@ -56,6 +67,7 @@ class AppTabCubit extends Cubit<AppTabState> {
   }
 
   Future<void> openWithSearch() async {
+    _bumpSelectionVersion();
     emit(
       state.copyWith(
         selectedId: () => null,
@@ -71,6 +83,7 @@ class AppTabCubit extends Cubit<AppTabState> {
   }
 
   Future<void> select(AppModule module) async {
+    _bumpSelectionVersion();
     if (state.selectedId == module.id && state.hasSelection) return;
     emit(state.copyWith(selectedId: () => module.id));
     try {
@@ -90,6 +103,7 @@ class AppTabCubit extends Cubit<AppTabState> {
   }
 
   void syncFromLocation(String location) {
+    _bumpSelectionVersion();
     final module = AppRegistry.moduleFromLocation(location);
     if (module == null || module.id == state.selectedId) return;
     emit(state.copyWith(selectedId: () => module.id));

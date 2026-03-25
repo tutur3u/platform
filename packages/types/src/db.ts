@@ -152,6 +152,11 @@ export type TaskRouteRecordRow = Pick<Tables<'tasks'>, 'id'> &
     projects: TaskProjectRelationRow[] | null;
   };
 export type WorkspaceHabit = Tables<'workspace_habits'>;
+export type WorkspaceHabitTracker = Tables<'workspace_habit_trackers'>;
+export type WorkspaceHabitTrackerEntryRow =
+  Tables<'workspace_habit_tracker_entries'>;
+export type WorkspaceHabitTrackerStreakActionRow =
+  Tables<'workspace_habit_tracker_streak_actions'>;
 export type HabitCalendarEventRow = Tables<'habit_calendar_events'>;
 export type HabitCompletionRow = Tables<'habit_completions'>;
 

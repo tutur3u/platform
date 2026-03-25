@@ -121,6 +121,12 @@ abstract class AppLocalizations {
   /// **'Sign in to continue'**
   String get loginSubtitle;
 
+  /// No description provided for @loginContinueWithEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with email'**
+  String get loginContinueWithEmail;
+
   /// No description provided for @loginSignIn.
   ///
   /// In en, this message translates to:
@@ -391,6 +397,12 @@ abstract class AppLocalizations {
   /// **'Tasks'**
   String get navTasks;
 
+  /// No description provided for @navHabits.
+  ///
+  /// In en, this message translates to:
+  /// **'Habits'**
+  String get navHabits;
+
   /// No description provided for @navCalendar.
   ///
   /// In en, this message translates to:
@@ -432,6 +444,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back'**
   String get navBack;
+
+  /// No description provided for @navMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get navMore;
 
   /// No description provided for @appsHubSearchHint.
   ///
@@ -499,6 +517,12 @@ abstract class AppLocalizations {
   /// **'Assigned work, planning, and portfolio.'**
   String get appsHubTasksDescription;
 
+  /// No description provided for @appsHubHabitsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared habits, streaks, and recurring progress.'**
+  String get appsHubHabitsDescription;
+
   /// No description provided for @appsHubCalendarDescription.
   ///
   /// In en, this message translates to:
@@ -516,6 +540,690 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tracking sessions, stats, and requests.'**
   String get appsHubTimerDescription;
+
+  /// No description provided for @habitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Habits'**
+  String get habitsTitle;
+
+  /// No description provided for @habitsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load habits right now'**
+  String get habitsLoadError;
+
+  /// No description provided for @habitsSummarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track rituals, routines, and shared momentum across your workspace.'**
+  String get habitsSummarySubtitle;
+
+  /// No description provided for @habitsSummaryVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Current volume'**
+  String get habitsSummaryVolume;
+
+  /// No description provided for @habitsSummaryTargetsMet.
+  ///
+  /// In en, this message translates to:
+  /// **'Targets met'**
+  String get habitsSummaryTargetsMet;
+
+  /// No description provided for @habitsSummaryTopStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Top streak'**
+  String get habitsSummaryTopStreak;
+
+  /// No description provided for @habitsSummaryTrackers.
+  ///
+  /// In en, this message translates to:
+  /// **'Trackers'**
+  String get habitsSummaryTrackers;
+
+  /// No description provided for @habitsScopeSelf.
+  ///
+  /// In en, this message translates to:
+  /// **'Self'**
+  String get habitsScopeSelf;
+
+  /// No description provided for @habitsScopeTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get habitsScopeTeam;
+
+  /// No description provided for @habitsScopeMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get habitsScopeMember;
+
+  /// No description provided for @habitsMemberPickerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'View member'**
+  String get habitsMemberPickerLabel;
+
+  /// No description provided for @habitsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search habits, rituals, or metrics'**
+  String get habitsSearchHint;
+
+  /// No description provided for @habitsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No habit trackers yet'**
+  String get habitsEmptyTitle;
+
+  /// No description provided for @habitsEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first tracker to turn recurring habits into something the whole workspace can follow.'**
+  String get habitsEmptyDescription;
+
+  /// No description provided for @habitsTrackerNoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No description yet'**
+  String get habitsTrackerNoDescription;
+
+  /// No description provided for @habitsCreateTrackerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create tracker'**
+  String get habitsCreateTrackerAction;
+
+  /// No description provided for @habitsSaveTrackerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save tracker'**
+  String get habitsSaveTrackerAction;
+
+  /// No description provided for @habitsCreateTrackerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create habit tracker'**
+  String get habitsCreateTrackerTitle;
+
+  /// No description provided for @habitsEditTrackerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit habit tracker'**
+  String get habitsEditTrackerTitle;
+
+  /// No description provided for @habitsCreateTrackerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Define the goal, logging fields, and quick actions your workspace will use.'**
+  String get habitsCreateTrackerDescription;
+
+  /// No description provided for @habitsEditTrackerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the tracker structure, goal, and quick-add behavior.'**
+  String get habitsEditTrackerDescription;
+
+  /// No description provided for @habitsTemplateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from a template'**
+  String get habitsTemplateLabel;
+
+  /// No description provided for @habitsNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get habitsNameLabel;
+
+  /// No description provided for @habitsNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracker name is required'**
+  String get habitsNameRequired;
+
+  /// No description provided for @habitsDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get habitsDescriptionLabel;
+
+  /// No description provided for @habitsTrackingModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking mode'**
+  String get habitsTrackingModeLabel;
+
+  /// No description provided for @habitsModeDailySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily summary'**
+  String get habitsModeDailySummary;
+
+  /// No description provided for @habitsModeEventLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Event log'**
+  String get habitsModeEventLog;
+
+  /// No description provided for @habitsAggregationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Aggregation'**
+  String get habitsAggregationLabel;
+
+  /// No description provided for @habitsAggregationSum.
+  ///
+  /// In en, this message translates to:
+  /// **'Sum'**
+  String get habitsAggregationSum;
+
+  /// No description provided for @habitsAggregationMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get habitsAggregationMax;
+
+  /// No description provided for @habitsAggregationCountEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Count entries'**
+  String get habitsAggregationCountEntries;
+
+  /// No description provided for @habitsAggregationBooleanAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any complete'**
+  String get habitsAggregationBooleanAny;
+
+  /// No description provided for @habitsTargetPeriodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Target period'**
+  String get habitsTargetPeriodLabel;
+
+  /// No description provided for @habitsPeriodDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get habitsPeriodDaily;
+
+  /// No description provided for @habitsPeriodWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get habitsPeriodWeekly;
+
+  /// No description provided for @habitsTargetOperatorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Target operator'**
+  String get habitsTargetOperatorLabel;
+
+  /// No description provided for @habitsTargetOperatorEq.
+  ///
+  /// In en, this message translates to:
+  /// **'Exactly'**
+  String get habitsTargetOperatorEq;
+
+  /// No description provided for @habitsTargetOperatorGte.
+  ///
+  /// In en, this message translates to:
+  /// **'At least'**
+  String get habitsTargetOperatorGte;
+
+  /// No description provided for @habitsTargetValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Target value'**
+  String get habitsTargetValueLabel;
+
+  /// No description provided for @habitsTargetValueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Target value must be greater than zero'**
+  String get habitsTargetValueRequired;
+
+  /// No description provided for @habitsStartDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get habitsStartDateLabel;
+
+  /// No description provided for @habitsAppearanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get habitsAppearanceLabel;
+
+  /// No description provided for @habitsIconLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get habitsIconLabel;
+
+  /// No description provided for @habitsFieldsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fields'**
+  String get habitsFieldsTitle;
+
+  /// No description provided for @habitsFieldsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one valid field'**
+  String get habitsFieldsRequired;
+
+  /// No description provided for @habitsAddField.
+  ///
+  /// In en, this message translates to:
+  /// **'Add field'**
+  String get habitsAddField;
+
+  /// No description provided for @habitsPrimaryMetricLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary metric'**
+  String get habitsPrimaryMetricLabel;
+
+  /// No description provided for @habitsPrimaryMetricRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a primary metric field'**
+  String get habitsPrimaryMetricRequired;
+
+  /// No description provided for @habitsQuickAddValuesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick-add values'**
+  String get habitsQuickAddValuesLabel;
+
+  /// No description provided for @habitsQuickAddValuesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: 1, 2, 3'**
+  String get habitsQuickAddValuesHint;
+
+  /// No description provided for @habitsFreezeAllowanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Freeze allowance'**
+  String get habitsFreezeAllowanceLabel;
+
+  /// No description provided for @habitsRecoveryWindowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery windows'**
+  String get habitsRecoveryWindowLabel;
+
+  /// No description provided for @habitsActiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get habitsActiveLabel;
+
+  /// No description provided for @habitsFieldKeysUnique.
+  ///
+  /// In en, this message translates to:
+  /// **'Field keys must be unique'**
+  String get habitsFieldKeysUnique;
+
+  /// No description provided for @habitsSelectOptionsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select fields need at least one option'**
+  String get habitsSelectOptionsRequired;
+
+  /// No description provided for @habitsFieldCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Field {count}'**
+  String habitsFieldCardTitle(int count);
+
+  /// No description provided for @habitsFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Field label'**
+  String get habitsFieldLabel;
+
+  /// No description provided for @habitsFieldType.
+  ///
+  /// In en, this message translates to:
+  /// **'Field type'**
+  String get habitsFieldType;
+
+  /// No description provided for @habitsFieldKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Field key'**
+  String get habitsFieldKey;
+
+  /// No description provided for @habitsFieldUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get habitsFieldUnit;
+
+  /// No description provided for @habitsFieldOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get habitsFieldOptions;
+
+  /// No description provided for @habitsFieldOptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: easy, medium, hard'**
+  String get habitsFieldOptionsHint;
+
+  /// No description provided for @habitsFieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required field'**
+  String get habitsFieldRequired;
+
+  /// No description provided for @habitsFieldTypeBoolean.
+  ///
+  /// In en, this message translates to:
+  /// **'Boolean'**
+  String get habitsFieldTypeBoolean;
+
+  /// No description provided for @habitsFieldTypeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get habitsFieldTypeNumber;
+
+  /// No description provided for @habitsFieldTypeDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get habitsFieldTypeDuration;
+
+  /// No description provided for @habitsFieldTypeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get habitsFieldTypeText;
+
+  /// No description provided for @habitsFieldTypeSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get habitsFieldTypeSelect;
+
+  /// No description provided for @habitsOverviewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get habitsOverviewTab;
+
+  /// No description provided for @habitsEntriesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries'**
+  String get habitsEntriesTab;
+
+  /// No description provided for @habitsLeaderboardTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard'**
+  String get habitsLeaderboardTab;
+
+  /// No description provided for @habitsLogEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log entry'**
+  String get habitsLogEntryTitle;
+
+  /// No description provided for @habitsLogEntryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture a habit update without leaving the habits area.'**
+  String get habitsLogEntryDescription;
+
+  /// No description provided for @habitsLogEntryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Log entry'**
+  String get habitsLogEntryAction;
+
+  /// No description provided for @habitsCompleteNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete now'**
+  String get habitsCompleteNow;
+
+  /// No description provided for @habitsEntryDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry date'**
+  String get habitsEntryDateLabel;
+
+  /// No description provided for @habitsEntryNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get habitsEntryNoteLabel;
+
+  /// No description provided for @habitsEntryTagsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get habitsEntryTagsLabel;
+
+  /// No description provided for @habitsEntryTagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated tags'**
+  String get habitsEntryTagsHint;
+
+  /// No description provided for @habitsSaveEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Save entry'**
+  String get habitsSaveEntry;
+
+  /// No description provided for @habitsMarkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark done'**
+  String get habitsMarkDone;
+
+  /// No description provided for @habitsMarkedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked done'**
+  String get habitsMarkedDone;
+
+  /// No description provided for @habitsFormRequiredField.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete the required fields'**
+  String get habitsFormRequiredField;
+
+  /// No description provided for @habitsFormInvalidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number'**
+  String get habitsFormInvalidNumber;
+
+  /// No description provided for @habitsArchiveTrackerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive habit tracker?'**
+  String get habitsArchiveTrackerTitle;
+
+  /// No description provided for @habitsArchiveTrackerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This tracker will be removed from the active habits view.'**
+  String get habitsArchiveTrackerMessage;
+
+  /// No description provided for @habitsArchiveTrackerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive tracker'**
+  String get habitsArchiveTrackerAction;
+
+  /// No description provided for @habitsDeleteEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete entry?'**
+  String get habitsDeleteEntryTitle;
+
+  /// No description provided for @habitsDeleteEntryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This habit entry will be permanently removed.'**
+  String get habitsDeleteEntryMessage;
+
+  /// No description provided for @habitsDeleteEntryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete entry'**
+  String get habitsDeleteEntryAction;
+
+  /// No description provided for @habitsEditTrackerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tracker'**
+  String get habitsEditTrackerAction;
+
+  /// No description provided for @habitsCurrentStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Current streak'**
+  String get habitsCurrentStreak;
+
+  /// No description provided for @habitsBestStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Best streak'**
+  String get habitsBestStreak;
+
+  /// No description provided for @habitsConsistencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Consistency'**
+  String get habitsConsistencyLabel;
+
+  /// No description provided for @habitsRecoveryWindowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery window'**
+  String get habitsRecoveryWindowTitle;
+
+  /// No description provided for @habitsRecoveryWindowDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a repair or freeze when a streak period needs help staying intact.'**
+  String get habitsRecoveryWindowDescription;
+
+  /// No description provided for @habitsRepairStreakAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair streak'**
+  String get habitsRepairStreakAction;
+
+  /// No description provided for @habitsUseFreezeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Use freeze'**
+  String get habitsUseFreezeAction;
+
+  /// No description provided for @habitsCurrentPeriodMetricsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current period metrics'**
+  String get habitsCurrentPeriodMetricsTitle;
+
+  /// No description provided for @habitsEntriesCountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} entries'**
+  String habitsEntriesCountLabel(int count);
+
+  /// No description provided for @habitsMemberSummariesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Member summaries'**
+  String get habitsMemberSummariesTitle;
+
+  /// No description provided for @habitsTeamSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Team summary'**
+  String get habitsTeamSummaryTitle;
+
+  /// No description provided for @habitsTopStreakLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Top streak'**
+  String get habitsTopStreakLabel;
+
+  /// No description provided for @habitsEntriesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries'**
+  String get habitsEntriesLabel;
+
+  /// No description provided for @habitsNoEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries yet'**
+  String get habitsNoEntries;
+
+  /// No description provided for @habitsNoLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'No leaderboard data yet'**
+  String get habitsNoLeaderboard;
+
+  /// No description provided for @habitsStreakChip.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} streak'**
+  String habitsStreakChip(int count);
+
+  /// No description provided for @habitsTargetChip.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} target'**
+  String habitsTargetChip(double count);
+
+  /// No description provided for @habitsTeamMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Team members'**
+  String get habitsTeamMembers;
+
+  /// No description provided for @habitsTodayTotalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s total'**
+  String get habitsTodayTotalHint;
+
+  /// No description provided for @habitsQuickLogValueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a value before saving'**
+  String get habitsQuickLogValueRequired;
+
+  /// No description provided for @habitsMetricMet.
+  ///
+  /// In en, this message translates to:
+  /// **'Met'**
+  String get habitsMetricMet;
+
+  /// No description provided for @habitsMetricPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get habitsMetricPending;
 
   /// No description provided for @assistantComingSoon.
   ///
@@ -880,13 +1588,13 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardOpenTasks.
   ///
   /// In en, this message translates to:
-  /// **'Open tasks'**
+  /// **'Open'**
   String get dashboardOpenTasks;
 
   /// No description provided for @dashboardOpenCalendar.
   ///
   /// In en, this message translates to:
-  /// **'Open calendar'**
+  /// **'Open'**
   String get dashboardOpenCalendar;
 
   /// No description provided for @dashboardNoAssignedTasks.
@@ -5695,6 +6403,18 @@ abstract class AppLocalizations {
   /// **'Personal'**
   String get workspacePersonalSection;
 
+  /// No description provided for @workspaceSystemBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get workspaceSystemBadge;
+
+  /// No description provided for @workspaceSystemSection.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get workspaceSystemSection;
+
   /// No description provided for @workspaceTeamSection.
   ///
   /// In en, this message translates to:
@@ -5767,6 +6487,12 @@ abstract class AppLocalizations {
   /// **'Enter the code from your authenticator app'**
   String get mfaSubtitle;
 
+  /// No description provided for @mfaCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit code'**
+  String get mfaCodeLabel;
+
   /// No description provided for @mfaVerify.
   ///
   /// In en, this message translates to:
@@ -5820,6 +6546,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get commonRetry;
+
+  /// No description provided for @commonPressBackAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit'**
+  String get commonPressBackAgainToExit;
+
+  /// No description provided for @commonPressBackAgainToExitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again within 2 seconds to close the app.'**
+  String get commonPressBackAgainToExitHint;
 
   /// No description provided for @commonPrevious.
   ///

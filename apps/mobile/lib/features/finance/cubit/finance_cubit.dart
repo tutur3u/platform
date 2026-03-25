@@ -16,14 +16,15 @@ class FinanceCubit extends Cubit<FinanceState> {
   final FinanceRepository _repo;
 
   /// Loads wallets and recent transactions for the workspace.
-  ///
-  /// Wallets are loaded first because `wallet_transactions` does not have a
-  /// `ws_id` column — transactions are scoped through their wallet.
   Future<void> loadFinanceData(String wsId) async {
     emit(state.copyWith(status: FinanceStatus.loading, clearError: true));
 
     try {
       final walletsFuture = _repo.getWallets(wsId);
+      final recentTransactionsFuture = _repo.getTransactionsInfinite(
+        wsId: wsId,
+        limit: 10,
+      );
       final workspaceCurrencyFuture = _repo
           .getWorkspaceDefaultCurrency(wsId)
           .catchError((_) => 'USD');
@@ -32,13 +33,7 @@ class FinanceCubit extends Cubit<FinanceState> {
       );
 
       final wallets = await walletsFuture;
-      final walletIds = wallets.map((w) => w.id).toList();
-      final transactionsFuture = _repo.getTransactions(
-        walletIds: walletIds,
-        limit: 10,
-      );
-
-      final transactions = await transactionsFuture;
+      final recentTransactionsPage = await recentTransactionsFuture;
       final workspaceCurrency = await workspaceCurrencyFuture;
       final exchangeRates = await exchangeRatesFuture;
 
@@ -46,7 +41,7 @@ class FinanceCubit extends Cubit<FinanceState> {
         state.copyWith(
           status: FinanceStatus.loaded,
           wallets: wallets,
-          recentTransactions: transactions,
+          recentTransactions: recentTransactionsPage.data,
           workspaceCurrency: workspaceCurrency,
           exchangeRates: exchangeRates,
           clearError: true,

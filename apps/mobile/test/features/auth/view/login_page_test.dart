@@ -5,6 +5,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -36,6 +37,10 @@ void main() {
 
       expect(find.text('Continue with Apple'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
+      expect(
+        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('disables social buttons while auth is busy', (
@@ -54,13 +59,46 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Continue with Apple'), findsOneWidget);
-      expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Continue with Apple'), findsNothing);
+      expect(find.text('Continue with Google'), findsNothing);
+      expect(find.byType(shad.OutlineButton), findsNWidgets(2));
 
-      await tester.tap(find.text('Continue with Apple'));
-      await tester.tap(find.text('Continue with Google'));
+      await tester.tap(find.byType(shad.OutlineButton).first);
+      await tester.tap(find.byType(shad.OutlineButton).last);
       verifyNever(() => authCubit.signInWithApple());
       verifyNever(() => authCubit.signInWithGoogle());
+    });
+
+    testWidgets('switches to password step after confirming email', (
+      tester,
+    ) async {
+      const state = AuthState.unauthenticated();
+      when(() => authCubit.state).thenReturn(state);
+      whenListen(
+        authCubit,
+        const Stream<AuthState>.empty(),
+        initialState: state,
+      );
+
+      await tester.pumpApp(
+        BlocProvider.value(value: authCubit, child: const LoginPage()),
+      );
+      await tester.pump();
+
+      await tester.enterText(
+        find.byType(shad.TextField).first,
+        'user@test.com',
+      );
+      await tester.tap(
+        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Continue with Apple'), findsNothing);
+      expect(find.text('Continue with Google'), findsNothing);
+      expect(find.text('Back'), findsOneWidget);
+      expect(find.text('user@test.com'), findsOneWidget);
+      expect(find.byType(shad.TextField), findsOneWidget);
     });
   });
 }

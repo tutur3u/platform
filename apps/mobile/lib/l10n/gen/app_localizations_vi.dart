@@ -24,6 +24,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loginSubtitle => 'Đăng nhập để tiếp tục';
 
   @override
+  String get loginContinueWithEmail => 'Tiếp tục với email';
+
+  @override
   String get loginSignIn => 'Đăng nhập';
 
   @override
@@ -159,6 +162,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navTasks => 'Công việc';
 
   @override
+  String get navHabits => 'Thói quen';
+
+  @override
   String get navCalendar => 'Lịch';
 
   @override
@@ -178,6 +184,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get navBack => 'Quay lại';
+
+  @override
+  String get navMore => 'Thêm';
 
   @override
   String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
@@ -213,6 +222,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubTasksDescription => 'Công việc được giao, lập kế hoạch và portfolio.';
 
   @override
+  String get appsHubHabitsDescription => 'Thói quen chung, chuỗi ngày và tiến độ lặp lại.';
+
+  @override
   String get appsHubCalendarDescription => 'Lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
 
   @override
@@ -220,6 +232,356 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appsHubTimerDescription => 'Theo dõi phiên, thống kê và yêu cầu.';
+
+  @override
+  String get habitsTitle => 'Thói quen';
+
+  @override
+  String get habitsLoadError => 'Không thể tải thói quen lúc này';
+
+  @override
+  String get habitsSummarySubtitle => 'Theo dõi các nghi thức, thói quen và động lực chung trong không gian làm việc.';
+
+  @override
+  String get habitsSummaryVolume => 'Khối lượng hiện tại';
+
+  @override
+  String get habitsSummaryTargetsMet => 'Đạt mục tiêu';
+
+  @override
+  String get habitsSummaryTopStreak => 'Chuỗi cao nhất';
+
+  @override
+  String get habitsSummaryTrackers => 'Bộ theo dõi';
+
+  @override
+  String get habitsScopeSelf => 'Cá nhân';
+
+  @override
+  String get habitsScopeTeam => 'Nhóm';
+
+  @override
+  String get habitsScopeMember => 'Thành viên';
+
+  @override
+  String get habitsMemberPickerLabel => 'Xem thành viên';
+
+  @override
+  String get habitsSearchHint => 'Tìm thói quen, nghi thức hoặc chỉ số';
+
+  @override
+  String get habitsEmptyTitle => 'Chưa có bộ theo dõi thói quen';
+
+  @override
+  String get habitsEmptyDescription => 'Tạo bộ theo dõi đầu tiên để biến thói quen lặp lại thành điều cả không gian làm việc có thể cùng theo dõi.';
+
+  @override
+  String get habitsTrackerNoDescription => 'Chưa có mô tả';
+
+  @override
+  String get habitsCreateTrackerAction => 'Tạo bộ theo dõi';
+
+  @override
+  String get habitsSaveTrackerAction => 'Lưu bộ theo dõi';
+
+  @override
+  String get habitsCreateTrackerTitle => 'Tạo bộ theo dõi thói quen';
+
+  @override
+  String get habitsEditTrackerTitle => 'Sửa bộ theo dõi thói quen';
+
+  @override
+  String get habitsCreateTrackerDescription => 'Thiết lập mục tiêu, trường nhập liệu và thao tác nhanh cho không gian làm việc.';
+
+  @override
+  String get habitsEditTrackerDescription => 'Cập nhật cấu trúc bộ theo dõi, mục tiêu và hành vi thêm nhanh.';
+
+  @override
+  String get habitsTemplateLabel => 'Bắt đầu từ mẫu';
+
+  @override
+  String get habitsNameLabel => 'Tên';
+
+  @override
+  String get habitsNameRequired => 'Tên bộ theo dõi là bắt buộc';
+
+  @override
+  String get habitsDescriptionLabel => 'Mô tả';
+
+  @override
+  String get habitsTrackingModeLabel => 'Chế độ theo dõi';
+
+  @override
+  String get habitsModeDailySummary => 'Tổng hợp theo ngày';
+
+  @override
+  String get habitsModeEventLog => 'Nhật ký sự kiện';
+
+  @override
+  String get habitsAggregationLabel => 'Tổng hợp';
+
+  @override
+  String get habitsAggregationSum => 'Cộng dồn';
+
+  @override
+  String get habitsAggregationMax => 'Lớn nhất';
+
+  @override
+  String get habitsAggregationCountEntries => 'Đếm lượt nhập';
+
+  @override
+  String get habitsAggregationBooleanAny => 'Chỉ cần hoàn thành';
+
+  @override
+  String get habitsTargetPeriodLabel => 'Chu kỳ mục tiêu';
+
+  @override
+  String get habitsPeriodDaily => 'Hàng ngày';
+
+  @override
+  String get habitsPeriodWeekly => 'Hàng tuần';
+
+  @override
+  String get habitsTargetOperatorLabel => 'Điều kiện mục tiêu';
+
+  @override
+  String get habitsTargetOperatorEq => 'Chính xác';
+
+  @override
+  String get habitsTargetOperatorGte => 'Ít nhất';
+
+  @override
+  String get habitsTargetValueLabel => 'Giá trị mục tiêu';
+
+  @override
+  String get habitsTargetValueRequired => 'Giá trị mục tiêu phải lớn hơn 0';
+
+  @override
+  String get habitsStartDateLabel => 'Ngày bắt đầu';
+
+  @override
+  String get habitsAppearanceLabel => 'Giao diện';
+
+  @override
+  String get habitsIconLabel => 'Biểu tượng';
+
+  @override
+  String get habitsFieldsTitle => 'Trường dữ liệu';
+
+  @override
+  String get habitsFieldsRequired => 'Hãy thêm ít nhất một trường hợp lệ';
+
+  @override
+  String get habitsAddField => 'Thêm trường';
+
+  @override
+  String get habitsPrimaryMetricLabel => 'Chỉ số chính';
+
+  @override
+  String get habitsPrimaryMetricRequired => 'Chọn trường chỉ số chính';
+
+  @override
+  String get habitsQuickAddValuesLabel => 'Giá trị thêm nhanh';
+
+  @override
+  String get habitsQuickAddValuesHint => 'Ví dụ: 1, 2, 3';
+
+  @override
+  String get habitsFreezeAllowanceLabel => 'Số lần đóng băng';
+
+  @override
+  String get habitsRecoveryWindowLabel => 'Cửa sổ phục hồi';
+
+  @override
+  String get habitsActiveLabel => 'Đang hoạt động';
+
+  @override
+  String get habitsFieldKeysUnique => 'Khóa trường phải là duy nhất';
+
+  @override
+  String get habitsSelectOptionsRequired => 'Trường chọn phải có ít nhất một tùy chọn';
+
+  @override
+  String habitsFieldCardTitle(int count) {
+    return 'Trường $count';
+  }
+
+  @override
+  String get habitsFieldLabel => 'Nhãn trường';
+
+  @override
+  String get habitsFieldType => 'Loại trường';
+
+  @override
+  String get habitsFieldKey => 'Khóa trường';
+
+  @override
+  String get habitsFieldUnit => 'Đơn vị';
+
+  @override
+  String get habitsFieldOptions => 'Tùy chọn';
+
+  @override
+  String get habitsFieldOptionsHint => 'Ví dụ: dễ, trung bình, khó';
+
+  @override
+  String get habitsFieldRequired => 'Trường bắt buộc';
+
+  @override
+  String get habitsFieldTypeBoolean => 'Đúng/Sai';
+
+  @override
+  String get habitsFieldTypeNumber => 'Số';
+
+  @override
+  String get habitsFieldTypeDuration => 'Thời lượng';
+
+  @override
+  String get habitsFieldTypeText => 'Văn bản';
+
+  @override
+  String get habitsFieldTypeSelect => 'Chọn';
+
+  @override
+  String get habitsOverviewTab => 'Tổng quan';
+
+  @override
+  String get habitsEntriesTab => 'Lượt nhập';
+
+  @override
+  String get habitsLeaderboardTab => 'Bảng xếp hạng';
+
+  @override
+  String get habitsLogEntryTitle => 'Ghi nhận lượt nhập';
+
+  @override
+  String get habitsLogEntryDescription => 'Lưu cập nhật thói quen mà không cần rời khu vực thói quen.';
+
+  @override
+  String get habitsLogEntryAction => 'Ghi nhận';
+
+  @override
+  String get habitsCompleteNow => 'Hoàn thành ngay';
+
+  @override
+  String get habitsEntryDateLabel => 'Ngày nhập';
+
+  @override
+  String get habitsEntryNoteLabel => 'Ghi chú';
+
+  @override
+  String get habitsEntryTagsLabel => 'Thẻ';
+
+  @override
+  String get habitsEntryTagsHint => 'Các thẻ, ngăn cách bằng dấu phẩy';
+
+  @override
+  String get habitsSaveEntry => 'Lưu lượt nhập';
+
+  @override
+  String get habitsMarkDone => 'Đánh dấu hoàn thành';
+
+  @override
+  String get habitsMarkedDone => 'Đã đánh dấu hoàn thành';
+
+  @override
+  String get habitsFormRequiredField => 'Vui lòng điền các trường bắt buộc';
+
+  @override
+  String get habitsFormInvalidNumber => 'Hãy nhập một số hợp lệ';
+
+  @override
+  String get habitsArchiveTrackerTitle => 'Lưu trữ bộ theo dõi?';
+
+  @override
+  String get habitsArchiveTrackerMessage => 'Bộ theo dõi này sẽ bị xóa khỏi danh sách thói quen đang hoạt động.';
+
+  @override
+  String get habitsArchiveTrackerAction => 'Lưu trữ bộ theo dõi';
+
+  @override
+  String get habitsDeleteEntryTitle => 'Xóa lượt nhập?';
+
+  @override
+  String get habitsDeleteEntryMessage => 'Lượt nhập thói quen này sẽ bị xóa vĩnh viễn.';
+
+  @override
+  String get habitsDeleteEntryAction => 'Xóa lượt nhập';
+
+  @override
+  String get habitsEditTrackerAction => 'Sửa bộ theo dõi';
+
+  @override
+  String get habitsCurrentStreak => 'Chuỗi hiện tại';
+
+  @override
+  String get habitsBestStreak => 'Chuỗi tốt nhất';
+
+  @override
+  String get habitsConsistencyLabel => 'Độ ổn định';
+
+  @override
+  String get habitsRecoveryWindowTitle => 'Cửa sổ phục hồi';
+
+  @override
+  String get habitsRecoveryWindowDescription => 'Dùng sửa chuỗi hoặc đóng băng khi một chu kỳ chuỗi cần được giữ nguyên.';
+
+  @override
+  String get habitsRepairStreakAction => 'Sửa chuỗi';
+
+  @override
+  String get habitsUseFreezeAction => 'Dùng đóng băng';
+
+  @override
+  String get habitsCurrentPeriodMetricsTitle => 'Chỉ số chu kỳ hiện tại';
+
+  @override
+  String habitsEntriesCountLabel(int count) {
+    return '$count lượt nhập';
+  }
+
+  @override
+  String get habitsMemberSummariesTitle => 'Tóm tắt thành viên';
+
+  @override
+  String get habitsTeamSummaryTitle => 'Tóm tắt nhóm';
+
+  @override
+  String get habitsTopStreakLabel => 'Chuỗi cao nhất';
+
+  @override
+  String get habitsEntriesLabel => 'Lượt nhập';
+
+  @override
+  String get habitsNoEntries => 'Chưa có lượt nhập';
+
+  @override
+  String get habitsNoLeaderboard => 'Chưa có dữ liệu bảng xếp hạng';
+
+  @override
+  String habitsStreakChip(int count) {
+    return '$count chuỗi';
+  }
+
+  @override
+  String habitsTargetChip(double count) {
+    return 'Mục tiêu $count';
+  }
+
+  @override
+  String get habitsTeamMembers => 'Thành viên nhóm';
+
+  @override
+  String get habitsTodayTotalHint => 'Tổng hôm nay';
+
+  @override
+  String get habitsQuickLogValueRequired => 'Hãy nhập giá trị trước khi lưu';
+
+  @override
+  String get habitsMetricMet => 'Đạt';
+
+  @override
+  String get habitsMetricPending => 'Chưa đạt';
 
   @override
   String get assistantComingSoon => 'Sắp ra mắt';
@@ -404,10 +766,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardUpcomingEvents => 'Sự kiện sắp tới';
 
   @override
-  String get dashboardOpenTasks => 'Mở công việc';
+  String get dashboardOpenTasks => 'Mở';
 
   @override
-  String get dashboardOpenCalendar => 'Mở lịch';
+  String get dashboardOpenCalendar => 'Mở';
 
   @override
   String get dashboardNoAssignedTasks => 'Không có công việc đang hoạt động nào được giao cho bạn.';
@@ -2956,6 +3318,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspacePersonalSection => 'Cá nhân';
 
   @override
+  String get workspaceSystemBadge => 'Hệ thống';
+
+  @override
+  String get workspaceSystemSection => 'Hệ thống';
+
+  @override
   String get workspaceTeamSection => 'Nhóm làm việc';
 
   @override
@@ -2994,6 +3362,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mfaSubtitle => 'Nhập mã từ ứng dụng xác thực của bạn';
 
   @override
+  String get mfaCodeLabel => 'Mã gồm 6 chữ số';
+
+  @override
   String get mfaVerify => 'Xác thực';
 
   @override
@@ -3019,6 +3390,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonRetry => 'Thử lại';
+
+  @override
+  String get commonPressBackAgainToExit => 'Nhấn quay lại lần nữa để thoát';
+
+  @override
+  String get commonPressBackAgainToExitHint => 'Nhấn quay lại lần nữa trong vòng 2 giây để đóng ứng dụng.';
 
   @override
   String get commonPrevious => 'Trước';

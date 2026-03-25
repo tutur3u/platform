@@ -31,10 +31,18 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;
   int _requestVersion = 0;
+  int _insightsRequestVersion = 0;
+
+  void _emitIfOpen(AssistantShellState nextState) {
+    if (isClosed) {
+      return;
+    }
+    emit(nextState);
+  }
 
   Future<void> loadWorkspace(Workspace workspace) async {
     final requestVersion = ++_requestVersion;
-    emit(
+    _emitIfOpen(
       state.copyWith(
         status: AssistantShellStatus.loading,
         workspace: workspace,
@@ -70,7 +78,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       final workspaceCredits = await workspaceCreditsFuture;
       final models = await modelsFuture;
 
-      if (requestVersion != _requestVersion) return;
+      if (isClosed || requestVersion != _requestVersion) return;
 
       final isPersonalDashboardWorkspace =
           personalWorkspaceId != null && personalWorkspaceId == workspace.id;
@@ -87,7 +95,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           ? workspaceCredits
           : await _repository.fetchCredits(creditWorkspaceId);
 
-      if (requestVersion != _requestVersion) return;
+      if (isClosed || requestVersion != _requestVersion) return;
 
       final defaultModelId =
           activeCredits.defaultLanguageModel ?? _defaultAssistantModel.value;
@@ -98,7 +106,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         activeCredits,
       );
 
-      emit(
+      _emitIfOpen(
         state.copyWith(
           status: AssistantShellStatus.loaded,
           workspace: workspace,
@@ -132,8 +140,8 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         ),
       );
     } on Exception catch (error) {
-      if (requestVersion != _requestVersion) return;
-      emit(
+      if (isClosed || requestVersion != _requestVersion) return;
+      _emitIfOpen(
         state.copyWith(
           status: AssistantShellStatus.error,
           error: error.toString(),
@@ -145,11 +153,13 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   Future<void> renameAssistant(String name) async {
     if (state.workspace == null) return;
     final soul = await _repository.updateSoulName(name);
+    if (isClosed) return;
     emit(state.copyWith(soul: soul));
   }
 
   Future<void> refreshSoul() async {
     final soul = await _repository.fetchSoul();
+    if (isClosed) return;
     emit(state.copyWith(soul: soul));
   }
 
@@ -217,12 +227,23 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   Future<void> refreshInsights() async {
     final workspace = state.workspace;
     if (workspace == null) return;
+    final requestVersion = ++_insightsRequestVersion;
+    final workspaceId = workspace.id;
+
     final tasks = await _repository.fetchTasksInsight(
-      wsId: workspace.id,
+      wsId: workspaceId,
       isPersonal: workspace.personal,
     );
-    final calendar = await _repository.fetchCalendarInsight(workspace.id);
-    emit(
+
+    if (isClosed || requestVersion != _insightsRequestVersion) return;
+    if (state.workspace?.id != workspaceId) return;
+
+    final calendar = await _repository.fetchCalendarInsight(workspaceId);
+
+    if (isClosed || requestVersion != _insightsRequestVersion) return;
+    if (state.workspace?.id != workspaceId) return;
+
+    _emitIfOpen(
       state.copyWith(
         tasksInsight: tasks,
         calendarInsight: calendar,

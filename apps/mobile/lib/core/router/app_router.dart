@@ -20,7 +20,7 @@ import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
 import 'package:mobile/features/finance/view/wallets_page.dart';
-import 'package:mobile/features/onboarding/view/onboarding_page.dart';
+import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
@@ -66,7 +66,6 @@ GoRouter createAppRouter(
   WorkspaceCubit workspaceCubit,
   AppTabCubit appTabCubit, {
   String? initialLocation,
-  bool hasSeenOnboarding = false,
 }) {
   return GoRouter(
     debugLogDiagnostics: true,
@@ -100,12 +99,9 @@ GoRouter createAppRouter(
         return isAuthRoute ? null : Routes.login;
       }
 
-      // Not authenticated → redirect to login or onboarding
+      // Not authenticated → redirect to login
       if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
-        if (!hasSeenOnboarding && state.matchedLocation != Routes.onboarding) {
-          return Routes.onboarding;
-        }
-        if (hasSeenOnboarding && state.matchedLocation != Routes.login) {
+        if (state.matchedLocation != Routes.login) {
           return Routes.login;
         }
         return null;
@@ -171,11 +167,6 @@ GoRouter createAppRouter(
         path: Routes.mfaVerify,
         builder: (context, state) => const MfaVerifyPage(),
       ),
-      GoRoute(
-        path: Routes.onboarding,
-        builder: (context, state) => const OnboardingPage(),
-      ),
-
       // ── Workspace selection ──────────────────────
       GoRoute(
         path: Routes.workspaceSelect,
@@ -186,10 +177,7 @@ GoRouter createAppRouter(
       ShellRoute(
         builder: (context, state, child) => BlocProvider(
           create: (_) => AssistantChromeCubit(),
-          child: ShellPage(
-            matchedLocation: state.uri.path,
-            child: child,
-          ),
+          child: ShellPage(matchedLocation: state.uri.path, child: child),
         ),
         routes: [
           GoRoute(
@@ -209,6 +197,10 @@ GoRouter createAppRouter(
               path: module.route,
               builder: (context, _) => module.pageBuilder(context),
             ),
+          GoRoute(
+            path: Routes.habits,
+            builder: (context, state) => const HabitsPage(),
+          ),
           GoRoute(
             path: Routes.taskBoards,
             builder: (context, state) => const TaskBoardsPage(),
@@ -289,9 +281,8 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.timerStats,
-            builder: (context, state) => const TimeTrackerPage(
-              initialSection: TimeTrackerSection.stats,
-            ),
+            builder: (context, state) =>
+                const TimeTrackerPage(initialSection: TimeTrackerSection.stats),
           ),
           GoRoute(
             path: Routes.timerManagement,

@@ -11,6 +11,7 @@ export * from './EducationAccessRequest';
 export * from './Entity';
 export * from './EventParticipant';
 export * from './Habit';
+export * from './HabitTracker';
 export * from './InventoryProductRelations';
 export * from './Invoice';
 export * from './MeetTogetherPlan';

@@ -239,7 +239,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
               child: IndexedStack(
                 index: _index,
                 children: [
-                  TimerTab(onSeeAll: () => context.go(Routes.timerHistory)),
+                  TimerTab(onSeeAll: () => context.push(Routes.timerHistory)),
                   const HistoryTab(),
                   StatsTab(initialScope: widget.initialStatsScope),
                 ],

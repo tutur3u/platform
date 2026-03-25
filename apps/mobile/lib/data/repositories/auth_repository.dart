@@ -229,7 +229,26 @@ class AuthRepository {
       }
 
       final tokens = await _googleIdentityClient.authenticate();
+      return await _completeNativeGoogleSignIn(tokens);
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return const AuthActionResult.cancelled();
+      }
 
+      if (_shouldFallbackToBrowserFromNativeError(e.code)) {
+        return null;
+      }
+
+      return const AuthActionResult.failure(AuthErrorCode.googleSignInFailed);
+    } on Exception {
+      return const AuthActionResult.failure(AuthErrorCode.googleSignInFailed);
+    }
+  }
+
+  Future<AuthActionResult> _completeNativeGoogleSignIn(
+    GoogleIdentityTokens tokens,
+  ) async {
+    try {
       await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: tokens.idToken,
@@ -237,17 +256,25 @@ class AuthRepository {
       );
 
       return const AuthActionResult.success();
-    } on GoogleSignInException catch (e) {
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        return const AuthActionResult.cancelled();
-      }
-
-      return null;
     } on AuthException {
-      return null;
+      return const AuthActionResult.failure(AuthErrorCode.googleSignInFailed);
     } on Exception {
-      return null;
+      return const AuthActionResult.failure(AuthErrorCode.googleSignInFailed);
     }
+  }
+
+  bool _shouldFallbackToBrowserFromNativeError(
+    GoogleSignInExceptionCode code,
+  ) {
+    return switch (code) {
+      GoogleSignInExceptionCode.clientConfigurationError ||
+      GoogleSignInExceptionCode.providerConfigurationError ||
+      GoogleSignInExceptionCode.uiUnavailable => true,
+      GoogleSignInExceptionCode.unknownError ||
+      GoogleSignInExceptionCode.interrupted ||
+      GoogleSignInExceptionCode.userMismatch ||
+      GoogleSignInExceptionCode.canceled => false,
+    };
   }
 
   Future<AuthActionResult> _launchBrowserGoogleSignIn() async {

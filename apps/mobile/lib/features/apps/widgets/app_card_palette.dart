@@ -10,8 +10,32 @@ class AppCardPalette {
     required this.textColor,
   });
 
-  factory AppCardPalette.resolve(BuildContext context, int index) {
+  factory AppCardPalette.resolve(
+    BuildContext context, {
+    required int index,
+    String? moduleId,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (moduleId == 'habits') {
+      return isDark
+          ? const AppCardPalette(
+              background: Color(0xFF2E1E1A),
+              border: Color(0xFFB46D45),
+              shadow: Color(0x22190F0B),
+              iconBackground: Color(0xFF442A22),
+              iconColor: Color(0xFFFFD8BE),
+              textColor: Color(0xFFFFF0E6),
+            )
+          : const AppCardPalette(
+              background: Color(0xFFFFE8D8),
+              border: Color(0xFFF2B58A),
+              shadow: Color(0x33F29A58),
+              iconBackground: Color(0xFFFFFFFF),
+              iconColor: Color(0xFF9A4F1F),
+              textColor: Color(0xFF4C240B),
+            );
+    }
+
     final palettes = isDark
         ? const [
             AppCardPalette(

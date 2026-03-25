@@ -23,55 +23,75 @@ class AuthScaffold extends StatelessWidget {
     final deviceClass = context.deviceClass;
     final hPadding = ResponsivePadding.horizontal(deviceClass);
     final maxFormW = ResponsivePadding.maxFormWidth(deviceClass);
+    final keyboardBottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardVisible = keyboardBottomInset > 0;
 
     return shad.Scaffold(
       child: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxFormW),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (showBackButton)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: shad.GhostButton(
-                          onPressed:
-                              onBack ?? () => Navigator.of(context).pop(),
-                          child: const Icon(Icons.arrow_back),
-                        ),
-                      ),
-                    ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                hPadding,
+                24,
+                hPadding,
+                24 + keyboardBottomInset,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 48,
+                ),
+                child: Align(
+                  alignment: keyboardVisible
+                      ? Alignment.topCenter
+                      : Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxFormW),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (showBackButton)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 24),
+                              child: shad.GhostButton(
+                                onPressed:
+                                    onBack ?? () => Navigator.of(context).pop(),
+                                child: const Icon(Icons.arrow_back),
+                              ),
+                            ),
+                          ),
 
-                  // Brand Header
-                  Center(
-                    child: Image.asset(
-                      'assets/logos/transparent.png',
-                      width: 64,
-                      height: 64,
+                        // Brand Header
+                        Center(
+                          child: Image.asset(
+                            'assets/logos/transparent.png',
+                            width: 64,
+                            height: 64,
+                          ),
+                        ),
+
+                        const shad.Gap(48),
+
+                        if (title != null) ...[
+                          Text(
+                            title!,
+                            style: theme.typography.h2,
+                            textAlign: TextAlign.center,
+                          ),
+                          const shad.Gap(24),
+                        ],
+
+                        child,
+                      ],
                     ),
                   ),
-
-                  const shad.Gap(48),
-
-                  if (title != null) ...[
-                    Text(
-                      title!,
-                      style: theme.typography.h2,
-                      textAlign: TextAlign.center,
-                    ),
-                    const shad.Gap(24),
-                  ],
-
-                  child,
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
