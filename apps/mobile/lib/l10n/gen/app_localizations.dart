@@ -439,6 +439,12 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get navBack;
 
+  /// No description provided for @navMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get navMore;
+
   /// No description provided for @appsHubSearchHint.
   ///
   /// In en, this message translates to:
@@ -5701,6 +5707,18 @@ abstract class AppLocalizations {
   /// **'Personal'**
   String get workspacePersonalSection;
 
+  /// No description provided for @workspaceSystemBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get workspaceSystemBadge;
+
+  /// No description provided for @workspaceSystemSection.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get workspaceSystemSection;
+
   /// No description provided for @workspaceTeamSection.
   ///
   /// In en, this message translates to:
@@ -5772,6 +5790,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter the code from your authenticator app'**
   String get mfaSubtitle;
+
+  /// No description provided for @mfaCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit code'**
+  String get mfaCodeLabel;
 
   /// No description provided for @mfaVerify.
   ///

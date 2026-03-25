@@ -44,6 +44,7 @@ yarn-debug.log*
 
 # turbo
 .turbo
+.worktrees
 
 # Typescript
 *.tsbuildinfo

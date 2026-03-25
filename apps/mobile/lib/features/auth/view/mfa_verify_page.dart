@@ -5,6 +5,8 @@ import 'package:flutter/material.dart'
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/auth/widgets/auth_action_button.dart';
+import 'package:mobile/features/auth/widgets/auth_otp_field.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -18,10 +20,22 @@ class MfaVerifyPage extends StatefulWidget {
 
 class _MfaVerifyPageState extends State<MfaVerifyPage> {
   final _codeController = TextEditingController();
+  final _otpFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _otpFocusNode.requestFocus();
+      }
+    });
+  }
 
   @override
   void dispose() {
     _codeController.dispose();
+    _otpFocusNode.dispose();
     super.dispose();
   }
 
@@ -29,10 +43,7 @@ class _MfaVerifyPageState extends State<MfaVerifyPage> {
     final code = _codeController.text.trim();
     if (code.length != 6) return;
 
-    final success = await context.read<AuthCubit>().verifyMfa(code);
-    if (!success && mounted) {
-      _codeController.clear();
-    }
+    await context.read<AuthCubit>().verifyMfa(code);
   }
 
   @override
@@ -41,59 +52,89 @@ class _MfaVerifyPageState extends State<MfaVerifyPage> {
     final theme = shad.Theme.of(context);
 
     return AuthScaffold(
-      title: l10n.mfaTitle,
       child: BlocBuilder<AuthCubit, AuthState>(
         buildWhen: (prev, curr) =>
             prev.isLoading != curr.isLoading || prev.error != curr.error,
         builder: (context, state) {
-          return Column(
-            children: [
-              Text(
-                l10n.mfaSubtitle,
-                style: theme.typography.textMuted.copyWith(fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              const shad.Gap(32),
-              shad.InputOTP(
-                onChanged: (v) {
-                  _codeController.text = v.otpToString();
-                  if (v.otpToString().length == 6) {
-                    unawaited(_handleVerify());
-                  }
-                },
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  shad.InputOTPChild.character(allowDigit: true),
-                  shad.InputOTPChild.character(allowDigit: true),
-                  shad.InputOTPChild.character(allowDigit: true),
-                  shad.InputOTPChild.separator,
-                  shad.InputOTPChild.character(allowDigit: true),
-                  shad.InputOTPChild.character(allowDigit: true),
-                  shad.InputOTPChild.character(allowDigit: true),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 290),
+                    child: Center(
+                      child: Text(
+                        l10n.mfaTitle,
+                        style: theme.typography.h2.copyWith(
+                          height: 1.02,
+                          letterSpacing: -0.6,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  const shad.Gap(18),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 260),
+                    child: Text(
+                      l10n.mfaSubtitle,
+                      style: theme.typography.textMuted.copyWith(
+                        fontSize: 15,
+                        height: 1.35,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const shad.Gap(30),
+                  Text(
+                    l10n.mfaCodeLabel,
+                    style: theme.typography.small.copyWith(
+                      color: theme.colorScheme.mutedForeground,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const shad.Gap(16),
+                  Center(
+                    child: AuthOtpField(
+                      controller: _codeController,
+                      focusNode: _otpFocusNode,
+                      enabled: !state.isLoading,
+                      onChanged: (_) {},
+                      onCompleted: (_) => unawaited(_handleVerify()),
+                    ),
+                  ),
+                  if (state.error != null) ...[
+                    const shad.Gap(18),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 280),
+                        child: Text(
+                          state.error!,
+                          style: theme.typography.small.copyWith(
+                            color: theme.colorScheme.destructive,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const shad.Gap(32),
+                  AuthPrimaryButton(
+                    label: l10n.mfaVerify,
+                    isLoading: state.isLoading,
+                    onPressed: _handleVerify,
+                  ),
+                  const shad.Gap(12),
+                  Center(
+                    child: _SignOutButton(l10n: l10n, isBusy: state.isLoading),
+                  ),
                 ],
               ),
-              if (state.error != null) ...[
-                const shad.Gap(16),
-                Text(
-                  state.error!,
-                  style: theme.typography.small.copyWith(
-                    color: theme.colorScheme.destructive,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              const shad.Gap(32),
-              SizedBox(
-                width: double.infinity,
-                child: shad.PrimaryButton(
-                  onPressed: state.isLoading ? null : _handleVerify,
-                  child: state.isLoading
-                      ? const shad.CircularProgressIndicator(size: 20)
-                      : Text(l10n.mfaVerify),
-                ),
-              ),
-              const shad.Gap(16),
-              _SignOutButton(l10n: l10n),
-            ],
+            ),
           );
         },
       ),
@@ -102,20 +143,25 @@ class _MfaVerifyPageState extends State<MfaVerifyPage> {
 }
 
 class _SignOutButton extends StatelessWidget {
-  const _SignOutButton({required this.l10n});
+  const _SignOutButton({
+    required this.l10n,
+    required this.isBusy,
+  });
 
   final AppLocalizations l10n;
+  final bool isBusy;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: shad.GhostButton(
-        onPressed: () {
-          unawaited(context.read<AuthCubit>().signOut());
-        },
-        child: Text(l10n.mfaSignOut),
-      ),
+    return AuthSecondaryButton(
+      label: l10n.mfaSignOut,
+      expand: false,
+      onPressed: isBusy
+          ? null
+          : () {
+              unawaited(context.read<AuthCubit>().signOut());
+            },
+      variant: AuthSecondaryButtonVariant.ghost,
     );
   }
 }

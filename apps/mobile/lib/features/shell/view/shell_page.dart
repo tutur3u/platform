@@ -65,6 +65,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const MethodChannel _androidBackChannel = MethodChannel(
     'mobile/shell_back',
   );
+  static const double _compactMiniBackButtonMinWidth = 68;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;

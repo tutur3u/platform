@@ -17,6 +17,7 @@ import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -49,10 +50,7 @@ class DashboardPage extends StatelessWidget {
   }
 
   void _loadTasksIfReady(BuildContext context, TaskListCubit cubit) {
-    final workspace = context
-        .read<WorkspaceCubit>()
-        .state
-        .personalWorkspaceOrCurrent;
+    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     if (workspace == null) return;
     unawaited(
       cubit.loadTasks(wsId: workspace.id, isPersonal: workspace.personal),
@@ -60,10 +58,7 @@ class DashboardPage extends StatelessWidget {
   }
 
   void _loadEventsIfReady(BuildContext context, CalendarCubit cubit) {
-    final workspace = context
-        .read<WorkspaceCubit>()
-        .state
-        .personalWorkspaceOrCurrent;
+    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     if (workspace == null) return;
     unawaited(cubit.loadEvents(workspace.id));
   }
@@ -78,10 +73,9 @@ class _DashboardView extends StatelessWidget {
       listeners: [
         BlocListener<WorkspaceCubit, WorkspaceState>(
           listenWhen: (previous, current) =>
-              previous.personalWorkspaceOrCurrent?.id !=
-              current.personalWorkspaceOrCurrent?.id,
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
           listener: (context, state) {
-            final workspace = state.personalWorkspaceOrCurrent;
+            final workspace = state.currentWorkspace;
             if (workspace == null) return;
             unawaited(
               context.read<TaskListCubit>().loadTasks(
@@ -95,7 +89,7 @@ class _DashboardView extends StatelessWidget {
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, workspaceState) {
-          final workspace = workspaceState.personalWorkspaceOrCurrent;
+          final workspace = workspaceState.currentWorkspace;
           if (workspace == null) {
             return shad.Scaffold(
               child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
@@ -156,11 +150,9 @@ class _DashboardView extends StatelessWidget {
                                     sliver: SliverList.list(
                                       children: [
                                         _TodaySummaryCard(
-                                          workspaceName: _displayWorkspaceName(
-                                            workspace.name ??
-                                                context
-                                                    .l10n
-                                                    .assistantPersonalWorkspace,
+                                          workspaceName: displayWorkspaceName(
+                                            context,
+                                            workspace,
                                           ),
                                           activeTasks:
                                               taskState.totalActiveTasks,
@@ -276,16 +268,6 @@ class _DashboardView extends StatelessWidget {
           ..sort((a, b) => a.startAt!.compareTo(b.startAt!));
 
     return result.take(3).toList(growable: false);
-  }
-
-  String _displayWorkspaceName(String value) {
-    if (value.toUpperCase() != value) return value;
-    return value
-        .toLowerCase()
-        .split(RegExp(r'\s+'))
-        .where((part) => part.isNotEmpty)
-        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-        .join(' ');
   }
 }
 

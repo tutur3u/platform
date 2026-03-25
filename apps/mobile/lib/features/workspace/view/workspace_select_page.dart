@@ -9,6 +9,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
 import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -130,10 +131,7 @@ class _WorkspaceListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
-
-    final personal = state.workspaces.where((w) => w.personal).toList();
-    final team = state.workspaces.where((w) => !w.personal).toList()
-      ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+    final sections = splitWorkspaceSections(state.workspaces);
 
     return ResponsiveWrapper(
       maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
@@ -159,18 +157,26 @@ class _WorkspaceListView extends StatelessWidget {
             ],
 
             // Personal workspace section
-            if (personal.isNotEmpty) ...[
+            if (sections.personal.isNotEmpty) ...[
               _SectionHeader(title: l10n.workspacePersonalSection),
               const shad.Gap(8),
-              for (final w in personal) _buildTile(w),
+              for (final w in sections.personal) _buildTile(w),
+            ],
+
+            if (sections.system.isNotEmpty) ...[
+              if (sections.personal.isNotEmpty) const shad.Gap(16),
+              _SectionHeader(title: l10n.workspaceSystemSection),
+              const shad.Gap(8),
+              for (final w in sections.system) _buildTile(w),
             ],
 
             // Team workspaces section
-            if (team.isNotEmpty) ...[
-              if (personal.isNotEmpty) const shad.Gap(16),
+            if (sections.team.isNotEmpty) ...[
+              if (sections.personal.isNotEmpty || sections.system.isNotEmpty)
+                const shad.Gap(16),
               _SectionHeader(title: l10n.workspaceTeamSection),
               const shad.Gap(8),
-              for (final w in team) _buildTile(w),
+              for (final w in sections.team) _buildTile(w),
             ],
           ],
         ),
@@ -268,7 +274,7 @@ class _WorkspaceTile extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      workspace.name ?? workspace.id,
+                      displayWorkspaceName(context, workspace),
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.p.copyWith(
                         fontWeight: isSelected
@@ -277,10 +283,14 @@ class _WorkspaceTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (workspace.personal) ...[
+                  if (workspace.personal || isSystemWorkspace(workspace)) ...[
                     const shad.Gap(8),
                     shad.OutlineBadge(
-                      child: Text(l10n.workspacePersonalBadge),
+                      child: Text(
+                        workspace.personal
+                            ? l10n.workspacePersonalBadge
+                            : l10n.workspaceSystemBadge,
+                      ),
                     ),
                   ],
                 ],

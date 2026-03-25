@@ -183,6 +183,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navBack => 'Back';
 
   @override
+  String get navMore => 'More';
+
+  @override
   String get appsHubSearchHint => 'Search apps';
 
   @override
@@ -2965,6 +2968,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspacePersonalSection => 'Personal';
 
   @override
+  String get workspaceSystemBadge => 'System';
+
+  @override
+  String get workspaceSystemSection => 'System';
+
+  @override
   String get workspaceTeamSection => 'Team workspaces';
 
   @override
@@ -3001,6 +3010,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mfaSubtitle => 'Enter the code from your authenticator app';
+
+  @override
+  String get mfaCodeLabel => '6-digit code';
 
   @override
   String get mfaVerify => 'Verify';

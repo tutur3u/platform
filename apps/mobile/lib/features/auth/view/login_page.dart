@@ -7,6 +7,7 @@ import 'package:mobile/core/config/env.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/utils/auth_error_localization.dart';
+import 'package:mobile/features/auth/widgets/auth_action_button.dart';
 import 'package:mobile/features/auth/widgets/auth_google_button.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -268,17 +269,12 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             const shad.Gap(16),
-            SizedBox(
-              width: double.infinity,
-              child: shad.PrimaryButton(
-                onPressed:
-                    state.isLoading || _emailController.text.trim().isEmpty
-                    ? null
-                    : _showPasswordStep,
-                child: Center(
-                  child: Text(context.l10n.loginContinueWithEmail),
-                ),
-              ),
+            AuthPrimaryButton(
+              label: context.l10n.loginContinueWithEmail,
+              onPressed: _emailController.text.trim().isEmpty
+                  ? null
+                  : _showPasswordStep,
+              isLoading: state.isLoading,
             ),
           ],
         );
@@ -343,29 +339,32 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const shad.Gap(8),
             if (Env.isTurnstileConfigured) ...[
-              CloudflareTurnstile(
-                siteKey: Env.turnstileSiteKey,
-                baseUrl: Env.turnstileBaseUrl,
-                onTokenReceived: (token) {
-                  setState(() => _captchaToken = token);
-                },
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 312),
+                  child: CloudflareTurnstile(
+                    siteKey: Env.turnstileSiteKey,
+                    baseUrl: Env.turnstileBaseUrl,
+                    options: TurnstileOptions(
+                      size: TurnstileSize.flexible,
+                      theme: theme.brightness == Brightness.dark
+                          ? TurnstileTheme.dark
+                          : TurnstileTheme.light,
+                    ),
+                    onTokenReceived: (token) {
+                      setState(() => _captchaToken = token);
+                    },
+                  ),
+                ),
               ),
               const shad.Gap(8),
             ],
-            SizedBox(
-              width: double.infinity,
-              child: shad.PrimaryButton(
-                onPressed:
-                    state.isLoading ||
-                        (Env.isTurnstileConfigured && _captchaToken == null)
-                    ? null
-                    : _handlePasswordLogin,
-                child: state.isLoading
-                    ? const Center(
-                        child: shad.CircularProgressIndicator(size: 20),
-                      )
-                    : Center(child: Text(context.l10n.loginSignIn)),
-              ),
+            AuthPrimaryButton(
+              label: context.l10n.loginSignIn,
+              onPressed: (Env.isTurnstileConfigured && _captchaToken == null)
+                  ? null
+                  : _handlePasswordLogin,
+              isLoading: state.isLoading,
             ),
           ],
         );
