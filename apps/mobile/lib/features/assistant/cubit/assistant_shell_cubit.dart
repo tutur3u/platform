@@ -32,9 +32,16 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   final AssistantPreferences _preferences;
   int _requestVersion = 0;
 
+  void _emitIfOpen(AssistantShellState nextState) {
+    if (isClosed) {
+      return;
+    }
+    emit(nextState);
+  }
+
   Future<void> loadWorkspace(Workspace workspace) async {
     final requestVersion = ++_requestVersion;
-    emit(
+    _emitIfOpen(
       state.copyWith(
         status: AssistantShellStatus.loading,
         workspace: workspace,
@@ -70,7 +77,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       final workspaceCredits = await workspaceCreditsFuture;
       final models = await modelsFuture;
 
-      if (requestVersion != _requestVersion) return;
+      if (isClosed || requestVersion != _requestVersion) return;
 
       final isPersonalDashboardWorkspace =
           personalWorkspaceId != null && personalWorkspaceId == workspace.id;
@@ -87,7 +94,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           ? workspaceCredits
           : await _repository.fetchCredits(creditWorkspaceId);
 
-      if (requestVersion != _requestVersion) return;
+      if (isClosed || requestVersion != _requestVersion) return;
 
       final defaultModelId =
           activeCredits.defaultLanguageModel ?? _defaultAssistantModel.value;
@@ -98,7 +105,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         activeCredits,
       );
 
-      emit(
+      _emitIfOpen(
         state.copyWith(
           status: AssistantShellStatus.loaded,
           workspace: workspace,
@@ -132,8 +139,8 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         ),
       );
     } on Exception catch (error) {
-      if (requestVersion != _requestVersion) return;
-      emit(
+      if (isClosed || requestVersion != _requestVersion) return;
+      _emitIfOpen(
         state.copyWith(
           status: AssistantShellStatus.error,
           error: error.toString(),

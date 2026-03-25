@@ -47,4 +47,42 @@ abstract final class Routes {
       '/tasks/portfolio/projects/$projectId';
 
   static String taskBoardDetailPath(String boardId) => '/tasks/boards/$boardId';
+
+  static String normalizeLocation(String value) {
+    var normalized = value;
+    while (normalized.length > 1 && normalized.endsWith('/')) {
+      normalized = normalized.substring(0, normalized.length - 1);
+    }
+    return normalized;
+  }
+
+  static String? miniAppRootForLocation(String location) {
+    final normalized = normalizeLocation(location);
+
+    if (normalized == tasks || normalized.startsWith('$tasks/')) {
+      return tasks;
+    }
+    if (normalized == finance || normalized.startsWith('$finance/')) {
+      return finance;
+    }
+    if (normalized == timer || normalized.startsWith('$timer/')) {
+      return timer;
+    }
+    if (normalized == calendar || normalized.startsWith('$calendar/')) {
+      return calendar;
+    }
+
+    return null;
+  }
+
+  static bool isMiniAppChildLocation(String location) {
+    final normalized = normalizeLocation(location);
+    final root = miniAppRootForLocation(normalized);
+    return root != null && normalized != root;
+  }
+
+  static bool isMiniAppRootLocation(String location) {
+    final normalized = normalizeLocation(location);
+    return miniAppRootForLocation(normalized) == normalized;
+  }
 }

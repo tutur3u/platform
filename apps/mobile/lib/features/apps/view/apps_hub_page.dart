@@ -13,8 +13,33 @@ import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class AppsHubPage extends StatelessWidget {
+class AppsHubPage extends StatefulWidget {
   const AppsHubPage({super.key});
+
+  @override
+  State<AppsHubPage> createState() => _AppsHubPageState();
+}
+
+class _AppsHubPageState extends State<AppsHubPage> {
+  Timer? _tapShieldTimer;
+  var _tapShieldActive = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tapShieldTimer = Timer(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      setState(() {
+        _tapShieldActive = false;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tapShieldTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,34 +56,38 @@ class AppsHubPage extends StatelessWidget {
             ResponsivePadding.horizontal(context.deviceClass),
             24 + MediaQuery.paddingOf(context).bottom,
           ),
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              const SliverToBoxAdapter(child: _AppsIntro()),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-              SliverGrid(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return _SubproductCard(
-                    module: modules[index],
-                    index: index,
-                  );
-                }, childCount: modules.length),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: context.deviceClass == DeviceClass.expanded
-                      ? 4
-                      : context.deviceClass == DeviceClass.medium
-                      ? 3
-                      : 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: context.deviceClass == DeviceClass.expanded
-                      ? 1.1
-                      : context.deviceClass == DeviceClass.medium
-                      ? 1.0
-                      : 0.88,
+          child: IgnorePointer(
+            ignoring: _tapShieldActive,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                const SliverToBoxAdapter(child: _AppsIntro()),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverGrid(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    return _SubproductCard(
+                      module: modules[index],
+                      index: index,
+                    );
+                  }, childCount: modules.length),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: context.deviceClass == DeviceClass.expanded
+                        ? 4
+                        : context.deviceClass == DeviceClass.medium
+                        ? 3
+                        : 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio:
+                        context.deviceClass == DeviceClass.expanded
+                        ? 1.1
+                        : context.deviceClass == DeviceClass.medium
+                        ? 1.0
+                        : 0.88,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -90,6 +119,9 @@ class _SubproductCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(26),
       onTap: () {
+        debugPrintStack(
+          label: '[AppsHub] open module=${module.id} route=${module.route}',
+        );
         unawaited(context.read<AppTabCubit>().select(module));
         context.go(module.route);
       },

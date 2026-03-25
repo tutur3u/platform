@@ -25,6 +25,7 @@ void main() {
         child: const AppsHubPage(),
       ),
     );
+    await tester.pump(const Duration(milliseconds: 700));
     await tester.pumpAndSettle();
 
     expect(find.text('Tasks'), findsOneWidget);

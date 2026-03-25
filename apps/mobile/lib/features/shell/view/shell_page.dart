@@ -70,6 +70,22 @@ class _ShellPageState extends State<ShellPage> {
   String? _lastLayeredLocation;
   final List<String> _routeHistory = [];
   bool _isHandlingBackNavigation = false;
+  bool _isProcessingBackNavigation = false;
+  bool _ignoreNextPopScopeCallback = false;
+  Timer? _suppressPointerTimer;
+  bool _suppressPointerInput = false;
+
+  void _debugBack(String event, [String? details]) {
+    debugPrint(
+      '[ShellBack] $event '
+      'route=${_normalizeRouteLocation(widget.matchedLocation)} '
+      'history=${_routeHistory.join(' > ')} '
+      'flags={handling:$_isHandlingBackNavigation,'
+      'processing:$_isProcessingBackNavigation,'
+      'ignoreNextPop:$_ignoreNextPopScopeCallback}'
+      '${details == null ? '' : ' $details'}',
+    );
+  }
 
   bool _isAppsTabHit(Offset position) {
     final ctx = _appsTabKey.currentContext;
@@ -104,45 +120,125 @@ class _ShellPageState extends State<ShellPage> {
     final location = widget.matchedLocation;
     final activeModule = AppRegistry.moduleFromLocation(location);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          return;
-        }
-        unawaited(_handleBackNavigation(context));
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        _debugBack('BackButtonListener.start');
+        _ignoreNextPopScopeCallback = true;
+        await _runBackNavigation(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _debugBack('BackButtonListener.postFrameReset');
+          _ignoreNextPopScopeCallback = false;
+        });
+        return true;
       },
-      child: BlocBuilder<AppTabCubit, AppTabState>(
-        builder: (context, state) => _buildCompactLayout(
-          context,
-          state,
-          activeModule: activeModule,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          _debugBack('PopScope.invoked', 'didPop=$didPop result=$result');
+          if (didPop) {
+            return;
+          }
+          if (_ignoreNextPopScopeCallback) {
+            _debugBack('PopScope.ignored');
+            _ignoreNextPopScopeCallback = false;
+            return;
+          }
+          unawaited(_runBackNavigation(context));
+        },
+        child: IgnorePointer(
+          ignoring: _suppressPointerInput,
+          child: BlocBuilder<AppTabCubit, AppTabState>(
+            builder: (context, state) => _buildCompactLayout(
+              context,
+              state,
+              activeModule: activeModule,
+            ),
+          ),
         ),
       ),
     );
   }
 
+  Future<void> _runBackNavigation(BuildContext context) async {
+    if (_isProcessingBackNavigation) {
+      _debugBack('runBackNavigation.skipAlreadyProcessing');
+      return;
+    }
+    _debugBack('runBackNavigation.start');
+    _isProcessingBackNavigation = true;
+    try {
+      await _handleBackNavigation(context);
+    } finally {
+      _isProcessingBackNavigation = false;
+      _debugBack('runBackNavigation.end');
+    }
+  }
+
   Future<void> _handleBackNavigation(BuildContext context) async {
-    final router = GoRouter.of(context);
-    if (router.canPop()) {
-      router.pop();
+    final currentLocation = _normalizeRouteLocation(widget.matchedLocation);
+    final miniAppRoot = Routes.miniAppRootForLocation(currentLocation);
+    _debugBack(
+      'handleBackNavigation.evaluate',
+      'current=$currentLocation miniAppRoot=$miniAppRoot',
+    );
+    if (miniAppRoot != null && miniAppRoot != currentLocation) {
+      final previousMiniAppLocation = _peekPreviousRoute(currentLocation);
+      if (previousMiniAppLocation != null &&
+          _isSameMiniAppFamily(currentLocation, previousMiniAppLocation)) {
+        final previousLocation = _takePreviousRoute(currentLocation);
+        if (previousLocation != null) {
+          _debugBack(
+            'handleBackNavigation.toPreviousMiniApp',
+            previousLocation,
+          );
+          debugPrintStack(
+            label:
+                '[ShellNav] go $previousLocation from back previous mini-app',
+          );
+          _isHandlingBackNavigation = true;
+          context.go(previousLocation);
+          return;
+        }
+      }
+
+      _debugBack('handleBackNavigation.toMiniAppRoot', miniAppRoot);
+      debugPrintStack(
+        label: '[ShellNav] go $miniAppRoot from back mini-app root fallback',
+      );
+      _isHandlingBackNavigation = true;
+      context.go(miniAppRoot);
       return;
     }
 
-    final currentLocation = _normalizeRouteLocation(widget.matchedLocation);
+    if (Routes.isMiniAppRootLocation(currentLocation)) {
+      _suppressPointerEventsDuringTransition();
+      _debugBack('handleBackNavigation.toApps');
+      debugPrintStack(label: '[ShellNav] go ${Routes.apps} from back mini-app');
+      _isHandlingBackNavigation = true;
+      context.go(Routes.apps);
+      return;
+    }
+
     final previousLocation = _takePreviousRoute(currentLocation);
     if (previousLocation != null) {
+      _debugBack('handleBackNavigation.toPreviousRoute', previousLocation);
+      debugPrintStack(
+        label: '[ShellNav] go $previousLocation from back previous route',
+      );
       _isHandlingBackNavigation = true;
       context.go(previousLocation);
       return;
     }
 
     if (!_isExitLocation(currentLocation)) {
+      _debugBack('handleBackNavigation.toHome');
+      debugPrintStack(label: '[ShellNav] go ${Routes.home} from back fallback');
       _isHandlingBackNavigation = true;
       context.go(Routes.home);
       return;
     }
 
+    _debugBack('handleBackNavigation.systemPop');
     await SystemNavigator.pop();
   }
 
@@ -154,10 +250,18 @@ class _ShellPageState extends State<ShellPage> {
     final current = _normalizeRouteLocation(newLocation);
 
     if (previous == current) {
+      _debugBack(
+        'recordRouteVisit.skipSameRoute',
+        'old=$previous new=$current',
+      );
       return;
     }
 
     if (_isHandlingBackNavigation) {
+      _debugBack(
+        'recordRouteVisit.skipBackHandled',
+        'old=$previous new=$current',
+      );
       _isHandlingBackNavigation = false;
       return;
     }
@@ -166,6 +270,7 @@ class _ShellPageState extends State<ShellPage> {
     if (_routeHistory.length > 50) {
       _routeHistory.removeAt(0);
     }
+    _debugBack('recordRouteVisit.added', 'old=$previous new=$current');
   }
 
   String? _takePreviousRoute(String currentLocation) {
@@ -179,16 +284,29 @@ class _ShellPageState extends State<ShellPage> {
     return null;
   }
 
+  String? _peekPreviousRoute(String currentLocation) {
+    for (var i = _routeHistory.length - 1; i >= 0; i--) {
+      final candidate = _normalizeRouteLocation(_routeHistory[i]);
+      if (candidate == currentLocation) {
+        continue;
+      }
+      return candidate;
+    }
+    return null;
+  }
+
+  bool _isSameMiniAppFamily(String locationA, String locationB) {
+    final rootA = Routes.miniAppRootForLocation(locationA);
+    final rootB = Routes.miniAppRootForLocation(locationB);
+    return rootA != null && rootA == rootB;
+  }
+
   bool _isExitLocation(String location) {
     return location == Routes.home || location == Routes.apps;
   }
 
   String _normalizeRouteLocation(String value) {
-    var normalized = value;
-    while (normalized.length > 1 && normalized.endsWith('/')) {
-      normalized = normalized.substring(0, normalized.length - 1);
-    }
-    return normalized;
+    return Routes.normalizeLocation(value);
   }
 
   void _setShellState(VoidCallback fn) {
@@ -196,9 +314,21 @@ class _ShellPageState extends State<ShellPage> {
     setState(fn);
   }
 
+  void _suppressPointerEventsDuringTransition() {
+    _debugBack('pointerSuppression.start');
+    _suppressPointerTimer?.cancel();
+    _setShellState(() => _suppressPointerInput = true);
+    _suppressPointerTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      _debugBack('pointerSuppression.end');
+      _setShellState(() => _suppressPointerInput = false);
+    });
+  }
+
   @override
   void dispose() {
     _stopLongPressTimer();
+    _suppressPointerTimer?.cancel();
     _layerController.dispose();
     super.dispose();
   }
