@@ -38,10 +38,7 @@ class AppsHubPage extends StatelessWidget {
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
               SliverGrid(
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  return _SubproductCard(
-                    module: modules[index],
-                    index: index,
-                  );
+                  return _SubproductCard(module: modules[index], index: index);
                 }, childCount: modules.length),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: context.deviceClass == DeviceClass.expanded
@@ -158,6 +155,7 @@ class _SubproductCard extends StatelessWidget {
 
   String _description(BuildContext context, String moduleId) {
     return switch (moduleId) {
+      'habits' => context.l10n.appsHubHabitsDescription,
       'tasks' => context.l10n.appsHubTasksDescription,
       'calendar' => context.l10n.appsHubCalendarDescription,
       'finance' => context.l10n.appsHubFinanceDescription,
