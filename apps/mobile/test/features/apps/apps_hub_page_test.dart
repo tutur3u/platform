@@ -35,6 +35,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tasks'), findsOneWidget);
+    expect(find.text('Habits'), findsOneWidget);
     expect(find.text('Calendar'), findsOneWidget);
     expect(find.text('Finance'), findsOneWidget);
     expect(find.text('Timer'), findsOneWidget);

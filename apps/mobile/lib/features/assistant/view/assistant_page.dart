@@ -864,7 +864,7 @@ class _AssistantPageState extends State<AssistantPage> {
               itemCount: prompts.length,
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 260,
-                mainAxisExtent: 108,
+                mainAxisExtent: 132,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
               ),
@@ -2306,15 +2306,20 @@ class _PromptChip extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                prompt.label,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
+              const SizedBox(height: 8),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    prompt.label,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                  ),
                 ),
               ),
             ],

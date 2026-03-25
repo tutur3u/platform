@@ -3,6 +3,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
+import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -12,6 +13,15 @@ class AppRegistry {
   const AppRegistry._();
 
   static const List<AppModule> allModules = [
+    AppModule(
+      id: 'habits',
+      route: Routes.habits,
+      icon: Icons.repeat_rounded,
+      labelBuilder: _labelHabits,
+      pageBuilder: _pageHabits,
+      miniAppNavItems: _habitsMiniNav,
+      isPinned: true,
+    ),
     AppModule(
       id: 'tasks',
       route: Routes.tasks,
@@ -74,6 +84,15 @@ class AppRegistry {
       route: Routes.taskPortfolio,
       icon: shad.LucideIcons.gitBranch,
       labelBuilder: _labelTaskPortfolio,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _habitsMiniNav = [
+    MiniAppNavItem(
+      id: 'habits_home',
+      route: Routes.habits,
+      icon: Icons.repeat_rounded,
+      labelBuilder: _labelHabits,
     ),
   ];
 
@@ -181,6 +200,7 @@ class AppRegistry {
   }
 
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
+  static String _labelHabits(AppLocalizations l10n) => l10n.navHabits;
   static String _labelTaskEstimates(AppLocalizations l10n) =>
       l10n.taskPlanningTitle;
   static String _labelTaskBoards(AppLocalizations l10n) => l10n.taskBoardsTitle;
@@ -199,6 +219,7 @@ class AppRegistry {
       l10n.timerRequestsTitle;
 
   static Widget _pageTasks(BuildContext context) => const TaskListPage();
+  static Widget _pageHabits(BuildContext context) => const HabitsPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageFinance(BuildContext context) => const FinancePage();
   static Widget _pageTimer(BuildContext context) => const TimeTrackerPage();

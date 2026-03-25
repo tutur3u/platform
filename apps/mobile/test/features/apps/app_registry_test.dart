@@ -7,9 +7,11 @@ void main() {
     test('matches module root and nested paths', () {
       final financeRoot = AppRegistry.moduleFromLocation(Routes.finance);
       final financeNested = AppRegistry.moduleFromLocation(Routes.transactions);
+      final habitsRoot = AppRegistry.moduleFromLocation(Routes.habits);
 
       expect(financeRoot?.id, 'finance');
       expect(financeNested?.id, 'finance');
+      expect(habitsRoot?.id, 'habits');
     });
 
     test('normalizes trailing slash', () {
@@ -42,6 +44,15 @@ void main() {
       expect(routes, contains(Routes.tasks));
       expect(routes, contains(Routes.taskBoards));
       expect(routes, contains(Routes.taskEstimates));
+    });
+
+    test('habits module exposes its root nav item', () {
+      final habits = AppRegistry.moduleById('habits');
+
+      expect(habits, isNotNull);
+      final routes = habits!.miniAppNavItems.map((item) => item.route).toList();
+
+      expect(routes, [Routes.habits]);
     });
 
     test('all modules define at least one mini nav item', () {
