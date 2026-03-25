@@ -62,8 +62,7 @@ export function BoardClient({
     [board]
   );
 
-  // Tasks start empty — populated progressively per-list by useProgressiveBoardLoader.
-  // Full reconciliation happens on window focus via queryFn.
+  // Tasks start empty and are populated progressively per-list.
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
@@ -75,7 +74,7 @@ export function BoardClient({
     initialData: [],
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: 'always',
+    refetchOnWindowFocus: false,
     enabled: !!boardWorkspaceId,
   });
 
@@ -84,6 +83,44 @@ export function BoardClient({
     boardWorkspaceId,
     boardId
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let isRevalidating = false;
+    let lastRevalidateAt = 0;
+
+    const revalidateLoadedLists = () => {
+      const now = Date.now();
+      if (isRevalidating || now - lastRevalidateAt < 1500) return;
+
+      isRevalidating = true;
+      lastRevalidateAt = now;
+      progressiveLoader
+        .revalidateLoadedLists()
+        .catch(() => {
+          // best effort
+        })
+        .finally(() => {
+          isRevalidating = false;
+        });
+    };
+
+    const onFocus = () => revalidateLoadedLists();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        revalidateLoadedLists();
+      }
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [progressiveLoader.revalidateLoadedLists]);
 
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);

@@ -107,7 +107,7 @@ export function BoardViews({
       if (nextView !== 'list' && nextView !== 'timeline') return;
 
       void queryClient.prefetchQuery({
-        queryKey: ['tasks', board.id],
+        queryKey: ['tasks-full', board.id],
         queryFn: fetchBoardTasks,
         staleTime: 0,
       });
@@ -123,8 +123,8 @@ export function BoardViews({
     [primeFullTaskCache]
   );
 
-  useQuery({
-    queryKey: ['tasks', board.id],
+  const { data: fullTasks = [] } = useQuery({
+    queryKey: ['tasks-full', board.id],
     enabled: shouldEagerLoadTasks,
     queryFn: fetchBoardTasks,
     refetchOnMount: 'always',
@@ -280,11 +280,32 @@ export function BoardViews({
     [filters, currentUserId]
   );
 
+  const sourceTasks = useMemo(() => {
+    if (!shouldEagerLoadTasks) return tasks;
+
+    if (fullTasks.length === 0) return tasks;
+
+    const progressiveById = new Map(
+      tasks.map((task) => [task.id, task] as const)
+    );
+    const merged = fullTasks.map(
+      (task) => progressiveById.get(task.id) ?? task
+    );
+
+    for (const task of tasks) {
+      if (!merged.some((item) => item.id === task.id)) {
+        merged.push(task);
+      }
+    }
+
+    return merged;
+  }, [fullTasks, shouldEagerLoadTasks, tasks]);
+
   // Filter tasks based on filters AND filtered lists
   const filteredTasks = useMemo(() => {
     // First, filter by list status
     const listIds = new Set(filteredLists.map((list) => list.id));
-    let result = tasks.filter((task) => listIds.has(task.list_id));
+    let result = sourceTasks.filter((task) => listIds.has(task.list_id));
 
     // If there's a search query, use semantic search results
     if (filters.searchQuery && filters.searchQuery.trim().length > 0) {
@@ -307,7 +328,7 @@ export function BoardViews({
     // Apply other filters (labels, assignees, projects, priorities, due date)
     return applyNonSearchFilters(result);
   }, [
-    tasks,
+    sourceTasks,
     filters,
     filteredLists,
     semanticSearchResults,
