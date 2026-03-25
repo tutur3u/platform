@@ -1,14 +1,14 @@
+import { createClient } from '@ncthub/supabase/next/server';
+import type { SupabaseUser } from '@ncthub/supabase/next/user';
+import type { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import { Separator } from '@ncthub/ui/separator';
+import dayjs from 'dayjs';
 import Form from './form';
 import NeoMeetHeader from './neo-meet-header';
 import UserTime from './user-time';
-import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import type { SupabaseUser } from '@ncthub/supabase/next/user';
-import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
-import { Separator } from '@ncthub/ui/separator';
-import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { getLocale, getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 export default async function MeetTogetherPage() {
   const locale = await getLocale();
@@ -24,7 +24,7 @@ export default async function MeetTogetherPage() {
       <Separator className="mt-8 mb-4 md:mt-16" />
 
       <div className="flex w-full flex-col items-center justify-center p-4 pb-8 text-foreground">
-        <h2 className="text-center text-2xl font-bold">{t('your_plans')}</h2>
+        <h2 className="text-center font-bold text-2xl">{t('your_plans')}</h2>
 
         {plans?.length > 0 ? (
           <div className="mt-4 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -39,13 +39,15 @@ export default async function MeetTogetherPage() {
                     {plan.name}
                   </h3>
                   {plan.start_time && (
-                    <div className="rounded bg-foreground px-2 py-0.5 text-sm font-semibold text-background">
+                    <div className="rounded bg-foreground px-2 py-0.5 font-semibold text-background text-sm">
                       GMT
                       {Intl.NumberFormat('en-US', {
                         signDisplay: 'always',
                       }).format(
-                        parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? '0') *
-                          (plan.start_time?.includes('-') ? -1 : 1)
+                        parseInt(
+                          plan.start_time?.split(/[+-]/)?.[1] ?? '0',
+                          10
+                        ) * (plan.start_time?.includes('-') ? -1 : 1)
                       )}
                     </div>
                   )}
@@ -113,15 +115,13 @@ async function getData() {
 
   if (!user) return { data: [], count: 0, user };
 
-  const sbAdmin = await createAdminClient();
-
-  const createdPlansQuery = sbAdmin
+  const createdPlansQuery = supabase
     .from('meet_together_plans')
     .select('*')
     .eq('creator_id', user.id)
     .order('created_at', { ascending: false });
 
-  const joinedPlansQuery = sbAdmin
+  const joinedPlansQuery = supabase
     .from('meet_together_user_timeblocks')
     .select('...meet_together_plans(*)')
     .eq('user_id', user.id)

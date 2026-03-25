@@ -8,6 +8,7 @@ interface Params {
 }
 
 export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
   const sbAdmin = await createAdminClient();
   const { planId } = await params;
 
@@ -16,7 +17,7 @@ export async function GET(_: Request, { params }: Params) {
     .select('*')
     .eq('plan_id', planId);
 
-  const userTimeBlocksQuery = sbAdmin
+  const userTimeBlocksQuery = supabase
     .from('meet_together_user_timeblocks')
     .select('*')
     .eq('plan_id', planId);
@@ -40,8 +41,8 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   const timeblocks = [
-    ...(guestTimeBlocks?.data || [])?.map((tb) => ({ ...tb, is_guest: true })),
-    ...(userTimeBlocks?.data || [])?.map((tb) => ({ ...tb, is_guest: false })),
+    ...(guestTimeBlocks?.data || []).map((tb) => ({ ...tb, is_guest: true })),
+    ...(userTimeBlocks?.data || []).map((tb) => ({ ...tb, is_guest: false })),
   ];
 
   return NextResponse.json(timeblocks);

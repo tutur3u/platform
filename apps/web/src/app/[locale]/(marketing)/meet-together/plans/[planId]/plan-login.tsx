@@ -172,7 +172,7 @@ export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
         );
       }}
     >
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-106.25">
         <DialogHeader>
           <DialogTitle>
             {displayMode === 'account-switcher'

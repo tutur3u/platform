@@ -1,4 +1,4 @@
-import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
+import { createClient } from '@ncthub/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(_: Request) {
@@ -30,10 +30,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
   const data = await req.json();
 
-  const { data: plan, error } = await sbAdmin
+  const { data: plan, error } = await supabase
     .from('meet_together_plans')
     .insert({ ...data, creator_id: user.id })
     .select('id')

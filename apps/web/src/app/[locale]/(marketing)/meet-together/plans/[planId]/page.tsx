@@ -4,6 +4,7 @@ import { getPlan } from './helpers';
 import PlanDetailsClient from './plan-details-client';
 import { TimeBlockingProvider } from './time-blocking-provider';
 import 'dayjs/locale/vi';
+import { createClient } from '@ncthub/supabase/next/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -61,6 +62,7 @@ async function getUsers(planId: string) {
 }
 
 async function getTimeBlocks(planId: string) {
+  const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
   const guestQueryBuilder = sbAdmin
@@ -68,7 +70,7 @@ async function getTimeBlocks(planId: string) {
     .select('*')
     .eq('plan_id', planId);
 
-  const userQueryBuilder = sbAdmin
+  const userQueryBuilder = supabase
     .from('meet_together_user_timeblocks')
     .select('*')
     .eq('plan_id', planId);
