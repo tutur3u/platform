@@ -24,6 +24,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loginSubtitle => 'Đăng nhập để tiếp tục';
 
   @override
+  String get loginContinueWithEmail => 'Tiếp tục với email';
+
+  @override
   String get loginSignIn => 'Đăng nhập';
 
   @override

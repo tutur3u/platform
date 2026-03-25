@@ -27,16 +27,12 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class App extends StatefulWidget {
   const App({
-    required this.hasSeenOnboarding,
     this.initialRoute,
     super.key,
   });
 
   /// Shell route to start on (loaded from SharedPreferences in bootstrap).
   final String? initialRoute;
-
-  /// Whether the user has seen the onboarding flow.
-  final bool hasSeenOnboarding;
 
   @override
   State<App> createState() => _AppState();
@@ -85,7 +81,6 @@ class _AppState extends State<App> {
       _workspaceCubit,
       _appTabCubit,
       initialLocation: widget.initialRoute,
-      hasSeenOnboarding: widget.hasSeenOnboarding,
     );
     unawaited(_localeCubit.loadLocale());
     unawaited(_calendarSettingsCubit.loadUserPreference());

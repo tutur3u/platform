@@ -27,7 +27,6 @@ class AppBlocObserver extends BlocObserver {
 Future<void> bootstrap(
   FutureOr<Widget> Function({
     String? initialRoute,
-    bool? hasSeenOnboarding,
   })
   builder,
 ) async {
@@ -64,12 +63,10 @@ Future<void> bootstrap(
   // Use lastTabRoute if it's more specific (e.g., /timer/history vs /timer)
   // otherwise fall back to lastAppRoute or lastTabRoute
   final initialRoute = lastTabRoute ?? lastAppRoute;
-  final hasSeenOnboarding = await SettingsRepository().hasSeenOnboarding();
 
   runApp(
     await builder(
       initialRoute: initialRoute,
-      hasSeenOnboarding: hasSeenOnboarding,
     ),
   );
 }

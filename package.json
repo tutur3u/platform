@@ -23,7 +23,7 @@
     "build": "turbo run build",
     "build:android": "cd apps/mobile && flutter build aab --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "build:android:dev": "cd apps/mobile && flutter build aab --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
-    "build:ios": "cd apps/mobile && flutter build ios --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
+    "build:ios": "cd apps/mobile && flutter build ipa --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "build:ios:dev": "cd apps/mobile && flutter build ios --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
     "build:web": "turbo run build -F @tuturuuu/web",
     "build:tasks": "turbo run build -F @tuturuuu/tasks",

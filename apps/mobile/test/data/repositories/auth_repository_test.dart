@@ -153,6 +153,50 @@ void main() {
     );
 
     test(
+      'returns a failure instead of silently falling back',
+      () async {
+        when(
+          () => googleIdentityClient.initialize(
+            serverClientId: 'web-client-id',
+          ),
+        ).thenAnswer((_) async {});
+        when(
+          () => googleIdentityClient.supportsAuthenticate(),
+        ).thenReturn(true);
+        when(
+          () => googleIdentityClient.authenticate(),
+        ).thenAnswer(
+          (_) async => const GoogleIdentityTokens(
+            idToken: 'id-token',
+            accessToken: 'access-token',
+          ),
+        );
+        when(
+          () => goTrueClient.signInWithIdToken(
+            provider: OAuthProvider.google,
+            idToken: 'id-token',
+            accessToken: 'access-token',
+          ),
+        ).thenThrow(
+          const AuthException('Supabase rejected the Google token'),
+        );
+
+        final result = await repository.signInWithGoogle();
+
+        expect(result.status, AuthActionStatus.failure);
+        expect(result.errorCode, AuthErrorCode.googleSignInFailed);
+        verifyNever(
+          () => oauthUrlLauncher.launchProviderSignIn(
+            authClient: goTrueClient,
+            provider: OAuthProvider.google,
+            redirectTo: any(named: 'redirectTo'),
+            queryParams: any(named: 'queryParams'),
+          ),
+        );
+      },
+    );
+
+    test(
       'does not fall back when native sign-in is explicitly cancelled',
       () async {
         when(

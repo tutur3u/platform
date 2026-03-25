@@ -577,7 +577,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = Tuturuuu;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -588,6 +588,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -663,6 +664,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = iphoneos;
@@ -680,7 +682,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = Tuturuuu;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -691,6 +693,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -778,7 +781,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = Tuturuuu;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -789,6 +792,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -881,6 +885,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = "[DEV] Tuturuuu";
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -891,6 +896,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -981,6 +987,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = "[DEV] Tuturuuu";
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -991,6 +998,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1080,6 +1088,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = "[DEV] Tuturuuu";
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1090,6 +1099,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1182,7 +1192,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = "[STG] Tuturuuu";
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1193,6 +1203,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1268,6 +1279,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = iphoneos;
@@ -1285,7 +1297,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = "[STG] Tuturuuu";
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1296,6 +1308,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1383,7 +1396,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
 				ENABLE_BITCODE = NO;
 				FLAVOR_APP_NAME = "[STG] Tuturuuu";
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -1394,6 +1407,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.1.2;
 				PACKAGE_CONFIG = .dart_tool/package_config.json;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg;
 				PRODUCT_NAME = "$(TARGET_NAME)";
