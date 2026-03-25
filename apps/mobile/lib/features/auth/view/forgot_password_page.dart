@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/auth/widgets/auth_action_button.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -74,12 +75,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               textAlign: TextAlign.center,
             ),
             const shad.Gap(32),
-            SizedBox(
-              width: double.infinity,
-              child: shad.PrimaryButton(
-                onPressed: () => context.go('/login'),
-                child: Text(l10n.forgotPasswordBackToLogin),
-              ),
+            AuthPrimaryButton(
+              label: l10n.forgotPasswordBackToLogin,
+              onPressed: () => context.go('/login'),
             ),
           ],
         ),
@@ -126,14 +124,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                 ],
                 const shad.Gap(32),
-                SizedBox(
-                  width: double.infinity,
-                  child: shad.PrimaryButton(
-                    onPressed: state.isLoading ? null : _handleSubmit,
-                    child: state.isLoading
-                        ? const shad.CircularProgressIndicator(size: 16)
-                        : Text(l10n.forgotPasswordSendReset),
-                  ),
+                AuthPrimaryButton(
+                  label: l10n.forgotPasswordSendReset,
+                  onPressed: _handleSubmit,
+                  isLoading: state.isLoading,
                 ),
               ],
             ),

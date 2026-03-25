@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mobile/features/auth/widgets/auth_action_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -21,31 +22,17 @@ class AuthSocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: shad.OutlineButton(
-        onPressed: isLoading ? null : onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              logoAssetPath,
-              width: 20,
-              height: 20,
-              colorFilter: logoColor == null
-                  ? null
-                  : ColorFilter.mode(logoColor!, BlendMode.srcIn),
-            ),
-            const shad.Gap(10),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
+    return AuthSecondaryButton(
+      label: label,
+      onPressed: onPressed,
+      isLoading: isLoading,
+      leading: SvgPicture.asset(
+        logoAssetPath,
+        width: 20,
+        height: 20,
+        colorFilter: logoColor == null
+            ? null
+            : ColorFilter.mode(logoColor!, BlendMode.srcIn),
       ),
     );
   }

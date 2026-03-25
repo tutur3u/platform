@@ -7,6 +7,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
 import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -24,10 +25,7 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
           builder: (_, state) {
             final l10n = context.l10n;
             final theme = shad.Theme.of(context);
-            final personal = state.workspaces.where((w) => w.personal).toList()
-              ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-            final team = state.workspaces.where((w) => !w.personal).toList()
-              ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+            final sections = splitWorkspaceSections(state.workspaces);
 
             return ConstrainedBox(
               constraints: BoxConstraints(
@@ -87,11 +85,11 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                       child: Column(
                         children: [
-                          if (personal.isNotEmpty)
+                          if (sections.personal.isNotEmpty)
                             _WorkspacePickerGroup(
                               title: l10n.workspacePersonalSection,
                               children: [
-                                for (final workspace in personal)
+                                for (final workspace in sections.personal)
                                   _PickerTile(
                                     workspace: workspace,
                                     isSelected:
@@ -106,12 +104,34 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                                   ),
                               ],
                             ),
-                          if (team.isNotEmpty) ...[
+                          if (sections.system.isNotEmpty) ...[
+                            if (sections.personal.isNotEmpty)
+                              const shad.Gap(10),
+                            _WorkspacePickerGroup(
+                              title: l10n.workspaceSystemSection,
+                              children: [
+                                for (final workspace in sections.system)
+                                  _PickerTile(
+                                    workspace: workspace,
+                                    isSelected:
+                                        workspace.id ==
+                                        state.currentWorkspace?.id,
+                                    onTap: () async {
+                                      await Navigator.maybePop(context);
+                                      await workspaceCubit.selectWorkspace(
+                                        workspace,
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ],
+                          if (sections.team.isNotEmpty) ...[
                             const shad.Gap(10),
                             _WorkspacePickerGroup(
                               title: l10n.workspaceTeamSection,
                               children: [
-                                for (final workspace in team)
+                                for (final workspace in sections.team)
                                   _PickerTile(
                                     workspace: workspace,
                                     isSelected:
@@ -273,7 +293,7 @@ class _PickerTile extends StatelessWidget {
               const shad.Gap(10),
               Expanded(
                 child: Text(
-                  _displayWorkspaceName(context, workspace),
+                  displayWorkspaceName(context, workspace),
                   overflow: TextOverflow.ellipsis,
                   style: theme.typography.p.copyWith(
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
@@ -295,20 +315,4 @@ class _PickerTile extends StatelessWidget {
       ),
     );
   }
-}
-
-String _displayWorkspaceName(BuildContext context, Workspace workspace) {
-  final raw =
-      workspace.name ??
-      (workspace.personal ? context.l10n.workspacePersonalBadge : workspace.id);
-  if (raw.toUpperCase() != raw) {
-    return raw;
-  }
-
-  return raw
-      .toLowerCase()
-      .split(RegExp(r'\s+'))
-      .where((part) => part.isNotEmpty)
-      .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-      .join(' ');
 }

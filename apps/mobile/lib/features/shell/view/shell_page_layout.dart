@@ -291,6 +291,15 @@ extension _ShellPageLayout on _ShellPageState {
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final isCompact = context.isCompact;
     final showBottomNav = MediaQuery.viewInsetsOf(context).bottom <= 0;
+    final compactMiniItems = <Widget>[
+      ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: _ShellPageState._compactMiniBackButtonMinWidth,
+        ),
+        child: miniItems.first,
+      ),
+      ...miniItems.skip(1).map((item) => Expanded(child: item)),
+    ];
     final navigationBar = _buildNavigationBarContainer(
       context: context,
       isCompact: isCompact,
@@ -310,14 +319,12 @@ extension _ShellPageLayout on _ShellPageState {
                           key: _ShellPageState._miniLayerKey,
                           selectedKey: miniSelectedKey,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
+                            horizontal: 4,
                             vertical: 4,
                           ),
                           onSelected: (key) =>
                               _onMiniAppItemTapped(key, context, activeModule),
-                          children: miniItems
-                              .map((item) => Expanded(child: item))
-                              .toList(),
+                          children: compactMiniItems,
                         )
                       : CustomNavigationBar(
                           key: _ShellPageState._miniLayerKey,

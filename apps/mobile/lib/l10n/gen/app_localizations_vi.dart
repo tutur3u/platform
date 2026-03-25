@@ -183,6 +183,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navBack => 'Quay lại';
 
   @override
+  String get navMore => 'Thêm';
+
+  @override
   String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
 
   @override
@@ -2959,6 +2962,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspacePersonalSection => 'Cá nhân';
 
   @override
+  String get workspaceSystemBadge => 'Hệ thống';
+
+  @override
+  String get workspaceSystemSection => 'Hệ thống';
+
+  @override
   String get workspaceTeamSection => 'Nhóm làm việc';
 
   @override
@@ -2995,6 +3004,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mfaSubtitle => 'Nhập mã từ ứng dụng xác thực của bạn';
+
+  @override
+  String get mfaCodeLabel => 'Mã gồm 6 chữ số';
 
   @override
   String get mfaVerify => 'Xác thực';

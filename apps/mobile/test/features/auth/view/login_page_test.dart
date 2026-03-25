@@ -59,11 +59,12 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Continue with Apple'), findsOneWidget);
-      expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Continue with Apple'), findsNothing);
+      expect(find.text('Continue with Google'), findsNothing);
+      expect(find.byType(shad.OutlineButton), findsNWidgets(2));
 
-      await tester.tap(find.text('Continue with Apple'));
-      await tester.tap(find.text('Continue with Google'));
+      await tester.tap(find.byType(shad.OutlineButton).first);
+      await tester.tap(find.byType(shad.OutlineButton).last);
       verifyNever(() => authCubit.signInWithApple());
       verifyNever(() => authCubit.signInWithGoogle());
     });

@@ -24,6 +24,7 @@ class AuthScaffold extends StatelessWidget {
     final hPadding = ResponsivePadding.horizontal(deviceClass);
     final maxFormW = ResponsivePadding.maxFormWidth(deviceClass);
     final keyboardBottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardVisible = keyboardBottomInset > 0;
 
     return shad.Scaffold(
       child: SafeArea(
@@ -41,7 +42,10 @@ class AuthScaffold extends StatelessWidget {
                 constraints: BoxConstraints(
                   minHeight: constraints.maxHeight - 48,
                 ),
-                child: Center(
+                child: Align(
+                  alignment: keyboardVisible
+                      ? Alignment.topCenter
+                      : Alignment.center,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: maxFormW),
                     child: Column(

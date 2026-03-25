@@ -55,6 +55,7 @@ class _ShellPageState extends State<ShellPage> {
   static const double _navIconSize = 22;
   static const double _navItemSpacing = 2;
   static const double _floatingNavMinItemWidth = 96;
+  static const double _compactMiniBackButtonMinWidth = 68;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;
