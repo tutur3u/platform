@@ -234,11 +234,7 @@ export async function WorkspaceNavigationLinks({
     {
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
-      aliases: [
-        `/${personalOrWsId}/tasks`,
-        `/${personalOrWsId}/tasks/habits`,
-        `/${personalOrWsId}/tasks/drafts`,
-      ],
+      aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/drafts`],
       icon: <CheckCircle2 className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
@@ -250,12 +246,6 @@ export async function WorkspaceNavigationLinks({
           matchExact: true,
         },
         null,
-        {
-          title: t('sidebar_tabs.habits'),
-          href: `/${personalOrWsId}/tasks/habits`,
-          icon: <Repeat className="h-4 w-4" />,
-          requireRootMember: true,
-        },
         // {
         //   title: t('sidebar_tabs.notes'),
         //   href: `/${personalOrWsId}/tasks/notes`,
@@ -313,6 +303,12 @@ export async function WorkspaceNavigationLinks({
           disabled: withoutPermission('manage_projects'),
         },
       ],
+    },
+    {
+      title: t('sidebar_tabs.habits'),
+      href: `/${personalOrWsId}/habits`,
+      aliases: [`/${personalOrWsId}/habits`, `/${personalOrWsId}/tasks/habits`],
+      icon: <Repeat className="h-5 w-5" />,
     },
     {
       title: t('sidebar_tabs.calendar'),

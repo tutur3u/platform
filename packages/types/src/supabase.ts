@@ -17335,6 +17335,415 @@ export type Database = {
           },
         ];
       };
+      workspace_habit_tracker_entries: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          entry_date: string;
+          entry_kind: string;
+          id: string;
+          note: string | null;
+          occurred_at: string;
+          primary_value: number | null;
+          tags: string[];
+          tracker_id: string;
+          updated_at: string;
+          user_id: string;
+          values: Json;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          entry_date?: string;
+          entry_kind?: string;
+          id?: string;
+          note?: string | null;
+          occurred_at?: string;
+          primary_value?: number | null;
+          tags?: string[];
+          tracker_id: string;
+          updated_at?: string;
+          user_id: string;
+          values?: Json;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          entry_date?: string;
+          entry_kind?: string;
+          id?: string;
+          note?: string | null;
+          occurred_at?: string;
+          primary_value?: number | null;
+          tags?: string[];
+          tracker_id?: string;
+          updated_at?: string;
+          user_id?: string;
+          values?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_tracker_id_fkey';
+            columns: ['tracker_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habit_trackers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_habit_tracker_streak_actions: {
+        Row: {
+          action_type: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          note: string | null;
+          period_end: string;
+          period_start: string;
+          tracker_id: string;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          action_type: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          note?: string | null;
+          period_end: string;
+          period_start: string;
+          tracker_id: string;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          action_type?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          note?: string | null;
+          period_end?: string;
+          period_start?: string;
+          tracker_id?: string;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_tracker_id_fkey';
+            columns: ['tracker_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_habit_trackers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_tracker_streak_actions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_habit_trackers: {
+        Row: {
+          aggregation_strategy: string;
+          archived_at: string | null;
+          color: string;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          freeze_allowance: number;
+          icon: string;
+          id: string;
+          input_schema: Json;
+          is_active: boolean;
+          name: string;
+          primary_metric_key: string;
+          quick_add_values: Json;
+          recovery_window_periods: number;
+          start_date: string;
+          target_operator: string;
+          target_period: string;
+          target_value: number;
+          tracking_mode: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          aggregation_strategy?: string;
+          archived_at?: string | null;
+          color?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          freeze_allowance?: number;
+          icon?: string;
+          id?: string;
+          input_schema?: Json;
+          is_active?: boolean;
+          name: string;
+          primary_metric_key?: string;
+          quick_add_values?: Json;
+          recovery_window_periods?: number;
+          start_date?: string;
+          target_operator?: string;
+          target_period?: string;
+          target_value?: number;
+          tracking_mode?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          aggregation_strategy?: string;
+          archived_at?: string | null;
+          color?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          freeze_allowance?: number;
+          icon?: string;
+          id?: string;
+          input_schema?: Json;
+          is_active?: boolean;
+          name?: string;
+          primary_metric_key?: string;
+          quick_add_values?: Json;
+          recovery_window_periods?: number;
+          start_date?: string;
+          target_operator?: string;
+          target_period?: string;
+          target_value?: number;
+          tracking_mode?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_habit_trackers_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_trackers_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_trackers_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_trackers_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_trackers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_trackers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_trackers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_habit_trackers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_habits: {
         Row: {
           auto_schedule: boolean | null;

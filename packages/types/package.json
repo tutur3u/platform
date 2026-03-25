@@ -38,6 +38,11 @@
       "import": "./dist/sdk.js",
       "require": "./dist/sdk.js"
     },
+    "./primitives": {
+      "types": "./dist/primitives/index.d.ts",
+      "import": "./dist/primitives/index.js",
+      "require": "./dist/primitives/index.js"
+    },
     "./primitives/*": {
       "types": "./dist/primitives/*.d.ts",
       "import": "./dist/primitives/*.js",
