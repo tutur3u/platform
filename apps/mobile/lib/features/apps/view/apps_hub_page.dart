@@ -139,9 +139,7 @@ class _SubproductCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(26),
       onTap: () {
-        debugPrintStack(
-          label: '[AppsHub] open module=${module.id} route=${module.route}',
-        );
+        debugPrint('[AppsHub] open module=${module.id} route=${module.route}');
         unawaited(context.read<AppTabCubit>().select(module));
         context.go(module.route);
       },
