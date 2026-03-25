@@ -1588,13 +1588,13 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardOpenTasks.
   ///
   /// In en, this message translates to:
-  /// **'Open tasks'**
+  /// **'Open'**
   String get dashboardOpenTasks;
 
   /// No description provided for @dashboardOpenCalendar.
   ///
   /// In en, this message translates to:
-  /// **'Open calendar'**
+  /// **'Open'**
   String get dashboardOpenCalendar;
 
   /// No description provided for @dashboardNoAssignedTasks.

@@ -363,6 +363,9 @@ class _HabitsViewState extends State<_HabitsView> {
 
   Future<void> _openTrackerDetail(String trackerId) async {
     final cubit = context.read<HabitsCubit>();
+    final isPersonalWorkspace =
+        context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
+        false;
     await cubit.selectTracker(trackerId);
 
     if (!mounted) {
@@ -385,6 +388,7 @@ class _HabitsViewState extends State<_HabitsView> {
               isSubmittingEntry: state.isSubmittingEntry,
               isSubmittingStreakAction: state.isSubmittingStreakAction,
               isArchivingTracker: state.isArchivingTracker,
+              showLeaderboard: !isPersonalWorkspace,
               onRetry: () => cubit.loadTrackerDetail(trackerId, refresh: true),
               onLogEntry: () async {
                 final detail = state.detail;

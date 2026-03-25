@@ -766,10 +766,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardUpcomingEvents => 'Sự kiện sắp tới';
 
   @override
-  String get dashboardOpenTasks => 'Mở công việc';
+  String get dashboardOpenTasks => 'Mở';
 
   @override
-  String get dashboardOpenCalendar => 'Mở lịch';
+  String get dashboardOpenCalendar => 'Mở';
 
   @override
   String get dashboardNoAssignedTasks => 'Không có công việc đang hoạt động nào được giao cho bạn.';

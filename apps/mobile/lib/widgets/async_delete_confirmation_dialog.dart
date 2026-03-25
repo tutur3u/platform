@@ -44,18 +44,28 @@ class _AsyncDeleteConfirmationDialogState
           const shad.Gap(24),
           shad.OutlineButton(
             onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
-            child: Text(widget.cancelLabel),
+            child: SizedBox(
+              width: double.infinity,
+              child: Text(widget.cancelLabel, textAlign: TextAlign.center),
+            ),
           ),
           const shad.Gap(8),
           shad.DestructiveButton(
             onPressed: _isDeleting ? null : _handleConfirm,
             child: _isDeleting
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: shad.CircularProgressIndicator(),
+                ? const Center(
+                    child: SizedBox.square(
+                      dimension: 16,
+                      child: shad.CircularProgressIndicator(),
+                    ),
                   )
-                : Text(widget.confirmLabel),
+                : SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      widget.confirmLabel,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
           ),
         ],
       ),

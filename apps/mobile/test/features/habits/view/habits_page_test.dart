@@ -314,4 +314,37 @@ void main() {
     expect(find.text('Team'), findsNothing);
     expect(find.text('Member'), findsNothing);
   });
+
+  testWidgets('hides leaderboard tab in a personal workspace detail view', (
+    tester,
+  ) async {
+    when(() => workspaceCubit.state).thenReturn(
+      const WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: [
+          Workspace(id: 'ws-personal', name: 'Personal', personal: true),
+        ],
+        currentWorkspace: Workspace(
+          id: 'ws-personal',
+          name: 'Personal',
+          personal: true,
+        ),
+      ),
+    );
+
+    await tester.pumpApp(
+      BlocProvider<WorkspaceCubit>.value(
+        value: workspaceCubit,
+        child: HabitsPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Water').first);
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(Tab, 'Overview'), findsOneWidget);
+    expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
+    expect(find.widgetWithText(Tab, 'Leaderboard'), findsNothing);
+  });
 }

@@ -22,6 +22,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
     required this.onDeleteEntry,
     required this.onApplyStreakAction,
     required this.onArchiveTracker,
+    this.showLeaderboard = true,
     super.key,
     this.detail,
   });
@@ -39,19 +40,25 @@ class HabitTrackerDetailSheet extends StatelessWidget {
   final Future<void> Function(HabitTrackerStreakActionInput input)
   onApplyStreakAction;
   final Future<void> Function() onArchiveTracker;
+  final bool showLeaderboard;
 
   @override
   Widget build(BuildContext context) {
     final height = context.isCompact
         ? MediaQuery.sizeOf(context).height * 0.92
         : 760.0;
+    final tabs = [
+      Tab(text: context.l10n.habitsOverviewTab),
+      Tab(text: context.l10n.habitsEntriesTab),
+      if (showLeaderboard) Tab(text: context.l10n.habitsLeaderboardTab),
+    ];
 
     return SizedBox(
       height: height,
       child: Material(
         color: Theme.of(context).colorScheme.surface,
         child: DefaultTabController(
-          length: 3,
+          length: tabs.length,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: detailStatus == HabitsStatus.loading && detail == null
@@ -60,45 +67,42 @@ class HabitTrackerDetailSheet extends StatelessWidget {
                 ? _DetailErrorView(error: detailError, onRetry: onRetry)
                 : detail == null
                 ? const SizedBox.shrink()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _Header(
-                        detail: detail!,
-                        isArchivingTracker: isArchivingTracker,
-                        onLogEntry: onLogEntry,
-                        onEditTracker: onEditTracker,
-                        onArchiveTracker: () => _confirmArchive(context),
-                      ),
-                      const SizedBox(height: 16),
-                      TabBar(
-                        tabs: [
-                          Tab(text: context.l10n.habitsOverviewTab),
-                          Tab(text: context.l10n.habitsEntriesTab),
-                          Tab(text: context.l10n.habitsLeaderboardTab),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _OverviewTab(
-                              detail: detail!,
-                              isSubmittingStreakAction:
-                                  isSubmittingStreakAction,
-                              onApplyStreakAction: onApplyStreakAction,
-                            ),
-                            _EntriesTab(
-                              detail: detail!,
-                              isSubmittingEntry: isSubmittingEntry,
-                              onDeleteEntry: (entryId) =>
-                                  _confirmDeleteEntry(context, entryId),
-                            ),
-                            _LeaderboardTab(detail: detail!),
-                          ],
+                : Builder(
+                    builder: (context) {
+                      final currentDetail = detail!;
+                      final tabViews = [
+                        _OverviewTab(
+                          detail: currentDetail,
+                          isSubmittingStreakAction: isSubmittingStreakAction,
+                          onApplyStreakAction: onApplyStreakAction,
                         ),
-                      ),
-                    ],
+                        _EntriesTab(
+                          detail: currentDetail,
+                          isSubmittingEntry: isSubmittingEntry,
+                          onDeleteEntry: (entryId) =>
+                              _confirmDeleteEntry(context, entryId),
+                        ),
+                        if (showLeaderboard)
+                          _LeaderboardTab(detail: currentDetail),
+                      ];
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _Header(
+                            detail: currentDetail,
+                            isArchivingTracker: isArchivingTracker,
+                            onLogEntry: onLogEntry,
+                            onEditTracker: onEditTracker,
+                            onArchiveTracker: () => _confirmArchive(context),
+                          ),
+                          const SizedBox(height: 16),
+                          TabBar(tabs: tabs),
+                          const SizedBox(height: 12),
+                          Expanded(child: TabBarView(children: tabViews)),
+                        ],
+                      );
+                    },
                   ),
           ),
         ),

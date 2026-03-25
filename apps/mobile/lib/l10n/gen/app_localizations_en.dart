@@ -766,10 +766,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardUpcomingEvents => 'Upcoming events';
 
   @override
-  String get dashboardOpenTasks => 'Open tasks';
+  String get dashboardOpenTasks => 'Open';
 
   @override
-  String get dashboardOpenCalendar => 'Open calendar';
+  String get dashboardOpenCalendar => 'Open';
 
   @override
   String get dashboardNoAssignedTasks => 'No active tasks assigned to you.';
