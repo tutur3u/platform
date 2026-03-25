@@ -80,6 +80,18 @@ export {
   updateBudget,
   updateRecurringTransaction,
 } from './finance';
+export {
+  createWorkspaceHabitTracker,
+  createWorkspaceHabitTrackerEntry,
+  createWorkspaceHabitTrackerStreakAction,
+  deleteWorkspaceHabitTracker,
+  deleteWorkspaceHabitTrackerEntry,
+  getWorkspaceHabitTracker,
+  listWorkspaceHabitTrackerEntries,
+  listWorkspaceHabitTrackers,
+  updateWorkspaceHabitTracker,
+  updateWorkspaceHabitTrackerEntry,
+} from './habit-trackers';
 export { listInquiryMediaUrls } from './inquiries';
 export { listWorkspaceEmails } from './mail';
 export { getCurrentUserNovaTeam } from './nova';

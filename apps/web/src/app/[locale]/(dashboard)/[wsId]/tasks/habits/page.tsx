@@ -1,17 +1,14 @@
-import HabitsPage from '@tuturuuu/ui/tu-do/habits/habits-page';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Habits',
-  description: 'Manage your recurring habits and track your streaks.',
-};
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
+    locale: string;
     wsId: string;
   }>;
 }
 
-export default async function Page({ params }: Props) {
-  return <HabitsPage params={params} />;
+export default async function LegacyHabitsPage({ params }: Props) {
+  const { wsId } = await params;
+
+  redirect(`/${wsId}/habits`);
 }

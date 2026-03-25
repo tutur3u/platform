@@ -43,6 +43,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Workspace Protocol**: Internal packages use `workspace:*`.
 - **Server Components**: Default to Server Components; use 'use client' only when state/interactivity is required.
 - **Type Inference**: Import extended types from `@tuturuuu/types/db`. Never hand-edit generated type files. Refrain from ad-hoc type definitions that duplicate DB types; extend them in `packages/types` if necessary.
+- **Shared Types Export Parity**: When adding new modules under `packages/types/src/primitives`, keep `packages/types/package.json` exports and the corresponding `dist/primitives/*` entries in sync before running app tests. Vitest/Vite resolves `@tuturuuu/types` through package exports, not raw source files.
 - **Shared DB Row Aliases**: If a query row shape is reused beyond a single inline callback, define/export it from `packages/types/src/db.ts` (and consume it through `@tuturuuu/types`) instead of recreating local `Pick<Database...>` aliases. For type-only Supabase usage, import `TypedSupabaseClient` from `@tuturuuu/supabase/types`, not `@tuturuuu/supabase/next/client`.
 
 ## 4. Canonical Workflows
@@ -87,6 +88,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Internal API First**: When client or shared UI code needs app API access, add or extend helpers in `packages/internal-api/src/*` and consume those helpers instead of scattering raw `fetch('/api/...')` calls through hooks/components. Treat `packages/internal-api` as the canonical client boundary for app APIs.
 - **Supabase Browser Client Deprecation Migration**: When `@tuturuuu/supabase/next/client` or `createDynamicClient` is flagged as deprecated in app code, do not swap to temporary browser clients (`auth-browser`/`realtime-browser`) for CRUD or storage paths. Migrate the call site to an authenticated Internal API route and consume it through `@tuturuuu/internal-api` helpers.
 - **Internal API First for App CRUD**: When app code needs authenticated workspace/user CRUD, add or extend the route and consume it through `packages/internal-api/src/*` instead of scattering raw `fetch('/api/...')` calls across components. Treat `packages/internal-api` as the canonical client contract for internal APIs.
+- **API-Only Table Parity Across Surfaces**: If a mobile or web feature already has an API-backed repository/helper for a protected table, reuse that path for dashboard/summary/home views too. Do not mix API-backed list screens with direct Supabase table reads for the same entity, or protected-table permission errors will appear only on some surfaces.
 
 ## 6. Known Gotchas & Patterns
 

@@ -22,6 +22,9 @@ class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
   final _formKey = const shad.FormKey<String>(#signUpForm);
   bool _signUpSuccess = false;
 
@@ -30,6 +33,9 @@ class _SignUpPageState extends State<SignUpPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
@@ -148,9 +154,11 @@ class _SignUpPageState extends State<SignUpPage> {
                   label: Text(l10n.emailLabel),
                   child: shad.TextField(
                     controller: _emailController,
+                    focusNode: _emailFocusNode,
                     placeholder: Text(l10n.emailLabel),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => _passwordFocusNode.requestFocus(),
                   ),
                 ),
                 const shad.Gap(16),
@@ -161,10 +169,13 @@ class _SignUpPageState extends State<SignUpPage> {
                     children: [
                       shad.TextField(
                         controller: _passwordController,
+                        focusNode: _passwordFocusNode,
                         placeholder: Text(l10n.passwordLabel),
                         obscureText: true,
                         textInputAction: TextInputAction.next,
                         onChanged: (_) => setState(() {}),
+                        onSubmitted: (_) =>
+                            _confirmPasswordFocusNode.requestFocus(),
                       ),
                       const shad.Gap(8),
                       _PasswordStrengthIndicator(
@@ -179,6 +190,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   label: Text(l10n.signUpConfirmPassword),
                   child: shad.TextField(
                     controller: _confirmPasswordController,
+                    focusNode: _confirmPasswordFocusNode,
                     placeholder: Text(l10n.signUpConfirmPassword),
                     obscureText: true,
                     textInputAction: TextInputAction.done,

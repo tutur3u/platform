@@ -121,6 +121,12 @@ abstract class AppLocalizations {
   /// **'Sign in to continue'**
   String get loginSubtitle;
 
+  /// No description provided for @loginContinueWithEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with email'**
+  String get loginContinueWithEmail;
+
   /// No description provided for @loginSignIn.
   ///
   /// In en, this message translates to:

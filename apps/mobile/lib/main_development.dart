@@ -3,9 +3,6 @@ import 'package:mobile/bootstrap.dart';
 
 Future<void> main() async {
   await bootstrap(
-    ({initialRoute, hasSeenOnboarding}) => App(
-      initialRoute: initialRoute,
-      hasSeenOnboarding: hasSeenOnboarding ?? false,
-    ),
+    ({initialRoute}) => App(initialRoute: initialRoute),
   );
 }
