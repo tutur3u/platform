@@ -18,6 +18,8 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../helpers/helpers.dart';
+
 class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
@@ -277,20 +279,30 @@ void main() {
       final popScope = tester.widget<PopScope<dynamic>>(
         find.byWidgetPredicate((widget) => widget is PopScope).first,
       );
+      final onPopInvoked = popScope.onPopInvokedWithResult;
+      expect(
+        onPopInvoked,
+        isNotNull,
+        reason: 'Shell PopScope callback should be wired for back handling.',
+      );
+      if (onPopInvoked == null) {
+        fail('Shell PopScope callback should not be null.');
+      }
 
-      popScope.onPopInvokedWithResult!(false, null);
+      onPopInvoked(false, null);
       await _pumpForTransitions(tester);
 
+      final context = tester.element(find.byType(ShellPage));
+      final l10n = AppLocalizations.of(context);
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
       expect(systemPopCalls, 0);
-      expect(find.text('Press back again to exit'), findsOneWidget);
+      expect(find.text(l10n.commonPressBackAgainToExit), findsOneWidget);
 
-      popScope.onPopInvokedWithResult!(false, null);
+      onPopInvoked(false, null);
       await _pumpForTransitions(tester);
 
       expect(systemPopCalls, 1);
-      await tester.pump(const Duration(seconds: 6));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.drainShadToastTimers();
     });
 
     testWidgets('home root requires double back to exit', (tester) async {
@@ -330,20 +342,30 @@ void main() {
       final popScope = tester.widget<PopScope<dynamic>>(
         find.byWidgetPredicate((widget) => widget is PopScope).first,
       );
+      final onPopInvoked = popScope.onPopInvokedWithResult;
+      expect(
+        onPopInvoked,
+        isNotNull,
+        reason: 'Shell PopScope callback should be wired for back handling.',
+      );
+      if (onPopInvoked == null) {
+        fail('Shell PopScope callback should not be null.');
+      }
 
-      popScope.onPopInvokedWithResult!(false, null);
+      onPopInvoked(false, null);
       await _pumpForTransitions(tester);
 
+      final context = tester.element(find.byType(ShellPage));
+      final l10n = AppLocalizations.of(context);
       expect(router.routeInformationProvider.value.uri.path, Routes.home);
       expect(systemPopCalls, 0);
-      expect(find.text('Press back again to exit'), findsOneWidget);
+      expect(find.text(l10n.commonPressBackAgainToExit), findsOneWidget);
 
-      popScope.onPopInvokedWithResult!(false, null);
+      onPopInvoked(false, null);
       await _pumpForTransitions(tester);
 
       expect(systemPopCalls, 1);
-      await tester.pump(const Duration(seconds: 6));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.drainShadToastTimers();
     });
 
     testWidgets('apps tab opens picker even when a mini-app is selected', (
@@ -359,7 +381,16 @@ void main() {
       final router = _buildRouter(initialLocation: Routes.home);
       addTearDown(router.dispose);
 
-      await appTabCubit.select(AppRegistry.moduleById('timer')!);
+      final timerModule = AppRegistry.moduleById('timer');
+      expect(
+        timerModule,
+        isNotNull,
+        reason: 'Timer module should be registered.',
+      );
+      if (timerModule == null) {
+        fail('AppRegistry.moduleById("timer") returned null.');
+      }
+      await appTabCubit.select(timerModule);
 
       await tester.pumpWidget(
         _buildTestApp(
@@ -434,7 +465,16 @@ void main() {
         );
 
         await tester.binding.handlePopRoute();
-        popScope.onPopInvokedWithResult!(false, null);
+        final onPopInvoked = popScope.onPopInvokedWithResult;
+        expect(
+          onPopInvoked,
+          isNotNull,
+          reason: 'Shell PopScope callback should be wired for back handling.',
+        );
+        if (onPopInvoked == null) {
+          fail('Shell PopScope callback should not be null.');
+        }
+        onPopInvoked(false, null);
         await _pumpForTransitions(tester);
 
         expect(router.routeInformationProvider.value.uri.path, Routes.apps);

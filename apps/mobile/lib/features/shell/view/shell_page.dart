@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, Scaffold;
 import 'package:flutter/services.dart';
@@ -19,6 +20,8 @@ import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -78,6 +81,10 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   bool _isProcessingBackNavigation = false;
   Timer? _suppressPointerTimer;
   bool _suppressPointerInput = false;
+  DateTime? _lastBackDispatchAt;
+  String? _lastBackDispatchSource;
+  static const Duration _backDispatchDedupWindow = Duration(milliseconds: 250);
+  shad.ToastOverlay? _exitConfirmationToast;
 
   void _debugBack(String event, [String? details]) {
     debugPrint(
@@ -120,7 +127,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   @override
   Future<bool> didPopRoute() async {
     _debugBack('WidgetsBinding.didPopRoute');
-    await _runBackNavigation(context);
+    _dispatchBackNavigation(context, source: 'didPopRoute');
     return true;
   }
 
@@ -143,27 +150,35 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
     return BackButtonListener(
       onBackButtonPressed: () async {
-        final route = _normalizeRouteLocation(widget.matchedLocation);
-        if (_isExitLocation(route)) {
-          _debugBack('BackButtonListener.exitRoute');
-          await _runBackNavigation(context);
-          return true;
-        }
-        return false;
+        _debugBack('BackButtonListener.pressed');
+        _dispatchBackNavigation(context, source: 'backButtonListener');
+        return true;
       },
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
           _debugBack('PopScope.invoked', 'didPop=$didPop result=$result');
-          unawaited(_runBackNavigation(context));
+          _dispatchBackNavigation(context, source: 'popScope');
         },
-        child: IgnorePointer(
-          ignoring: _suppressPointerInput,
-          child: BlocBuilder<AppTabCubit, AppTabState>(
-            builder: (context, state) => _buildCompactLayout(
-              context,
-              state,
-              activeModule: activeModule,
+        child: BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (previous, current) =>
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+          listener: (context, state) {
+            _debugBack(
+              'workspaceChanged.resetExitConfirmation',
+              'wsId=${state.currentWorkspace?.id}',
+            );
+            _lastExitAttemptAt = null;
+            _dismissExitConfirmationToast();
+          },
+          child: IgnorePointer(
+            ignoring: _suppressPointerInput,
+            child: BlocBuilder<AppTabCubit, AppTabState>(
+              builder: (context, state) => _buildCompactLayout(
+                context,
+                state,
+                activeModule: activeModule,
+              ),
             ),
           ),
         ),
@@ -184,6 +199,24 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       _isProcessingBackNavigation = false;
       _debugBack('runBackNavigation.end');
     }
+  }
+
+  void _dispatchBackNavigation(BuildContext context, {required String source}) {
+    final now = DateTime.now();
+    final lastBackDispatchAt = _lastBackDispatchAt;
+    final lastBackDispatchSource = _lastBackDispatchSource;
+    if (lastBackDispatchAt != null &&
+        lastBackDispatchSource != null &&
+        lastBackDispatchSource != source &&
+        now.difference(lastBackDispatchAt) <= _backDispatchDedupWindow) {
+      _debugBack('runBackNavigation.skipDuplicate', 'source=$source');
+      return;
+    }
+
+    _lastBackDispatchAt = now;
+    _lastBackDispatchSource = source;
+    _debugBack('runBackNavigation.dispatch', 'source=$source');
+    unawaited(_runBackNavigation(context));
   }
 
   Future<void> _handleBackNavigation(BuildContext context) async {
@@ -272,8 +305,12 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     if (!toastContext.mounted) {
       return;
     }
-    shad.showToast(
+    _dismissExitConfirmationToast();
+    _exitConfirmationToast = shad.showToast(
       context: toastContext,
+      onClosed: () {
+        _exitConfirmationToast = null;
+      },
       builder: (context, overlay) => shad.Alert(
         title: Text(context.l10n.commonPressBackAgainToExit),
         content: Text(context.l10n.commonPressBackAgainToExitHint),
@@ -295,6 +332,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       );
       return;
     }
+
+    _lastExitAttemptAt = null;
+    _dismissExitConfirmationToast();
 
     if (_isHandlingBackNavigation) {
       _debugBack(
@@ -353,13 +393,24 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     setState(fn);
   }
 
+  void _dismissExitConfirmationToast() {
+    _exitConfirmationToast?.close();
+    _exitConfirmationToast = null;
+  }
+
   void _syncAndroidBackState() {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
     final route = _normalizeRouteLocation(widget.matchedLocation);
-    final exitMessage = AppLocalizations.of(context).commonPressBackAgainToExit;
+    final l10n = AppLocalizations.of(context);
+    final exitMessage = l10n.commonPressBackAgainToExit;
+    final exitHintMessage = l10n.commonPressBackAgainToExitHint;
     unawaited(
       _androidBackChannel.invokeMethod<void>('updateState', {
         'route': route,
         'exitMessage': exitMessage,
+        'exitHintMessage': exitHintMessage,
       }),
     );
   }
@@ -385,6 +436,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(SystemNavigator.setFrameworkHandlesBack(false));
     _stopLongPressTimer();
+    _dismissExitConfirmationToast();
     _suppressPointerTimer?.cancel();
     _layerController.dispose();
     super.dispose();
