@@ -61,6 +61,7 @@ class _HabitsView extends StatefulWidget {
 
 class _HabitsViewState extends State<_HabitsView> {
   late final TextEditingController _searchController;
+  bool _isSearchVisible = false;
 
   @override
   void initState() {
@@ -99,6 +100,12 @@ class _HabitsViewState extends State<_HabitsView> {
           MobileSectionAppBar(
             title: context.l10n.habitsTitle,
             actions: [
+              shad.IconButton.ghost(
+                icon: Icon(
+                  _isSearchVisible ? Icons.close_rounded : Icons.search_rounded,
+                ),
+                onPressed: _toggleSearch,
+              ),
               shad.IconButton.ghost(
                 icon: const Icon(Icons.add),
                 onPressed: _openCreateTracker,
@@ -216,12 +223,26 @@ class _HabitsViewState extends State<_HabitsView> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 12),
-                        shad.TextField(
-                          controller: _searchController,
-                          hintText: context.l10n.habitsSearchHint,
-                          onChanged: (value) =>
-                              context.read<HabitsCubit>().setSearchQuery(value),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          child: _isSearchVisible
+                              ? Padding(
+                                  key: const ValueKey('habits-search-visible'),
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: shad.TextField(
+                                    controller: _searchController,
+                                    hintText: context.l10n.habitsSearchHint,
+                                    onChanged: (value) => context
+                                        .read<HabitsCubit>()
+                                        .setSearchQuery(value),
+                                  ),
+                                )
+                              : const SizedBox(
+                                  key: ValueKey('habits-search-hidden'),
+                                  height: 12,
+                                ),
                         ),
                         const SizedBox(height: 16),
                         if (filteredTrackers.isEmpty)
@@ -305,6 +326,17 @@ class _HabitsViewState extends State<_HabitsView> {
         values: {tracker.tracker.primaryMetricKey: value},
       ),
     );
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      final nextVisible = !_isSearchVisible;
+      _isSearchVisible = nextVisible;
+      if (!nextVisible) {
+        _searchController.clear();
+        context.read<HabitsCubit>().setSearchQuery('');
+      }
+    });
   }
 
   Future<void> _openCreateTracker() async {

@@ -9,6 +9,7 @@ import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -260,6 +261,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('View member'), findsOneWidget);
+  });
+
+  testWidgets('search is hidden by default and toggles from the app bar', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      BlocProvider<WorkspaceCubit>.value(
+        value: workspaceCubit,
+        child: HabitsPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(shad.TextField), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.search_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(shad.TextField), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(shad.TextField), findsNothing);
   });
 
   testWidgets('hides scope controls in a personal workspace', (tester) async {
