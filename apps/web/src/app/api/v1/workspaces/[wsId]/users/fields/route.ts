@@ -109,7 +109,7 @@ export async function POST(req: Request, { params }: Params) {
     wsId: normalizedWsId,
     request: req,
   });
-  if (!permissions || !permissions.containsPermission('update_users')) {
+  if (!permissions?.containsPermission('update_users')) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 

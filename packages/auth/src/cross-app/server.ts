@@ -64,7 +64,7 @@ export function createPOST(appName: AppName) {
       // Process the result - first row of the returned table
       const firstRow = Array.isArray(data) ? data[0] : data;
 
-      if (!firstRow || !firstRow.user_id) {
+      if (!firstRow?.user_id) {
         console.log('[cross-app] Invalid result or user_id is null');
         return NextResponse.json(
           { error: 'Invalid or expired token' },
