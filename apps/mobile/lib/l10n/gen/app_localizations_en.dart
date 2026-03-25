@@ -162,6 +162,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navTasks => 'Tasks';
 
   @override
+  String get navHabits => 'Habits';
+
+  @override
   String get navCalendar => 'Calendar';
 
   @override
@@ -219,6 +222,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubTasksDescription => 'Assigned work, planning, and portfolio.';
 
   @override
+  String get appsHubHabitsDescription => 'Shared habits, streaks, and recurring progress.';
+
+  @override
   String get appsHubCalendarDescription => 'Agenda, upcoming events, and schedule views.';
 
   @override
@@ -226,6 +232,356 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appsHubTimerDescription => 'Tracking sessions, stats, and requests.';
+
+  @override
+  String get habitsTitle => 'Habits';
+
+  @override
+  String get habitsLoadError => 'Couldn\'t load habits right now';
+
+  @override
+  String get habitsSummarySubtitle => 'Track rituals, routines, and shared momentum across your workspace.';
+
+  @override
+  String get habitsSummaryVolume => 'Current volume';
+
+  @override
+  String get habitsSummaryTargetsMet => 'Targets met';
+
+  @override
+  String get habitsSummaryTopStreak => 'Top streak';
+
+  @override
+  String get habitsSummaryTrackers => 'Trackers';
+
+  @override
+  String get habitsScopeSelf => 'Self';
+
+  @override
+  String get habitsScopeTeam => 'Team';
+
+  @override
+  String get habitsScopeMember => 'Member';
+
+  @override
+  String get habitsMemberPickerLabel => 'View member';
+
+  @override
+  String get habitsSearchHint => 'Search habits, rituals, or metrics';
+
+  @override
+  String get habitsEmptyTitle => 'No habit trackers yet';
+
+  @override
+  String get habitsEmptyDescription => 'Create your first tracker to turn recurring habits into something the whole workspace can follow.';
+
+  @override
+  String get habitsTrackerNoDescription => 'No description yet';
+
+  @override
+  String get habitsCreateTrackerAction => 'Create tracker';
+
+  @override
+  String get habitsSaveTrackerAction => 'Save tracker';
+
+  @override
+  String get habitsCreateTrackerTitle => 'Create habit tracker';
+
+  @override
+  String get habitsEditTrackerTitle => 'Edit habit tracker';
+
+  @override
+  String get habitsCreateTrackerDescription => 'Define the goal, logging fields, and quick actions your workspace will use.';
+
+  @override
+  String get habitsEditTrackerDescription => 'Update the tracker structure, goal, and quick-add behavior.';
+
+  @override
+  String get habitsTemplateLabel => 'Start from a template';
+
+  @override
+  String get habitsNameLabel => 'Name';
+
+  @override
+  String get habitsNameRequired => 'Tracker name is required';
+
+  @override
+  String get habitsDescriptionLabel => 'Description';
+
+  @override
+  String get habitsTrackingModeLabel => 'Tracking mode';
+
+  @override
+  String get habitsModeDailySummary => 'Daily summary';
+
+  @override
+  String get habitsModeEventLog => 'Event log';
+
+  @override
+  String get habitsAggregationLabel => 'Aggregation';
+
+  @override
+  String get habitsAggregationSum => 'Sum';
+
+  @override
+  String get habitsAggregationMax => 'Max';
+
+  @override
+  String get habitsAggregationCountEntries => 'Count entries';
+
+  @override
+  String get habitsAggregationBooleanAny => 'Any complete';
+
+  @override
+  String get habitsTargetPeriodLabel => 'Target period';
+
+  @override
+  String get habitsPeriodDaily => 'Daily';
+
+  @override
+  String get habitsPeriodWeekly => 'Weekly';
+
+  @override
+  String get habitsTargetOperatorLabel => 'Target operator';
+
+  @override
+  String get habitsTargetOperatorEq => 'Exactly';
+
+  @override
+  String get habitsTargetOperatorGte => 'At least';
+
+  @override
+  String get habitsTargetValueLabel => 'Target value';
+
+  @override
+  String get habitsTargetValueRequired => 'Target value must be greater than zero';
+
+  @override
+  String get habitsStartDateLabel => 'Start date';
+
+  @override
+  String get habitsAppearanceLabel => 'Appearance';
+
+  @override
+  String get habitsIconLabel => 'Icon';
+
+  @override
+  String get habitsFieldsTitle => 'Fields';
+
+  @override
+  String get habitsFieldsRequired => 'Add at least one valid field';
+
+  @override
+  String get habitsAddField => 'Add field';
+
+  @override
+  String get habitsPrimaryMetricLabel => 'Primary metric';
+
+  @override
+  String get habitsPrimaryMetricRequired => 'Choose a primary metric field';
+
+  @override
+  String get habitsQuickAddValuesLabel => 'Quick-add values';
+
+  @override
+  String get habitsQuickAddValuesHint => 'Example: 1, 2, 3';
+
+  @override
+  String get habitsFreezeAllowanceLabel => 'Freeze allowance';
+
+  @override
+  String get habitsRecoveryWindowLabel => 'Recovery windows';
+
+  @override
+  String get habitsActiveLabel => 'Active';
+
+  @override
+  String get habitsFieldKeysUnique => 'Field keys must be unique';
+
+  @override
+  String get habitsSelectOptionsRequired => 'Select fields need at least one option';
+
+  @override
+  String habitsFieldCardTitle(int count) {
+    return 'Field $count';
+  }
+
+  @override
+  String get habitsFieldLabel => 'Field label';
+
+  @override
+  String get habitsFieldType => 'Field type';
+
+  @override
+  String get habitsFieldKey => 'Field key';
+
+  @override
+  String get habitsFieldUnit => 'Unit';
+
+  @override
+  String get habitsFieldOptions => 'Options';
+
+  @override
+  String get habitsFieldOptionsHint => 'Example: easy, medium, hard';
+
+  @override
+  String get habitsFieldRequired => 'Required field';
+
+  @override
+  String get habitsFieldTypeBoolean => 'Boolean';
+
+  @override
+  String get habitsFieldTypeNumber => 'Number';
+
+  @override
+  String get habitsFieldTypeDuration => 'Duration';
+
+  @override
+  String get habitsFieldTypeText => 'Text';
+
+  @override
+  String get habitsFieldTypeSelect => 'Select';
+
+  @override
+  String get habitsOverviewTab => 'Overview';
+
+  @override
+  String get habitsEntriesTab => 'Entries';
+
+  @override
+  String get habitsLeaderboardTab => 'Leaderboard';
+
+  @override
+  String get habitsLogEntryTitle => 'Log entry';
+
+  @override
+  String get habitsLogEntryDescription => 'Capture a habit update without leaving the habits area.';
+
+  @override
+  String get habitsLogEntryAction => 'Log entry';
+
+  @override
+  String get habitsCompleteNow => 'Complete now';
+
+  @override
+  String get habitsEntryDateLabel => 'Entry date';
+
+  @override
+  String get habitsEntryNoteLabel => 'Note';
+
+  @override
+  String get habitsEntryTagsLabel => 'Tags';
+
+  @override
+  String get habitsEntryTagsHint => 'Comma-separated tags';
+
+  @override
+  String get habitsSaveEntry => 'Save entry';
+
+  @override
+  String get habitsMarkDone => 'Mark done';
+
+  @override
+  String get habitsMarkedDone => 'Marked done';
+
+  @override
+  String get habitsFormRequiredField => 'Please complete the required fields';
+
+  @override
+  String get habitsFormInvalidNumber => 'Enter a valid number';
+
+  @override
+  String get habitsArchiveTrackerTitle => 'Archive habit tracker?';
+
+  @override
+  String get habitsArchiveTrackerMessage => 'This tracker will be removed from the active habits view.';
+
+  @override
+  String get habitsArchiveTrackerAction => 'Archive tracker';
+
+  @override
+  String get habitsDeleteEntryTitle => 'Delete entry?';
+
+  @override
+  String get habitsDeleteEntryMessage => 'This habit entry will be permanently removed.';
+
+  @override
+  String get habitsDeleteEntryAction => 'Delete entry';
+
+  @override
+  String get habitsEditTrackerAction => 'Edit tracker';
+
+  @override
+  String get habitsCurrentStreak => 'Current streak';
+
+  @override
+  String get habitsBestStreak => 'Best streak';
+
+  @override
+  String get habitsConsistencyLabel => 'Consistency';
+
+  @override
+  String get habitsRecoveryWindowTitle => 'Recovery window';
+
+  @override
+  String get habitsRecoveryWindowDescription => 'Use a repair or freeze when a streak period needs help staying intact.';
+
+  @override
+  String get habitsRepairStreakAction => 'Repair streak';
+
+  @override
+  String get habitsUseFreezeAction => 'Use freeze';
+
+  @override
+  String get habitsCurrentPeriodMetricsTitle => 'Current period metrics';
+
+  @override
+  String habitsEntriesCountLabel(int count) {
+    return '$count entries';
+  }
+
+  @override
+  String get habitsMemberSummariesTitle => 'Member summaries';
+
+  @override
+  String get habitsTeamSummaryTitle => 'Team summary';
+
+  @override
+  String get habitsTopStreakLabel => 'Top streak';
+
+  @override
+  String get habitsEntriesLabel => 'Entries';
+
+  @override
+  String get habitsNoEntries => 'No entries yet';
+
+  @override
+  String get habitsNoLeaderboard => 'No leaderboard data yet';
+
+  @override
+  String habitsStreakChip(int count) {
+    return '$count streak';
+  }
+
+  @override
+  String habitsTargetChip(double count) {
+    return '$count target';
+  }
+
+  @override
+  String get habitsTeamMembers => 'Team members';
+
+  @override
+  String get habitsTodayTotalHint => 'Today\'s total';
+
+  @override
+  String get habitsQuickLogValueRequired => 'Enter a value before saving';
+
+  @override
+  String get habitsMetricMet => 'Met';
+
+  @override
+  String get habitsMetricPending => 'Pending';
 
   @override
   String get assistantComingSoon => 'Coming Soon';
