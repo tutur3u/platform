@@ -61,6 +61,7 @@ GoRouter _buildRouter({required String initialLocation}) {
           create: (_) => AssistantChromeCubit(),
           child: ShellPage(
             matchedLocation: state.uri.path,
+            enableDebugLogs: false,
             child: child,
           ),
         ),
@@ -477,8 +478,11 @@ void main() {
         onPopInvoked(false, null);
         await _pumpForTransitions(tester);
 
+        final context = tester.element(shellFinder);
+        final l10n = AppLocalizations.of(context);
         expect(router.routeInformationProvider.value.uri.path, Routes.apps);
         expect(systemPopCalls, 0);
+        expect(find.text(l10n.commonPressBackAgainToExit), findsNothing);
         expect(shellState.mounted, isTrue);
       },
     );

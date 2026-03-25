@@ -39,11 +39,13 @@ class ShellPage extends StatefulWidget {
   const ShellPage({
     required this.child,
     required this.matchedLocation,
+    this.enableDebugLogs = kDebugMode,
     super.key,
   });
 
   final Widget child;
   final String matchedLocation;
+  final bool enableDebugLogs;
 
   @override
   State<ShellPage> createState() => _ShellPageState();
@@ -63,6 +65,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const MethodChannel _androidBackChannel = MethodChannel(
     'mobile/shell_back',
   );
+  static const double _compactMiniBackButtonMinWidth = 68;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;
@@ -87,6 +90,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   shad.ToastOverlay? _exitConfirmationToast;
 
   void _debugBack(String event, [String? details]) {
+    if (!widget.enableDebugLogs) {
+      return;
+    }
     debugPrint(
       '[ShellBack] $event '
       'route=${_normalizeRouteLocation(widget.matchedLocation)} '
@@ -95,6 +101,13 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       'processing:$_isProcessingBackNavigation}'
       '${details == null ? '' : ' $details'}',
     );
+  }
+
+  void _debugShellNav(String message) {
+    if (!widget.enableDebugLogs) {
+      return;
+    }
+    debugPrint(message);
   }
 
   bool _isAppsTabHit(Offset position) {
@@ -236,9 +249,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
             'handleBackNavigation.toPreviousMiniApp',
             previousLocation,
           );
-          debugPrintStack(
-            label:
-                '[ShellNav] go $previousLocation from back previous mini-app',
+          _debugShellNav(
+            '[ShellNav] go $previousLocation from back previous mini-app',
           );
           _isHandlingBackNavigation = true;
           context.go(previousLocation);
@@ -247,8 +259,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       }
 
       _debugBack('handleBackNavigation.toMiniAppRoot', miniAppRoot);
-      debugPrintStack(
-        label: '[ShellNav] go $miniAppRoot from back mini-app root fallback',
+      _debugShellNav(
+        '[ShellNav] go $miniAppRoot from back mini-app root fallback',
       );
       _isHandlingBackNavigation = true;
       context.go(miniAppRoot);
@@ -258,7 +270,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     if (Routes.isMiniAppRootLocation(currentLocation)) {
       _suppressPointerEventsDuringTransition();
       _debugBack('handleBackNavigation.toApps');
-      debugPrintStack(label: '[ShellNav] go ${Routes.apps} from back mini-app');
+      _debugShellNav('[ShellNav] go ${Routes.apps} from back mini-app');
       _isHandlingBackNavigation = true;
       context.go(Routes.apps);
       return;
@@ -272,8 +284,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     final previousLocation = _takePreviousRoute(currentLocation);
     if (previousLocation != null) {
       _debugBack('handleBackNavigation.toPreviousRoute', previousLocation);
-      debugPrintStack(
-        label: '[ShellNav] go $previousLocation from back previous route',
+      _debugShellNav(
+        '[ShellNav] go $previousLocation from back previous route',
       );
       _isHandlingBackNavigation = true;
       context.go(previousLocation);
@@ -281,7 +293,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     }
 
     _debugBack('handleBackNavigation.toHome');
-    debugPrintStack(label: '[ShellNav] go ${Routes.home} from back fallback');
+    _debugShellNav('[ShellNav] go ${Routes.home} from back fallback');
     _isHandlingBackNavigation = true;
     context.go(Routes.home);
   }

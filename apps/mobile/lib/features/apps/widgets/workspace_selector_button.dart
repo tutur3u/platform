@@ -3,22 +3,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
-import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 
 class WorkspaceSelectorButton extends StatelessWidget {
   const WorkspaceSelectorButton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return BlocBuilder<WorkspaceCubit, WorkspaceState>(
       buildWhen: (prev, curr) => prev.currentWorkspace != curr.currentWorkspace,
       builder: (context, state) {
-        final workspace = state.currentWorkspace;
-        final workspaceName = workspace?.personal ?? true
-            ? l10n.workspacePersonalBadge
-            : _displayWorkspaceName(workspace?.name ?? '');
+        final workspaceName = displayWorkspaceNameOrFallback(
+          context,
+          state.currentWorkspace,
+        );
 
         return Material(
           color: Colors.transparent,
@@ -54,15 +52,5 @@ class WorkspaceSelectorButton extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _displayWorkspaceName(String value) {
-    if (value.isEmpty || value.toUpperCase() != value) return value;
-    return value
-        .toLowerCase()
-        .split(RegExp(r'\s+'))
-        .where((part) => part.isNotEmpty)
-        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-        .join(' ');
   }
 }

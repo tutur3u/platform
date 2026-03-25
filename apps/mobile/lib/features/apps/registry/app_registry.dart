@@ -94,22 +94,22 @@ class AppRegistry {
       labelBuilder: _labelHome,
     ),
     MiniAppNavItem(
-      id: 'finance_transactions',
+      id: 'finance_history',
       route: Routes.transactions,
       icon: Icons.receipt_long_outlined,
-      labelBuilder: _labelTransactions,
-    ),
-    MiniAppNavItem(
-      id: 'finance_categories',
-      route: Routes.categories,
-      icon: Icons.category_outlined,
-      labelBuilder: _labelCategories,
+      labelBuilder: _labelHistory,
     ),
     MiniAppNavItem(
       id: 'finance_wallets',
       route: Routes.wallets,
       icon: Icons.account_balance_wallet_outlined,
       labelBuilder: _labelWallets,
+    ),
+    MiniAppNavItem(
+      id: 'finance_more',
+      route: Routes.categories,
+      icon: Icons.more_horiz,
+      labelBuilder: _labelMore,
     ),
   ];
 
@@ -191,10 +191,8 @@ class AppRegistry {
   static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
   static String _labelHome(AppLocalizations l10n) => l10n.navHome;
-  static String _labelTransactions(AppLocalizations l10n) =>
-      l10n.financeTransactions;
-  static String _labelCategories(AppLocalizations l10n) =>
-      l10n.financeCategories;
+  static String _labelHistory(AppLocalizations l10n) => l10n.timerHistory;
+  static String _labelMore(AppLocalizations l10n) => l10n.navMore;
   static String _labelTimerHistory(AppLocalizations l10n) => l10n.timerHistory;
   static String _labelTimerStats(AppLocalizations l10n) => l10n.timerStatsTitle;
   static String _timerRequestsTitle(AppLocalizations l10n) =>

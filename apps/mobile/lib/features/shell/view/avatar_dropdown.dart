@@ -10,6 +10,7 @@ import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart'; // For User type
@@ -148,7 +149,10 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     final currentWorkspace = context.select<WorkspaceCubit, Workspace?>(
       (cubit) => cubit.state.currentWorkspace,
     );
-    final workspaceName = currentWorkspace?.name ?? l10n.workspacePickerTitle;
+    final workspaceName = displayWorkspaceNameOrFallback(
+      context,
+      currentWorkspace,
+    );
 
     final email = user?.email;
     final meta = user?.userMetadata;

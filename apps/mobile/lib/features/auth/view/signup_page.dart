@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/utils/auth_error_localization.dart';
+import 'package:mobile/features/auth/widgets/auth_action_button.dart';
 import 'package:mobile/features/auth/widgets/auth_google_button.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -107,12 +108,9 @@ class _SignUpPageState extends State<SignUpPage> {
               textAlign: TextAlign.center,
             ),
             const shad.Gap(32),
-            SizedBox(
-              width: double.infinity,
-              child: shad.PrimaryButton(
-                onPressed: () => context.go('/login'),
-                child: Center(child: Text(l10n.signUpBackToLogin)),
-              ),
+            AuthPrimaryButton(
+              label: l10n.signUpBackToLogin,
+              onPressed: () => context.go('/login'),
             ),
           ],
         ),
@@ -217,16 +215,10 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ],
                 const shad.Gap(24),
-                SizedBox(
-                  width: double.infinity,
-                  child: shad.PrimaryButton(
-                    onPressed: state.isLoading ? null : _handleSignUp,
-                    child: state.isLoading
-                        ? const Center(
-                            child: shad.CircularProgressIndicator(size: 16),
-                          )
-                        : Center(child: Text(l10n.signUpButton)),
-                  ),
+                AuthPrimaryButton(
+                  label: l10n.signUpButton,
+                  onPressed: _handleSignUp,
+                  isLoading: state.isLoading,
                 ),
                 const shad.Gap(16),
                 Center(

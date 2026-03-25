@@ -31,6 +31,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;
   int _requestVersion = 0;
+  int _insightsRequestVersion = 0;
 
   void _emitIfOpen(AssistantShellState nextState) {
     if (isClosed) {
@@ -152,11 +153,13 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   Future<void> renameAssistant(String name) async {
     if (state.workspace == null) return;
     final soul = await _repository.updateSoulName(name);
+    if (isClosed) return;
     emit(state.copyWith(soul: soul));
   }
 
   Future<void> refreshSoul() async {
     final soul = await _repository.fetchSoul();
+    if (isClosed) return;
     emit(state.copyWith(soul: soul));
   }
 
@@ -224,7 +227,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   Future<void> refreshInsights() async {
     final workspace = state.workspace;
     if (workspace == null) return;
-    final requestVersion = ++_requestVersion;
+    final requestVersion = ++_insightsRequestVersion;
     final workspaceId = workspace.id;
 
     final tasks = await _repository.fetchTasksInsight(
@@ -232,12 +235,12 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       isPersonal: workspace.personal,
     );
 
-    if (isClosed || requestVersion != _requestVersion) return;
+    if (isClosed || requestVersion != _insightsRequestVersion) return;
     if (state.workspace?.id != workspaceId) return;
 
     final calendar = await _repository.fetchCalendarInsight(workspaceId);
 
-    if (isClosed || requestVersion != _requestVersion) return;
+    if (isClosed || requestVersion != _insightsRequestVersion) return;
     if (state.workspace?.id != workspaceId) return;
 
     _emitIfOpen(

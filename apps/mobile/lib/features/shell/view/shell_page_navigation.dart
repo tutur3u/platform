@@ -105,16 +105,27 @@ extension _ShellPageNavigation on _ShellPageState {
     );
     final l10n = context.l10n;
     final isCompact = context.isCompact;
+    final useDenseCompactLabels =
+        isCompact && module.miniAppNavItems.length >= 4;
+    final miniLabelStyle = useDenseCompactLabels
+        ? labelStyle.copyWith(fontSize: 10)
+        : labelStyle;
+    final miniItemSpacing = useDenseCompactLabels
+        ? 1.0
+        : _ShellPageState._navItemSpacing;
+    final miniIconSize = useDenseCompactLabels
+        ? 20.0
+        : _ShellPageState._navIconSize;
 
     return [
       shad.NavigationItem(
         key: _ShellPageState._backToRootKey,
-        spacing: _ShellPageState._navItemSpacing,
+        spacing: miniItemSpacing,
         alignment: Alignment.center,
         marginAlignment: Alignment.center,
-        label: isCompact ? _buildNavLabel(l10n.navBack, labelStyle) : null,
+        label: isCompact ? _buildNavLabel(l10n.navBack, miniLabelStyle) : null,
         child: isCompact
-            ? const Icon(Icons.chevron_left, size: _ShellPageState._navIconSize)
+            ? Icon(Icons.chevron_left, size: miniIconSize)
             : _buildHorizontalNavItem(
                 icon: Icons.chevron_left,
                 label: l10n.navBack,
@@ -124,12 +135,12 @@ extension _ShellPageNavigation on _ShellPageState {
       ...module.miniAppNavItems.map(
         (item) => shad.NavigationItem(
           key: _miniNavKey(module.id, item.id),
-          spacing: _ShellPageState._navItemSpacing,
+          spacing: miniItemSpacing,
           label: isCompact
-              ? _buildNavLabel(item.label(l10n), labelStyle)
+              ? _buildNavLabel(item.label(l10n), miniLabelStyle)
               : null,
           child: isCompact
-              ? Icon(item.icon, size: _ShellPageState._navIconSize)
+              ? Icon(item.icon, size: miniIconSize)
               : _buildHorizontalNavItem(
                   icon: item.icon,
                   label: item.label(l10n),

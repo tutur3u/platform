@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Displays a workspace avatar with initials and a consistent color.
@@ -22,6 +23,8 @@ class WorkspaceAvatar extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final initials = workspace.personal
         ? 'P'
+        : isSystemWorkspace(workspace)
+        ? 'S'
         : (workspace.name != null && workspace.name!.isNotEmpty
               ? workspace.name![0].toUpperCase()
               : 'W');
