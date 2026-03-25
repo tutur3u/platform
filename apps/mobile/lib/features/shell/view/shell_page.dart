@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, Scaffold;
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -67,6 +68,8 @@ class _ShellPageState extends State<ShellPage> {
   bool _syncingLayerPage = false;
   bool _showMiniNav = true;
   String? _lastLayeredLocation;
+  final List<String> _routeHistory = [];
+  bool _isHandlingBackNavigation = false;
 
   bool _isAppsTabHit(Offset position) {
     final ctx = _appsTabKey.currentContext;
@@ -89,6 +92,10 @@ class _ShellPageState extends State<ShellPage> {
   @override
   void didUpdateWidget(covariant ShellPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _recordRouteVisit(
+      oldLocation: oldWidget.matchedLocation,
+      newLocation: widget.matchedLocation,
+    );
     _syncCompactLayoutState(oldMatchedLocation: oldWidget.matchedLocation);
   }
 
@@ -97,13 +104,91 @@ class _ShellPageState extends State<ShellPage> {
     final location = widget.matchedLocation;
     final activeModule = AppRegistry.moduleFromLocation(location);
 
-    return BlocBuilder<AppTabCubit, AppTabState>(
-      builder: (context, state) => _buildCompactLayout(
-        context,
-        state,
-        activeModule: activeModule,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+        unawaited(_handleBackNavigation(context));
+      },
+      child: BlocBuilder<AppTabCubit, AppTabState>(
+        builder: (context, state) => _buildCompactLayout(
+          context,
+          state,
+          activeModule: activeModule,
+        ),
       ),
     );
+  }
+
+  Future<void> _handleBackNavigation(BuildContext context) async {
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      router.pop();
+      return;
+    }
+
+    final currentLocation = _normalizeRouteLocation(widget.matchedLocation);
+    final previousLocation = _takePreviousRoute(currentLocation);
+    if (previousLocation != null) {
+      _isHandlingBackNavigation = true;
+      context.go(previousLocation);
+      return;
+    }
+
+    if (!_isExitLocation(currentLocation)) {
+      _isHandlingBackNavigation = true;
+      context.go(Routes.home);
+      return;
+    }
+
+    await SystemNavigator.pop();
+  }
+
+  void _recordRouteVisit({
+    required String oldLocation,
+    required String newLocation,
+  }) {
+    final previous = _normalizeRouteLocation(oldLocation);
+    final current = _normalizeRouteLocation(newLocation);
+
+    if (previous == current) {
+      return;
+    }
+
+    if (_isHandlingBackNavigation) {
+      _isHandlingBackNavigation = false;
+      return;
+    }
+
+    _routeHistory.add(previous);
+    if (_routeHistory.length > 50) {
+      _routeHistory.removeAt(0);
+    }
+  }
+
+  String? _takePreviousRoute(String currentLocation) {
+    while (_routeHistory.isNotEmpty) {
+      final previous = _routeHistory.removeLast();
+      if (_normalizeRouteLocation(previous) == currentLocation) {
+        continue;
+      }
+      return previous;
+    }
+    return null;
+  }
+
+  bool _isExitLocation(String location) {
+    return location == Routes.home || location == Routes.apps;
+  }
+
+  String _normalizeRouteLocation(String value) {
+    var normalized = value;
+    while (normalized.length > 1 && normalized.endsWith('/')) {
+      normalized = normalized.substring(0, normalized.length - 1);
+    }
+    return normalized;
   }
 
   void _setShellState(VoidCallback fn) {

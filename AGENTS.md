@@ -10,7 +10,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 - **Long-Running / Build Commands**: NEVER run `bun dev`, `bun run build`, `bun build`, or equivalent build/compile/bundling operations unless the user **explicitly requests** it.
 - **Supabase Production Push**: NEVER run `bun sb:push` or `bun sb:linkpush`. Prepare migrations; the user applies them.
-- **Auto-Fixing & Verification**: assistants may run `bun type-check`, `bun check`, `bun format`, and `bun ff` ONLY when the user **explicitly requests** it. However, the end-of-session `bun check` defined in section 2.2 is a **standing mandate** and MUST be executed autonomously before sign-off.
+- **Auto-Fixing & Verification**: assistants may run `bun type-check`, `bun check`, `bun format`, and `bun ff` when (a) the user explicitly requests it, or (b) a workspace playbook requires it for files you changed. Prefer the narrowest verifier that matches the changed surface (for example `bun check:mobile` for Flutter-only work). Do not default to repo-wide `bun check` for stack-isolated changes.
 - **Sensitive Data**: NEVER commit secrets, API keys, tokens, or credentials. Reference environment variables by name only.
 - **Manual Dependency Edits**: NEVER manually edit `package.json` to add or update dependencies. Always use the CLI.
 - **UI Antipatterns**: NEVER use native browser dialogs (alert, confirm), hard-coded color classes (use dynamic-*), or emojis in UI code (use lucide-react via @tuturuuu/icons).
@@ -23,7 +23,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Shared UI Translation Parity**: When adding new translation keys consumed from shared packages like `packages/ui` (for example `common.*` keys), update every app-level `messages/en.json` and `messages/vi.json` bundle that ships that shared UI, and keep the message files alphabetically sorted.
 - **Navigation Parity**: ALWAYS update `navigation.tsx` in the relevant app when adding new routes (aliases + children + icons + permissions).
 - **Proactive Refactoring**: Evaluate files >400 LOC and components >200 LOC for extraction into smaller, focused units.
-- **Unified Verification**: If your changes touch TypeScript/Javascript files, always end your session with a `bun check`. Ensure all checks pass (you may ignore ones that were not introduced by you).
+- **Unified Verification**: If your changes touch TypeScript/Javascript files (or root scripts/config that affect repo-wide checks), end your session with `bun check`. For stack-isolated work that does not touch TS/JS (for example mobile Flutter-only changes), run the stack-specific verifier (for example `bun check:mobile`) unless the user requests a repo-wide run.
 - **UI Preflight Hygiene**: For newly added/edited files, format files with `bun ff` before running verification checks to avoid `biome` issues.
 - **Formatting Workflow**: For fixing formatting issues, try `bun ff` first before making manual edits.
 - **Session Retrospective**: Conduct a retrospective at the end of every session to document mistakes and update these guidelines.

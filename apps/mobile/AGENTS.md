@@ -30,6 +30,7 @@ Global repo rules still apply from the root `AGENTS.md`.
 - **Global App Picker Semantics**: The global `Apps` tab should always behave as an app picker entry point, not as a proxy for the last selected mini-app.
 - **Shell-Owned Mobile App Chrome**: When global bottom nav already provides route hierarchy and `Apps` returns to picker, do not add duplicate per-page back buttons in sub-app `AppBar`s.
 - **Shared Flutter App Bars vs Test Providers**: Reusable mobile `AppBar`s that inject provider-dependent actions should gate those actions defensively or make them injectable for standalone tests.
+- **ShellPage Widget Test Harness**: `ShellPage` tests must provide `AuthCubit` and `WorkspaceCubit` (the top bar avatar reads both) and should prefer compact test viewports plus bounded `pump` loops over `pumpAndSettle` to avoid hanging on persistent shell/nav animations.
 - **Flutter Standalone Card Surfaces**: For tinted or pastel tappable cards, do not rely on `Ink` decoration without a clear `Material` ancestor.
 - **Chat-First Mobile Assistant Layouts**: Keep assistant surfaces focused on transcript/composer; move secondary controls into modal settings/history surfaces.
 - **Stable Shell Top Bars Across Tabs**: Keep shell navbar layout stable across Home, Assistant, and Apps; place assistant-only actions in the assistant surface.
