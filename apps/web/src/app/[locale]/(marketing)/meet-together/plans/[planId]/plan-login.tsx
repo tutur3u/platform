@@ -44,7 +44,6 @@ const GUEST_CREDENTIALS_KEY_PREFIX = 'meet_together_guest_';
 export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
   const pathname = usePathname();
   const router = useRouter();
-
   const t = useTranslations();
 
   const {
@@ -114,7 +113,7 @@ export default function PlanLogin({ plan }: { plan: MeetTogetherPlan }) {
       if (!plan.id) return;
       loginMutation.mutate(values);
     },
-    [loginMutation, plan.id]
+    [loginMutation.mutate, plan.id]
   );
 
   // Try to load saved credentials from localStorage on component mount

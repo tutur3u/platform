@@ -1,6 +1,5 @@
 'use client';
 
-import CopyLinkButton from './copy-link-button';
 import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
@@ -14,6 +13,7 @@ import {
 import { QrCode } from '@ncthub/ui/icons';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
+import CopyLinkButton from './copy-link-button';
 
 export default function ShowQRButton({ url }: { url: string }) {
   const t = useTranslations();
@@ -26,7 +26,7 @@ export default function ShowQRButton({ url }: { url: string }) {
           {t('meet-together-plan-details.show_qr_code')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-106.25">
         <DialogHeader>
           <DialogTitle>{t('common.qr_code')}</DialogTitle>
           <DialogDescription>
