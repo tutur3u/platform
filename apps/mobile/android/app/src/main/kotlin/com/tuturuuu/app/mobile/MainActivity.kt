@@ -13,6 +13,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private var currentRoute: String? = null
     private var exitMessage: String = "Press back again to exit"
+    private var exitHintMessage: String = "Tap back once more to close the app"
     private var lastExitAttemptAt: Long = 0L
     private var onBackInvokedCallback: OnBackInvokedCallback? = null
 
@@ -42,6 +43,11 @@ class MainActivity : FlutterActivity() {
             if (call.method == "updateState") {
                 currentRoute = call.argument<String>("route")
                 exitMessage = call.argument<String>("exitMessage") ?: exitMessage
+                exitHintMessage =
+                    call.argument<String>("exitHintMessage") ?: exitHintMessage
+                if (!isExitRoute(currentRoute)) {
+                    lastExitAttemptAt = 0L
+                }
                 Log.d(
                     "MainActivity",
                     "updateState route=$currentRoute exitMessage=$exitMessage",
@@ -53,6 +59,7 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {
         Log.d("MainActivity", "onBackPressed")
         handleBackPress()
@@ -71,9 +78,12 @@ class MainActivity : FlutterActivity() {
 
             lastExitAttemptAt = now
             Log.d("MainActivity", "handleBackPress showExitToast")
-            Toast.makeText(this, exitMessage, Toast.LENGTH_LONG).show()
+            val toastMessage = "$exitMessage\n$exitHintMessage"
+            Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT).show()
             return
         }
+
+        lastExitAttemptAt = 0L
 
         val engine = flutterEngine
         if (engine != null) {
@@ -82,6 +92,10 @@ class MainActivity : FlutterActivity() {
         }
 
         super.onBackPressed()
+    }
+
+    private fun isExitRoute(route: String?): Boolean {
+        return route == "/" || route == "/apps"
     }
 
     override fun onDestroy() {

@@ -224,12 +224,23 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   Future<void> refreshInsights() async {
     final workspace = state.workspace;
     if (workspace == null) return;
+    final requestVersion = ++_requestVersion;
+    final workspaceId = workspace.id;
+
     final tasks = await _repository.fetchTasksInsight(
-      wsId: workspace.id,
+      wsId: workspaceId,
       isPersonal: workspace.personal,
     );
-    final calendar = await _repository.fetchCalendarInsight(workspace.id);
-    emit(
+
+    if (isClosed || requestVersion != _requestVersion) return;
+    if (state.workspace?.id != workspaceId) return;
+
+    final calendar = await _repository.fetchCalendarInsight(workspaceId);
+
+    if (isClosed || requestVersion != _requestVersion) return;
+    if (state.workspace?.id != workspaceId) return;
+
+    _emitIfOpen(
       state.copyWith(
         tasksInsight: tasks,
         calendarInsight: calendar,

@@ -37,7 +37,6 @@ extension _ShellPageInteractions on _ShellPageState {
       isMiniAppRoot ? 'miniAppNav.go' : 'miniAppNav.goChild',
       selectedRoute,
     );
-    debugPrintStack(label: '[ShellNav] go $selectedRoute from mini-app nav');
     context.go(selectedRoute);
 
     await context.read<AppTabCubit>().setLastTabRoute(selected.route);
@@ -105,7 +104,6 @@ extension _ShellPageInteractions on _ShellPageState {
   void _handleAppsLongPress() {
     if (!mounted) return;
     _debugBack('rootNav.longPressApps');
-    debugPrintStack(label: '[ShellNav] go ${Routes.apps} from apps long press');
     unawaited(context.read<AppTabCubit>().openWithSearch());
     context.go(Routes.apps);
   }
@@ -119,9 +117,6 @@ extension _ShellPageInteractions on _ShellPageState {
     if (!currentContext.mounted) {
       return;
     }
-    debugPrintStack(
-      label: '[ShellNav] go ${Routes.apps} from open apps drawer',
-    );
     currentContext.go(Routes.apps);
     _lastTabIndex = 2;
     _tapStopwatch
@@ -156,7 +151,6 @@ extension _ShellPageInteractions on _ShellPageState {
     if (!context.mounted) {
       return;
     }
-    debugPrintStack(label: '[ShellNav] go $route from root nav tap');
     context.go(route);
     await appTabCubit.setLastTabRoute(route);
     if (!context.mounted) {

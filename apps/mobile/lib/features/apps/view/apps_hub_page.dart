@@ -22,15 +22,35 @@ class AppsHubPage extends StatefulWidget {
 
 class _AppsHubPageState extends State<AppsHubPage> {
   Timer? _tapShieldTimer;
-  var _tapShieldActive = true;
+  var _tapShieldActive = false;
 
   @override
   void initState() {
     super.initState();
-    _tapShieldTimer = Timer(const Duration(milliseconds: 600), () {
-      if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final routeAnimation = ModalRoute.of(context)?.animation;
+      final isTransitioning =
+          routeAnimation != null &&
+          (routeAnimation.isAnimating ||
+              routeAnimation.status == AnimationStatus.forward);
+      if (!isTransitioning) {
+        return;
+      }
+
       setState(() {
-        _tapShieldActive = false;
+        _tapShieldActive = true;
+      });
+
+      _tapShieldTimer = Timer(const Duration(milliseconds: 600), () {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _tapShieldActive = false;
+        });
       });
     });
   }
