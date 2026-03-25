@@ -402,7 +402,7 @@ export default function HabitsClientPage({ wsId }: { wsId: string }) {
       />
 
       <div className="space-y-5 pb-6">
-        <section className="grid gap-5 min-[1120px]:grid-cols-[minmax(0,1.45fr),minmax(320px,0.78fr)] 2xl:grid-cols-[minmax(0,1.5fr),minmax(360px,0.74fr)]">
+        <section className="grid gap-5 2xl:grid-cols-[minmax(0,1.5fr),minmax(360px,0.74fr)] min-[1120px]:grid-cols-[minmax(0,1.45fr),minmax(320px,0.78fr)]">
           <div className="overflow-hidden rounded-[32px] border border-border/70 bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.12),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.08),transparent_26%)] bg-card/80">
             <div className="flex flex-col gap-5 px-6 py-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-3">
