@@ -1,6 +1,6 @@
 'use client';
 
-import { Timezone } from '@ncthub/types/primitives/Timezone';
+import type { Timezone } from '@ncthub/types/primitives/Timezone';
 import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
@@ -25,8 +25,8 @@ import { Input } from '@ncthub/ui/input';
 import { zodResolver } from '@ncthub/ui/resolvers';
 import { cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -148,6 +148,7 @@ export default function CreatePlanDialog({ plan }: Props) {
     >
       <DialogTrigger asChild>
         <button
+          type="button"
           className={cn(
             'group relative col-span-full mt-4 inline-flex w-full',
             missingFields || creating
@@ -159,7 +160,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         >
           <div
             className={cn(
-              'animate-tilt absolute -inset-px rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
+              'absolute -inset-px animate-tilt rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
               missingFields ||
                 creating ||
                 'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
@@ -169,30 +170,8 @@ export default function CreatePlanDialog({ plan }: Props) {
             {t('create_plan')}
           </div>
         </button>
-        {/* <button
-          className={`${
-            
-          } group relative inline-flex w-full`}
-          onClick={() => setIsOpened(true)}
-          disabled={missingFields || creating}
-        >
-          <div
-            className={cn(
-              'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r',
-              missingFields || creating
-                ? 'opacity-10'
-                : 'group-hover:opacity-30',
-              'absolute rounded-lg blur transition-all duration-500'
-            )}
-          />
-          <div
-            className={`from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue relative inline-flex w-full items-center justify-center rounded-lg bg-linear-to-r px-8 py-2 font-bold text-white transition-all md:text-lg`}
-          >
-            {t('create_plan')}
-          </div>
-        </button> */}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-106.25">
         <DialogHeader>
           <DialogTitle>{t('new_plan')}</DialogTitle>
           <DialogDescription>{t('new_plan_desc')}</DialogDescription>

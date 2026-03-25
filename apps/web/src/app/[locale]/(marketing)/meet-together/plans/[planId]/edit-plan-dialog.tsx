@@ -1,6 +1,6 @@
 'use client';
 
-import { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
+import type { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,8 +36,8 @@ import { Pencil } from '@ncthub/ui/icons';
 import { Input } from '@ncthub/ui/input';
 import { zodResolver } from '@ncthub/ui/resolvers';
 import { Separator } from '@ncthub/ui/separator';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -76,7 +76,7 @@ export default function EditPlanDialog({ plan }: Props) {
     setUpdating(true);
 
     const data = form.getValues();
-    let hasError = false;
+    const hasError = false;
 
     if (hasError) {
       setUpdating(false);
@@ -133,7 +133,7 @@ export default function EditPlanDialog({ plan }: Props) {
         </Button>
       </DialogTrigger>
       <DialogContent
-        className="sm:max-w-[425px]"
+        className="sm:max-w-106.25"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader>
@@ -184,7 +184,7 @@ export default function EditPlanDialog({ plan }: Props) {
                 <Separator />
 
                 <AlertDialog>
-                  <AlertDialogTrigger>
+                  <AlertDialogTrigger asChild>
                     <Button
                       type="button"
                       className="w-full"
