@@ -1219,6 +1219,8 @@
     "gallery": "Thư viện",
 
     "commonRetry": "Thử lại",
+    "commonPressBackAgainToExit": "Nhấn quay lại lần nữa để thoát",
+    "commonPressBackAgainToExitHint": "Nhấn quay lại lần nữa trong vòng 2 giây để đóng ứng dụng.",
     "commonPrevious": "Trước",
     "commonNext": "Tiếp",
 

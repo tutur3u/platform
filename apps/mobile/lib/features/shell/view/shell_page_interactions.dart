@@ -31,19 +31,14 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
 
-    final shouldPush =
-        selectedRoute != _normalizeRouteLocation(activeModule.route);
-    if (shouldPush) {
-      _debugBack('miniAppNav.push', selectedRoute);
-      debugPrintStack(
-        label: '[ShellNav] push $selectedRoute from mini-app nav',
-      );
-      unawaited(context.push(selectedRoute));
-    } else {
-      _debugBack('miniAppNav.go', selectedRoute);
-      debugPrintStack(label: '[ShellNav] go $selectedRoute from mini-app nav');
-      context.go(selectedRoute);
-    }
+    final isMiniAppRoot =
+        selectedRoute == _normalizeRouteLocation(activeModule.route);
+    _debugBack(
+      isMiniAppRoot ? 'miniAppNav.go' : 'miniAppNav.goChild',
+      selectedRoute,
+    );
+    debugPrintStack(label: '[ShellNav] go $selectedRoute from mini-app nav');
+    context.go(selectedRoute);
 
     await context.read<AppTabCubit>().setLastTabRoute(selected.route);
 

@@ -46,7 +46,7 @@ class ShellPage extends StatefulWidget {
   State<ShellPage> createState() => _ShellPageState();
 }
 
-class _ShellPageState extends State<ShellPage> {
+class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const ValueKey<String> _homeKey = ValueKey('home');
   static const ValueKey<String> _appsKey = ValueKey('apps');
   static const ValueKey<String> _assistantKey = ValueKey('assistant');
@@ -56,6 +56,10 @@ class _ShellPageState extends State<ShellPage> {
   static const double _navIconSize = 22;
   static const double _navItemSpacing = 2;
   static const double _floatingNavMinItemWidth = 96;
+  static const Duration _exitConfirmationWindow = Duration(seconds: 2);
+  static const MethodChannel _androidBackChannel = MethodChannel(
+    'mobile/shell_back',
+  );
 
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;
@@ -69,9 +73,9 @@ class _ShellPageState extends State<ShellPage> {
   bool _showMiniNav = true;
   String? _lastLayeredLocation;
   final List<String> _routeHistory = [];
+  DateTime? _lastExitAttemptAt;
   bool _isHandlingBackNavigation = false;
   bool _isProcessingBackNavigation = false;
-  bool _ignoreNextPopScopeCallback = false;
   Timer? _suppressPointerTimer;
   bool _suppressPointerInput = false;
 
@@ -81,8 +85,7 @@ class _ShellPageState extends State<ShellPage> {
       'route=${_normalizeRouteLocation(widget.matchedLocation)} '
       'history=${_routeHistory.join(' > ')} '
       'flags={handling:$_isHandlingBackNavigation,'
-      'processing:$_isProcessingBackNavigation,'
-      'ignoreNextPop:$_ignoreNextPopScopeCallback}'
+      'processing:$_isProcessingBackNavigation}'
       '${details == null ? '' : ' $details'}',
     );
   }
@@ -102,7 +105,23 @@ class _ShellPageState extends State<ShellPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(SystemNavigator.setFrameworkHandlesBack(true));
     _layerController = PageController(initialPage: 1);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAndroidBackState();
+    _persistCurrentRoute();
+  }
+
+  @override
+  Future<bool> didPopRoute() async {
+    _debugBack('WidgetsBinding.didPopRoute');
+    await _runBackNavigation(context);
+    return true;
   }
 
   @override
@@ -113,6 +132,8 @@ class _ShellPageState extends State<ShellPage> {
       newLocation: widget.matchedLocation,
     );
     _syncCompactLayoutState(oldMatchedLocation: oldWidget.matchedLocation);
+    _syncAndroidBackState();
+    _persistCurrentRoute();
   }
 
   @override
@@ -122,27 +143,18 @@ class _ShellPageState extends State<ShellPage> {
 
     return BackButtonListener(
       onBackButtonPressed: () async {
-        _debugBack('BackButtonListener.start');
-        _ignoreNextPopScopeCallback = true;
-        await _runBackNavigation(context);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _debugBack('BackButtonListener.postFrameReset');
-          _ignoreNextPopScopeCallback = false;
-        });
-        return true;
+        final route = _normalizeRouteLocation(widget.matchedLocation);
+        if (_isExitLocation(route)) {
+          _debugBack('BackButtonListener.exitRoute');
+          await _runBackNavigation(context);
+          return true;
+        }
+        return false;
       },
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
           _debugBack('PopScope.invoked', 'didPop=$didPop result=$result');
-          if (didPop) {
-            return;
-          }
-          if (_ignoreNextPopScopeCallback) {
-            _debugBack('PopScope.ignored');
-            _ignoreNextPopScopeCallback = false;
-            return;
-          }
           unawaited(_runBackNavigation(context));
         },
         child: IgnorePointer(
@@ -219,6 +231,11 @@ class _ShellPageState extends State<ShellPage> {
       return;
     }
 
+    if (_isExitLocation(currentLocation)) {
+      await _handleExitAttempt(context);
+      return;
+    }
+
     final previousLocation = _takePreviousRoute(currentLocation);
     if (previousLocation != null) {
       _debugBack('handleBackNavigation.toPreviousRoute', previousLocation);
@@ -230,16 +247,38 @@ class _ShellPageState extends State<ShellPage> {
       return;
     }
 
-    if (!_isExitLocation(currentLocation)) {
-      _debugBack('handleBackNavigation.toHome');
-      debugPrintStack(label: '[ShellNav] go ${Routes.home} from back fallback');
-      _isHandlingBackNavigation = true;
-      context.go(Routes.home);
+    _debugBack('handleBackNavigation.toHome');
+    debugPrintStack(label: '[ShellNav] go ${Routes.home} from back fallback');
+    _isHandlingBackNavigation = true;
+    context.go(Routes.home);
+  }
+
+  Future<void> _handleExitAttempt(BuildContext context) async {
+    final now = DateTime.now();
+    final lastExitAttemptAt = _lastExitAttemptAt;
+    final shouldExit =
+        lastExitAttemptAt != null &&
+        now.difference(lastExitAttemptAt) <= _exitConfirmationWindow;
+
+    if (shouldExit) {
+      _debugBack('handleBackNavigation.systemPopConfirmed');
+      await SystemNavigator.pop();
       return;
     }
 
-    _debugBack('handleBackNavigation.systemPop');
-    await SystemNavigator.pop();
+    _lastExitAttemptAt = now;
+    _debugBack('handleBackNavigation.awaitExitConfirmation');
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    if (!toastContext.mounted) {
+      return;
+    }
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert(
+        title: Text(context.l10n.commonPressBackAgainToExit),
+        content: Text(context.l10n.commonPressBackAgainToExitHint),
+      ),
+    );
   }
 
   void _recordRouteVisit({
@@ -314,6 +353,22 @@ class _ShellPageState extends State<ShellPage> {
     setState(fn);
   }
 
+  void _syncAndroidBackState() {
+    final route = _normalizeRouteLocation(widget.matchedLocation);
+    final exitMessage = AppLocalizations.of(context).commonPressBackAgainToExit;
+    unawaited(
+      _androidBackChannel.invokeMethod<void>('updateState', {
+        'route': route,
+        'exitMessage': exitMessage,
+      }),
+    );
+  }
+
+  void _persistCurrentRoute() {
+    final route = _normalizeRouteLocation(widget.matchedLocation);
+    unawaited(context.read<AppTabCubit>().setLastTabRoute(route));
+  }
+
   void _suppressPointerEventsDuringTransition() {
     _debugBack('pointerSuppression.start');
     _suppressPointerTimer?.cancel();
@@ -327,6 +382,8 @@ class _ShellPageState extends State<ShellPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(SystemNavigator.setFrameworkHandlesBack(false));
     _stopLongPressTimer();
     _suppressPointerTimer?.cancel();
     _layerController.dispose();

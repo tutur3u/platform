@@ -3021,6 +3021,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonRetry => 'Thử lại';
 
   @override
+  String get commonPressBackAgainToExit => 'Nhấn quay lại lần nữa để thoát';
+
+  @override
+  String get commonPressBackAgainToExitHint => 'Nhấn quay lại lần nữa trong vòng 2 giây để đóng ứng dụng.';
+
+  @override
   String get commonPrevious => 'Trước';
 
   @override

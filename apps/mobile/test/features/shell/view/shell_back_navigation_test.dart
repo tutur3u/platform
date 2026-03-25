@@ -240,6 +240,112 @@ void main() {
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
     });
 
+    testWidgets('apps root requires double back to exit', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      var systemPopCalls = 0;
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            ..setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'SystemNavigator.pop') {
+                systemPopCalls += 1;
+              }
+              return null;
+            });
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      final router = _buildRouter(initialLocation: Routes.apps);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      final popScope = tester.widget<PopScope<dynamic>>(
+        find.byWidgetPredicate((widget) => widget is PopScope).first,
+      );
+
+      popScope.onPopInvokedWithResult!(false, null);
+      await _pumpForTransitions(tester);
+
+      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      expect(systemPopCalls, 0);
+      expect(find.text('Press back again to exit'), findsOneWidget);
+
+      popScope.onPopInvokedWithResult!(false, null);
+      await _pumpForTransitions(tester);
+
+      expect(systemPopCalls, 1);
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump(const Duration(milliseconds: 50));
+    });
+
+    testWidgets('home root requires double back to exit', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      var systemPopCalls = 0;
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            ..setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'SystemNavigator.pop') {
+                systemPopCalls += 1;
+              }
+              return null;
+            });
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      final router = _buildRouter(initialLocation: Routes.home);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      final popScope = tester.widget<PopScope<dynamic>>(
+        find.byWidgetPredicate((widget) => widget is PopScope).first,
+      );
+
+      popScope.onPopInvokedWithResult!(false, null);
+      await _pumpForTransitions(tester);
+
+      expect(router.routeInformationProvider.value.uri.path, Routes.home);
+      expect(systemPopCalls, 0);
+      expect(find.text('Press back again to exit'), findsOneWidget);
+
+      popScope.onPopInvokedWithResult!(false, null);
+      await _pumpForTransitions(tester);
+
+      expect(systemPopCalls, 1);
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump(const Duration(milliseconds: 50));
+    });
+
     testWidgets('apps tab opens picker even when a mini-app is selected', (
       tester,
     ) async {
@@ -315,9 +421,6 @@ void main() {
         await _pumpForTransitions(tester);
 
         final shellState = tester.state(find.byType(ShellPage));
-        final backButtonListener = tester.widget<BackButtonListener>(
-          find.byType(BackButtonListener),
-        );
         final shellFinder = find.byType(ShellPage);
         final popScope = tester.widget<PopScope<dynamic>>(
           find
@@ -330,7 +433,7 @@ void main() {
               .first,
         );
 
-        await backButtonListener.onBackButtonPressed();
+        await tester.binding.handlePopRoute();
         popScope.onPopInvokedWithResult!(false, null);
         await _pumpForTransitions(tester);
 
@@ -542,5 +645,68 @@ void main() {
         expect(router.routeInformationProvider.value.uri.path, Routes.finance);
       },
     );
+
+    testWidgets(
+      'persists /apps as last tab after returning from mini-app root',
+      (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(390, 844);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final router = _buildRouter(initialLocation: Routes.timer);
+        addTearDown(router.dispose);
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            router: router,
+            appTabCubit: appTabCubit,
+            authCubit: authCubit,
+            workspaceCubit: workspaceCubit,
+          ),
+        );
+        await _pumpForTransitions(tester);
+
+        router.go(Routes.apps);
+        await _pumpForTransitions(tester);
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getString('last-tab-route'), Routes.apps);
+      },
+    );
+
+    testWidgets('persists / as last tab when navigating to home', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final router = _buildRouter(initialLocation: Routes.apps);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      router.go(Routes.home);
+      await _pumpForTransitions(tester);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('last-tab-route'), Routes.home);
+    });
   });
 }

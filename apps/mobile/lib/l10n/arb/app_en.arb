@@ -1215,6 +1215,8 @@
     "gallery": "Gallery",
 
     "commonRetry": "Retry",
+    "commonPressBackAgainToExit": "Press back again to exit",
+    "commonPressBackAgainToExitHint": "Press back again within 2 seconds to close the app.",
     "commonPrevious": "Previous",
     "commonNext": "Next",
 

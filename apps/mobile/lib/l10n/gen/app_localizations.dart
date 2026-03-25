@@ -5821,6 +5821,18 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get commonRetry;
 
+  /// No description provided for @commonPressBackAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit'**
+  String get commonPressBackAgainToExit;
+
+  /// No description provided for @commonPressBackAgainToExitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again within 2 seconds to close the app.'**
+  String get commonPressBackAgainToExitHint;
+
   /// No description provided for @commonPrevious.
   ///
   /// In en, this message translates to:
