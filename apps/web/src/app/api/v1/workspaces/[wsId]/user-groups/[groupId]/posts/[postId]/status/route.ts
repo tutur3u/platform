@@ -71,5 +71,6 @@ export async function GET(req: Request, { params }: Params) {
     queue,
     sent: Number(summary?.sent_stage_count ?? 0),
     tentative: Number(summary?.missing_check_count ?? 0),
+    undeliverable: Number(summary?.undeliverable_count ?? 0),
   });
 }

@@ -49,6 +49,7 @@ describe('group post status route', () => {
           sent_count: 6,
           sent_stage_count: 6,
           total_count: 10,
+          undeliverable_count: 2,
         },
       ],
       error: null,
@@ -86,6 +87,7 @@ describe('group post status route', () => {
       },
       sent: 6,
       tentative: 3,
+      undeliverable: 2,
     });
 
     expect(rpcMock).toHaveBeenCalledWith('get_user_group_post_status_summary', {

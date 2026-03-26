@@ -59,6 +59,12 @@ function UserCard({
   const queueAppearance = isPostEmailQueueStatus(recipient.queue_status)
     ? getPostEmailStatusAppearance(recipient.queue_status)
     : null;
+  const deliveryIssueMessage =
+    recipient.delivery_issue_reason === 'missing_email'
+      ? tableT('delivery_issue_reason_missing_email')
+      : recipient.delivery_issue_reason === 'missing_sender_platform_user'
+        ? tableT('delivery_issue_reason_missing_sender_platform_user')
+        : null;
   const stageIconClassName = cn(
     'mr-1 h-3.5 w-3.5',
     stageAppearance.iconClassName
@@ -184,6 +190,12 @@ function UserCard({
       {!hasExistingCheck && (
         <div className="mb-3 rounded border border-dynamic-blue/20 bg-dynamic-blue/5 p-2 text-dynamic-blue text-sm">
           {tableT('missing_check_description')}
+        </div>
+      )}
+
+      {recipient.review_stage === 'undeliverable' && deliveryIssueMessage && (
+        <div className="mb-3 rounded border border-dynamic-orange/20 bg-dynamic-orange/5 p-2 text-dynamic-orange text-sm">
+          {deliveryIssueMessage}
         </div>
       )}
 
