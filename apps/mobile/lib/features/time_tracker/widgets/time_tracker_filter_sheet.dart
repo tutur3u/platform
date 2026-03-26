@@ -102,11 +102,11 @@ class _TimeTrackerFilterSheetState extends State<TimeTrackerFilterSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
+        padding: const EdgeInsets.fromLTRB(
           16,
           16,
           16,
-          MediaQuery.of(context).viewPadding.bottom + 16,
+          16,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,7 +215,7 @@ class _TimeTrackerFilterSheetState extends State<TimeTrackerFilterSheet> {
                         _tempUserId = null;
                       });
                     },
-                    child: Text(l10n.timerRequestsFilterClear),
+                    child: Center(child: Text(l10n.timerRequestsFilterClear)),
                   ),
                 ),
                 const shad.Gap(8),
@@ -225,7 +225,7 @@ class _TimeTrackerFilterSheetState extends State<TimeTrackerFilterSheet> {
                       Navigator.of(context).pop();
                       widget.onApply(_tempFilter, _tempUserId);
                     },
-                    child: Text(l10n.timerRequestsFilterApply),
+                    child: Center(child: Text(l10n.timerRequestsFilterApply)),
                   ),
                 ),
               ],
