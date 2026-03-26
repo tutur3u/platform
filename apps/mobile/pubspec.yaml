@@ -1,6 +1,6 @@
 name: mobile
 description: Tuturuuu Mobile
-version: 0.1.4+10
+version: 0.1.5+11
 publish_to: none
 
 environment:
@@ -30,7 +30,7 @@ dependencies:
   google_sign_in: ^7.2.0
   http: ^1.6.0
   http_parser: ^4.1.2
-  image_cropper: ^12.0.0
+  image_cropper: ^12.1.0
   image_picker: ^1.2.1
   intl: ^0.20.2
   json_annotation: ^4.11.0
@@ -41,7 +41,7 @@ dependencies:
   path_provider: ^2.1.5
   shadcn_flutter: ^0.0.52
   share_plus: ^12.0.1
-  shared_preferences: ^2.5.4
+  shared_preferences: ^2.5.5
   supabase_flutter: ^2.12.2
   url_launcher: ^6.3.2
 
