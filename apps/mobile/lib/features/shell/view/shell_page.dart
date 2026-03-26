@@ -89,6 +89,11 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const Duration _backDispatchDedupWindow = Duration(milliseconds: 250);
   shad.ToastOverlay? _exitConfirmationToast;
 
+  void _markBackDispatch({required String source}) {
+    _lastBackDispatchAt = DateTime.now();
+    _lastBackDispatchSource = source;
+  }
+
   void _debugBack(String event, [String? details]) {
     if (!widget.enableDebugLogs) {
       return;
@@ -146,7 +151,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     final rootNav = Navigator.of(context, rootNavigator: true);
     if (rootNav.canPop()) {
       _debugBack('WidgetsBinding.didPopRoute.popNavigatorDialog');
-      _lastBackDispatchAt = DateTime.now();
+      _markBackDispatch(source: 'didPopRoute');
       rootNav.pop();
       return true;
     }
@@ -180,7 +185,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
         final rootNav = Navigator.of(context, rootNavigator: true);
         if (rootNav.canPop()) {
           _debugBack('BackButtonListener.popNavigatorDialog');
-          _lastBackDispatchAt = DateTime.now();
+          _markBackDispatch(source: 'backButtonListener');
           rootNav.pop();
           return true;
         }

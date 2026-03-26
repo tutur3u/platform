@@ -507,6 +507,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
 
   void _showFilterMenu(BuildContext context, TaskBoardsFilter selected) {
     final cubit = context.read<TaskBoardsCubit>();
+    final isCompact = context.isCompact;
     unawaited(
       showAdaptiveDrawer(
         context: context,
@@ -519,7 +520,11 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                 return InkWell(
                   onTap: () {
                     cubit.setFilter(filter);
-                    unawaited(Navigator.maybePop(drawerContext));
+                    if (isCompact) {
+                      unawaited(shad.closeOverlay<void>(drawerContext));
+                    } else {
+                      unawaited(Navigator.maybePop(drawerContext));
+                    }
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
