@@ -5209,6 +5209,12 @@ abstract class AppLocalizations {
   /// **'Select a task'**
   String get timerTaskIdPlaceholder;
 
+  /// No description provided for @timerAttachmentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No attachments} one{1 attachment} other{{count} attachments}}'**
+  String timerAttachmentCount(int count);
+
   /// No description provided for @timerRecentSessions.
   ///
   /// In en, this message translates to:

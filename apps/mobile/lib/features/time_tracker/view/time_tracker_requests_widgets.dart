@@ -87,9 +87,9 @@ class _RequestTile extends StatelessWidget {
                     if (request.images.isNotEmpty)
                       _MetaChip(
                         icon: Icons.attach_file_rounded,
-                        label: request.images.length == 1
-                            ? '1 attachment'
-                            : '${request.images.length} attachments',
+                        label: l10n.timerAttachmentCount(
+                          request.images.length,
+                        ),
                       ),
                   ],
                 ),

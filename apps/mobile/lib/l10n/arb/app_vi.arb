@@ -1050,6 +1050,14 @@
     },
     "timerTaskPickerSearch": "Tìm kiếm nhiệm vụ",
     "timerTaskIdPlaceholder": "Chọn nhiệm vụ",
+    "timerAttachmentCount": "{count, plural, =0{Không có tệp đính kèm} one{1 tệp đính kèm} other{{count} tệp đính kèm}}",
+    "@timerAttachmentCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "timerRecentSessions": "Phiên gần đây",
     "timerSeeAll": "Xem tất cả",
     "timerNoSessions": "Chưa có phiên nào",

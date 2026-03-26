@@ -2685,6 +2685,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerTaskIdPlaceholder => 'Select a task';
 
   @override
+  String timerAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments',
+      one: '1 attachment',
+      zero: 'No attachments',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get timerRecentSessions => 'Recent sessions';
 
   @override
