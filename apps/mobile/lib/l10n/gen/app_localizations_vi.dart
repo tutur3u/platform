@@ -2685,6 +2685,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerTaskIdPlaceholder => 'Chọn nhiệm vụ';
 
   @override
+  String timerAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tệp đính kèm',
+      one: '1 tệp đính kèm',
+      zero: 'Không có tệp đính kèm',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get timerRecentSessions => 'Phiên gần đây';
 
   @override
@@ -2924,6 +2936,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get timerRequestNeedsInfo => 'Cần thêm thông tin';
+
+  @override
+  String timerRequestInfoRequestedBy(String name) {
+    return 'Đã yêu cầu thông tin bởi $name';
+  }
 
   @override
   String get timerApprove => 'Duyệt';

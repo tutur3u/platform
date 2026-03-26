@@ -2,9 +2,11 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
+import { useQueryStates } from 'nuqs';
+import { postsSearchParamParsers } from './search-params';
 import {
   getPostReviewStageAppearance,
   POST_REVIEW_STAGE_ORDER,
@@ -21,12 +23,14 @@ export function PostStatusSummary({
   activeStage,
   filteredCount,
   summary,
+  toolbar,
 }: {
   activeStage?: PostReviewStage;
   filteredCount: number;
   summary: PostEmailStatusSummary;
+  toolbar?: ReactNode;
 }) {
-  const searchParams = useSearchParams();
+  const [queryState, setQueryState] = useQueryStates(postsSearchParamParsers);
   const t = useTranslations('ws-post-emails');
   const tableT = useTranslations('post-email-data-table');
 
@@ -34,8 +38,7 @@ export function PostStatusSummary({
   const isDefaultActionableView = activeStage === DEFAULT_POST_REVIEW_STAGE;
 
   const hasAdvancedFilters = Boolean(
-    searchParams.getSingle('queueStatus') ||
-      searchParams.getSingle('approvalStatus')
+    queryState.queueStatus || queryState.approvalStatus
   );
 
   return (
@@ -68,12 +71,7 @@ export function PostStatusSummary({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    searchParams.set({
-                      page: '1',
-                      stage: undefined,
-                    })
-                  }
+                  onClick={() => void setQueryState({ page: 1, stage: null })}
                 >
                   {t('show_all_recipients')}
                 </Button>
@@ -84,8 +82,8 @@ export function PostStatusSummary({
                   size="sm"
                   className="text-muted-foreground"
                   onClick={() =>
-                    searchParams.set({
-                      page: '1',
+                    void setQueryState({
+                      page: 1,
                       stage: DEFAULT_POST_REVIEW_STAGE,
                     })
                   }
@@ -99,10 +97,10 @@ export function PostStatusSummary({
                   size="sm"
                   className="text-muted-foreground"
                   onClick={() =>
-                    searchParams.set({
-                      approvalStatus: undefined,
-                      page: '1',
-                      queueStatus: undefined,
+                    void setQueryState({
+                      approvalStatus: null,
+                      page: 1,
+                      queueStatus: null,
                     })
                   }
                 >
@@ -132,12 +130,7 @@ export function PostStatusSummary({
                     <button
                       key={stage}
                       type="button"
-                      onClick={() =>
-                        searchParams.set({
-                          page: '1',
-                          stage,
-                        })
-                      }
+                      onClick={() => void setQueryState({ page: 1, stage })}
                       className={cn(
                         'group rounded-xl border bg-background px-3.5 py-3 text-left transition-all',
                         isActive
@@ -180,6 +173,9 @@ export function PostStatusSummary({
             </div>
           </div>
         </div>
+        {toolbar ? (
+          <div className="border-t border-border/60 px-6 py-4">{toolbar}</div>
+        ) : null}
       </CardContent>
     </Card>
   );

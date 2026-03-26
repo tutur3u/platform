@@ -6,14 +6,13 @@ import {
   autoSkipOldPostEmails,
   getPostEmailMaxAgeCutoff,
 } from '@/lib/post-email-queue';
-import { normalizeArrayParam, normalizePostReviewStage } from './search-params';
 import { normalizePostEmailQueueStatus } from './status-derivation';
 import type {
   PostApprovalStatus,
+  PostDeliveryIssueReason,
   PostEmail,
   PostEmailQueueStatus,
   PostEmailStatusSummary,
-  PostReviewStage,
   PostsSearchParams,
 } from './types';
 import { isPostApprovalStatus, isPostEmailQueueStatus } from './types';
@@ -72,11 +71,13 @@ function mapPostEmailRow(row: PostEmailRowRpc): PostEmail {
     queue_attempt_count: row.queue_attempt_count,
     queue_last_error: row.queue_last_error,
     queue_sent_at: row.queue_sent_at,
+    delivery_issue_reason:
+      (row.delivery_issue_reason as PostDeliveryIssueReason | null) ?? null,
     approval_status: row.approval_status ?? undefined,
     approval_rejection_reason: row.approval_rejection_reason,
     can_remove_approval: row.can_remove_approval,
     created_at: row.check_created_at ? new Date(row.check_created_at) : null,
-    stage: row.review_stage as PostReviewStage,
+    stage: row.review_stage,
   };
 }
 
@@ -91,6 +92,7 @@ function mapSummaryRow(
       approved_awaiting_delivery: Number(
         row?.approved_awaiting_delivery_count ?? 0
       ),
+      undeliverable: Number(row?.undeliverable_count ?? 0),
       queued: Number(row?.queued_stage_count ?? 0),
       processing: Number(row?.processing_stage_count ?? 0),
       sent: Number(row?.sent_stage_count ?? 0),
@@ -130,16 +132,16 @@ export async function getPostsPageData(
   }: PostsSearchParams = {}
 ) {
   const sbAdmin = await createAdminClient();
-  const parsedPage = Number.parseInt(page, 10);
-  const parsedSize = Number.parseInt(pageSize, 10);
+  const parsedPage = typeof page === 'number' ? page : Number.NaN;
+  const parsedSize = typeof pageSize === 'number' ? pageSize : Number.NaN;
   const safePage =
     Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
   const safeSize =
     Number.isFinite(parsedSize) && parsedSize > 0 ? parsedSize : 10;
   const activeApprovalStatus = normalizeApprovalStatus(approvalStatus);
-  const includedGroupIds = normalizeArrayParam(includedGroups);
-  const excludedGroupIds = normalizeArrayParam(excludedGroups);
-  const activeStage = normalizePostReviewStage(stage);
+  const includedGroupIds = includedGroups ?? [];
+  const excludedGroupIds = excludedGroups ?? [];
+  const activeStage = stage ?? undefined;
   const activeQueueStatus = normalizeQueueStatus(queueStatus);
   const cutoff = getPostEmailMaxAgeCutoff();
   const offset = (safePage - 1) * safeSize;

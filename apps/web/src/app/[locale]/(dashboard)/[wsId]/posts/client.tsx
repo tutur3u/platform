@@ -1,14 +1,16 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-import { CustomDataTable } from '@/components/custom-data-table';
+import { useCallback, useEffect, useState } from 'react';
+import { useQueryStates } from 'nuqs';
 import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
-import { normalizePostReviewStage } from './search-params';
+import { postsSearchParamParsers } from './search-params';
 import { PostStatusSummary } from './status-summary';
 import type {
   PostEmail,
@@ -35,9 +37,23 @@ export default function PostsClient({
   postsStatus,
 }: PostsClientProps) {
   const t = useTranslations();
+  const router = useRouter();
+  const [queryState, setQueryState] = useQueryStates(postsSearchParamParsers);
   const [posts, setPosts] = usePosts();
   const [selectedPost, setSelectedPost] = useState<PostEmail | null>(null);
-  const activeStage = normalizePostReviewStage(searchParams.stage);
+  const activeStage = queryState.stage ?? searchParams.stage ?? undefined;
+  const currentPage = queryState.page ?? searchParams.page ?? 1;
+  const currentPageSize = queryState.pageSize ?? searchParams.pageSize ?? 10;
+
+  const handleSetParams = useCallback(
+    (params: { page?: number; pageSize?: string }) => {
+      void setQueryState({
+        page: params.page,
+        pageSize: params.pageSize ? Number(params.pageSize) : undefined,
+      });
+    },
+    [setQueryState]
+  );
 
   useEffect(() => {
     if (posts.selected && postsData?.data) {
@@ -85,6 +101,12 @@ export default function PostsClient({
         activeStage={activeStage}
         filteredCount={postsData?.count || 0}
         summary={postsStatus}
+        toolbar={
+          <PostsFilters
+            wsId={wsId}
+            statusSummary={postsStatus}
+          />
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.95fr)] xl:items-start">
@@ -99,19 +121,15 @@ export default function PostsClient({
           </CardHeader>
           <CardContent className="min-w-0">
             <div className="min-h-144 overflow-y-auto">
-              <CustomDataTable
+              <DataTable
                 data={postsData?.data || []}
                 namespace="post-email-data-table"
                 columnGenerator={getPostEmailColumns}
+                t={t}
                 extraData={{ locale }}
                 count={postsData?.count || 0}
-                filters={
-                  <PostsFilters
-                    wsId={wsId}
-                    searchParams={searchParams}
-                    statusSummary={postsStatus}
-                  />
-                }
+                pageIndex={Math.max(currentPage - 1, 0)}
+                pageSize={currentPageSize}
                 defaultVisibility={{
                   id: false,
                   email: false,
@@ -127,6 +145,9 @@ export default function PostsClient({
                   post_content: false,
                 }}
                 disableSearch
+                onRefresh={() => router.refresh()}
+                resetParams={() => {}}
+                setParams={handleSetParams}
                 onRowClick={(row) => {
                   setPosts({
                     ...posts,

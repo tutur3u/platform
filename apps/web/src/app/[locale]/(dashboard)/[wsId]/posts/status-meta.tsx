@@ -22,6 +22,7 @@ export const POST_REVIEW_STAGE_ORDER: PostReviewStage[] = [
   'missing_check',
   'pending_approval',
   'approved_awaiting_delivery',
+  'undeliverable',
   'queued',
   'processing',
   'sent',
@@ -75,6 +76,13 @@ export function getPostReviewStageAppearance(status: PostReviewStage): {
         className:
           'border-dynamic-cyan/20 bg-dynamic-cyan/10 text-dynamic-cyan',
         labelKey: 'approved_awaiting_delivery',
+      };
+    case 'undeliverable':
+      return {
+        icon: Ban,
+        className:
+          'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange',
+        labelKey: 'undeliverable',
       };
     case 'queued':
       return {

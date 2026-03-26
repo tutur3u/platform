@@ -7147,6 +7147,8 @@
     "completed": "Completed",
     "created_at": "Created At",
     "delivery_failed": "Delivery Failed",
+    "delivery_issue_reason_missing_email": "This recipient does not have a deliverable email address on record yet.",
+    "delivery_issue_reason_missing_sender_platform_user": "The approver is not linked to a sender platform user, so delivery cannot be queued yet.",
     "details_description": "Select a recipient to inspect their review and delivery pipeline details.",
     "details_title": "Post Recipient Details",
     "email": "Email",
@@ -7177,6 +7179,7 @@
     "skipped": "Skipped",
     "stage": "Stage",
     "subject": "Subject",
+    "undeliverable": "Undeliverable",
     "view_post": "View Post"
   },
   "product-data-table": {
