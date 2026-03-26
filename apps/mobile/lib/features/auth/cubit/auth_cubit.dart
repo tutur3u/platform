@@ -147,7 +147,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(
           state.copyWith(
             isLoading: false,
-            error: null,
+            error: result.errorMessage,
             errorCode: result.errorCode ?? fallbackErrorCode,
           ),
         );

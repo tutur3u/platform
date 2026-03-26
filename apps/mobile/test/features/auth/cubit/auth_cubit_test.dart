@@ -138,6 +138,34 @@ void main() {
     );
 
     blocTest<AuthCubit, AuthState>(
+      'stores repository error messages when present',
+      build: () {
+        when(
+          () => authRepository.signInWithGoogle(),
+        ).thenAnswer(
+          (_) async => const AuthActionResult.failure(
+            AuthErrorCode.googleSignInFailed,
+            errorMessage: 'Unacceptable audience in id_token',
+          ),
+        );
+        return AuthCubit(authRepository: authRepository);
+      },
+      act: (cubit) => cubit.signInWithGoogle(),
+      expect: () => <AuthState>[
+        const AuthState.unauthenticated().copyWith(
+          isLoading: true,
+          error: null,
+          errorCode: null,
+        ),
+        const AuthState.unauthenticated().copyWith(
+          isLoading: false,
+          error: 'Unacceptable audience in id_token',
+          errorCode: AuthErrorCode.googleSignInFailed,
+        ),
+      ],
+    );
+
+    blocTest<AuthCubit, AuthState>(
       'stores auth callback errors emitted by the Supabase auth stream',
       build: () {
         final controller = StreamController<supa.AuthState>();
