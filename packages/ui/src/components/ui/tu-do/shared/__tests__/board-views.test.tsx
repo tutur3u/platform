@@ -53,6 +53,7 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
 vi.mock('../progressive-loader-context', () => ({
   useProgressiveLoader: () => ({
     loadListPage: loadListPageMock,
+    revalidateLoadedLists: vi.fn().mockResolvedValue(undefined),
     pagination: {},
   }),
 }));

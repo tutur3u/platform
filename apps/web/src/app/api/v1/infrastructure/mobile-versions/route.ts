@@ -25,8 +25,8 @@ const UpdatePayloadSchema = z.object({
   android: PlatformPolicySchema,
 });
 
-async function authorizePlatformAdmin() {
-  const supabase = await createClient();
+async function authorizePlatformAdmin(request: Request) {
+  const supabase = await createClient(request);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -38,7 +38,10 @@ async function authorizePlatformAdmin() {
     };
   }
 
-  const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
+  const permissions = await getPermissions({
+    wsId: ROOT_WORKSPACE_ID,
+    request,
+  });
   if (!permissions || permissions.withoutPermission('manage_workspace_roles')) {
     return {
       ok: false as const,
@@ -49,8 +52,8 @@ async function authorizePlatformAdmin() {
   return { ok: true as const };
 }
 
-export async function GET() {
-  const authorization = await authorizePlatformAdmin();
+export async function GET(request: NextRequest) {
+  const authorization = await authorizePlatformAdmin(request);
   if (!authorization.ok) {
     return authorization.response;
   }
@@ -68,7 +71,7 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
-  const authorization = await authorizePlatformAdmin();
+  const authorization = await authorizePlatformAdmin(request);
   if (!authorization.ok) {
     return authorization.response;
   }

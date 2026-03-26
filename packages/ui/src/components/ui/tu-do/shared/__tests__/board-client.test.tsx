@@ -33,6 +33,7 @@ vi.mock('../use-progressive-board-loader', () => ({
     return {
       pagination: {},
       loadListPage: vi.fn(),
+      revalidateLoadedLists: vi.fn().mockResolvedValue(undefined),
     };
   },
 }));

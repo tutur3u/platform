@@ -26,6 +26,7 @@ abstract final class Routes {
   static const finance = '/finance';
   static const timer = '/timer';
   static const settings = '/settings';
+  static const settingsMobileVersions = '/settings/mobile-versions';
 
   // Detail pages
   static const taskDetail = '/tasks/:taskId';

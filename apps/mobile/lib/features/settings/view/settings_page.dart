@@ -23,6 +23,7 @@ import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -57,16 +58,19 @@ class _SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<_SettingsView> {
   late final Future<PackageInfo> _packageInfoFuture;
-  final WorkspacePermissionsRepository _workspacePermissionsRepository =
-      WorkspacePermissionsRepository();
+  late final WorkspacePermissionsRepository _workspacePermissionsRepository;
   String? _loadedWorkspaceId;
   int _workspacePermissionLoadToken = 0;
   bool _canManageWorkspaceSettings = false;
   bool _isWorkspacePermissionLoading = false;
+  bool _canManageMobileVersions = false;
+  String? _mobileVersionsAccessWorkspaceId;
+  int _mobileVersionsAccessLoadToken = 0;
 
   @override
   void initState() {
     super.initState();
+    _workspacePermissionsRepository = WorkspacePermissionsRepository();
     _packageInfoFuture = PackageInfo.fromPlatform();
     final workspaceId = context
         .read<WorkspaceCubit>()
@@ -78,6 +82,7 @@ class _SettingsViewState extends State<_SettingsView> {
       unawaited(_loadWorkspaceCalendarPreference(workspaceId));
     }
     unawaited(_loadWorkspaceSettingsPermission(workspace));
+    unawaited(_loadMobileVersionsAccess(workspaceId, forceReload: true));
   }
 
   @override
@@ -95,6 +100,7 @@ class _SettingsViewState extends State<_SettingsView> {
           unawaited(_loadWorkspaceCalendarPreference(workspaceId));
         }
         unawaited(_loadWorkspaceSettingsPermission(state.currentWorkspace));
+        unawaited(_loadMobileVersionsAccess(workspaceId));
       },
       child: shad.Scaffold(
         child: FutureBuilder<PackageInfo>(
@@ -199,6 +205,26 @@ class _SettingsViewState extends State<_SettingsView> {
                         _showCalendarDialog(),
                       ),
                     ),
+                    if (_canManageMobileVersions) ...[
+                      const shad.Gap(32),
+                      SettingsSection(
+                        title: context.l10n.settingsInfrastructureSectionTitle,
+                        description: context
+                            .l10n
+                            .settingsInfrastructureSectionDescription,
+                        children: [
+                          SettingsTile(
+                            icon: Icons.system_update_alt_rounded,
+                            title: context.l10n.settingsMobileVersions,
+                            subtitle: context
+                                .l10n
+                                .settingsMobileVersionsTileDescription,
+                            onTap: () =>
+                                context.push(Routes.settingsMobileVersions),
+                          ),
+                        ],
+                      ),
+                    ],
                     const shad.Gap(32),
                     _AboutSection(packageInfo: packageInfo),
                     const shad.Gap(32),
@@ -340,6 +366,40 @@ class _SettingsViewState extends State<_SettingsView> {
     }
   }
 
+  Future<void> _loadMobileVersionsAccess(
+    String? workspaceId, {
+    bool forceReload = false,
+  }) async {
+    if (!forceReload && _mobileVersionsAccessWorkspaceId == workspaceId) {
+      return;
+    }
+
+    _mobileVersionsAccessWorkspaceId = workspaceId;
+    final requestToken = ++_mobileVersionsAccessLoadToken;
+
+    if (workspaceId == null || !isSystemWorkspaceId(workspaceId)) {
+      if (!mounted || requestToken != _mobileVersionsAccessLoadToken) {
+        return;
+      }
+      setState(() => _canManageMobileVersions = false);
+      return;
+    }
+
+    final permissions = await _workspacePermissionsRepository.getPermissions(
+      wsId: rootWorkspaceId,
+    );
+
+    if (!mounted || requestToken != _mobileVersionsAccessLoadToken) {
+      return;
+    }
+
+    setState(
+      () => _canManageMobileVersions = permissions.containsPermission(
+        manageWorkspaceRolesPermission,
+      ),
+    );
+  }
+
   Future<void> _refresh(BuildContext context) async {
     final workspaceCubit = context.read<WorkspaceCubit>();
     final calendarCubit = context.read<CalendarSettingsCubit>();
@@ -350,6 +410,7 @@ class _SettingsViewState extends State<_SettingsView> {
       workspaceCubit.loadWorkspaces(),
       workspaceCubit.refreshLimits(),
       calendarCubit.loadUserPreference(),
+      _loadMobileVersionsAccess(currentWorkspaceId, forceReload: true),
       if (currentWorkspaceId != null)
         calendarCubit.loadWorkspacePreference(currentWorkspaceId),
     ]);
