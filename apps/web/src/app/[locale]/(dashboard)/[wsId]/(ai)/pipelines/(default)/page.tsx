@@ -87,7 +87,7 @@ async function getData(
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user || !user.email?.endsWith('@tuturuuu.com')) {
+    if (!user?.email?.endsWith('@tuturuuu.com')) {
       throw new Error('Unauthorized');
     }
 

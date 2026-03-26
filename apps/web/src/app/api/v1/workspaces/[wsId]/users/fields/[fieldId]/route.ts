@@ -52,7 +52,7 @@ async function authorizeMutation(request: Request, wsId: string) {
   }
 
   const permissions = await getPermissions({ wsId: normalizedWsId, request });
-  if (!permissions || !permissions.containsPermission('update_users')) {
+  if (!permissions?.containsPermission('update_users')) {
     return {
       error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
     };

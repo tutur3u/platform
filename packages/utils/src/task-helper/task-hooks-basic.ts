@@ -134,7 +134,7 @@ export function useCreateTask(boardId: string, wsId?: string) {
       if (!wsId) {
         throw new Error('Workspace ID is required to create tasks');
       }
-      if (!task.name || !task.name.trim()) {
+      if (!task.name?.trim()) {
         throw new Error('Task name is required');
       }
 

@@ -39,9 +39,8 @@ class Env {
 
   static const googleIosClientId = String.fromEnvironment(
     'GOOGLE_IOS_CLIENT_ID',
-    defaultValue:
-        '21140998358-'
-        'slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
+    // Let google_sign_in load the flavor-matched iOS client from the bundled
+    // GoogleService-Info.plist unless a value is explicitly injected.
   );
 
   static const isTaskDescriptionEditingEnabled = bool.fromEnvironment(

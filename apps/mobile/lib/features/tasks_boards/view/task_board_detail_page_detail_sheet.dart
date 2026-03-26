@@ -392,23 +392,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       ),
     );
 
-    if (context.isCompact) {
-      await shad.openDrawer<void>(
-        context: context,
-        position: shad.OverlayPosition.bottom,
-        builder: (_) => content,
-      );
-    } else {
-      await shad.showDialog<void>(
-        context: context,
-        builder: (_) => Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: content,
-          ),
-        ),
-      );
-    }
+    await showAdaptiveDrawer(context: context, builder: (_) => content);
 
     if (!mounted) return;
     final refreshedTask = _findTaskInState(cubit.state, _task.id);

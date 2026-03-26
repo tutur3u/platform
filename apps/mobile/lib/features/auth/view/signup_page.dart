@@ -122,7 +122,9 @@ class _SignUpPageState extends State<SignUpPage> {
       title: l10n.signUpTitle,
       child: BlocBuilder<AuthCubit, AuthState>(
         buildWhen: (prev, curr) =>
-            prev.isLoading != curr.isLoading || prev.error != curr.error,
+            prev.isLoading != curr.isLoading ||
+            prev.error != curr.error ||
+            prev.errorCode != curr.errorCode,
         builder: (context, state) {
           return shad.Form(
             key: _formKey,

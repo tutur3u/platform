@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class PomodoroSettingsDialog extends StatefulWidget {
@@ -29,40 +30,32 @@ class _PomodoroSettingsDialogState extends State<PomodoroSettingsDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      padding: const EdgeInsets.all(24),
+    return AppDialogScaffold(
+      title: l10n.timerPomodoroSettings,
+      description: l10n.timerPomodoroSettingsDescription,
+      icon: Icons.timer_outlined,
+      actions: [
+        shad.OutlineButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+        shad.PrimaryButton(
+          onPressed: () {
+            widget.onSave(_settings);
+            Navigator.of(context).pop();
+          },
+          child: Text(l10n.timerSave),
+        ),
+      ],
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.mutedForeground.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const shad.Gap(16),
-          Text(
-            l10n.timerPomodoroSettings,
-            style: theme.typography.h3,
-          ),
-          const shad.Gap(24),
           _SliderSetting(
             label: l10n.timerFocusTime,
             value: _settings.focusMinutes.toDouble(),
             min: 15,
             max: 60,
-            suffix: 'min',
+            suffix: l10n.settingsMinutesUnit,
             onChanged: (v) => setState(
               () => _settings = _settings.copyWith(focusMinutes: v.round()),
             ),
@@ -72,7 +65,7 @@ class _PomodoroSettingsDialogState extends State<PomodoroSettingsDialog> {
             value: _settings.shortBreakMinutes.toDouble(),
             min: 3,
             max: 15,
-            suffix: 'min',
+            suffix: l10n.settingsMinutesUnit,
             onChanged: (v) => setState(
               () => _settings = _settings.copyWith(
                 shortBreakMinutes: v.round(),
@@ -84,7 +77,7 @@ class _PomodoroSettingsDialogState extends State<PomodoroSettingsDialog> {
             value: _settings.longBreakMinutes.toDouble(),
             min: 10,
             max: 30,
-            suffix: 'min',
+            suffix: l10n.settingsMinutesUnit,
             onChanged: (v) => setState(
               () => _settings = _settings.copyWith(longBreakMinutes: v.round()),
             ),
@@ -100,39 +93,61 @@ class _PomodoroSettingsDialogState extends State<PomodoroSettingsDialog> {
               ),
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.timerAutoStartBreaks),
-              shad.Switch(
-                value: _settings.autoStartBreaks,
-                onChanged: (v) => setState(
-                  () => _settings = _settings.copyWith(autoStartBreaks: v),
-                ),
+          const shad.Gap(8),
+          _SwitchSettingRow(
+            label: l10n.timerAutoStartBreaks,
+            value: _settings.autoStartBreaks,
+            onChanged: (value) => setState(
+              () => _settings = _settings.copyWith(autoStartBreaks: value),
+            ),
+          ),
+          const shad.Gap(12),
+          _SwitchSettingRow(
+            label: l10n.timerAutoStartFocus,
+            value: _settings.autoStartFocus,
+            onChanged: (value) => setState(
+              () => _settings = _settings.copyWith(autoStartFocus: value),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SwitchSettingRow extends StatelessWidget {
+  const _SwitchSettingRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.typography.small.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-            ],
+            ),
           ),
-          const shad.Gap(16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.timerAutoStartFocus),
-              shad.Switch(
-                value: _settings.autoStartFocus,
-                onChanged: (v) => setState(
-                  () => _settings = _settings.copyWith(autoStartFocus: v),
-                ),
-              ),
-            ],
-          ),
-          const shad.Gap(24),
-          shad.PrimaryButton(
-            onPressed: () {
-              widget.onSave(_settings);
-              Navigator.of(context).pop();
-            },
-            child: Text(l10n.timerSave),
-          ),
+          shad.Switch(value: value, onChanged: onChanged),
         ],
       ),
     );

@@ -49,7 +49,8 @@ The current baked-in fallback value for `GOOGLE_WEB_CLIENT_ID` is:
 The current baked-in fallback value for `GOOGLE_IOS_CLIENT_ID` is:
 
 ```text
-21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com
+(empty by default; iOS reads the flavor-matched value from the bundled
+GoogleService-Info.plist unless you explicitly override it)
 ```
 
 You still need to ensure each non-production flavor has its own matching

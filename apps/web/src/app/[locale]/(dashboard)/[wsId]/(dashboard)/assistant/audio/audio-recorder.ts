@@ -38,7 +38,7 @@ export class AudioRecorder extends EventEmitter {
       return;
     }
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Could not request user media');
     }
 

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const result = await response.json();
 
-    if (!result || !result.candidates) {
+    if (!result?.candidates) {
       return NextResponse.json(
         { error: 'Invalid response from Gemini' },
         { status: 500 }

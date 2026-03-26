@@ -177,7 +177,8 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           BlocBuilder<AuthCubit, AuthState>(
-            buildWhen: (prev, curr) => prev.error != curr.error,
+            buildWhen: (prev, curr) =>
+                prev.error != curr.error || prev.errorCode != curr.errorCode,
             builder: (context, state) {
               final errorText = resolveAuthErrorMessage(
                 l10n: l10n,

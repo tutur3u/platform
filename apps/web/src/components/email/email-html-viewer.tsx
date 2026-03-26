@@ -80,7 +80,7 @@ export function EmailHtmlViewer({
 
     const iframe = iframeRef.current;
     const doc = iframe.contentDocument;
-    if (!doc || !doc.documentElement) return;
+    if (!doc?.documentElement) return;
 
     if (previewTheme === 'dark') {
       doc.documentElement.classList.add('dark');

@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/material.dart'
-    hide AlertDialog, AppBar, FilledButton, Scaffold, TextButton;
+import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ProfilePage extends StatelessWidget {
@@ -19,7 +21,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) {
+      create: (_) {
         final cubit = ProfileCubit(
           profileRepository: ProfileRepository(
             ownsApiClient: true,
@@ -44,12 +46,12 @@ class _ProfileView extends StatelessWidget {
     return shad.Scaffold(
       child: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
-          if (state.status == ProfileStatus.loading) {
+          if (state.status == ProfileStatus.loading && state.profile == null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
+                  const shad.CircularProgressIndicator(),
                   const shad.Gap(16),
                   Text(l10n.profileLoading),
                 ],
@@ -57,192 +59,244 @@ class _ProfileView extends StatelessWidget {
             );
           }
 
-          if (state.status == ProfileStatus.error || state.profile == null) {
+          if (state.status == ProfileStatus.error && state.profile == null) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    state.error ?? l10n.profileUpdateError,
-                    textAlign: TextAlign.center,
-                  ),
-                  const shad.Gap(16),
-                  shad.PrimaryButton(
-                    onPressed: () => context.read<ProfileCubit>().loadProfile(),
-                    child: Text(l10n.commonRetry),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      state.error ?? l10n.profileUpdateError,
+                      textAlign: TextAlign.center,
+                    ),
+                    const shad.Gap(16),
+                    shad.PrimaryButton(
+                      onPressed: () => context.read<ProfileCubit>().loadProfile(
+                        forceRefresh: true,
+                      ),
+                      child: Text(l10n.commonRetry),
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
-          final profile = state.profile!;
+          final profile = state.profile;
+          if (profile == null) {
+            return const SizedBox.shrink();
+          }
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Avatar Section
-              _AvatarSection(
-                avatarUrl: profile.avatarUrl,
-                displayName: profile.displayName,
-                email: profile.email,
+          return RefreshIndicator.adaptive(
+            onRefresh: () => context.read<ProfileCubit>().loadProfile(
+              forceRefresh: true,
+            ),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
-              const shad.Gap(24),
-              const shad.Divider(),
-              const shad.Gap(16),
-
-              // Account Status
-              _AccountStatusCard(
-                createdAt: profile.createdAt,
-              ),
-              const shad.Gap(24),
-
-              // Display Name
-              _DisplayNameField(
-                defaultValue: profile.displayName,
-              ),
-              const shad.Gap(16),
-
-              // Full Name
-              _FullNameField(
-                defaultValue: profile.fullName,
-              ),
-              const shad.Gap(16),
-
-              // Email
-              _EmailField(
-                email: profile.email,
-                newEmail: profile.newEmail,
-              ),
-            ],
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+              children: [
+                _ProfileHeroCard(profile: profile, state: state),
+                const shad.Gap(32),
+                _ProfilePanel(
+                  title: l10n.profileIdentitySectionTitle,
+                  description: l10n.profileIdentitySectionDescription,
+                  child: Column(
+                    children: [
+                      _ProfileActionTile(
+                        icon: Icons.person_outline_rounded,
+                        title: l10n.profileDisplayName,
+                        value: profile.displayName ?? l10n.profileMissingValue,
+                        isValuePlaceholder:
+                            profile.displayName?.trim().isEmpty ?? true,
+                        onTap: () => _showEditFieldSheet(
+                          context,
+                          title: l10n.profileDisplayName,
+                          description: l10n.profileDisplayNameDescription,
+                          initialValue: profile.displayName ?? '',
+                          placeholder: l10n.profileDisplayNameHint,
+                          validator: (value) => value.trim().isEmpty
+                              ? l10n.profileDisplayNameRequired
+                              : null,
+                          onSave: (value) => context
+                              .read<ProfileCubit>()
+                              .updateDisplayName(value),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      _ProfileActionTile(
+                        icon: Icons.badge_outlined,
+                        title: l10n.profileFullName,
+                        value: profile.fullName ?? l10n.profileMissingValue,
+                        isValuePlaceholder:
+                            profile.fullName?.trim().isEmpty ?? true,
+                        onTap: () => _showEditFieldSheet(
+                          context,
+                          title: l10n.profileFullName,
+                          description: l10n.profileFullNameDescription,
+                          initialValue: profile.fullName ?? '',
+                          placeholder: l10n.profileFullNameHint,
+                          validator: (value) => value.trim().isEmpty
+                              ? l10n.profileFullNameRequired
+                              : null,
+                          onSave: (value) => context
+                              .read<ProfileCubit>()
+                              .updateFullName(value),
+                        ),
+                      ),
+                      const shad.Gap(12),
+                      _ProfileActionTile(
+                        icon: Icons.alternate_email_rounded,
+                        title: l10n.profileEmail,
+                        value: profile.email ?? l10n.profileMissingValue,
+                        subtitle: profile.newEmail == null
+                            ? null
+                            : l10n.profileEmailPendingChange(profile.newEmail!),
+                        isValuePlaceholder:
+                            profile.email?.trim().isEmpty ?? true,
+                        onTap: () => _showEditFieldSheet(
+                          context,
+                          title: l10n.profileEmail,
+                          description: l10n.profileEmailDescription,
+                          initialValue: profile.email ?? '',
+                          placeholder: l10n.profileEmailHint,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) => value.contains('@')
+                              ? null
+                              : l10n.profileInvalidEmail,
+                          onSave: (value) =>
+                              context.read<ProfileCubit>().updateEmail(value),
+                          successMessage: l10n.profileEmailUpdateNote,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const shad.Gap(32),
+                _ProfilePanel(
+                  title: l10n.profileAvatarSectionTitle,
+                  description: l10n.profileAvatarDescription,
+                  child: Column(
+                    children: [
+                      _ProfileActionTile(
+                        icon: Icons.photo_camera_back_outlined,
+                        title: profile.avatarUrl != null
+                            ? l10n.profileChangeAvatar
+                            : l10n.profileUploadAvatar,
+                        value: profile.avatarUrl?.trim().isNotEmpty ?? false
+                            ? l10n.profileAvatarSet
+                            : l10n.profileMissingValue,
+                        isValuePlaceholder:
+                            profile.avatarUrl?.trim().isEmpty ?? true,
+                        onTap: () => _pickAndUploadAvatar(context),
+                      ),
+                      if (profile.avatarUrl != null) const shad.Gap(12),
+                      if (profile.avatarUrl != null)
+                        _ProfileActionTile(
+                          icon: Icons.delete_outline_rounded,
+                          title: l10n.profileRemoveAvatar,
+                          value: l10n.profileDangerAction,
+                          isDestructive: true,
+                          onTap: () => _confirmRemoveAvatar(context),
+                        ),
+                    ],
+                  ),
+                ),
+                const shad.Gap(32),
+                _ProfilePanel(
+                  title: l10n.profileAccountStatus,
+                  description: l10n.profileAccountStatusDescription,
+                  child: _ProfileStatusGrid(profile: profile),
+                ),
+              ],
+            ),
           );
         },
       ),
     );
   }
-}
 
-class _AvatarSection extends StatelessWidget {
-  const _AvatarSection({
-    this.avatarUrl,
-    this.displayName,
-    this.email,
-  });
-
-  final String? avatarUrl;
-  final String? displayName;
-  final String? email;
-
-  String _getInitials() {
-    if (displayName != null && displayName!.isNotEmpty) {
-      return displayName!.substring(0, 1).toUpperCase();
-    }
-    if (email != null && email!.isNotEmpty) {
-      return email!.substring(0, 1).toUpperCase();
-    }
-    return '?';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Column(
-      children: [
-        Center(
-          child: BlocBuilder<ProfileCubit, ProfileState>(
-            buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
-            builder: (context, state) {
-              return Stack(
-                children: [
-                  Opacity(
-                    opacity: state.isLoading ? 0.5 : 1.0,
-                    child: CircleAvatar(
-                      radius: 48,
-                      backgroundImage:
-                          (avatarUrl != null && avatarUrl!.isNotEmpty)
-                          ? NetworkImage(avatarUrl!)
-                          : null,
-                      child: (avatarUrl ?? '').isEmpty
-                          ? Text(
-                              _getInitials(),
-                              style: theme.typography.h2,
-                            )
-                          : null,
-                    ),
-                  ),
-                  if (state.isLoading)
-                    const Positioned.fill(
-                      child: Center(
-                        child: shad.CircularProgressIndicator(),
-                      ),
-                    ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: shad.GhostButton(
-                      onPressed: state.isLoading
-                          ? null
-                          : () => unawaited(_showAvatarOptions(context)),
-                      density: shad.ButtonDensity.icon,
-                      child: const Icon(Icons.edit, size: 16),
-                    ),
-                  ),
-                ],
-              );
-            },
+  Future<void> _confirmRemoveAvatar(BuildContext context) async {
+    final confirmed = await showAdaptiveSheet<bool>(
+      context: context,
+      maxDialogWidth: 420,
+      builder: (dialogContext) => AppDialogScaffold(
+        title: dialogContext.l10n.profileRemoveAvatar,
+        description: dialogContext.l10n.profileRemoveAvatarDescription,
+        icon: Icons.delete_outline_rounded,
+        maxWidth: 420,
+        maxHeightFactor: 0.56,
+        actions: [
+          shad.OutlineButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(dialogContext.l10n.profileCancel),
           ),
-        ),
-      ],
+          shad.DestructiveButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(dialogContext.l10n.profileRemoveAvatar),
+          ),
+        ],
+        child: const SizedBox.shrink(),
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+
+    final success = await context.read<ProfileCubit>().removeAvatar();
+    if (!context.mounted) {
+      return;
+    }
+
+    shad.showToast(
+      context: context,
+      builder: (toastContext, _) => success
+          ? shad.Alert(
+              title: Text(toastContext.l10n.profileAvatarRemoveSuccess),
+            )
+          : shad.Alert.destructive(
+              title: Text(toastContext.l10n.profileAvatarRemoveError),
+            ),
     );
   }
 
   Future<void> _pickAndUploadAvatar(BuildContext context) async {
     final l10n = context.l10n;
-    final cubit = context.read<ProfileCubit>();
     final picker = ImagePicker();
     final theme = shad.Theme.of(context);
 
-    final source = await showDialog<ImageSource>(
+    final source = await showAdaptiveSheet<ImageSource>(
       context: context,
-      builder: (context) => Center(
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
-          child: shad.AlertDialog(
-            barrierColor: Colors.transparent,
-            title: Text(l10n.selectImageSource),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                shad.GhostButton(
-                  onPressed: () => Navigator.pop(context, ImageSource.camera),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.camera_alt),
-                      const shad.Gap(8),
-                      Text(l10n.camera),
-                    ],
-                  ),
-                ),
-                shad.GhostButton(
-                  onPressed: () => Navigator.pop(context, ImageSource.gallery),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.photo_library),
-                      const shad.Gap(8),
-                      Text(l10n.gallery),
-                    ],
-                  ),
-                ),
-              ],
+      maxDialogWidth: 420,
+      builder: (dialogContext) => AppDialogScaffold(
+        title: l10n.selectImageSource,
+        description: l10n.profileAvatarPickerDescription,
+        icon: Icons.add_a_photo_outlined,
+        maxWidth: 420,
+        maxHeightFactor: 0.62,
+        child: Column(
+          children: [
+            _AvatarSourceTile(
+              icon: Icons.camera_alt_rounded,
+              label: l10n.camera,
+              onTap: () => Navigator.pop(dialogContext, ImageSource.camera),
             ),
-          ),
+            _AvatarSourceTile(
+              icon: Icons.photo_library_rounded,
+              label: l10n.gallery,
+              onTap: () => Navigator.pop(dialogContext, ImageSource.gallery),
+            ),
+          ],
         ),
       ),
     );
 
-    if (!context.mounted) return;
-    if (source == null) return;
+    if (!context.mounted || source == null) {
+      return;
+    }
 
     final pickedFile = await picker.pickImage(
       source: source,
@@ -251,8 +305,9 @@ class _AvatarSection extends StatelessWidget {
       imageQuality: 85,
     );
 
-    if (!context.mounted) return;
-    if (pickedFile == null) return;
+    if (!context.mounted || pickedFile == null) {
+      return;
+    }
 
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: pickedFile.path,
@@ -273,81 +328,102 @@ class _AvatarSection extends StatelessWidget {
       ],
     );
 
-    if (!context.mounted) return;
-    if (croppedFile == null) return;
-
-    try {
-      await cubit.uploadAvatar(File(croppedFile.path));
-    } on Exception {
-      if (!context.mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileAvatarUpdateError),
-        ),
-      );
+    if (!context.mounted || croppedFile == null) {
+      return;
     }
+
+    final success = await context.read<ProfileCubit>().uploadAvatar(
+      File(croppedFile.path),
+    );
+    if (!context.mounted) {
+      return;
+    }
+
+    shad.showToast(
+      context: context,
+      builder: (toastContext, _) => success
+          ? shad.Alert(
+              title: Text(toastContext.l10n.profileAvatarUpdateSuccess),
+            )
+          : shad.Alert.destructive(
+              title: Text(toastContext.l10n.profileAvatarUpdateError),
+            ),
+    );
   }
 
-  Future<void> _showAvatarOptions(BuildContext context) async {
-    final l10n = context.l10n;
-    final cubit = context.read<ProfileCubit>();
-
-    await showDialog<void>(
+  Future<void> _showEditFieldSheet(
+    BuildContext context, {
+    required String title,
+    required String description,
+    required String initialValue,
+    required String placeholder,
+    required Future<bool> Function(String value) onSave,
+    required String? Function(String value) validator,
+    TextInputType? keyboardType,
+    String? successMessage,
+  }) async {
+    await showAdaptiveSheet<void>(
       context: context,
-      builder: (dialogContext) => Center(
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
-          child: shad.AlertDialog(
-            barrierColor: Colors.transparent,
-            title: Text(l10n.profileAvatar),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
+      maxDialogWidth: 520,
+      builder: (dialogContext) => _EditProfileFieldSheet(
+        title: title,
+        description: description,
+        initialValue: initialValue,
+        placeholder: placeholder,
+        keyboardType: keyboardType,
+        validator: validator,
+        onSave: onSave,
+        successMessage: successMessage,
+      ),
+    );
+  }
+}
+
+class _AvatarSourceTile extends StatelessWidget {
+  const _AvatarSourceTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Ink(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: theme.colorScheme.border),
+            ),
+            child: Row(
               children: [
-                if (avatarUrl != null) ...[
-                  shad.GhostButton(
-                    onPressed: () async {
-                      try {
-                        await cubit.removeAvatar();
-                        if (dialogContext.mounted) {
-                          Navigator.pop(dialogContext);
-                        }
-                      } on Exception {
-                        if (!dialogContext.mounted) return;
-                        shad.showToast(
-                          context: dialogContext,
-                          builder: (context, overlay) => shad.Alert.destructive(
-                            title: Text(context.l10n.profileAvatarRemoveError),
-                          ),
-                        );
-                      }
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.delete_outline),
-                        const shad.Gap(8),
-                        Text(l10n.profileRemoveAvatar),
-                      ],
+                Icon(icon, size: 20),
+                const shad.Gap(12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.typography.small.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const shad.Gap(8),
-                ],
-                shad.GhostButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                    unawaited(_pickAndUploadAvatar(context));
-                  },
-                  child: Row(
-                    children: [
-                      const Icon(Icons.photo_library),
-                      const shad.Gap(8),
-                      Text(
-                        avatarUrl != null
-                            ? l10n.profileChangeAvatar
-                            : l10n.profileUploadAvatar,
-                      ),
-                    ],
-                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: theme.colorScheme.mutedForeground,
                 ),
               ],
             ),
@@ -358,117 +434,40 @@ class _AvatarSection extends StatelessWidget {
   }
 }
 
-class _AccountStatusCard extends StatelessWidget {
-  const _AccountStatusCard({this.createdAt});
-
-  final DateTime? createdAt;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final l10n = context.l10n;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.muted.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.profileAccountStatus,
-            style: theme.typography.semiBold,
-          ),
-          const shad.Gap(12),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.profileStatus,
-                      style: theme.typography.textMuted,
-                    ),
-                    Text(
-                      l10n.profileActive,
-                      style: theme.typography.semiBold,
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.profileVerification,
-                      style: theme.typography.textMuted,
-                    ),
-                    Text(
-                      l10n.profileVerified,
-                      style: theme.typography.semiBold,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (createdAt != null) ...[
-            const shad.Gap(12),
-            Text(
-              l10n.profileMemberSince,
-              style: theme.typography.textMuted,
-            ),
-            Text(
-              DateFormat.yMMMd(
-                Localizations.localeOf(context).toString(),
-              ).format(createdAt!),
-              style: theme.typography.semiBold,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-typedef ValueValidator<T> = String? Function(T value);
-
-class _EditableTextField extends StatefulWidget {
-  const _EditableTextField({
-    required this.label,
-    required this.hint,
+class _EditProfileFieldSheet extends StatefulWidget {
+  const _EditProfileFieldSheet({
+    required this.title,
+    required this.description,
+    required this.initialValue,
+    required this.placeholder,
+    required this.validator,
     required this.onSave,
-    this.defaultValue,
-    this.emptyMessage,
     this.keyboardType,
-    this.validator,
+    this.successMessage,
   });
 
-  final String label;
-  final String hint;
-  final String? defaultValue;
-  final Future<bool> Function(String) onSave;
-  final String? emptyMessage;
+  final String title;
+  final String description;
+  final String initialValue;
+  final String placeholder;
   final TextInputType? keyboardType;
-  final ValueValidator<String>? validator;
+  final String? Function(String value) validator;
+  final Future<bool> Function(String value) onSave;
+  final String? successMessage;
 
   @override
-  State<_EditableTextField> createState() => _EditableTextFieldState();
+  State<_EditProfileFieldSheet> createState() => _EditProfileFieldSheetState();
 }
 
-class _EditableTextFieldState extends State<_EditableTextField> {
+class _EditProfileFieldSheetState extends State<_EditProfileFieldSheet> {
   late final TextEditingController _controller;
-  bool _hasChanges = false;
+  String? _error;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.defaultValue ?? '');
-    _controller.addListener(_onTextChanged);
+    _controller = TextEditingController(text: widget.initialValue);
   }
 
   @override
@@ -477,205 +476,451 @@ class _EditableTextFieldState extends State<_EditableTextField> {
     super.dispose();
   }
 
-  @override
-  void didUpdateWidget(covariant _EditableTextField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.defaultValue != oldWidget.defaultValue) {
-      setState(() {
-        _controller.text = widget.defaultValue ?? '';
-        _hasChanges = false;
-      });
-    }
-  }
-
-  void _onTextChanged() {
-    setState(() {
-      _hasChanges = _controller.text != (widget.defaultValue ?? '');
-    });
-  }
-
-  Future<void> _save(BuildContext context) async {
+  Future<void> _save() async {
     final value = _controller.text.trim();
-    if (widget.emptyMessage != null) {
-      final validationError = widget.validator?.call(value);
-      if (value.isEmpty || validationError != null) {
-        shad.showToast(
-          context: context,
-          builder: (context, overlay) => shad.Alert.destructive(
-            title: Text(context.l10n.profileUpdateError),
-            content: Text(validationError ?? widget.emptyMessage!),
-          ),
-        );
-        return;
-      }
+    final validationError = widget.validator(value);
+    if (validationError != null) {
+      setState(() => _error = validationError);
+      return;
     }
 
-    bool success;
-    try {
-      success = await widget.onSave(value);
-    } on Exception catch (error) {
-      if (!context.mounted) {
-        return;
-      }
+    setState(() {
+      _error = null;
+      _isSaving = true;
+    });
+
+    final success = await widget.onSave(value);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _isSaving = false);
+    if (success) {
+      Navigator.of(context).pop();
       shad.showToast(
         context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileUpdateError),
-          content: Text(error.toString()),
+        builder: (toastContext, _) => shad.Alert(
+          title: Text(toastContext.l10n.profileUpdateSuccess),
+          content: widget.successMessage == null
+              ? null
+              : Text(widget.successMessage!),
         ),
       );
       return;
     }
 
-    if (success && context.mounted) {
-      setState(() {
-        _hasChanges = false;
-      });
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert(
-          title: Text(context.l10n.profileUpdateSuccess),
-          content: widget.keyboardType == TextInputType.emailAddress
-              ? Text(context.l10n.profileEmailUpdateNote)
-              : null,
-        ),
-      );
-    } else if (context.mounted) {
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileUpdateError),
-        ),
-      );
-    }
+    setState(() => _error = context.l10n.profileUpdateError);
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ProfileCubit, ProfileState>(
-      buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
-      builder: (context, state) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.label),
+    final theme = shad.Theme.of(context);
+
+    return AppDialogScaffold(
+      title: widget.title,
+      description: widget.description,
+      icon: Icons.edit_outlined,
+      maxWidth: 520,
+      actions: [
+        shad.OutlineButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+          child: Text(context.l10n.profileCancel),
+        ),
+        shad.PrimaryButton(
+          onPressed: _isSaving ? null : _save,
+          child: _isSaving
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: shad.CircularProgressIndicator(),
+                )
+              : Text(context.l10n.profileSave),
+        ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          shad.TextField(
+            controller: _controller,
+            placeholder: Text(widget.placeholder),
+            keyboardType: widget.keyboardType,
+            enabled: !_isSaving,
+            autofocus: true,
+          ),
+          if (_error != null) ...[
             const shad.Gap(8),
-            Row(
-              children: [
-                Expanded(
-                  child: shad.TextField(
-                    controller: _controller,
-                    placeholder: Text(widget.hint),
-                    keyboardType: widget.keyboardType,
-                    enabled: !state.isLoading,
-                  ),
-                ),
-                if (_hasChanges) ...[
-                  const shad.Gap(8),
-                  shad.PrimaryButton(
-                    onPressed: state.isLoading
-                        ? null
-                        : () async {
-                            await _save(context);
-                          },
-                    density: shad.ButtonDensity.icon,
-                    child: state.isLoading
-                        ? const shad.CircularProgressIndicator(size: 16)
-                        : const Icon(Icons.check, size: 20),
-                  ),
-                ],
-              ],
+            Text(
+              _error!,
+              style: theme.typography.small.copyWith(
+                color: theme.colorScheme.destructive,
+              ),
             ),
           ],
-        );
-      },
+        ],
+      ),
     );
   }
 }
 
-class _DisplayNameField extends StatelessWidget {
-  const _DisplayNameField({this.defaultValue});
+class _ProfileActionTile extends StatelessWidget {
+  const _ProfileActionTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.onTap,
+    this.isDestructive = false,
+    this.subtitle,
+    this.isValuePlaceholder = false,
+  });
 
-  final String? defaultValue;
+  final IconData icon;
+  final String title;
+  final String value;
+  final String? subtitle;
+  final VoidCallback onTap;
+  final bool isDestructive;
+  final bool isValuePlaceholder;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+    final accent = isDestructive
+        ? theme.colorScheme.destructive
+        : theme.colorScheme.primary;
+    final valueColor = isValuePlaceholder
+        ? theme.colorScheme.foreground.withValues(alpha: 0.58)
+        : theme.colorScheme.foreground;
 
-    return _EditableTextField(
-      label: l10n.profileDisplayName,
-      hint: l10n.profileDisplayNameHint,
-      defaultValue: defaultValue,
-      emptyMessage: l10n.profileDisplayNameRequired,
-      onSave: (value) => context.read<ProfileCubit>().updateDisplayName(value),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.background.withValues(alpha: 0.78),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: theme.colorScheme.border),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 20, color: accent),
+              ),
+              const shad.Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: isDestructive ? accent : null,
+                      ),
+                    ),
+                    const shad.Gap(4),
+                    Text(
+                      value,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.base.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: valueColor,
+                      ),
+                    ),
+                    if (subtitle?.trim().isNotEmpty ?? false) ...[
+                      const shad.Gap(4),
+                      Text(
+                        subtitle!,
+                        style: theme.typography.textSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const shad.Gap(10),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: theme.colorScheme.mutedForeground,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _FullNameField extends StatelessWidget {
-  const _FullNameField({this.defaultValue});
+class _ProfileHeroCard extends StatelessWidget {
+  const _ProfileHeroCard({
+    required this.profile,
+    required this.state,
+  });
 
-  final String? defaultValue;
+  final UserProfile profile;
+  final ProfileState state;
 
   @override
   Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
     final l10n = context.l10n;
+    final displayName = profile.displayName?.trim().isNotEmpty ?? false
+        ? profile.displayName!.trim()
+        : profile.fullName?.trim().isNotEmpty ?? false
+        ? profile.fullName!.trim()
+        : profile.email ?? l10n.profileTitle;
 
-    return _EditableTextField(
-      label: l10n.profileFullName,
-      hint: l10n.profileFullNameHint,
-      defaultValue: defaultValue,
-      emptyMessage: l10n.profileFullNameRequired,
-      onSave: (value) => context.read<ProfileCubit>().updateFullName(value),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.18),
+            theme.colorScheme.card,
+            theme.colorScheme.secondary.withValues(alpha: 0.15),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.75),
+        ),
+      ),
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _LargeProfileAvatar(profile: profile),
+              const shad.Gap(14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const shad.Gap(2),
+                    Text(
+                      profile.email ?? l10n.profileMissingValue,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (state.isRefreshing)
+                const SizedBox.square(
+                  dimension: 18,
+                  child: shad.CircularProgressIndicator(),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _EmailField extends StatelessWidget {
-  const _EmailField({this.email, this.newEmail});
+class _LargeProfileAvatar extends StatelessWidget {
+  const _LargeProfileAvatar({required this.profile});
 
-  final String? email;
-  final String? newEmail;
+  final UserProfile profile;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+    final source =
+        profile.displayName ?? profile.fullName ?? profile.email ?? '?';
+    final initials = source.trim().isEmpty
+        ? '?'
+        : source.trim()[0].toUpperCase();
+
+    return Container(
+      width: 74,
+      height: 74,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      alignment: Alignment.center,
+      child: profile.avatarUrl?.trim().isNotEmpty ?? false
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Image.network(
+                profile.avatarUrl!,
+                width: 74,
+                height: 74,
+                fit: BoxFit.cover,
+              ),
+            )
+          : Text(
+              initials,
+              style: theme.typography.h2.copyWith(fontWeight: FontWeight.w800),
+            ),
+    );
+  }
+}
+
+class _ProfilePanel extends StatelessWidget {
+  const _ProfilePanel({
+    required this.title,
+    required this.description,
+    required this.child,
+  });
+
+  final String title;
+  final String description;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _EditableTextField(
-          label: newEmail != null
-              ? l10n.profileCurrentEmail
-              : l10n.profileEmail,
-          hint: l10n.profileEmailHint,
-          defaultValue: email,
-          emptyMessage: l10n.profileInvalidEmail,
-          keyboardType: TextInputType.emailAddress,
-          validator: (value) {
-            if (!value.contains('@')) {
-              return l10n.profileInvalidEmail;
-            }
-            return null;
-          },
-          onSave: (value) => context.read<ProfileCubit>().updateEmail(value),
+        Text(
+          title,
+          style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
         ),
-        if (newEmail != null) ...[
-          const shad.Gap(16),
-          Text(l10n.profileNewEmail),
-          const shad.Gap(8),
-          shad.TextField(
-            initialValue: newEmail,
-            enabled: false,
+        const shad.Gap(6),
+        Text(
+          description,
+          style: theme.typography.textSmall.copyWith(
+            color: theme.colorScheme.mutedForeground,
           ),
-          const shad.Gap(8),
-          Text(
-            l10n.profileEmailUpdateNote,
-            style: theme.typography.textMuted,
+        ),
+        const shad.Gap(14),
+        child,
+      ],
+    );
+  }
+}
+
+class _ProfileStatusGrid extends StatelessWidget {
+  const _ProfileStatusGrid({required this.profile});
+
+  final UserProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final joined = profile.createdAt == null
+        ? context.l10n.profileStatusUnknown
+        : DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(
+            profile.createdAt!,
+          );
+
+    return Column(
+      children: [
+        _StatusCard(
+          label: context.l10n.profileStatus,
+          value: context.l10n.profileActive,
+          icon: Icons.verified_user_outlined,
+        ),
+        const shad.Gap(12),
+        _StatusCard(
+          label: context.l10n.profileVerification,
+          value: context.l10n.profileVerified,
+          icon: Icons.verified_outlined,
+        ),
+        const shad.Gap(12),
+        _StatusCard(
+          label: context.l10n.profileMemberSince,
+          value: joined,
+          icon: Icons.event_outlined,
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.colorScheme.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const shad.Gap(10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.typography.xSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+                const shad.Gap(2),
+                Text(
+                  value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      ],
+      ),
     );
   }
 }

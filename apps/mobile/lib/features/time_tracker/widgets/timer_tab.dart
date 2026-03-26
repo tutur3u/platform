@@ -3,14 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
-import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/widgets/category_sheet.dart';
-import 'package:mobile/features/time_tracker/widgets/missed_entry_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/running_session_info_card.dart';
 import 'package:mobile/features/time_tracker/widgets/task_link_picker_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_advanced_section.dart';
@@ -21,9 +19,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerTab extends StatefulWidget {
-  const TimerTab({this.onSeeAll, super.key});
-
-  final VoidCallback? onSeeAll;
+  const TimerTab({super.key});
 
   @override
   State<TimerTab> createState() => _TimerTabState();
@@ -57,7 +53,7 @@ class _TimerTabState extends State<TimerTab> {
         final userId = supabase.auth.currentUser?.id ?? '';
 
         return ListView(
-          padding: const EdgeInsets.only(bottom: 32),
+          padding: const EdgeInsets.only(bottom: 96),
           children: [
             const shad.Gap(32),
             // Timer display
@@ -80,8 +76,6 @@ class _TimerTabState extends State<TimerTab> {
               onPause: () =>
                   unawaited(_handlePause(context, cubit, wsId, userId)),
               onResume: () => unawaited(_handleResume(context, cubit)),
-              onAddMissedEntry: () =>
-                  unawaited(_showMissedEntryDialog(context)),
               areActionButtonsDisabled: _isActionInProgress,
               isPauseLoading: _isActionLoading(_TimerControlAction.pause),
               isStopLoading: _isActionLoading(_TimerControlAction.stop),
@@ -294,7 +288,10 @@ class _TimerTabState extends State<TimerTab> {
     }
 
     final hasBypassPermission =
-        await _hasBypassTimeTrackingRequestApprovalPermission(wsId, userId);
+        await hasBypassTimeTrackingRequestApprovalPermission(
+          wsId: wsId,
+          userId: userId,
+        );
     if (hasBypassPermission) {
       return true;
     }
@@ -323,38 +320,62 @@ class _TimerTabState extends State<TimerTab> {
     }
 
     unawaited(
-      _showMissedEntryDialog(
+      showMissedEntryDialogFlow(
         context,
+        wsId: wsId,
+        userId: userId,
+        categories: cubit.state.categories,
+        thresholdDays: cubit.state.thresholdDays,
+        onCreateMissedEntry:
+            ({
+              required title,
+              required startTime,
+              required endTime,
+              categoryId,
+              description,
+            }) => cubit.createMissedEntry(
+              wsId,
+              userId,
+              title: title,
+              categoryId: categoryId,
+              startTime: startTime,
+              endTime: endTime,
+              description: description,
+              throwOnError: true,
+            ),
+        onCreateMissedEntryAsRequest:
+            ({
+              required title,
+              required startTime,
+              required endTime,
+              required imageLocalPaths,
+              categoryId,
+              description,
+            }) => cubit.createMissedEntryAsRequest(
+              wsId,
+              userId,
+              title: title,
+              categoryId: categoryId,
+              startTime: startTime,
+              endTime: endTime,
+              description: description,
+              imageLocalPaths: imageLocalPaths,
+              throwOnError: true,
+            ),
+        onAfterSave: () => cubit.discardRunningSession(
+          wsId,
+          userId,
+          throwOnError: true,
+        ),
         hasBypassPermission: hasBypassPermission,
         initialStartTime: runningSession.startTime,
         initialEndTime: DateTime.now(),
         initialTitle: runningSession.title,
         initialDescription: runningSession.description,
         initialCategoryId: runningSession.categoryId,
-        discardRunningSessionOnSave: true,
       ),
     );
     return false;
-  }
-
-  Future<bool> _hasBypassTimeTrackingRequestApprovalPermission(
-    String wsId,
-    String userId,
-  ) async {
-    if (wsId.isEmpty || userId.isEmpty) {
-      return false;
-    }
-
-    try {
-      final workspacePermissions = await WorkspacePermissionsRepository()
-          .getPermissions(wsId: wsId, userId: userId);
-
-      return workspacePermissions.containsPermission(
-        bypassTimeTrackingRequestApprovalPermission,
-      );
-    } on Exception {
-      return false;
-    }
   }
 
   void _showActionError(BuildContext context, Object error) {
@@ -400,89 +421,6 @@ class _TimerTabState extends State<TimerTab> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Future<void> _showMissedEntryDialog(
-    BuildContext context, {
-    bool? hasBypassPermission,
-    DateTime? initialStartTime,
-    DateTime? initialEndTime,
-    String? initialTitle,
-    String? initialDescription,
-    String? initialCategoryId,
-    bool discardRunningSessionOnSave = false,
-  }) async {
-    final cubit = context.read<TimeTrackerCubit>();
-    final state = cubit.state;
-    final wsId =
-        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
-    final userId = supabase.auth.currentUser?.id ?? '';
-
-    final canBypassApproval =
-        hasBypassPermission ??
-        await _hasBypassTimeTrackingRequestApprovalPermission(wsId, userId);
-    if (!context.mounted) {
-      return;
-    }
-
-    showAdaptiveDrawer(
-      context: context,
-      builder: (_) => MissedEntryDialog(
-        categories: cubit.state.categories,
-        canBypassRequestApproval: canBypassApproval,
-        thresholdDays: state.thresholdDays,
-        initialStartTime: initialStartTime,
-        initialEndTime: initialEndTime,
-        initialTitle: initialTitle,
-        initialDescription: initialDescription,
-        initialCategoryId: initialCategoryId,
-        onSave:
-            ({
-              required title,
-              required startTime,
-              required endTime,
-              required shouldSubmitAsRequest,
-              required imageLocalPaths,
-              categoryId,
-              description,
-            }) async {
-              if (shouldSubmitAsRequest) {
-                await cubit.createMissedEntryAsRequest(
-                  wsId,
-                  userId,
-                  title: title,
-                  categoryId: categoryId,
-                  startTime: startTime,
-                  endTime: endTime,
-                  description: description,
-                  imageLocalPaths: imageLocalPaths,
-                  throwOnError: true,
-                );
-
-                if (discardRunningSessionOnSave) {
-                  await cubit.discardRunningSession(
-                    wsId,
-                    userId,
-                    throwOnError: true,
-                  );
-                }
-
-                return;
-              }
-
-              await cubit.createMissedEntry(
-                wsId,
-                userId,
-                title: title,
-                categoryId: categoryId,
-                startTime: startTime,
-                endTime: endTime,
-                description: description,
-                throwOnError: true,
-              );
-            },
       ),
     );
   }

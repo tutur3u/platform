@@ -3,6 +3,8 @@ import 'package:mobile/data/models/user_profile.dart';
 
 enum ProfileStatus { initial, loading, loaded, error }
 
+const _sentinel = Object();
+
 /// State for profile management.
 class ProfileState extends Equatable {
   const ProfileState({
@@ -10,27 +12,49 @@ class ProfileState extends Equatable {
     this.profile,
     this.error,
     this.isLoading = false,
+    this.isRefreshing = false,
+    this.isFromCache = false,
+    this.lastUpdatedAt,
   });
 
   final ProfileStatus status;
   final UserProfile? profile;
   final String? error;
   final bool isLoading;
+  final bool isRefreshing;
+  final bool isFromCache;
+  final DateTime? lastUpdatedAt;
 
   ProfileState copyWith({
     ProfileStatus? status,
-    UserProfile? profile,
-    String? error,
+    Object? profile = _sentinel,
+    Object? error = _sentinel,
     bool? isLoading,
+    bool? isRefreshing,
+    bool? isFromCache,
+    Object? lastUpdatedAt = _sentinel,
   }) {
     return ProfileState(
       status: status ?? this.status,
-      profile: profile ?? this.profile,
-      error: error,
+      profile: profile == _sentinel ? this.profile : profile as UserProfile?,
+      error: error == _sentinel ? this.error : error as String?,
       isLoading: isLoading ?? this.isLoading,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      isFromCache: isFromCache ?? this.isFromCache,
+      lastUpdatedAt: lastUpdatedAt == _sentinel
+          ? this.lastUpdatedAt
+          : lastUpdatedAt as DateTime?,
     );
   }
 
   @override
-  List<Object?> get props => [status, profile, error, isLoading];
+  List<Object?> get props => [
+    status,
+    profile,
+    error,
+    isLoading,
+    isRefreshing,
+    isFromCache,
+    lastUpdatedAt,
+  ];
 }

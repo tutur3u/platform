@@ -191,7 +191,7 @@ export function BoardClient({
     );
   }
 
-  if (!board || !board.id) {
+  if (!board?.id) {
     return (
       <div className="flex flex-col">
         <div className="p-4 text-center text-muted-foreground">

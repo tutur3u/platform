@@ -560,7 +560,7 @@ export function DatasetCrawler({
                       const sheets = workbook.Sheets;
                       if (!sheets || typeof sheets !== 'object') return null;
                       const ws = sheets[sheet];
-                      if (!ws || !ws['!ref']) return null;
+                      if (!ws?.['!ref']) return null;
                       const range = XLSX.utils.decode_range(ws['!ref']);
                       const hasData = range.e.r > 0 || range.e.c > 0;
                       if (!hasData) return null;
@@ -598,8 +598,7 @@ export function DatasetCrawler({
                             () => {
                               const sheets = workbook.Sheets;
                               const sheet = sheets[selectedSheet];
-                              if (!sheet || !sheet['!ref'])
-                                return sheetInfo.rows;
+                              if (!sheet?.['!ref']) return sheetInfo.rows;
                               return XLSX.utils.decode_range(sheet['!ref']).e.r;
                             }
                           )()

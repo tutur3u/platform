@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-import '../../../helpers/helpers.dart';
+Future<void> _pumpDialogHarness(WidgetTester tester, Widget child) {
+  return tester.pumpWidget(
+    shad.ShadcnApp(
+      theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+      darkTheme: const shad.ThemeData.dark(
+        colorScheme: shad.ColorSchemes.darkZinc,
+      ),
+      localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
+        shad.ShadcnLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(body: child),
+    ),
+  );
+}
 
 void main() {
   group('ThresholdSettingsDialog', () {
@@ -11,16 +27,15 @@ void main() {
       int? savedThreshold;
       int? savedGracePeriod;
 
-      await tester.pumpApp(
-        Scaffold(
-          body: ThresholdSettingsDialog(
-            currentThreshold: 2,
-            currentStatusChangeGracePeriodMinutes: 5,
-            onSave: (threshold, gracePeriod) async {
-              savedThreshold = threshold;
-              savedGracePeriod = gracePeriod;
-            },
-          ),
+      await _pumpDialogHarness(
+        tester,
+        ThresholdSettingsDialog(
+          currentThreshold: 2,
+          currentStatusChangeGracePeriodMinutes: 5,
+          onSave: (threshold, gracePeriod) async {
+            savedThreshold = threshold;
+            savedGracePeriod = gracePeriod;
+          },
         ),
       );
 
@@ -41,16 +56,15 @@ void main() {
       int? savedThreshold = 99;
       int? savedGracePeriod;
 
-      await tester.pumpApp(
-        Scaffold(
-          body: ThresholdSettingsDialog(
-            currentThreshold: 3,
-            currentStatusChangeGracePeriodMinutes: 5,
-            onSave: (threshold, gracePeriod) async {
-              savedThreshold = threshold;
-              savedGracePeriod = gracePeriod;
-            },
-          ),
+      await _pumpDialogHarness(
+        tester,
+        ThresholdSettingsDialog(
+          currentThreshold: 3,
+          currentStatusChangeGracePeriodMinutes: 5,
+          onSave: (threshold, gracePeriod) async {
+            savedThreshold = threshold;
+            savedGracePeriod = gracePeriod;
+          },
         ),
       );
 

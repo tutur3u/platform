@@ -165,7 +165,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const content = template.content as unknown as TemplateContent;
 
     // Validate content structure
-    if (!content || !content.lists) {
+    if (!content?.lists) {
       return NextResponse.json(
         { error: 'Invalid template content' },
         { status: 400 }

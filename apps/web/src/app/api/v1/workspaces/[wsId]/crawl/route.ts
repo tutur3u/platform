@@ -202,7 +202,7 @@ async function getDataFromSession(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !user.email?.endsWith('@tuturuuu.com')) {
+  if (!user?.email?.endsWith('@tuturuuu.com')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 

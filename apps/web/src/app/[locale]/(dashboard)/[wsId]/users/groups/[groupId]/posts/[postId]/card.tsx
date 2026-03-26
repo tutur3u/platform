@@ -1,149 +1,108 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  Ban,
-  Check,
-  CircleSlash,
-  Clock3,
-  LoaderCircle,
-  MailCheck,
-  Save,
-  X,
-} from '@tuturuuu/icons';
-import type { UserGroupPost } from '@tuturuuu/types/db';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
+import { Check, LoaderCircle, Save, X } from '@tuturuuu/icons';
+import type { Database, UserGroupPost } from '@tuturuuu/types/db';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PostApprovalActions } from '@/components/post-approval-actions';
-import type { PostEmailQueueRow } from '@/lib/post-email-queue';
+import {
+  getPostApprovalStatusAppearance,
+  getPostEmailStatusAppearance,
+  getPostReviewStageAppearance,
+} from '../../../../../posts/status-meta';
+import type {
+  PostApprovalStatus,
+  PostReviewStage,
+} from '../../../../../posts/types';
+import { isPostEmailQueueStatus } from '../../../../../posts/types';
+
+type GroupPostRecipientRow =
+  Database['public']['Functions']['get_user_group_post_recipient_rows']['Returns'][number];
 
 interface Props {
-  user: WorkspaceUser;
+  recipient: GroupPostRecipientRow;
   wsId: string;
   post: UserGroupPost;
   canUpdateUserGroupsPosts?: boolean;
   canApprovePosts?: boolean;
-  queueItem?: PostEmailQueueRow;
-  initialCheck?: Partial<{
-    user_id: string;
-    post_id: string;
-    is_completed: boolean | null;
-    notes: string;
-    created_at?: string;
-    email_id?: string | null;
-    approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
-    approved_at?: string | null;
-    rejected_at?: string | null;
-    rejection_reason?: string | null;
-  }> | null;
-  isLoadingChecks?: boolean;
-}
-
-function getQueueBadge(queueItem?: PostEmailQueueRow) {
-  switch (queueItem?.status) {
-    case 'sent':
-      return {
-        icon: MailCheck,
-        className:
-          'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green',
-        label: 'Sent',
-      };
-    case 'processing':
-      return {
-        icon: LoaderCircle,
-        className:
-          'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue',
-        label: 'Processing',
-      };
-    case 'failed':
-      return {
-        icon: AlertCircle,
-        className: 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red',
-        label: 'Failed',
-      };
-    case 'blocked':
-      return {
-        icon: Ban,
-        className:
-          'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange',
-        label: 'Blocked',
-      };
-    case 'cancelled':
-      return {
-        icon: CircleSlash,
-        className: 'border-muted bg-muted text-muted-foreground',
-        label: 'Cancelled',
-      };
-    default:
-      return {
-        icon: Clock3,
-        className:
-          'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
-        label: 'Queued',
-      };
-  }
 }
 
 function UserCard({
-  user,
+  recipient,
   wsId,
   post,
   canUpdateUserGroupsPosts = false,
   canApprovePosts = false,
-  queueItem,
-  initialCheck = null,
-  isLoadingChecks = false,
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations();
+  const tableT = useTranslations('post-email-data-table');
 
-  const check = initialCheck;
-  const isLoadingCheck = isLoadingChecks;
-  const queueBadge = getQueueBadge(queueItem);
-  const QueueIcon = queueBadge.icon;
-  const approvalStatus = check?.approval_status ?? 'PENDING';
+  const hasExistingCheck = Boolean(recipient.has_check);
+  const approvalStatus = hasExistingCheck
+    ? (recipient.approval_status as PostApprovalStatus | null | undefined)
+    : undefined;
+  const stageAppearance = getPostReviewStageAppearance(
+    recipient.review_stage as PostReviewStage
+  );
+  const approvalAppearance = approvalStatus
+    ? getPostApprovalStatusAppearance(approvalStatus)
+    : null;
+  const queueAppearance = isPostEmailQueueStatus(recipient.queue_status)
+    ? getPostEmailStatusAppearance(recipient.queue_status)
+    : null;
+  const stageIconClassName = cn(
+    'mr-1 h-3.5 w-3.5',
+    stageAppearance.iconClassName
+  );
+  const queueIconClassName = cn(
+    'mr-1 h-3.5 w-3.5',
+    queueAppearance?.iconClassName
+  );
+  const notesDisabled = !hasExistingCheck;
 
-  const { mutate: handleSaveStatus, isPending: isSaving } = useMutation({
+  const { mutate: handleSaveStatus, isPending: isSavingStatus } = useMutation({
     mutationFn: async ({
       isCompleted,
       notes,
     }: {
-      isCompleted?: boolean | null;
+      isCompleted: boolean;
       notes?: string;
     }) => {
-      if (!user.id || !post.id || !post.group_id) {
+      if (!recipient.user_id || !post.id || !post.group_id) {
         throw new Error('Missing required fields');
       }
 
-      const finalNotes = notes ?? check?.notes ?? '';
-      const method = check?.user_id && check?.post_id ? 'PUT' : 'POST';
-      const endpoint =
-        check?.user_id && check?.post_id
-          ? `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`
-          : `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks`;
+      const endpoint = hasExistingCheck
+        ? `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`
+        : `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks`;
+      const payload = hasExistingCheck
+        ? {
+            user_id: recipient.user_id,
+            is_completed: isCompleted,
+            notes: notes ?? recipient.notes ?? '',
+          }
+        : {
+            post_id: post.id,
+            user_id: recipient.user_id,
+            is_completed: isCompleted,
+            notes: notes ?? '',
+          };
 
       const response = await fetch(endpoint, {
-        method,
+        method: hasExistingCheck ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...check,
-          user_id: user.id,
-          post_id: post.id,
-          is_completed: isCompleted,
-          notes: finalNotes,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -152,8 +111,8 @@ function UserCard({
 
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: ['group-post-checks', post.id],
       });
       router.refresh();
@@ -161,181 +120,161 @@ function UserCard({
   });
 
   const handleSaveNotes = (formData: FormData) => {
+    if (!hasExistingCheck) {
+      return;
+    }
+
     const notes = formData.get('notes') as string;
     handleSaveStatus({
+      isCompleted: recipient.is_completed,
       notes,
-      isCompleted: check?.is_completed ?? null,
     });
   };
 
   return (
-    <Card className="w-full rounded-lg p-4 shadow-md">
+    <Card className="w-full rounded-lg border-border/60 p-4 shadow-sm">
       <div className="mb-4 flex items-center">
-        {user.avatar_url ? (
-          <Image
-            src={user.avatar_url}
-            width={48}
-            height={48}
-            alt="User avatar"
-            className="h-12 w-12 rounded-full object-cover"
+        <Avatar className="h-12 w-12 rounded-full object-cover">
+          <AvatarImage
+            src={recipient.user_avatar_url || undefined}
+            alt={recipient.recipient || 'User avatar'}
           />
-        ) : (
-          <Avatar className="h-12 w-12 rounded-full object-cover">
-            <AvatarFallback>
-              {user.full_name ? user.full_name.charAt(0) : 'u'}
-            </AvatarFallback>
-          </Avatar>
-        )}
+          <AvatarFallback>
+            {(recipient.recipient || recipient.email || 'U').charAt(0)}
+          </AvatarFallback>
+        </Avatar>
         <div className="ml-4 flex w-full items-start justify-between gap-3">
           <div>
             <h3 className="font-semibold text-foreground text-lg">
-              {user.full_name}
+              {recipient.recipient}
             </h3>
-            {(user.email || user.phone) && (
+            {(recipient.email || recipient.user_phone) && (
               <p className="text-foreground text-sm">
-                {user.email || user.phone}
+                {recipient.email || recipient.user_phone}
               </p>
             )}
           </div>
           <div className="flex flex-col items-end gap-2">
-            <Badge
-              variant="outline"
-              className={cn(
-                approvalStatus === 'APPROVED' &&
-                  'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green',
-                approvalStatus === 'PENDING' &&
-                  'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
-                approvalStatus === 'REJECTED' &&
-                  'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
-              )}
-            >
-              {approvalStatus === 'APPROVED'
-                ? t('approvals.status.approved')
-                : approvalStatus === 'REJECTED'
-                  ? t('approvals.status.rejected')
-                  : t('approvals.status.pending')}
+            <Badge variant="outline" className={stageAppearance.className}>
+              <stageAppearance.icon className={stageIconClassName} />
+              {tableT(stageAppearance.labelKey)}
             </Badge>
-            {(queueItem || check?.email_id) && (
-              <Badge variant="outline" className={queueBadge.className}>
-                <QueueIcon className="mr-1 h-3.5 w-3.5" />
-                {queueBadge.label}
+            {approvalAppearance && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-[10px] opacity-90',
+                  approvalAppearance.className
+                )}
+              >
+                <approvalAppearance.icon className="mr-1 h-3.5 w-3.5" />
+                {tableT(approvalAppearance.labelKey)}
+              </Badge>
+            )}
+            {queueAppearance && (
+              <Badge variant="outline" className={queueAppearance.className}>
+                <queueAppearance.icon className={queueIconClassName} />
+                {tableT(queueAppearance.labelKey)}
               </Badge>
             )}
           </div>
         </div>
       </div>
 
-      <form action={handleSaveNotes} id={`notes-form-${user.id}`}>
+      {!hasExistingCheck && (
+        <div className="mb-3 rounded border border-dynamic-blue/20 bg-dynamic-blue/5 p-2 text-dynamic-blue text-sm">
+          {tableT('missing_check_description')}
+        </div>
+      )}
+
+      <form action={handleSaveNotes} id={`notes-form-${recipient.user_id}`}>
         <Textarea
-          key={check?.notes}
+          key={recipient.notes}
           name="notes"
-          placeholder="Notes"
-          defaultValue={check?.notes || ''}
-          disabled={isLoadingCheck || !check}
+          placeholder={tableT('notes_placeholder')}
+          defaultValue={recipient.notes || ''}
+          disabled={notesDisabled}
         />
       </form>
 
-      {check?.rejection_reason && approvalStatus === 'REJECTED' && (
+      {recipient.approval_rejection_reason && approvalStatus === 'REJECTED' && (
         <div className="mt-3 rounded border border-dynamic-red/20 bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
-          {check.rejection_reason}
+          {recipient.approval_rejection_reason}
         </div>
       )}
 
-      {queueItem?.last_error && (
+      {recipient.queue_last_error && (
         <div className="mt-3 rounded border border-dynamic-red/20 bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
-          {queueItem.last_error}
+          {recipient.queue_last_error}
         </div>
       )}
 
-      {canApprovePosts && post.id && user.id && (
+      {canApprovePosts && post.id && recipient.user_id && hasExistingCheck && (
         <div className="mt-4">
           <PostApprovalActions
             wsId={wsId}
-            itemId={`${post.id}:${user.id}`}
-            approvalStatus={approvalStatus}
-            canRemoveApproval={
-              approvalStatus === 'APPROVED' &&
-              queueItem?.status !== 'sent' &&
-              !check?.email_id
-            }
-            compact
-            onCompleted={() => {
-              queryClient.invalidateQueries({
-                queryKey: ['group-post-checks', post.id],
-              });
-            }}
+            itemId={`${post.id}:${recipient.user_id}`}
+            approvalStatus={approvalStatus ?? 'PENDING'}
+            queueStatus={recipient.queue_status ?? undefined}
+            canRemoveApproval={Boolean(recipient.can_remove_approval)}
           />
         </div>
       )}
 
-      <div className={cn('mt-4 flex flex-wrap justify-between gap-2')}>
-        <div className="flex w-full items-center justify-center gap-2">
-          {canUpdateUserGroupsPosts && (
+      {canUpdateUserGroupsPosts && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            className="bg-dynamic-green text-background hover:bg-dynamic-green/90"
+            onClick={() =>
+              handleSaveStatus({
+                isCompleted: true,
+              })
+            }
+            disabled={isSavingStatus}
+          >
+            {isSavingStatus ? (
+              <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="mr-1 h-4 w-4" />
+            )}
+            {t('common.completed')}
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() =>
+              handleSaveStatus({
+                isCompleted: false,
+              })
+            }
+            disabled={isSavingStatus}
+          >
+            {isSavingStatus ? (
+              <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <X className="mr-1 h-4 w-4" />
+            )}
+            {t('common.incomplete')}
+          </Button>
+          {hasExistingCheck && (
             <Button
-              type="submit"
-              form={`notes-form-${user.id}`}
-              disabled={isSaving || !check}
+              size="sm"
               variant="outline"
-              className="w-full border"
+              type="submit"
+              form={`notes-form-${recipient.user_id}`}
+              disabled={isSavingStatus}
             >
-              <Save />
-            </Button>
-          )}
-          {canUpdateUserGroupsPosts && (
-            <Button
-              variant={
-                check?.is_completed != null && check.is_completed
-                  ? 'outline'
-                  : 'ghost'
-              }
-              onClick={() =>
-                handleSaveStatus({
-                  isCompleted: false,
-                })
-              }
-              className={cn(
-                check?.is_completed != null && !check.is_completed
-                  ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
-                  : '',
-                'w-full border'
+              {isSavingStatus ? (
+                <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-1 h-4 w-4" />
               )}
-              disabled={isSaving || !check}
-            >
-              <X />
-            </Button>
-          )}
-          {canUpdateUserGroupsPosts && (
-            <Button
-              variant={check?.is_completed == null ? 'outline' : 'ghost'}
-              onClick={() => handleSaveStatus({ isCompleted: null })}
-              className={cn(
-                check?.is_completed == null
-                  ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
-                  : '',
-                'w-full border'
-              )}
-              disabled={isSaving || !check}
-            >
-              <CircleSlash />
-            </Button>
-          )}
-          {canUpdateUserGroupsPosts && (
-            <Button
-              variant={check?.is_completed != null ? 'outline' : 'ghost'}
-              onClick={() => handleSaveStatus({ isCompleted: true })}
-              className={cn(
-                check?.is_completed != null && check.is_completed
-                  ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
-                  : '',
-                'w-full border'
-              )}
-              disabled={isSaving || !check}
-            >
-              <Check />
+              {t('common.save')}
             </Button>
           )}
         </div>
-      </div>
+      )}
     </Card>
   );
 }

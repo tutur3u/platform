@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
   const permissions = await getPermissions({ wsId, request: req });
 
-  if (!permissions || !permissions.containsPermission('view_inventory')) {
+  if (!permissions?.containsPermission('view_inventory')) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 

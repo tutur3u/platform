@@ -646,7 +646,7 @@ export function useTaskActions({
   ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
-    if (!task || !task.assignees || task.assignees.length === 0) return;
+    if (!task?.assignees || task.assignees.length === 0) return;
 
     setIsLoading(true);
 

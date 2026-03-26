@@ -16,6 +16,7 @@ import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/models/time_tracking/session_page.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/data/models/workspace_settings.dart';
+import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -134,9 +135,12 @@ abstract class ITimeTrackerRepository {
   Future<List<TimeTrackingRequest>> getRequests(
     String wsId, {
     String? status,
+    String? userId,
     int limit = 50,
     int offset = 0,
   });
+
+  Future<List<WorkspaceUserOption>> getRequestUsers(String wsId);
 
   Future<TimeTrackingRequest> createRequest(
     String wsId, {
@@ -728,6 +732,7 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   Future<List<TimeTrackingRequest>> getRequests(
     String wsId, {
     String? status,
+    String? userId,
     int limit = 50,
     int offset = 0,
   }) async {
@@ -736,12 +741,25 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
         'limit': '$limit',
         'page': '${(offset ~/ limit) + 1}',
         if (status != null) 'status': status,
+        if (userId != null && userId.isNotEmpty) 'userId': userId,
       }),
     );
 
     final requests = data['requests'] as List<dynamic>? ?? [];
     return requests
         .map((e) => TimeTrackingRequest.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<WorkspaceUserOption>> getRequestUsers(String wsId) async {
+    final data = await _api.getJsonList(
+      '/api/v1/workspaces/$wsId/time-tracking/requests/users',
+    );
+
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(WorkspaceUserOption.fromJson)
         .toList();
   }
 

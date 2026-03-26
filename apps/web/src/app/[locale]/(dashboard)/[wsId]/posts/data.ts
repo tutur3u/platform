@@ -6,34 +6,29 @@ import {
   autoSkipOldPostEmails,
   getPostEmailMaxAgeCutoff,
 } from '@/lib/post-email-queue';
+import { normalizeArrayParam, normalizePostReviewStage } from './search-params';
+import { normalizePostEmailQueueStatus } from './status-derivation';
 import type {
   PostApprovalStatus,
   PostEmail,
   PostEmailQueueStatus,
   PostEmailStatusSummary,
+  PostReviewStage,
   PostsSearchParams,
 } from './types';
 import { isPostApprovalStatus, isPostEmailQueueStatus } from './types';
 
 type PostEmailSummaryRpcRow =
-  Database['public']['Functions']['get_workspace_post_email_status_summary']['Returns'][number];
+  Database['public']['Functions']['get_workspace_post_review_summary']['Returns'][number];
 
 type PostEmailRowRpc =
-  Database['public']['Functions']['get_workspace_post_email_rows']['Returns'][number];
+  Database['public']['Functions']['get_workspace_post_review_rows']['Returns'][number];
 
 type PostEmailRowsRpcArgs =
-  Database['public']['Functions']['get_workspace_post_email_rows']['Args'];
+  Database['public']['Functions']['get_workspace_post_review_rows']['Args'];
 
 type PostEmailSummaryRpcArgs =
-  Database['public']['Functions']['get_workspace_post_email_status_summary']['Args'];
-
-function normalizeArrayParam(value?: string | string[]) {
-  if (Array.isArray(value)) {
-    return value.filter(Boolean);
-  }
-
-  return value ? [value] : [];
-}
+  Database['public']['Functions']['get_workspace_post_review_summary']['Args'];
 
 function normalizeQueueStatus(
   value?: string
@@ -52,8 +47,13 @@ function mapPostEmailRow(row: PostEmailRowRpc): PostEmail {
     id: row.row_key,
     notes: row.notes,
     user_id: row.user_id,
+    user_display_name: row.user_display_name,
+    user_full_name: row.user_full_name,
+    user_phone: row.user_phone,
+    user_avatar_url: row.user_avatar_url,
     email_id: row.email_id,
     is_completed: row.is_completed,
+    has_check: row.has_check,
     ws_id: row.ws_id,
     email: row.email,
     recipient: row.recipient,
@@ -64,14 +64,19 @@ function mapPostEmailRow(row: PostEmailRowRpc): PostEmail {
     group_id: row.group_id,
     group_name: row.group_name,
     subject: row.subject,
-    queue_status: row.queue_status as PostEmailQueueStatus,
+    queue_status: normalizePostEmailQueueStatus({
+      approvalStatus: row.approval_status,
+      emailId: row.email_id,
+      queueStatus: row.queue_status as PostEmailQueueStatus | null,
+    }),
     queue_attempt_count: row.queue_attempt_count,
     queue_last_error: row.queue_last_error,
     queue_sent_at: row.queue_sent_at,
-    approval_status: row.approval_status ?? 'PENDING',
+    approval_status: row.approval_status ?? undefined,
     approval_rejection_reason: row.approval_rejection_reason,
     can_remove_approval: row.can_remove_approval,
     created_at: row.check_created_at ? new Date(row.check_created_at) : null,
+    stage: row.review_stage as PostReviewStage,
   };
 }
 
@@ -80,16 +85,34 @@ function mapSummaryRow(
 ): PostEmailStatusSummary {
   return {
     total: Number(row?.total_count ?? 0),
-    queued: Number(row?.queued_count ?? 0),
-    processing: Number(row?.processing_count ?? 0),
-    sent: Number(row?.sent_count ?? 0),
-    failed: Number(row?.failed_count ?? 0),
-    blocked: Number(row?.blocked_count ?? 0),
-    cancelled: Number(row?.cancelled_count ?? 0),
-    skipped: Number(row?.skipped_count ?? 0),
-    approved: Number(row?.approved_count ?? 0),
-    pending: Number(row?.pending_approval_count ?? 0),
-    rejected: Number(row?.rejected_count ?? 0),
+    stages: {
+      missing_check: Number(row?.missing_check_count ?? 0),
+      pending_approval: Number(row?.pending_approval_stage_count ?? 0),
+      approved_awaiting_delivery: Number(
+        row?.approved_awaiting_delivery_count ?? 0
+      ),
+      queued: Number(row?.queued_stage_count ?? 0),
+      processing: Number(row?.processing_stage_count ?? 0),
+      sent: Number(row?.sent_stage_count ?? 0),
+      delivery_failed: Number(row?.delivery_failed_count ?? 0),
+      skipped: Number(row?.skipped_stage_count ?? 0),
+      rejected: Number(row?.rejected_stage_count ?? 0),
+    },
+    approvals: {
+      pending: Number(row?.pending_approval_count ?? 0),
+      approved: Number(row?.approved_count ?? 0),
+      rejected: Number(row?.rejected_count ?? 0),
+      skipped: Number(row?.skipped_approval_count ?? 0),
+    },
+    queue: {
+      queued: Number(row?.queued_count ?? 0),
+      processing: Number(row?.processing_count ?? 0),
+      sent: Number(row?.sent_count ?? 0),
+      failed: Number(row?.failed_count ?? 0),
+      blocked: Number(row?.blocked_count ?? 0),
+      cancelled: Number(row?.cancelled_count ?? 0),
+      skipped: Number(row?.queue_skipped_count ?? 0),
+    },
   };
 }
 
@@ -101,6 +124,7 @@ export async function getPostsPageData(
     includedGroups,
     excludedGroups,
     userId,
+    stage,
     approvalStatus,
     queueStatus,
   }: PostsSearchParams = {}
@@ -115,6 +139,7 @@ export async function getPostsPageData(
   const activeApprovalStatus = normalizeApprovalStatus(approvalStatus);
   const includedGroupIds = normalizeArrayParam(includedGroups);
   const excludedGroupIds = normalizeArrayParam(excludedGroups);
+  const activeStage = normalizePostReviewStage(stage);
   const activeQueueStatus = normalizeQueueStatus(queueStatus);
   const cutoff = getPostEmailMaxAgeCutoff();
   const offset = (safePage - 1) * safeSize;
@@ -129,6 +154,7 @@ export async function getPostsPageData(
     ...(excludedGroupIds.length > 0
       ? { p_excluded_group_ids: excludedGroupIds }
       : {}),
+    ...(activeStage ? { p_stage: [activeStage] } : {}),
     ...(activeApprovalStatus
       ? { p_approval_status: activeApprovalStatus }
       : {}),
@@ -145,14 +171,17 @@ export async function getPostsPageData(
       ? { p_excluded_group_ids: excludedGroupIds }
       : {}),
     ...(userId ? { p_user_id: userId } : {}),
+    ...(activeApprovalStatus
+      ? { p_approval_status: activeApprovalStatus }
+      : {}),
     ...(activeQueueStatus ? { p_queue_status: activeQueueStatus } : {}),
   };
 
   await autoSkipOldPostEmails(sbAdmin, { wsId });
 
   const [rowsResult, summaryResult] = await Promise.all([
-    sbAdmin.rpc('get_workspace_post_email_rows', rowsArgs),
-    sbAdmin.rpc('get_workspace_post_email_status_summary', summaryArgs),
+    sbAdmin.rpc('get_workspace_post_review_rows', rowsArgs),
+    sbAdmin.rpc('get_workspace_post_review_summary', summaryArgs),
   ]);
 
   if (rowsResult.error) {
