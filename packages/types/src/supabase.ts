@@ -24319,6 +24319,7 @@ export type Database = {
           p_email_id: string;
           p_has_check: boolean;
           p_queue_status: string;
+          p_recipient_email: string;
         };
         Returns: string;
       };
