@@ -3833,6 +3833,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceCreateDescription => 'Create a fresh space for projects, habits, finance, and more.';
 
   @override
+  String get workspaceCreateSuccess => 'Workspace created.';
+
+  @override
+  String get workspaceCreateSuccessAvatarWarning => 'Workspace created, but profile picture failed to upload.';
+
+  @override
+  String get workspaceCreateError => 'Failed to create workspace';
+
+  @override
   String get workspaceCreateNew => 'New';
 
   @override
