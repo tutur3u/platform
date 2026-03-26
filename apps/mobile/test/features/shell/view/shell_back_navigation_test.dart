@@ -306,6 +306,49 @@ void main() {
       await tester.drainShadToastTimers();
     });
 
+    testWidgets('PopScope ignores already-popped routes', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final router = _buildRouter(initialLocation: Routes.timerRequests);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      final popScope = tester.widget<PopScope<dynamic>>(
+        find.byWidgetPredicate((widget) => widget is PopScope).first,
+      );
+      final onPopInvoked = popScope.onPopInvokedWithResult;
+      expect(
+        onPopInvoked,
+        isNotNull,
+        reason: 'Shell PopScope callback should be wired for back handling.',
+      );
+      if (onPopInvoked == null) {
+        fail('Shell PopScope callback should not be null.');
+      }
+
+      onPopInvoked(true, null);
+      await _pumpForTransitions(tester);
+
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        Routes.timerRequests,
+      );
+    });
+
     testWidgets('home root requires double back to exit', (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(390, 844);

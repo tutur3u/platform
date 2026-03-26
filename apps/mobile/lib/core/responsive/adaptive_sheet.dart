@@ -80,9 +80,14 @@ Future<void> showAdaptiveDrawer({
   required Widget Function(BuildContext) builder,
   double maxDialogWidth = 560,
 }) async {
+  final rootNavigatorContext = Navigator.of(
+    context,
+    rootNavigator: true,
+  ).context;
+
   if (context.isCompact) {
     await shad.openDrawer<void>(
-      context: context,
+      context: rootNavigatorContext,
       position: shad.OverlayPosition.bottom,
       builder: (drawerContext) => BackButtonListener(
         onBackButtonPressed: () async {
@@ -123,4 +128,13 @@ Future<void> showAdaptiveDrawer({
       ),
     ),
   );
+}
+
+Future<void> dismissAdaptiveDrawerOverlay(BuildContext context) async {
+  if (context.isCompact) {
+    await shad.closeOverlay<void>(context);
+    return;
+  }
+
+  await Navigator.maybePop(context);
 }

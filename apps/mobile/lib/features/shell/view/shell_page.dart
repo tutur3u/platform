@@ -196,6 +196,10 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
         canPop: false,
         onPopInvokedWithResult: (didPop, result) {
           _debugBack('PopScope.invoked', 'didPop=$didPop result=$result');
+          if (didPop) {
+            _debugBack('PopScope.skipHandledPop');
+            return;
+          }
           _dispatchBackNavigation(context, source: 'popScope');
         },
         child: BlocListener<WorkspaceCubit, WorkspaceState>(
