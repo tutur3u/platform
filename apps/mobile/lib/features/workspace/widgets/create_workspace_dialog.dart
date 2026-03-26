@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Chip, CircleAvatar, Divider;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
@@ -52,17 +54,16 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
     setState(() => _error = null);
 
     try {
-      final workspace = await context.read<WorkspaceCubit>().createWorkspace(
-        name,
-      );
+      final workspaceCubit = context.read<WorkspaceCubit>();
+      final workspace = await workspaceCubit.createWorkspace(name);
+      if (!mounted) return;
+
+      // Auto-select the newly created workspace before dismissing.
+      await workspaceCubit.selectWorkspace(workspace);
       if (!mounted) return;
 
       // Close dialog
-      await Navigator.maybePop(context);
-      if (!mounted) return;
-
-      // Auto-select the newly created workspace
-      await context.read<WorkspaceCubit>().selectWorkspace(workspace);
+      await dismissAdaptiveDrawerOverlay(context);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);

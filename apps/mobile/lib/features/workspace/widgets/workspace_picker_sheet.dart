@@ -37,173 +37,193 @@ void showWorkspacePickerSheet(
               final isDefaultMode =
                   mode == WorkspacePickerMode.defaultWorkspace;
 
-              return ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.66,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              isDefaultMode
-                                  ? l10n.workspaceDefaultPickerTitle
-                                  : l10n.workspacePickerTitle,
-                              style: theme.typography.h3.copyWith(
-                                fontWeight: FontWeight.w700,
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final mediaHeight = MediaQuery.of(context).size.height;
+                  final availableHeight = constraints.maxHeight.isFinite
+                      ? constraints.maxHeight
+                      : (mediaHeight.isFinite ? mediaHeight : 640.0);
+
+                  return ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: availableHeight * 0.66,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  isDefaultMode
+                                      ? l10n.workspaceDefaultPickerTitle
+                                      : l10n.workspacePickerTitle,
+                                  style: theme.typography.h3.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
+                              shad.GhostButton(
+                                size: shad.ButtonSize.small,
+                                onPressed: (state.limits?.canCreate ?? true)
+                                    ? () async {
+                                        await dismissAdaptiveDrawerOverlay(
+                                          context,
+                                        );
+                                        if (!parentContext.mounted) {
+                                          return;
+                                        }
+                                        await showCreateWorkspaceDialog(
+                                          parentContext,
+                                        );
+                                      }
+                                    : null,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.add_rounded, size: 16),
+                                    const shad.Gap(4),
+                                    Text(l10n.workspaceCreateNew),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (state.limits != null && state.limits!.limit > 0)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            child: _CompactLimitsBar(
+                              currentCount: state.limits!.currentCount,
+                              limit: state.limits!.limit,
                             ),
                           ),
-                          shad.GhostButton(
-                            size: shad.ButtonSize.small,
-                            onPressed: (state.limits?.canCreate ?? true)
-                                ? () async {
-                                    await Navigator.maybePop(context);
-                                    if (!parentContext.mounted) {
-                                      return;
-                                    }
-                                    await showCreateWorkspaceDialog(
-                                      parentContext,
-                                    );
-                                  }
-                                : null,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                        const shad.Gap(10),
+                        Flexible(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            child: Column(
                               children: [
-                                const Icon(Icons.add_rounded, size: 16),
-                                const shad.Gap(4),
-                                Text(l10n.workspaceCreateNew),
+                                if (sections.personal.isNotEmpty)
+                                  _WorkspacePickerGroup(
+                                    title: l10n.workspacePersonalSection,
+                                    children: [
+                                      for (final workspace in sections.personal)
+                                        _PickerTile(
+                                          workspace: workspace,
+                                          isSelected:
+                                              workspace.id ==
+                                              (isDefaultMode
+                                                  ? state.defaultWorkspace?.id
+                                                  : state.currentWorkspace?.id),
+                                          isCurrent:
+                                              workspace.id ==
+                                              state.currentWorkspace?.id,
+                                          isDefault:
+                                              workspace.id ==
+                                              state.defaultWorkspace?.id,
+                                          onTap: () async {
+                                            await dismissAdaptiveDrawerOverlay(
+                                              context,
+                                            );
+                                            if (isDefaultMode) {
+                                              await workspaceCubit
+                                                  .setDefaultWorkspace(
+                                                    workspace,
+                                                  );
+                                            } else {
+                                              await workspaceCubit
+                                                  .selectWorkspace(workspace);
+                                            }
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                if (sections.system.isNotEmpty) ...[
+                                  if (sections.personal.isNotEmpty)
+                                    const shad.Gap(10),
+                                  _WorkspacePickerGroup(
+                                    title: l10n.workspaceSystemSection,
+                                    children: [
+                                      for (final workspace in sections.system)
+                                        _PickerTile(
+                                          workspace: workspace,
+                                          isSelected:
+                                              workspace.id ==
+                                              (isDefaultMode
+                                                  ? state.defaultWorkspace?.id
+                                                  : state.currentWorkspace?.id),
+                                          isCurrent:
+                                              workspace.id ==
+                                              state.currentWorkspace?.id,
+                                          isDefault:
+                                              workspace.id ==
+                                              state.defaultWorkspace?.id,
+                                          onTap: () async {
+                                            await dismissAdaptiveDrawerOverlay(
+                                              context,
+                                            );
+                                            if (isDefaultMode) {
+                                              await workspaceCubit
+                                                  .setDefaultWorkspace(
+                                                    workspace,
+                                                  );
+                                            } else {
+                                              await workspaceCubit
+                                                  .selectWorkspace(workspace);
+                                            }
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                                if (sections.team.isNotEmpty) ...[
+                                  const shad.Gap(10),
+                                  _WorkspacePickerGroup(
+                                    title: l10n.workspaceTeamSection,
+                                    children: [
+                                      for (final workspace in sections.team)
+                                        _PickerTile(
+                                          workspace: workspace,
+                                          isSelected:
+                                              workspace.id ==
+                                              (isDefaultMode
+                                                  ? state.defaultWorkspace?.id
+                                                  : state.currentWorkspace?.id),
+                                          isCurrent:
+                                              workspace.id ==
+                                              state.currentWorkspace?.id,
+                                          isDefault:
+                                              workspace.id ==
+                                              state.defaultWorkspace?.id,
+                                          onTap: () async {
+                                            await dismissAdaptiveDrawerOverlay(
+                                              context,
+                                            );
+                                            if (isDefaultMode) {
+                                              await workspaceCubit
+                                                  .setDefaultWorkspace(
+                                                    workspace,
+                                                  );
+                                            } else {
+                                              await workspaceCubit
+                                                  .selectWorkspace(workspace);
+                                            }
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    if (state.limits != null && state.limits!.limit > 0)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: _CompactLimitsBar(
-                          currentCount: state.limits!.currentCount,
-                          limit: state.limits!.limit,
                         ),
-                      ),
-                    const shad.Gap(10),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Column(
-                          children: [
-                            if (sections.personal.isNotEmpty)
-                              _WorkspacePickerGroup(
-                                title: l10n.workspacePersonalSection,
-                                children: [
-                                  for (final workspace in sections.personal)
-                                    _PickerTile(
-                                      workspace: workspace,
-                                      isSelected:
-                                          workspace.id ==
-                                          (isDefaultMode
-                                              ? state.defaultWorkspace?.id
-                                              : state.currentWorkspace?.id),
-                                      isCurrent:
-                                          workspace.id ==
-                                          state.currentWorkspace?.id,
-                                      isDefault:
-                                          workspace.id ==
-                                          state.defaultWorkspace?.id,
-                                      onTap: () async {
-                                        await Navigator.maybePop(context);
-                                        if (isDefaultMode) {
-                                          await workspaceCubit
-                                              .setDefaultWorkspace(workspace);
-                                        } else {
-                                          await workspaceCubit.selectWorkspace(
-                                            workspace,
-                                          );
-                                        }
-                                      },
-                                    ),
-                                ],
-                              ),
-                            if (sections.system.isNotEmpty) ...[
-                              if (sections.personal.isNotEmpty)
-                                const shad.Gap(10),
-                              _WorkspacePickerGroup(
-                                title: l10n.workspaceSystemSection,
-                                children: [
-                                  for (final workspace in sections.system)
-                                    _PickerTile(
-                                      workspace: workspace,
-                                      isSelected:
-                                          workspace.id ==
-                                          (isDefaultMode
-                                              ? state.defaultWorkspace?.id
-                                              : state.currentWorkspace?.id),
-                                      isCurrent:
-                                          workspace.id ==
-                                          state.currentWorkspace?.id,
-                                      isDefault:
-                                          workspace.id ==
-                                          state.defaultWorkspace?.id,
-                                      onTap: () async {
-                                        await Navigator.maybePop(context);
-                                        if (isDefaultMode) {
-                                          await workspaceCubit
-                                              .setDefaultWorkspace(workspace);
-                                        } else {
-                                          await workspaceCubit.selectWorkspace(
-                                            workspace,
-                                          );
-                                        }
-                                      },
-                                    ),
-                                ],
-                              ),
-                            ],
-                            if (sections.team.isNotEmpty) ...[
-                              const shad.Gap(10),
-                              _WorkspacePickerGroup(
-                                title: l10n.workspaceTeamSection,
-                                children: [
-                                  for (final workspace in sections.team)
-                                    _PickerTile(
-                                      workspace: workspace,
-                                      isSelected:
-                                          workspace.id ==
-                                          (isDefaultMode
-                                              ? state.defaultWorkspace?.id
-                                              : state.currentWorkspace?.id),
-                                      isCurrent:
-                                          workspace.id ==
-                                          state.currentWorkspace?.id,
-                                      isDefault:
-                                          workspace.id ==
-                                          state.defaultWorkspace?.id,
-                                      onTap: () async {
-                                        await Navigator.maybePop(context);
-                                        if (isDefaultMode) {
-                                          await workspaceCubit
-                                              .setDefaultWorkspace(workspace);
-                                        } else {
-                                          await workspaceCubit.selectWorkspace(
-                                            workspace,
-                                          );
-                                        }
-                                      },
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               );
             },
           ),
