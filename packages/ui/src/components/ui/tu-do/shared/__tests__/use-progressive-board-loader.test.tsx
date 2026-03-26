@@ -292,11 +292,11 @@ describe('useProgressiveBoardLoader', () => {
 
     const finalTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
     expect(finalTasks).toEqual([
-      existingOtherListTask,
       {
         ...staleListTask,
         name: 'Fresh page 0 task',
       },
+      existingOtherListTask,
       {
         id: 'task-2',
         display_number: 2,
