@@ -4,7 +4,7 @@ import type {
   HabitTrackerMember,
   HabitTrackerStreakAction,
 } from '@tuturuuu/types/primitives/HabitTracker';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildHabitTrackerLeaderboard,
   buildHabitTrackerMemberSummary,
@@ -89,6 +89,15 @@ function createAction(
 }
 
 describe('habit tracker streaks', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-25T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('keeps streak continuity when a missed day is repaired', () => {
     const tracker = createTracker({ start_date: '2026-03-20' });
     const entries = [
