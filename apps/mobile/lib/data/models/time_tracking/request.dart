@@ -32,6 +32,7 @@ class TimeTrackingRequest extends Equatable {
     this.title,
     this.description,
     this.userDisplayName,
+    this.userAvatarUrl,
     this.startTime,
     this.endTime,
     this.images = const [],
@@ -59,6 +60,7 @@ class TimeTrackingRequest extends Equatable {
         title: json['title'] as String?,
         description: json['description'] as String?,
         userDisplayName: _nestedDisplayName(json['user']),
+        userAvatarUrl: _nestedAvatarUrl(json['user']),
         startTime: json['start_time'] != null
             ? DateTime.parse(json['start_time'] as String)
             : null,
@@ -104,6 +106,7 @@ class TimeTrackingRequest extends Equatable {
   final String? title;
   final String? description;
   final String? userDisplayName;
+  final String? userAvatarUrl;
   final DateTime? startTime;
   final DateTime? endTime;
   final List<String> images;
@@ -135,6 +138,7 @@ class TimeTrackingRequest extends Equatable {
     title,
     description,
     userDisplayName,
+    userAvatarUrl,
     startTime,
     endTime,
     images,
@@ -161,5 +165,16 @@ String? _nestedDisplayName(dynamic value) {
   final displayName = value['display_name'];
   return displayName is String && displayName.trim().isNotEmpty
       ? displayName.trim()
+      : null;
+}
+
+String? _nestedAvatarUrl(dynamic value) {
+  if (value is! Map<String, dynamic>) {
+    return null;
+  }
+
+  final avatarUrl = value['avatar_url'];
+  return avatarUrl is String && avatarUrl.trim().isNotEmpty
+      ? avatarUrl.trim()
       : null;
 }

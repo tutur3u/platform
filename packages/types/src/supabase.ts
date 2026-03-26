@@ -24292,10 +24292,10 @@ export type Database = {
       get_post_review_stage: {
         Args: {
           p_approval_status: Database['public']['Enums']['approval_status'];
+          p_delivery_issue_reason: string;
           p_email_id: string;
           p_has_check: boolean;
           p_queue_status: string;
-          p_recipient_email: string;
         };
         Returns: string;
       };
@@ -24691,6 +24691,7 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
+          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -24745,6 +24746,7 @@ export type Database = {
           skipped_stage_count: number;
           total_count: number;
           unchecked_count: number;
+          undeliverable_count: number;
         }[];
       };
       get_user_growth_comparison: {
@@ -25165,6 +25167,7 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
+          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -25223,6 +25226,7 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
+          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -25283,6 +25287,7 @@ export type Database = {
           skipped_approval_count: number;
           skipped_stage_count: number;
           total_count: number;
+          undeliverable_count: number;
         }[];
       };
       get_workspace_products_count: {

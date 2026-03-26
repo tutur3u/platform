@@ -2685,6 +2685,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerTaskIdPlaceholder => 'Select a task';
 
   @override
+  String timerAttachmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments',
+      one: '1 attachment',
+      zero: 'No attachments',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get timerRecentSessions => 'Recent sessions';
 
   @override
@@ -2924,6 +2936,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timerRequestNeedsInfo => 'Needs info';
+
+  @override
+  String timerRequestInfoRequestedBy(String name) {
+    return 'Info requested by $name';
+  }
 
   @override
   String get timerApprove => 'Approve';
@@ -3714,7 +3731,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceSystemBadge => 'System';
 
   @override
-  String get workspaceSystemSection => 'System';
+  String get workspaceSystemSection => 'Internal';
 
   @override
   String get workspaceTeamSection => 'Team workspaces';

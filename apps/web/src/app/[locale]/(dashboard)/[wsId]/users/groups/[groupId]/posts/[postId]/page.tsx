@@ -1,6 +1,5 @@
 import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { Database } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -13,6 +12,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { CheckAll } from './check-all';
+import type { GroupPostRecipientRow, GroupPostStatusSummaryRow } from './types';
 import { UsersList } from './users-list';
 
 export const metadata: Metadata = {
@@ -37,12 +37,6 @@ interface Props {
   }>;
   searchParams: Promise<SearchParams>;
 }
-
-type GroupPostRecipientRow =
-  Database['public']['Functions']['get_user_group_post_recipient_rows']['Returns'][number];
-
-type GroupPostStatusSummaryRow =
-  Database['public']['Functions']['get_user_group_post_status_summary']['Returns'][number];
 
 export default async function HomeworkCheck({ params, searchParams }: Props) {
   return (
@@ -205,7 +199,13 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                 </div>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-4">
+              <div className="rounded border border-dynamic-orange/15 bg-dynamic-orange/10 p-4 text-dynamic-orange">
+                <div className="font-semibold">
+                  {t('post-email-data-table.undeliverable')}
+                </div>
+                <div className="text-2xl">{status.undeliverable}</div>
+              </div>
               <div className="rounded border border-dynamic-orange/15 bg-dynamic-orange/10 p-4 text-dynamic-orange">
                 <div className="font-semibold">
                   {t('post-email-data-table.delivery_failed')}
@@ -299,6 +299,7 @@ async function getPostStatus(wsId: string, groupId: string, postId: string) {
     processing: Number(summary?.processing_stage_count ?? 0),
     queued: Number(summary?.queued_stage_count ?? 0),
     sent: Number(summary?.sent_stage_count ?? 0),
+    undeliverable: Number(summary?.undeliverable_count ?? 0),
   };
 }
 

@@ -35,7 +35,9 @@ void main() {
       workspaceCubit = _MockWorkspaceCubit();
     });
 
-    testWidgets('renders personal, system, and team sections', (tester) async {
+    testWidgets('renders personal, internal, and team sections', (
+      tester,
+    ) async {
       const state = WorkspaceState(
         status: WorkspaceStatus.loaded,
         workspaces: [teamWorkspace, systemWorkspace, personalWorkspace],
@@ -57,7 +59,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('PERSONAL'), findsOneWidget);
-      expect(find.text('SYSTEM'), findsOneWidget);
+      expect(find.text('INTERNAL'), findsOneWidget);
       expect(find.text('TEAM WORKSPACES'), findsOneWidget);
       expect(find.text('Platform'), findsOneWidget);
       expect(find.text('Product'), findsOneWidget);

@@ -1050,6 +1050,14 @@
     },
     "timerTaskPickerSearch": "Tìm kiếm nhiệm vụ",
     "timerTaskIdPlaceholder": "Chọn nhiệm vụ",
+    "timerAttachmentCount": "{count, plural, =0{Không có tệp đính kèm} one{1 tệp đính kèm} other{{count} tệp đính kèm}}",
+    "@timerAttachmentCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "timerRecentSessions": "Phiên gần đây",
     "timerSeeAll": "Xem tất cả",
     "timerNoSessions": "Chưa có phiên nào",
@@ -1160,6 +1168,14 @@
     "timerRequestApproved": "Đã duyệt",
     "timerRequestRejected": "Bị từ chối",
     "timerRequestNeedsInfo": "Cần thêm thông tin",
+    "timerRequestInfoRequestedBy": "Đã yêu cầu thông tin bởi {name}",
+    "@timerRequestInfoRequestedBy": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
     "timerApprove": "Duyệt",
     "timerReject": "Từ chối",
     "timerRequestInfo": "Yêu cầu thông tin",
@@ -1492,7 +1508,7 @@
     "workspacePersonalBadge": "Cá nhân",
     "workspacePersonalSection": "Cá nhân",
     "workspaceSystemBadge": "Hệ thống",
-    "workspaceSystemSection": "Hệ thống",
+    "workspaceSystemSection": "Nội bộ",
     "workspaceTeamSection": "Nhóm làm việc",
     "workspaceCreateTitle": "Tạo không gian làm việc",
     "workspaceCreateDescription": "Tạo một không gian mới cho dự án, thói quen, tài chính và nhiều hơn nữa.",

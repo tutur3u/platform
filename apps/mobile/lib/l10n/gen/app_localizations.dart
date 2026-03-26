@@ -5209,6 +5209,12 @@ abstract class AppLocalizations {
   /// **'Select a task'**
   String get timerTaskIdPlaceholder;
 
+  /// No description provided for @timerAttachmentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No attachments} one{1 attachment} other{{count} attachments}}'**
+  String timerAttachmentCount(int count);
+
   /// No description provided for @timerRecentSessions.
   ///
   /// In en, this message translates to:
@@ -5646,6 +5652,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Needs info'**
   String get timerRequestNeedsInfo;
+
+  /// No description provided for @timerRequestInfoRequestedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Info requested by {name}'**
+  String timerRequestInfoRequestedBy(String name);
 
   /// No description provided for @timerApprove.
   ///
@@ -7138,7 +7150,7 @@ abstract class AppLocalizations {
   /// No description provided for @workspaceSystemSection.
   ///
   /// In en, this message translates to:
-  /// **'System'**
+  /// **'Internal'**
   String get workspaceSystemSection;
 
   /// No description provided for @workspaceTeamSection.
