@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -79,6 +80,14 @@ class _RequestsViewState extends State<_RequestsView> {
   bool _isThresholdLoading = false;
   int _permissionLoadToken = 0;
   int _requestLoadToken = 0;
+  final Map<String, bool> _isMissedEntryDialogLoadingByWorkspace =
+      <String, bool>{};
+  final Map<String, bool> _hasLoadedMissedEntryCategoriesByWorkspace =
+      <String, bool>{};
+  final Map<String, int> _missedEntryDialogRequestVersionByWorkspace =
+      <String, int>{};
+  final Map<String, int> _thresholdSaveRequestVersionByWorkspace =
+      <String, int>{};
   bool _didInitializeWorkspaceLoad = false;
 
   String? _currentUserId() => context.read<AuthCubit>().state.user?.id;
