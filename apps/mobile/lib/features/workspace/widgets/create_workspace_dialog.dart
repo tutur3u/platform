@@ -53,17 +53,16 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
     setState(() => _error = null);
 
     try {
-      final workspace = await context.read<WorkspaceCubit>().createWorkspace(
-        name,
-      );
+      final workspaceCubit = context.read<WorkspaceCubit>();
+      final workspace = await workspaceCubit.createWorkspace(name);
+      if (!mounted) return;
+
+      // Auto-select the newly created workspace before dismissing.
+      await workspaceCubit.selectWorkspace(workspace);
       if (!mounted) return;
 
       // Close dialog
       await dismissAdaptiveDrawerOverlay(context);
-      if (!mounted) return;
-
-      // Auto-select the newly created workspace
-      await context.read<WorkspaceCubit>().selectWorkspace(workspace);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
