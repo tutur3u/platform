@@ -4,19 +4,29 @@ import 'package:flutter/widgets.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/widgets/missed_entry_dialog.dart';
+
+final WorkspacePermissionsRepository _defaultWorkspacePermissionsRepository =
+    WorkspacePermissionsRepository();
 
 Future<bool> hasBypassTimeTrackingRequestApprovalPermission({
   required String wsId,
   required String userId,
+  WorkspacePermissionsRepository? workspacePermissionsRepository,
 }) async {
   if (wsId.isEmpty || userId.isEmpty) {
     return false;
   }
 
   try {
-    final workspacePermissions = await WorkspacePermissionsRepository()
-        .getPermissions(wsId: wsId, userId: userId);
+    final repository =
+        workspacePermissionsRepository ??
+        _defaultWorkspacePermissionsRepository;
+    final workspacePermissions = await repository.getPermissions(
+      wsId: wsId,
+      userId: userId,
+    );
 
     return workspacePermissions.containsPermission(
       bypassTimeTrackingRequestApprovalPermission,
@@ -55,6 +65,7 @@ Future<void> showMissedEntryDialogFlow(
   required SaveMissedEntryRequestCallback onCreateMissedEntryAsRequest,
   Future<void> Function()? onAfterSave,
   bool? hasBypassPermission,
+  WorkspacePermissionsRepository? workspacePermissionsRepository,
   DateTime? initialStartTime,
   DateTime? initialEndTime,
   String? initialTitle,
@@ -66,6 +77,7 @@ Future<void> showMissedEntryDialogFlow(
       await hasBypassTimeTrackingRequestApprovalPermission(
         wsId: wsId,
         userId: userId,
+        workspacePermissionsRepository: workspacePermissionsRepository,
       );
   if (!context.mounted) {
     return;
@@ -118,5 +130,72 @@ Future<void> showMissedEntryDialogFlow(
             },
       ),
     ),
+  );
+}
+
+Future<void> showMissedEntryDialogForTimeTrackerCubit(
+  BuildContext context, {
+  required TimeTrackerCubit cubit,
+  required String wsId,
+  required String userId,
+  Future<void> Function()? onAfterSave,
+  bool? hasBypassPermission,
+  WorkspacePermissionsRepository? workspacePermissionsRepository,
+  DateTime? initialStartTime,
+  DateTime? initialEndTime,
+  String? initialTitle,
+  String? initialDescription,
+  String? initialCategoryId,
+}) {
+  return showMissedEntryDialogFlow(
+    context,
+    wsId: wsId,
+    userId: userId,
+    categories: cubit.state.categories,
+    thresholdDays: cubit.state.thresholdDays,
+    onCreateMissedEntry:
+        ({
+          required title,
+          required startTime,
+          required endTime,
+          categoryId,
+          description,
+        }) => cubit.createMissedEntry(
+          wsId,
+          userId,
+          title: title,
+          categoryId: categoryId,
+          startTime: startTime,
+          endTime: endTime,
+          description: description,
+          throwOnError: true,
+        ),
+    onCreateMissedEntryAsRequest:
+        ({
+          required title,
+          required startTime,
+          required endTime,
+          required imageLocalPaths,
+          categoryId,
+          description,
+        }) => cubit.createMissedEntryAsRequest(
+          wsId,
+          userId,
+          title: title,
+          categoryId: categoryId,
+          startTime: startTime,
+          endTime: endTime,
+          description: description,
+          imageLocalPaths: imageLocalPaths,
+          throwOnError: true,
+        ),
+    onAfterSave: onAfterSave,
+    hasBypassPermission: hasBypassPermission,
+    workspacePermissionsRepository: workspacePermissionsRepository,
+    initialStartTime: initialStartTime,
+    initialEndTime: initialEndTime,
+    initialTitle: initialTitle,
+    initialDescription: initialDescription,
+    initialCategoryId: initialCategoryId,
   );
 }
