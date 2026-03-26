@@ -1,7 +1,6 @@
 import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { Database } from '@tuturuuu/types/db';
 import {
   autoSkipOldPostEmails,
   getPostEmailMaxAgeCutoff,
@@ -15,30 +14,104 @@ import type {
   PostEmailStatusSummary,
   PostsSearchParams,
 } from './types';
-import { isPostApprovalStatus, isPostEmailQueueStatus } from './types';
+import {
+  isPostApprovalStatus,
+  isPostEmailQueueStatus,
+  type PostReviewStage,
+} from './types';
 
-type PostEmailSummaryRpcRow =
-  Database['public']['Functions']['get_workspace_post_review_summary']['Returns'][number];
+interface PostEmailRowRpc {
+  row_key: string;
+  notes: string | null;
+  user_id: string;
+  user_display_name: string | null;
+  user_full_name: string | null;
+  user_phone: string | null;
+  user_avatar_url: string | null;
+  email_id: string | null;
+  is_completed: boolean | null;
+  has_check: boolean;
+  ws_id: string;
+  email: string | null;
+  recipient: string | null;
+  post_id: string | null;
+  post_title: string | null;
+  post_content: string | null;
+  post_created_at: string | null;
+  group_id: string | null;
+  group_name: string | null;
+  subject: string | null;
+  queue_status: string | null;
+  queue_attempt_count: number | null;
+  queue_last_error: string | null;
+  queue_sent_at: string | null;
+  delivery_issue_reason: string | null;
+  approval_status: PostApprovalStatus | null;
+  approval_rejection_reason: string | null;
+  can_remove_approval: boolean | null;
+  check_created_at: string | null;
+  review_stage: PostReviewStage;
+  total_count?: number | null;
+}
 
-type PostEmailRowRpc =
-  Database['public']['Functions']['get_workspace_post_review_rows']['Returns'][number];
+interface PostEmailSummaryRpcRow {
+  total_count: number | null;
+  missing_check_count: number | null;
+  pending_approval_stage_count: number | null;
+  approved_awaiting_delivery_count: number | null;
+  undeliverable_count: number | null;
+  queued_stage_count: number | null;
+  processing_stage_count: number | null;
+  sent_stage_count: number | null;
+  delivery_failed_count: number | null;
+  skipped_stage_count: number | null;
+  rejected_stage_count: number | null;
+  pending_approval_count: number | null;
+  approved_count: number | null;
+  rejected_count: number | null;
+  skipped_approval_count: number | null;
+  queued_count: number | null;
+  processing_count: number | null;
+  sent_count: number | null;
+  failed_count: number | null;
+  blocked_count: number | null;
+  cancelled_count: number | null;
+  queue_skipped_count: number | null;
+}
 
-type PostEmailRowsRpcArgs =
-  Database['public']['Functions']['get_workspace_post_review_rows']['Args'];
+interface PostEmailRowsRpcArgs {
+  p_ws_id: string;
+  p_cutoff: string;
+  p_limit: number;
+  p_offset: number;
+  p_included_group_ids?: string[];
+  p_excluded_group_ids?: string[];
+  p_stage?: PostReviewStage[];
+  p_approval_status?: PostApprovalStatus;
+  p_user_id?: string;
+  p_queue_status?: PostEmailQueueStatus;
+}
 
-type PostEmailSummaryRpcArgs =
-  Database['public']['Functions']['get_workspace_post_review_summary']['Args'];
+interface PostEmailSummaryRpcArgs {
+  p_ws_id: string;
+  p_cutoff: string;
+  p_included_group_ids?: string[];
+  p_excluded_group_ids?: string[];
+  p_user_id?: string;
+  p_approval_status?: PostApprovalStatus;
+  p_queue_status?: PostEmailQueueStatus;
+}
 
 function normalizeQueueStatus(
-  value?: string
+  value?: string | null
 ): PostEmailQueueStatus | undefined {
-  return isPostEmailQueueStatus(value) ? value : undefined;
+  return value && isPostEmailQueueStatus(value) ? value : undefined;
 }
 
 function normalizeApprovalStatus(
-  value?: string
+  value?: string | null
 ): PostApprovalStatus | undefined {
-  return isPostApprovalStatus(value) ? value : undefined;
+  return value && isPostApprovalStatus(value) ? value : undefined;
 }
 
 function mapPostEmailRow(row: PostEmailRowRpc): PostEmail {
@@ -68,16 +141,16 @@ function mapPostEmailRow(row: PostEmailRowRpc): PostEmail {
       emailId: row.email_id,
       queueStatus: row.queue_status as PostEmailQueueStatus | null,
     }),
-    queue_attempt_count: row.queue_attempt_count,
+    queue_attempt_count: row.queue_attempt_count ?? undefined,
     queue_last_error: row.queue_last_error,
     queue_sent_at: row.queue_sent_at,
     delivery_issue_reason:
       (row.delivery_issue_reason as PostDeliveryIssueReason | null) ?? null,
     approval_status: row.approval_status ?? undefined,
     approval_rejection_reason: row.approval_rejection_reason,
-    can_remove_approval: row.can_remove_approval,
+    can_remove_approval: row.can_remove_approval ?? undefined,
     created_at: row.check_created_at ? new Date(row.check_created_at) : null,
-    stage: row.review_stage,
+    stage: row.review_stage as PostReviewStage,
   };
 }
 
@@ -121,8 +194,8 @@ function mapSummaryRow(
 export async function getPostsPageData(
   wsId: string,
   {
-    page = '1',
-    pageSize = '10',
+    page = 1,
+    pageSize = 10,
     includedGroups,
     excludedGroups,
     userId,
@@ -194,8 +267,10 @@ export async function getPostsPageData(
     throw new Error(summaryResult.error.message);
   }
 
-  const rows = rowsResult.data ?? [];
-  const summary = mapSummaryRow(summaryResult.data?.[0]);
+  const rows = (rowsResult.data ?? []) as PostEmailRowRpc[];
+  const summary = mapSummaryRow(
+    (summaryResult.data?.[0] as PostEmailSummaryRpcRow | undefined) ?? null
+  );
 
   return {
     postsData: {

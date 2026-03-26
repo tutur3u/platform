@@ -103,11 +103,6 @@ jobs:
           </plist>
           EOF
 
-      - name: Update CocoaPods Repos
-        if: steps.cache-build.outputs.cache-hit != 'true'
-        run: cd macos && pod repo update
-        shell: bash
-
       - name: Build macOS
         if: steps.cache-build.outputs.cache-hit != 'true'
         run: flutter build macos --flavor development --target lib/main_development.dart

@@ -24,13 +24,17 @@ export default async function PostsPage({
 }) {
   const { locale } = await params;
   const searchParamsData = await searchParams;
-  const parsedSearchParams = await postsSearchParamsCache.parse(searchParamsData);
+  const parsedSearchParams = await postsSearchParamsCache.parse(
+    searchParamsData as Record<string, string | string[] | undefined>
+  );
 
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const canonicalSearchParams =
-          buildCanonicalPostsSearchParams(searchParamsData, parsedSearchParams);
+        const canonicalSearchParams = buildCanonicalPostsSearchParams(
+          searchParamsData,
+          parsedSearchParams
+        );
 
         if (canonicalSearchParams) {
           redirect(`/${wsId}/posts?${canonicalSearchParams}`);

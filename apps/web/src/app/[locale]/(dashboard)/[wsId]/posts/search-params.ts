@@ -1,9 +1,11 @@
 import {
+  parseAsBoolean,
   parseAsInteger,
   parseAsNativeArrayOf,
   parseAsString,
   parseAsStringLiteral,
-} from 'nuqs';
+} from 'nuqs/server';
+import { POST_EMAIL_QUEUE_STATUSES } from '@/lib/post-email-queue/statuses';
 import {
   DEFAULT_POST_REVIEW_STAGE,
   POST_APPROVAL_STATUSES,
@@ -11,7 +13,6 @@ import {
   type PostsSearchParams,
   type RawPostsSearchParams,
 } from './types';
-import { POST_EMAIL_QUEUE_STATUSES } from '@/lib/post-email-queue/statuses';
 
 const postsNavigationOptions = {
   shallow: false,
@@ -33,6 +34,7 @@ export const postsSearchParamParsers = {
   queueStatus: parseAsStringLiteral(POST_EMAIL_QUEUE_STATUSES).withOptions(
     postsNavigationOptions
   ),
+  showAll: parseAsBoolean.withOptions(postsNavigationOptions),
   stage: parseAsStringLiteral(POST_REVIEW_STAGES).withOptions(
     postsNavigationOptions
   ),
@@ -54,16 +56,18 @@ export function normalizeRawPostReviewStage(
     POST_REVIEW_STAGES.includes(entry as (typeof POST_REVIEW_STAGES)[number])
   );
 
-  return candidate
-    ? (candidate as PostsSearchParams['stage'])
-    : null;
+  return candidate ? (candidate as PostsSearchParams['stage']) : null;
 }
 
 export function shouldApplyDefaultPostStageFilter(
-  searchParams: Pick<PostsSearchParams, 'approvalStatus' | 'queueStatus' | 'stage'>
+  searchParams: Pick<
+    PostsSearchParams,
+    'approvalStatus' | 'queueStatus' | 'showAll' | 'stage'
+  >
 ) {
   return (
     !searchParams.stage &&
+    !searchParams.showAll &&
     !searchParams.approvalStatus &&
     !searchParams.queueStatus
   );
@@ -105,4 +109,23 @@ export function buildPostsSearchParamsFromRaw(
   }
 
   return params;
+}
+
+export function buildRawPostsSearchParamsFromUrlSearchParams(
+  searchParams: URLSearchParams
+): RawPostsSearchParams {
+  const rawSearchParams: RawPostsSearchParams = {};
+
+  for (const key of searchParams.keys()) {
+    const values = searchParams.getAll(key);
+
+    if (values.length === 0) {
+      continue;
+    }
+
+    rawSearchParams[key as keyof RawPostsSearchParams] =
+      values.length === 1 ? values[0] : values;
+  }
+
+  return rawSearchParams;
 }

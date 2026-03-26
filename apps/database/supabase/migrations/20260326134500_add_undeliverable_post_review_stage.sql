@@ -24,6 +24,13 @@ drop function if exists public.get_workspace_post_review_base_rows(
   timestamptz,
   text
 );
+drop function if exists public.get_post_review_stage(
+  boolean,
+  public.approval_status,
+  uuid,
+  text,
+  text
+);
 
 create or replace function public.get_post_review_stage(
   p_has_check boolean,
