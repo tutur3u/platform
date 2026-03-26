@@ -232,4 +232,78 @@ describe('useProgressiveBoardLoader', () => {
     expect(tasks?.[0]?.list_id).toBe('todo-list');
     expect(tasks?.[0]).not.toHaveProperty('_localMutationAt');
   });
+
+  it('revalidates loaded lists without clearing other list tasks', async () => {
+    const existingOtherListTask: Task = {
+      id: 'task-other',
+      display_number: 20,
+      name: 'Other list task',
+      list_id: 'list-2',
+      created_at: '2026-03-19T00:00:00.000Z',
+    };
+
+    const staleListTask: Task = {
+      id: 'task-1',
+      display_number: 1,
+      name: 'Stale list task',
+      list_id: 'list-1',
+      created_at: '2026-03-19T00:00:00.000Z',
+    };
+
+    queryClient.setQueryData(
+      ['tasks', 'board-1'],
+      [staleListTask, existingOtherListTask]
+    );
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1'),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.loadListPage('list-1', 0);
+      await result.current.loadListPage('list-1', 1);
+    });
+
+    vi.mocked(listWorkspaceTasks)
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            ...staleListTask,
+            name: 'Fresh page 0 task',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        tasks: [
+          {
+            id: 'task-2',
+            display_number: 2,
+            name: 'Fresh page 1 task',
+            list_id: 'list-1',
+            created_at: '2026-03-19T01:00:00.000Z',
+          },
+        ],
+      });
+
+    await act(async () => {
+      await result.current.revalidateLoadedLists();
+    });
+
+    const finalTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
+    expect(finalTasks).toEqual([
+      {
+        ...staleListTask,
+        name: 'Fresh page 0 task',
+      },
+      existingOtherListTask,
+      {
+        id: 'task-2',
+        display_number: 2,
+        name: 'Fresh page 1 task',
+        list_id: 'list-1',
+        created_at: '2026-03-19T01:00:00.000Z',
+      },
+    ]);
+  });
 });
