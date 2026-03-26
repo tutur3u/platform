@@ -74,7 +74,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
       return;
     }
 
-    setState(() {
+    _updateState(() {
       if (_validationErrors.isNotEmpty) {
         _validationErrors = const <String, String>{};
       }
@@ -85,7 +85,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final loadToken = ++_loadToken;
 
-    setState(() {
+    _updateState(() {
       _isLoading = true;
       _error = null;
       _hasAccess = false;
@@ -97,7 +97,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
         return;
       }
 
-      setState(() => _isLoading = false);
+      _updateState(() => _isLoading = false);
       return;
     }
 
@@ -114,7 +114,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
         manageWorkspaceRolesPermission,
       );
       if (!hasAccess) {
-        setState(() {
+        _updateState(() {
           _hasAccess = false;
           _isLoading = false;
         });
@@ -127,7 +127,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
         return;
       }
 
-      setState(() {
+      _updateState(() {
         _hasAccess = true;
         _isLoading = false;
         _error = null;
@@ -139,7 +139,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
       }
 
       final message = error.toString().trim();
-      setState(() {
+      _updateState(() {
         _isLoading = false;
         _error = message.isNotEmpty
             ? message
@@ -160,11 +160,11 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
   Future<void> _savePolicies() async {
     final validationErrors = _validatePolicies();
     if (validationErrors.isNotEmpty) {
-      setState(() => _validationErrors = validationErrors);
+      _updateState(() => _validationErrors = validationErrors);
       return;
     }
 
-    setState(() {
+    _updateState(() {
       _isSaving = true;
       _validationErrors = const <String, String>{};
     });
@@ -177,7 +177,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
         return;
       }
 
-      setState(() {
+      _updateState(() {
         _isSaving = false;
         _applyPolicies(updatedPolicies);
       });
@@ -189,7 +189,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
         return;
       }
 
-      setState(() => _isSaving = false);
+      _updateState(() => _isSaving = false);
       final message = error.toString().trim();
       _showToast(
         message: message.isNotEmpty

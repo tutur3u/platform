@@ -42,11 +42,9 @@ void main() {
         const MobileVersionPolicies(
           ios: MobilePlatformVersionPolicy(
             effectiveVersion: '1.4.0',
-            minimumVersion: null,
             storeUrl: 'https://apps.apple.com/app/id1',
           ),
           android: MobilePlatformVersionPolicy(
-            effectiveVersion: null,
             minimumVersion: '1.2.0',
             storeUrl:
                 'https://play.google.com/store/apps/details?id=example.app',
@@ -76,7 +74,7 @@ void main() {
                 'minimumVersion': '1.3.0',
                 'storeUrl': 'https://apps.apple.com/app/id1',
               },
-              'android': {
+              'android': <String, dynamic>{
                 'effectiveVersion': null,
                 'minimumVersion': null,
                 'storeUrl': null,
@@ -92,7 +90,7 @@ void main() {
                 'minimumVersion': '1.3.0',
                 'storeUrl': 'https://apps.apple.com/app/id1',
               },
-              'android': {
+              'android': <String, dynamic>{
                 'effectiveVersion': null,
                 'minimumVersion': null,
                 'storeUrl': null,

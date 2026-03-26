@@ -59,6 +59,10 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
   String? _error;
   int _loadToken = 0;
 
+  void _updateState(VoidCallback callback) {
+    setState(callback);
+  }
+
   @override
   void initState() {
     super.initState();
