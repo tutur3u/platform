@@ -1,6 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
@@ -99,6 +100,31 @@ void main() {
       expect(find.text('Back'), findsOneWidget);
       expect(find.text('user@test.com'), findsOneWidget);
       expect(find.byType(shad.TextField), findsOneWidget);
+    });
+
+    testWidgets('rebuilds to show localized auth errors from errorCode', (
+      tester,
+    ) async {
+      const initialState = AuthState.unauthenticated();
+      final errorState = const AuthState.unauthenticated().copyWith(
+        errorCode: AuthErrorCode.googleBrowserLaunchFailed,
+      );
+      when(() => authCubit.state).thenReturn(initialState);
+      whenListen(
+        authCubit,
+        Stream<AuthState>.fromIterable([errorState]),
+        initialState: initialState,
+      );
+
+      await tester.pumpApp(
+        BlocProvider.value(value: authCubit, child: const LoginPage()),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('Unable to open Google sign-in right now.'),
+        findsOneWidget,
+      );
     });
   });
 }
