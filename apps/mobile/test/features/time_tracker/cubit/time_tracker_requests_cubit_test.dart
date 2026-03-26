@@ -86,6 +86,52 @@ void main() {
 
       await cubit.close();
     });
+
+    test('persists status override for subsequent reloads', () async {
+      final cubit = TimeTrackerRequestsCubit(repository: repository);
+
+      when(
+        () => repository.getRequests('ws_1', status: 'approved'),
+      ).thenAnswer(
+        (_) async => [_request('req_approved', ApprovalStatus.approved)],
+      );
+
+      await cubit.loadRequests('ws_1', statusOverride: 'approved');
+      await cubit.loadRequests('ws_1');
+
+      expect(cubit.state.selectedStatus, ApprovalStatus.approved);
+      verify(
+        () => repository.getRequests('ws_1', status: 'approved'),
+      ).called(2);
+
+      await cubit.close();
+    });
+
+    test('persists all override as no status filter', () async {
+      final cubit = TimeTrackerRequestsCubit(repository: repository);
+
+      when(
+        () => repository.getRequests('ws_1', status: 'all'),
+      ).thenAnswer((_) async => [_request('req_all', ApprovalStatus.pending)]);
+      when(
+        () => repository.getRequests('ws_1'),
+      ).thenAnswer(
+        (_) async => [_request('req_all_2', ApprovalStatus.pending)],
+      );
+
+      await cubit.loadRequests('ws_1', statusOverride: 'all');
+      await cubit.loadRequests('ws_1');
+
+      expect(cubit.state.selectedStatus, isNull);
+      verify(
+        () => repository.getRequests('ws_1', status: 'all'),
+      ).called(1);
+      verify(
+        () => repository.getRequests('ws_1'),
+      ).called(1);
+
+      await cubit.close();
+    });
   });
 }
 

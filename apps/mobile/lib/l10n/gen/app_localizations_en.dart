@@ -2890,6 +2890,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestsTitle => 'Requests';
 
   @override
+  String get timerRequestsFilterAllStatuses => 'All';
+
+  @override
+  String get timerRequestsFilterTitle => 'Filter requests';
+
+  @override
+  String get timerRequestsFilterStatusLabel => 'Status';
+
+  @override
+  String get timerRequestsFilterUserLabel => 'User';
+
+  @override
+  String get timerRequestsFilterAllUsers => 'All users';
+
+  @override
+  String get timerRequestsFilterClear => 'Clear filters';
+
+  @override
+  String get timerRequestsFilterApply => 'Apply filters';
+
+  @override
   String get timerRequestPending => 'Pending';
 
   @override

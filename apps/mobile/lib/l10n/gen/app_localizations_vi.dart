@@ -2890,6 +2890,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestsTitle => 'Yêu cầu';
 
   @override
+  String get timerRequestsFilterAllStatuses => 'Tất cả';
+
+  @override
+  String get timerRequestsFilterTitle => 'Lọc yêu cầu';
+
+  @override
+  String get timerRequestsFilterStatusLabel => 'Trạng thái';
+
+  @override
+  String get timerRequestsFilterUserLabel => 'Người dùng';
+
+  @override
+  String get timerRequestsFilterAllUsers => 'Tất cả người dùng';
+
+  @override
+  String get timerRequestsFilterClear => 'Xóa bộ lọc';
+
+  @override
+  String get timerRequestsFilterApply => 'Áp dụng bộ lọc';
+
+  @override
   String get timerRequestPending => 'Đang chờ';
 
   @override

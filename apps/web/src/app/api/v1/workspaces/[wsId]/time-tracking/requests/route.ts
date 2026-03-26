@@ -4,6 +4,7 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -238,9 +239,34 @@ export async function GET(
       );
     }
 
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const canManageAllRequests = permissions.containsPermission(
+      'manage_time_tracking_requests'
+    );
+
     const url = new URL(request.url);
     const status = url.searchParams.get('status') || 'pending'; // 'pending', 'approved', 'rejected'
     const userId = url.searchParams.get('userId'); // Optional: filter by user
+    const normalizedUserId = userId?.trim();
+
+    if (
+      !canManageAllRequests &&
+      normalizedUserId &&
+      normalizedUserId !== user.id
+    ) {
+      return NextResponse.json(
+        { error: "You do not have permission to view other users' requests." },
+        { status: 403 }
+      );
+    }
+
+    const effectiveUserId = canManageAllRequests ? normalizedUserId : user.id;
 
     // Safe pagination parsing with bounds checking
     const pageParam = Number(url.searchParams.get('page') || '1');
@@ -272,8 +298,8 @@ export async function GET(
     }
 
     // Filter by user if specified
-    if (userId) {
-      countQuery = countQuery.eq('user_id', userId);
+    if (effectiveUserId) {
+      countQuery = countQuery.eq('user_id', effectiveUserId);
     }
 
     // Execute count query with explicit error handling
@@ -338,8 +364,8 @@ export async function GET(
     }
 
     // Filter by user if specified
-    if (userId) {
-      query = query.eq('user_id', userId);
+    if (effectiveUserId) {
+      query = query.eq('user_id', effectiveUserId);
     }
 
     // Apply pagination and ordering
