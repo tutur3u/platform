@@ -2,18 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
 import 'package:mobile/features/time_tracker/widgets/pomodoro_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
@@ -21,6 +20,7 @@ import 'package:mobile/features/time_tracker/widgets/timer_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerSection { timer, history, stats }
@@ -234,20 +234,85 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
               return _ErrorView(error: state.error);
             }
 
-            return ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: IndexedStack(
-                index: _index,
-                children: [
-                  TimerTab(onSeeAll: () => context.push(Routes.timerHistory)),
-                  const HistoryTab(),
-                  StatsTab(initialScope: widget.initialStatsScope),
-                ],
-              ),
+            return Stack(
+              children: [
+                ResponsiveWrapper(
+                  maxWidth: ResponsivePadding.maxContentWidth(
+                    context.deviceClass,
+                  ),
+                  child: IndexedStack(
+                    index: _index,
+                    children: [
+                      const TimerTab(),
+                      const HistoryTab(),
+                      StatsTab(initialScope: widget.initialStatsScope),
+                    ],
+                  ),
+                ),
+                ExtendedFab(
+                  icon: shad.LucideIcons.plus,
+                  label: l10n.timerAddMissedEntry,
+                  onPressed: () => unawaited(_openMissedEntryDialog(context)),
+                ),
+              ],
             );
           },
         ),
       ),
+    );
+  }
+
+  Future<void> _openMissedEntryDialog(BuildContext context) async {
+    final cubit = context.read<TimeTrackerCubit>();
+    final wsId =
+        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
+    final userId = supabase.auth.currentUser?.id ?? '';
+    if (wsId.isEmpty || userId.isEmpty) {
+      return;
+    }
+
+    await showMissedEntryDialogFlow(
+      context,
+      wsId: wsId,
+      userId: userId,
+      categories: cubit.state.categories,
+      thresholdDays: cubit.state.thresholdDays,
+      onCreateMissedEntry:
+          ({
+            required title,
+            required startTime,
+            required endTime,
+            categoryId,
+            description,
+          }) => cubit.createMissedEntry(
+            wsId,
+            userId,
+            title: title,
+            categoryId: categoryId,
+            startTime: startTime,
+            endTime: endTime,
+            description: description,
+            throwOnError: true,
+          ),
+      onCreateMissedEntryAsRequest:
+          ({
+            required title,
+            required startTime,
+            required endTime,
+            required imageLocalPaths,
+            categoryId,
+            description,
+          }) => cubit.createMissedEntryAsRequest(
+            wsId,
+            userId,
+            title: title,
+            categoryId: categoryId,
+            startTime: startTime,
+            endTime: endTime,
+            description: description,
+            imageLocalPaths: imageLocalPaths,
+            throwOnError: true,
+          ),
     );
   }
 

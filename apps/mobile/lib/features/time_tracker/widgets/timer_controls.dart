@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerControls extends StatelessWidget {
@@ -11,7 +10,6 @@ class TimerControls extends StatelessWidget {
     required this.onStop,
     required this.onPause,
     required this.onResume,
-    required this.onAddMissedEntry,
     this.areActionButtonsDisabled = false,
     this.isPauseLoading = false,
     this.isStopLoading = false,
@@ -25,7 +23,6 @@ class TimerControls extends StatelessWidget {
   final VoidCallback onStop;
   final VoidCallback onPause;
   final VoidCallback onResume;
-  final VoidCallback onAddMissedEntry;
   final bool areActionButtonsDisabled;
   final bool isPauseLoading;
   final bool isStopLoading;
@@ -33,7 +30,6 @@ class TimerControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final double primarySize = responsiveValue(
       context,
       compact: 72,
@@ -97,20 +93,6 @@ class TimerControls extends StatelessWidget {
             ],
           ],
         ),
-        if (!isRunning && !isPaused) ...[
-          const shad.Gap(16),
-          shad.OutlineButton(
-            onPressed: areActionButtonsDisabled ? null : onAddMissedEntry,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(shad.LucideIcons.plus, size: 18),
-                const shad.Gap(8),
-                Text(l10n.timerAddMissedEntry),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }

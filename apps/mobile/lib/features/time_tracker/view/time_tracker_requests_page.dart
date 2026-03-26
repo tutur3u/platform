@@ -16,12 +16,14 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.dart';
+import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_filter_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
@@ -167,83 +169,160 @@ class _RequestsViewState extends State<_RequestsView> {
           ],
         ),
       ],
-      child: ResponsiveWrapper(
-        maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-        child: Builder(
-          builder: (context) {
-            if (workspaceState.status == WorkspaceStatus.initial ||
-                workspaceState.status == WorkspaceStatus.loading) {
-              return const Center(child: shad.CircularProgressIndicator());
-            }
-
-            if (workspaceState.currentWorkspace == null) {
-              return Center(
-                child: Text(
-                  l10n.assistantSelectWorkspace,
-                  style: shad.Theme.of(context).typography.textMuted,
-                ),
-              );
-            }
-
-            return BlocBuilder<
-              TimeTrackerRequestsCubit,
-              TimeTrackerRequestsState
-            >(
-              builder: (context, state) {
-                if (state.status == TimeTrackerRequestsStatus.initial ||
-                    state.status == TimeTrackerRequestsStatus.loading) {
+      child: Stack(
+        children: [
+          ResponsiveWrapper(
+            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+            child: Builder(
+              builder: (context) {
+                if (workspaceState.status == WorkspaceStatus.initial ||
+                    workspaceState.status == WorkspaceStatus.loading) {
                   return const Center(child: shad.CircularProgressIndicator());
                 }
 
-                if (state.status == TimeTrackerRequestsStatus.error) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          shad.LucideIcons.circleAlert,
-                          size: 48,
-                          color: shad.Theme.of(context).colorScheme.destructive,
-                        ),
-                        const shad.Gap(16),
-                        Text(state.error ?? 'Error'),
-                        const shad.Gap(16),
-                        shad.SecondaryButton(
-                          onPressed: () => unawaited(_loadRequests()),
-                          child: Text(l10n.commonRetry),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (state.requests.isEmpty) {
+                if (workspaceState.currentWorkspace == null) {
                   return Center(
                     child: Text(
-                      l10n.timerNoSessions,
+                      l10n.assistantSelectWorkspace,
                       style: shad.Theme.of(context).typography.textMuted,
                     ),
                   );
                 }
 
-                return RefreshIndicator(
-                  onRefresh: _loadRequests,
-                  child: ListView.builder(
-                    itemCount: state.requests.length,
-                    padding: const EdgeInsets.only(bottom: 32),
-                    itemBuilder: (context, index) {
-                      final request = state.requests[index];
-                      return _RequestTile(
-                        request: request,
-                        onTap: () => _showRequestDetail(context, request),
+                return BlocBuilder<
+                  TimeTrackerRequestsCubit,
+                  TimeTrackerRequestsState
+                >(
+                  builder: (context, state) {
+                    if (state.status == TimeTrackerRequestsStatus.initial ||
+                        state.status == TimeTrackerRequestsStatus.loading) {
+                      return const Center(
+                        child: shad.CircularProgressIndicator(),
                       );
-                    },
-                  ),
+                    }
+
+                    if (state.status == TimeTrackerRequestsStatus.error) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              shad.LucideIcons.circleAlert,
+                              size: 48,
+                              color: shad.Theme.of(
+                                context,
+                              ).colorScheme.destructive,
+                            ),
+                            const shad.Gap(16),
+                            Text(state.error ?? 'Error'),
+                            const shad.Gap(16),
+                            shad.SecondaryButton(
+                              onPressed: () => unawaited(_loadRequests()),
+                              child: Text(l10n.commonRetry),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (state.requests.isEmpty) {
+                      return Center(
+                        child: Text(
+                          l10n.timerNoSessions,
+                          style: shad.Theme.of(context).typography.textMuted,
+                        ),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: _loadRequests,
+                      child: ListView.builder(
+                        itemCount: state.requests.length,
+                        padding: const EdgeInsets.only(bottom: 96),
+                        itemBuilder: (context, index) {
+                          final request = state.requests[index];
+                          return _RequestTile(
+                            request: request,
+                            onTap: () => _showRequestDetail(context, request),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 );
               },
-            );
-          },
-        ),
+            ),
+          ),
+          ExtendedFab(
+            icon: shad.LucideIcons.plus,
+            label: l10n.timerAddMissedEntry,
+            onPressed: () => unawaited(_openMissedEntryDialog()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openMissedEntryDialog() async {
+    final wsId = _permissionsWorkspaceId;
+    final userId = _currentUserId();
+    if (wsId == null || wsId.isEmpty || userId == null || userId.isEmpty) {
+      return;
+    }
+
+    final repository = context.read<ITimeTrackerRepository>();
+    final cubit = context.read<TimeTrackerRequestsCubit>();
+
+    final categories = await repository.getCategories(wsId);
+    if (!mounted) {
+      return;
+    }
+
+    await showMissedEntryDialogFlow(
+      context,
+      wsId: wsId,
+      userId: userId,
+      categories: categories,
+      thresholdDays: _missedEntryDateThreshold,
+      onCreateMissedEntry:
+          ({
+            required title,
+            required startTime,
+            required endTime,
+            categoryId,
+            description,
+          }) => repository.createMissedEntry(
+            wsId,
+            title: title,
+            categoryId: categoryId,
+            startTime: startTime,
+            endTime: endTime,
+            description: description,
+          ),
+      onCreateMissedEntryAsRequest:
+          ({
+            required title,
+            required startTime,
+            required endTime,
+            required imageLocalPaths,
+            categoryId,
+            description,
+          }) => repository.createRequest(
+            wsId,
+            title: title,
+            categoryId: categoryId,
+            startTime: startTime,
+            endTime: endTime,
+            description: description,
+            imageLocalPaths: imageLocalPaths,
+          ),
+      onAfterSave: () => cubit.filterByStatus(
+        _statusFromFilter(_selectedFilter),
+        wsId,
+        userId: _requestUserFilterId(),
+        statusOverride: _selectedFilter == TimeTrackerRequestStatusFilter.all
+            ? 'all'
+            : approvalStatusToString(_statusFromFilter(_selectedFilter)!),
       ),
     );
   }
