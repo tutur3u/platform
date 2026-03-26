@@ -3853,6 +3853,92 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get notificationsTitle => 'Thông báo';
+
+  @override
+  String notificationsSubtitle(int count) {
+    return '$count chưa đọc';
+  }
+
+  @override
+  String get notificationsInbox => 'Hộp thư';
+
+  @override
+  String get notificationsArchive => 'Lưu trữ';
+
+  @override
+  String get notificationsArchiveAll => 'Lưu trữ tất cả';
+
+  @override
+  String get notificationsArchiveAllError => 'Không thể lưu trữ thông báo lúc này';
+
+  @override
+  String get notificationsMarkRead => 'Đánh dấu đã đọc';
+
+  @override
+  String get notificationsMarkUnread => 'Đánh dấu chưa đọc';
+
+  @override
+  String get notificationsLoadingMore => 'Đang tải thêm...';
+
+  @override
+  String get notificationsInboxEmptyTitle => 'Không có thông báo chưa đọc';
+
+  @override
+  String get notificationsInboxEmptyMessage => 'Hoạt động mới, nhắc đến và lời mời sẽ xuất hiện ở đây.';
+
+  @override
+  String get notificationsArchiveEmptyTitle => 'Không có thông báo đã lưu trữ';
+
+  @override
+  String get notificationsArchiveEmptyMessage => 'Thông báo đã đọc sẽ chuyển vào đây sau khi bạn xử lý xong.';
+
+  @override
+  String get notificationsLoadErrorTitle => 'Không thể tải thông báo';
+
+  @override
+  String get notificationsLoadErrorMessage => 'Vui lòng thử lại sau ít phút.';
+
+  @override
+  String get notificationsAcceptInvite => 'Chấp nhận';
+
+  @override
+  String get notificationsDeclineInvite => 'Từ chối';
+
+  @override
+  String get notificationsInviteAccepted => 'Đã chấp nhận lời mời';
+
+  @override
+  String get notificationsInviteDeclined => 'Đã từ chối lời mời';
+
+  @override
+  String get notificationsInviteActionError => 'Không thể cập nhật lời mời lúc này';
+
+  @override
+  String get notificationsOpenAction => 'Mở công việc';
+
+  @override
+  String get notificationsOpenUnsupported => 'Thông báo này chưa thể mở trên mobile';
+
+  @override
+  String get notificationsJustNow => 'Vừa xong';
+
+  @override
+  String notificationsMinutesAgo(int count) {
+    return '$count phút trước';
+  }
+
+  @override
+  String notificationsHoursAgo(int count) {
+    return '$count giờ trước';
+  }
+
+  @override
+  String notificationsDaysAgo(int count) {
+    return '$count ngày trước';
+  }
+
+  @override
   String get mfaTitle => 'Xác thực hai yếu tố';
 
   @override

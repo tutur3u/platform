@@ -33,6 +33,38 @@ abstract final class ProfileEndpoints {
   static const avatar = '/api/v1/users/me/avatar';
 }
 
+/// Notification endpoint paths.
+abstract final class NotificationEndpoints {
+  static const base = '/api/v1/notifications';
+
+  static String notifications(Map<String, String> params) {
+    if (params.isEmpty) {
+      return base;
+    }
+
+    return '$base?${Uri(queryParameters: params).query}';
+  }
+
+  static String unreadCount({String? wsId}) {
+    if (wsId == null) {
+      return '$base/unread-count';
+    }
+
+    return '$base/unread-count?${Uri(queryParameters: {'wsId': wsId}).query}';
+  }
+
+  static String notification(String notificationId) => '$base/$notificationId';
+
+  static String metadata(String notificationId) =>
+      '$base/$notificationId/metadata';
+
+  static String acceptInvite(String wsId) =>
+      '/api/workspaces/$wsId/accept-invite';
+
+  static String declineInvite(String wsId) =>
+      '/api/workspaces/$wsId/decline-invite';
+}
+
 /// Public mobile-specific endpoint paths.
 abstract final class MobileEndpoints {
   static const versionCheck = '/api/v1/mobile/version-check';

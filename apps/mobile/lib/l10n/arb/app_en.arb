@@ -1553,6 +1553,53 @@
         }
     },
 
+    "notificationsTitle": "Notifications",
+    "notificationsSubtitle": "{count} unread",
+    "@notificationsSubtitle": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsInbox": "Inbox",
+    "notificationsArchive": "Archive",
+    "notificationsArchiveAll": "Archive all",
+    "notificationsArchiveAllError": "Couldn't archive notifications right now",
+    "notificationsMarkRead": "Mark as read",
+    "notificationsMarkUnread": "Mark as unread",
+    "notificationsLoadingMore": "Loading more...",
+    "notificationsInboxEmptyTitle": "No unread notifications",
+    "notificationsInboxEmptyMessage": "New activity, mentions, and invites will show up here.",
+    "notificationsArchiveEmptyTitle": "No archived notifications",
+    "notificationsArchiveEmptyMessage": "Read notifications will move here after you've cleared them.",
+    "notificationsLoadErrorTitle": "Couldn't load notifications",
+    "notificationsLoadErrorMessage": "Try again in a moment.",
+    "notificationsAcceptInvite": "Accept",
+    "notificationsDeclineInvite": "Decline",
+    "notificationsInviteAccepted": "Invite accepted",
+    "notificationsInviteDeclined": "Invite declined",
+    "notificationsInviteActionError": "Couldn't update this invite right now",
+    "notificationsOpenAction": "Open task",
+    "notificationsOpenUnsupported": "This notification can't be opened yet",
+    "notificationsJustNow": "Just now",
+    "notificationsMinutesAgo": "{count}m ago",
+    "@notificationsMinutesAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsHoursAgo": "{count}h ago",
+    "@notificationsHoursAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsDaysAgo": "{count}d ago",
+    "@notificationsDaysAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+
     "mfaTitle": "Two-factor authentication",
     "mfaSubtitle": "Enter the code from your authenticator app",
     "mfaCodeLabel": "6-digit code",

@@ -3859,6 +3859,92 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String notificationsSubtitle(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String get notificationsInbox => 'Inbox';
+
+  @override
+  String get notificationsArchive => 'Archive';
+
+  @override
+  String get notificationsArchiveAll => 'Archive all';
+
+  @override
+  String get notificationsArchiveAllError => 'Couldn\'t archive notifications right now';
+
+  @override
+  String get notificationsMarkRead => 'Mark as read';
+
+  @override
+  String get notificationsMarkUnread => 'Mark as unread';
+
+  @override
+  String get notificationsLoadingMore => 'Loading more...';
+
+  @override
+  String get notificationsInboxEmptyTitle => 'No unread notifications';
+
+  @override
+  String get notificationsInboxEmptyMessage => 'New activity, mentions, and invites will show up here.';
+
+  @override
+  String get notificationsArchiveEmptyTitle => 'No archived notifications';
+
+  @override
+  String get notificationsArchiveEmptyMessage => 'Read notifications will move here after you\'ve cleared them.';
+
+  @override
+  String get notificationsLoadErrorTitle => 'Couldn\'t load notifications';
+
+  @override
+  String get notificationsLoadErrorMessage => 'Try again in a moment.';
+
+  @override
+  String get notificationsAcceptInvite => 'Accept';
+
+  @override
+  String get notificationsDeclineInvite => 'Decline';
+
+  @override
+  String get notificationsInviteAccepted => 'Invite accepted';
+
+  @override
+  String get notificationsInviteDeclined => 'Invite declined';
+
+  @override
+  String get notificationsInviteActionError => 'Couldn\'t update this invite right now';
+
+  @override
+  String get notificationsOpenAction => 'Open task';
+
+  @override
+  String get notificationsOpenUnsupported => 'This notification can\'t be opened yet';
+
+  @override
+  String get notificationsJustNow => 'Just now';
+
+  @override
+  String notificationsMinutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String notificationsHoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String notificationsDaysAgo(int count) {
+    return '${count}d ago';
+  }
+
+  @override
   String get mfaTitle => 'Two-factor authentication';
 
   @override

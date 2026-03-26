@@ -7399,6 +7399,162 @@ abstract class AppLocalizations {
   /// **'{current} of {limit} workspaces used'**
   String workspaceCreateLimitInfo(int current, int limit);
 
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unread'**
+  String notificationsSubtitle(int count);
+
+  /// No description provided for @notificationsInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get notificationsInbox;
+
+  /// No description provided for @notificationsArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get notificationsArchive;
+
+  /// No description provided for @notificationsArchiveAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive all'**
+  String get notificationsArchiveAll;
+
+  /// No description provided for @notificationsArchiveAllError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t archive notifications right now'**
+  String get notificationsArchiveAllError;
+
+  /// No description provided for @notificationsMarkRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get notificationsMarkRead;
+
+  /// No description provided for @notificationsMarkUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as unread'**
+  String get notificationsMarkUnread;
+
+  /// No description provided for @notificationsLoadingMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more...'**
+  String get notificationsLoadingMore;
+
+  /// No description provided for @notificationsInboxEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No unread notifications'**
+  String get notificationsInboxEmptyTitle;
+
+  /// No description provided for @notificationsInboxEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New activity, mentions, and invites will show up here.'**
+  String get notificationsInboxEmptyMessage;
+
+  /// No description provided for @notificationsArchiveEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived notifications'**
+  String get notificationsArchiveEmptyTitle;
+
+  /// No description provided for @notificationsArchiveEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Read notifications will move here after you\'ve cleared them.'**
+  String get notificationsArchiveEmptyMessage;
+
+  /// No description provided for @notificationsLoadErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load notifications'**
+  String get notificationsLoadErrorTitle;
+
+  /// No description provided for @notificationsLoadErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in a moment.'**
+  String get notificationsLoadErrorMessage;
+
+  /// No description provided for @notificationsAcceptInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get notificationsAcceptInvite;
+
+  /// No description provided for @notificationsDeclineInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get notificationsDeclineInvite;
+
+  /// No description provided for @notificationsInviteAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite accepted'**
+  String get notificationsInviteAccepted;
+
+  /// No description provided for @notificationsInviteDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite declined'**
+  String get notificationsInviteDeclined;
+
+  /// No description provided for @notificationsInviteActionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update this invite right now'**
+  String get notificationsInviteActionError;
+
+  /// No description provided for @notificationsOpenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open task'**
+  String get notificationsOpenAction;
+
+  /// No description provided for @notificationsOpenUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This notification can\'t be opened yet'**
+  String get notificationsOpenUnsupported;
+
+  /// No description provided for @notificationsJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get notificationsJustNow;
+
+  /// No description provided for @notificationsMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String notificationsMinutesAgo(int count);
+
+  /// No description provided for @notificationsHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h ago'**
+  String notificationsHoursAgo(int count);
+
+  /// No description provided for @notificationsDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String notificationsDaysAgo(int count);
+
   /// No description provided for @mfaTitle.
   ///
   /// In en, this message translates to:

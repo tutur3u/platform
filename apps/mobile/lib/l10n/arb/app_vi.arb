@@ -1557,6 +1557,53 @@
         }
     },
 
+    "notificationsTitle": "Thông báo",
+    "notificationsSubtitle": "{count} chưa đọc",
+    "@notificationsSubtitle": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsInbox": "Hộp thư",
+    "notificationsArchive": "Lưu trữ",
+    "notificationsArchiveAll": "Lưu trữ tất cả",
+    "notificationsArchiveAllError": "Không thể lưu trữ thông báo lúc này",
+    "notificationsMarkRead": "Đánh dấu đã đọc",
+    "notificationsMarkUnread": "Đánh dấu chưa đọc",
+    "notificationsLoadingMore": "Đang tải thêm...",
+    "notificationsInboxEmptyTitle": "Không có thông báo chưa đọc",
+    "notificationsInboxEmptyMessage": "Hoạt động mới, nhắc đến và lời mời sẽ xuất hiện ở đây.",
+    "notificationsArchiveEmptyTitle": "Không có thông báo đã lưu trữ",
+    "notificationsArchiveEmptyMessage": "Thông báo đã đọc sẽ chuyển vào đây sau khi bạn xử lý xong.",
+    "notificationsLoadErrorTitle": "Không thể tải thông báo",
+    "notificationsLoadErrorMessage": "Vui lòng thử lại sau ít phút.",
+    "notificationsAcceptInvite": "Chấp nhận",
+    "notificationsDeclineInvite": "Từ chối",
+    "notificationsInviteAccepted": "Đã chấp nhận lời mời",
+    "notificationsInviteDeclined": "Đã từ chối lời mời",
+    "notificationsInviteActionError": "Không thể cập nhật lời mời lúc này",
+    "notificationsOpenAction": "Mở công việc",
+    "notificationsOpenUnsupported": "Thông báo này chưa thể mở trên mobile",
+    "notificationsJustNow": "Vừa xong",
+    "notificationsMinutesAgo": "{count} phút trước",
+    "@notificationsMinutesAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsHoursAgo": "{count} giờ trước",
+    "@notificationsHoursAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsDaysAgo": "{count} ngày trước",
+    "@notificationsDaysAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+
     "mfaTitle": "Xác thực hai yếu tố",
     "mfaSubtitle": "Nhập mã từ ứng dụng xác thực của bạn",
     "mfaCodeLabel": "Mã gồm 6 chữ số",
