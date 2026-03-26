@@ -19,6 +19,7 @@ export const POST_REVIEW_STAGES = [
   'missing_check',
   'pending_approval',
   'approved_awaiting_delivery',
+  'undeliverable',
   'queued',
   'processing',
   'sent',
@@ -31,6 +32,9 @@ export const DEFAULT_POST_REVIEW_STAGE = 'pending_approval' as const;
 
 export type PostApprovalStatus = (typeof POST_APPROVAL_STATUSES)[number];
 export type PostReviewStage = (typeof POST_REVIEW_STAGES)[number];
+export type PostDeliveryIssueReason =
+  | 'missing_email'
+  | 'missing_sender_platform_user';
 
 export function isPostApprovalStatus(
   value?: string
@@ -42,16 +46,28 @@ export function isPostReviewStage(value?: string): value is PostReviewStage {
   return POST_REVIEW_STAGES.includes(value as PostReviewStage);
 }
 
-export interface PostsSearchParams {
-  page?: string;
-  pageSize?: string;
+export interface RawPostsSearchParams {
+  page?: string | string[];
+  pageSize?: string | string[];
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
-  userId?: string;
+  userId?: string | string[];
   stage?: string | string[];
-  queueStatus?: string;
-  approvalStatus?: string;
-  cursor?: string;
+  queueStatus?: string | string[];
+  approvalStatus?: string | string[];
+  cursor?: string | string[];
+}
+
+export interface PostsSearchParams {
+  page?: number | null;
+  pageSize?: number | null;
+  includedGroups?: string[] | null;
+  excludedGroups?: string[] | null;
+  userId?: string | null;
+  stage?: PostReviewStage | null;
+  queueStatus?: PostEmailQueueStatus | null;
+  approvalStatus?: PostApprovalStatus | null;
+  cursor?: string | null;
 }
 
 export interface PostEmailStatusSummary {
@@ -101,6 +117,7 @@ export interface PostEmail {
   queue_attempt_count?: number;
   queue_last_error?: string | null;
   queue_sent_at?: string | null;
+  delivery_issue_reason?: PostDeliveryIssueReason | null;
   approval_status?: PostApprovalStatus;
   approval_rejection_reason?: string | null;
   can_remove_approval?: boolean;

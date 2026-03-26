@@ -8,6 +8,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
@@ -20,6 +21,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.d
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.dart';
 import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_filters.dart';
+import 'package:mobile/features/time_tracker/widgets/request_detail_shared.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_filter_sheet.dart';
@@ -314,7 +316,7 @@ class _RequestsViewState extends State<_RequestsView> {
                         onRefresh: _loadRequests,
                         child: ListView.builder(
                           itemCount: state.requests.length,
-                          padding: const EdgeInsets.only(bottom: 96),
+                          padding: const EdgeInsets.only(top: 8, bottom: 96),
                           itemBuilder: (context, index) {
                             final request = state.requests[index];
                             return _RequestTile(

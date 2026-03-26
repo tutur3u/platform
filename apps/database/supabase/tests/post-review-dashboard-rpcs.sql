@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(15);
 
 insert into public.users (id)
 values ('00000000-0000-0000-0000-00000000010A')
@@ -60,8 +60,17 @@ values
   ('00000000-0000-0000-0000-000000000116', '00000000-0000-0000-0000-00000000010B', 'Delivery Failed User', 'Delivery Failed User', 'delivery-failed@example.com'),
   ('00000000-0000-0000-0000-000000000117', '00000000-0000-0000-0000-00000000010B', 'Skipped User', 'Skipped User', 'skipped@example.com'),
   ('00000000-0000-0000-0000-000000000118', '00000000-0000-0000-0000-00000000010B', 'Rejected User', 'Rejected User', 'rejected@example.com'),
-  ('00000000-0000-0000-0000-000000000119', '00000000-0000-0000-0000-00000000010B', 'Missing Email Approved User', 'Missing Email Approved User', null)
+  ('00000000-0000-0000-0000-000000000119', '00000000-0000-0000-0000-00000000010B', 'Missing Email Approved User', 'Missing Email Approved User', null),
+  ('00000000-0000-0000-0000-000000000120', '00000000-0000-0000-0000-00000000010B', 'Missing Sender Mapping User', 'Missing Sender Mapping User', 'missing-sender@example.com')
 on conflict (id) do nothing;
+
+insert into public.workspace_user_linked_users (platform_user_id, virtual_user_id, ws_id)
+values (
+  '00000000-0000-0000-0000-00000000010A',
+  '00000000-0000-0000-0000-000000000111',
+  '00000000-0000-0000-0000-00000000010B'
+)
+on conflict do nothing;
 
 insert into public.workspace_user_groups (id, ws_id, name)
 values (
@@ -81,7 +90,8 @@ values
   ('00000000-0000-0000-0000-00000000010C', '00000000-0000-0000-0000-000000000116', 'USER'),
   ('00000000-0000-0000-0000-00000000010C', '00000000-0000-0000-0000-000000000117', 'USER'),
   ('00000000-0000-0000-0000-00000000010C', '00000000-0000-0000-0000-000000000118', 'USER'),
-  ('00000000-0000-0000-0000-00000000010C', '00000000-0000-0000-0000-000000000119', 'USER')
+  ('00000000-0000-0000-0000-00000000010C', '00000000-0000-0000-0000-000000000119', 'USER'),
+  ('00000000-0000-0000-0000-00000000010C', '00000000-0000-0000-0000-000000000120', 'USER')
 on conflict do nothing;
 
 insert into public.user_group_posts (
@@ -152,7 +162,8 @@ values
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000116', false, 'Blocked note', 'APPROVED', '00000000-0000-0000-0000-000000000111', now(), null),
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000117', true, 'Skipped note', 'SKIPPED', null, null, null),
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000118', false, 'Rejected note', 'REJECTED', null, null, null),
-  ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000119', true, 'Missing email approved note', 'APPROVED', '00000000-0000-0000-0000-000000000111', now(), null)
+  ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000119', true, 'Missing email approved note', 'APPROVED', '00000000-0000-0000-0000-000000000111', now(), null),
+  ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000120', true, 'Missing sender approved note', 'APPROVED', '00000000-0000-0000-0000-000000000120', now(), null)
 on conflict (post_id, user_id) do update
 set
   is_completed = excluded.is_completed,
@@ -211,8 +222,21 @@ select is(
     )
     where user_id = '00000000-0000-0000-0000-000000000119'
   ),
-  'delivery_failed',
-  'approved recipients without an email resolve to delivery_failed'
+  'undeliverable',
+  'approved recipients without an email resolve to undeliverable'
+);
+
+select is(
+  (
+    select review_stage
+    from public.get_workspace_post_review_rows(
+      p_ws_id => '00000000-0000-0000-0000-00000000010B',
+      p_limit => 20
+    )
+    where user_id = '00000000-0000-0000-0000-000000000120'
+  ),
+  'undeliverable',
+  'approved recipients without a sender mapping resolve to undeliverable'
 );
 
 select is(
@@ -300,7 +324,7 @@ select is(
       p_ws_id => '00000000-0000-0000-0000-00000000010B'
     )
   ),
-  9::bigint,
+  10::bigint,
   'workspace post review summary counts every recipient row'
 );
 
@@ -310,6 +334,7 @@ select is(
       missing_check_count
       + pending_approval_stage_count
       + approved_awaiting_delivery_count
+      + undeliverable_count
       + queued_stage_count
       + processing_stage_count
       + sent_stage_count
@@ -320,7 +345,7 @@ select is(
       p_ws_id => '00000000-0000-0000-0000-00000000010B'
     )
   ),
-  9::bigint,
+  10::bigint,
   'stage counts sum to total_count'
 );
 
@@ -333,7 +358,7 @@ select is(
       p_post_id => '00000000-0000-0000-0000-00000000010D'
     )
   ),
-  9::bigint,
+  10::bigint,
   'group post status summary counts all group members for the post'
 );
 
@@ -348,6 +373,17 @@ select is(
   ),
   1::bigint,
   'group post status summary reports missing-check recipients as unchecked'
+);
+
+select is(
+  (
+    select undeliverable_count
+    from public.get_workspace_post_review_summary(
+      p_ws_id => '00000000-0000-0000-0000-00000000010B'
+    )
+  ),
+  2::bigint,
+  'workspace post review summary reports undeliverable approved recipients separately'
 );
 
 select ok(

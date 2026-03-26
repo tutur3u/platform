@@ -1049,6 +1049,14 @@
     },
     "timerTaskPickerSearch": "Search tasks",
     "timerTaskIdPlaceholder": "Select a task",
+    "timerAttachmentCount": "{count, plural, =0{No attachments} one{1 attachment} other{{count} attachments}}",
+    "@timerAttachmentCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "timerRecentSessions": "Recent sessions",
     "timerSeeAll": "See all",
     "timerNoSessions": "No sessions yet",
@@ -1159,6 +1167,14 @@
     "timerRequestApproved": "Approved",
     "timerRequestRejected": "Rejected",
     "timerRequestNeedsInfo": "Needs info",
+    "timerRequestInfoRequestedBy": "Info requested by {name}",
+    "@timerRequestInfoRequestedBy": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
     "timerApprove": "Approve",
     "timerReject": "Reject",
     "timerRequestInfo": "Request info",

@@ -7147,6 +7147,8 @@
     "completed": "Hoàn thành",
     "created_at": "Ngày tạo",
     "delivery_failed": "Gửi thất bại",
+    "delivery_issue_reason_missing_email": "Người nhận này chưa có địa chỉ email hợp lệ để gửi.",
+    "delivery_issue_reason_missing_sender_platform_user": "Người phê duyệt chưa được liên kết với tài khoản người gửi trên nền tảng nên chưa thể đưa vào hàng đợi.",
     "details_description": "Chọn một người nhận để xem chi tiết quy trình kiểm tra, phê duyệt và gửi bài viết.",
     "details_title": "Chi tiết người nhận bài viết",
     "email": "Email",
@@ -7177,6 +7179,7 @@
     "skipped": "Đã bỏ qua",
     "stage": "Giai đoạn",
     "subject": "Chủ đề",
+    "undeliverable": "Không thể gửi",
     "view_post": "Xem bài viết"
   },
   "product-data-table": {

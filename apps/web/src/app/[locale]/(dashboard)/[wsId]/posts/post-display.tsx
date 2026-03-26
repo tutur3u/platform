@@ -62,6 +62,12 @@ export function PostDisplay({
   const queueAppearance = postEmail.queue_status
     ? getPostEmailStatusAppearance(postEmail.queue_status)
     : null;
+  const deliveryIssueMessage =
+    postEmail.delivery_issue_reason === 'missing_email'
+      ? t('delivery_issue_reason_missing_email')
+      : postEmail.delivery_issue_reason === 'missing_sender_platform_user'
+        ? t('delivery_issue_reason_missing_sender_platform_user')
+        : null;
   const hasFollowUp = Boolean(
     postEmail.approval_rejection_reason || postEmail.queue_last_error
   );
@@ -183,6 +189,17 @@ export function PostDisplay({
               </p>
               <p className="mt-1 text-dynamic-blue text-sm">
                 {t('missing_check_description')}
+              </p>
+            </div>
+          )}
+
+          {postEmail.stage === 'undeliverable' && deliveryIssueMessage && (
+            <div className="rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-3">
+              <p className="font-medium text-dynamic-orange text-xs uppercase tracking-wide">
+                {t('undeliverable')}
+              </p>
+              <p className="mt-1 text-dynamic-orange text-sm">
+                {deliveryIssueMessage}
               </p>
             </div>
           )}

@@ -4,8 +4,11 @@ import { redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import PostsClient from './client';
 import { getPostsPageData } from './data';
-import { buildCanonicalPostsSearchParams } from './search-params';
-import type { PostsSearchParams } from './types';
+import {
+  buildCanonicalPostsSearchParams,
+  postsSearchParamsCache,
+} from './search-params.server';
+import type { RawPostsSearchParams } from './types';
 
 export const metadata: Metadata = {
   title: 'Posts',
@@ -17,16 +20,17 @@ export default async function PostsPage({
   searchParams,
 }: {
   params: Promise<{ wsId: string; locale: string }>;
-  searchParams: Promise<PostsSearchParams>;
+  searchParams: Promise<RawPostsSearchParams>;
 }) {
   const { locale } = await params;
   const searchParamsData = await searchParams;
+  const parsedSearchParams = await postsSearchParamsCache.parse(searchParamsData);
 
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const canonicalSearchParams =
-          buildCanonicalPostsSearchParams(searchParamsData);
+          buildCanonicalPostsSearchParams(searchParamsData, parsedSearchParams);
 
         if (canonicalSearchParams) {
           redirect(`/${wsId}/posts?${canonicalSearchParams}`);
@@ -40,7 +44,7 @@ export default async function PostsPage({
 
         const { postsData, postsStatus } = await getPostsPageData(
           wsId,
-          searchParamsData
+          parsedSearchParams
         );
 
         return (
@@ -48,7 +52,7 @@ export default async function PostsPage({
             wsId={wsId}
             locale={locale}
             canApprovePosts={canApprovePosts}
-            searchParams={searchParamsData}
+            searchParams={parsedSearchParams}
             postsData={postsData}
             postsStatus={postsStatus}
           />
