@@ -121,7 +121,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                     onRefresh: _load,
                     child: ListView.builder(
                       itemCount: _sessions.length,
-                      padding: const EdgeInsets.only(bottom: 32),
+                      padding: const EdgeInsets.only(bottom: 96),
                       itemBuilder: (context, index) {
                         final session = _sessions[index];
                         return _ManagementSessionTile(session: session);

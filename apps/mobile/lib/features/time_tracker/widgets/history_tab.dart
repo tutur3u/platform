@@ -244,7 +244,7 @@ class _HistoryTabState extends State<HistoryTab> {
                   ),
               ],
               const SliverToBoxAdapter(
-                child: SizedBox(height: 32),
+                child: SizedBox(height: 96),
               ),
             ],
           ),
