@@ -112,3 +112,12 @@ Future<void> showAdaptiveDrawer({
     ),
   );
 }
+
+Future<void> dismissAdaptiveDrawerOverlay(BuildContext context) async {
+  if (context.isCompact) {
+    await shad.closeOverlay<void>(context);
+    return;
+  }
+
+  await Navigator.maybePop(context);
+}

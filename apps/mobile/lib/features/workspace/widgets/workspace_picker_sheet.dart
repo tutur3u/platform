@@ -53,7 +53,7 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                             size: shad.ButtonSize.small,
                             onPressed: (state.limits?.canCreate ?? true)
                                 ? () async {
-                                    await Navigator.maybePop(context);
+                                    await dismissAdaptiveDrawerOverlay(context);
                                     if (!parentContext.mounted) {
                                       return;
                                     }
@@ -99,7 +99,9 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                                           workspace.id ==
                                           state.currentWorkspace?.id,
                                       onTap: () async {
-                                        await Navigator.maybePop(context);
+                                        await dismissAdaptiveDrawerOverlay(
+                                          context,
+                                        );
                                         await workspaceCubit.selectWorkspace(
                                           workspace,
                                         );
@@ -120,7 +122,9 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                                           workspace.id ==
                                           state.currentWorkspace?.id,
                                       onTap: () async {
-                                        await Navigator.maybePop(context);
+                                        await dismissAdaptiveDrawerOverlay(
+                                          context,
+                                        );
                                         await workspaceCubit.selectWorkspace(
                                           workspace,
                                         );
@@ -141,7 +145,9 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                                           workspace.id ==
                                           state.currentWorkspace?.id,
                                       onTap: () async {
-                                        await Navigator.maybePop(context);
+                                        await dismissAdaptiveDrawerOverlay(
+                                          context,
+                                        );
                                         await workspaceCubit.selectWorkspace(
                                           workspace,
                                         );

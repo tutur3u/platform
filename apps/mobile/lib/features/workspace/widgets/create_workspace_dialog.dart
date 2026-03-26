@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Chip, CircleAvatar, Divider;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
@@ -57,7 +59,7 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
       if (!mounted) return;
 
       // Close dialog
-      await Navigator.maybePop(context);
+      await dismissAdaptiveDrawerOverlay(context);
       if (!mounted) return;
 
       // Auto-select the newly created workspace
@@ -145,7 +147,8 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
                   shad.OutlineButton(
                     onPressed: state.isCreating
                         ? null
-                        : () => Navigator.maybePop(context),
+                        : () =>
+                              unawaited(dismissAdaptiveDrawerOverlay(context)),
                     child: Text(l10n.workspaceCreateCancel),
                   ),
                   const shad.Gap(8),
