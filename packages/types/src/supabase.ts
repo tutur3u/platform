@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -17762,11 +17757,15 @@ export type Database = {
           end_date: string | null;
           frequency: Database['public']['Enums']['habit_frequency'];
           id: string;
+          ideal_instances_per_day: number | null;
           ideal_time: string | null;
           is_active: boolean | null;
+          is_splittable: boolean;
           is_visible_in_calendar: boolean | null;
           max_duration_minutes: number | null;
+          max_instances_per_day: number | null;
           min_duration_minutes: number | null;
+          min_instances_per_day: number | null;
           monthly_type:
             | Database['public']['Enums']['monthly_recurrence_type']
             | null;
@@ -17798,11 +17797,15 @@ export type Database = {
           end_date?: string | null;
           frequency?: Database['public']['Enums']['habit_frequency'];
           id?: string;
+          ideal_instances_per_day?: number | null;
           ideal_time?: string | null;
           is_active?: boolean | null;
+          is_splittable?: boolean;
           is_visible_in_calendar?: boolean | null;
           max_duration_minutes?: number | null;
+          max_instances_per_day?: number | null;
           min_duration_minutes?: number | null;
+          min_instances_per_day?: number | null;
           monthly_type?:
             | Database['public']['Enums']['monthly_recurrence_type']
             | null;
@@ -17834,11 +17837,15 @@ export type Database = {
           end_date?: string | null;
           frequency?: Database['public']['Enums']['habit_frequency'];
           id?: string;
+          ideal_instances_per_day?: number | null;
           ideal_time?: string | null;
           is_active?: boolean | null;
+          is_splittable?: boolean;
           is_visible_in_calendar?: boolean | null;
           max_duration_minutes?: number | null;
+          max_instances_per_day?: number | null;
           min_duration_minutes?: number | null;
+          min_instances_per_day?: number | null;
           monthly_type?:
             | Database['public']['Enums']['monthly_recurrence_type']
             | null;
@@ -20946,7 +20953,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -22735,28 +22771,16 @@ export type Database = {
         Args: { p_balance_id: string };
         Returns: undefined;
       };
-      _resolve_table_associated_ws_id:
-        | {
-            Args: { p_target_table: string };
-            Returns: {
-              user_id: string;
-              ws_id: string;
-            }[];
-          }
-        | {
-            Args: { p_new_record: Json; p_target_table: string };
-            Returns: {
-              user_id: string;
-              ws_id: string;
-            }[];
-          };
+      _resolve_table_associated_ws_id: {
+        Args: { p_new_record: Json; p_target_table: string };
+        Returns: {
+          user_id: string;
+          ws_id: string;
+        }[];
+      };
       _resolve_user_personal_workspace_id: {
         Args: { p_user_id: string };
         Returns: string;
-      };
-      _resolve_user_personal_workspace_tier: {
-        Args: { p_user_id: string };
-        Returns: Database['public']['Enums']['workspace_product_tier'];
       };
       _resolve_workspace_tier: {
         Args: { p_ws_id: string };
@@ -24292,10 +24316,10 @@ export type Database = {
       get_post_review_stage: {
         Args: {
           p_approval_status: Database['public']['Enums']['approval_status'];
-          p_delivery_issue_reason: string;
           p_email_id: string;
           p_has_check: boolean;
           p_queue_status: string;
+          p_recipient_email: string;
         };
         Returns: string;
       };
@@ -24691,7 +24715,6 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
-          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -24746,7 +24769,6 @@ export type Database = {
           skipped_stage_count: number;
           total_count: number;
           unchecked_count: number;
-          undeliverable_count: number;
         }[];
       };
       get_user_growth_comparison: {
@@ -25167,7 +25189,6 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
-          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -25226,7 +25247,6 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
-          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -25287,7 +25307,6 @@ export type Database = {
           skipped_approval_count: number;
           skipped_stage_count: number;
           total_count: number;
-          undeliverable_count: number;
         }[];
       };
       get_workspace_products_count: {
