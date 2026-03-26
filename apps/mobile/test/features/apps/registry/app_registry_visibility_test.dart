@@ -78,5 +78,48 @@ void main() {
 
       expect(routes, contains(Routes.timerRequests));
     });
+
+    testWidgets('reacts immediately to workspace switch', (tester) async {
+      final workspaceCubit = _MockWorkspaceCubit();
+      whenListen(
+        workspaceCubit,
+        Stream<WorkspaceState>.fromIterable(const [
+          WorkspaceState(
+            status: WorkspaceStatus.loaded,
+            currentWorkspace: Workspace(id: 'team-1'),
+          ),
+          WorkspaceState(
+            status: WorkspaceStatus.loaded,
+            currentWorkspace: Workspace(id: 'personal-1', personal: true),
+          ),
+        ]),
+        initialState: const WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          currentWorkspace: Workspace(id: 'team-1'),
+        ),
+      );
+      addTearDown(workspaceCubit.close);
+
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: Builder(
+            builder: (context) {
+              final timer = AppRegistry.moduleById('timer')!;
+              final routes = timer.miniAppNavItemsFor(context);
+              final hasRequests = routes.any(
+                (item) => item.route == Routes.timerRequests,
+              );
+              return Text(hasRequests ? 'has-requests' : 'no-requests');
+            },
+          ),
+        ),
+      );
+
+      expect(find.text('has-requests'), findsOneWidget);
+
+      await tester.pump();
+      expect(find.text('no-requests'), findsOneWidget);
+    });
   });
 }

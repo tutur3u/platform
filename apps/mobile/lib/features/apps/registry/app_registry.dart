@@ -169,8 +169,10 @@ class AppRegistry {
   ];
 
   static bool _showTimerRequestsMiniNav(BuildContext context) {
-    return !(context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
-        false);
+    final isPersonalWorkspace = context.select<WorkspaceCubit, bool>(
+      (cubit) => cubit.state.currentWorkspace?.personal ?? false,
+    );
+    return !isPersonalWorkspace;
   }
 
   static List<AppModule> modules(BuildContext context) {
