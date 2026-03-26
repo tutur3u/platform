@@ -9,17 +9,20 @@ export interface UserPresenceState {
   online_at: string;
   session_id?: string;
   /** Optional metadata for context-specific presence tracking */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }
 
 export function usePresence(
   channelName: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>
 ) {
   const [presenceState, setPresenceState] = useState<
     RealtimePresenceState<UserPresenceState>
   >({});
   const [currentUserId, setCurrentUserId] = useState<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const channelRef = useRef<any>(null);
   const retryCountRef = useRef(0);
   const isCleanedUpRef = useRef(false);
