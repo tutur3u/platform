@@ -71,6 +71,7 @@ class _RequestsViewState extends State<_RequestsView> {
   int _statusChangeGracePeriodMinutes = 0;
   bool _isThresholdLoading = false;
   int _permissionLoadToken = 0;
+  int _requestLoadToken = 0;
   bool _didInitializeWorkspaceLoad = false;
 
   String? _currentUserId() => context.read<AuthCubit>().state.user?.id;
@@ -82,12 +83,16 @@ class _RequestsViewState extends State<_RequestsView> {
     return _currentUserId();
   }
 
-  Future<void> _loadRequests() async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+  Future<void> _loadRequests({String? wsIdOverride}) async {
+    final wsId =
+        wsIdOverride ??
+        context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null || wsId.isEmpty) {
       context.read<TimeTrackerRequestsCubit>().reset();
       return;
     }
+
+    final localToken = ++_requestLoadToken;
 
     await context.read<TimeTrackerRequestsCubit>().loadRequests(
       wsId,
@@ -96,6 +101,19 @@ class _RequestsViewState extends State<_RequestsView> {
           ? 'all'
           : approvalStatusToString(_statusFromFilter(_selectedFilter)!),
     );
+
+    if (!mounted) {
+      return;
+    }
+
+    final currentWsId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
+    if (localToken != _requestLoadToken || currentWsId != wsId) {
+      return;
+    }
   }
 
   @override
@@ -109,7 +127,9 @@ class _RequestsViewState extends State<_RequestsView> {
 
     _didInitializeWorkspaceLoad = true;
     _permissionsWorkspaceId = wsId;
-    unawaited(_loadPermissionsAndThreshold());
+    _requestLoadToken++;
+    context.read<TimeTrackerRequestsCubit>().reset();
+    unawaited(_loadPermissionsAndThreshold(wsId));
   }
 
   @override
@@ -228,9 +248,8 @@ class _RequestsViewState extends State<_RequestsView> {
     );
   }
 
-  Future<void> _loadPermissionsAndThreshold() async {
+  Future<void> _loadPermissionsAndThreshold(String? wsId) async {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
-    final wsId = workspace?.id;
     final localWsId = wsId;
     final localToken = ++_permissionLoadToken;
     final currentUserId = context.read<AuthCubit>().state.user?.id;
@@ -260,7 +279,7 @@ class _RequestsViewState extends State<_RequestsView> {
         _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
-      unawaited(_loadRequests());
+      unawaited(_loadRequests(wsIdOverride: wsId));
       return;
     }
 
@@ -361,7 +380,7 @@ class _RequestsViewState extends State<_RequestsView> {
         _statusChangeGracePeriodMinutes = 0;
         _isThresholdLoading = false;
       });
-      unawaited(_loadRequests());
+      unawaited(_loadRequests(wsIdOverride: wsId));
       return;
     }
 
@@ -382,7 +401,7 @@ class _RequestsViewState extends State<_RequestsView> {
       _statusChangeGracePeriodMinutes = statusChangeGracePeriodMinutes;
       _isThresholdLoading = false;
     });
-    unawaited(_loadRequests());
+    unawaited(_loadRequests(wsIdOverride: wsId));
   }
 
   Future<void> _showThresholdSettingsDialog() async {
