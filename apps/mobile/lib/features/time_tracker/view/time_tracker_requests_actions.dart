@@ -8,25 +8,54 @@ extension _RequestsViewActions on _RequestsViewState {
       return;
     }
 
+    final snapshotWsId = wsId;
+    final rootToastContext = Navigator.of(context, rootNavigator: true).context;
+    final rootL10n = rootToastContext.l10n;
     final repository = context.read<ITimeTrackerRepository>();
     final cubit = context.read<TimeTrackerRequestsCubit>();
+    final requestVersion =
+        (_missedEntryDialogRequestVersionByWorkspace[snapshotWsId] ?? 0) + 1;
+    _missedEntryDialogRequestVersionByWorkspace[snapshotWsId] = requestVersion;
+    _applyState(() {
+      _isMissedEntryDialogLoadingByWorkspace[snapshotWsId] = true;
+    });
+
+    bool isCurrentRequest() {
+      if (!mounted) {
+        return false;
+      }
+      final currentWsId = context
+          .read<WorkspaceCubit>()
+          .state
+          .currentWorkspace
+          ?.id;
+      final latestRequestVersion =
+          _missedEntryDialogRequestVersionByWorkspace[snapshotWsId];
+      return currentWsId == snapshotWsId &&
+          latestRequestVersion == requestVersion;
+    }
 
     List<TimeTrackingCategory> categories;
     try {
-      categories = await repository.getCategories(wsId);
-    } on ApiException catch (e) {
-      if (!mounted) {
+      categories = await repository.getCategories(snapshotWsId);
+      if (!isCurrentRequest()) {
         return;
       }
-      final toastContext = Navigator.of(context, rootNavigator: true).context;
-      if (!toastContext.mounted) {
+      _applyState(() {
+        _hasLoadedMissedEntryCategoriesByWorkspace[snapshotWsId] = true;
+      });
+    } on ApiException catch (e) {
+      if (!isCurrentRequest()) {
+        return;
+      }
+      if (!rootToastContext.mounted) {
         return;
       }
       final message = e.message.isNotEmpty
           ? e.message
-          : context.l10n.commonSomethingWentWrong;
+          : rootL10n.commonSomethingWentWrong;
       shad.showToast(
-        context: toastContext,
+        context: rootToastContext,
         builder: (context, overlay) => shad.Alert.destructive(
           title: Text(context.l10n.commonSomethingWentWrong),
           content: Text(message),
@@ -34,20 +63,32 @@ extension _RequestsViewActions on _RequestsViewState {
       );
       return;
     } on Object {
-      if (!mounted) {
+      if (!isCurrentRequest()) {
         return;
       }
-      final toastContext = Navigator.of(context, rootNavigator: true).context;
-      if (!toastContext.mounted) {
+      if (!rootToastContext.mounted) {
         return;
       }
       shad.showToast(
-        context: toastContext,
+        context: rootToastContext,
         builder: (context, overlay) => shad.Alert.destructive(
           title: Text(context.l10n.commonSomethingWentWrong),
           content: Text(context.l10n.commonSomethingWentWrong),
         ),
       );
+      return;
+    } finally {
+      if (mounted) {
+        final latestRequestVersion =
+            _missedEntryDialogRequestVersionByWorkspace[snapshotWsId];
+        if (latestRequestVersion == requestVersion) {
+          _applyState(() {
+            _isMissedEntryDialogLoadingByWorkspace[snapshotWsId] = false;
+          });
+        }
+      }
+    }
+    if (!isCurrentRequest()) {
       return;
     }
     if (!mounted) {
@@ -56,7 +97,7 @@ extension _RequestsViewActions on _RequestsViewState {
 
     await showMissedEntryDialogFlow(
       context,
-      wsId: wsId,
+      wsId: snapshotWsId,
       userId: userId,
       categories: categories,
       thresholdDays: _missedEntryDateThreshold,
@@ -69,7 +110,7 @@ extension _RequestsViewActions on _RequestsViewState {
             categoryId,
             description,
           }) => repository.createMissedEntry(
-            wsId,
+            snapshotWsId,
             title: title,
             categoryId: categoryId,
             startTime: startTime,
@@ -85,7 +126,7 @@ extension _RequestsViewActions on _RequestsViewState {
             categoryId,
             description,
           }) => repository.createRequest(
-            wsId,
+            snapshotWsId,
             title: title,
             categoryId: categoryId,
             startTime: startTime,
@@ -93,12 +134,17 @@ extension _RequestsViewActions on _RequestsViewState {
             description: description,
             imageLocalPaths: imageLocalPaths,
           ),
-      onAfterSave: () => cubit.filterByStatus(
-        statusFromFilter(_selectedFilter),
-        wsId,
-        userId: _requestUserFilterId(),
-        statusOverride: _statusOverrideForFilter(_selectedFilter),
-      ),
+      onAfterSave: () async {
+        if (!isCurrentRequest()) {
+          return;
+        }
+        await cubit.filterByStatus(
+          statusFromFilter(_selectedFilter),
+          snapshotWsId,
+          userId: _requestUserFilterId(),
+          statusOverride: _statusOverrideForFilter(_selectedFilter),
+        );
+      },
     );
   }
 
@@ -274,18 +320,40 @@ extension _RequestsViewActions on _RequestsViewState {
           currentStatusChangeGracePeriodMinutes:
               _statusChangeGracePeriodMinutes,
           onSave: (threshold, statusChangeGracePeriodMinutes) async {
+            final snapshotWsId = wsId;
             final toastContext = Navigator.of(
               context,
               rootNavigator: true,
             ).context;
+            final requestVersion =
+                (_thresholdSaveRequestVersionByWorkspace[snapshotWsId] ?? 0) +
+                1;
+            _thresholdSaveRequestVersionByWorkspace[snapshotWsId] =
+                requestVersion;
+
+            bool canApplySaveResult() {
+              if (!mounted) {
+                return false;
+              }
+              final currentWsId = context
+                  .read<WorkspaceCubit>()
+                  .state
+                  .currentWorkspace
+                  ?.id;
+              final latestRequestVersion =
+                  _thresholdSaveRequestVersionByWorkspace[snapshotWsId];
+              return currentWsId == snapshotWsId &&
+                  latestRequestVersion == requestVersion;
+            }
+
             try {
               await repo.updateMissedEntryDateThreshold(
-                wsId,
+                snapshotWsId,
                 threshold,
                 statusChangeGracePeriodMinutes: statusChangeGracePeriodMinutes,
               );
 
-              if (!mounted) {
+              if (!canApplySaveResult()) {
                 return;
               }
 
@@ -304,7 +372,7 @@ extension _RequestsViewActions on _RequestsViewState {
                 ),
               );
             } on ApiException catch (e) {
-              if (!mounted) {
+              if (!canApplySaveResult()) {
                 return;
               }
               if (!toastContext.mounted) {
@@ -312,7 +380,7 @@ extension _RequestsViewActions on _RequestsViewState {
               }
               final message = e.message.isNotEmpty
                   ? e.message
-                  : context.l10n.commonSomethingWentWrong;
+                  : toastContext.l10n.commonSomethingWentWrong;
               shad.showToast(
                 context: toastContext,
                 builder: (context, overlay) => shad.Alert.destructive(
@@ -321,7 +389,7 @@ extension _RequestsViewActions on _RequestsViewState {
                 ),
               );
             } on Object {
-              if (!mounted) {
+              if (!canApplySaveResult()) {
                 return;
               }
               if (!toastContext.mounted) {

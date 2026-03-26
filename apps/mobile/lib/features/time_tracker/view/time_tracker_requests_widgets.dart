@@ -67,7 +67,6 @@ class _RequestTile extends StatelessWidget {
   }
 
   String _formatDate(DateTime dt) {
-    final local = dt.toLocal();
-    return '${local.month}/${local.day}';
+    return DateFormat.Md().format(dt.toLocal());
   }
 }
