@@ -47,7 +47,9 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         status: TimeTrackerRequestsStatus.loading,
         selectedStatus: selectedStatus,
         clearSelectedStatus: selectedStatus == null,
-        selectedUserId: hasExplicitUserId ? requestedUserId : null,
+        selectedUserId: hasExplicitUserId
+            ? requestedUserId
+            : state.selectedUserId,
         clearSelectedUserId: hasExplicitUserId && requestedUserId == null,
         clearError: true,
       ),

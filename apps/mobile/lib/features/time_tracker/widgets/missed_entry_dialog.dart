@@ -6,6 +6,7 @@ import 'package:flutter/material.dart'
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/features/time_tracker/utils/threshold.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -360,7 +361,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                           if (navigator.canPop()) {
                             navigator.pop();
                           }
-                        } on Exception catch (error) {
+                        } on ApiException catch (error) {
                           if (!context.mounted) {
                             return;
                           }
@@ -371,6 +372,23 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                                 shad.Alert.destructive(
                                   title: Text(errorTitle),
                                   content: Text(_toErrorMessage(error)),
+                                ),
+                          );
+
+                          setState(() => _isSubmitting = false);
+                        } on Object {
+                          if (!context.mounted) {
+                            return;
+                          }
+
+                          shad.showToast(
+                            context: toastContext,
+                            builder: (context, overlay) =>
+                                shad.Alert.destructive(
+                                  title: Text(errorTitle),
+                                  content: Text(
+                                    context.l10n.commonSomethingWentWrong,
+                                  ),
                                 ),
                           );
 
@@ -552,18 +570,12 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
     });
   }
 
-  String _toErrorMessage(Object error) {
-    final message = error.toString().trim();
+  String _toErrorMessage(ApiException error) {
+    final message = error.message.trim();
     if (message.isEmpty) {
       return context.l10n.commonSomethingWentWrong;
     }
-
-    final separatorIndex = message.lastIndexOf(':');
-    if (separatorIndex == -1 || separatorIndex == message.length - 1) {
-      return message;
-    }
-
-    return message.substring(separatorIndex + 1).trim();
+    return message;
   }
 
   String _formatDuration(Duration d) {

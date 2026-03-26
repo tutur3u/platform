@@ -271,48 +271,11 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       return;
     }
 
-    await showMissedEntryDialogFlow(
+    await showMissedEntryDialogForTimeTrackerCubit(
       context,
+      cubit: cubit,
       wsId: wsId,
       userId: userId,
-      categories: cubit.state.categories,
-      thresholdDays: cubit.state.thresholdDays,
-      onCreateMissedEntry:
-          ({
-            required title,
-            required startTime,
-            required endTime,
-            categoryId,
-            description,
-          }) => cubit.createMissedEntry(
-            wsId,
-            userId,
-            title: title,
-            categoryId: categoryId,
-            startTime: startTime,
-            endTime: endTime,
-            description: description,
-            throwOnError: true,
-          ),
-      onCreateMissedEntryAsRequest:
-          ({
-            required title,
-            required startTime,
-            required endTime,
-            required imageLocalPaths,
-            categoryId,
-            description,
-          }) => cubit.createMissedEntryAsRequest(
-            wsId,
-            userId,
-            title: title,
-            categoryId: categoryId,
-            startTime: startTime,
-            endTime: endTime,
-            description: description,
-            imageLocalPaths: imageLocalPaths,
-            throwOnError: true,
-          ),
     );
   }
 
