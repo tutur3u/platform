@@ -83,7 +83,24 @@ HabitTrackerListResponse _listResponse({
 HabitTrackerDetailResponse _detailResponse(String trackerId) {
   return HabitTrackerDetailResponse(
     tracker: _listResponse(trackerId: trackerId).trackers.single.tracker,
-    entries: const [],
+    entries: [
+      HabitTrackerEntry(
+        id: 'entry-$trackerId',
+        wsId: 'ws-1',
+        trackerId: trackerId,
+        userId: 'user-1',
+        entryKind: HabitTrackerEntryKind.eventLog,
+        entryDate: '2026-03-25',
+        values: const {'glasses': 2.0},
+        tags: const [],
+        createdAt: trackerId == 'tracker-1'
+            ? DateTime(2026, 3, 25, 9)
+            : DateTime(2026, 3, 24, 18),
+        updatedAt: trackerId == 'tracker-1'
+            ? DateTime(2026, 3, 25, 9)
+            : DateTime(2026, 3, 24, 18),
+      ),
+    ],
     currentMember: _listResponse(
       trackerId: trackerId,
     ).trackers.single.currentMember,
@@ -109,6 +126,7 @@ void main() {
     late HabitsCubit cubit;
 
     setUp(() {
+      HabitsCubit.clearCache();
       repository = _MockHabitTrackerRepository();
       cubit = HabitsCubit(repository: repository);
     });
@@ -258,5 +276,65 @@ void main() {
         expect(cubit.state.quickDraftFor('tracker-1'), isEmpty);
       },
     );
+
+    test('loadActivity aggregates entries across trackers', () async {
+      when(
+        () => repository.listTrackers('ws-1'),
+      ).thenAnswer(
+        (_) async => HabitTrackerListResponse(
+          trackers: [
+            ..._listResponse(trackerId: 'tracker-1').trackers,
+            ..._listResponse(
+              trackerId: 'tracker-2',
+              trackerName: 'Reading',
+            ).trackers,
+          ],
+          members: const [],
+          scope: HabitTrackerScope.self,
+          viewerUserId: 'viewer-1',
+        ),
+      );
+      when(
+        () => repository.getTrackerDetail('ws-1', 'tracker-1'),
+      ).thenAnswer((_) async => _detailResponse('tracker-1'));
+      when(
+        () => repository.getTrackerDetail('ws-1', 'tracker-2'),
+      ).thenAnswer((_) async => _detailResponse('tracker-2'));
+
+      await cubit.loadWorkspace('ws-1');
+      await cubit.loadActivity(refresh: true);
+
+      expect(cubit.state.activityStatus, HabitsStatus.loaded);
+      expect(cubit.state.activityEntries, hasLength(2));
+      expect(cubit.state.activityEntries.first.tracker.id, 'tracker-1');
+      expect(cubit.state.activityEntries.last.tracker.id, 'tracker-2');
+    });
+
+    test('reuses fresh cached state across cubit instances', () async {
+      when(
+        () => repository.listTrackers('ws-1'),
+      ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
+      when(
+        () => repository.getTrackerDetail('ws-1', 'tracker-1'),
+      ).thenAnswer((_) async => _detailResponse('tracker-1'));
+
+      await cubit.loadWorkspace('ws-1');
+      await cubit.loadActivity();
+      await cubit.close();
+
+      final cachedCubit = HabitsCubit(
+        repository: repository,
+        initialState: HabitsCubit.cachedStateForWorkspace('ws-1'),
+      );
+      addTearDown(cachedCubit.close);
+
+      await cachedCubit.loadWorkspace('ws-1');
+      await cachedCubit.loadActivity();
+
+      expect(cachedCubit.state.status, HabitsStatus.loaded);
+      expect(cachedCubit.state.activityStatus, HabitsStatus.loaded);
+      verify(() => repository.listTrackers('ws-1')).called(1);
+      verify(() => repository.getTrackerDetail('ws-1', 'tracker-1')).called(2);
+    });
   });
 }

@@ -54,7 +54,7 @@ export async function validateInvite(
     }
 
     // Validate workspace data structure
-    if (!inviteLink || !inviteLink.workspaces) {
+    if (!inviteLink?.workspaces) {
       return {
         authenticated: true,
         error: 'Invalid workspace data',

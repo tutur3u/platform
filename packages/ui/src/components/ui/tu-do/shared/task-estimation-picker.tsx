@@ -107,7 +107,7 @@ export function TaskEstimationPicker({
   };
 
   const estimationValues = useMemo(() => {
-    if (!boardConfig || !boardConfig.estimation_type) return [];
+    if (!boardConfig?.estimation_type) return [];
     const indices = buildEstimationIndices({
       extended: !!boardConfig.extended_estimation,
       allowZero: !!boardConfig.allow_zero_estimates,
@@ -126,7 +126,7 @@ export function TaskEstimationPicker({
   }, [boardConfig]);
 
   // If board is not configured for estimation, show message
-  if (!isLoading && (!boardConfig || !boardConfig.estimation_type)) {
+  if (!isLoading && !boardConfig?.estimation_type) {
     return (
       <div className="text-center text-muted-foreground text-sm">
         <Calculator className="mx-auto mb-2 h-6 w-6" />

@@ -127,7 +127,7 @@ export function useSubscriptionInvoiceContent({
         const latestInvoice = latestSubscriptionInvoices.find(
           (inv) => inv.group_id === a.group_id
         );
-        if (!latestInvoice || !latestInvoice.valid_until) return true;
+        if (!latestInvoice?.valid_until) return true;
         const validUntil = new Date(latestInvoice.valid_until);
         const attendanceDate = new Date(a.date);
         return attendanceDate >= validUntil;

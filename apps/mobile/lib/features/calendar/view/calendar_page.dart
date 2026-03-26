@@ -29,10 +29,13 @@ class CalendarPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
+        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = CalendarCubit(
           calendarRepository: CalendarRepository(),
+          initialState: wsId != null
+              ? CalendarCubit.cachedStateForWorkspace(wsId)
+              : null,
         );
-        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         if (wsId != null) unawaited(cubit.loadEvents(wsId));
         return cubit;
       },
@@ -415,6 +418,8 @@ class _ErrorView extends StatelessWidget {
 void _reload(BuildContext context) {
   final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
   if (wsId != null) {
-    unawaited(context.read<CalendarCubit>().loadEvents(wsId));
+    unawaited(
+      context.read<CalendarCubit>().loadEvents(wsId, forceRefresh: true),
+    );
   }
 }

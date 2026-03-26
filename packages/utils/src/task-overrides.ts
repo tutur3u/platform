@@ -12,7 +12,7 @@ export function resolveEffectiveValues(
   task: TaskWithRelations,
   overrides: TaskUserOverride | null | undefined
 ): TaskWithRelations {
-  if (!overrides || !overrides.self_managed) return task;
+  if (!overrides?.self_managed) return task;
 
   return {
     ...task,

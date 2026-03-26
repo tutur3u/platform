@@ -83,6 +83,10 @@
     "appsHubFinanceDescription": "Ví, danh mục và lịch sử giao dịch.",
     "appsHubTimerDescription": "Theo dõi phiên, thống kê và yêu cầu.",
     "habitsTitle": "Thói quen",
+    "habitsOverviewLabel": "Tổng quan",
+    "habitsActivityLabel": "Hoạt động",
+    "habitsActivityTitle": "Hoạt động",
+    "habitsActivitySubtitle": "Xem các lượt ghi nhận thói quen mới nhất trên mọi bộ theo dõi trong không gian làm việc này.",
     "habitsLoadError": "Không thể tải thói quen lúc này",
     "habitsSummarySubtitle": "Theo dõi các nghi thức, thói quen và động lực chung trong không gian làm việc.",
     "habitsSummaryVolume": "Khối lượng hiện tại",
@@ -203,6 +207,9 @@
     "habitsEntriesLabel": "Lượt nhập",
     "habitsNoEntries": "Chưa có lượt nhập",
     "habitsNoLeaderboard": "Chưa có dữ liệu bảng xếp hạng",
+    "habitsActivityEmptyTitle": "Chưa có nhật ký",
+    "habitsActivityEmptyBody": "Khi ai đó ghi nhận một lượt nhập thói quen, nó sẽ xuất hiện ở đây.",
+    "habitsActivityNoTrackers": "Hãy tạo bộ theo dõi thói quen trước để bắt đầu thu thập hoạt động.",
     "habitsStreakChip": "{count} chuỗi",
     "@habitsStreakChip": {
         "placeholders": {
@@ -804,10 +811,40 @@
     },
 
     "financeTitle": "Tài chính",
+    "financeOverviewLabel": "Tổng quan",
+    "financeActivityLabel": "Hoạt động",
+    "financeManageLabel": "Quản lý",
+    "financeOverviewEyebrow": "Tóm tắt không gian làm việc",
+    "financeOverviewCrossCurrencyHint": "Bao gồm số dư đã quy đổi giữa các ví. Tiền tệ gốc: {currency}.",
+    "@financeOverviewCrossCurrencyHint": {
+        "placeholders": {
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "financeOverviewSingleCurrencyHint": "Mọi số dư đều đang được theo dõi bằng {currency}.",
+    "@financeOverviewSingleCurrencyHint": {
+        "placeholders": {
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
     "financeWallets": "Ví",
     "financeTransactions": "Giao dịch",
     "financeCategories": "Danh mục",
     "financeRecentTransactions": "Giao dịch gần đây",
+    "financeOverviewActionsSubtitle": "Đi thẳng vào thao tác bạn cần làm tiếp theo.",
+    "financeOverviewCreateTransactionHint": "Ghi nhanh thu, chi hoặc chuyển khoản.",
+    "financeOverviewWalletsHint": "Xem số dư và tinh chỉnh từng ví.",
+    "financeOverviewManageHint": "Quản lý danh mục, thẻ và cấu trúc tài chính.",
+    "financeOverviewWalletSectionTitle": "Danh sách ví",
+    "financeOverviewWalletSectionSubtitle": "Nhìn nhanh các số dư quan trọng nhất của bạn.",
+    "financeOverviewNoWalletsBody": "Tạo ví đầu tiên để bắt đầu theo dõi số dư, chuyển khoản và danh mục.",
+    "financeOverviewActivityTitle": "Hoạt động gần đây",
+    "financeOverviewActivitySubtitle": "Biến động mới nhất trên tất cả ví của bạn.",
+    "financeOverviewNoTransactionsBody": "Các giao dịch sẽ xuất hiện ở đây khi bạn bắt đầu ghi nhận dòng tiền vào ra.",
     "financeNoWallets": "Chưa có ví",
     "financeCreateWallet": "Tạo ví",
     "financeEditWallet": "Sửa ví",
@@ -823,11 +860,13 @@
     "financeWalletCurrency": "Tiền tệ",
     "financeWalletSelectCurrency": "Chọn tiền tệ",
     "financeWalletSearchCurrency": "Tìm tiền tệ",
+    "financeCurrencyPickerSubtitle": "Chọn mã tiền tệ phù hợp nhất với cách ví này được theo dõi.",
     "financeWalletCurrencyRequired": "Nhập mã tiền tệ 3 ký tự hợp lệ",
     "financeWalletIconOrImage": "Biểu tượng hoặc hình ảnh",
     "financeWalletNoVisual": "Chưa chọn hình đại diện",
     "financeWalletPickImage": "Chọn hình ảnh",
     "financeWalletClearVisual": "Xóa hình đại diện",
+    "financeWalletDialogSubtitle": "Thiết lập cách ví này hiển thị và hoạt động trong phần tài chính.",
     "financeWalletCreditDetails": "Thông tin tín dụng",
     "financeWalletCreditLimit": "Hạn mức tín dụng",
     "financeWalletCreditLimitRequired": "Hạn mức tín dụng phải lớn hơn 0",
@@ -850,20 +889,40 @@
     "financeNoCategories": "Chưa có danh mục",
     "financeTags": "Thẻ",
     "financeNoTags": "Chưa có thẻ",
+    "financeManageCategoriesTitle": "Danh mục",
+    "financeManageCategoriesSubtitle": "Nhóm giao dịch vào các nhóm thu và chi rõ ràng.",
+    "financeManageTagsTitle": "Thẻ",
+    "financeManageTagsSubtitle": "Dùng thẻ cho các nhãn linh hoạt và báo cáo nhanh.",
+    "financeManageCategoriesEmptyBody": "Tạo danh mục cho các mẫu thu nhập và chi tiêu lặp lại.",
+    "financeManageTagsEmptyBody": "Tạo thẻ cho nhãn linh hoạt như chuyến đi, đăng ký hoặc dự án.",
     "financeCreateTag": "Tạo thẻ",
     "financeEditTag": "Sửa thẻ",
     "financeDeleteTag": "Xóa thẻ",
     "financeDeleteTagConfirm": "Xóa thẻ này?",
     "financeTagName": "Tên thẻ",
     "financeTagNameRequired": "Vui lòng nhập tên thẻ",
+    "financeTagDialogSubtitle": "Đặt tên nhãn và chọn màu để dễ nhận biết.",
     "financeIncome": "Thu nhập",
     "financeExpense": "Chi tiêu",
     "financeViewAll": "Xem tất cả",
     "financeSearchTransactions": "Tìm kiếm giao dịch",
     "financeNoSearchResults": "Không tìm thấy giao dịch",
+    "financeActivityDefaultHint": "Tìm kiếm và rà soát dòng tiền theo từng ngày.",
+    "financeActivitySearchHint": "Tìm kiếm đang mở. Lọc theo nơi chi tiêu, ví hoặc danh mục.",
+    "financeActivitySearchEmptyBody": "Hãy thử từ khóa khác, tên ví hoặc tên danh mục khác.",
+    "financeActivityClearSearch": "Xóa tìm kiếm",
+    "financeActivitySearchResults": "{count, plural, =0{Chưa có kết quả} one{Khớp 1 giao dịch} other{Khớp {count} giao dịch}}",
+    "@financeActivitySearchResults": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "financeTransactionDetails": "Chi tiết giao dịch",
     "financeCreateTransaction": "Tạo giao dịch",
     "financeEditTransaction": "Sửa giao dịch",
+    "financeTransactionDialogSubtitle": "Ghi lại số tiền, nguồn và thiết lập hiển thị trong một nơi.",
     "financeDeleteTransaction": "Xóa giao dịch",
     "financeDeleteTransactionConfirm": "Xóa giao dịch này?",
     "financeTransactionCreated": "Đã tạo giao dịch",
@@ -874,6 +933,10 @@
     "financeTakenAt": "Thời gian ghi nhận",
     "financeCategory": "Danh mục",
     "financeWallet": "Ví",
+    "financePickerWalletSubtitle": "Chọn ví mà giao dịch này sẽ tác động.",
+    "financePickerCategorySubtitle": "Chọn nhóm phù hợp nhất cho giao dịch này.",
+    "financePickerTagSubtitle": "Chọn nhãn tùy chọn để thêm ngữ cảnh.",
+    "financeNoTag": "Không gắn thẻ",
     "financeDestinationWallet": "Ví đích",
     "financeSelectDestinationWallet": "Chọn ví đích",
     "financeTransferMode": "Chế độ chuyển khoản",
@@ -895,6 +958,7 @@
     "financeDeleteCategory": "Xóa danh mục",
     "financeDeleteCategoryConfirm": "Xóa danh mục này?",
     "financeCategoryNameRequired": "Vui lòng nhập tên danh mục",
+    "financeCategoryDialogSubtitle": "Xác định cách danh mục này hiển thị và nó là thu hay chi.",
     "financeType": "Loại",
     "financeIcon": "Biểu tượng",
     "financeSelectIcon": "Chọn biểu tượng",
@@ -911,6 +975,14 @@
     "financeNetBalance": "Số dư ròng",
     "financeYourWallets": "Ví của bạn",
     "financeQuickActions": "Thao tác nhanh",
+    "financeWalletSummaryHint": "{count, plural, =0{Chưa cấu hình ví nào} one{Đã có 1 ví sẵn sàng sử dụng} other{Đã có {count} ví sẵn sàng sử dụng}}",
+    "@financeWalletSummaryHint": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "financeAddTransaction": "Thêm",
     "financeAddFirstTransaction": "Thêm giao dịch đầu tiên",
     "financeCreateFirstWallet": "Tạo ví đầu tiên",

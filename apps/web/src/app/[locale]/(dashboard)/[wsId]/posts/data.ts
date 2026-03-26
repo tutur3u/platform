@@ -6,6 +6,7 @@ import {
   autoSkipOldPostEmails,
   getPostEmailMaxAgeCutoff,
 } from '@/lib/post-email-queue';
+import { normalizePostEmailQueueStatus } from './status-derivation';
 import type {
   PostApprovalStatus,
   PostEmail,
@@ -64,7 +65,11 @@ function mapPostEmailRow(row: PostEmailRowRpc): PostEmail {
     group_id: row.group_id,
     group_name: row.group_name,
     subject: row.subject,
-    queue_status: row.queue_status as PostEmailQueueStatus,
+    queue_status: normalizePostEmailQueueStatus({
+      approvalStatus: row.approval_status,
+      emailId: row.email_id,
+      queueStatus: row.queue_status as PostEmailQueueStatus | null,
+    }),
     queue_attempt_count: row.queue_attempt_count,
     queue_last_error: row.queue_last_error,
     queue_sent_at: row.queue_sent_at,

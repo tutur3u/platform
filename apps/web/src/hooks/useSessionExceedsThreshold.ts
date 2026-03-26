@@ -29,7 +29,7 @@ export function useSessionExceedsThreshold(
   isLoading: boolean = false
 ): SessionThresholdResult {
   return useMemo(() => {
-    if (!session || !session.start_time) {
+    if (!session?.start_time) {
       return {
         exceeds: false,
         thresholdDays: thresholdDays ?? null,

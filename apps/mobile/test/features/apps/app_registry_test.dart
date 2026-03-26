@@ -1,6 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/l10n/l10n.dart';
+
+import '../../helpers/helpers.dart';
 
 void main() {
   group('AppRegistry.moduleFromLocation', () {
@@ -46,19 +50,57 @@ void main() {
       expect(routes, contains(Routes.taskEstimates));
     });
 
-    test('habits module exposes its root nav item', () {
+    test('habits module exposes overview and activity nav items', () {
       final habits = AppRegistry.moduleById('habits');
 
       expect(habits, isNotNull);
       final routes = habits!.miniAppNavItems.map((item) => item.route).toList();
 
-      expect(routes, [Routes.habits]);
+      expect(routes, [Routes.habits, Routes.habitsActivity]);
     });
 
     test('all modules define at least one mini nav item', () {
       for (final module in AppRegistry.allModules) {
         expect(module.miniAppNavItems, isNotEmpty, reason: module.id);
       }
+    });
+
+    testWidgets('finance nav uses overview, activity, wallets, manage labels', (
+      tester,
+    ) async {
+      late List<String> labels;
+
+      await tester.pumpApp(
+        Builder(
+          builder: (context) {
+            final finance = AppRegistry.moduleById('finance')!;
+            labels = finance.miniAppNavItems
+                .map((item) => item.labelBuilder(context.l10n))
+                .toList(growable: false);
+            return const SizedBox.shrink();
+          },
+        ),
+      );
+
+      expect(labels, ['Overview', 'Activity', 'Wallets', 'Manage']);
+    });
+
+    testWidgets('habits nav uses overview and activity labels', (tester) async {
+      late List<String> labels;
+
+      await tester.pumpApp(
+        Builder(
+          builder: (context) {
+            final habits = AppRegistry.moduleById('habits')!;
+            labels = habits.miniAppNavItems
+                .map((item) => item.labelBuilder(context.l10n))
+                .toList(growable: false);
+            return const SizedBox.shrink();
+          },
+        ),
+      );
+
+      expect(labels, ['Overview', 'Activity']);
     });
   });
 }

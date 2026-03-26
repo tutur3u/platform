@@ -170,56 +170,34 @@ class _WalletPickerDialog extends StatelessWidget {
         ? wallets.where((w) => w.id != excludeWalletId).toList()
         : wallets;
 
-    return shad.AlertDialog(
-      title: Text(title),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: list
-                .map(
-                  (wallet) => shad.GhostButton(
-                    onPressed: () => Navigator.of(context).pop(wallet.id),
-                    child: Row(
-                      children: [
-                        WalletVisualAvatar(
-                          icon: wallet.icon,
-                          imageSrc: wallet.imageSrc,
-                          fallbackIcon: Icons.wallet_outlined,
-                          size: 28,
-                        ),
-                        const shad.Gap(8),
-                        Expanded(
-                          child: Text(
-                            wallet.name ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          wallet.currency ?? 'USD',
-                          style: shad.Theme.of(context).typography.xSmall
-                              .copyWith(
-                                color: shad.Theme.of(
-                                  context,
-                                ).colorScheme.mutedForeground,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-      ),
+    return FinanceModalScaffold(
+      title: title,
+      subtitle: context.l10n.financePickerWalletSubtitle,
       actions: [
         shad.OutlineButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
         ),
       ],
+      child: ListView.separated(
+        shrinkWrap: true,
+        itemCount: list.length,
+        separatorBuilder: (_, _) => const shad.Gap(8),
+        itemBuilder: (context, index) {
+          final wallet = list[index];
+          return FinancePickerTile(
+            title: wallet.name ?? '',
+            subtitle: wallet.currency ?? 'USD',
+            leading: WalletVisualAvatar(
+              icon: wallet.icon,
+              imageSrc: wallet.imageSrc,
+              fallbackIcon: Icons.wallet_outlined,
+              size: 30,
+            ),
+            onTap: () => Navigator.of(context).pop(wallet.id),
+          );
+        },
+      ),
     );
   }
 }
@@ -236,61 +214,46 @@ class _CategoryPickerDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return shad.AlertDialog(
-      title: Text(context.l10n.financeCategory),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: categories
-                .map(
-                  (category) => shad.GhostButton(
-                    onPressed: () => Navigator.of(context).pop(category.id),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            color: categoryColor(category).withValues(
-                              alpha: 0.16,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            resolvePlatformIcon(
-                              category.icon,
-                              fallback: category.isExpense != false
-                                  ? Icons.arrow_downward
-                                  : Icons.arrow_upward,
-                            ),
-                            size: 14,
-                            color: categoryColor(category),
-                          ),
-                        ),
-                        const shad.Gap(8),
-                        Expanded(
-                          child: Text(
-                            category.name ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-      ),
+    return FinanceModalScaffold(
+      title: context.l10n.financeCategory,
+      subtitle: context.l10n.financePickerCategorySubtitle,
       actions: [
         shad.OutlineButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
         ),
       ],
+      child: ListView.separated(
+        shrinkWrap: true,
+        itemCount: categories.length,
+        separatorBuilder: (_, _) => const shad.Gap(8),
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          final icon = resolvePlatformIcon(
+            category.icon,
+            fallback: category.isExpense != false
+                ? Icons.arrow_downward
+                : Icons.arrow_upward,
+          );
+          final color = categoryColor(category);
+          return FinancePickerTile(
+            title: category.name ?? '',
+            subtitle: category.isExpense != false
+                ? context.l10n.financeExpense
+                : context.l10n.financeIncome,
+            leading: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 16, color: color),
+            ),
+            onTap: () => Navigator.of(context).pop(category.id),
+          );
+        },
+      ),
     );
   }
 }
@@ -309,73 +272,49 @@ class _TagPickerDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return shad.AlertDialog(
-      title: Text(context.l10n.financeTags),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              shad.GhostButton(
-                onPressed: () => Navigator.of(context).pop(''),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.block_outlined,
-                      size: 16,
-                      color: shad.Theme.of(context).colorScheme.mutedForeground,
-                    ),
-                    const shad.Gap(8),
-                    const Expanded(
-                      child: Text(
-                        '-',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (selectedTagId == null)
-                      const Icon(Icons.check, size: 16),
-                  ],
-                ),
-              ),
-              ...tags.map(
-                (tag) => shad.GhostButton(
-                  onPressed: () => Navigator.of(context).pop(tag.id),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: tagColor(tag),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const shad.Gap(8),
-                      Expanded(
-                        child: Text(
-                          tag.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (tag.id == selectedTagId)
-                        const Icon(Icons.check, size: 16),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return FinanceModalScaffold(
+      title: context.l10n.financeTags,
+      subtitle: context.l10n.financePickerTagSubtitle,
       actions: [
         shad.OutlineButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
         ),
       ],
+      child: ListView.separated(
+        shrinkWrap: true,
+        itemCount: tags.length + 1,
+        separatorBuilder: (_, _) => const shad.Gap(8),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return FinancePickerTile(
+              title: context.l10n.financeNoTag,
+              isSelected: selectedTagId == null,
+              leading: Icon(
+                Icons.block_outlined,
+                size: 18,
+                color: shad.Theme.of(context).colorScheme.mutedForeground,
+              ),
+              onTap: () => Navigator.of(context).pop(''),
+            );
+          }
+
+          final tag = tags[index - 1];
+          return FinancePickerTile(
+            title: tag.name,
+            isSelected: tag.id == selectedTagId,
+            leading: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: tagColor(tag),
+                shape: BoxShape.circle,
+              ),
+            ),
+            onTap: () => Navigator.of(context).pop(tag.id),
+          );
+        },
+      ),
     );
   }
 }

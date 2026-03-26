@@ -227,6 +227,7 @@ async function getEligibleRecipients(
     userIds?: string[];
   }
 ): Promise<EligibleRecipient[]> {
+  // Query 1: Get check records with user data (with ws_id filter)
   let query = sbAdmin
     .from('user_group_post_checks')
     .select(
@@ -243,13 +244,63 @@ async function getEligibleRecipients(
   if (error) throw error;
 
   const rows = (data ?? []) as EligibleRecipientCheckRow[];
+
+  // Query 2: Get all check records for this post (without user filter) to diagnose missing users
+  let allChecksQuery = sbAdmin
+    .from('user_group_post_checks')
+    .select('user_id, is_completed, approval_status, approved_by')
+    .eq('post_id', postId);
+
+  if (userIds && userIds.length > 0) {
+    allChecksQuery = allChecksQuery.in('user_id', userIds);
+  }
+
+  const { data: allChecksData, error: allChecksError } = await allChecksQuery;
+  if (allChecksError) throw allChecksError;
+
+  const allCheckRows = allChecksData ?? [];
+  const foundUserIds = new Set(rows.map((r) => r.user_id));
+  const missingFromUserTable = allCheckRows
+    .filter((r) => !foundUserIds.has(r.user_id))
+    .map((r) => r.user_id);
+
+  // Enhanced diagnostics
+  const diagnostics = {
+    totalCheckRows: allCheckRows.length,
+    rowsWithUserData: rows.length,
+    missingFromUserTable: missingFromUserTable.length,
+    missingIsCompleted: [] as string[],
+    notApproved: [] as Array<{ userId: string; status: string | null }>,
+    missingUserObject: [] as string[],
+    missingEmail: [] as Array<{ userId: string; email: unknown }>,
+    kept: [] as string[],
+  };
+
   const filtered = rows
-    .filter(
-      (row) =>
-        row.is_completed !== null &&
-        row.approval_status === 'APPROVED' &&
-        row.user?.email != null
-    )
+    .filter((row) => {
+      const hasCompletion = row.is_completed !== null;
+      const isApproved = row.approval_status === 'APPROVED';
+      const hasUser = row.user != null;
+      const hasEmail = row.user?.email != null && row.user?.email !== '';
+
+      if (!hasCompletion) diagnostics.missingIsCompleted.push(row.user_id);
+      if (hasCompletion && !isApproved)
+        diagnostics.notApproved.push({
+          userId: row.user_id,
+          status: row.approval_status,
+        });
+      if (hasCompletion && isApproved && !hasUser)
+        diagnostics.missingUserObject.push(row.user_id);
+      if (hasCompletion && isApproved && hasUser && !hasEmail)
+        diagnostics.missingEmail.push({
+          userId: row.user_id,
+          email: row.user?.email,
+        });
+
+      const keep = hasCompletion && isApproved && hasUser && hasEmail;
+      if (keep) diagnostics.kept.push(row.user_id);
+      return keep;
+    })
     .map((row) => ({
       user_id: row.user_id,
       email: row.user!.email,
@@ -260,13 +311,40 @@ async function getEligibleRecipients(
     isValidEmailAddress(row.email)
   );
 
-  console.log('[getEligibleRecipients]', {
-    postId,
-    totalRows: rows.length,
-    afterApprovalFilter: filtered.length,
-    afterEmailFilter: withValidEmail.length,
-    sample: withValidEmail.slice(0, 2),
-  });
+  // Log diagnostics - always log when users are skipped due to missing emails
+  const hasSkippedUsers = diagnostics.missingEmail.length > 0;
+  const hasDiagnostics =
+    allCheckRows.length !== rows.length ||
+    diagnostics.missingIsCompleted.length > 0 ||
+    diagnostics.notApproved.length > 0 ||
+    diagnostics.missingUserObject.length > 0 ||
+    hasSkippedUsers;
+
+  if (hasDiagnostics || allCheckRows.length !== withValidEmail.length) {
+    console.log('[getEligibleRecipients] Processing results', {
+      postId,
+      wsId,
+      summary: {
+        totalCheckRows: diagnostics.totalCheckRows,
+        rowsWithUserData: diagnostics.rowsWithUserData,
+        eligibleForEmail: withValidEmail.length,
+        skippedNoEmail: diagnostics.missingEmail.length,
+      },
+      filters: {
+        missingIsCompleted: diagnostics.missingIsCompleted.length,
+        notApproved: diagnostics.notApproved.length,
+        missingUserObject: diagnostics.missingUserObject.length,
+        missingEmail: diagnostics.missingEmail.length,
+        kept: diagnostics.kept.length,
+      },
+      // Sample of users skipped due to missing email
+      sampleSkippedNoEmail: diagnostics.missingEmail
+        .slice(0, 5)
+        .map((m) => m.userId),
+      sampleKept: diagnostics.kept.slice(0, 3),
+      sampleEligible: withValidEmail.slice(0, 2),
+    });
+  }
 
   return withValidEmail;
 }

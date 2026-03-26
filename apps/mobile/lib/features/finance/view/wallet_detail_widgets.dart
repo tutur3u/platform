@@ -5,6 +5,7 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -25,6 +26,7 @@ class WalletDetailMetadataCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final palette = FinancePalette.of(context);
     final isCredit = wallet.type == 'CREDIT';
     final walletCurrency = wallet.currency ?? 'USD';
     final balance = wallet.balance ?? 0;
@@ -41,7 +43,8 @@ class WalletDetailMetadataCard extends StatelessWidget {
         ? '  (≈ ${formatCurrency(convertedBalance, workspaceCurrency)})'
         : '';
 
-    return shad.Card(
+    return FinancePanel(
+      backgroundColor: palette.elevatedPanel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -66,8 +69,29 @@ class WalletDetailMetadataCard extends StatelessWidget {
                       wallet.name ?? '-',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.p.copyWith(
-                        fontWeight: FontWeight.w700,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const shad.Gap(6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: (isCredit ? palette.negative : palette.accent)
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        isCredit
+                            ? context.l10n.financeWalletTypeCredit
+                            : context.l10n.financeWalletTypeStandard,
+                        style: theme.typography.xSmall.copyWith(
+                          color: isCredit ? palette.negative : palette.accent,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -85,21 +109,39 @@ class WalletDetailMetadataCard extends StatelessWidget {
             ),
           ],
           const shad.Gap(12),
-          _MetaRow(
+          FinanceAmountText(
+            amount: balance,
+            currency: walletCurrency,
+            showPlus: false,
+            alignment: CrossAxisAlignment.start,
+            forceColor: theme.colorScheme.foreground,
+            style: theme.typography.h3,
+          ),
+          if (showConverted) ...[
+            const shad.Gap(6),
+            Text(
+              '≈ ${formatCurrency(convertedBalance, workspaceCurrency)}',
+              style: theme.typography.textSmall.copyWith(
+                color: colorScheme.mutedForeground,
+              ),
+            ),
+          ],
+          const shad.Gap(16),
+          FinanceKeyValueRow(
             label: context.l10n.financeWalletBalance,
             value:
                 '${formatCurrency(balance, walletCurrency)}'
                 '$convertedBalanceText',
           ),
           const shad.Gap(8),
-          _MetaRow(
+          FinanceKeyValueRow(
             label: context.l10n.financeType,
             value: isCredit
                 ? context.l10n.financeWalletTypeCredit
                 : context.l10n.financeWalletTypeStandard,
           ),
           const shad.Gap(8),
-          _MetaRow(
+          FinanceKeyValueRow(
             label: context.l10n.financeWalletCurrency,
             value: walletCurrency,
           ),
@@ -128,6 +170,7 @@ class WalletDetailStatsCard extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final materialTheme = Theme.of(context);
+    final palette = FinancePalette.of(context);
     final incomeColor = materialTheme.brightness == Brightness.dark
         ? Colors.green.shade300
         : Colors.green.shade700;
@@ -195,36 +238,56 @@ class WalletDetailStatsCard extends StatelessWidget {
         ? null
         : '≈ ${formatCurrency(convertedNet, targetCurrency)}';
 
-    return shad.Card(
+    return FinancePanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             l10n.financeStatisticsSummary,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w700,
+            style: theme.typography.large.copyWith(
+              fontWeight: FontWeight.w800,
             ),
           ),
           const shad.Gap(12),
-          _StatRow(
-            label: l10n.financeTotalTransactions,
-            value: currentStats.totalTransactions.toString(),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              FinanceStatChip(
+                icon: Icons.receipt_long_outlined,
+                label: l10n.financeTotalTransactions,
+                value: currentStats.totalTransactions.toString(),
+                tint: palette.accent,
+              ),
+              FinanceStatChip(
+                icon: Icons.arrow_upward_rounded,
+                label: l10n.financeIncome,
+                value: incomeText,
+                tint: incomeColor,
+              ),
+              FinanceStatChip(
+                icon: Icons.arrow_downward_rounded,
+                label: l10n.financeExpense,
+                value: expenseText,
+                tint: theme.colorScheme.destructive,
+              ),
+            ],
           ),
-          const shad.Gap(6),
+          const shad.Gap(16),
           _StatRow(
             label: l10n.financeIncome,
             value: incomeText,
             secondaryValue: convertedIncomeText,
             valueColor: incomeColor,
           ),
-          const shad.Gap(6),
+          const shad.Gap(8),
           _StatRow(
             label: l10n.financeExpense,
             value: expenseText,
             secondaryValue: convertedExpenseText,
             valueColor: theme.colorScheme.destructive,
           ),
-          const shad.Gap(6),
+          const shad.Gap(8),
           _StatRow(
             label: l10n.financeNet,
             value: netText,
@@ -235,43 +298,6 @@ class WalletDetailStatsCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _MetaRow extends StatelessWidget {
-  const _MetaRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.textSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const shad.Gap(8),
-        Expanded(
-          flex: 2,
-          child: Text(
-            value,
-            style: theme.typography.textSmall,
-          ),
-        ),
-      ],
     );
   }
 }

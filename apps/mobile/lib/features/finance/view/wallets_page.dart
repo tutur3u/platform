@@ -1,13 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
+import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/features/finance/finance_cache.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -39,11 +41,13 @@ class _WalletsView extends StatefulWidget {
 
 class _WalletsViewState extends State<_WalletsView> {
   static const double _fabContentBottomPadding = 96;
+  static final Map<String, _WalletsCacheEntry> _cache = {};
 
   List<Wallet> _wallets = const [];
   bool _isLoading = false;
   String? _error;
   int _currentWalletsRequestToken = 0;
+  String? _loadedWorkspaceId;
 
   @override
   void initState() {
@@ -54,13 +58,21 @@ class _WalletsViewState extends State<_WalletsView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
     final listBottomPadding =
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       headers: [
-        MobileSectionAppBar(title: l10n.financeWallets),
+        MobileSectionAppBar(
+          title: l10n.financeWallets,
+          actions: [
+            shad.GhostButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: _onCreate,
+              child: const Icon(Icons.add_card_rounded, size: 18),
+            ),
+          ],
+        ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
@@ -68,75 +80,9 @@ class _WalletsViewState extends State<_WalletsView> {
         listener: (context, _) => unawaited(_loadWallets()),
         child: Stack(
           children: [
-            Column(
-              children: [
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _loadWallets,
-                    child: _isLoading
-                        ? const Center(child: shad.CircularProgressIndicator())
-                        : _error != null
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              const SizedBox(height: 120),
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                  ),
-                                  child: Text(
-                                    _error!,
-                                    textAlign: TextAlign.center,
-                                    style: theme.typography.textMuted,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : _wallets.isEmpty
-                        ? ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              const SizedBox(height: 120),
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                  ),
-                                  child: Text(
-                                    l10n.financeNoWallets,
-                                    textAlign: TextAlign.center,
-                                    style: theme.typography.textMuted,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.fromLTRB(
-                              16,
-                              8,
-                              16,
-                              listBottomPadding,
-                            ),
-                            itemCount: _wallets.length,
-                            separatorBuilder: (context, index) =>
-                                const shad.Gap(8),
-                            itemBuilder: (context, index) {
-                              final wallet = _wallets[index];
-                              return _WalletCard(
-                                wallet: wallet,
-                                onTap: () => _openWallet(wallet),
-                                onEdit: () => _onEdit(wallet),
-                                onDelete: () => _onDelete(wallet),
-                              );
-                            },
-                          ),
-                  ),
-                ),
-              ],
+            RefreshIndicator(
+              onRefresh: () => _loadWallets(forceRefresh: true),
+              child: _buildBody(listBottomPadding),
             ),
             ExtendedFab(
               icon: Icons.add,
@@ -149,34 +95,104 @@ class _WalletsViewState extends State<_WalletsView> {
     );
   }
 
+  Widget _buildBody(double listBottomPadding) {
+    final l10n = context.l10n;
+
+    if (_isLoading) {
+      return const Center(child: shad.CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+        children: [
+          FinanceEmptyState(
+            icon: Icons.error_outline,
+            title: l10n.commonSomethingWentWrong,
+            body: _error!,
+            action: shad.SecondaryButton(
+              onPressed: _loadWallets,
+              child: Text(l10n.commonRetry),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (_wallets.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+        children: [
+          const _WalletSummaryCard(walletCount: 0),
+          const shad.Gap(16),
+          FinanceEmptyState(
+            icon: Icons.account_balance_wallet_outlined,
+            title: l10n.financeNoWallets,
+            body: l10n.financeOverviewNoWalletsBody,
+            action: shad.SecondaryButton(
+              onPressed: _onCreate,
+              child: Text(l10n.financeCreateFirstWallet),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+      itemCount: _wallets.length + 1,
+      separatorBuilder: (context, index) => const shad.Gap(12),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return _WalletSummaryCard(walletCount: _wallets.length);
+        }
+
+        final wallet = _wallets[index - 1];
+        return _WalletCard(
+          wallet: wallet,
+          onTap: () => _openWallet(wallet),
+          onEdit: () => _onEdit(wallet),
+          onDelete: () => _onDelete(wallet),
+        );
+      },
+    );
+  }
+
   Future<void> _onCreate() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null) {
+      return;
+    }
 
     final changed = await _showWalletDialog(wsId: wsId);
     if (changed) {
-      await _loadWallets();
+      await _loadWallets(forceRefresh: true);
     }
   }
 
   Future<void> _onEdit(Wallet wallet) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null) {
+      return;
+    }
 
     final changed = await _showWalletDialog(wsId: wsId, wallet: wallet);
     if (changed) {
-      await _loadWallets();
+      await _loadWallets(forceRefresh: true);
     }
   }
 
   Future<void> _onDelete(Wallet wallet) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null) {
+      return;
+    }
 
-    final repository = context.read<FinanceRepository>();
     final l10n = context.l10n;
     final toastContext = Navigator.of(context, rootNavigator: true).context;
-
     final confirmed = await shad.showDialog<bool>(
       context: context,
       builder: (_) => AsyncDeleteConfirmationDialog(
@@ -186,38 +202,97 @@ class _WalletsViewState extends State<_WalletsView> {
         confirmLabel: l10n.financeDeleteWallet,
         toastContext: toastContext,
         onConfirm: () async {
-          await repository.deleteWallet(wsId: wsId, walletId: wallet.id);
+          await context.read<FinanceRepository>().deleteWallet(
+            wsId: wsId,
+            walletId: wallet.id,
+          );
         },
       ),
     );
 
-    if (!mounted || confirmed != true) return;
-    await _loadWallets();
+    if (!mounted || confirmed != true) {
+      return;
+    }
+
+    await _loadWallets(forceRefresh: true);
   }
 
   Future<void> _openWallet(Wallet wallet) async {
     await context.push(Routes.walletDetailPath(wallet.id));
-    if (!mounted) return;
-    await _loadWallets();
+    if (mounted) {
+      await _loadWallets(forceRefresh: true);
+    }
   }
 
-  Future<void> _loadWallets() async {
+  Future<void> _loadWallets({bool forceRefresh = false}) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null) {
+      if (!mounted) {
+        _loadedWorkspaceId = null;
+        return;
+      }
+      setState(() {
+        _wallets = const [];
+        _loadedWorkspaceId = null;
+        _isLoading = false;
+        _error = null;
+      });
+      return;
+    }
     final requestToken = ++_currentWalletsRequestToken;
+    final cached = _cache[wsId];
+    final hasVisibleData = _loadedWorkspaceId == wsId;
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    if (!forceRefresh && cached != null) {
+      if (!mounted || requestToken != _currentWalletsRequestToken) {
+        return;
+      }
+      setState(() {
+        _wallets = cached.wallets;
+        _loadedWorkspaceId = wsId;
+        _isLoading = false;
+        _error = null;
+      });
+      if (isFinanceCacheFresh(cached.fetchedAt)) {
+        return;
+      }
+    } else if (!hasVisibleData) {
+      if (!mounted || requestToken != _currentWalletsRequestToken) {
+        return;
+      }
+      setState(() {
+        _wallets = const [];
+        _loadedWorkspaceId = wsId;
+        _isLoading = true;
+        _error = null;
+      });
+    } else {
+      setState(() => _error = null);
+    }
 
     try {
       final wallets = await context.read<FinanceRepository>().getWallets(wsId);
-      if (!mounted || requestToken != _currentWalletsRequestToken) return;
-      setState(() => _wallets = wallets);
+      if (!mounted || requestToken != _currentWalletsRequestToken) {
+        return;
+      }
+      _cache[wsId] = _WalletsCacheEntry(
+        wallets: wallets,
+        fetchedAt: DateTime.now(),
+      );
+      setState(() {
+        _wallets = wallets;
+        _loadedWorkspaceId = wsId;
+        _error = null;
+      });
     } on Exception {
-      if (!mounted || requestToken != _currentWalletsRequestToken) return;
-      setState(() => _error = context.l10n.commonSomethingWentWrong);
+      if (!mounted || requestToken != _currentWalletsRequestToken) {
+        return;
+      }
+      if (cached != null || hasVisibleData) {
+        setState(() => _error = null);
+      } else {
+        setState(() => _error = context.l10n.commonSomethingWentWrong);
+      }
     } finally {
       if (mounted && requestToken == _currentWalletsRequestToken) {
         setState(() => _isLoading = false);
@@ -229,7 +304,7 @@ class _WalletsViewState extends State<_WalletsView> {
     required String wsId,
     Wallet? wallet,
   }) async {
-    final createdOrUpdated = await shad.showDialog<bool>(
+    final result = await showFinanceModal<bool>(
       context: context,
       builder: (_) => WalletDialog(
         wsId: wsId,
@@ -238,7 +313,77 @@ class _WalletsViewState extends State<_WalletsView> {
       ),
     );
 
-    return createdOrUpdated ?? false;
+    return result ?? false;
+  }
+}
+
+class _WalletsCacheEntry {
+  const _WalletsCacheEntry({
+    required this.wallets,
+    required this.fetchedAt,
+  });
+
+  final List<Wallet> wallets;
+  final DateTime fetchedAt;
+}
+
+class _WalletSummaryCard extends StatelessWidget {
+  const _WalletSummaryCard({required this.walletCount});
+
+  final int walletCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final palette = FinancePalette.of(context);
+    final theme = shad.Theme.of(context);
+
+    return FinancePanel(
+      padding: const EdgeInsets.all(20),
+      backgroundColor: palette.elevatedPanel,
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: palette.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.account_balance_wallet_outlined,
+              color: palette.accent,
+            ),
+          ),
+          const shad.Gap(14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.financeOverviewWalletSectionTitle,
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const shad.Gap(4),
+                Text(
+                  l10n.financeWalletSummaryHint(walletCount),
+                  style: theme.typography.textSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FinanceStatChip(
+            icon: Icons.layers_outlined,
+            label: l10n.financeWallets,
+            value: '$walletCount',
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -257,99 +402,121 @@ class _WalletCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = FinancePalette.of(context);
     final theme = shad.Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isCredit = wallet.type == 'CREDIT';
-    final accent = isCredit ? Colors.deepOrange : colorScheme.primary;
+    final accent = isCredit ? palette.negative : palette.accent;
     final balance = wallet.balance ?? 0;
     final currency = wallet.currency ?? 'USD';
     final icon = resolvePlatformIcon(
       wallet.icon,
-      fallback: isCredit ? Icons.credit_card : Icons.wallet_outlined,
+      fallback: isCredit ? Icons.credit_card_outlined : Icons.wallet_outlined,
     );
 
-    return shad.Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Row(
-          children: [
-            WalletVisualAvatar(
-              icon: wallet.icon,
-              imageSrc: wallet.imageSrc,
-              fallbackIcon: icon,
-              backgroundColor: accent.withValues(alpha: 0.14),
-            ),
-            const shad.Gap(12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    wallet.name ?? '-',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.p.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (wallet.description?.trim().isNotEmpty ?? false) ...[
-                    const shad.Gap(2),
+    return FinancePanel(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              WalletVisualAvatar(
+                icon: wallet.icon,
+                imageSrc: wallet.imageSrc,
+                fallbackIcon: icon,
+                backgroundColor: accent.withValues(alpha: 0.14),
+              ),
+              const shad.Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      wallet.description!,
+                      wallet.name ?? '-',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textSmall.copyWith(
-                        color: colorScheme.mutedForeground,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                  ],
-                  const shad.Gap(4),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          color: accent.withValues(alpha: 0.12),
-                        ),
-                        child: Text(
-                          isCredit
-                              ? context.l10n.financeWalletTypeCredit
-                              : context.l10n.financeWalletTypeStandard,
-                          style: theme.typography.xSmall.copyWith(
-                            color: accent,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                    if (wallet.description?.trim().isNotEmpty ?? false) ...[
+                      const shad.Gap(4),
                       Text(
-                        formatCurrency(balance, currency),
-                        style: theme.typography.xSmall.copyWith(
-                          fontWeight: FontWeight.w600,
+                        wallet.description!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.textSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
                         ),
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            shad.GhostButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: onEdit,
-              child: const Icon(Icons.edit_outlined, size: 16),
-            ),
-            shad.GhostButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: onDelete,
-              child: const Icon(Icons.delete_outline, size: 16),
-            ),
-          ],
+              const shad.Gap(8),
+              shad.GhostButton(
+                density: shad.ButtonDensity.icon,
+                onPressed: onEdit,
+                child: const Icon(Icons.edit_outlined, size: 18),
+              ),
+              shad.GhostButton(
+                density: shad.ButtonDensity.icon,
+                onPressed: onDelete,
+                child: const Icon(Icons.delete_outline, size: 18),
+              ),
+            ],
+          ),
+          const shad.Gap(18),
+          FinanceAmountText(
+            amount: balance,
+            currency: currency,
+            showPlus: false,
+            alignment: CrossAxisAlignment.start,
+            forceColor: theme.colorScheme.foreground,
+            style: theme.typography.h3,
+          ),
+          const shad.Gap(12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _WalletMetaPill(
+                label: isCredit
+                    ? context.l10n.financeWalletTypeCredit
+                    : context.l10n.financeWalletTypeStandard,
+                color: accent,
+              ),
+              _WalletMetaPill(
+                label: currency.toUpperCase(),
+                color: theme.colorScheme.mutedForeground,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WalletMetaPill extends StatelessWidget {
+  const _WalletMetaPill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: shad.Theme.of(context).typography.xSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

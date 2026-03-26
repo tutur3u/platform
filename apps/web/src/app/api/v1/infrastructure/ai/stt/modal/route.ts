@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   }
 
   // if user is not part of Tuturuuu org
-  if (!user.email || !user.email.endsWith('@tuturuuu.com')) {
+  if (!user.email?.endsWith('@tuturuuu.com')) {
     return new Response('Forbidden', { status: 403 });
   }
 

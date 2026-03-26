@@ -435,8 +435,7 @@ export default function TimeTrackerContent({
       try {
         if (!task || !currentUserId) return;
 
-        const isUnassigned =
-          !task || !task.assignees || task.assignees.length === 0;
+        const isUnassigned = !task?.assignees || task.assignees.length === 0;
 
         // If task is unassigned, assign to current user first
         if (isUnassigned) {
@@ -1267,7 +1266,7 @@ export default function TimeTrackerContent({
                 availableTasks.map((task) => {
                   const priorityBadge = getPriorityBadge(task.priority);
                   const isUnassigned =
-                    !task || !task.assignees || task.assignees.length === 0;
+                    !task?.assignees || task.assignees.length === 0;
 
                   return (
                     <button

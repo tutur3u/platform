@@ -5,13 +5,30 @@ const _sentinel = Object();
 
 enum HabitsStatus { initial, loading, loaded, error }
 
+class HabitActivityEntry extends Equatable {
+  const HabitActivityEntry({
+    required this.tracker,
+    required this.entry,
+  });
+
+  final HabitTracker tracker;
+  final HabitTrackerEntry entry;
+
+  DateTime get timestamp => entry.occurredAt ?? entry.createdAt;
+
+  @override
+  List<Object?> get props => [tracker, entry];
+}
+
 class HabitsState extends Equatable {
   const HabitsState({
     this.status = HabitsStatus.initial,
     this.detailStatus = HabitsStatus.initial,
+    this.activityStatus = HabitsStatus.initial,
     this.activeWorkspaceId,
     this.listResponse,
     this.detail,
+    this.activityEntries = const [],
     this.selectedTrackerId,
     this.selectedScope = HabitTrackerScope.self,
     this.selectedMemberId,
@@ -23,15 +40,18 @@ class HabitsState extends Equatable {
     this.isArchivingTracker = false,
     this.error,
     this.detailError,
+    this.activityError,
     this.detailScope,
     this.detailScopeUserId,
   });
 
   final HabitsStatus status;
   final HabitsStatus detailStatus;
+  final HabitsStatus activityStatus;
   final String? activeWorkspaceId;
   final HabitTrackerListResponse? listResponse;
   final HabitTrackerDetailResponse? detail;
+  final List<HabitActivityEntry> activityEntries;
   final String? selectedTrackerId;
   final HabitTrackerScope selectedScope;
   final String? selectedMemberId;
@@ -43,6 +63,7 @@ class HabitsState extends Equatable {
   final bool isArchivingTracker;
   final String? error;
   final String? detailError;
+  final String? activityError;
   final HabitTrackerScope? detailScope;
   final String? detailScopeUserId;
 
@@ -85,9 +106,11 @@ class HabitsState extends Equatable {
   HabitsState copyWith({
     HabitsStatus? status,
     HabitsStatus? detailStatus,
+    HabitsStatus? activityStatus,
     Object? activeWorkspaceId = _sentinel,
     Object? listResponse = _sentinel,
     Object? detail = _sentinel,
+    List<HabitActivityEntry>? activityEntries,
     Object? selectedTrackerId = _sentinel,
     HabitTrackerScope? selectedScope,
     Object? selectedMemberId = _sentinel,
@@ -99,12 +122,14 @@ class HabitsState extends Equatable {
     bool? isArchivingTracker,
     Object? error = _sentinel,
     Object? detailError = _sentinel,
+    Object? activityError = _sentinel,
     Object? detailScope = _sentinel,
     Object? detailScopeUserId = _sentinel,
   }) {
     return HabitsState(
       status: status ?? this.status,
       detailStatus: detailStatus ?? this.detailStatus,
+      activityStatus: activityStatus ?? this.activityStatus,
       activeWorkspaceId: activeWorkspaceId == _sentinel
           ? this.activeWorkspaceId
           : activeWorkspaceId as String?,
@@ -114,6 +139,7 @@ class HabitsState extends Equatable {
       detail: detail == _sentinel
           ? this.detail
           : detail as HabitTrackerDetailResponse?,
+      activityEntries: activityEntries ?? this.activityEntries,
       selectedTrackerId: selectedTrackerId == _sentinel
           ? this.selectedTrackerId
           : selectedTrackerId as String?,
@@ -132,6 +158,9 @@ class HabitsState extends Equatable {
       detailError: detailError == _sentinel
           ? this.detailError
           : detailError as String?,
+      activityError: activityError == _sentinel
+          ? this.activityError
+          : activityError as String?,
       detailScope: detailScope == _sentinel
           ? this.detailScope
           : detailScope as HabitTrackerScope?,
@@ -145,9 +174,11 @@ class HabitsState extends Equatable {
   List<Object?> get props => [
     status,
     detailStatus,
+    activityStatus,
     activeWorkspaceId,
     listResponse,
     detail,
+    activityEntries,
     selectedTrackerId,
     selectedScope,
     selectedMemberId,
@@ -159,6 +190,7 @@ class HabitsState extends Equatable {
     isArchivingTracker,
     error,
     detailError,
+    activityError,
     detailScope,
     detailScopeUserId,
   ];
