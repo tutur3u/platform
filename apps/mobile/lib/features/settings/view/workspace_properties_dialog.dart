@@ -122,13 +122,6 @@ class _WorkspacePropertiesDialogState
     final initialName = (widget.workspace.name ?? '').trim();
 
     try {
-      if (name != initialName) {
-        await _workspaceRepository.updateWorkspaceName(
-          widget.workspace.id,
-          name,
-        );
-      }
-
       if (_avatarFile != null) {
         await _workspaceRepository.updateWorkspaceAvatar(
           widget.workspace.id,
@@ -136,6 +129,13 @@ class _WorkspacePropertiesDialogState
         );
       } else if (_removeAvatar && _hadInitialAvatar) {
         await _workspaceRepository.removeWorkspaceAvatar(widget.workspace.id);
+      }
+
+      if (name != initialName) {
+        await _workspaceRepository.updateWorkspaceName(
+          widget.workspace.id,
+          name,
+        );
       }
 
       await workspaceCubit.loadWorkspaces();
@@ -264,9 +264,8 @@ class _WorkspacePropertiesDialogState
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                  ),
                 ),
-              
+              ),
             ],
           ),
           const shad.Gap(12),
@@ -287,7 +286,7 @@ class _WorkspacePropertiesDialogState
                         : () {
                             setState(() {
                               _avatarFile = null;
-                              _removeAvatar = true;
+                              _removeAvatar = _hadInitialAvatar;
                             });
                           },
                     child: Text(l10n.profileRemoveAvatar),
