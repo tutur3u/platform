@@ -3731,7 +3731,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceSystemBadge => 'System';
 
   @override
-  String get workspaceSystemSection => 'System';
+  String get workspaceSystemSection => 'Internal';
 
   @override
   String get workspaceTeamSection => 'Team workspaces';

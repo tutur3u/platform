@@ -1,6 +1,5 @@
 import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { Database } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -13,6 +12,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { CheckAll } from './check-all';
+import type { GroupPostRecipientRow, GroupPostStatusSummaryRow } from './types';
 import { UsersList } from './users-list';
 
 export const metadata: Metadata = {
@@ -37,12 +37,6 @@ interface Props {
   }>;
   searchParams: Promise<SearchParams>;
 }
-
-type GroupPostRecipientRow =
-  Database['public']['Functions']['get_user_group_post_recipient_rows']['Returns'][number];
-
-type GroupPostStatusSummaryRow =
-  Database['public']['Functions']['get_user_group_post_status_summary']['Returns'][number];
 
 export default async function HomeworkCheck({ params, searchParams }: Props) {
   return (

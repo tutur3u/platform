@@ -1504,7 +1504,7 @@
     "workspacePersonalBadge": "Personal",
     "workspacePersonalSection": "Personal",
     "workspaceSystemBadge": "System",
-    "workspaceSystemSection": "System",
+    "workspaceSystemSection": "Internal",
     "workspaceTeamSection": "Team workspaces",
     "workspaceCreateTitle": "Create workspace",
     "workspaceCreateDescription": "Create a fresh space for projects, habits, finance, and more.",

@@ -307,6 +307,18 @@ class _AvatarMenuContent extends StatelessWidget {
       children: [
         _AccountHeader(data: data, compact: compact),
         const shad.Gap(14),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            context.l10n.settingsCurrentWorkspace,
+            style: theme.typography.small.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+        const shad.Gap(10),
         _WorkspaceCard(
           data: data,
           onTap: () => onSelected(AvatarMenuAction.workspace),
@@ -445,20 +457,6 @@ class _WorkspaceCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.l10n.settingsCurrentWorkspace,
-                  style: theme.typography.small.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const shad.Gap(12),
           Row(
             children: [
               if (workspace?.personal ?? false)

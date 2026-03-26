@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { Database } from '@tuturuuu/types/db';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import type { GroupPostStatusSummaryRow } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/types';
 
 interface Params {
   params: Promise<{
@@ -10,9 +10,6 @@ interface Params {
     postId: string;
   }>;
 }
-
-type GroupPostStatusSummaryRow =
-  Database['public']['Functions']['get_user_group_post_status_summary']['Returns'][number];
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId, postId } = await params;

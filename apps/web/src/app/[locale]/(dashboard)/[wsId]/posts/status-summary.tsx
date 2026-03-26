@@ -4,8 +4,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
 import { useQueryStates } from 'nuqs';
+import type { ReactNode } from 'react';
 import { postsSearchParamParsers } from './search-params';
 import {
   getPostReviewStageAppearance,
@@ -71,7 +71,13 @@ export function PostStatusSummary({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => void setQueryState({ page: 1, stage: null })}
+                  onClick={() =>
+                    void setQueryState({
+                      page: 1,
+                      showAll: true,
+                      stage: null,
+                    })
+                  }
                 >
                   {t('show_all_recipients')}
                 </Button>
@@ -84,6 +90,7 @@ export function PostStatusSummary({
                   onClick={() =>
                     void setQueryState({
                       page: 1,
+                      showAll: null,
                       stage: DEFAULT_POST_REVIEW_STAGE,
                     })
                   }
@@ -130,7 +137,13 @@ export function PostStatusSummary({
                     <button
                       key={stage}
                       type="button"
-                      onClick={() => void setQueryState({ page: 1, stage })}
+                      onClick={() =>
+                        void setQueryState({
+                          page: 1,
+                          showAll: null,
+                          stage,
+                        })
+                      }
                       className={cn(
                         'group rounded-xl border bg-background px-3.5 py-3 text-left transition-all',
                         isActive
@@ -174,7 +187,7 @@ export function PostStatusSummary({
           </div>
         </div>
         {toolbar ? (
-          <div className="border-t border-border/60 px-6 py-4">{toolbar}</div>
+          <div className="border-border/60 border-t px-6 py-4">{toolbar}</div>
         ) : null}
       </CardContent>
     </Card>

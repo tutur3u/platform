@@ -1,10 +1,8 @@
 'use client';
 
-import type { Database, UserGroupPost } from '@tuturuuu/types/db';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import UserCard from './card';
-
-type GroupPostRecipientRow =
-  Database['public']['Functions']['get_user_group_post_recipient_rows']['Returns'][number];
+import type { GroupPostRecipientRow } from './types';
 
 interface Props {
   recipients: GroupPostRecipientRow[];

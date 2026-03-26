@@ -3725,7 +3725,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceSystemBadge => 'Hệ thống';
 
   @override
-  String get workspaceSystemSection => 'Hệ thống';
+  String get workspaceSystemSection => 'Nội bộ';
 
   @override
   String get workspaceTeamSection => 'Nhóm làm việc';

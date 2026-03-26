@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, LoaderCircle, Save, X } from '@tuturuuu/icons';
-import type { Database, UserGroupPost } from '@tuturuuu/types/db';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -22,9 +22,7 @@ import type {
   PostReviewStage,
 } from '../../../../../posts/types';
 import { isPostEmailQueueStatus } from '../../../../../posts/types';
-
-type GroupPostRecipientRow =
-  Database['public']['Functions']['get_user_group_post_recipient_rows']['Returns'][number];
+import type { GroupPostRecipientRow } from './types';
 
 interface Props {
   recipient: GroupPostRecipientRow;
@@ -56,8 +54,10 @@ function UserCard({
   const approvalAppearance = approvalStatus
     ? getPostApprovalStatusAppearance(approvalStatus)
     : null;
-  const queueAppearance = isPostEmailQueueStatus(recipient.queue_status)
-    ? getPostEmailStatusAppearance(recipient.queue_status)
+  const queueAppearance = isPostEmailQueueStatus(
+    recipient.queue_status ?? undefined
+  )
+    ? getPostEmailStatusAppearance(recipient.queue_status ?? undefined)
     : null;
   const deliveryIssueMessage =
     recipient.delivery_issue_reason === 'missing_email'
@@ -132,7 +132,7 @@ function UserCard({
 
     const notes = formData.get('notes') as string;
     handleSaveStatus({
-      isCompleted: recipient.is_completed,
+      isCompleted: recipient.is_completed ?? false,
       notes,
     });
   };
