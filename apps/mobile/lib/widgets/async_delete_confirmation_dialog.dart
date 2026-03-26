@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AsyncDeleteConfirmationDialog extends StatefulWidget {
@@ -34,53 +35,29 @@ class _AsyncDeleteConfirmationDialogState
 
   @override
   Widget build(BuildContext context) {
-    Widget dialog = shad.AlertDialog(
-      title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(widget.message),
-          const shad.Gap(24),
-          shad.OutlineButton(
-            onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
-            child: SizedBox(
-              width: double.infinity,
-              child: Text(widget.cancelLabel, textAlign: TextAlign.center),
-            ),
-          ),
-          const shad.Gap(8),
-          shad.DestructiveButton(
-            onPressed: _isDeleting ? null : _handleConfirm,
-            child: _isDeleting
-                ? const Center(
-                    child: SizedBox.square(
-                      dimension: 16,
-                      child: shad.CircularProgressIndicator(),
-                    ),
-                  )
-                : SizedBox(
-                    width: double.infinity,
-                    child: Text(
-                      widget.confirmLabel,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-          ),
-        ],
-      ),
-    );
-
-    if (widget.maxWidth != null) {
-      dialog = Center(
-        child: SizedBox(
-          width: widget.maxWidth,
-          child: dialog,
+    return AppDialogScaffold(
+      title: widget.title,
+      description: widget.message,
+      icon: Icons.delete_outline_rounded,
+      maxWidth: widget.maxWidth ?? 420,
+      maxHeightFactor: 0.56,
+      actions: [
+        shad.OutlineButton(
+          onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
+          child: Text(widget.cancelLabel),
         ),
-      );
-    }
-
-    return dialog;
+        shad.DestructiveButton(
+          onPressed: _isDeleting ? null : _handleConfirm,
+          child: _isDeleting
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: shad.CircularProgressIndicator(),
+                )
+              : Text(widget.confirmLabel),
+        ),
+      ],
+      child: const SizedBox.shrink(),
+    );
   }
 
   Future<void> _handleConfirm() async {

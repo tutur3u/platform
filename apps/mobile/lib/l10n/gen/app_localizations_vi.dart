@@ -626,7 +626,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSettingsTitle => 'Cài đặt Mira';
 
   @override
-  String get assistantActionsTitle => 'Thao tác Mira';
+  String get assistantActionsTitle => 'Thao tác';
 
   @override
   String get assistantRenameTitle => 'Đổi tên Mira';
@@ -2875,6 +2875,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerPomodoroSettings => 'Cài đặt Pomodoro';
 
   @override
+  String get timerPomodoroSettingsDescription => 'Điều chỉnh thời gian tập trung, thời gian nghỉ và tự động chuyển giữa các phiên.';
+
+  @override
   String get timerFocusTime => 'Thời gian tập trung';
 
   @override
@@ -3325,16 +3328,37 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTitle => 'Cài đặt';
 
   @override
+  String get settingsAccountTab => 'Tài khoản';
+
+  @override
+  String get settingsPreferencesTab => 'Tùy chọn';
+
+  @override
+  String get settingsAboutTab => 'Giới thiệu';
+
+  @override
+  String get settingsLicensesTab => 'Giấy phép';
+
+  @override
   String get settingsProfile => 'Hồ sơ';
 
   @override
+  String get settingsProfileDescription => 'Quản lý thông tin cá nhân và ảnh đại diện của bạn.';
+
+  @override
   String get settingsLanguage => 'Ngôn ngữ';
+
+  @override
+  String get settingsLanguageDescription => 'Chọn ngôn ngữ sử dụng trong toàn bộ ứng dụng.';
 
   @override
   String get settingsAppVersion => 'Phiên bản ứng dụng';
 
   @override
   String get settingsLanguageSystem => 'Mặc định hệ thống';
+
+  @override
+  String get settingsLanguageSystemDescription => 'Tự động theo ngôn ngữ của thiết bị.';
 
   @override
   String get settingsLanguageEnglish => 'Tiếng Anh';
@@ -3346,6 +3370,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsTheme => 'Giao diện';
 
   @override
+  String get settingsThemeDescription => 'Điều chỉnh giao diện ứng dụng theo thiết bị và sở thích của bạn.';
+
+  @override
   String get settingsThemeLight => 'Sáng';
 
   @override
@@ -3355,7 +3382,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsThemeSystem => 'Hệ thống';
 
   @override
+  String get settingsThemeSystemDescription => 'Tự động theo giao diện của thiết bị.';
+
+  @override
   String get settingsSwitchWorkspace => 'Chuyển không gian làm việc';
+
+  @override
+  String get settingsSwitchWorkspaceDescription => 'Di chuyển giữa ngữ cảnh cá nhân và nhóm.';
 
   @override
   String get settingsCalendar => 'Lịch';
@@ -3364,7 +3397,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsFirstDayOfWeek => 'Ngày đầu tuần';
 
   @override
+  String get settingsFirstDayOfWeekDescription => 'Kiểm soát cách lịch và tổng kết tuần bắt đầu.';
+
+  @override
   String get settingsFirstDayAuto => 'Tự động';
+
+  @override
+  String get settingsFirstDayAutoDescription => 'Dùng mặc định của không gian làm việc hoặc ngôn ngữ khi có thể.';
 
   @override
   String get settingsFirstDaySunday => 'Chủ nhật';
@@ -3376,19 +3415,154 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsFirstDaySaturday => 'Thứ bảy';
 
   @override
+  String get settingsHeroDescription => 'Thiết lập cá nhân, ngữ cảnh không gian làm việc và thông tin bản phát hành trong một nơi.';
+
+  @override
+  String get settingsSignedInAs => 'Đăng nhập bằng';
+
+  @override
+  String get settingsCurrentWorkspace => 'Không gian làm việc hiện tại';
+
+  @override
+  String get settingsCurrentWorkspaceDescription => 'Chọn không gian làm việc bạn đang dùng lúc này.';
+
+  @override
+  String get settingsDefaultWorkspace => 'Không gian mặc định';
+
+  @override
+  String get settingsDefaultWorkspaceDescription => 'Ứng dụng sẽ mở vào đây mặc định mỗi lần khởi động.';
+
+  @override
+  String get settingsNoEmail => 'Không có email';
+
+  @override
+  String get settingsNoWorkspaceSelected => 'Chưa chọn không gian làm việc';
+
+  @override
+  String get settingsWorkspaceActive => 'Đang hoạt động';
+
+  @override
+  String get settingsAccountSectionTitle => 'Tài khoản';
+
+  @override
+  String get settingsAccountSectionDescription => 'Truy cập hồ sơ và điều khiển phiên đăng nhập.';
+
+  @override
+  String get settingsWorkspaceSectionTitle => 'Không gian làm việc';
+
+  @override
+  String get settingsWorkspaceSectionDescription => 'Xem ngữ cảnh hiện tại và chuyển khi cần.';
+
+  @override
+  String get settingsPreferencesSectionTitle => 'Tùy chọn';
+
+  @override
+  String get settingsPreferencesSectionDescription => 'Ngôn ngữ, giao diện và mặc định lịch.';
+
+  @override
+  String get settingsDangerSectionTitle => 'Phiên đăng nhập';
+
+  @override
+  String get settingsDangerSectionDescription => 'Đăng xuất và kết thúc quyền truy cập trên thiết bị này.';
+
+  @override
+  String get settingsQuickOpenProfile => 'Mở hồ sơ';
+
+  @override
+  String get settingsQuickSwitchWorkspace => 'Đổi hiện tại';
+
+  @override
+  String get settingsQuickDefaultWorkspace => 'Không gian mặc định';
+
+  @override
+  String get settingsDataStatusLabel => 'Dữ liệu';
+
+  @override
+  String get settingsDataStatusLive => 'Trực tiếp';
+
+  @override
+  String get settingsDataStatusCached => 'Đã lưu';
+
+  @override
+  String get settingsDataStatusRefreshing => 'Đang làm mới';
+
+  @override
+  String get settingsPullToRefreshAction => 'Làm mới ngay';
+
+  @override
   String get settingsSignOut => 'Đăng xuất';
+
+  @override
+  String get settingsSignOutDescription => 'Kết thúc phiên đăng nhập trên thiết bị này.';
 
   @override
   String get settingsSignOutConfirm => 'Bạn có chắc muốn đăng xuất không?';
 
   @override
+  String get settingsAboutSummary => 'Tuturuuu mobile giữ các công cụ không gian làm việc, trợ lý và luồng làm việc hằng ngày luôn trong tầm tay.';
+
+  @override
+  String get settingsAboutSectionTitle => 'Giới thiệu ứng dụng';
+
+  @override
+  String get settingsAboutSectionDescription => 'Thông tin bản phát hành và sản phẩm của bản dựng này.';
+
+  @override
+  String get settingsVersionLabel => 'Phiên bản';
+
+  @override
+  String get settingsBuildLabel => 'Bản dựng';
+
+  @override
+  String get settingsPackageLabel => 'Gói';
+
+  @override
+  String get settingsVersionTileDescription => 'Bản phát hành hiện được cài trên thiết bị này.';
+
+  @override
+  String get settingsLicensesSectionTitle => 'Giấy phép mã nguồn mở';
+
+  @override
+  String get settingsLicensesSectionDescription => 'Xem các thông báo phần mềm bên thứ ba được đóng gói trong ứng dụng.';
+
+  @override
+  String get settingsLicenseViewerTitle => 'Mở trình xem giấy phép';
+
+  @override
+  String get settingsLicenseViewerDescription => 'Duyệt các giấy phép Flutter, plugin và package có trong bản dựng này.';
+
+  @override
+  String get settingsLicenseVersionDescription => 'Đối chiếu phiên bản đã cài khi xem thông báo.';
+
+  @override
+  String get settingsMinutesUnit => 'phút';
+
+  @override
   String get profileTitle => 'Hồ sơ';
+
+  @override
+  String get profileIdentitySectionTitle => 'Danh tính';
+
+  @override
+  String get profileIdentitySectionDescription => 'Giữ các thông tin cốt lõi mà mọi người thấy về tài khoản của bạn luôn cập nhật.';
 
   @override
   String get profileAvatar => 'Ảnh đại diện';
 
   @override
+  String get profileAvatarSet => 'Đã gắn ảnh';
+
+  @override
   String get profileAvatarDescription => 'Tải lên ảnh đại diện của bạn';
+
+  @override
+  String get profileAvatarSectionTitle => 'Ảnh đại diện';
+
+  @override
+  String get profileAvatarActionDescription => 'Chọn ảnh mới hoặc làm mới ảnh hiện đang gắn với tài khoản.';
+
+  @override
+  String get profileAvatarPickerDescription => 'Chọn nơi lấy ảnh đại diện mới của bạn.';
 
   @override
   String get profileUploadAvatar => 'Tải lên ảnh đại diện';
@@ -3400,13 +3574,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileRemoveAvatar => 'Xóa ảnh đại diện';
 
   @override
+  String get profileRemoveAvatarDescription => 'Xóa ảnh hiện tại khỏi hồ sơ tài khoản của bạn.';
+
+  @override
   String get profileRemoveConfirm => 'Xóa ảnh đại diện?';
 
   @override
   String get profileAccountStatus => 'Trạng thái tài khoản';
 
   @override
+  String get profileAccountStatusDescription => 'Chi tiết thành viên và xác minh của tài khoản này.';
+
+  @override
   String get profileStatus => 'Trạng thái';
+
+  @override
+  String get profileStatusUnknown => 'Không rõ';
 
   @override
   String get profileVerification => 'Xác minh';
@@ -3427,6 +3610,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileDisplayNameHint => 'Tên hiển thị của bạn';
 
   @override
+  String get profileDisplayNameDescription => 'Tên này xuất hiện ở các bề mặt cộng tác trong ứng dụng.';
+
+  @override
   String get profileDisplayNameRequired => 'Tên hiển thị không được để trống';
 
   @override
@@ -3434,6 +3620,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileFullNameHint => 'Tên đầy đủ của bạn';
+
+  @override
+  String get profileFullNameDescription => 'Dùng tên pháp lý hoặc tên đầy đủ bạn muốn lưu trong hồ sơ tài khoản.';
 
   @override
   String get profileFullNameRequired => 'Tên đầy đủ không được để trống';
@@ -3445,6 +3634,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileEmailHint => 'example@tuturuuu.com';
 
   @override
+  String get profileEmailDescription => 'Khi cập nhật email, thư xác nhận sẽ được gửi đến cả địa chỉ cũ và mới.';
+
+  @override
   String get profileInvalidEmail => 'Vui lòng nhập địa chỉ email hợp lệ';
 
   @override
@@ -3452,6 +3644,17 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileNewEmail => 'Email mới';
+
+  @override
+  String get profileMissingValue => 'Chưa đặt';
+
+  @override
+  String get profileDangerAction => 'Nguy hiểm';
+
+  @override
+  String profileEmailPendingChange(String email) {
+    return 'Đang chờ đổi sang $email';
+  }
 
   @override
   String get profileEmailUpdateNote => 'Email xác nhận sẽ được gửi đến cả hai địa chỉ';
@@ -3487,6 +3690,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspacePickerTitle => 'Không gian làm việc';
 
   @override
+  String get workspaceDefaultPickerTitle => 'Không gian mặc định';
+
+  @override
+  String get workspaceCurrentBadge => 'Hiện tại';
+
+  @override
+  String get workspaceDefaultBadge => 'Mặc định';
+
+  @override
   String get workspacePersonalBadge => 'Cá nhân';
 
   @override
@@ -3503,6 +3715,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspaceCreateTitle => 'Tạo không gian làm việc';
+
+  @override
+  String get workspaceCreateDescription => 'Tạo một không gian mới cho dự án, thói quen, tài chính và nhiều hơn nữa.';
 
   @override
   String get workspaceCreateNew => 'Tạo mới';

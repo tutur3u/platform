@@ -13,9 +13,14 @@ import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// Shows a bottom drawer (compact) or dialog (medium+) for switching
-/// between workspaces.
-void showWorkspacePickerSheet(BuildContext parentContext) {
+/// Shows a bottom drawer (compact) or dialog (medium+) for choosing either the
+/// current workspace or the launch-default workspace.
+enum WorkspacePickerMode { current, defaultWorkspace }
+
+void showWorkspacePickerSheet(
+  BuildContext parentContext, {
+  WorkspacePickerMode mode = WorkspacePickerMode.current,
+}) {
   final workspaceCubit = parentContext.read<WorkspaceCubit>();
 
   unawaited(
@@ -29,6 +34,8 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
               final l10n = context.l10n;
               final theme = shad.Theme.of(context);
               final sections = splitWorkspaceSections(state.workspaces);
+              final isDefaultMode =
+                  mode == WorkspacePickerMode.defaultWorkspace;
 
               return LayoutBuilder(
                 builder: (context, constraints) {
@@ -50,7 +57,9 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                             children: [
                               Expanded(
                                 child: Text(
-                                  l10n.workspacePickerTitle,
+                                  isDefaultMode
+                                      ? l10n.workspaceDefaultPickerTitle
+                                      : l10n.workspacePickerTitle,
                                   style: theme.typography.h3.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -106,15 +115,28 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                                           workspace: workspace,
                                           isSelected:
                                               workspace.id ==
+                                              (isDefaultMode
+                                                  ? state.defaultWorkspace?.id
+                                                  : state.currentWorkspace?.id),
+                                          isCurrent:
+                                              workspace.id ==
                                               state.currentWorkspace?.id,
+                                          isDefault:
+                                              workspace.id ==
+                                              state.defaultWorkspace?.id,
                                           onTap: () async {
                                             await dismissAdaptiveDrawerOverlay(
                                               context,
                                             );
-                                            await workspaceCubit
-                                                .selectWorkspace(
-                                                  workspace,
-                                                );
+                                            if (isDefaultMode) {
+                                              await workspaceCubit
+                                                  .setDefaultWorkspace(
+                                                    workspace,
+                                                  );
+                                            } else {
+                                              await workspaceCubit
+                                                  .selectWorkspace(workspace);
+                                            }
                                           },
                                         ),
                                     ],
@@ -130,15 +152,28 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                                           workspace: workspace,
                                           isSelected:
                                               workspace.id ==
+                                              (isDefaultMode
+                                                  ? state.defaultWorkspace?.id
+                                                  : state.currentWorkspace?.id),
+                                          isCurrent:
+                                              workspace.id ==
                                               state.currentWorkspace?.id,
+                                          isDefault:
+                                              workspace.id ==
+                                              state.defaultWorkspace?.id,
                                           onTap: () async {
                                             await dismissAdaptiveDrawerOverlay(
                                               context,
                                             );
-                                            await workspaceCubit
-                                                .selectWorkspace(
-                                                  workspace,
-                                                );
+                                            if (isDefaultMode) {
+                                              await workspaceCubit
+                                                  .setDefaultWorkspace(
+                                                    workspace,
+                                                  );
+                                            } else {
+                                              await workspaceCubit
+                                                  .selectWorkspace(workspace);
+                                            }
                                           },
                                         ),
                                     ],
@@ -154,15 +189,28 @@ void showWorkspacePickerSheet(BuildContext parentContext) {
                                           workspace: workspace,
                                           isSelected:
                                               workspace.id ==
+                                              (isDefaultMode
+                                                  ? state.defaultWorkspace?.id
+                                                  : state.currentWorkspace?.id),
+                                          isCurrent:
+                                              workspace.id ==
                                               state.currentWorkspace?.id,
+                                          isDefault:
+                                              workspace.id ==
+                                              state.defaultWorkspace?.id,
                                           onTap: () async {
                                             await dismissAdaptiveDrawerOverlay(
                                               context,
                                             );
-                                            await workspaceCubit
-                                                .selectWorkspace(
-                                                  workspace,
-                                                );
+                                            if (isDefaultMode) {
+                                              await workspaceCubit
+                                                  .setDefaultWorkspace(
+                                                    workspace,
+                                                  );
+                                            } else {
+                                              await workspaceCubit
+                                                  .selectWorkspace(workspace);
+                                            }
                                           },
                                         ),
                                     ],
@@ -285,11 +333,15 @@ class _PickerTile extends StatelessWidget {
   const _PickerTile({
     required this.workspace,
     required this.isSelected,
+    required this.isCurrent,
+    required this.isDefault,
     required this.onTap,
   });
 
   final Workspace workspace;
   final bool isSelected;
+  final bool isCurrent;
+  final bool isDefault;
   final VoidCallback onTap;
 
   @override
@@ -316,13 +368,37 @@ class _PickerTile extends StatelessWidget {
               WorkspaceAvatar(workspace: workspace, radius: 15),
               const shad.Gap(10),
               Expanded(
-                child: Text(
-                  displayWorkspaceName(context, workspace),
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.p.copyWith(
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayWorkspaceName(context, workspace),
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.p.copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    if (isCurrent || isDefault) ...[
+                      const shad.Gap(4),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          if (isCurrent)
+                            shad.OutlineBadge(
+                              child: Text(context.l10n.workspaceCurrentBadge),
+                            ),
+                          if (isDefault)
+                            shad.OutlineBadge(
+                              child: Text(context.l10n.workspaceDefaultBadge),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const shad.Gap(8),

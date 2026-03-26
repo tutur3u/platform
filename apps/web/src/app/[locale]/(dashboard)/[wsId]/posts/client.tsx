@@ -8,15 +8,13 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
+import { normalizePostReviewStage } from './search-params';
 import { PostStatusSummary } from './status-summary';
 import type {
-  PostApprovalStatus,
   PostEmail,
-  PostEmailQueueStatus,
   PostEmailStatusSummary,
   PostsSearchParams,
 } from './types';
-import { isPostApprovalStatus, isPostEmailQueueStatus } from './types';
 import { createPostEmailKey, usePosts } from './use-posts';
 
 interface PostsClientProps {
@@ -39,24 +37,41 @@ export default function PostsClient({
   const t = useTranslations();
   const [posts, setPosts] = usePosts();
   const [selectedPost, setSelectedPost] = useState<PostEmail | null>(null);
-  const activeQueueStatus = isPostEmailQueueStatus(searchParams.queueStatus)
-    ? (searchParams.queueStatus as PostEmailQueueStatus)
-    : undefined;
-  const activeApprovalStatus = isPostApprovalStatus(searchParams.approvalStatus)
-    ? (searchParams.approvalStatus as PostApprovalStatus)
-    : undefined;
+  const activeStage = normalizePostReviewStage(searchParams.stage);
 
   useEffect(() => {
     if (posts.selected && postsData?.data) {
       const found = postsData.data.find(
         (p: PostEmail) => createPostEmailKey(p) === posts.selected
       );
-      setSelectedPost(found || null);
+      if (found) {
+        setSelectedPost(found);
+        return;
+      }
+
+      const firstVisiblePost = postsData.data[0] ?? null;
+      setSelectedPost(firstVisiblePost);
+      if (firstVisiblePost) {
+        setPosts({
+          ...posts,
+          selected: createPostEmailKey(firstVisiblePost),
+        });
+      }
+      return;
+    }
+
+    const firstVisiblePost = postsData?.data?.[0] ?? null;
+    setSelectedPost(firstVisiblePost);
+    if (firstVisiblePost) {
+      setPosts({
+        ...posts,
+        selected: createPostEmailKey(firstVisiblePost),
+      });
       return;
     }
 
     setSelectedPost(null);
-  }, [posts.selected, postsData]);
+  }, [posts, posts.selected, postsData, setPosts]);
 
   return (
     <div className="space-y-6 p-6">
@@ -67,8 +82,7 @@ export default function PostsClient({
       />
 
       <PostStatusSummary
-        activeQueueStatus={activeQueueStatus}
-        activeApprovalStatus={activeApprovalStatus}
+        activeStage={activeStage}
         filteredCount={postsData?.count || 0}
         summary={postsStatus}
       />
@@ -77,7 +91,7 @@ export default function PostsClient({
         <Card className="min-w-0 border-border/60 shadow-sm">
           <CardHeader className="space-y-1 pb-3">
             <CardTitle className="text-base">
-              {t('ws-post-emails.matching_deliveries', {
+              {t('ws-post-emails.matching_recipients', {
                 filtered: postsData?.count || 0,
                 total: postsStatus.total,
               })}
@@ -107,6 +121,7 @@ export default function PostsClient({
                   created_at: false,
                   queue_attempt_count: false,
                   queue_status: false,
+                  stage: true,
                   approval_status: false,
                   post_title: false,
                   post_content: false,

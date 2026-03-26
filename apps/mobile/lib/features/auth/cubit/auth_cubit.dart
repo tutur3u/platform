@@ -32,22 +32,38 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void _setupAuthListener() {
-    _authSub = _repo.onAuthStateChange().listen((authState) {
-      final event = authState.event;
-      final session = authState.session;
+    _authSub = _repo.onAuthStateChange().listen(
+      (authState) {
+        final event = authState.event;
+        final session = authState.session;
 
-      if ((event == supa.AuthChangeEvent.signedIn ||
-              event == supa.AuthChangeEvent.tokenRefreshed) &&
-          session?.user != null) {
-        if (_repo.checkMfaRequired()) {
-          emit(AuthState.mfaRequired(session!.user));
-        } else {
-          emit(AuthState.authenticated(session!.user));
+        if ((event == supa.AuthChangeEvent.signedIn ||
+                event == supa.AuthChangeEvent.tokenRefreshed) &&
+            session?.user != null) {
+          if (_repo.checkMfaRequired()) {
+            emit(AuthState.mfaRequired(session!.user));
+          } else {
+            emit(AuthState.authenticated(session!.user));
+          }
+        } else if (event == supa.AuthChangeEvent.signedOut) {
+          emit(const AuthState.unauthenticated());
         }
-      } else if (event == supa.AuthChangeEvent.signedOut) {
-        emit(const AuthState.unauthenticated());
-      }
-    });
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        final message = switch (error) {
+          final supa.AuthException authError => authError.message,
+          _ => error.toString(),
+        };
+
+        emit(
+          const AuthState.unauthenticated().copyWith(
+            error: message,
+            errorCode: null,
+            isLoading: false,
+          ),
+        );
+      },
+    );
   }
 
   // ── Password ────────────────────────────────────
@@ -131,7 +147,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(
           state.copyWith(
             isLoading: false,
-            error: null,
+            error: result.errorMessage,
             errorCode: result.errorCode ?? fallbackErrorCode,
           ),
         );

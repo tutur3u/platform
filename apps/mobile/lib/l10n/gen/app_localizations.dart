@@ -1312,7 +1312,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantActionsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Assistant actions'**
+  /// **'Action'**
   String get assistantActionsTitle;
 
   /// No description provided for @assistantRenameTitle.
@@ -5545,6 +5545,12 @@ abstract class AppLocalizations {
   /// **'Pomodoro settings'**
   String get timerPomodoroSettings;
 
+  /// No description provided for @timerPomodoroSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tune focus sessions, breaks, and the automation between them.'**
+  String get timerPomodoroSettingsDescription;
+
   /// No description provided for @timerFocusTime.
   ///
   /// In en, this message translates to:
@@ -6373,17 +6379,53 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @settingsAccountTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsAccountTab;
+
+  /// No description provided for @settingsPreferencesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get settingsPreferencesTab;
+
+  /// No description provided for @settingsAboutTab.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsAboutTab;
+
+  /// No description provided for @settingsLicensesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Licenses'**
+  String get settingsLicensesTab;
+
   /// No description provided for @settingsProfile.
   ///
   /// In en, this message translates to:
   /// **'Profile'**
   String get settingsProfile;
 
+  /// No description provided for @settingsProfileDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your personal details and avatar.'**
+  String get settingsProfileDescription;
+
   /// No description provided for @settingsLanguage.
   ///
   /// In en, this message translates to:
   /// **'Language'**
   String get settingsLanguage;
+
+  /// No description provided for @settingsLanguageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the language used throughout the app.'**
+  String get settingsLanguageDescription;
 
   /// No description provided for @settingsAppVersion.
   ///
@@ -6396,6 +6438,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System default'**
   String get settingsLanguageSystem;
+
+  /// No description provided for @settingsLanguageSystemDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow your device language automatically.'**
+  String get settingsLanguageSystemDescription;
 
   /// No description provided for @settingsLanguageEnglish.
   ///
@@ -6415,6 +6463,12 @@ abstract class AppLocalizations {
   /// **'Theme'**
   String get settingsTheme;
 
+  /// No description provided for @settingsThemeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the app appearance for your device and preference.'**
+  String get settingsThemeDescription;
+
   /// No description provided for @settingsThemeLight.
   ///
   /// In en, this message translates to:
@@ -6433,11 +6487,23 @@ abstract class AppLocalizations {
   /// **'System'**
   String get settingsThemeSystem;
 
+  /// No description provided for @settingsThemeSystemDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Match your device appearance automatically.'**
+  String get settingsThemeSystemDescription;
+
   /// No description provided for @settingsSwitchWorkspace.
   ///
   /// In en, this message translates to:
   /// **'Switch workspace'**
   String get settingsSwitchWorkspace;
+
+  /// No description provided for @settingsSwitchWorkspaceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Move between personal and team contexts.'**
+  String get settingsSwitchWorkspaceDescription;
 
   /// No description provided for @settingsCalendar.
   ///
@@ -6451,11 +6517,23 @@ abstract class AppLocalizations {
   /// **'First day of week'**
   String get settingsFirstDayOfWeek;
 
+  /// No description provided for @settingsFirstDayOfWeekDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Control how calendars and weekly summaries start.'**
+  String get settingsFirstDayOfWeekDescription;
+
   /// No description provided for @settingsFirstDayAuto.
   ///
   /// In en, this message translates to:
   /// **'Auto'**
   String get settingsFirstDayAuto;
+
+  /// No description provided for @settingsFirstDayAutoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your workspace or locale defaults when available.'**
+  String get settingsFirstDayAutoDescription;
 
   /// No description provided for @settingsFirstDaySunday.
   ///
@@ -6475,11 +6553,167 @@ abstract class AppLocalizations {
   /// **'Saturday'**
   String get settingsFirstDaySaturday;
 
+  /// No description provided for @settingsHeroDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal setup, workspace context, and release details in one place.'**
+  String get settingsHeroDescription;
+
+  /// No description provided for @settingsSignedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as'**
+  String get settingsSignedInAs;
+
+  /// No description provided for @settingsCurrentWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Current workspace'**
+  String get settingsCurrentWorkspace;
+
+  /// No description provided for @settingsCurrentWorkspaceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the workspace you are using right now.'**
+  String get settingsCurrentWorkspaceDescription;
+
+  /// No description provided for @settingsDefaultWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Default workspace'**
+  String get settingsDefaultWorkspace;
+
+  /// No description provided for @settingsDefaultWorkspaceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The app opens here by default on every launch.'**
+  String get settingsDefaultWorkspaceDescription;
+
+  /// No description provided for @settingsNoEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'No email available'**
+  String get settingsNoEmail;
+
+  /// No description provided for @settingsNoWorkspaceSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No workspace selected'**
+  String get settingsNoWorkspaceSelected;
+
+  /// No description provided for @settingsWorkspaceActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get settingsWorkspaceActive;
+
+  /// No description provided for @settingsAccountSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsAccountSectionTitle;
+
+  /// No description provided for @settingsAccountSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile access and session controls.'**
+  String get settingsAccountSectionDescription;
+
+  /// No description provided for @settingsWorkspaceSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get settingsWorkspaceSectionTitle;
+
+  /// No description provided for @settingsWorkspaceSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'See your current context and switch when needed.'**
+  String get settingsWorkspaceSectionDescription;
+
+  /// No description provided for @settingsPreferencesSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get settingsPreferencesSectionTitle;
+
+  /// No description provided for @settingsPreferencesSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Language, appearance, and calendar defaults.'**
+  String get settingsPreferencesSectionDescription;
+
+  /// No description provided for @settingsDangerSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session'**
+  String get settingsDangerSectionTitle;
+
+  /// No description provided for @settingsDangerSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out and end access on this device.'**
+  String get settingsDangerSectionDescription;
+
+  /// No description provided for @settingsQuickOpenProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Open profile'**
+  String get settingsQuickOpenProfile;
+
+  /// No description provided for @settingsQuickSwitchWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch current'**
+  String get settingsQuickSwitchWorkspace;
+
+  /// No description provided for @settingsQuickDefaultWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Default workspace'**
+  String get settingsQuickDefaultWorkspace;
+
+  /// No description provided for @settingsDataStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get settingsDataStatusLabel;
+
+  /// No description provided for @settingsDataStatusLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get settingsDataStatusLive;
+
+  /// No description provided for @settingsDataStatusCached.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached'**
+  String get settingsDataStatusCached;
+
+  /// No description provided for @settingsDataStatusRefreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing'**
+  String get settingsDataStatusRefreshing;
+
+  /// No description provided for @settingsPullToRefreshAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh now'**
+  String get settingsPullToRefreshAction;
+
   /// No description provided for @settingsSignOut.
   ///
   /// In en, this message translates to:
   /// **'Sign out'**
   String get settingsSignOut;
+
+  /// No description provided for @settingsSignOutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'End your session on this device.'**
+  String get settingsSignOutDescription;
 
   /// No description provided for @settingsSignOutConfirm.
   ///
@@ -6487,11 +6721,101 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to sign out?'**
   String get settingsSignOutConfirm;
 
+  /// No description provided for @settingsAboutSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu mobile keeps your workspace tools, assistant, and day-to-day workflows within quick reach.'**
+  String get settingsAboutSummary;
+
+  /// No description provided for @settingsAboutSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About the app'**
+  String get settingsAboutSectionTitle;
+
+  /// No description provided for @settingsAboutSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Release details and product information for this build.'**
+  String get settingsAboutSectionDescription;
+
+  /// No description provided for @settingsVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get settingsVersionLabel;
+
+  /// No description provided for @settingsBuildLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get settingsBuildLabel;
+
+  /// No description provided for @settingsPackageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Package'**
+  String get settingsPackageLabel;
+
+  /// No description provided for @settingsVersionTileDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed release currently running on this device.'**
+  String get settingsVersionTileDescription;
+
+  /// No description provided for @settingsLicensesSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licenses'**
+  String get settingsLicensesSectionTitle;
+
+  /// No description provided for @settingsLicensesSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the third-party software notices bundled with the app.'**
+  String get settingsLicensesSectionDescription;
+
+  /// No description provided for @settingsLicenseViewerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open license viewer'**
+  String get settingsLicenseViewerTitle;
+
+  /// No description provided for @settingsLicenseViewerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse Flutter, plugin, and package licenses included in this build.'**
+  String get settingsLicenseViewerDescription;
+
+  /// No description provided for @settingsLicenseVersionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference the installed version while reviewing notices.'**
+  String get settingsLicenseVersionDescription;
+
+  /// No description provided for @settingsMinutesUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get settingsMinutesUnit;
+
   /// No description provided for @profileTitle.
   ///
   /// In en, this message translates to:
   /// **'Profile'**
   String get profileTitle;
+
+  /// No description provided for @profileIdentitySectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity'**
+  String get profileIdentitySectionTitle;
+
+  /// No description provided for @profileIdentitySectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the core details people see about your account up to date.'**
+  String get profileIdentitySectionDescription;
 
   /// No description provided for @profileAvatar.
   ///
@@ -6499,11 +6823,35 @@ abstract class AppLocalizations {
   /// **'Avatar'**
   String get profileAvatar;
 
+  /// No description provided for @profileAvatarSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo attached'**
+  String get profileAvatarSet;
+
   /// No description provided for @profileAvatarDescription.
   ///
   /// In en, this message translates to:
   /// **'Upload your profile picture'**
   String get profileAvatarDescription;
+
+  /// No description provided for @profileAvatarSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar'**
+  String get profileAvatarSectionTitle;
+
+  /// No description provided for @profileAvatarActionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new photo or refresh the one already attached.'**
+  String get profileAvatarActionDescription;
+
+  /// No description provided for @profileAvatarPickerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where to pick your new avatar image from.'**
+  String get profileAvatarPickerDescription;
 
   /// No description provided for @profileUploadAvatar.
   ///
@@ -6523,6 +6871,12 @@ abstract class AppLocalizations {
   /// **'Remove avatar'**
   String get profileRemoveAvatar;
 
+  /// No description provided for @profileRemoveAvatarDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the current photo from your account profile.'**
+  String get profileRemoveAvatarDescription;
+
   /// No description provided for @profileRemoveConfirm.
   ///
   /// In en, this message translates to:
@@ -6535,11 +6889,23 @@ abstract class AppLocalizations {
   /// **'Account status'**
   String get profileAccountStatus;
 
+  /// No description provided for @profileAccountStatusDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Membership and verification details for this account.'**
+  String get profileAccountStatusDescription;
+
   /// No description provided for @profileStatus.
   ///
   /// In en, this message translates to:
   /// **'Status'**
   String get profileStatus;
+
+  /// No description provided for @profileStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get profileStatusUnknown;
 
   /// No description provided for @profileVerification.
   ///
@@ -6577,6 +6943,12 @@ abstract class AppLocalizations {
   /// **'Your display name'**
   String get profileDisplayNameHint;
 
+  /// No description provided for @profileDisplayNameDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This name appears in collaborative surfaces across the app.'**
+  String get profileDisplayNameDescription;
+
   /// No description provided for @profileDisplayNameRequired.
   ///
   /// In en, this message translates to:
@@ -6594,6 +6966,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your full name'**
   String get profileFullNameHint;
+
+  /// No description provided for @profileFullNameDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your legal or preferred full name for account records.'**
+  String get profileFullNameDescription;
 
   /// No description provided for @profileFullNameRequired.
   ///
@@ -6613,6 +6991,12 @@ abstract class AppLocalizations {
   /// **'example@tuturuuu.com'**
   String get profileEmailHint;
 
+  /// No description provided for @profileEmailDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your email sends confirmation to both the old and new addresses.'**
+  String get profileEmailDescription;
+
   /// No description provided for @profileInvalidEmail.
   ///
   /// In en, this message translates to:
@@ -6630,6 +7014,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New email'**
   String get profileNewEmail;
+
+  /// No description provided for @profileMissingValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get profileMissingValue;
+
+  /// No description provided for @profileDangerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger'**
+  String get profileDangerAction;
+
+  /// No description provided for @profileEmailPendingChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending change to {email}'**
+  String profileEmailPendingChange(String email);
 
   /// No description provided for @profileEmailUpdateNote.
   ///
@@ -6697,6 +7099,24 @@ abstract class AppLocalizations {
   /// **'Workspaces'**
   String get workspacePickerTitle;
 
+  /// No description provided for @workspaceDefaultPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default workspace'**
+  String get workspaceDefaultPickerTitle;
+
+  /// No description provided for @workspaceCurrentBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get workspaceCurrentBadge;
+
+  /// No description provided for @workspaceDefaultBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get workspaceDefaultBadge;
+
   /// No description provided for @workspacePersonalBadge.
   ///
   /// In en, this message translates to:
@@ -6732,6 +7152,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create workspace'**
   String get workspaceCreateTitle;
+
+  /// No description provided for @workspaceCreateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a fresh space for projects, habits, finance, and more.'**
+  String get workspaceCreateDescription;
 
   /// No description provided for @workspaceCreateNew.
   ///

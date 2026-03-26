@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
@@ -69,39 +70,59 @@ class _AppsHubPageState extends State<AppsHubPage> {
       child: SafeArea(
         top: false,
         bottom: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            ResponsivePadding.horizontal(context.deviceClass),
-            10,
-            ResponsivePadding.horizontal(context.deviceClass),
-            24 + MediaQuery.paddingOf(context).bottom,
-          ),
+        child: ResponsiveWrapper(
+          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
           child: IgnorePointer(
             ignoring: _tapShieldActive,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                const SliverToBoxAdapter(child: _AppsIntro()),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    ResponsivePadding.horizontal(context.deviceClass),
+                    10,
+                    ResponsivePadding.horizontal(context.deviceClass),
+                    0,
+                  ),
+                  sliver: const SliverToBoxAdapter(child: _AppsIntro()),
+                ),
                 if (context.deviceClass == DeviceClass.compact)
-                  SliverToBoxAdapter(child: _CompactAppsGrid(modules: modules))
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      ResponsivePadding.horizontal(context.deviceClass),
+                      0,
+                      ResponsivePadding.horizontal(context.deviceClass),
+                      24 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: _CompactAppsGrid(modules: modules),
+                    ),
+                  )
                 else
-                  SliverGrid(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      return _SubproductCard(
-                        module: modules[index],
-                        index: index,
-                      );
-                    }, childCount: modules.length),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount:
-                          context.deviceClass == DeviceClass.expanded ? 4 : 3,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio:
-                          context.deviceClass == DeviceClass.expanded
-                          ? 1.1
-                          : 1.0,
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      ResponsivePadding.horizontal(context.deviceClass),
+                      0,
+                      ResponsivePadding.horizontal(context.deviceClass),
+                      24 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    sliver: SliverGrid(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        return _SubproductCard(
+                          module: modules[index],
+                          index: index,
+                        );
+                      }, childCount: modules.length),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            context.deviceClass == DeviceClass.expanded ? 4 : 3,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio:
+                            context.deviceClass == DeviceClass.expanded
+                            ? 1.1
+                            : 1.0,
+                      ),
                     ),
                   ),
               ],
@@ -135,7 +156,7 @@ class _CompactAppsGrid extends StatelessWidget {
     if (featuredModule != null) {
       rows.add(
         SizedBox(
-          height: 186,
+          height: 198,
           child: _SubproductCard(
             module: featuredModule,
             index: featuredTaskIndex,
@@ -154,7 +175,7 @@ class _CompactAppsGrid extends StatelessWidget {
       if (second == null) {
         rows.add(
           SizedBox(
-            height: 164,
+            height: 196,
             child: _SubproductCard(module: first.$2, index: first.$1),
           ),
         );
@@ -163,7 +184,7 @@ class _CompactAppsGrid extends StatelessWidget {
 
       rows.add(
         SizedBox(
-          height: 172,
+          height: 208,
           child: Row(
             children: [
               Expanded(
@@ -195,8 +216,6 @@ class _AppsIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Shell already shows the title in the app bar, so we don't need to
-    // duplicate it here. Return empty widget.
     return const SizedBox.shrink();
   }
 }
@@ -219,7 +238,10 @@ class _SubproductCard extends StatelessWidget {
       index: index,
       moduleId: module.id,
     );
-
+    final shellBackground = Color.alphaBlend(
+      palette.shadow.withValues(alpha: 0.22),
+      palette.background,
+    );
     return InkWell(
       borderRadius: BorderRadius.circular(26),
       onTap: () {
@@ -227,14 +249,25 @@ class _SubproductCard extends StatelessWidget {
         context.go(module.route);
       },
       child: Material(
-        color: palette.background,
+        color: shellBackground,
         borderRadius: BorderRadius.circular(26),
         clipBehavior: Clip.antiAlias,
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: palette.border),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  palette.iconBackground.withValues(alpha: 0.2),
+                  palette.background,
+                ),
+                shellBackground,
+              ],
+            ),
+            border: Border.all(color: palette.border.withValues(alpha: 0.95)),
             boxShadow: [
               BoxShadow(
                 color: palette.shadow,
@@ -281,11 +314,15 @@ class _SubproductCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   _description(context, module.id),
-                  maxLines: featured ? 3 : 4,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: featured
+                      ? 3
+                      : context.deviceClass == DeviceClass.compact
+                      ? 5
+                      : 4,
+                  overflow: TextOverflow.fade,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: palette.textColor.withValues(alpha: 0.78),
-                    height: 1.28,
+                    height: 1.32,
                   ),
                 ),
               ),

@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   Ban,
   CheckCircle2,
+  CircleHelp,
   Clock3,
   Loader,
   MailX,
@@ -11,7 +12,23 @@ import {
   XCircle,
 } from '@tuturuuu/icons';
 import type { ComponentType } from 'react';
-import type { PostApprovalStatus, PostEmailQueueStatus } from './types';
+import type {
+  PostApprovalStatus,
+  PostEmailQueueStatus,
+  PostReviewStage,
+} from './types';
+
+export const POST_REVIEW_STAGE_ORDER: PostReviewStage[] = [
+  'missing_check',
+  'pending_approval',
+  'approved_awaiting_delivery',
+  'queued',
+  'processing',
+  'sent',
+  'delivery_failed',
+  'skipped',
+  'rejected',
+];
 
 export type PostEmailStatusLabelKey = PostEmailQueueStatus;
 
@@ -30,6 +47,78 @@ export const POST_APPROVAL_STATUS_ORDER: PostApprovalStatus[] = [
   'APPROVED',
   'REJECTED',
 ];
+
+export function getPostReviewStageAppearance(status: PostReviewStage): {
+  icon: ComponentType<{ className?: string }>;
+  className: string;
+  iconClassName?: string;
+  labelKey: PostReviewStage;
+} {
+  switch (status) {
+    case 'missing_check':
+      return {
+        icon: CircleHelp,
+        className:
+          'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue',
+        labelKey: 'missing_check',
+      };
+    case 'pending_approval':
+      return {
+        icon: Clock3,
+        className:
+          'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
+        labelKey: 'pending_approval',
+      };
+    case 'approved_awaiting_delivery':
+      return {
+        icon: CheckCircle2,
+        className:
+          'border-dynamic-cyan/20 bg-dynamic-cyan/10 text-dynamic-cyan',
+        labelKey: 'approved_awaiting_delivery',
+      };
+    case 'queued':
+      return {
+        icon: Clock3,
+        className:
+          'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow',
+        labelKey: 'queued',
+      };
+    case 'processing':
+      return {
+        icon: Loader,
+        className:
+          'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue',
+        iconClassName: 'animate-spin',
+        labelKey: 'processing',
+      };
+    case 'sent':
+      return {
+        icon: CheckCircle2,
+        className:
+          'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green',
+        labelKey: 'sent',
+      };
+    case 'delivery_failed':
+      return {
+        icon: AlertTriangle,
+        className: 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red',
+        labelKey: 'delivery_failed',
+      };
+    case 'skipped':
+      return {
+        icon: SkipForward,
+        className:
+          'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple',
+        labelKey: 'skipped',
+      };
+    case 'rejected':
+      return {
+        icon: XCircle,
+        className: 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red',
+        labelKey: 'rejected',
+      };
+  }
+}
 
 export function getPostApprovalStatusAppearance(status?: PostApprovalStatus): {
   icon: ComponentType<{ className?: string }>;
