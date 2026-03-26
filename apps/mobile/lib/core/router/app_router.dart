@@ -37,6 +37,14 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/view/workspace_select_page.dart';
 
+bool shouldRedirectPersonalTimerRequests(
+  String matchedLocation,
+  WorkspaceState workspaceState,
+) {
+  return matchedLocation == Routes.timerRequests &&
+      (workspaceState.currentWorkspace?.personal ?? false);
+}
+
 HistoryViewMode? _parseHistoryViewMode(String? value) {
   switch (value) {
     case 'day':
@@ -136,6 +144,11 @@ GoRouter createAppRouter(
           wsState.status == WorkspaceStatus.loaded &&
           !wsState.hasWorkspace) {
         return Routes.workspaceSelect;
+      }
+
+      // Personal workspace cannot access timer requests page.
+      if (shouldRedirectPersonalTimerRequests(state.matchedLocation, wsState)) {
+        return Routes.timer;
       }
 
       // On workspace-select but already has a workspace → go home

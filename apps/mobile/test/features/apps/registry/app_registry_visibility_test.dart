@@ -1,0 +1,82 @@
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+
+import '../../../helpers/helpers.dart';
+
+class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
+    implements WorkspaceCubit {}
+
+void main() {
+  group('AppRegistry timer mini nav visibility', () {
+    testWidgets('hides requests in personal workspace', (tester) async {
+      final workspaceCubit = _MockWorkspaceCubit();
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: const WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          currentWorkspace: Workspace(id: 'personal-1', personal: true),
+        ),
+      );
+      addTearDown(workspaceCubit.close);
+
+      late List<String> routes;
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: Builder(
+            builder: (context) {
+              final timer = AppRegistry.moduleById('timer')!;
+              routes = timer
+                  .miniAppNavItemsFor(context)
+                  .map((item) => item.route)
+                  .toList(growable: false);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      expect(routes, isNot(contains(Routes.timerRequests)));
+    });
+
+    testWidgets('shows requests in non-personal workspace', (tester) async {
+      final workspaceCubit = _MockWorkspaceCubit();
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: const WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          currentWorkspace: Workspace(id: 'team-1'),
+        ),
+      );
+      addTearDown(workspaceCubit.close);
+
+      late List<String> routes;
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: Builder(
+            builder: (context) {
+              final timer = AppRegistry.moduleById('timer')!;
+              routes = timer
+                  .miniAppNavItemsFor(context)
+                  .map((item) => item.route)
+                  .toList(growable: false);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      expect(routes, contains(Routes.timerRequests));
+    });
+  });
+}

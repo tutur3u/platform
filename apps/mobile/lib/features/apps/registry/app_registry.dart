@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
@@ -6,6 +7,7 @@ import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -162,8 +164,14 @@ class AppRegistry {
       route: Routes.timerRequests,
       icon: Icons.pending_actions,
       labelBuilder: _timerRequestsTitle,
+      isVisible: _showTimerRequestsMiniNav,
     ),
   ];
+
+  static bool _showTimerRequestsMiniNav(BuildContext context) {
+    return !(context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
+        false);
+  }
 
   static List<AppModule> modules(BuildContext context) {
     return allModules

@@ -283,10 +283,15 @@ extension _ShellPageLayout on _ShellPageState {
     AppModule activeModule,
   ) {
     final globalBody = _cachedGlobalBody ?? const DashboardPage();
-    final miniItems = _buildMiniAppNavItems(context, activeModule);
+    final activeMiniNavItems = activeModule.miniAppNavItemsFor(context);
+    final miniItems = _buildMiniAppNavItems(
+      context,
+      activeModule,
+      activeMiniNavItems,
+    );
     final miniSelectedKey = _miniSelectedKey(
       context,
-      activeModule.miniAppNavItems,
+      activeMiniNavItems,
     );
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final isCompact = context.isCompact;
@@ -322,15 +327,23 @@ extension _ShellPageLayout on _ShellPageState {
                             horizontal: 4,
                             vertical: 4,
                           ),
-                          onSelected: (key) =>
-                              _onMiniAppItemTapped(key, context, activeModule),
+                          onSelected: (key) => _onMiniAppItemTapped(
+                            key,
+                            context,
+                            activeModule,
+                            activeMiniNavItems,
+                          ),
                           children: compactMiniItems,
                         )
                       : CustomNavigationBar(
                           key: _ShellPageState._miniLayerKey,
                           selectedKey: miniSelectedKey,
-                          onSelected: (key) =>
-                              _onMiniAppItemTapped(key, context, activeModule),
+                          onSelected: (key) => _onMiniAppItemTapped(
+                            key,
+                            context,
+                            activeModule,
+                            activeMiniNavItems,
+                          ),
                           expandItems: false,
                           minItemWidth:
                               _ShellPageState._floatingNavMinItemWidth,

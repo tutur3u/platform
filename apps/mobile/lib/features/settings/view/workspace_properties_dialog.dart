@@ -264,9 +264,8 @@ class _WorkspacePropertiesDialogState
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                  ),
                 ),
-              
+              ),
             ],
           ),
           const shad.Gap(12),
