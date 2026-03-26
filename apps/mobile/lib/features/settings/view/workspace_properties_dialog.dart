@@ -249,40 +249,24 @@ class _WorkspacePropertiesDialogState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundImage: avatarImage,
-                child: hasAvatarPreview
-                    ? null
-                    : Text(
-                        initials,
-                        style: theme.typography.large.copyWith(
-                          fontWeight: FontWeight.w700,
+              GestureDetector(
+                onTap: _isSaving ? null : _pickAvatar,
+                child: CircleAvatar(
+                  radius: 28,
+                  backgroundImage: avatarImage,
+                  child: hasAvatarPreview
+                      ? null
+                      : Text(
+                          initials,
+                          style: theme.typography.large.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-              ),
-              const shad.Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.settingsWorkspaceAvatar,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const shad.Gap(6),
-                    Text(
-                      l10n.settingsWorkspaceAvatarDescription,
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              
             ],
           ),
           const shad.Gap(12),

@@ -6604,7 +6604,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsWorkspacePropertiesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Workspace profile'**
+  /// **'Workspace information'**
   String get settingsWorkspacePropertiesTitle;
 
   /// No description provided for @settingsWorkspacePropertiesDescription.
@@ -6628,7 +6628,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsWorkspacePropertiesUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Workspace profile updated.'**
+  /// **'Workspace information updated.'**
   String get settingsWorkspacePropertiesUpdated;
 
   /// No description provided for @settingsWorkspacePropertiesNameRequired.

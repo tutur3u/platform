@@ -3450,7 +3450,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsDefaultWorkspaceDescription => 'Ứng dụng sẽ mở vào đây mặc định mỗi lần khởi động.';
 
   @override
-  String get settingsWorkspacePropertiesTitle => 'Hồ sơ không gian làm việc';
+  String get settingsWorkspacePropertiesTitle => 'Thông tin không gian làm việc';
 
   @override
   String get settingsWorkspacePropertiesDescription => 'Cập nhật tên và ảnh đại diện của không gian làm việc.';
@@ -3462,7 +3462,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsWorkspacePropertiesPermissionLoading => 'Đang kiểm tra quyền trong không gian làm việc...';
 
   @override
-  String get settingsWorkspacePropertiesUpdated => 'Đã cập nhật hồ sơ không gian làm việc.';
+  String get settingsWorkspacePropertiesUpdated => 'Đã cập nhật thông tin không gian làm việc.';
 
   @override
   String get settingsWorkspacePropertiesNameRequired => 'Tên không gian làm việc không được để trống';

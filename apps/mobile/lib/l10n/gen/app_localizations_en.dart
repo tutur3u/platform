@@ -3456,7 +3456,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDefaultWorkspaceDescription => 'The app opens here by default on every launch.';
 
   @override
-  String get settingsWorkspacePropertiesTitle => 'Workspace profile';
+  String get settingsWorkspacePropertiesTitle => 'Workspace information';
 
   @override
   String get settingsWorkspacePropertiesDescription => 'Update the workspace name and avatar.';
@@ -3468,7 +3468,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsWorkspacePropertiesPermissionLoading => 'Checking your workspace permissions...';
 
   @override
-  String get settingsWorkspacePropertiesUpdated => 'Workspace profile updated.';
+  String get settingsWorkspacePropertiesUpdated => 'Workspace information updated.';
 
   @override
   String get settingsWorkspacePropertiesNameRequired => 'Workspace name cannot be empty';
