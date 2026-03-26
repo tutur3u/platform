@@ -12,7 +12,6 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
@@ -25,13 +24,15 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+
     // Verify workspace access
     const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (memberError) {
       return NextResponse.json(

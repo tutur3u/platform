@@ -18,7 +18,9 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.d
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
+import 'package:mobile/features/time_tracker/widgets/time_tracker_filter_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
@@ -55,7 +57,8 @@ class _RequestsViewState extends State<_RequestsView> {
   static const String _statusChangeGracePeriodConfigId =
       'TIME_TRACKING_REQUEST_STATUS_CHANGE_GRACE_PERIOD_MINUTES';
 
-  _RequestStatusFilter _selectedFilter = _RequestStatusFilter.pending;
+  TimeTrackerRequestStatusFilter _selectedFilter =
+      TimeTrackerRequestStatusFilter.pending;
   final WorkspacePermissionsRepository _workspacePermissionsRepository =
       WorkspacePermissionsRepository();
   String? _permissionsWorkspaceId;
@@ -68,6 +71,7 @@ class _RequestsViewState extends State<_RequestsView> {
   int _statusChangeGracePeriodMinutes = 0;
   bool _isThresholdLoading = false;
   int _permissionLoadToken = 0;
+  bool _didInitializeWorkspaceLoad = false;
 
   String? _currentUserId() => context.read<AuthCubit>().state.user?.id;
 
@@ -81,33 +85,17 @@ class _RequestsViewState extends State<_RequestsView> {
   Future<void> _loadRequests() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null || wsId.isEmpty) {
+      context.read<TimeTrackerRequestsCubit>().reset();
       return;
     }
 
     await context.read<TimeTrackerRequestsCubit>().loadRequests(
       wsId,
       userId: _requestUserFilterId(),
-      statusOverride: _selectedFilter == _RequestStatusFilter.all
+      statusOverride: _selectedFilter == TimeTrackerRequestStatusFilter.all
           ? 'all'
           : approvalStatusToString(_statusFromFilter(_selectedFilter)!),
     );
-
-    if (!mounted || !_canManageRequests) {
-      return;
-    }
-
-    final availableRequestUsers = _buildAvailableRequestUsers();
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _availableRequestUsers = availableRequestUsers;
-      if (_selectedUserId != null &&
-          !availableRequestUsers.any((user) => user.id == _selectedUserId)) {
-        _selectedUserId = null;
-      }
-    });
   }
 
   @override
@@ -115,10 +103,11 @@ class _RequestsViewState extends State<_RequestsView> {
     super.didChangeDependencies();
 
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == _permissionsWorkspaceId) {
+    if (_didInitializeWorkspaceLoad && wsId == _permissionsWorkspaceId) {
       return;
     }
 
+    _didInitializeWorkspaceLoad = true;
     _permissionsWorkspaceId = wsId;
     unawaited(_loadPermissionsAndThreshold());
   }
@@ -126,6 +115,7 @@ class _RequestsViewState extends State<_RequestsView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final workspaceState = context.watch<WorkspaceCubit>().state;
 
     return shad.Scaffold(
       headers: [
@@ -159,56 +149,78 @@ class _RequestsViewState extends State<_RequestsView> {
       ],
       child: ResponsiveWrapper(
         maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-        child: BlocBuilder<TimeTrackerRequestsCubit, TimeTrackerRequestsState>(
-          builder: (context, state) {
-            if (state.status == TimeTrackerRequestsStatus.loading) {
+        child: Builder(
+          builder: (context) {
+            if (workspaceState.status == WorkspaceStatus.initial ||
+                workspaceState.status == WorkspaceStatus.loading) {
               return const Center(child: shad.CircularProgressIndicator());
             }
 
-            if (state.status == TimeTrackerRequestsStatus.error) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      shad.LucideIcons.circleAlert,
-                      size: 48,
-                      color: shad.Theme.of(context).colorScheme.destructive,
-                    ),
-                    const shad.Gap(16),
-                    Text(state.error ?? 'Error'),
-                    const shad.Gap(16),
-                    shad.SecondaryButton(
-                      onPressed: () => unawaited(_loadRequests()),
-                      child: Text(l10n.commonRetry),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            if (state.requests.isEmpty) {
+            if (workspaceState.currentWorkspace == null) {
               return Center(
                 child: Text(
-                  l10n.timerNoSessions,
+                  l10n.assistantSelectWorkspace,
                   style: shad.Theme.of(context).typography.textMuted,
                 ),
               );
             }
 
-            return RefreshIndicator(
-              onRefresh: _loadRequests,
-              child: ListView.builder(
-                itemCount: state.requests.length,
-                padding: const EdgeInsets.only(bottom: 32),
-                itemBuilder: (context, index) {
-                  final request = state.requests[index];
-                  return _RequestTile(
-                    request: request,
-                    onTap: () => _showRequestDetail(context, request),
+            return BlocBuilder<
+              TimeTrackerRequestsCubit,
+              TimeTrackerRequestsState
+            >(
+              builder: (context, state) {
+                if (state.status == TimeTrackerRequestsStatus.initial ||
+                    state.status == TimeTrackerRequestsStatus.loading) {
+                  return const Center(child: shad.CircularProgressIndicator());
+                }
+
+                if (state.status == TimeTrackerRequestsStatus.error) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          shad.LucideIcons.circleAlert,
+                          size: 48,
+                          color: shad.Theme.of(context).colorScheme.destructive,
+                        ),
+                        const shad.Gap(16),
+                        Text(state.error ?? 'Error'),
+                        const shad.Gap(16),
+                        shad.SecondaryButton(
+                          onPressed: () => unawaited(_loadRequests()),
+                          child: Text(l10n.commonRetry),
+                        ),
+                      ],
+                    ),
                   );
-                },
-              ),
+                }
+
+                if (state.requests.isEmpty) {
+                  return Center(
+                    child: Text(
+                      l10n.timerNoSessions,
+                      style: shad.Theme.of(context).typography.textMuted,
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: _loadRequests,
+                  child: ListView.builder(
+                    itemCount: state.requests.length,
+                    padding: const EdgeInsets.only(bottom: 32),
+                    itemBuilder: (context, index) {
+                      final request = state.requests[index];
+                      return _RequestTile(
+                        request: request,
+                        onTap: () => _showRequestDetail(context, request),
+                      );
+                    },
+                  ),
+                );
+              },
             );
           },
         ),
@@ -260,7 +272,7 @@ class _RequestsViewState extends State<_RequestsView> {
 
     var canManageRequests = false;
     var canManageThresholdSettings = false;
-    final availableRequestUsers = <WorkspaceUserOption>[];
+    var availableRequestUsers = const <WorkspaceUserOption>[];
     int? threshold;
     var statusChangeGracePeriodMinutes = 0;
     try {
@@ -297,6 +309,19 @@ class _RequestsViewState extends State<_RequestsView> {
       }
 
       if (canManageRequests) {
+        try {
+          final users = await repository.getRequestUsers(wsId);
+          if (!canApplyState()) {
+            return;
+          }
+          availableRequestUsers = buildAvailableRequestUsers(users);
+        } on Exception {
+          if (!canApplyState()) {
+            return;
+          }
+          availableRequestUsers = const <WorkspaceUserOption>[];
+        }
+
         try {
           final gracePeriodValue = await repository.getWorkspaceConfigValue(
             wsId,
@@ -347,6 +372,9 @@ class _RequestsViewState extends State<_RequestsView> {
       _canManageRequests = canManageRequests;
       _canManageThresholdSettings = canManageThresholdSettings;
       if (!canManageRequests) {
+        _selectedUserId = null;
+      } else if (_selectedUserId != null &&
+          !availableRequestUsers.any((user) => user.id == _selectedUserId)) {
         _selectedUserId = null;
       }
       _availableRequestUsers = availableRequestUsers;
@@ -442,8 +470,10 @@ class _RequestsViewState extends State<_RequestsView> {
   void _showRequestDetail(BuildContext context, TimeTrackingRequest request) {
     final cubit = context.read<TimeTrackerRequestsCubit>();
     final repository = context.read<ITimeTrackerRepository>();
-    final wsId =
-        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null || wsId.isEmpty) {
+      return;
+    }
     final currentUser = context.read<AuthCubit>().state.user;
     final currentUserId = currentUser?.id;
     final currentUserDisplayName = _extractUserDisplayName(currentUser);
@@ -508,29 +538,18 @@ class _RequestsViewState extends State<_RequestsView> {
     return null;
   }
 
-  String _filterLabel(BuildContext context, _RequestStatusFilter filter) {
-    final l10n = context.l10n;
+  ApprovalStatus? _statusFromFilter(TimeTrackerRequestStatusFilter filter) {
     return switch (filter) {
-      _RequestStatusFilter.all => l10n.timerRequestsFilterAllStatuses,
-      _RequestStatusFilter.pending => l10n.timerRequestPending,
-      _RequestStatusFilter.approved => l10n.timerRequestApproved,
-      _RequestStatusFilter.rejected => l10n.timerRequestRejected,
-      _RequestStatusFilter.needsInfo => l10n.timerRequestNeedsInfo,
-    };
-  }
-
-  ApprovalStatus? _statusFromFilter(_RequestStatusFilter filter) {
-    return switch (filter) {
-      _RequestStatusFilter.all => null,
-      _RequestStatusFilter.pending => ApprovalStatus.pending,
-      _RequestStatusFilter.approved => ApprovalStatus.approved,
-      _RequestStatusFilter.rejected => ApprovalStatus.rejected,
-      _RequestStatusFilter.needsInfo => ApprovalStatus.needsInfo,
+      TimeTrackerRequestStatusFilter.all => null,
+      TimeTrackerRequestStatusFilter.pending => ApprovalStatus.pending,
+      TimeTrackerRequestStatusFilter.approved => ApprovalStatus.approved,
+      TimeTrackerRequestStatusFilter.rejected => ApprovalStatus.rejected,
+      TimeTrackerRequestStatusFilter.needsInfo => ApprovalStatus.needsInfo,
     };
   }
 
   bool _hasActiveFilters() {
-    if (_selectedFilter != _RequestStatusFilter.all) {
+    if (_selectedFilter != TimeTrackerRequestStatusFilter.all) {
       return true;
     }
 
@@ -541,257 +560,39 @@ class _RequestsViewState extends State<_RequestsView> {
     return false;
   }
 
-  String _selectedUserFilterLabel(BuildContext context, String? userId) {
-    if (userId == null || userId.isEmpty) {
-      return context.l10n.timerRequestsFilterAllUsers;
-    }
-
-    for (final user in _availableRequestUsers) {
-      if (user.id == userId) {
-        return user.label;
-      }
-    }
-
-    return context.l10n.timerRequestsFilterAllUsers;
-  }
-
-  List<WorkspaceUserOption> _buildAvailableRequestUsers() {
-    final requests = context.read<TimeTrackerRequestsCubit>().state.requests;
-    final usersById = <String, WorkspaceUserOption>{};
-
-    for (final request in requests) {
-      final userId = request.userId;
-      if (userId == null || userId.isEmpty) {
-        continue;
-      }
-
-      usersById[userId] = WorkspaceUserOption(
-        id: userId,
-        displayName: request.userDisplayName ?? userId,
-      );
-    }
-
-    final users = usersById.values.toList()
-      ..sort((a, b) => a.label.toLowerCase().compareTo(b.label.toLowerCase()));
-    return users;
-  }
-
   Future<void> _showFilterSheet() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null || wsId.isEmpty) {
       return;
     }
 
-    final l10n = context.l10n;
-    var tempFilter = _selectedFilter;
-    var tempUserId = _selectedUserId;
-    if (_canManageRequests &&
-        tempUserId != null &&
-        !_availableRequestUsers.any((user) => user.id == tempUserId)) {
-      tempUserId = null;
-    }
+    await TimeTrackerFilterSheet.show(
+      context,
+      selectedFilter: _selectedFilter,
+      selectedUserId: _selectedUserId,
+      availableRequestUsers: _availableRequestUsers,
+      canManageRequests: _canManageRequests,
+      onApply: (filter, userId) {
+        setState(() {
+          _selectedFilter = filter;
+          _selectedUserId = _canManageRequests ? userId : null;
+        });
 
-    await showAdaptiveSheet<void>(
-      context: context,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final theme = shad.Theme.of(context);
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.background,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-              ),
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  16,
-                  16,
-                  MediaQuery.of(context).viewPadding.bottom + 16,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.timerRequestsFilterTitle,
-                      style: shad.Theme.of(context).typography.h4,
-                    ),
-                    const shad.Gap(16),
-                    Text(
-                      l10n.timerRequestsFilterStatusLabel,
-                      style: shad.Theme.of(context).typography.small,
-                    ),
-                    const shad.Gap(8),
-                    shad.OutlineButton(
-                      onPressed: () {
-                        shad.showDropdown<void>(
-                          context: context,
-                          builder: (context) {
-                            return shad.DropdownMenu(
-                              children: _RequestStatusFilter.values
-                                  .map(
-                                    (filter) => shad.MenuButton(
-                                      leading: tempFilter == filter
-                                          ? const Icon(Icons.check, size: 16)
-                                          : const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                            ),
-                                      onPressed: (context) {
-                                        setSheetState(
-                                          () => tempFilter = filter,
-                                        );
-                                      },
-                                      child: Text(
-                                        _filterLabel(context, filter),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                            );
-                          },
-                        );
-                      },
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(_filterLabel(context, tempFilter)),
-                          ),
-                          const shad.Gap(8),
-                          const Icon(Icons.keyboard_arrow_down, size: 16),
-                        ],
-                      ),
-                    ),
-                    if (_canManageRequests) ...[
-                      const shad.Gap(16),
-                      Text(
-                        l10n.timerRequestsFilterUserLabel,
-                        style: shad.Theme.of(context).typography.small,
-                      ),
-                      const shad.Gap(8),
-                      shad.OutlineButton(
-                        onPressed: () {
-                          shad.showDropdown<void>(
-                            context: context,
-                            builder: (context) {
-                              return shad.DropdownMenu(
-                                children: [
-                                  shad.MenuButton(
-                                    leading: tempUserId == null
-                                        ? const Icon(Icons.check, size: 16)
-                                        : const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                          ),
-                                    onPressed: (context) {
-                                      setSheetState(() => tempUserId = null);
-                                    },
-                                    child: Text(
-                                      l10n.timerRequestsFilterAllUsers,
-                                    ),
-                                  ),
-                                  ..._availableRequestUsers.map(
-                                    (user) => shad.MenuButton(
-                                      leading: tempUserId == user.id
-                                          ? const Icon(Icons.check, size: 16)
-                                          : const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                            ),
-                                      onPressed: (context) {
-                                        setSheetState(
-                                          () => tempUserId = user.id,
-                                        );
-                                      },
-                                      child: Text(user.label),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                _selectedUserFilterLabel(context, tempUserId),
-                              ),
-                            ),
-                            const shad.Gap(8),
-                            const Icon(Icons.keyboard_arrow_down, size: 16),
-                          ],
-                        ),
-                      ),
-                    ],
-                    const shad.Gap(20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: shad.OutlineButton(
-                            onPressed: () {
-                              setSheetState(() {
-                                tempFilter = _RequestStatusFilter.all;
-                                tempUserId = null;
-                              });
-                            },
-                            child: Text(l10n.timerRequestsFilterClear),
-                          ),
-                        ),
-                        const shad.Gap(8),
-                        Expanded(
-                          child: shad.PrimaryButton(
-                            onPressed: () {
-                              Navigator.of(sheetContext).pop();
-                              _applyFilters(
-                                tempFilter,
-                                wsId,
-                                userId: tempUserId,
-                              );
-                            },
-                            child: Text(l10n.timerRequestsFilterApply),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+        final cubit = context.read<TimeTrackerRequestsCubit>();
+        unawaited(
+          cubit.filterByStatus(
+            _statusFromFilter(filter),
+            wsId,
+            userId: _requestUserFilterId(),
+            statusOverride: filter == TimeTrackerRequestStatusFilter.all
+                ? 'all'
+                : approvalStatusToString(_statusFromFilter(filter)!),
+          ),
         );
       },
     );
   }
-
-  void _applyFilters(
-    _RequestStatusFilter filter,
-    String wsId, {
-    String? userId,
-  }) {
-    setState(() {
-      _selectedFilter = filter;
-      _selectedUserId = _canManageRequests ? userId : null;
-    });
-
-    final cubit = context.read<TimeTrackerRequestsCubit>();
-
-    unawaited(
-      cubit.filterByStatus(
-        _statusFromFilter(filter),
-        wsId,
-        userId: _requestUserFilterId(),
-        statusOverride: filter == _RequestStatusFilter.all
-            ? 'all'
-            : approvalStatusToString(_statusFromFilter(filter)!),
-      ),
-    );
-  }
 }
-
-enum _RequestStatusFilter { all, pending, approved, rejected, needsInfo }
 
 class _RequestTile extends StatelessWidget {
   const _RequestTile({required this.request, this.onTap});
