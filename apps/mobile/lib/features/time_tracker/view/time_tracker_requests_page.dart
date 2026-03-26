@@ -7,6 +7,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -89,6 +90,14 @@ class _RequestsViewState extends State<_RequestsView> {
     return _currentUserId();
   }
 
+  String _statusOverrideForFilter(TimeTrackerRequestStatusFilter filter) {
+    if (filter == TimeTrackerRequestStatusFilter.all) {
+      return 'all';
+    }
+
+    return approvalStatusToString(statusFromFilter(filter)!);
+  }
+
   void _applyState(VoidCallback updater) {
     if (!mounted) {
       return;
@@ -110,9 +119,7 @@ class _RequestsViewState extends State<_RequestsView> {
     await context.read<TimeTrackerRequestsCubit>().loadRequests(
       wsId,
       userId: _requestUserFilterId(),
-      statusOverride: _selectedFilter == TimeTrackerRequestStatusFilter.all
-          ? 'all'
-          : approvalStatusToString(statusFromFilter(_selectedFilter)!),
+      statusOverride: _statusOverrideForFilter(_selectedFilter),
     );
 
     if (!mounted) {
@@ -151,165 +158,175 @@ class _RequestsViewState extends State<_RequestsView> {
     final workspaceState = context.watch<WorkspaceCubit>().state;
     final wsId = workspaceState.currentWorkspace?.id;
 
-    return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: l10n.timerRequestsTitle,
-          actions: [
-            shad.IconButton.ghost(
-              onPressed: wsId == null || wsId.isEmpty
-                  ? null
-                  : () => unawaited(
-                      showFilterSheet(
-                        context,
-                        selectedFilter: _selectedFilter,
-                        selectedUserId: _selectedUserId,
-                        availableRequestUsers: _availableRequestUsers,
-                        canManageRequests: _canManageRequests,
-                        onApply: (filter, userId) {
-                          setState(() {
-                            _selectedFilter = filter;
-                            _selectedUserId = _canManageRequests
-                                ? userId
-                                : null;
-                          });
-
-                          final cubit = context
-                              .read<TimeTrackerRequestsCubit>();
-                          unawaited(
-                            cubit.filterByStatus(
-                              statusFromFilter(filter),
-                              wsId,
-                              userId: _requestUserFilterId(),
-                              statusOverride:
-                                  filter == TimeTrackerRequestStatusFilter.all
-                                  ? 'all'
-                                  : approvalStatusToString(
-                                      statusFromFilter(filter)!,
-                                    ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-              icon: Icon(
-                Icons.filter_alt_outlined,
-                color:
-                    hasActiveFilters(
-                      selectedFilter: _selectedFilter,
-                      canManageRequests: _canManageRequests,
-                      selectedUserId: _selectedUserId,
-                    )
-                    ? shad.Theme.of(context).colorScheme.primary
-                    : null,
-              ),
-            ),
-            if (_canManageThresholdSettings)
+    return BlocListener<WorkspaceCubit, WorkspaceState>(
+      listenWhen: (previous, current) =>
+          previous.currentWorkspace?.id != current.currentWorkspace?.id,
+      listener: (context, state) {
+        final nextWsId = state.currentWorkspace?.id;
+        _permissionsWorkspaceId = nextWsId;
+        _requestLoadToken++;
+        context.read<TimeTrackerRequestsCubit>().reset();
+        unawaited(_loadPermissionsAndThreshold(nextWsId));
+      },
+      child: shad.Scaffold(
+        headers: [
+          MobileSectionAppBar(
+            title: l10n.timerRequestsTitle,
+            actions: [
               shad.IconButton.ghost(
-                onPressed: _isThresholdLoading
+                onPressed: wsId == null || wsId.isEmpty
                     ? null
-                    : () => unawaited(_showThresholdSettingsDialog()),
-                icon: _isThresholdLoading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: shad.CircularProgressIndicator(),
-                      )
-                    : const Icon(Icons.settings_outlined),
-              ),
-          ],
-        ),
-      ],
-      child: Stack(
-        children: [
-          ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-            child: Builder(
-              builder: (context) {
-                if (workspaceState.status == WorkspaceStatus.initial ||
-                    workspaceState.status == WorkspaceStatus.loading) {
-                  return const Center(child: shad.CircularProgressIndicator());
-                }
+                    : () => unawaited(
+                        showFilterSheet(
+                          context,
+                          selectedFilter: _selectedFilter,
+                          selectedUserId: _selectedUserId,
+                          availableRequestUsers: _availableRequestUsers,
+                          canManageRequests: _canManageRequests,
+                          onApply: (filter, userId) {
+                            setState(() {
+                              _selectedFilter = filter;
+                              _selectedUserId = _canManageRequests
+                                  ? userId
+                                  : null;
+                            });
 
-                if (workspaceState.currentWorkspace == null) {
-                  return Center(
-                    child: Text(
-                      l10n.assistantSelectWorkspace,
-                      style: shad.Theme.of(context).typography.textMuted,
-                    ),
-                  );
-                }
-
-                return BlocBuilder<
-                  TimeTrackerRequestsCubit,
-                  TimeTrackerRequestsState
-                >(
-                  builder: (context, state) {
-                    if (state.status == TimeTrackerRequestsStatus.initial ||
-                        state.status == TimeTrackerRequestsStatus.loading) {
-                      return const Center(
-                        child: shad.CircularProgressIndicator(),
-                      );
-                    }
-
-                    if (state.status == TimeTrackerRequestsStatus.error) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              shad.LucideIcons.circleAlert,
-                              size: 48,
-                              color: shad.Theme.of(
-                                context,
-                              ).colorScheme.destructive,
-                            ),
-                            const shad.Gap(16),
-                            Text(state.error ?? 'Error'),
-                            const shad.Gap(16),
-                            shad.SecondaryButton(
-                              onPressed: () => unawaited(_loadRequests()),
-                              child: Text(l10n.commonRetry),
-                            ),
-                          ],
+                            final cubit = context
+                                .read<TimeTrackerRequestsCubit>();
+                            unawaited(
+                              cubit.filterByStatus(
+                                statusFromFilter(filter),
+                                wsId,
+                                userId: _requestUserFilterId(),
+                                statusOverride: _statusOverrideForFilter(
+                                  filter,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    }
-
-                    if (state.requests.isEmpty) {
-                      return Center(
-                        child: Text(
-                          l10n.timerNoSessions,
-                          style: shad.Theme.of(context).typography.textMuted,
-                        ),
-                      );
-                    }
-
-                    return RefreshIndicator(
-                      onRefresh: _loadRequests,
-                      child: ListView.builder(
-                        itemCount: state.requests.length,
-                        padding: const EdgeInsets.only(bottom: 96),
-                        itemBuilder: (context, index) {
-                          final request = state.requests[index];
-                          return _RequestTile(
-                            request: request,
-                            onTap: () => _showRequestDetail(context, request),
-                          );
-                        },
                       ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          ExtendedFab(
-            icon: shad.LucideIcons.plus,
-            label: l10n.timerAddMissedEntry,
-            onPressed: () => unawaited(_openMissedEntryDialog()),
+                icon: Icon(
+                  Icons.filter_alt_outlined,
+                  color:
+                      hasActiveFilters(
+                        selectedFilter: _selectedFilter,
+                        canManageRequests: _canManageRequests,
+                        selectedUserId: _selectedUserId,
+                      )
+                      ? shad.Theme.of(context).colorScheme.primary
+                      : null,
+                ),
+              ),
+              if (_canManageThresholdSettings)
+                shad.IconButton.ghost(
+                  onPressed: _isThresholdLoading
+                      ? null
+                      : () => unawaited(_showThresholdSettingsDialog()),
+                  icon: _isThresholdLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: shad.CircularProgressIndicator(),
+                        )
+                      : const Icon(Icons.settings_outlined),
+                ),
+            ],
           ),
         ],
+        child: Stack(
+          children: [
+            ResponsiveWrapper(
+              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+              child: Builder(
+                builder: (context) {
+                  if (workspaceState.status == WorkspaceStatus.initial ||
+                      workspaceState.status == WorkspaceStatus.loading) {
+                    return const Center(
+                      child: shad.CircularProgressIndicator(),
+                    );
+                  }
+
+                  if (workspaceState.currentWorkspace == null) {
+                    return Center(
+                      child: Text(
+                        l10n.assistantSelectWorkspace,
+                        style: shad.Theme.of(context).typography.textMuted,
+                      ),
+                    );
+                  }
+
+                  return BlocBuilder<
+                    TimeTrackerRequestsCubit,
+                    TimeTrackerRequestsState
+                  >(
+                    builder: (context, state) {
+                      if (state.status == TimeTrackerRequestsStatus.initial ||
+                          state.status == TimeTrackerRequestsStatus.loading) {
+                        return const Center(
+                          child: shad.CircularProgressIndicator(),
+                        );
+                      }
+
+                      if (state.status == TimeTrackerRequestsStatus.error) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                shad.LucideIcons.circleAlert,
+                                size: 48,
+                                color: shad.Theme.of(
+                                  context,
+                                ).colorScheme.destructive,
+                              ),
+                              const shad.Gap(16),
+                              Text(state.error ?? 'Error'),
+                              const shad.Gap(16),
+                              shad.SecondaryButton(
+                                onPressed: () => unawaited(_loadRequests()),
+                                child: Text(l10n.commonRetry),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      if (state.requests.isEmpty) {
+                        return Center(
+                          child: Text(
+                            l10n.timerNoSessions,
+                            style: shad.Theme.of(context).typography.textMuted,
+                          ),
+                        );
+                      }
+
+                      return RefreshIndicator(
+                        onRefresh: _loadRequests,
+                        child: ListView.builder(
+                          itemCount: state.requests.length,
+                          padding: const EdgeInsets.only(bottom: 96),
+                          itemBuilder: (context, index) {
+                            final request = state.requests[index];
+                            return _RequestTile(
+                              request: request,
+                              onTap: () => _showRequestDetail(context, request),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            ExtendedFab(
+              icon: shad.LucideIcons.plus,
+              label: l10n.timerAddMissedEntry,
+              onPressed: () => unawaited(_openMissedEntryDialog()),
+            ),
+          ],
+        ),
       ),
     );
   }

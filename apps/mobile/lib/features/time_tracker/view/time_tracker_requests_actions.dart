@@ -11,7 +11,45 @@ extension _RequestsViewActions on _RequestsViewState {
     final repository = context.read<ITimeTrackerRepository>();
     final cubit = context.read<TimeTrackerRequestsCubit>();
 
-    final categories = await repository.getCategories(wsId);
+    List<TimeTrackingCategory> categories;
+    try {
+      categories = await repository.getCategories(wsId);
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (!toastContext.mounted) {
+        return;
+      }
+      final message = e.message.isNotEmpty
+          ? e.message
+          : context.l10n.commonSomethingWentWrong;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          title: Text(context.l10n.commonSomethingWentWrong),
+          content: Text(message),
+        ),
+      );
+      return;
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (!toastContext.mounted) {
+        return;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          title: Text(context.l10n.commonSomethingWentWrong),
+          content: Text(context.l10n.commonSomethingWentWrong),
+        ),
+      );
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -22,6 +60,7 @@ extension _RequestsViewActions on _RequestsViewState {
       userId: userId,
       categories: categories,
       thresholdDays: _missedEntryDateThreshold,
+      workspacePermissionsRepository: _workspacePermissionsRepository,
       onCreateMissedEntry:
           ({
             required title,
@@ -58,9 +97,7 @@ extension _RequestsViewActions on _RequestsViewState {
         statusFromFilter(_selectedFilter),
         wsId,
         userId: _requestUserFilterId(),
-        statusOverride: _selectedFilter == TimeTrackerRequestStatusFilter.all
-            ? 'all'
-            : approvalStatusToString(statusFromFilter(_selectedFilter)!),
+        statusOverride: _statusOverrideForFilter(_selectedFilter),
       ),
     );
   }
@@ -124,8 +161,9 @@ extension _RequestsViewActions on _RequestsViewState {
           .containsPermission(
             manageWorkspaceSettingsPermission,
           );
+      final isPersonalWorkspace = workspace?.personal ?? true;
       canManageThresholdSettings =
-          !workspace!.personal &&
+          !isPersonalWorkspace &&
           canManageRequests &&
           canManageWorkspaceSettings;
 
