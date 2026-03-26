@@ -3456,6 +3456,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDefaultWorkspaceDescription => 'The app opens here by default on every launch.';
 
   @override
+  String get settingsWorkspacePropertiesTitle => 'Workspace profile';
+
+  @override
+  String get settingsWorkspacePropertiesDescription => 'Update the workspace name and avatar.';
+
+  @override
+  String get settingsWorkspacePropertiesNoAccess => 'You need workspace settings permission to edit these properties.';
+
+  @override
+  String get settingsWorkspacePropertiesPermissionLoading => 'Checking your workspace permissions...';
+
+  @override
+  String get settingsWorkspacePropertiesUpdated => 'Workspace profile updated.';
+
+  @override
+  String get settingsWorkspacePropertiesNameRequired => 'Workspace name cannot be empty';
+
+  @override
+  String get settingsWorkspaceAvatar => 'Workspace avatar';
+
+  @override
+  String get settingsWorkspaceAvatarDescription => 'Upload a new image or remove the current avatar.';
+
+  @override
+  String get settingsWorkspaceAvatarRemovePending => 'The current avatar will be removed when you save.';
+
+  @override
+  String get settingsWorkspaceNameHint => 'Workspace name';
+
+  @override
   String get settingsNoEmail => 'No email available';
 
   @override

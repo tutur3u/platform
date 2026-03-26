@@ -203,39 +203,7 @@ class WorkspaceRepository {
 
     if (avatarFile != null) {
       try {
-        final uploadJson = await _api.postJson(
-          WorkspaceEndpoints.avatarUploadUrl(wsId),
-          {
-            'filename': avatarFile.uri.pathSegments.last,
-          },
-        );
-        final upload = AvatarUploadUrlResponse.fromJson(uploadJson);
-
-        final bytes = await avatarFile.readAsBytes();
-        final contentType =
-            lookupMimeType(avatarFile.path) ?? 'application/octet-stream';
-        final uploadResponse = await _httpClient
-            .put(
-              Uri.parse(upload.uploadUrl),
-              headers: {
-                'Authorization': 'Bearer ${upload.token}',
-                'Content-Type': contentType,
-              },
-              body: bytes,
-            )
-            .timeout(const Duration(seconds: 60));
-
-        if (uploadResponse.statusCode < 200 ||
-            uploadResponse.statusCode >= 300) {
-          throw ApiException(
-            message: 'Failed to upload workspace avatar',
-            statusCode: uploadResponse.statusCode,
-          );
-        }
-
-        await _api.patchJson(WorkspaceEndpoints.avatar(wsId), {
-          'filePath': upload.filePath,
-        });
+        await updateWorkspaceAvatar(wsId, avatarFile);
       } on Exception catch (_) {
         // Workspace creation already succeeded; avatar upload is best-effort.
         avatarUploadFailed = true;
@@ -254,6 +222,49 @@ class WorkspaceRepository {
       workspace: ws,
       avatarUploadFailed: avatarUploadFailed,
     );
+  }
+
+  Future<void> updateWorkspaceName(String wsId, String name) async {
+    await _api.putJson(WorkspaceEndpoints.workspace(wsId), {'name': name});
+  }
+
+  Future<void> updateWorkspaceAvatar(String wsId, File avatarFile) async {
+    final uploadJson = await _api.postJson(
+      WorkspaceEndpoints.avatarUploadUrl(wsId),
+      {
+        'filename': avatarFile.uri.pathSegments.last,
+      },
+    );
+    final upload = AvatarUploadUrlResponse.fromJson(uploadJson);
+
+    final bytes = await avatarFile.readAsBytes();
+    final contentType =
+        lookupMimeType(avatarFile.path) ?? 'application/octet-stream';
+    final uploadResponse = await _httpClient
+        .put(
+          Uri.parse(upload.uploadUrl),
+          headers: {
+            'Authorization': 'Bearer ${upload.token}',
+            'Content-Type': contentType,
+          },
+          body: bytes,
+        )
+        .timeout(const Duration(seconds: 60));
+
+    if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
+      throw ApiException(
+        message: 'Failed to upload workspace avatar',
+        statusCode: uploadResponse.statusCode,
+      );
+    }
+
+    await _api.patchJson(WorkspaceEndpoints.avatar(wsId), {
+      'filePath': upload.filePath,
+    });
+  }
+
+  Future<void> removeWorkspaceAvatar(String wsId) async {
+    await _api.deleteJson(WorkspaceEndpoints.avatar(wsId));
   }
 }
 

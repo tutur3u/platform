@@ -3450,6 +3450,36 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsDefaultWorkspaceDescription => 'Ứng dụng sẽ mở vào đây mặc định mỗi lần khởi động.';
 
   @override
+  String get settingsWorkspacePropertiesTitle => 'Hồ sơ không gian làm việc';
+
+  @override
+  String get settingsWorkspacePropertiesDescription => 'Cập nhật tên và ảnh đại diện của không gian làm việc.';
+
+  @override
+  String get settingsWorkspacePropertiesNoAccess => 'Bạn cần quyền quản lý cài đặt không gian làm việc để chỉnh sửa.';
+
+  @override
+  String get settingsWorkspacePropertiesPermissionLoading => 'Đang kiểm tra quyền trong không gian làm việc...';
+
+  @override
+  String get settingsWorkspacePropertiesUpdated => 'Đã cập nhật hồ sơ không gian làm việc.';
+
+  @override
+  String get settingsWorkspacePropertiesNameRequired => 'Tên không gian làm việc không được để trống';
+
+  @override
+  String get settingsWorkspaceAvatar => 'Ảnh đại diện không gian làm việc';
+
+  @override
+  String get settingsWorkspaceAvatarDescription => 'Tải ảnh mới lên hoặc xóa ảnh hiện tại.';
+
+  @override
+  String get settingsWorkspaceAvatarRemovePending => 'Ảnh hiện tại sẽ bị xóa khi bạn lưu.';
+
+  @override
+  String get settingsWorkspaceNameHint => 'Tên không gian làm việc';
+
+  @override
   String get settingsNoEmail => 'Không có email';
 
   @override

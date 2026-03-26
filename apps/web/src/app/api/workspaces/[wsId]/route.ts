@@ -3,7 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_WORKSPACE_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 
 const UpdateWorkspaceSchema = z.object({
   name: z.string().min(1).max(MAX_WORKSPACE_NAME_LENGTH),
@@ -15,10 +15,10 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id);
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const {
     data: { user },
@@ -52,13 +52,14 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id);
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   try {
     const body = await req.json();
     const { name } = UpdateWorkspaceSchema.parse(body);
+
 
     const { error } = await supabase
       .from('workspaces')
