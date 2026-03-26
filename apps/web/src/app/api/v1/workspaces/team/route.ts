@@ -12,11 +12,11 @@ import { createFreeSubscription } from '@/utils/subscription-helper';
 
 const CreateTeamWorkspaceSchema = z.object({
   name: z.string().min(1).max(MAX_WORKSPACE_NAME_LENGTH),
-  avatar_url: z.url().optional(),
+  avatar_url: z.string().trim().min(1).optional(),
 });
 
 export async function POST(req: Request) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   const {
     data: { user },

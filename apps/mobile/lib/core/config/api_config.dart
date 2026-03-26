@@ -38,6 +38,12 @@ abstract final class MobileEndpoints {
   static const versionCheck = '/api/v1/mobile/version-check';
 }
 
+/// Workspace endpoint paths.
+abstract final class WorkspaceEndpoints {
+  static const team = '/api/v1/workspaces/team';
+  static const avatarUploadUrl = '/api/v1/users/me/avatar/upload-url';
+}
+
 /// Finance endpoint paths.
 abstract final class FinanceEndpoints {
   static String wallets(String wsId) => '/api/workspaces/$wsId/wallets';

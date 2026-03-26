@@ -13,6 +13,7 @@ import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ProfilePage extends StatelessWidget {
@@ -268,30 +269,12 @@ class _ProfileView extends StatelessWidget {
     final picker = ImagePicker();
     final theme = shad.Theme.of(context);
 
-    final source = await showAdaptiveSheet<ImageSource>(
+    final source = await showImageSourcePickerDialog(
       context: context,
-      maxDialogWidth: 420,
-      builder: (dialogContext) => AppDialogScaffold(
-        title: l10n.selectImageSource,
-        description: l10n.profileAvatarPickerDescription,
-        icon: Icons.add_a_photo_outlined,
-        maxWidth: 420,
-        maxHeightFactor: 0.62,
-        child: Column(
-          children: [
-            _AvatarSourceTile(
-              icon: Icons.camera_alt_rounded,
-              label: l10n.camera,
-              onTap: () => Navigator.pop(dialogContext, ImageSource.camera),
-            ),
-            _AvatarSourceTile(
-              icon: Icons.photo_library_rounded,
-              label: l10n.gallery,
-              onTap: () => Navigator.pop(dialogContext, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
+      title: l10n.selectImageSource,
+      description: l10n.profileAvatarPickerDescription,
+      cameraLabel: l10n.camera,
+      galleryLabel: l10n.gallery,
     );
 
     if (!context.mounted || source == null) {
@@ -374,61 +357,6 @@ class _ProfileView extends StatelessWidget {
         validator: validator,
         onSave: onSave,
         successMessage: successMessage,
-      ),
-    );
-  }
-}
-
-class _AvatarSourceTile extends StatelessWidget {
-  const _AvatarSourceTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Ink(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.card,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.colorScheme.border),
-            ),
-            child: Row(
-              children: [
-                Icon(icon, size: 20),
-                const shad.Gap(12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: theme.typography.small.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
