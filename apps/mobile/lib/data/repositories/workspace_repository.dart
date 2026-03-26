@@ -186,52 +186,62 @@ class WorkspaceRepository {
 
   /// Creates a new team workspace with the given [name].
   ///
-  /// Returns the created [Workspace] or throws [ApiException].
-  Future<Workspace> createWorkspace(String name, {File? avatarFile}) async {
-    String? avatarPath;
-
-    if (avatarFile != null) {
-      final uploadJson = await _api.postJson(
-        WorkspaceEndpoints.avatarUploadUrl,
-        {
-          'filename': avatarFile.uri.pathSegments.last,
-        },
-      );
-      final upload = AvatarUploadUrlResponse.fromJson(uploadJson);
-
-      final bytes = await avatarFile.readAsBytes();
-      final contentType =
-          lookupMimeType(avatarFile.path) ?? 'application/octet-stream';
-      final uploadResponse = await _httpClient
-          .put(
-            Uri.parse(upload.uploadUrl),
-            headers: {
-              'Authorization': 'Bearer ${upload.token}',
-              'Content-Type': contentType,
-            },
-            body: bytes,
-          )
-          .timeout(const Duration(seconds: 60));
-
-      if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
-        throw ApiException(
-          message: 'Failed to upload workspace avatar',
-          statusCode: uploadResponse.statusCode,
-        );
-      }
-
-      avatarPath = upload.filePath;
-    }
-
+  /// Returns the created [WorkspaceCreationResult] or throws [ApiException].
+  Future<WorkspaceCreationResult> createWorkspace(
+    String name, {
+    File? avatarFile,
+  }) async {
     final json = await _api.postJson(
       WorkspaceEndpoints.team,
       {
         'name': name,
-        if (avatarPath != null) 'avatar_url': avatarPath,
       },
     );
 
     final wsId = json['id'] as String;
+    var avatarUploadFailed = false;
+
+    if (avatarFile != null) {
+      try {
+        final uploadJson = await _api.postJson(
+          WorkspaceEndpoints.avatarUploadUrl(wsId),
+          {
+            'filename': avatarFile.uri.pathSegments.last,
+          },
+        );
+        final upload = AvatarUploadUrlResponse.fromJson(uploadJson);
+
+        final bytes = await avatarFile.readAsBytes();
+        final contentType =
+            lookupMimeType(avatarFile.path) ?? 'application/octet-stream';
+        final uploadResponse = await _httpClient
+            .put(
+              Uri.parse(upload.uploadUrl),
+              headers: {
+                'Authorization': 'Bearer ${upload.token}',
+                'Content-Type': contentType,
+              },
+              body: bytes,
+            )
+            .timeout(const Duration(seconds: 60));
+
+        if (uploadResponse.statusCode < 200 ||
+            uploadResponse.statusCode >= 300) {
+          throw ApiException(
+            message: 'Failed to upload workspace avatar',
+            statusCode: uploadResponse.statusCode,
+          );
+        }
+
+        await _api.patchJson(WorkspaceEndpoints.avatar(wsId), {
+          'filePath': upload.filePath,
+        });
+      } on Exception catch (_) {
+        // Workspace creation already succeeded; avatar upload is best-effort.
+        avatarUploadFailed = true;
+      }
+    }
+
     // Fetch the full workspace to get all fields
     final ws = await getWorkspaceById(wsId);
     if (ws == null) {
@@ -240,6 +250,19 @@ class WorkspaceRepository {
         statusCode: 0,
       );
     }
-    return ws;
+    return WorkspaceCreationResult(
+      workspace: ws,
+      avatarUploadFailed: avatarUploadFailed,
+    );
   }
+}
+
+class WorkspaceCreationResult {
+  const WorkspaceCreationResult({
+    required this.workspace,
+    required this.avatarUploadFailed,
+  });
+
+  final Workspace workspace;
+  final bool avatarUploadFailed;
 }

@@ -7159,6 +7159,24 @@ abstract class AppLocalizations {
   /// **'Create a fresh space for projects, habits, finance, and more.'**
   String get workspaceCreateDescription;
 
+  /// No description provided for @workspaceCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace created.'**
+  String get workspaceCreateSuccess;
+
+  /// No description provided for @workspaceCreateSuccessAvatarWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace created, but profile picture failed to upload.'**
+  String get workspaceCreateSuccessAvatarWarning;
+
+  /// No description provided for @workspaceCreateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create workspace'**
+  String get workspaceCreateError;
+
   /// No description provided for @workspaceCreateNew.
   ///
   /// In en, this message translates to:

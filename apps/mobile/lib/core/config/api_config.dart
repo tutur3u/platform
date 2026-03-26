@@ -41,7 +41,9 @@ abstract final class MobileEndpoints {
 /// Workspace endpoint paths.
 abstract final class WorkspaceEndpoints {
   static const team = '/api/v1/workspaces/team';
-  static const avatarUploadUrl = '/api/v1/users/me/avatar/upload-url';
+  static String avatarUploadUrl(String wsId) =>
+      '/api/v1/workspaces/$wsId/avatar/upload-url';
+  static String avatar(String wsId) => '/api/v1/workspaces/$wsId/avatar';
 }
 
 /// Finance endpoint paths.

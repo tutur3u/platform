@@ -60,23 +60,57 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
 
     try {
       final workspaceCubit = context.read<WorkspaceCubit>();
-      final workspace = await workspaceCubit.createWorkspace(
+      final result = await workspaceCubit.createWorkspace(
         name,
         avatarFile: _avatarFile,
       );
       if (!mounted) return;
 
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (!toastContext.mounted) return;
+
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert(
+          content: Text(
+            result.avatarUploadFailed
+                ? context.l10n.workspaceCreateSuccessAvatarWarning
+                : context.l10n.workspaceCreateSuccess,
+          ),
+        ),
+      );
+
       // Auto-select the newly created workspace before dismissing.
-      await workspaceCubit.selectWorkspace(workspace);
+      await workspaceCubit.selectWorkspace(result.workspace);
       if (!mounted) return;
 
       // Close dialog
       await Navigator.maybePop(context);
     } on ApiException catch (e) {
       if (!mounted) return;
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (toastContext.mounted) {
+        shad.showToast(
+          context: toastContext,
+          builder: (context, overlay) => shad.Alert.destructive(
+            content: Text(
+              e.message.isEmpty ? context.l10n.workspaceCreateError : e.message,
+            ),
+          ),
+        );
+      }
       setState(() => _error = e.message);
     } on Exception catch (e) {
       if (!mounted) return;
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
+      if (toastContext.mounted) {
+        shad.showToast(
+          context: toastContext,
+          builder: (context, overlay) => shad.Alert.destructive(
+            content: Text(context.l10n.workspaceCreateError),
+          ),
+        );
+      }
       setState(() => _error = e.toString());
     }
   }

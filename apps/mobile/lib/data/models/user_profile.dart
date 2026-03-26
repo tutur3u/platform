@@ -85,7 +85,7 @@ class AvatarUploadUrlResponse extends Equatable {
 
   factory AvatarUploadUrlResponse.fromJson(Map<String, dynamic> json) =>
       AvatarUploadUrlResponse(
-        uploadUrl: json['uploadUrl'] as String,
+        uploadUrl: (json['uploadUrl'] ?? json['signedUrl']) as String,
         publicUrl: json['publicUrl'] as String,
         filePath: json['filePath'] as String,
         token: json['token'] as String,

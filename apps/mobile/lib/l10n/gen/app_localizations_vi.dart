@@ -3720,6 +3720,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceCreateDescription => 'Tạo một không gian mới cho dự án, thói quen, tài chính và nhiều hơn nữa.';
 
   @override
+  String get workspaceCreateSuccess => 'Đã tạo không gian làm việc.';
+
+  @override
+  String get workspaceCreateSuccessAvatarWarning => 'Đã tạo không gian làm việc, nhưng ảnh đại diện không tải lên được.';
+
+  @override
+  String get workspaceCreateError => 'Không thể tạo không gian làm việc';
+
+  @override
   String get workspaceCreateNew => 'Tạo mới';
 
   @override
