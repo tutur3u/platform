@@ -1166,6 +1166,14 @@
     "timerRequestApproved": "Approved",
     "timerRequestRejected": "Rejected",
     "timerRequestNeedsInfo": "Needs info",
+    "timerRequestInfoRequestedBy": "Info requested by {name}",
+    "@timerRequestInfoRequestedBy": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
     "timerApprove": "Approve",
     "timerReject": "Reject",
     "timerRequestInfo": "Request info",

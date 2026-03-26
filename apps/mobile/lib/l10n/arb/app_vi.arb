@@ -1167,6 +1167,14 @@
     "timerRequestApproved": "Đã duyệt",
     "timerRequestRejected": "Bị từ chối",
     "timerRequestNeedsInfo": "Cần thêm thông tin",
+    "timerRequestInfoRequestedBy": "Đã yêu cầu thông tin bởi {name}",
+    "@timerRequestInfoRequestedBy": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
     "timerApprove": "Duyệt",
     "timerReject": "Từ chối",
     "timerRequestInfo": "Yêu cầu thông tin",

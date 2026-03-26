@@ -2935,6 +2935,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestNeedsInfo => 'Needs info';
 
   @override
+  String timerRequestInfoRequestedBy(String name) {
+    return 'Info requested by $name';
+  }
+
+  @override
   String get timerApprove => 'Approve';
 
   @override

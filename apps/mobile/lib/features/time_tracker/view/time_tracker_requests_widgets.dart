@@ -42,7 +42,8 @@ class _RequestTile extends StatelessWidget {
                   children: [
                     RequestStatusBadge(status: request.approvalStatus),
                     const Spacer(),
-                    if (hasDuration) _DurationChip(duration: duration),
+                    if (hasDuration)
+                      _DurationChip(duration: duration, l10n: l10n),
                   ],
                 ),
 
@@ -147,6 +148,8 @@ class _UserRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     final initials = _initials(displayName);
+    final trimmedAvatarUrl = avatarUrl?.trim();
+    final hasAvatar = trimmedAvatarUrl?.isNotEmpty == true;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -155,10 +158,8 @@ class _UserRow extends StatelessWidget {
         CircleAvatar(
           radius: 13,
           backgroundColor: colorScheme.primary.withValues(alpha: 0.12),
-          backgroundImage: avatarUrl?.trim().isNotEmpty == true
-              ? NetworkImage(avatarUrl!.trim())
-              : null,
-          child: avatarUrl?.trim().isNotEmpty == true
+          backgroundImage: hasAvatar ? NetworkImage(trimmedAvatarUrl!) : null,
+          child: hasAvatar
               ? null
               : Text(
                   initials,
@@ -202,9 +203,10 @@ class _UserRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DurationChip extends StatelessWidget {
-  const _DurationChip({required this.duration});
+  const _DurationChip({required this.duration, required this.l10n});
 
   final Duration duration;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +219,7 @@ class _DurationChip extends StatelessWidget {
         Icon(Icons.access_time_rounded, size: 13, color: muted),
         const SizedBox(width: 3),
         Text(
-          _label(duration),
+          _label(duration, l10n),
           style: theme.typography.small.copyWith(
             color: muted,
             fontWeight: FontWeight.w500,
@@ -227,12 +229,12 @@ class _DurationChip extends StatelessWidget {
     );
   }
 
-  static String _label(Duration d) {
+  static String _label(Duration d, AppLocalizations l10n) {
     final h = d.inHours;
     final m = d.inMinutes.remainder(60);
-    if (h == 0) return '${m}m';
-    if (m == 0) return '${h}h';
-    return '${h}h ${m}m';
+    if (h == 0) return '$m${l10n.timerMinuteUnitShort}';
+    if (m == 0) return '$h${l10n.timerHourUnitShort}';
+    return '$h${l10n.timerHourUnitShort} $m${l10n.timerMinuteUnitShort}';
   }
 }
 
@@ -345,7 +347,7 @@ class _ActionFooter extends StatelessWidget {
         );
       case ApprovalStatus.needsInfo when r.needsInfoRequestedByName != null:
         return (
-          'Info requested by ${r.needsInfoRequestedByName}',
+          l10n.timerRequestInfoRequestedBy(r.needsInfoRequestedByName!),
           colors.blue,
           Icons.info_outline_rounded,
         );

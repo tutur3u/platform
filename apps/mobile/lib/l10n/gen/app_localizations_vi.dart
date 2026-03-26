@@ -2935,6 +2935,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestNeedsInfo => 'Cần thêm thông tin';
 
   @override
+  String timerRequestInfoRequestedBy(String name) {
+    return 'Đã yêu cầu thông tin bởi $name';
+  }
+
+  @override
   String get timerApprove => 'Duyệt';
 
   @override

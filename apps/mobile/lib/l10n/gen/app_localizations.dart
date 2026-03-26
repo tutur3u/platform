@@ -5647,6 +5647,12 @@ abstract class AppLocalizations {
   /// **'Needs info'**
   String get timerRequestNeedsInfo;
 
+  /// No description provided for @timerRequestInfoRequestedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Info requested by {name}'**
+  String timerRequestInfoRequestedBy(String name);
+
   /// No description provided for @timerApprove.
   ///
   /// In en, this message translates to:
