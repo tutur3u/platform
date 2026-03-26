@@ -1,10 +1,10 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getPostsPageData } from '@/app/[locale]/(dashboard)/[wsId]/posts/data';
+import { loadPostsSearchParams } from '@/app/[locale]/(dashboard)/[wsId]/posts/search-params.server';
 import type {
   PostEmail,
   PostEmailStatusSummary,
-  PostsSearchParams,
 } from '@/app/[locale]/(dashboard)/[wsId]/posts/types';
 
 export async function GET(
@@ -19,17 +19,7 @@ export async function GET(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { searchParams } = req.nextUrl;
-
-  const query: PostsSearchParams = {
-    page: searchParams.get('page') || '1',
-    pageSize: searchParams.get('pageSize') || '10',
-    includedGroups: searchParams.getAll('includedGroups'),
-    excludedGroups: searchParams.getAll('excludedGroups'),
-    userId: searchParams.get('userId') || undefined,
-    approvalStatus: searchParams.get('approvalStatus') || undefined,
-    queueStatus: searchParams.get('queueStatus') || undefined,
-  };
+  const query = loadPostsSearchParams(req.nextUrl.searchParams);
 
   try {
     const { postsData, postsStatus } = await getPostsPageData(wsId, query);

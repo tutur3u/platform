@@ -6,9 +6,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostStatusSummary } from './status-summary';
 import type { PostEmailStatusSummary } from './types';
 
-const searchParamsMock = {
-  getSingle: vi.fn(),
-  set: vi.fn(),
+const setQueryStateMock = vi.fn();
+const queryStateMock = {
+  approvalStatus: null,
+  cursor: null,
+  excludedGroups: [],
+  includedGroups: [],
+  page: 1,
+  pageSize: 10,
+  queueStatus: null,
+  showAll: null,
+  stage: null,
+  userId: null,
 };
 
 vi.mock('next-intl', () => ({
@@ -16,9 +25,14 @@ vi.mock('next-intl', () => ({
     values ? `${key}:${JSON.stringify(values)}` : key,
 }));
 
-vi.mock('@tuturuuu/ui/hooks/useSearchParams', () => ({
-  default: () => searchParamsMock,
-}));
+vi.mock('nuqs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('nuqs')>();
+
+  return {
+    ...actual,
+    useQueryStates: () => [queryStateMock, setQueryStateMock],
+  };
+});
 
 const summary: PostEmailStatusSummary = {
   approvals: {
@@ -46,14 +60,14 @@ const summary: PostEmailStatusSummary = {
     rejected: 1,
     sent: 3,
     skipped: 0,
+    undeliverable: 1,
   },
-  total: 16,
+  total: 17,
 };
 
 describe('PostStatusSummary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    searchParamsMock.getSingle.mockReturnValue(undefined);
   });
 
   it('replaces the current stage when a stage card is clicked', () => {
@@ -67,8 +81,9 @@ describe('PostStatusSummary', () => {
 
     fireEvent.click(screen.getByText('pending_approval'));
 
-    expect(searchParamsMock.set).toHaveBeenCalledWith({
-      page: '1',
+    expect(setQueryStateMock).toHaveBeenCalledWith({
+      page: 1,
+      showAll: null,
       stage: 'pending_approval',
     });
   });
@@ -84,9 +99,10 @@ describe('PostStatusSummary', () => {
 
     fireEvent.click(screen.getByText('show_all_recipients'));
 
-    expect(searchParamsMock.set).toHaveBeenCalledWith({
-      page: '1',
-      stage: undefined,
+    expect(setQueryStateMock).toHaveBeenCalledWith({
+      page: 1,
+      showAll: true,
+      stage: null,
     });
   });
 
@@ -101,8 +117,9 @@ describe('PostStatusSummary', () => {
 
     fireEvent.click(screen.getByText('show_actionable_queue'));
 
-    expect(searchParamsMock.set).toHaveBeenCalledWith({
-      page: '1',
+    expect(setQueryStateMock).toHaveBeenCalledWith({
+      page: 1,
+      showAll: null,
       stage: 'pending_approval',
     });
   });

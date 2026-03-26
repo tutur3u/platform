@@ -55,6 +55,7 @@ export interface RawPostsSearchParams {
   stage?: string | string[];
   queueStatus?: string | string[];
   approvalStatus?: string | string[];
+  showAll?: string | string[];
   cursor?: string | string[];
 }
 
@@ -67,6 +68,7 @@ export interface PostsSearchParams {
   stage?: PostReviewStage | null;
   queueStatus?: PostEmailQueueStatus | null;
   approvalStatus?: PostApprovalStatus | null;
+  showAll?: boolean | null;
   cursor?: string | null;
 }
 
