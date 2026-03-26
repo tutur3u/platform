@@ -4,7 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 
 export async function GET(
   request: NextRequest,
@@ -24,7 +24,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
     const { data: memberCheck, error: memberError } = await supabase
