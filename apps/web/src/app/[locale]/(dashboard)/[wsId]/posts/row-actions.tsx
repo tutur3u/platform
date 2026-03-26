@@ -6,11 +6,13 @@ import { useTranslations } from 'next-intl';
 import {
   getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
+  getPostReviewStageAppearance,
 } from './status-meta';
 import type { PostEmail } from './types';
 
 export default function PostsRowActions({ data }: { data: PostEmail }) {
   const t = useTranslations('post-email-data-table');
+  const stageAppearance = getPostReviewStageAppearance(data.stage);
   const approvalAppearance = data.approval_status
     ? getPostApprovalStatusAppearance(data.approval_status)
     : null;
@@ -20,10 +22,19 @@ export default function PostsRowActions({ data }: { data: PostEmail }) {
 
   return (
     <div className="flex flex-none items-center justify-end gap-1.5">
+      <Badge
+        variant="outline"
+        className={cn('text-[10px]', stageAppearance.className)}
+      >
+        <stageAppearance.icon
+          className={cn('mr-0.5 h-3 w-3', stageAppearance.iconClassName)}
+        />
+        {t(stageAppearance.labelKey)}
+      </Badge>
       {approvalAppearance && (
         <Badge
           variant="outline"
-          className={cn('text-[10px]', approvalAppearance.className)}
+          className={cn('text-[10px] opacity-90', approvalAppearance.className)}
         >
           <approvalAppearance.icon className="mr-0.5 h-3 w-3" />
           {t(approvalAppearance.labelKey)}

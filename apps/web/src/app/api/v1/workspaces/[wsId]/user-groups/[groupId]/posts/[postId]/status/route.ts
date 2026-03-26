@@ -1,11 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/db';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import {
-  getPostEmailQueueRows,
-  hasPostEmailBeenSent,
-  summarizePostEmailQueue,
-} from '@/lib/post-email-queue';
 
 interface Params {
   params: Promise<{
@@ -15,14 +11,17 @@ interface Params {
   }>;
 }
 
+type GroupPostStatusSummaryRow =
+  Database['public']['Functions']['get_user_group_post_status_summary']['Returns'][number];
+
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId, postId } = await params;
 
-  // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+
   const { withoutPermission } = permissions;
   if (withoutPermission('view_user_groups_posts')) {
     return NextResponse.json(
@@ -32,55 +31,45 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin.rpc(
+    'get_user_group_post_status_summary',
+    {
+      p_group_id: groupId,
+      p_post_id: postId,
+      p_ws_id: wsId,
+    }
+  );
 
-  const {
-    data: users,
-    count,
-    error: usersError,
-  } = await sbAdmin
-    .from('workspace_user_groups_users')
-    .select(
-      '...workspace_users(id, user_group_post_checks!user_id!inner(post_id, is_completed))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('group_id', groupId)
-    .eq('workspace_users.user_group_post_checks.post_id', postId);
-
-  if (usersError) {
-    console.error(usersError);
+  if (error) {
+    console.error('Error fetching group post status summary:', error);
     return NextResponse.json(
-      { message: 'Error fetching group members' },
+      { message: 'Error fetching group post status summary' },
       { status: 500 }
     );
   }
 
-  const queueRows = await getPostEmailQueueRows(sbAdmin, [postId]);
-  const queueSummary = summarizePostEmailQueue(queueRows);
-  const canRemoveApproval = !(await hasPostEmailBeenSent(sbAdmin, postId));
-
-  const safeUsers = (users || []) as Array<{
-    id: string | null;
-    user_group_post_checks?: Array<{
-      post_id: string;
-      is_completed: boolean | null;
-    }> | null;
-  }>;
+  const summary = data?.[0] as GroupPostStatusSummaryRow | undefined;
+  const queue = {
+    blocked: Number(summary?.blocked_count ?? 0),
+    cancelled: Number(summary?.cancelled_count ?? 0),
+    failed: Number(summary?.failed_count ?? 0),
+    processing: Number(summary?.processing_count ?? 0),
+    queued: Number(summary?.queued_count ?? 0),
+    sent: Number(summary?.sent_count ?? 0),
+    skipped: Number(summary?.queue_skipped_count ?? 0),
+  };
 
   return NextResponse.json({
-    sent: queueSummary.sent,
-    checked: safeUsers.filter((user) =>
-      user?.user_group_post_checks?.find((check) => check?.is_completed)
-    ).length,
-    failed: safeUsers.filter((user) =>
-      user?.user_group_post_checks?.find(
-        (check) => check?.is_completed === false
-      )
-    ).length,
-    tentative: safeUsers.filter((user) => !user?.id).length,
-    count: count || 0,
-    queue: queueSummary,
-    can_remove_approval: canRemoveApproval,
+    approved_awaiting_delivery: Number(
+      summary?.approved_awaiting_delivery_count ?? 0
+    ),
+    can_remove_approval: Number(summary?.sent_stage_count ?? 0) === 0,
+    checked: Number(summary?.completed_count ?? 0),
+    count: Number(summary?.total_count ?? 0),
+    failed: Number(summary?.incomplete_count ?? 0),
+    missing_check: Number(summary?.missing_check_count ?? 0),
+    queue,
+    sent: Number(summary?.sent_stage_count ?? 0),
+    tentative: Number(summary?.missing_check_count ?? 0),
   });
 }

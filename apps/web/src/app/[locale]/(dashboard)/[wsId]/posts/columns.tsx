@@ -12,6 +12,7 @@ import PostsRowActions from './row-actions';
 import {
   getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
+  getPostReviewStageAppearance,
 } from './status-meta';
 import type { PostEmail } from './types';
 
@@ -25,6 +26,32 @@ export const getPostEmailColumns = ({
 }: ColumnGeneratorOptions<PostEmail> & {
   extraData?: PostEmailExtraData;
 }): ColumnDef<PostEmail>[] => [
+  {
+    accessorKey: 'stage',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.stage`)}
+      />
+    ),
+    cell: ({ row }) => {
+      const value = row.getValue('stage') as PostEmail['stage'];
+      const {
+        icon: Icon,
+        className,
+        iconClassName,
+        labelKey,
+      } = getPostReviewStageAppearance(value);
+
+      return (
+        <Badge variant="outline" className={className}>
+          <Icon className={cn('mr-1 h-3.5 w-3.5', iconClassName)} />
+          {t(`${namespace}.${labelKey}`)}
+        </Badge>
+      );
+    },
+  },
   {
     accessorKey: 'recipient',
     header: ({ column }) => (
@@ -175,19 +202,27 @@ export const getPostEmailColumns = ({
         title={t(`${namespace}.is_completed`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        {row.getValue('is_completed') ? (
-          <div className="rounded-full bg-dynamic-green/15 p-1 text-dynamic-green">
-            <Check className="h-3.5 w-3.5" />
-          </div>
-        ) : (
-          <div className="rounded-full bg-dynamic-red/15 p-1 text-dynamic-red">
-            <X className="h-3.5 w-3.5" />
-          </div>
-        )}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const value = row.getValue('is_completed') as PostEmail['is_completed'];
+
+      return (
+        <div className="flex items-center justify-center">
+          {value == null ? (
+            <div className="rounded-full bg-dynamic-blue/15 px-2 py-1 text-dynamic-blue text-xs">
+              -
+            </div>
+          ) : value ? (
+            <div className="rounded-full bg-dynamic-green/15 p-1 text-dynamic-green">
+              <Check className="h-3.5 w-3.5" />
+            </div>
+          ) : (
+            <div className="rounded-full bg-dynamic-red/15 p-1 text-dynamic-red">
+              <X className="h-3.5 w-3.5" />
+            </div>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'notes',

@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   CheckCircle2,
+  CircleHelp,
   ListFilter,
   MinusCircle,
   PlusCircle,
@@ -17,8 +18,10 @@ import { Filter } from '../users/filters';
 import {
   getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
+  getPostReviewStageAppearance,
   POST_APPROVAL_STATUS_ORDER,
   POST_EMAIL_STATUS_ORDER,
+  POST_REVIEW_STAGE_ORDER,
 } from './status-meta';
 import type { PostEmailStatusSummary, PostsSearchParams } from './types';
 
@@ -59,6 +62,24 @@ export default function PostsFilters({
   return (
     <>
       <Filter
+        key="stage-filter"
+        tag="stage"
+        title={t('post-email-data-table.stage')}
+        icon={<CircleHelp className="mr-2 h-4 w-4" />}
+        extraQueryOnSet={{ page: '1' }}
+        options={POST_REVIEW_STAGE_ORDER.map((stage) => {
+          const appearance = getPostReviewStageAppearance(stage);
+          const Icon = appearance.icon;
+
+          return {
+            label: t(`post-email-data-table.${appearance.labelKey}`),
+            value: stage,
+            count: statusSummary.stages[stage],
+            icon: <Icon className={cn('h-4 w-4', appearance.iconClassName)} />,
+          };
+        })}
+      />
+      <Filter
         key="approval-status-filter"
         tag="approvalStatus"
         title={t('post-email-data-table.approval_status')}
@@ -74,10 +95,10 @@ export default function PostsFilters({
             value: status,
             count:
               status === 'APPROVED'
-                ? statusSummary.approved
+                ? statusSummary.approvals.approved
                 : status === 'REJECTED'
-                  ? statusSummary.rejected
-                  : statusSummary.pending,
+                  ? statusSummary.approvals.rejected
+                  : statusSummary.approvals.pending,
             icon: <Icon className="h-4 w-4" />,
           };
         })}
@@ -96,7 +117,7 @@ export default function PostsFilters({
           return {
             label: t(`post-email-data-table.${appearance.labelKey}`),
             value: status,
-            count: statusSummary[status],
+            count: statusSummary.queue[status],
             icon: <Icon className={cn('h-4 w-4', appearance.iconClassName)} />,
           };
         })}

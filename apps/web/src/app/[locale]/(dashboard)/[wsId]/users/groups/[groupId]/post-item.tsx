@@ -46,6 +46,7 @@ function PostCompletionBadge({
     checked: number | null;
     failed: number | null;
     tentative: number | null;
+    missing_check?: number | null;
     count: number | null;
   }>({
     queryKey: ['user-group-post-email-status', groupId, postId],

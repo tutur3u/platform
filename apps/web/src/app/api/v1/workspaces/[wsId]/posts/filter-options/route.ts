@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { getPostEmailMaxAgeCutoff } from '@/lib/post-email-queue';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -17,44 +18,21 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const userGroupsPromise = supabase
-    .from('workspace_user_groups_with_amount')
-    .select('id, name, amount', { count: 'exact' })
-    .eq('ws_id', wsId)
-    .order('name');
+  const userGroupsPromise = supabase.rpc(
+    'get_workspace_post_review_filter_options',
+    {
+      p_cutoff: getPostEmailMaxAgeCutoff(),
+      p_included_group_ids:
+        includedGroups.length > 0 ? includedGroups : undefined,
+      p_ws_id: wsId,
+    }
+  );
 
-  const excludedGroupsPromise = includedGroups.length
-    ? supabase
-        .rpc(
-          'get_possible_excluded_groups',
-          {
-            _ws_id: wsId,
-            included_groups: includedGroups,
-          },
-          { count: 'exact' }
-        )
-        .select('id, name, amount')
-        .order('name')
-    : userGroupsPromise;
+  const { data: filterOptions, error } = await userGroupsPromise;
 
-  const usersPromise = supabase
-    .from('workspace_users')
-    .select('id, full_name')
-    .eq('ws_id', wsId)
-    .order('full_name', { ascending: true });
-
-  const [userGroupsResult, excludedGroupsResult, usersResult] =
-    await Promise.all([userGroupsPromise, excludedGroupsPromise, usersPromise]);
-
-  if (
-    userGroupsResult.error ||
-    excludedGroupsResult.error ||
-    usersResult.error
-  ) {
+  if (error) {
     console.error('Error loading post filter options:', {
-      userGroups: userGroupsResult.error,
-      excludedGroups: excludedGroupsResult.error,
-      users: usersResult.error,
+      filterOptions: error,
     });
     return NextResponse.json(
       { message: 'Failed to load filter options' },
@@ -62,9 +40,31 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
+  const options = filterOptions ?? [];
+  const userGroups = options
+    .filter((option) => option.option_scope === 'include_group')
+    .map((option) => ({
+      amount: Number(option.amount ?? 0),
+      id: option.id,
+      name: option.label,
+    }));
+  const excludedUserGroups = options
+    .filter((option) => option.option_scope === 'exclude_group')
+    .map((option) => ({
+      amount: Number(option.amount ?? 0),
+      id: option.id,
+      name: option.label,
+    }));
+  const users = options
+    .filter((option) => option.option_scope === 'user')
+    .map((option) => ({
+      full_name: option.label,
+      id: option.id,
+    }));
+
   return NextResponse.json({
-    userGroups: userGroupsResult.data ?? [],
-    excludedUserGroups: excludedGroupsResult.data ?? [],
-    users: usersResult.data ?? [],
+    excludedUserGroups,
+    userGroups,
+    users,
   });
 }

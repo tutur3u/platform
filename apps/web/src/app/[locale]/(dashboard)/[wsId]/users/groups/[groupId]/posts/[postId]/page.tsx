@@ -1,13 +1,6 @@
-import {
-  Check,
-  CheckCheck,
-  CheckCircle2,
-  CircleHelp,
-  Clock,
-  Send,
-  X,
-} from '@tuturuuu/icons';
+import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -19,10 +12,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import {
-  getPostEmailQueueRows,
-  summarizePostEmailQueue,
-} from '@/lib/post-email-queue';
 import { CheckAll } from './check-all';
 import { UsersList } from './users-list';
 
@@ -49,6 +38,12 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
+type GroupPostRecipientRow =
+  Database['public']['Functions']['get_user_group_post_recipient_rows']['Returns'][number];
+
+type GroupPostStatusSummaryRow =
+  Database['public']['Functions']['get_user_group_post_status_summary']['Returns'][number];
+
 export default async function HomeworkCheck({ params, searchParams }: Props) {
   return (
     <WorkspaceWrapper params={params}>
@@ -63,20 +58,28 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         if (!canViewUserGroupsPosts) {
           notFound();
         }
+
         const post = await getPostData(postId);
         const group = await getGroupData(wsId, groupId);
-        const status = await getPostStatus(groupId, postId);
-
-        const { data: rawUsers } = await getUserData(
+        const status = await getPostStatus(wsId, groupId, postId);
+        const recipients = await getRecipientRows(
           wsId,
           groupId,
+          postId,
           await searchParams
         );
 
-        const users = rawUsers.map((u) => ({
-          ...u,
-          href: `/${wsId}/users/database/${u.id}`,
-        }));
+        const users = recipients.map(
+          (recipient) =>
+            ({
+              avatar_url: recipient.user_avatar_url,
+              display_name: recipient.user_display_name,
+              email: recipient.email,
+              full_name: recipient.user_full_name,
+              href: `/${wsId}/users/database/${recipient.user_id}`,
+              id: recipient.user_id,
+            }) as WorkspaceUser
+        );
 
         const canUpdateUserGroupsPosts = containsPermission(
           'update_user_groups_posts'
@@ -84,6 +87,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         const canApprovePosts = containsPermission(
           'send_user_group_post_emails'
         );
+
         return (
           <div>
             <FeatureSummary
@@ -146,12 +150,12 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                     groupId={groupId}
                     postId={postId}
                     users={users}
-                    completed={status.checked === status.count}
+                    completed={status.completed === status.count}
                     canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
                   />
                 ) : undefined
               }
-              disableSecondaryTrigger={status.checked === status.count}
+              disableSecondaryTrigger={status.completed === status.count}
               showSecondaryTrigger={canUpdateUserGroupsPosts}
             />
             <Separator className="my-4" />
@@ -163,7 +167,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                 </div>
                 <Separator className="my-1 bg-dynamic-purple/15" />
                 <div className="font-semibold text-xl md:text-3xl">
-                  {status.sent?.length}
+                  {status.sent}
                   <span className="opacity-50">/{status.count}</span>
                 </div>
               </div>
@@ -174,7 +178,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                 </div>
                 <Separator className="my-1 bg-dynamic-green/15" />
                 <div className="font-semibold text-3xl">
-                  {status.checked}
+                  {status.completed}
                   <span className="opacity-50">/{status.count}</span>
                 </div>
               </div>
@@ -185,18 +189,18 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                 </div>
                 <Separator className="my-1 bg-dynamic-red/15" />
                 <div className="font-semibold text-3xl">
-                  {status.failed}
+                  {status.incomplete}
                   <span className="opacity-50">/{status.count}</span>
                 </div>
               </div>
               <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 p-4 text-dynamic-blue">
                 <div className="flex items-center gap-2 font-bold text-xl">
                   <CircleHelp />
-                  {t('post-email-data-table.queued')}
+                  {t('post-email-data-table.missing_check')}
                 </div>
                 <Separator className="my-1 bg-dynamic-blue/15" />
                 <div className="font-semibold text-3xl">
-                  {status.queue.queued + status.queue.processing}
+                  {status.missing_check}
                   <span className="opacity-50">/{status.count}</span>
                 </div>
               </div>
@@ -204,31 +208,26 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
             <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-3">
               <div className="rounded border border-dynamic-orange/15 bg-dynamic-orange/10 p-4 text-dynamic-orange">
                 <div className="font-semibold">
-                  {t('post-email-data-table.failed')}
+                  {t('post-email-data-table.delivery_failed')}
                 </div>
-                <div className="text-2xl">
-                  {status.queue.failed +
-                    status.queue.blocked +
-                    status.queue.cancelled}
-                </div>
+                <div className="text-2xl">{status.delivery_failed}</div>
               </div>
               <div className="rounded border border-dynamic-blue/15 bg-dynamic-blue/10 p-4 text-dynamic-blue">
                 <div className="font-semibold">
                   {t('post-email-data-table.processing')}
                 </div>
-                <div className="text-2xl">{status.queue.processing}</div>
+                <div className="text-2xl">{status.processing}</div>
               </div>
               <div className="rounded border border-dynamic-green/15 bg-dynamic-green/10 p-4 text-dynamic-green">
-                <div className="font-semibold">{t('approvals.title')}</div>
-                <div className="flex items-center gap-2 text-2xl">
-                  <CheckCircle2 className="h-5 w-5" />
-                  {status.approvals.approved}
+                <div className="font-semibold">
+                  {t('post-email-data-table.queued')}
                 </div>
+                <div className="text-2xl">{status.queued}</div>
               </div>
             </div>
             <Separator className="my-4" />
             <UsersList
-              users={users}
+              recipients={recipients}
               wsId={wsId}
               post={{
                 ...post,
@@ -236,7 +235,6 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               }}
               canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
               canApprovePosts={canApprovePosts}
-              queueByUserId={status.queueByUserId}
             />
           </div>
         );
@@ -270,107 +268,60 @@ async function getGroupData(wsId: string, groupId: string) {
   return data;
 }
 
-async function getPostStatus(groupId: string, postId: string) {
+async function getPostStatus(wsId: string, groupId: string, postId: string) {
   const sbAdmin = await createAdminClient();
-
-  const { data: users, count } = await sbAdmin
-    .from('workspace_user_groups_users')
-    .select(
-      '...workspace_users(id, user_group_post_checks!user_id!inner(post_id, is_completed, approval_status))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('group_id', groupId)
-    .eq('workspace_users.user_group_post_checks.post_id', postId);
-
-  const queueRows = await getPostEmailQueueRows(sbAdmin, [postId]);
-  const queueSummary = summarizePostEmailQueue(queueRows);
-  const queueByUserId = Object.fromEntries(
-    queueRows.map((row) => [row.user_id, row])
+  const { data, error } = await sbAdmin.rpc(
+    'get_user_group_post_status_summary',
+    {
+      p_group_id: groupId,
+      p_post_id: postId,
+      p_ws_id: wsId,
+    }
   );
 
+  if (error) {
+    throw error;
+  }
+
+  const summary = data?.[0] as GroupPostStatusSummaryRow | undefined;
+
   return {
-    sent:
-      queueRows
-        .filter((row) => row.status === 'sent')
-        .map((row) => row.user_id) || [],
-    checked: users?.filter((user) =>
-      user?.user_group_post_checks?.find((check) => check?.is_completed)
-    ).length,
-    failed: users?.filter((user) =>
-      user?.user_group_post_checks?.find(
-        (check) => check?.is_completed === false
-      )
-    ).length,
-    tenative: users?.filter((user) => !user.id).length,
-    count,
-    queue: queueSummary,
-    queueByUserId,
     approvals: {
-      approved:
-        users?.filter((user) =>
-          user?.user_group_post_checks?.find(
-            (check) => check?.approval_status === 'APPROVED'
-          )
-        ).length ?? 0,
-      pending:
-        users?.filter((user) =>
-          user?.user_group_post_checks?.find(
-            (check) => check?.approval_status === 'PENDING'
-          )
-        ).length ?? 0,
-      rejected:
-        users?.filter((user) =>
-          user?.user_group_post_checks?.find(
-            (check) => check?.approval_status === 'REJECTED'
-          )
-        ).length ?? 0,
+      approved: Number(summary?.approved_count ?? 0),
+      pending: Number(summary?.pending_approval_count ?? 0),
+      rejected: Number(summary?.rejected_count ?? 0),
     },
+    completed: Number(summary?.completed_count ?? 0),
+    count: Number(summary?.total_count ?? 0),
+    delivery_failed: Number(summary?.delivery_failed_count ?? 0),
+    incomplete: Number(summary?.incomplete_count ?? 0),
+    missing_check: Number(summary?.missing_check_count ?? 0),
+    processing: Number(summary?.processing_stage_count ?? 0),
+    queued: Number(summary?.queued_stage_count ?? 0),
+    sent: Number(summary?.sent_stage_count ?? 0),
   };
 }
 
-async function getUserData(
+async function getRecipientRows(
   wsId: string,
   groupId: string,
-  {
-    q,
-    // page = '1',
-    // pageSize = '10',
-    excludedGroups = [],
-    retry = true,
-  }: SearchParams & { retry?: boolean } = {}
+  postId: string,
+  { q }: SearchParams = {}
 ) {
   const sbAdmin = await createAdminClient();
-
-  const queryBuilder = sbAdmin
-    .from('workspace_user_groups_users')
-    .select('...workspace_users!inner(*)', {
-      count: 'exact',
-    })
-    .eq('group_id', groupId);
-
-  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
-
-  // if (page && pageSize) {
-  //   const parsedPage = Number.parseInt(page);
-  //   const parsedSize = Number.parseInt(pageSize);
-  //   const start = (parsedPage - 1) * parsedSize;
-  //   const end = parsedPage * parsedSize;
-  //   queryBuilder.range(start, end).limit(parsedSize);
-  // }
-
-  const { data, error, count } = await queryBuilder;
+  const { data, error } = await sbAdmin.rpc(
+    'get_user_group_post_recipient_rows',
+    {
+      p_group_id: groupId,
+      p_post_id: postId,
+      p_q: q ?? undefined,
+      p_ws_id: wsId,
+    }
+  );
 
   if (error) {
-    if (!retry) throw error;
-    return getUserData(wsId, groupId, {
-      q,
-      // pageSize,
-      excludedGroups,
-      retry: false,
-    });
+    throw error;
   }
 
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+  return (data ?? []) as GroupPostRecipientRow[];
 }

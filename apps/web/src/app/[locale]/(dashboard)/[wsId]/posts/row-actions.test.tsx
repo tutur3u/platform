@@ -11,17 +11,18 @@ vi.mock('next-intl', () => ({
 import PostsRowActions from './row-actions';
 
 describe('PostsRowActions', () => {
-  it('does not render a queued badge when queue_status is undefined', () => {
+  it('renders a missing check stage without a queued badge when queue_status is undefined', () => {
     render(
       <PostsRowActions
         data={{
-          approval_status: 'APPROVED',
+          stage: 'missing_check',
+          approval_status: undefined,
           queue_status: undefined,
         }}
       />
     );
 
-    expect(screen.getByText('approved')).toBeInTheDocument();
+    expect(screen.getByText('missing_check')).toBeInTheDocument();
     expect(screen.queryByText('queued')).not.toBeInTheDocument();
   });
 
@@ -29,13 +30,14 @@ describe('PostsRowActions', () => {
     render(
       <PostsRowActions
         data={{
+          stage: 'rejected',
           approval_status: 'REJECTED',
           queue_status: undefined,
         }}
       />
     );
 
-    expect(screen.getByText('rejected')).toBeInTheDocument();
+    expect(screen.getAllByText('rejected')).toHaveLength(2);
     expect(screen.queryByText('queued')).not.toBeInTheDocument();
   });
 
@@ -43,6 +45,7 @@ describe('PostsRowActions', () => {
     render(
       <PostsRowActions
         data={{
+          stage: 'queued',
           approval_status: 'APPROVED',
           queue_status: 'queued',
         }}
@@ -50,6 +53,6 @@ describe('PostsRowActions', () => {
     );
 
     expect(screen.getByText('approved')).toBeInTheDocument();
-    expect(screen.getByText('queued')).toBeInTheDocument();
+    expect(screen.getAllByText('queued')).toHaveLength(2);
   });
 });
