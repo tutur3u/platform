@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 export interface UserPresenceState {
   user: User;
   online_at: string;
+  session_id?: string;
   /** Optional metadata for context-specific presence tracking */
   metadata?: Record<string, any>;
 }
