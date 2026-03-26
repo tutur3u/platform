@@ -1433,6 +1433,36 @@
     "settingsBuildLabel": "Build",
     "settingsPackageLabel": "Package",
     "settingsVersionTileDescription": "Installed release currently running on this device.",
+    "settingsInfrastructureSectionTitle": "Infrastructure",
+    "settingsInfrastructureSectionDescription": "Platform-wide controls available in the internal workspace.",
+    "settingsMobileVersions": "Mobile versions",
+    "settingsMobileVersionsTileDescription": "Manage the effective and minimum versions enforced by the mobile app.",
+    "settingsMobileVersionsTitle": "Mobile versions",
+    "settingsMobileVersionsPageDescription": "Manage the effective and minimum app versions enforced by the mobile app before users can continue.",
+    "settingsMobileVersionsIosTitle": "iOS",
+    "settingsMobileVersionsIosDescription": "Set the App Store threshold and update prompt for iPhone and iPad users.",
+    "settingsMobileVersionsAndroidTitle": "Android",
+    "settingsMobileVersionsAndroidDescription": "Set the Play Store threshold and update prompt for Android users.",
+    "settingsMobileVersionsEffectiveVersion": "Effective version",
+    "settingsMobileVersionsEffectiveVersionDescription": "Versions below this threshold see a recommended update prompt.",
+    "settingsMobileVersionsMinimumVersion": "Minimum version",
+    "settingsMobileVersionsMinimumVersionDescription": "Versions below this threshold must update before continuing.",
+    "settingsMobileVersionsStoreUrl": "Store URL",
+    "settingsMobileVersionsStoreUrlDescription": "Required whenever either version threshold is set.",
+    "settingsMobileVersionsVersionPlaceholder": "1.2.3",
+    "settingsMobileVersionsStoreUrlPlaceholder": "https://apps.apple.com/app/id123456789",
+    "settingsMobileVersionsSave": "Save changes",
+    "settingsMobileVersionsSaving": "Saving...",
+    "settingsMobileVersionsSaveSuccess": "Mobile version policy saved.",
+    "settingsMobileVersionsSaveError": "Failed to save mobile version policy.",
+    "settingsMobileVersionsLoadError": "Failed to load mobile version policies.",
+    "settingsMobileVersionsWorkspaceRequiredTitle": "Internal workspace required",
+    "settingsMobileVersionsWorkspaceRequiredDescription": "Switch to the internal workspace to manage platform mobile version policies.",
+    "settingsMobileVersionsAccessDeniedTitle": "Access required",
+    "settingsMobileVersionsAccessDeniedDescription": "You need the workspace roles permission in the internal workspace to manage mobile version policies.",
+    "settingsMobileVersionsValidationVersionFormat": "Use semantic version format x.y.z.",
+    "settingsMobileVersionsValidationStoreUrlRequired": "Store URL is required when a version is set.",
+    "settingsMobileVersionsValidationEffectiveAtLeastMinimum": "Effective version must be greater than or equal to the minimum version.",
     "settingsLicensesSectionTitle": "Open-source licenses",
     "settingsLicensesSectionDescription": "Review the third-party software notices bundled with the app.",
     "settingsLicenseViewerTitle": "Open license viewer",
@@ -1508,6 +1538,9 @@
     "workspaceTeamSection": "Team workspaces",
     "workspaceCreateTitle": "Create workspace",
     "workspaceCreateDescription": "Create a fresh space for projects, habits, finance, and more.",
+    "workspaceCreateSuccess": "Workspace created.",
+    "workspaceCreateSuccessAvatarWarning": "Workspace created, but profile picture failed to upload.",
+    "workspaceCreateError": "Failed to create workspace",
     "workspaceCreateNew": "New",
     "workspaceCreateNameHint": "Workspace name",
     "workspaceCreateNameRequired": "Workspace name is required",
@@ -1520,6 +1553,53 @@
         "placeholders": {
             "current": { "type": "int" },
             "limit": { "type": "int" }
+        }
+    },
+
+    "notificationsTitle": "Notifications",
+    "notificationsSubtitle": "{count} unread",
+    "@notificationsSubtitle": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsInbox": "Inbox",
+    "notificationsArchive": "Archive",
+    "notificationsArchiveAll": "Archive all",
+    "notificationsArchiveAllError": "Couldn't archive notifications right now",
+    "notificationsMarkRead": "Mark as read",
+    "notificationsMarkUnread": "Mark as unread",
+    "notificationsLoadingMore": "Loading more...",
+    "notificationsInboxEmptyTitle": "No unread notifications",
+    "notificationsInboxEmptyMessage": "New activity, mentions, and invites will show up here.",
+    "notificationsArchiveEmptyTitle": "No archived notifications",
+    "notificationsArchiveEmptyMessage": "Read notifications will move here after you've cleared them.",
+    "notificationsLoadErrorTitle": "Couldn't load notifications",
+    "notificationsLoadErrorMessage": "Try again in a moment.",
+    "notificationsAcceptInvite": "Accept",
+    "notificationsDeclineInvite": "Decline",
+    "notificationsInviteAccepted": "Invite accepted",
+    "notificationsInviteDeclined": "Invite declined",
+    "notificationsInviteActionError": "Couldn't update this invite right now",
+    "notificationsOpenAction": "Open task",
+    "notificationsOpenUnsupported": "This notification can't be opened yet",
+    "notificationsJustNow": "Just now",
+    "notificationsMinutesAgo": "{count}m ago",
+    "@notificationsMinutesAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsHoursAgo": "{count}h ago",
+    "@notificationsHoursAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsDaysAgo": "{count}d ago",
+    "@notificationsDaysAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
         }
     },
 

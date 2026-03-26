@@ -99,6 +99,9 @@ export function TasksTab({
           hasMore: false,
         };
       },
+      revalidateLoadedLists: async () => {
+        return;
+      },
     };
   }, [lists, tasks]);
 

@@ -45,6 +45,13 @@ function createPermissionsResult(permissions: string[] = []) {
   };
 }
 
+function createTestRequest(init?: RequestInit) {
+  return new Request('http://localhost/api/v1/infrastructure/mobile-versions', {
+    method: 'GET',
+    ...init,
+  }) as NextRequest;
+}
+
 describe('infrastructure mobile-versions route', () => {
   const authGetUserMock = vi.fn();
 
@@ -60,20 +67,27 @@ describe('infrastructure mobile-versions route', () => {
   it('rejects unauthenticated requests', async () => {
     authGetUserMock.mockResolvedValue({ data: { user: null } });
 
-    const response = await GET();
+    const request = createTestRequest();
+    const response = await GET(request);
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ message: 'Unauthorized' });
+    expect(createClientMock).toHaveBeenCalledWith(request);
   });
 
   it('rejects authenticated users without root permission', async () => {
     authGetUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     getPermissionsMock.mockResolvedValue(createPermissionsResult());
 
-    const response = await GET();
+    const request = createTestRequest();
+    const response = await GET(request);
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    expect(getPermissionsMock).toHaveBeenCalledWith({
+      wsId: '00000000-0000-0000-0000-000000000000',
+      request,
+    });
   });
 
   it('returns stored policies for platform admins', async () => {
@@ -94,7 +108,8 @@ describe('infrastructure mobile-versions route', () => {
       },
     });
 
-    const response = await GET();
+    const request = createTestRequest();
+    const response = await GET(request);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
@@ -116,29 +131,32 @@ describe('infrastructure mobile-versions route', () => {
       })),
     });
 
-    const response = await PUT(
-      new Request('http://localhost', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+    const request = createTestRequest({
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ios: {
+          effectiveVersion: '1.2.0',
+          minimumVersion: '1.1.0',
+          storeUrl: 'https://apps.apple.com/app/id1',
         },
-        body: JSON.stringify({
-          ios: {
-            effectiveVersion: '1.2.0',
-            minimumVersion: '1.1.0',
-            storeUrl: 'https://apps.apple.com/app/id1',
-          },
-          android: {
-            effectiveVersion: '1.2.0',
-            minimumVersion: '1.1.0',
-            storeUrl:
-              'https://play.google.com/store/apps/details?id=example.app',
-          },
-        }),
-      }) as NextRequest
-    );
+        android: {
+          effectiveVersion: '1.2.0',
+          minimumVersion: '1.1.0',
+          storeUrl: 'https://play.google.com/store/apps/details?id=example.app',
+        },
+      }),
+    });
+
+    const response = await PUT(request);
 
     expect(response.status).toBe(200);
     expect(upsertMock).toHaveBeenCalledOnce();
+    expect(getPermissionsMock).toHaveBeenCalledWith({
+      wsId: '00000000-0000-0000-0000-000000000000',
+      request,
+    });
   });
 });

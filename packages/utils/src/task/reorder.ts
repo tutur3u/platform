@@ -127,9 +127,16 @@ export function useReorderTask(boardId: string, wsId: string) {
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          return old.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task
-          );
+          return old.map((task) => {
+            if (task.id !== updatedTask.id) {
+              return task;
+            }
+
+            return {
+              ...task,
+              ...updatedTask,
+            };
+          });
         }
       );
 

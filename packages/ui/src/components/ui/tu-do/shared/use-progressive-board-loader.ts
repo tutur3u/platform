@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ListPaginationState,
   ProgressiveLoaderValue,
@@ -11,6 +11,7 @@ import type {
 
 const PAGE_SIZE = 50;
 const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
+const REVALIDATE_LIST_CONCURRENCY = 2;
 
 /**
  * Manages per-list pagination state and merges results into the shared
@@ -25,6 +26,11 @@ export function useProgressiveBoardLoader(
   const [pagination, setPagination] = useState<
     Record<string, ListPaginationState>
   >({});
+  const paginationRef = useRef<Record<string, ListPaginationState>>({});
+
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
 
   const loadListPage = useCallback(
     async (listId: string, page: number = 0) => {
@@ -136,8 +142,129 @@ export function useProgressiveBoardLoader(
     [boardId, queryClient, wsId]
   );
 
+  const revalidateLoadedLists = useCallback(async () => {
+    const snapshot = paginationRef.current;
+    const loadedListIds = Object.entries(snapshot)
+      .filter(([, state]) => state.page >= 0 && !state.isInitialLoad)
+      .map(([listId]) => listId);
+
+    if (loadedListIds.length === 0) return;
+
+    const revalidateList = async (listId: string) => {
+      const currentState = paginationRef.current[listId];
+      if (!currentState || currentState.isLoading) return;
+
+      const targetPage = Math.max(0, currentState.page);
+      const pageIndices = Array.from(
+        { length: targetPage + 1 },
+        (_, index) => index
+      );
+
+      const requestStartedAt = Date.now();
+      const pageResults = await Promise.all(
+        pageIndices.map((page) =>
+          listWorkspaceTasks(wsId, {
+            listId,
+            limit: PAGE_SIZE,
+            offset: page * PAGE_SIZE,
+          })
+        )
+      );
+
+      const mergedListTasks = pageResults.flatMap(
+        (result) => result.tasks ?? []
+      );
+      const hasMore =
+        (pageResults[pageResults.length - 1]?.tasks?.length ?? 0) === PAGE_SIZE;
+      const totalCount = mergedListTasks.length + (hasMore ? 1 : 0);
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          const existing = old ?? [];
+          const incomingById = new Map(
+            mergedListTasks.map((task) => [task.id, task] as const)
+          );
+
+          const merged: Task[] = [];
+
+          const hasFreshLocalMutation = (task: Task) => {
+            const localTask = task as Task & { _localMutationAt?: number };
+            const localMutationAt = localTask._localMutationAt;
+            return (
+              typeof localMutationAt === 'number' &&
+              localMutationAt > requestStartedAt &&
+              Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS
+            );
+          };
+
+          for (const task of existing) {
+            const incomingTask = incomingById.get(task.id);
+            if (incomingTask) {
+              incomingById.delete(task.id);
+
+              if (
+                task.list_id !== incomingTask.list_id &&
+                hasFreshLocalMutation(task)
+              ) {
+                merged.push(task);
+                continue;
+              }
+
+              const sanitizedTask = {
+                ...(task as Task & { _localMutationAt?: number }),
+              };
+              delete sanitizedTask._localMutationAt;
+
+              merged.push({ ...sanitizedTask, ...incomingTask });
+              continue;
+            }
+
+            if (task.list_id !== listId) {
+              merged.push(task);
+              continue;
+            }
+
+            if (hasFreshLocalMutation(task)) {
+              merged.push(task);
+            }
+          }
+
+          return [...merged, ...incomingById.values()];
+        }
+      );
+
+      setPagination((prev) => ({
+        ...prev,
+        [listId]: {
+          ...(prev[listId] ?? {
+            page: targetPage,
+            hasMore: true,
+            totalCount: 0,
+            isLoading: false,
+            isInitialLoad: false,
+          }),
+          page: targetPage,
+          hasMore,
+          totalCount,
+          isLoading: false,
+          isInitialLoad: false,
+        },
+      }));
+    };
+
+    for (
+      let i = 0;
+      i < loadedListIds.length;
+      i += REVALIDATE_LIST_CONCURRENCY
+    ) {
+      const chunk = loadedListIds.slice(i, i + REVALIDATE_LIST_CONCURRENCY);
+      await Promise.all(chunk.map((listId) => revalidateList(listId)));
+    }
+  }, [boardId, queryClient, wsId]);
+
   return useMemo(
-    () => ({ pagination, loadListPage }),
-    [pagination, loadListPage]
+    () => ({ pagination, loadListPage, revalidateLoadedLists }),
+    [pagination, loadListPage, revalidateLoadedLists]
   );
 }

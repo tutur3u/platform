@@ -16,6 +16,7 @@ export interface ProgressiveLoaderValue {
     listId: string,
     page?: number
   ) => Promise<{ tasks: Task[]; totalCount: number; hasMore: boolean }>;
+  revalidateLoadedLists: () => Promise<void>;
   pagination: Record<string, ListPaginationState>;
 }
 

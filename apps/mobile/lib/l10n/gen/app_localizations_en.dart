@@ -3543,6 +3543,96 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsVersionTileDescription => 'Installed release currently running on this device.';
 
   @override
+  String get settingsInfrastructureSectionTitle => 'Infrastructure';
+
+  @override
+  String get settingsInfrastructureSectionDescription => 'Platform-wide controls available in the internal workspace.';
+
+  @override
+  String get settingsMobileVersions => 'Mobile versions';
+
+  @override
+  String get settingsMobileVersionsTileDescription => 'Manage the effective and minimum versions enforced by the mobile app.';
+
+  @override
+  String get settingsMobileVersionsTitle => 'Mobile versions';
+
+  @override
+  String get settingsMobileVersionsPageDescription => 'Manage the effective and minimum app versions enforced by the mobile app before users can continue.';
+
+  @override
+  String get settingsMobileVersionsIosTitle => 'iOS';
+
+  @override
+  String get settingsMobileVersionsIosDescription => 'Set the App Store threshold and update prompt for iPhone and iPad users.';
+
+  @override
+  String get settingsMobileVersionsAndroidTitle => 'Android';
+
+  @override
+  String get settingsMobileVersionsAndroidDescription => 'Set the Play Store threshold and update prompt for Android users.';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersion => 'Effective version';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersionDescription => 'Versions below this threshold see a recommended update prompt.';
+
+  @override
+  String get settingsMobileVersionsMinimumVersion => 'Minimum version';
+
+  @override
+  String get settingsMobileVersionsMinimumVersionDescription => 'Versions below this threshold must update before continuing.';
+
+  @override
+  String get settingsMobileVersionsStoreUrl => 'Store URL';
+
+  @override
+  String get settingsMobileVersionsStoreUrlDescription => 'Required whenever either version threshold is set.';
+
+  @override
+  String get settingsMobileVersionsVersionPlaceholder => '1.2.3';
+
+  @override
+  String get settingsMobileVersionsStoreUrlPlaceholder => 'https://apps.apple.com/app/id123456789';
+
+  @override
+  String get settingsMobileVersionsSave => 'Save changes';
+
+  @override
+  String get settingsMobileVersionsSaving => 'Saving...';
+
+  @override
+  String get settingsMobileVersionsSaveSuccess => 'Mobile version policy saved.';
+
+  @override
+  String get settingsMobileVersionsSaveError => 'Failed to save mobile version policy.';
+
+  @override
+  String get settingsMobileVersionsLoadError => 'Failed to load mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredTitle => 'Internal workspace required';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredDescription => 'Switch to the internal workspace to manage platform mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedTitle => 'Access required';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedDescription => 'You need the workspace roles permission in the internal workspace to manage mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsValidationVersionFormat => 'Use semantic version format x.y.z.';
+
+  @override
+  String get settingsMobileVersionsValidationStoreUrlRequired => 'Store URL is required when a version is set.';
+
+  @override
+  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum => 'Effective version must be greater than or equal to the minimum version.';
+
+  @override
   String get settingsLicensesSectionTitle => 'Open-source licenses';
 
   @override
@@ -3743,6 +3833,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceCreateDescription => 'Create a fresh space for projects, habits, finance, and more.';
 
   @override
+  String get workspaceCreateSuccess => 'Workspace created.';
+
+  @override
+  String get workspaceCreateSuccessAvatarWarning => 'Workspace created, but profile picture failed to upload.';
+
+  @override
+  String get workspaceCreateError => 'Failed to create workspace';
+
+  @override
   String get workspaceCreateNew => 'New';
 
   @override
@@ -3766,6 +3865,92 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String workspaceCreateLimitInfo(int current, int limit) {
     return '$current of $limit workspaces used';
+  }
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String notificationsSubtitle(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String get notificationsInbox => 'Inbox';
+
+  @override
+  String get notificationsArchive => 'Archive';
+
+  @override
+  String get notificationsArchiveAll => 'Archive all';
+
+  @override
+  String get notificationsArchiveAllError => 'Couldn\'t archive notifications right now';
+
+  @override
+  String get notificationsMarkRead => 'Mark as read';
+
+  @override
+  String get notificationsMarkUnread => 'Mark as unread';
+
+  @override
+  String get notificationsLoadingMore => 'Loading more...';
+
+  @override
+  String get notificationsInboxEmptyTitle => 'No unread notifications';
+
+  @override
+  String get notificationsInboxEmptyMessage => 'New activity, mentions, and invites will show up here.';
+
+  @override
+  String get notificationsArchiveEmptyTitle => 'No archived notifications';
+
+  @override
+  String get notificationsArchiveEmptyMessage => 'Read notifications will move here after you\'ve cleared them.';
+
+  @override
+  String get notificationsLoadErrorTitle => 'Couldn\'t load notifications';
+
+  @override
+  String get notificationsLoadErrorMessage => 'Try again in a moment.';
+
+  @override
+  String get notificationsAcceptInvite => 'Accept';
+
+  @override
+  String get notificationsDeclineInvite => 'Decline';
+
+  @override
+  String get notificationsInviteAccepted => 'Invite accepted';
+
+  @override
+  String get notificationsInviteDeclined => 'Invite declined';
+
+  @override
+  String get notificationsInviteActionError => 'Couldn\'t update this invite right now';
+
+  @override
+  String get notificationsOpenAction => 'Open task';
+
+  @override
+  String get notificationsOpenUnsupported => 'This notification can\'t be opened yet';
+
+  @override
+  String get notificationsJustNow => 'Just now';
+
+  @override
+  String notificationsMinutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String notificationsHoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String notificationsDaysAgo(int count) {
+    return '${count}d ago';
   }
 
   @override

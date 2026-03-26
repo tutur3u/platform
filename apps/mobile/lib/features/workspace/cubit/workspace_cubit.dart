@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -98,24 +99,30 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
 
   /// Creates a new workspace and adds it to the list.
   ///
-  /// Returns the created workspace, or throws on failure.
-  Future<Workspace> createWorkspace(String name) async {
+  /// Returns the creation result, or throws on failure.
+  Future<WorkspaceCreationResult> createWorkspace(
+    String name, {
+    File? avatarFile,
+  }) async {
     emit(state.copyWith(isCreating: true));
 
     try {
-      final workspace = await _repo.createWorkspace(name);
+      final result = await _repo.createWorkspace(
+        name,
+        avatarFile: avatarFile,
+      );
 
       emit(
         state.copyWith(
           isCreating: false,
-          workspaces: [...state.workspaces, workspace],
+          workspaces: [...state.workspaces, result.workspace],
         ),
       );
 
       // Refresh limits after creation
       unawaited(_loadLimits());
 
-      return workspace;
+      return result;
     } on Exception {
       emit(state.copyWith(isCreating: false));
       rethrow;

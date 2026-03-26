@@ -1,5 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
+import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_limits.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -10,10 +15,33 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// Ported from apps/native/lib/stores/workspace-store.ts.
 class WorkspaceRepository {
-  WorkspaceRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  WorkspaceRepository({ApiClient? apiClient, http.Client? httpClient})
+    : _api = apiClient ?? ApiClient(),
+      _httpClient = httpClient ?? http.Client();
 
   final ApiClient _api;
+  final http.Client _httpClient;
   static const _selectedKey = 'selected-workspace';
+
+  String? _resolveWorkspaceAvatarUrl(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
+      return trimmed;
+    }
+    final publicUrl = supabase.storage.from('avatars').getPublicUrl(trimmed);
+    return publicUrl;
+  }
+
+  Workspace _workspaceFromJson(Map<String, dynamic> json) {
+    final normalized = Map<String, dynamic>.from(json);
+    normalized['avatar_url'] = _resolveWorkspaceAvatarUrl(
+      normalized['avatar_url'] as String?,
+    );
+    return Workspace.fromJson(normalized);
+  }
+
   static const _defaultWorkspaceIdKey = 'default-workspace-id';
 
   /// Fetches workspaces the current user belongs to.
@@ -32,7 +60,7 @@ class WorkspaceRepository {
           final record = row as Map<String, dynamic>;
           final ws = record['workspaces'] as Map<String, dynamic>?;
           if (ws == null) return null;
-          return Workspace.fromJson(ws);
+          return _workspaceFromJson(ws);
         })
         .whereType<Workspace>()
         .toList();
@@ -68,7 +96,7 @@ class WorkspaceRepository {
 
         if (member != null) {
           final ws = member['workspaces'] as Map<String, dynamic>?;
-          if (ws != null) return Workspace.fromJson(ws);
+          if (ws != null) return _workspaceFromJson(ws);
         }
       }
 
@@ -82,7 +110,7 @@ class WorkspaceRepository {
 
       if (personalRow != null) {
         final ws = personalRow['workspaces'] as Map<String, dynamic>?;
-        if (ws != null) return Workspace.fromJson(ws);
+        if (ws != null) return _workspaceFromJson(ws);
       }
     } on Object catch (_) {
       // Non-critical — caller falls back to SharedPreferences
@@ -119,7 +147,7 @@ class WorkspaceRepository {
         .maybeSingle();
 
     if (response == null) return null;
-    return Workspace.fromJson(response);
+    return _workspaceFromJson(response);
   }
 
   /// Persists the selected workspace to SharedPreferences.
@@ -135,7 +163,7 @@ class WorkspaceRepository {
     if (json == null) return null;
 
     try {
-      return Workspace.fromJson(
+      return _workspaceFromJson(
         jsonDecode(json) as Map<String, dynamic>,
       );
     } on Object catch (_) {
@@ -156,16 +184,64 @@ class WorkspaceRepository {
     return WorkspaceLimits.fromJson(json);
   }
 
-  /// Creates a new workspace with the given [name].
+  /// Creates a new team workspace with the given [name].
   ///
-  /// Returns the created [Workspace] or throws [ApiException].
-  Future<Workspace> createWorkspace(String name) async {
+  /// Returns the created [WorkspaceCreationResult] or throws [ApiException].
+  Future<WorkspaceCreationResult> createWorkspace(
+    String name, {
+    File? avatarFile,
+  }) async {
     final json = await _api.postJson(
-      '/api/v1/workspaces',
-      {'name': name},
+      WorkspaceEndpoints.team,
+      {
+        'name': name,
+      },
     );
 
     final wsId = json['id'] as String;
+    var avatarUploadFailed = false;
+
+    if (avatarFile != null) {
+      try {
+        final uploadJson = await _api.postJson(
+          WorkspaceEndpoints.avatarUploadUrl(wsId),
+          {
+            'filename': avatarFile.uri.pathSegments.last,
+          },
+        );
+        final upload = AvatarUploadUrlResponse.fromJson(uploadJson);
+
+        final bytes = await avatarFile.readAsBytes();
+        final contentType =
+            lookupMimeType(avatarFile.path) ?? 'application/octet-stream';
+        final uploadResponse = await _httpClient
+            .put(
+              Uri.parse(upload.uploadUrl),
+              headers: {
+                'Authorization': 'Bearer ${upload.token}',
+                'Content-Type': contentType,
+              },
+              body: bytes,
+            )
+            .timeout(const Duration(seconds: 60));
+
+        if (uploadResponse.statusCode < 200 ||
+            uploadResponse.statusCode >= 300) {
+          throw ApiException(
+            message: 'Failed to upload workspace avatar',
+            statusCode: uploadResponse.statusCode,
+          );
+        }
+
+        await _api.patchJson(WorkspaceEndpoints.avatar(wsId), {
+          'filePath': upload.filePath,
+        });
+      } on Exception catch (_) {
+        // Workspace creation already succeeded; avatar upload is best-effort.
+        avatarUploadFailed = true;
+      }
+    }
+
     // Fetch the full workspace to get all fields
     final ws = await getWorkspaceById(wsId);
     if (ws == null) {
@@ -174,6 +250,19 @@ class WorkspaceRepository {
         statusCode: 0,
       );
     }
-    return ws;
+    return WorkspaceCreationResult(
+      workspace: ws,
+      avatarUploadFailed: avatarUploadFailed,
+    );
   }
+}
+
+class WorkspaceCreationResult {
+  const WorkspaceCreationResult({
+    required this.workspace,
+    required this.avatarUploadFailed,
+  });
+
+  final Workspace workspace;
+  final bool avatarUploadFailed;
 }

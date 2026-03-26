@@ -6775,6 +6775,186 @@ abstract class AppLocalizations {
   /// **'Installed release currently running on this device.'**
   String get settingsVersionTileDescription;
 
+  /// No description provided for @settingsInfrastructureSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Infrastructure'**
+  String get settingsInfrastructureSectionTitle;
+
+  /// No description provided for @settingsInfrastructureSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform-wide controls available in the internal workspace.'**
+  String get settingsInfrastructureSectionDescription;
+
+  /// No description provided for @settingsMobileVersions.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile versions'**
+  String get settingsMobileVersions;
+
+  /// No description provided for @settingsMobileVersionsTileDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage the effective and minimum versions enforced by the mobile app.'**
+  String get settingsMobileVersionsTileDescription;
+
+  /// No description provided for @settingsMobileVersionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile versions'**
+  String get settingsMobileVersionsTitle;
+
+  /// No description provided for @settingsMobileVersionsPageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage the effective and minimum app versions enforced by the mobile app before users can continue.'**
+  String get settingsMobileVersionsPageDescription;
+
+  /// No description provided for @settingsMobileVersionsIosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS'**
+  String get settingsMobileVersionsIosTitle;
+
+  /// No description provided for @settingsMobileVersionsIosDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the App Store threshold and update prompt for iPhone and iPad users.'**
+  String get settingsMobileVersionsIosDescription;
+
+  /// No description provided for @settingsMobileVersionsAndroidTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Android'**
+  String get settingsMobileVersionsAndroidTitle;
+
+  /// No description provided for @settingsMobileVersionsAndroidDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the Play Store threshold and update prompt for Android users.'**
+  String get settingsMobileVersionsAndroidDescription;
+
+  /// No description provided for @settingsMobileVersionsEffectiveVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective version'**
+  String get settingsMobileVersionsEffectiveVersion;
+
+  /// No description provided for @settingsMobileVersionsEffectiveVersionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Versions below this threshold see a recommended update prompt.'**
+  String get settingsMobileVersionsEffectiveVersionDescription;
+
+  /// No description provided for @settingsMobileVersionsMinimumVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum version'**
+  String get settingsMobileVersionsMinimumVersion;
+
+  /// No description provided for @settingsMobileVersionsMinimumVersionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Versions below this threshold must update before continuing.'**
+  String get settingsMobileVersionsMinimumVersionDescription;
+
+  /// No description provided for @settingsMobileVersionsStoreUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Store URL'**
+  String get settingsMobileVersionsStoreUrl;
+
+  /// No description provided for @settingsMobileVersionsStoreUrlDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Required whenever either version threshold is set.'**
+  String get settingsMobileVersionsStoreUrlDescription;
+
+  /// No description provided for @settingsMobileVersionsVersionPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'1.2.3'**
+  String get settingsMobileVersionsVersionPlaceholder;
+
+  /// No description provided for @settingsMobileVersionsStoreUrlPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'https://apps.apple.com/app/id123456789'**
+  String get settingsMobileVersionsStoreUrlPlaceholder;
+
+  /// No description provided for @settingsMobileVersionsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get settingsMobileVersionsSave;
+
+  /// No description provided for @settingsMobileVersionsSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get settingsMobileVersionsSaving;
+
+  /// No description provided for @settingsMobileVersionsSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile version policy saved.'**
+  String get settingsMobileVersionsSaveSuccess;
+
+  /// No description provided for @settingsMobileVersionsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save mobile version policy.'**
+  String get settingsMobileVersionsSaveError;
+
+  /// No description provided for @settingsMobileVersionsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load mobile version policies.'**
+  String get settingsMobileVersionsLoadError;
+
+  /// No description provided for @settingsMobileVersionsWorkspaceRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal workspace required'**
+  String get settingsMobileVersionsWorkspaceRequiredTitle;
+
+  /// No description provided for @settingsMobileVersionsWorkspaceRequiredDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to the internal workspace to manage platform mobile version policies.'**
+  String get settingsMobileVersionsWorkspaceRequiredDescription;
+
+  /// No description provided for @settingsMobileVersionsAccessDeniedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access required'**
+  String get settingsMobileVersionsAccessDeniedTitle;
+
+  /// No description provided for @settingsMobileVersionsAccessDeniedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You need the workspace roles permission in the internal workspace to manage mobile version policies.'**
+  String get settingsMobileVersionsAccessDeniedDescription;
+
+  /// No description provided for @settingsMobileVersionsValidationVersionFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Use semantic version format x.y.z.'**
+  String get settingsMobileVersionsValidationVersionFormat;
+
+  /// No description provided for @settingsMobileVersionsValidationStoreUrlRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Store URL is required when a version is set.'**
+  String get settingsMobileVersionsValidationStoreUrlRequired;
+
+  /// No description provided for @settingsMobileVersionsValidationEffectiveAtLeastMinimum.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective version must be greater than or equal to the minimum version.'**
+  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum;
+
   /// No description provided for @settingsLicensesSectionTitle.
   ///
   /// In en, this message translates to:
@@ -7171,6 +7351,24 @@ abstract class AppLocalizations {
   /// **'Create a fresh space for projects, habits, finance, and more.'**
   String get workspaceCreateDescription;
 
+  /// No description provided for @workspaceCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace created.'**
+  String get workspaceCreateSuccess;
+
+  /// No description provided for @workspaceCreateSuccessAvatarWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace created, but profile picture failed to upload.'**
+  String get workspaceCreateSuccessAvatarWarning;
+
+  /// No description provided for @workspaceCreateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create workspace'**
+  String get workspaceCreateError;
+
   /// No description provided for @workspaceCreateNew.
   ///
   /// In en, this message translates to:
@@ -7218,6 +7416,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{current} of {limit} workspaces used'**
   String workspaceCreateLimitInfo(int current, int limit);
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unread'**
+  String notificationsSubtitle(int count);
+
+  /// No description provided for @notificationsInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get notificationsInbox;
+
+  /// No description provided for @notificationsArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get notificationsArchive;
+
+  /// No description provided for @notificationsArchiveAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive all'**
+  String get notificationsArchiveAll;
+
+  /// No description provided for @notificationsArchiveAllError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t archive notifications right now'**
+  String get notificationsArchiveAllError;
+
+  /// No description provided for @notificationsMarkRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get notificationsMarkRead;
+
+  /// No description provided for @notificationsMarkUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as unread'**
+  String get notificationsMarkUnread;
+
+  /// No description provided for @notificationsLoadingMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more...'**
+  String get notificationsLoadingMore;
+
+  /// No description provided for @notificationsInboxEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No unread notifications'**
+  String get notificationsInboxEmptyTitle;
+
+  /// No description provided for @notificationsInboxEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New activity, mentions, and invites will show up here.'**
+  String get notificationsInboxEmptyMessage;
+
+  /// No description provided for @notificationsArchiveEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived notifications'**
+  String get notificationsArchiveEmptyTitle;
+
+  /// No description provided for @notificationsArchiveEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Read notifications will move here after you\'ve cleared them.'**
+  String get notificationsArchiveEmptyMessage;
+
+  /// No description provided for @notificationsLoadErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load notifications'**
+  String get notificationsLoadErrorTitle;
+
+  /// No description provided for @notificationsLoadErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in a moment.'**
+  String get notificationsLoadErrorMessage;
+
+  /// No description provided for @notificationsAcceptInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get notificationsAcceptInvite;
+
+  /// No description provided for @notificationsDeclineInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get notificationsDeclineInvite;
+
+  /// No description provided for @notificationsInviteAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite accepted'**
+  String get notificationsInviteAccepted;
+
+  /// No description provided for @notificationsInviteDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite declined'**
+  String get notificationsInviteDeclined;
+
+  /// No description provided for @notificationsInviteActionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update this invite right now'**
+  String get notificationsInviteActionError;
+
+  /// No description provided for @notificationsOpenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open task'**
+  String get notificationsOpenAction;
+
+  /// No description provided for @notificationsOpenUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This notification can\'t be opened yet'**
+  String get notificationsOpenUnsupported;
+
+  /// No description provided for @notificationsJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get notificationsJustNow;
+
+  /// No description provided for @notificationsMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String notificationsMinutesAgo(int count);
+
+  /// No description provided for @notificationsHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h ago'**
+  String notificationsHoursAgo(int count);
+
+  /// No description provided for @notificationsDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String notificationsDaysAgo(int count);
 
   /// No description provided for @mfaTitle.
   ///
