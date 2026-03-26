@@ -88,6 +88,18 @@ describe('PostStatusSummary', () => {
     });
   });
 
+  it('uses a five-column grid on lg and above', () => {
+    const { container } = render(
+      <PostStatusSummary
+        activeStage="sent"
+        filteredCount={3}
+        summary={summary}
+      />
+    );
+
+    expect(container.querySelector('.lg\\:grid-cols-5')).not.toBeNull();
+  });
+
   it('clears stage when show all recipients is clicked', () => {
     render(
       <PostStatusSummary
