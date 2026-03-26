@@ -64,8 +64,8 @@ void main() {
       await tester.tap(find.text('Product'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Workspaces'), findsOneWidget);
-      expect(find.text('SYSTEM'), findsOneWidget);
+      expect(find.text('Workspaces'), findsNWidgets(2));
+      expect(find.text('Internal'), findsOneWidget);
     });
   });
 }

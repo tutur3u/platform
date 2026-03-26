@@ -4,7 +4,7 @@ import {
   parseAsNativeArrayOf,
   parseAsString,
   parseAsStringLiteral,
-} from 'nuqs';
+} from 'nuqs/server';
 import { POST_EMAIL_QUEUE_STATUSES } from '@/lib/post-email-queue/statuses';
 import {
   DEFAULT_POST_REVIEW_STAGE,

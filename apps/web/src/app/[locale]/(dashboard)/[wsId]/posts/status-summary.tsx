@@ -44,7 +44,7 @@ export function PostStatusSummary({
   return (
     <Card className="overflow-hidden border-border/60 shadow-sm">
       <CardContent className="p-0">
-        <div className="grid gap-6 p-6 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,2.15fr)]">
+        <div className="grid gap-6 p-6 xl:grid-cols-[minmax(0,0.72fr)_minmax(0,2.28fr)]">
           <div className="space-y-4">
             <div className="space-y-2">
               <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.24em]">
@@ -125,7 +125,7 @@ export function PostStatusSummary({
                 </p>
                 <div className="h-px flex-1 bg-border/60" />
               </div>
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                 {POST_REVIEW_STAGE_ORDER.map((stage) => {
                   const count = summary.stages[stage];
                   const percentage = getStatusPercentage(count, summary.total);

@@ -117,11 +117,6 @@ jobs:
           xcrun simctl boot "$DEVICE" || true
           echo "SIMULATOR_UDID=$DEVICE" >> $GITHUB_ENV
 
-      - name: Update CocoaPods Repos
-        if: steps.cache-build.outputs.cache-hit != 'true'
-        run: cd ios && pod repo update
-        shell: bash
-
       - name: Build iOS (development flavor, simulator)
         if: steps.cache-build.outputs.cache-hit != 'true'
         run: flutter build ios --flavor development --target lib/main_development.dart --simulator -d ${{ env.SIMULATOR_UDID }}
