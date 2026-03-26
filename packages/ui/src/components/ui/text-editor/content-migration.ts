@@ -36,7 +36,7 @@ const IMAGE_NODE_TYPES = ['image', 'imageResize'];
 export function migrateInlineImagesToBlock(
   content: JSONContent | null
 ): JSONContent | null {
-  if (!content || !content.content) return content;
+  if (!content?.content) return content;
 
   const newContent: JSONContent[] = [];
 
@@ -176,7 +176,7 @@ function hasNonEmptyContent(node: JSONContent): boolean {
  * Used to avoid unnecessary processing.
  */
 export function needsMigration(content: JSONContent | null): boolean {
-  if (!content || !content.content) return false;
+  if (!content?.content) return false;
 
   function checkNode(node: JSONContent): boolean {
     // Check if this is a paragraph with inline images

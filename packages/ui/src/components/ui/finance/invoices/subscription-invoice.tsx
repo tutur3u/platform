@@ -229,7 +229,7 @@ export function SubscriptionInvoice({
       const latestInvoice = latestSubscriptionInvoices.find(
         (inv) => inv.group_id === groupId
       );
-      if (!latestInvoice || !latestInvoice.valid_until) return false;
+      if (!latestInvoice?.valid_until) return false;
 
       const validUntilMonthStart = new Date(latestInvoice.valid_until);
       validUntilMonthStart.setDate(1);

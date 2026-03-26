@@ -789,7 +789,7 @@ export class TuturuuuClient {
     }
 
     // Validate API key
-    if (!this.apiKey || !this.apiKey.startsWith('ttr_')) {
+    if (!this.apiKey?.startsWith('ttr_')) {
       throw new ValidationError(
         'Invalid API key format. Expected key to start with "ttr_" or set TUTURUUU_API_KEY environment variable'
       );

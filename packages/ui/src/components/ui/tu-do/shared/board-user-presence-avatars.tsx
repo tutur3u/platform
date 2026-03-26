@@ -493,8 +493,10 @@ export function BoardUserPresenceAvatars({
   return (
     <div className="flex items-center -space-x-1.5">
       {displayUsers.map((presence) => {
-        const user = presence?.user;
-        if (!user || !user.id) return null;
+        if (!presence) return null;
+
+        const user = presence.user;
+        if (!user?.id) return null;
 
         const isCurrentUser = user.id === currentUserId;
         const presences = presenceState[user.id] || [];

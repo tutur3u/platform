@@ -54,7 +54,7 @@ test('workspace tsgo build type-check scripts use the cache-invalidation wrapper
     const packageJson = readJson(packageJsonPath);
     const typeCheckScript = packageJson.scripts?.['type-check'];
 
-    if (!typeCheckScript || !typeCheckScript.includes('--build')) {
+    if (!typeCheckScript?.includes('--build')) {
       continue;
     }
 

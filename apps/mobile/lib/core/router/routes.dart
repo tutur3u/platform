@@ -16,6 +16,7 @@ abstract final class Routes {
   static const profileRoot = '/profile';
   static const tasks = '/tasks';
   static const habits = '/habits';
+  static const habitsActivity = '/habits/activity';
   static const taskBoards = '/tasks/boards';
   static const taskBoardDetail = '/tasks/boards/:boardId';
   static const taskEstimates = '/tasks/estimates';
@@ -61,6 +62,9 @@ abstract final class Routes {
 
     if (normalized == tasks || normalized.startsWith('$tasks/')) {
       return tasks;
+    }
+    if (normalized == habits || normalized.startsWith('$habits/')) {
+      return habits;
     }
     if (normalized == finance || normalized.startsWith('$finance/')) {
       return finance;

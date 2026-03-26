@@ -10,6 +10,7 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
@@ -356,7 +357,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wallet == null || wsId == null) return;
 
-    final changed = await shad.showDialog<bool>(
+    final changed = await showFinanceModal<bool>(
       context: context,
       builder: (_) => WalletDialog(
         wsId: wsId,

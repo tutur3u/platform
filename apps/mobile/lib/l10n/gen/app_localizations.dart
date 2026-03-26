@@ -547,6 +547,30 @@ abstract class AppLocalizations {
   /// **'Habits'**
   String get habitsTitle;
 
+  /// No description provided for @habitsOverviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get habitsOverviewLabel;
+
+  /// No description provided for @habitsActivityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get habitsActivityLabel;
+
+  /// No description provided for @habitsActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get habitsActivityTitle;
+
+  /// No description provided for @habitsActivitySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the latest habit logs across every tracker in this workspace.'**
+  String get habitsActivitySubtitle;
+
   /// No description provided for @habitsLoadError.
   ///
   /// In en, this message translates to:
@@ -1182,6 +1206,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No leaderboard data yet'**
   String get habitsNoLeaderboard;
+
+  /// No description provided for @habitsActivityEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs yet'**
+  String get habitsActivityEmptyTitle;
+
+  /// No description provided for @habitsActivityEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone logs a habit entry, it will appear here.'**
+  String get habitsActivityEmptyBody;
+
+  /// No description provided for @habitsActivityNoTrackers.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a habit tracker first to start collecting activity.'**
+  String get habitsActivityNoTrackers;
 
   /// No description provided for @habitsStreakChip.
   ///
@@ -4033,6 +4075,42 @@ abstract class AppLocalizations {
   /// **'Finance'**
   String get financeTitle;
 
+  /// No description provided for @financeOverviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get financeOverviewLabel;
+
+  /// No description provided for @financeActivityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get financeActivityLabel;
+
+  /// No description provided for @financeManageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get financeManageLabel;
+
+  /// No description provided for @financeOverviewEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace snapshot'**
+  String get financeOverviewEyebrow;
+
+  /// No description provided for @financeOverviewCrossCurrencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes converted balances across wallets. Base currency: {currency}.'**
+  String financeOverviewCrossCurrencyHint(String currency);
+
+  /// No description provided for @financeOverviewSingleCurrencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything is already tracked in {currency}.'**
+  String financeOverviewSingleCurrencyHint(String currency);
+
   /// No description provided for @financeWallets.
   ///
   /// In en, this message translates to:
@@ -4056,6 +4134,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recent transactions'**
   String get financeRecentTransactions;
+
+  /// No description provided for @financeOverviewActionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump into the next thing you need to do.'**
+  String get financeOverviewActionsSubtitle;
+
+  /// No description provided for @financeOverviewCreateTransactionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture income, expenses, or transfers quickly.'**
+  String get financeOverviewCreateTransactionHint;
+
+  /// No description provided for @financeOverviewWalletsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Review balances and tune each account.'**
+  String get financeOverviewWalletsHint;
+
+  /// No description provided for @financeOverviewManageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape categories, tags, and finance structure.'**
+  String get financeOverviewManageHint;
+
+  /// No description provided for @financeOverviewWalletSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet lineup'**
+  String get financeOverviewWalletSectionTitle;
+
+  /// No description provided for @financeOverviewWalletSectionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your most important balances at a glance.'**
+  String get financeOverviewWalletSectionSubtitle;
+
+  /// No description provided for @financeOverviewNoWalletsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first wallet to start tracking balances, transfers, and categories.'**
+  String get financeOverviewNoWalletsBody;
+
+  /// No description provided for @financeOverviewActivityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get financeOverviewActivityTitle;
+
+  /// No description provided for @financeOverviewActivitySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The latest movement across your wallets.'**
+  String get financeOverviewActivitySubtitle;
+
+  /// No description provided for @financeOverviewNoTransactionsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Transactions appear here once you start logging money in and out.'**
+  String get financeOverviewNoTransactionsBody;
 
   /// No description provided for @financeNoWallets.
   ///
@@ -4147,6 +4285,12 @@ abstract class AppLocalizations {
   /// **'Search currencies'**
   String get financeWalletSearchCurrency;
 
+  /// No description provided for @financeCurrencyPickerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the code that best matches how this wallet is tracked.'**
+  String get financeCurrencyPickerSubtitle;
+
   /// No description provided for @financeWalletCurrencyRequired.
   ///
   /// In en, this message translates to:
@@ -4176,6 +4320,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear visual'**
   String get financeWalletClearVisual;
+
+  /// No description provided for @financeWalletDialogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up how this wallet should look and behave in finance.'**
+  String get financeWalletDialogSubtitle;
 
   /// No description provided for @financeWalletCreditDetails.
   ///
@@ -4267,6 +4417,42 @@ abstract class AppLocalizations {
   /// **'No tags yet'**
   String get financeNoTags;
 
+  /// No description provided for @financeManageCategoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get financeManageCategoriesTitle;
+
+  /// No description provided for @financeManageCategoriesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group transactions into clear spending and income buckets.'**
+  String get financeManageCategoriesSubtitle;
+
+  /// No description provided for @financeManageTagsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get financeManageTagsTitle;
+
+  /// No description provided for @financeManageTagsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use tags for lightweight labels and flexible reporting.'**
+  String get financeManageTagsSubtitle;
+
+  /// No description provided for @financeManageCategoriesEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create categories for recurring income and expense patterns.'**
+  String get financeManageCategoriesEmptyBody;
+
+  /// No description provided for @financeManageTagsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create tags for ad-hoc labels like trips, subscriptions, or projects.'**
+  String get financeManageTagsEmptyBody;
+
   /// No description provided for @financeCreateTag.
   ///
   /// In en, this message translates to:
@@ -4303,6 +4489,12 @@ abstract class AppLocalizations {
   /// **'Tag name is required'**
   String get financeTagNameRequired;
 
+  /// No description provided for @financeTagDialogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the label and choose a color that is easy to scan.'**
+  String get financeTagDialogSubtitle;
+
   /// No description provided for @financeIncome.
   ///
   /// In en, this message translates to:
@@ -4333,6 +4525,36 @@ abstract class AppLocalizations {
   /// **'No matching transactions'**
   String get financeNoSearchResults;
 
+  /// No description provided for @financeActivityDefaultHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search and review money movement by day.'**
+  String get financeActivityDefaultHint;
+
+  /// No description provided for @financeActivitySearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search is open. Filter by merchant, wallet, or category.'**
+  String get financeActivitySearchHint;
+
+  /// No description provided for @financeActivitySearchEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different keyword, wallet, or category name.'**
+  String get financeActivitySearchEmptyBody;
+
+  /// No description provided for @financeActivityClearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get financeActivityClearSearch;
+
+  /// No description provided for @financeActivitySearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No matches yet} one{1 transaction matched} other{{count} transactions matched}}'**
+  String financeActivitySearchResults(int count);
+
   /// No description provided for @financeTransactionDetails.
   ///
   /// In en, this message translates to:
@@ -4350,6 +4572,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit transaction'**
   String get financeEditTransaction;
+
+  /// No description provided for @financeTransactionDialogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture the amount, source, and visibility settings in one place.'**
+  String get financeTransactionDialogSubtitle;
 
   /// No description provided for @financeDeleteTransaction.
   ///
@@ -4410,6 +4638,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallet'**
   String get financeWallet;
+
+  /// No description provided for @financePickerWalletSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the wallet this transaction should affect.'**
+  String get financePickerWalletSubtitle;
+
+  /// No description provided for @financePickerCategorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the bucket that best describes the transaction.'**
+  String get financePickerCategorySubtitle;
+
+  /// No description provided for @financePickerTagSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an optional label for extra context.'**
+  String get financePickerTagSubtitle;
+
+  /// No description provided for @financeNoTag.
+  ///
+  /// In en, this message translates to:
+  /// **'No tag'**
+  String get financeNoTag;
 
   /// No description provided for @financeDestinationWallet.
   ///
@@ -4537,6 +4789,12 @@ abstract class AppLocalizations {
   /// **'Category name is required'**
   String get financeCategoryNameRequired;
 
+  /// No description provided for @financeCategoryDialogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Define how this category should look and whether it counts as income or expense.'**
+  String get financeCategoryDialogSubtitle;
+
   /// No description provided for @financeType.
   ///
   /// In en, this message translates to:
@@ -4632,6 +4890,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quick actions'**
   String get financeQuickActions;
+
+  /// No description provided for @financeWalletSummaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No wallets configured yet} one{1 wallet is ready to use} other{{count} wallets are ready to use}}'**
+  String financeWalletSummaryHint(int count);
 
   /// No description provided for @financeAddTransaction.
   ///

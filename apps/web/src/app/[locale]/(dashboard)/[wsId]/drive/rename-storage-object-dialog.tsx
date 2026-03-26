@@ -44,7 +44,7 @@ function getFinalRenameValue(
 ) {
   const currentName = storageObject?.name;
 
-  if (!storageObject?.id || !currentName || !currentName.includes('.')) {
+  if (!storageObject?.id || !currentName?.includes('.')) {
     return nextName;
   }
 

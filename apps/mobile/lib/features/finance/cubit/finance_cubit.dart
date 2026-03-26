@@ -5,6 +5,7 @@ import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/features/finance/finance_cache.dart';
 
 part 'finance_state.dart';
 
@@ -14,10 +15,23 @@ class FinanceCubit extends Cubit<FinanceState> {
       super(const FinanceState());
 
   final FinanceRepository _repo;
+  static final Map<String, _FinanceCacheEntry> _cache = {};
+  String? _loadedWorkspaceId;
 
   /// Loads wallets and recent transactions for the workspace.
-  Future<void> loadFinanceData(String wsId) async {
-    emit(state.copyWith(status: FinanceStatus.loading, clearError: true));
+  Future<void> loadFinanceData(String wsId, {bool forceRefresh = false}) async {
+    final cached = _cache[wsId];
+    final hasVisibleData = _loadedWorkspaceId == wsId;
+
+    if (!forceRefresh && cached != null) {
+      _loadedWorkspaceId = wsId;
+      emit(cached.state);
+      if (isFinanceCacheFresh(cached.fetchedAt)) {
+        return;
+      }
+    } else if (!hasVisibleData) {
+      emit(state.copyWith(status: FinanceStatus.loading, clearError: true));
+    }
 
     try {
       final walletsFuture = _repo.getWallets(wsId);
@@ -37,20 +51,44 @@ class FinanceCubit extends Cubit<FinanceState> {
       final workspaceCurrency = await workspaceCurrencyFuture;
       final exchangeRates = await exchangeRatesFuture;
 
-      emit(
-        state.copyWith(
-          status: FinanceStatus.loaded,
-          wallets: wallets,
-          recentTransactions: recentTransactionsPage.data,
-          workspaceCurrency: workspaceCurrency,
-          exchangeRates: exchangeRates,
-          clearError: true,
-        ),
+      final nextState = state.copyWith(
+        status: FinanceStatus.loaded,
+        wallets: wallets,
+        recentTransactions: recentTransactionsPage.data,
+        workspaceCurrency: workspaceCurrency,
+        exchangeRates: exchangeRates,
+        clearError: true,
       );
+
+      _cache[wsId] = _FinanceCacheEntry(
+        state: nextState,
+        fetchedAt: DateTime.now(),
+      );
+      _loadedWorkspaceId = wsId;
+      emit(nextState);
     } on Exception catch (e) {
+      if (cached != null || hasVisibleData) {
+        emit(
+          (cached?.state ?? state).copyWith(
+            status: FinanceStatus.loaded,
+            clearError: true,
+          ),
+        );
+        return;
+      }
       emit(
         state.copyWith(status: FinanceStatus.error, error: e.toString()),
       );
     }
   }
+}
+
+class _FinanceCacheEntry {
+  const _FinanceCacheEntry({
+    required this.state,
+    required this.fetchedAt,
+  });
+
+  final FinanceState state;
+  final DateTime fetchedAt;
 }

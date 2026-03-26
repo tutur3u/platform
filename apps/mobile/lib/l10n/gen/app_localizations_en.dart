@@ -237,6 +237,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsTitle => 'Habits';
 
   @override
+  String get habitsOverviewLabel => 'Overview';
+
+  @override
+  String get habitsActivityLabel => 'Activity';
+
+  @override
+  String get habitsActivityTitle => 'Activity';
+
+  @override
+  String get habitsActivitySubtitle => 'Review the latest habit logs across every tracker in this workspace.';
+
+  @override
   String get habitsLoadError => 'Couldn\'t load habits right now';
 
   @override
@@ -557,6 +569,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get habitsNoLeaderboard => 'No leaderboard data yet';
+
+  @override
+  String get habitsActivityEmptyTitle => 'No logs yet';
+
+  @override
+  String get habitsActivityEmptyBody => 'When someone logs a habit entry, it will appear here.';
+
+  @override
+  String get habitsActivityNoTrackers => 'Create a habit tracker first to start collecting activity.';
 
   @override
   String habitsStreakChip(int count) {
@@ -2048,6 +2069,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTitle => 'Finance';
 
   @override
+  String get financeOverviewLabel => 'Overview';
+
+  @override
+  String get financeActivityLabel => 'Activity';
+
+  @override
+  String get financeManageLabel => 'Manage';
+
+  @override
+  String get financeOverviewEyebrow => 'Workspace snapshot';
+
+  @override
+  String financeOverviewCrossCurrencyHint(String currency) {
+    return 'Includes converted balances across wallets. Base currency: $currency.';
+  }
+
+  @override
+  String financeOverviewSingleCurrencyHint(String currency) {
+    return 'Everything is already tracked in $currency.';
+  }
+
+  @override
   String get financeWallets => 'Wallets';
 
   @override
@@ -2058,6 +2101,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeRecentTransactions => 'Recent transactions';
+
+  @override
+  String get financeOverviewActionsSubtitle => 'Jump into the next thing you need to do.';
+
+  @override
+  String get financeOverviewCreateTransactionHint => 'Capture income, expenses, or transfers quickly.';
+
+  @override
+  String get financeOverviewWalletsHint => 'Review balances and tune each account.';
+
+  @override
+  String get financeOverviewManageHint => 'Shape categories, tags, and finance structure.';
+
+  @override
+  String get financeOverviewWalletSectionTitle => 'Wallet lineup';
+
+  @override
+  String get financeOverviewWalletSectionSubtitle => 'Your most important balances at a glance.';
+
+  @override
+  String get financeOverviewNoWalletsBody => 'Create your first wallet to start tracking balances, transfers, and categories.';
+
+  @override
+  String get financeOverviewActivityTitle => 'Recent activity';
+
+  @override
+  String get financeOverviewActivitySubtitle => 'The latest movement across your wallets.';
+
+  @override
+  String get financeOverviewNoTransactionsBody => 'Transactions appear here once you start logging money in and out.';
 
   @override
   String get financeNoWallets => 'No wallets yet';
@@ -2105,6 +2178,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeWalletSearchCurrency => 'Search currencies';
 
   @override
+  String get financeCurrencyPickerSubtitle => 'Choose the code that best matches how this wallet is tracked.';
+
+  @override
   String get financeWalletCurrencyRequired => 'Enter a valid 3-letter currency code';
 
   @override
@@ -2118,6 +2194,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeWalletClearVisual => 'Clear visual';
+
+  @override
+  String get financeWalletDialogSubtitle => 'Set up how this wallet should look and behave in finance.';
 
   @override
   String get financeWalletCreditDetails => 'Credit details';
@@ -2174,6 +2253,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNoTags => 'No tags yet';
 
   @override
+  String get financeManageCategoriesTitle => 'Categories';
+
+  @override
+  String get financeManageCategoriesSubtitle => 'Group transactions into clear spending and income buckets.';
+
+  @override
+  String get financeManageTagsTitle => 'Tags';
+
+  @override
+  String get financeManageTagsSubtitle => 'Use tags for lightweight labels and flexible reporting.';
+
+  @override
+  String get financeManageCategoriesEmptyBody => 'Create categories for recurring income and expense patterns.';
+
+  @override
+  String get financeManageTagsEmptyBody => 'Create tags for ad-hoc labels like trips, subscriptions, or projects.';
+
+  @override
   String get financeCreateTag => 'Create tag';
 
   @override
@@ -2192,6 +2289,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTagNameRequired => 'Tag name is required';
 
   @override
+  String get financeTagDialogSubtitle => 'Describe the label and choose a color that is easy to scan.';
+
+  @override
   String get financeIncome => 'Income';
 
   @override
@@ -2207,6 +2307,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNoSearchResults => 'No matching transactions';
 
   @override
+  String get financeActivityDefaultHint => 'Search and review money movement by day.';
+
+  @override
+  String get financeActivitySearchHint => 'Search is open. Filter by merchant, wallet, or category.';
+
+  @override
+  String get financeActivitySearchEmptyBody => 'Try a different keyword, wallet, or category name.';
+
+  @override
+  String get financeActivityClearSearch => 'Clear search';
+
+  @override
+  String financeActivitySearchResults(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions matched',
+      one: '1 transaction matched',
+      zero: 'No matches yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get financeTransactionDetails => 'Transaction details';
 
   @override
@@ -2214,6 +2338,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeEditTransaction => 'Edit transaction';
+
+  @override
+  String get financeTransactionDialogSubtitle => 'Capture the amount, source, and visibility settings in one place.';
 
   @override
   String get financeDeleteTransaction => 'Delete transaction';
@@ -2244,6 +2371,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeWallet => 'Wallet';
+
+  @override
+  String get financePickerWalletSubtitle => 'Pick the wallet this transaction should affect.';
+
+  @override
+  String get financePickerCategorySubtitle => 'Choose the bucket that best describes the transaction.';
+
+  @override
+  String get financePickerTagSubtitle => 'Select an optional label for extra context.';
+
+  @override
+  String get financeNoTag => 'No tag';
 
   @override
   String get financeDestinationWallet => 'Destination wallet';
@@ -2309,6 +2448,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeCategoryNameRequired => 'Category name is required';
 
   @override
+  String get financeCategoryDialogSubtitle => 'Define how this category should look and whether it counts as income or expense.';
+
+  @override
   String get financeType => 'Type';
 
   @override
@@ -2355,6 +2497,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeQuickActions => 'Quick actions';
+
+  @override
+  String financeWalletSummaryHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallets are ready to use',
+      one: '1 wallet is ready to use',
+      zero: 'No wallets configured yet',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get financeAddTransaction => 'Add';

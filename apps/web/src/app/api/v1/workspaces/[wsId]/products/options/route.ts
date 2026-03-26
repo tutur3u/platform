@@ -49,7 +49,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const permissions = await getPermissions({ wsId, request });
-    if (!permissions || !permissions.containsPermission('view_inventory')) {
+    if (!permissions?.containsPermission('view_inventory')) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
