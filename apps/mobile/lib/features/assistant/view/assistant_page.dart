@@ -593,7 +593,6 @@ class _AssistantPageState extends State<AssistantPage> {
     required double bottomInset,
   }) {
     final l10n = context.l10n;
-    final dateLabel = DateFormat('EEE, d MMM').format(DateTime.now());
     final prompts = [
       _PromptDescriptor(
         label: l10n.assistantQuickPromptCalendar,
@@ -629,42 +628,20 @@ class _AssistantPageState extends State<AssistantPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              shellState.soul.name,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l10n.assistantAskPlaceholder,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              dateLabel,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
               l10n.assistantWorkspaceAwareDescription,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.45,
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 24),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: prompts.length,
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 260,
-                mainAxisExtent: 144,
+                mainAxisExtent: 156,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
               ),
@@ -800,8 +777,8 @@ class _AssistantPageState extends State<AssistantPage> {
   }
 
   BoxDecoration _buildPageDecoration(ThemeData theme) {
-    return BoxDecoration(
-      color: theme.colorScheme.surface,
+    return const BoxDecoration(
+      color: Colors.transparent,
     );
   }
 
@@ -1551,33 +1528,26 @@ class _PromptChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: Ink(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 Color.alphaBlend(
-                  prompt.color.withValues(alpha: 0.14),
-                  theme.colorScheme.surfaceContainerLow,
+                  prompt.color.withValues(alpha: 0.12),
+                  theme.colorScheme.surfaceContainerHigh,
                 ),
                 Color.alphaBlend(
-                  prompt.color.withValues(alpha: 0.05),
-                  theme.colorScheme.surfaceContainerLowest,
+                  prompt.color.withValues(alpha: 0.04),
+                  theme.colorScheme.surfaceContainerLow,
                 ),
               ],
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: prompt.color.withValues(alpha: 0.26)),
-            boxShadow: [
-              BoxShadow(
-                color: prompt.color.withValues(alpha: 0.12),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: prompt.color.withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1585,13 +1555,13 @@ class _PromptChip extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 34,
-                    height: 34,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: prompt.color.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(prompt.icon, size: 17, color: prompt.color),
+                    child: Icon(prompt.icon, size: 18, color: prompt.color),
                   ),
                   const Spacer(),
                   Container(
@@ -1600,7 +1570,7 @@ class _PromptChip extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withValues(alpha: 0.42),
+                      color: theme.colorScheme.surface.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -1613,17 +1583,15 @@ class _PromptChip extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: Text(
-                  prompt.label,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w800,
-                    height: 1.15,
-                  ),
+              const Spacer(),
+              Text(
+                prompt.label,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w800,
+                  height: 1.15,
                 ),
               ),
             ],
@@ -2315,42 +2283,23 @@ class _SendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(999),
         child: Ink(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.colorScheme.primary,
-                Color.alphaBlend(
-                  const Color(0xFF0EA5E9).withValues(alpha: 0.28),
-                  theme.colorScheme.primary,
-                ),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.24),
-                blurRadius: 14,
-                offset: const Offset(0, 8),
-              ),
-            ],
+          width: 42,
+          height: 42,
+          decoration: const BoxDecoration(
+            color: Color(0xFF8B5CF6),
+            shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: const Icon(
             Icons.arrow_upward_rounded,
             size: 20,
-            color: theme.colorScheme.onPrimary,
+            color: Colors.white,
           ),
         ),
       ),
