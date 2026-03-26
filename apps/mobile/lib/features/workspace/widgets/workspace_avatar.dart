@@ -21,9 +21,12 @@ class WorkspaceAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final isSystem = isSystemWorkspace(workspace);
+    final size = radius * 2;
+    final borderRadius = BorderRadius.circular(radius * 0.72);
     final initials = workspace.personal
         ? 'P'
-        : isSystemWorkspace(workspace)
+        : isSystem
         ? 'S'
         : (workspace.name != null && workspace.name!.isNotEmpty
               ? workspace.name![0].toUpperCase()
@@ -32,19 +35,34 @@ class WorkspaceAvatar extends StatelessWidget {
     final backgroundColor = workspace.personal
         ? theme.colorScheme.primary
         : _colorFromId(workspace.id);
-
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: backgroundColor,
-      foregroundImage: workspace.avatarUrl != null
-          ? NetworkImage(workspace.avatarUrl!)
-          : null,
+    final imageProvider = isSystem
+        ? const AssetImage('assets/logos/light.png') as ImageProvider<Object>
+        : workspace.avatarUrl != null
+        ? NetworkImage(workspace.avatarUrl!) as ImageProvider<Object>
+        : null;
+    final fallback = Center(
       child: Text(
         initials,
         style: theme.typography.small.copyWith(
           color: Colors.white,
           fontWeight: FontWeight.w700,
         ),
+      ),
+    );
+
+    return ClipRRect(
+      borderRadius: borderRadius,
+      child: Container(
+        width: size,
+        height: size,
+        color: backgroundColor,
+        child: imageProvider != null
+            ? Image(
+                image: imageProvider,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => fallback,
+              )
+            : fallback,
       ),
     );
   }

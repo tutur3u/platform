@@ -1,6 +1,6 @@
 name: mobile
 description: Tuturuuu Mobile
-version: 0.1.7+13
+version: 0.1.8+14
 publish_to: none
 
 environment:
@@ -65,6 +65,7 @@ flutter:
   generate: true
   uses-material-design: true
   assets:
+    - assets/logos/light.png
     - assets/logos/transparent.png
     - assets/logos/apple.svg
     - assets/logos/google-logo.png
