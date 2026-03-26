@@ -5,6 +5,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Shows a bottom drawer (compact) or dialog (medium+) for creating a new
@@ -81,23 +82,28 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
         final limits = state.limits;
         final canCreate = limits?.canCreate ?? true;
 
-        // SingleChildScrollView prevents bottom overflow when keyboard opens
-        return SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-          ),
+        return AppDialogScaffold(
+          title: l10n.workspaceCreateTitle,
+          description: l10n.workspaceCreateDescription,
+          icon: Icons.add_business_outlined,
+          maxWidth: 520,
+          actions: [
+            shad.OutlineButton(
+              onPressed: state.isCreating
+                  ? null
+                  : () => Navigator.maybePop(context),
+              child: Text(l10n.workspaceCreateCancel),
+            ),
+            shad.PrimaryButton(
+              onPressed: (canCreate && !state.isCreating) ? _onSubmit : null,
+              child: state.isCreating
+                  ? const shad.CircularProgressIndicator(size: 16)
+                  : Text(l10n.workspaceCreateSubmit),
+            ),
+          ],
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.workspaceCreateTitle,
-                style: theme.typography.h3,
-              ),
-              const shad.Gap(4),
               if (limits != null && limits.limit > 0) ...[
                 Text(
                   l10n.workspaceCreateLimitInfo(
@@ -108,12 +114,12 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
                     color: theme.colorScheme.mutedForeground,
                   ),
                 ),
-                const shad.Gap(4),
+                const shad.Gap(8),
                 shad.LinearProgressIndicator(
                   value: limits.currentCount / limits.limit,
                 ),
+                const shad.Gap(16),
               ],
-              const shad.Gap(16),
               shad.TextField(
                 controller: _controller,
                 placeholder: Text(l10n.workspaceCreateNameHint),
@@ -138,27 +144,6 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
                   ),
                 ),
               ],
-              const shad.Gap(16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  shad.OutlineButton(
-                    onPressed: state.isCreating
-                        ? null
-                        : () => Navigator.maybePop(context),
-                    child: Text(l10n.workspaceCreateCancel),
-                  ),
-                  const shad.Gap(8),
-                  shad.PrimaryButton(
-                    onPressed: (canCreate && !state.isCreating)
-                        ? _onSubmit
-                        : null,
-                    child: state.isCreating
-                        ? const shad.CircularProgressIndicator(size: 16)
-                        : Text(l10n.workspaceCreateSubmit),
-                  ),
-                ],
-              ),
             ],
           ),
         );

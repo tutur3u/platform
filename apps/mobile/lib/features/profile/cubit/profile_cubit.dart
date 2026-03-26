@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
+import 'package:mobile/features/profile/profile_cache.dart';
 
 /// Cubit for managing user profile state.
 class ProfileCubit extends Cubit<ProfileState> {
@@ -11,27 +13,97 @@ class ProfileCubit extends Cubit<ProfileState> {
       super(const ProfileState());
 
   final ProfileRepository _repository;
+  static UserProfile? _memoryCachedProfile;
+  static DateTime? _memoryCachedAt;
 
   /// Loads the user's profile.
-  Future<void> loadProfile({bool emitLoading = true}) async {
-    if (emitLoading) {
-      emit(state.copyWith(status: ProfileStatus.loading));
+  Future<void> loadProfile({
+    bool forceRefresh = false,
+    bool emitLoading = true,
+  }) async {
+    final cachedProfile = _memoryCachedProfile;
+    final cachedAt = _memoryCachedAt;
+    final persistedCache = cachedProfile == null
+        ? await _repository.getCachedProfile()
+        : (profile: cachedProfile, fetchedAt: cachedAt);
+    final visibleProfile = state.profile ?? persistedCache.profile;
+
+    if (visibleProfile != null && state.profile == null) {
+      emit(
+        state.copyWith(
+          status: ProfileStatus.loaded,
+          profile: visibleProfile,
+          error: null,
+          isLoading: false,
+          isRefreshing: false,
+          isFromCache: true,
+          lastUpdatedAt: persistedCache.fetchedAt,
+        ),
+      );
+    }
+
+    if (!forceRefresh &&
+        visibleProfile != null &&
+        persistedCache.fetchedAt != null &&
+        isProfileCacheFresh(persistedCache.fetchedAt!)) {
+      return;
+    }
+
+    if (emitLoading && visibleProfile == null) {
+      emit(
+        state.copyWith(
+          status: ProfileStatus.loading,
+          error: null,
+          isLoading: false,
+          isRefreshing: false,
+        ),
+      );
+    } else if (visibleProfile != null) {
+      emit(
+        state.copyWith(
+          status: ProfileStatus.loaded,
+          error: null,
+          isRefreshing: true,
+        ),
+      );
     }
 
     final result = await _repository.getProfile();
 
     if (result.profile != null) {
+      _memoryCachedProfile = result.profile;
+      _memoryCachedAt = DateTime.now();
+      await _repository.saveCachedProfile(result.profile!);
       emit(
         state.copyWith(
           status: ProfileStatus.loaded,
           profile: result.profile,
+          error: null,
+          isLoading: false,
+          isRefreshing: false,
+          isFromCache: false,
+          lastUpdatedAt: _memoryCachedAt,
         ),
       );
     } else {
+      if (visibleProfile != null) {
+        emit(
+          state.copyWith(
+            status: ProfileStatus.loaded,
+            error: null,
+            isLoading: false,
+            isRefreshing: false,
+            isFromCache: true,
+          ),
+        );
+        return;
+      }
       emit(
         state.copyWith(
           status: ProfileStatus.error,
           error: result.error,
+          isLoading: false,
+          isRefreshing: false,
         ),
       );
     }
@@ -61,13 +133,13 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<bool> _updateProfileField(
     Future<({bool success, String? error})> Function() update,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
 
     final result = await update();
 
     if (result.success) {
       // Reload profile to get updated data
-      await loadProfile(emitLoading: false);
+      await loadProfile(forceRefresh: true, emitLoading: false);
       emit(state.copyWith(isLoading: false));
       return true;
     }
@@ -108,7 +180,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
     if (updateResult.success) {
       // Reload profile to get updated data
-      await loadProfile(emitLoading: false);
+      await loadProfile(forceRefresh: true, emitLoading: false);
       emit(state.copyWith(isLoading: false));
       return true;
     } else {
@@ -125,7 +197,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
     if (result.success) {
       // Reload profile to get updated data
-      await loadProfile(emitLoading: false);
+      await loadProfile(forceRefresh: true, emitLoading: false);
       emit(state.copyWith(isLoading: false));
       return true;
     } else {
@@ -134,7 +206,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  void clearError() => emit(state.copyWith());
+  void clearError() => emit(state.copyWith(error: null));
 
   @override
   Future<void> close() {

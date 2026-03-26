@@ -23,6 +23,8 @@ Future<T?> showAdaptiveSheet<T>({
   if (context.isCompact) {
     return showModalBottomSheet<T>(
       context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.48),
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
       builder: (sheetContext) => BackButtonListener(
@@ -39,6 +41,7 @@ Future<T?> showAdaptiveSheet<T>({
 
   return showDialog<T>(
     context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.48),
     builder: (dialogContext) => BackButtonListener(
       onBackButtonPressed: () async {
         if (dialogContext.mounted) {
@@ -46,13 +49,17 @@ Future<T?> showAdaptiveSheet<T>({
         }
         return true;
       },
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxDialogWidth),
-          child: Material(
-            borderRadius: BorderRadius.circular(12),
-            clipBehavior: Clip.antiAlias,
-            child: builder(dialogContext),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxDialogWidth),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              clipBehavior: Clip.antiAlias,
+              child: builder(dialogContext),
+            ),
           ),
         ),
       ),
@@ -92,6 +99,7 @@ Future<void> showAdaptiveDrawer({
 
   await showDialog<void>(
     context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.48),
     builder: (dialogContext) => BackButtonListener(
       onBackButtonPressed: () async {
         if (dialogContext.mounted) {
@@ -99,13 +107,17 @@ Future<void> showAdaptiveDrawer({
         }
         return true;
       },
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxDialogWidth),
-          child: Material(
-            borderRadius: BorderRadius.circular(12),
-            clipBehavior: Clip.antiAlias,
-            child: builder(dialogContext),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxDialogWidth),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              clipBehavior: Clip.antiAlias,
+              child: builder(dialogContext),
+            ),
           ),
         ),
       ),

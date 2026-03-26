@@ -1,18 +1,23 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart'
-    hide AlertDialog, AppBar, Divider, FilledButton, Scaffold, TextButton;
+import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/models/user_profile.dart';
+import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/profile/cubit/profile_cubit.dart';
+import 'package:mobile/features/profile/cubit/profile_state.dart';
+import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
-import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
-import 'package:mobile/features/settings/cubit/theme_state.dart';
+import 'package:mobile/features/settings/view/settings_dialogs.dart';
+import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
@@ -25,290 +30,386 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return shad.Scaffold(
-      child: ResponsiveWrapper(
-        maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-        child: ListView(
-          padding: EdgeInsets.all(
-            ResponsivePadding.horizontal(context.deviceClass),
+    return BlocProvider(
+      create: (_) {
+        final cubit = ProfileCubit(
+          profileRepository: ProfileRepository(
+            ownsApiClient: true,
+            ownsHttpClient: true,
           ),
-          children: [
-            buildSettingsItem(
-              context,
-              icon: Icons.person_outline,
-              title: l10n.settingsProfile,
-              onTap: () => context.push(Routes.profileRoot),
-            ),
-            const shad.Divider(),
-            BlocBuilder<LocaleCubit, LocaleState>(
-              builder: (context, localeState) {
-                return buildSettingsItem(
-                  context,
-                  icon: Icons.language,
-                  title: l10n.settingsLanguage,
-                  subtitle: _localeDisplayName(localeState.locale, l10n),
-                  onTap: () => _showLanguageDialog(context),
-                );
-              },
-            ),
-            const shad.Divider(),
-            BlocBuilder<ThemeCubit, ThemeState>(
-              builder: (context, themeState) {
-                return buildSettingsItem(
-                  context,
-                  icon: Icons.palette_outlined,
-                  title: l10n.settingsTheme,
-                  subtitle: _themeDisplayName(themeState.themeMode, l10n),
-                  onTap: () => _showThemeDialog(context),
-                );
-              },
-            ),
-            const shad.Divider(),
-            BlocBuilder<WorkspaceCubit, WorkspaceState>(
-              buildWhen: (prev, curr) =>
-                  prev.currentWorkspace != curr.currentWorkspace,
-              builder: (context, state) {
-                return buildSettingsItem(
-                  context,
-                  icon: Icons.swap_horiz,
-                  title: l10n.settingsSwitchWorkspace,
-                  subtitle: state.currentWorkspace?.name,
-                  onTap: () => showWorkspacePickerSheet(context),
-                );
-              },
-            ),
-            const shad.Divider(),
-            const _AppVersionItem(),
-            const shad.Divider(),
-            buildSettingsItem(
-              context,
-              icon: Icons.logout,
-              title: l10n.settingsSignOut,
-              isDestructive: true,
-              onTap: () => _showSignOutDialog(context),
-            ),
-          ],
-        ),
-      ),
+        );
+        unawaited(cubit.loadProfile());
+        return cubit;
+      },
+      child: const _SettingsView(),
     );
   }
+}
 
-  static Widget buildSettingsItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    VoidCallback? onTap,
-    String? subtitle,
-    bool isDestructive = false,
-    bool showChevron = true,
-  }) {
-    final theme = shad.Theme.of(context);
-    final color = isDestructive ? theme.colorScheme.destructive : null;
+class _SettingsView extends StatefulWidget {
+  const _SettingsView();
 
-    return shad.GhostButton(
-      onPressed: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Icon(icon, color: color),
-            const shad.Gap(16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.typography.p.copyWith(color: color),
-                  ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle,
-                      style: theme.typography.textMuted,
-                    ),
-                ],
-              ),
-            ),
-            if (showChevron) const Icon(Icons.chevron_right, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
+  @override
+  State<_SettingsView> createState() => _SettingsViewState();
+}
 
-  String _localeDisplayName(Locale? locale, AppLocalizations l10n) {
-    if (locale == null) return l10n.settingsLanguageSystem;
-    switch (locale.languageCode) {
-      case 'en':
-        return l10n.settingsLanguageEnglish;
-      case 'vi':
-        return l10n.settingsLanguageVietnamese;
-      default:
-        return locale.languageCode;
+class _SettingsViewState extends State<_SettingsView> {
+  late final Future<PackageInfo> _packageInfoFuture;
+  String? _loadedWorkspaceId;
+
+  @override
+  void initState() {
+    super.initState();
+    _packageInfoFuture = PackageInfo.fromPlatform();
+    final workspaceId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
+    if (workspaceId != null) {
+      unawaited(_loadWorkspaceCalendarPreference(workspaceId));
     }
   }
 
-  void _showLanguageDialog(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
+    final horizontalPadding = ResponsivePadding.horizontal(
+      context.deviceClass,
+    );
+
+    return BlocListener<WorkspaceCubit, WorkspaceState>(
+      listenWhen: (previous, current) =>
+          previous.currentWorkspace?.id != current.currentWorkspace?.id,
+      listener: (context, state) {
+        final workspaceId = state.currentWorkspace?.id;
+        if (workspaceId != null) {
+          unawaited(_loadWorkspaceCalendarPreference(workspaceId));
+        }
+      },
+      child: shad.Scaffold(
+        child: FutureBuilder<PackageInfo>(
+          future: _packageInfoFuture,
+          builder: (context, snapshot) {
+            final packageInfo = snapshot.data;
+
+            return RefreshIndicator.adaptive(
+              onRefresh: () => _refresh(context),
+              child: ResponsiveWrapper(
+                maxWidth: ResponsivePadding.maxContentWidth(
+                  context.deviceClass,
+                ),
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    20,
+                    horizontalPadding,
+                    32,
+                  ),
+                  children: [
+                    BlocBuilder<ProfileCubit, ProfileState>(
+                      builder: (context, profileState) {
+                        return _SettingsHeroCard(
+                          profile: profileState.profile,
+                          isRefreshing: profileState.isRefreshing,
+                          currentWorkspace: context
+                              .watch<WorkspaceCubit>()
+                              .state
+                              .currentWorkspace,
+                          defaultWorkspace: context
+                              .watch<WorkspaceCubit>()
+                              .state
+                              .defaultWorkspace,
+                        );
+                      },
+                    ),
+                    const shad.Gap(32),
+                    SettingsSection(
+                      title: context.l10n.settingsAccountSectionTitle,
+                      description:
+                          context.l10n.settingsAccountSectionDescription,
+                      children: [
+                        BlocBuilder<ProfileCubit, ProfileState>(
+                          builder: (context, profileState) {
+                            final profile = profileState.profile;
+                            final value =
+                                profile?.displayName?.trim().isNotEmpty ?? false
+                                ? profile!.displayName!.trim()
+                                : profile?.fullName?.trim().isNotEmpty ?? false
+                                ? profile!.fullName!.trim()
+                                : profile?.email ??
+                                      context.l10n.settingsNoEmail;
+
+                            return SettingsTile(
+                              icon: Icons.person_outline_rounded,
+                              title: context.l10n.settingsProfile,
+                              value: value,
+                              subtitle: context.l10n.settingsProfileDescription,
+                              onTap: () => context.push(Routes.profileRoot),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const shad.Gap(32),
+                    _WorkspaceSection(
+                      onSelectCurrentWorkspace: () => showWorkspacePickerSheet(
+                        context,
+                      ),
+                      onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
+                        context,
+                        mode: WorkspacePickerMode.defaultWorkspace,
+                      ),
+                    ),
+                    const shad.Gap(32),
+                    _PreferencesSection(
+                      themeLabel: _themeDisplayName(
+                        context.watch<ThemeCubit>().state.themeMode,
+                        context.l10n,
+                      ),
+                      languageLabel: _localeDisplayName(
+                        Localizations.localeOf(context),
+                        context.read<LocaleCubit>().state.locale,
+                        context.l10n,
+                      ),
+                      calendarLabel: _calendarDisplayName(
+                        context.watch<CalendarSettingsCubit>().state,
+                        context.l10n,
+                      ),
+                      onChangeLanguage: () => unawaited(_showLanguageDialog()),
+                      onChangeTheme: () => unawaited(_showThemeDialog()),
+                      onChangeFirstDayOfWeek: () => unawaited(
+                        _showCalendarDialog(),
+                      ),
+                    ),
+                    const shad.Gap(32),
+                    _AboutSection(packageInfo: packageInfo),
+                    const shad.Gap(32),
+                    SettingsSection(
+                      title: context.l10n.settingsDangerSectionTitle,
+                      description:
+                          context.l10n.settingsDangerSectionDescription,
+                      children: [
+                        SettingsTile(
+                          icon: Icons.logout_rounded,
+                          title: context.l10n.settingsSignOut,
+                          subtitle: context.l10n.settingsSignOutDescription,
+                          isDestructive: true,
+                          onTap: () => unawaited(_showSignOutDialog()),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _calendarDisplayName(
+    CalendarSettingsState state,
+    AppLocalizations l10n,
+  ) {
+    final effective = state.userPreference != FirstDayOfWeek.auto_
+        ? state.userPreference
+        : state.workspacePreference != FirstDayOfWeek.auto_
+        ? state.workspacePreference
+        : FirstDayOfWeek.auto_;
+
+    switch (effective) {
+      case FirstDayOfWeek.auto_:
+        return l10n.settingsFirstDayAuto;
+      case FirstDayOfWeek.sunday:
+        return l10n.settingsFirstDaySunday;
+      case FirstDayOfWeek.monday:
+        return l10n.settingsFirstDayMonday;
+      case FirstDayOfWeek.saturday:
+        return l10n.settingsFirstDaySaturday;
+    }
+  }
+
+  String _localeDisplayName(
+    Locale systemLocale,
+    Locale? selectedLocale,
+    AppLocalizations l10n,
+  ) {
+    final locale = selectedLocale ?? systemLocale;
+    switch (locale.languageCode) {
+      case 'en':
+        return selectedLocale == null
+            ? '${l10n.settingsLanguageSystem} · ${l10n.settingsLanguageEnglish}'
+            : l10n.settingsLanguageEnglish;
+      case 'vi':
+        return selectedLocale == null
+            ? '${l10n.settingsLanguageSystem} · '
+                  '${l10n.settingsLanguageVietnamese}'
+            : l10n.settingsLanguageVietnamese;
+      default:
+        return selectedLocale == null
+            ? '${l10n.settingsLanguageSystem} · ${locale.languageCode}'
+            : locale.languageCode;
+    }
+  }
+
+  Future<void> _loadWorkspaceCalendarPreference(String workspaceId) async {
+    if (_loadedWorkspaceId == workspaceId) {
+      return;
+    }
+
+    _loadedWorkspaceId = workspaceId;
+    await context.read<CalendarSettingsCubit>().loadWorkspacePreference(
+      workspaceId,
+    );
+  }
+
+  Future<void> _refresh(BuildContext context) async {
+    final workspaceCubit = context.read<WorkspaceCubit>();
+    final calendarCubit = context.read<CalendarSettingsCubit>();
+    final currentWorkspaceId = workspaceCubit.state.currentWorkspace?.id;
+
+    await Future.wait([
+      context.read<ProfileCubit>().loadProfile(forceRefresh: true),
+      workspaceCubit.loadWorkspaces(),
+      workspaceCubit.refreshLimits(),
+      calendarCubit.loadUserPreference(),
+      if (currentWorkspaceId != null)
+        calendarCubit.loadWorkspacePreference(currentWorkspaceId),
+    ]);
+  }
+
+  Future<void> _showCalendarDialog() async {
+    final l10n = context.l10n;
+    final cubit = context.read<CalendarSettingsCubit>();
+    final selected = await showSettingsChoiceDialog<FirstDayOfWeek>(
+      context: context,
+      title: l10n.settingsFirstDayOfWeek,
+      description: l10n.settingsFirstDayOfWeekDescription,
+      currentValue: cubit.state.userPreference,
+      options: [
+        SettingsChoiceOption(
+          value: FirstDayOfWeek.auto_,
+          label: l10n.settingsFirstDayAuto,
+          icon: Icons.auto_mode_rounded,
+          description: l10n.settingsFirstDayAutoDescription,
+        ),
+        SettingsChoiceOption(
+          value: FirstDayOfWeek.monday,
+          label: l10n.settingsFirstDayMonday,
+          icon: Icons.calendar_view_week_rounded,
+        ),
+        SettingsChoiceOption(
+          value: FirstDayOfWeek.sunday,
+          label: l10n.settingsFirstDaySunday,
+          icon: Icons.view_week_rounded,
+        ),
+        SettingsChoiceOption(
+          value: FirstDayOfWeek.saturday,
+          label: l10n.settingsFirstDaySaturday,
+          icon: Icons.event_repeat_rounded,
+        ),
+      ],
+    );
+
+    if (selected != null && mounted) {
+      await cubit.setFirstDayOfWeek(selected);
+    }
+  }
+
+  Future<void> _showLanguageDialog() async {
     final l10n = context.l10n;
     final cubit = context.read<LocaleCubit>();
+    final currentValue = cubit.state.locale?.languageCode ?? 'system';
 
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (context) => Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: shad.AlertDialog(
-              barrierColor: Colors.transparent,
-              title: Text(l10n.settingsLanguage),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.clearLocale());
-                      Navigator.pop(context);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.settings_outlined),
-                        const shad.Gap(8),
-                        Text(l10n.settingsLanguageSystem),
-                      ],
-                    ),
-                  ),
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.setLocale(const Locale('en')));
-                      Navigator.pop(context);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.translate_outlined),
-                        const shad.Gap(8),
-                        Text(l10n.settingsLanguageEnglish),
-                      ],
-                    ),
-                  ),
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.setLocale(const Locale('vi')));
-                      Navigator.pop(context);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.translate_outlined),
-                        const shad.Gap(8),
-                        Text(l10n.settingsLanguageVietnamese),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+    final selected = await showSettingsChoiceDialog<String>(
+      context: context,
+      title: l10n.settingsLanguage,
+      description: l10n.settingsLanguageDescription,
+      currentValue: currentValue,
+      options: [
+        SettingsChoiceOption(
+          value: 'system',
+          label: l10n.settingsLanguageSystem,
+          icon: Icons.settings_suggest_rounded,
+          description: l10n.settingsLanguageSystemDescription,
         ),
-      ),
+        SettingsChoiceOption(
+          value: 'en',
+          label: l10n.settingsLanguageEnglish,
+          icon: Icons.translate_rounded,
+        ),
+        SettingsChoiceOption(
+          value: 'vi',
+          label: l10n.settingsLanguageVietnamese,
+          icon: Icons.translate_rounded,
+        ),
+      ],
     );
+
+    if (selected == null || !mounted) {
+      return;
+    }
+
+    if (selected == 'system') {
+      await cubit.clearLocale();
+      return;
+    }
+
+    await cubit.setLocale(Locale(selected));
   }
 
-  void _showSignOutDialog(BuildContext context) {
-    final l10n = context.l10n;
-
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (dialogContext) => Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: shad.AlertDialog(
-              barrierColor: Colors.transparent,
-              title: Text(l10n.settingsSignOut),
-              content: Text(l10n.settingsSignOutConfirm),
-              actions: [
-                shad.OutlineButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(l10n.profileCancel),
-                ),
-                shad.DestructiveButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                    unawaited(context.read<AuthCubit>().signOut());
-                  },
-                  child: Text(l10n.settingsSignOut),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+  Future<void> _showSignOutDialog() async {
+    final authCubit = context.read<AuthCubit>();
+    final confirmed = await showSettingsConfirmationDialog(
+      context: context,
+      title: context.l10n.settingsSignOut,
+      description: context.l10n.settingsSignOutConfirm,
+      confirmLabel: context.l10n.settingsSignOut,
+      isDestructive: true,
+      icon: Icons.logout_rounded,
     );
+
+    if (confirmed == true && context.mounted) {
+      await authCubit.signOut();
+    }
   }
 
-  void _showThemeDialog(BuildContext context) {
+  Future<void> _showThemeDialog() async {
     final l10n = context.l10n;
     final cubit = context.read<ThemeCubit>();
 
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (context) => Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: shad.AlertDialog(
-              barrierColor: Colors.transparent,
-              title: Text(l10n.settingsTheme),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.setThemeMode(shad.ThemeMode.light));
-                      Navigator.pop(context);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.light_mode_outlined),
-                        const shad.Gap(8),
-                        Text(l10n.settingsThemeLight),
-                      ],
-                    ),
-                  ),
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.setThemeMode(shad.ThemeMode.dark));
-                      Navigator.pop(context);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.dark_mode_outlined),
-                        const shad.Gap(8),
-                        Text(l10n.settingsThemeDark),
-                      ],
-                    ),
-                  ),
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.setThemeMode(shad.ThemeMode.system));
-                      Navigator.pop(context);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.settings_outlined),
-                        const shad.Gap(8),
-                        Text(l10n.settingsThemeSystem),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+    final selected = await showSettingsChoiceDialog<shad.ThemeMode>(
+      context: context,
+      title: l10n.settingsTheme,
+      description: l10n.settingsThemeDescription,
+      currentValue: cubit.state.themeMode,
+      options: [
+        SettingsChoiceOption(
+          value: shad.ThemeMode.system,
+          label: l10n.settingsThemeSystem,
+          icon: Icons.brightness_auto_rounded,
+          description: l10n.settingsThemeSystemDescription,
         ),
-      ),
+        SettingsChoiceOption(
+          value: shad.ThemeMode.light,
+          label: l10n.settingsThemeLight,
+          icon: Icons.light_mode_rounded,
+        ),
+        SettingsChoiceOption(
+          value: shad.ThemeMode.dark,
+          label: l10n.settingsThemeDark,
+          icon: Icons.dark_mode_rounded,
+        ),
+      ],
     );
+
+    if (selected != null && mounted) {
+      await cubit.setThemeMode(selected);
+    }
   }
 
   String _themeDisplayName(shad.ThemeMode mode, AppLocalizations l10n) {
@@ -323,51 +424,278 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
-class _AppVersionItem extends StatefulWidget {
-  const _AppVersionItem();
+class _AboutSection extends StatelessWidget {
+  const _AboutSection({required this.packageInfo});
 
-  @override
-  State<_AppVersionItem> createState() => _AppVersionItemState();
-}
-
-class _AppVersionItemState extends State<_AppVersionItem> {
-  late final Future<PackageInfo> _packageInfoFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _packageInfoFuture = PackageInfo.fromPlatform();
-  }
+  final PackageInfo? packageInfo;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return FutureBuilder<PackageInfo>(
-      future: _packageInfoFuture,
-      builder: (context, snapshot) {
-        final packageInfo = snapshot.data;
-        final versionLabel = _formatVersionLabel(packageInfo);
-
-        return SettingsPage.buildSettingsItem(
-          context,
-          icon: Icons.info_outline,
+    return SettingsSection(
+      title: l10n.settingsAboutSectionTitle,
+      description: l10n.settingsAboutSectionDescription,
+      children: [
+        SettingsTile(
+          icon: Icons.info_outline_rounded,
           title: l10n.settingsAppVersion,
-          subtitle: versionLabel,
+          value: _formatVersionLabel(packageInfo),
+          subtitle: l10n.settingsVersionTileDescription,
           showChevron: false,
-        );
-      },
+        ),
+      ],
     );
   }
+}
 
-  String _formatVersionLabel(PackageInfo? packageInfo) {
-    if (packageInfo == null) return '...';
+class _PreferencesSection extends StatelessWidget {
+  const _PreferencesSection({
+    required this.themeLabel,
+    required this.languageLabel,
+    required this.calendarLabel,
+    required this.onChangeLanguage,
+    required this.onChangeTheme,
+    required this.onChangeFirstDayOfWeek,
+  });
 
-    final buildNumber = packageInfo.buildNumber.trim();
-    if (buildNumber.isEmpty) {
-      return packageInfo.version;
-    }
+  final String themeLabel;
+  final String languageLabel;
+  final String calendarLabel;
+  final VoidCallback onChangeLanguage;
+  final VoidCallback onChangeTheme;
+  final VoidCallback onChangeFirstDayOfWeek;
 
-    return '${packageInfo.version} ($buildNumber)';
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return SettingsSection(
+      title: l10n.settingsPreferencesSectionTitle,
+      description: l10n.settingsPreferencesSectionDescription,
+      children: [
+        SettingsTile(
+          icon: Icons.palette_outlined,
+          title: l10n.settingsTheme,
+          subtitle: l10n.settingsThemeDescription,
+          value: themeLabel,
+          onTap: onChangeTheme,
+        ),
+        SettingsTile(
+          icon: Icons.language_rounded,
+          title: l10n.settingsLanguage,
+          subtitle: l10n.settingsLanguageDescription,
+          value: languageLabel,
+          onTap: onChangeLanguage,
+        ),
+        SettingsTile(
+          icon: Icons.calendar_today_outlined,
+          title: l10n.settingsFirstDayOfWeek,
+          subtitle: l10n.settingsFirstDayOfWeekDescription,
+          value: calendarLabel,
+          onTap: onChangeFirstDayOfWeek,
+        ),
+      ],
+    );
   }
+}
+
+class _SettingsHeroCard extends StatelessWidget {
+  const _SettingsHeroCard({
+    required this.profile,
+    required this.isRefreshing,
+    required this.currentWorkspace,
+    required this.defaultWorkspace,
+  });
+
+  final UserProfile? profile;
+  final bool isRefreshing;
+  final Workspace? currentWorkspace;
+  final Workspace? defaultWorkspace;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final l10n = context.l10n;
+    final authEmail = context.select<AuthCubit, String?>(
+      (cubit) => cubit.state.user?.email,
+    );
+    final displayName = profile?.displayName?.trim().isNotEmpty ?? false
+        ? profile!.displayName!.trim()
+        : profile?.fullName?.trim().isNotEmpty ?? false
+        ? profile!.fullName!.trim()
+        : authEmail ?? l10n.settingsTitle;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.18),
+            theme.colorScheme.card,
+            theme.colorScheme.secondary.withValues(alpha: 0.16),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.7),
+        ),
+      ),
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ProfileAvatar(profile: profile, fallbackEmail: authEmail),
+              const shad.Gap(14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.settingsTitle,
+                      style: theme.typography.h3.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const shad.Gap(6),
+                    Text(
+                      displayName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const shad.Gap(2),
+                    Text(
+                      profile?.email ?? authEmail ?? l10n.settingsNoEmail,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isRefreshing)
+                const SizedBox.square(
+                  dimension: 16,
+                  child: shad.CircularProgressIndicator(),
+                ),
+            ],
+          ),
+          const shad.Gap(16),
+          Text(
+            l10n.settingsHeroDescription,
+            style: theme.typography.textSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.profile,
+    required this.fallbackEmail,
+  });
+
+  final UserProfile? profile;
+  final String? fallbackEmail;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final source =
+        profile?.displayName ?? profile?.fullName ?? fallbackEmail ?? '?';
+    final initials = source.trim().isEmpty
+        ? '?'
+        : source.trim()[0].toUpperCase();
+
+    return Container(
+      width: 66,
+      height: 66,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      alignment: Alignment.center,
+      child: profile?.avatarUrl?.trim().isNotEmpty ?? false
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.network(
+                profile!.avatarUrl!,
+                width: 66,
+                height: 66,
+                fit: BoxFit.cover,
+              ),
+            )
+          : Text(
+              initials,
+              style: theme.typography.h3.copyWith(fontWeight: FontWeight.w800),
+            ),
+    );
+  }
+}
+
+class _WorkspaceSection extends StatelessWidget {
+  const _WorkspaceSection({
+    required this.onSelectCurrentWorkspace,
+    required this.onSelectDefaultWorkspace,
+  });
+
+  final VoidCallback onSelectCurrentWorkspace;
+  final VoidCallback onSelectDefaultWorkspace;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final workspaceState = context.watch<WorkspaceCubit>().state;
+
+    return SettingsSection(
+      title: l10n.settingsWorkspaceSectionTitle,
+      description: l10n.settingsWorkspaceSectionDescription,
+      children: [
+        SettingsTile(
+          icon: Icons.apartment_rounded,
+          title: l10n.settingsCurrentWorkspace,
+          subtitle: l10n.settingsCurrentWorkspaceDescription,
+          value:
+              workspaceState.currentWorkspace?.name ??
+              l10n.settingsNoWorkspaceSelected,
+          onTap: onSelectCurrentWorkspace,
+        ),
+        SettingsTile(
+          icon: Icons.home_work_outlined,
+          title: l10n.settingsDefaultWorkspace,
+          subtitle: l10n.settingsDefaultWorkspaceDescription,
+          value:
+              workspaceState.defaultWorkspace?.name ??
+              l10n.settingsNoWorkspaceSelected,
+          onTap: onSelectDefaultWorkspace,
+        ),
+      ],
+    );
+  }
+}
+
+String _formatVersionLabel(PackageInfo? packageInfo) {
+  if (packageInfo == null) {
+    return '...';
+  }
+
+  final buildNumber = packageInfo.buildNumber.trim();
+  if (buildNumber.isEmpty) {
+    return packageInfo.version;
+  }
+
+  return '${packageInfo.version} ($buildNumber)';
 }

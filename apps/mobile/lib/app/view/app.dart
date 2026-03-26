@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/theme/colors.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/version_check_repository.dart';
@@ -135,13 +136,17 @@ class _AppState extends State<App> {
                 return shad.ShadcnApp.router(
                   debugShowCheckedModeBanner: false,
                   theme: shad.ThemeData(
-                    colorScheme: shad.ColorSchemes.lightZinc,
+                    colorScheme: shad.ColorSchemes.lightZinc.copyWith(
+                      destructive: () => AppColors.destructiveLight,
+                    ),
                     typography: const shad.Typography.geist().copyWith(
                       sans: () => const TextStyle(fontFamily: 'NotoSans'),
                     ),
                   ),
                   darkTheme: shad.ThemeData.dark(
-                    colorScheme: shad.ColorSchemes.darkZinc,
+                    colorScheme: shad.ColorSchemes.darkZinc.copyWith(
+                      destructive: () => AppColors.destructiveDark,
+                    ),
                     typography: const shad.Typography.geist().copyWith(
                       sans: () => const TextStyle(fontFamily: 'NotoSans'),
                     ),

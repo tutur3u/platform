@@ -14,6 +14,7 @@ class WorkspaceRepository {
 
   final ApiClient _api;
   static const _selectedKey = 'selected-workspace';
+  static const _defaultWorkspaceIdKey = 'default-workspace-id';
 
   /// Fetches workspaces the current user belongs to.
   Future<List<Workspace>> getWorkspaces() async {
@@ -99,6 +100,14 @@ class WorkspaceRepository {
         .from('user_private_details')
         .update({'default_workspace_id': workspaceId})
         .eq('user_id', userId);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_defaultWorkspaceIdKey, workspaceId);
+  }
+
+  Future<String?> loadDefaultWorkspaceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_defaultWorkspaceIdKey);
   }
 
   /// Fetches a single workspace by ID.
@@ -138,6 +147,7 @@ class WorkspaceRepository {
   Future<void> clearSelectedWorkspace() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_selectedKey);
+    await prefs.remove(_defaultWorkspaceIdKey);
   }
 
   /// Fetches workspace creation limits for the current user.

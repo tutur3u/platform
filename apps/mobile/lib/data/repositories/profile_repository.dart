@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -5,6 +6,7 @@ import 'package:mime/mime.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Repository for profile operations.
 class ProfileRepository {
@@ -23,6 +25,8 @@ class ProfileRepository {
   final http.Client _httpClient;
   final bool _ownsApiClient;
   final bool _ownsHttpClient;
+  static const _cachedProfileKey = 'cached-user-profile';
+  static const _cachedProfileFetchedAtKey = 'cached-user-profile-fetched-at';
 
   void dispose() {
     if (_ownsApiClient) {
@@ -63,6 +67,42 @@ class ProfileRepository {
     } on Exception catch (e) {
       return (profile: null, error: e.toString());
     }
+  }
+
+  Future<({UserProfile? profile, DateTime? fetchedAt})>
+  getCachedProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_cachedProfileKey);
+    final fetchedAtRaw = prefs.getString(_cachedProfileFetchedAtKey);
+    if (raw == null) {
+      return (profile: null, fetchedAt: null);
+    }
+
+    try {
+      return (
+        profile: UserProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>),
+        fetchedAt: fetchedAtRaw == null
+            ? null
+            : DateTime.tryParse(fetchedAtRaw),
+      );
+    } on Object {
+      return (profile: null, fetchedAt: null);
+    }
+  }
+
+  Future<void> saveCachedProfile(UserProfile profile) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_cachedProfileKey, jsonEncode(profile.toJson()));
+    await prefs.setString(
+      _cachedProfileFetchedAtKey,
+      DateTime.now().toIso8601String(),
+    );
+  }
+
+  Future<void> clearCachedProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_cachedProfileKey);
+    await prefs.remove(_cachedProfileFetchedAtKey);
   }
 
   /// Removes avatar.

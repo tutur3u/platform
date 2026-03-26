@@ -2875,6 +2875,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerPomodoroSettings => 'Pomodoro settings';
 
   @override
+  String get timerPomodoroSettingsDescription => 'Tune focus sessions, breaks, and the automation between them.';
+
+  @override
   String get timerFocusTime => 'Focus time';
 
   @override
@@ -3331,16 +3334,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get settingsAccountTab => 'Account';
+
+  @override
+  String get settingsPreferencesTab => 'Preferences';
+
+  @override
+  String get settingsAboutTab => 'About';
+
+  @override
+  String get settingsLicensesTab => 'Licenses';
+
+  @override
   String get settingsProfile => 'Profile';
 
   @override
+  String get settingsProfileDescription => 'Manage your personal details and avatar.';
+
+  @override
   String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageDescription => 'Choose the language used throughout the app.';
 
   @override
   String get settingsAppVersion => 'App version';
 
   @override
   String get settingsLanguageSystem => 'System default';
+
+  @override
+  String get settingsLanguageSystemDescription => 'Follow your device language automatically.';
 
   @override
   String get settingsLanguageEnglish => 'English';
@@ -3352,6 +3376,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTheme => 'Theme';
 
   @override
+  String get settingsThemeDescription => 'Adjust the app appearance for your device and preference.';
+
+  @override
   String get settingsThemeLight => 'Light';
 
   @override
@@ -3361,7 +3388,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsThemeSystem => 'System';
 
   @override
+  String get settingsThemeSystemDescription => 'Match your device appearance automatically.';
+
+  @override
   String get settingsSwitchWorkspace => 'Switch workspace';
+
+  @override
+  String get settingsSwitchWorkspaceDescription => 'Move between personal and team contexts.';
 
   @override
   String get settingsCalendar => 'Calendar';
@@ -3370,7 +3403,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsFirstDayOfWeek => 'First day of week';
 
   @override
+  String get settingsFirstDayOfWeekDescription => 'Control how calendars and weekly summaries start.';
+
+  @override
   String get settingsFirstDayAuto => 'Auto';
+
+  @override
+  String get settingsFirstDayAutoDescription => 'Use your workspace or locale defaults when available.';
 
   @override
   String get settingsFirstDaySunday => 'Sunday';
@@ -3382,19 +3421,154 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsFirstDaySaturday => 'Saturday';
 
   @override
+  String get settingsHeroDescription => 'Personal setup, workspace context, and release details in one place.';
+
+  @override
+  String get settingsSignedInAs => 'Signed in as';
+
+  @override
+  String get settingsCurrentWorkspace => 'Current workspace';
+
+  @override
+  String get settingsCurrentWorkspaceDescription => 'Choose the workspace you are using right now.';
+
+  @override
+  String get settingsDefaultWorkspace => 'Default workspace';
+
+  @override
+  String get settingsDefaultWorkspaceDescription => 'The app opens here by default on every launch.';
+
+  @override
+  String get settingsNoEmail => 'No email available';
+
+  @override
+  String get settingsNoWorkspaceSelected => 'No workspace selected';
+
+  @override
+  String get settingsWorkspaceActive => 'Active';
+
+  @override
+  String get settingsAccountSectionTitle => 'Account';
+
+  @override
+  String get settingsAccountSectionDescription => 'Profile access and session controls.';
+
+  @override
+  String get settingsWorkspaceSectionTitle => 'Workspace';
+
+  @override
+  String get settingsWorkspaceSectionDescription => 'See your current context and switch when needed.';
+
+  @override
+  String get settingsPreferencesSectionTitle => 'Preferences';
+
+  @override
+  String get settingsPreferencesSectionDescription => 'Language, appearance, and calendar defaults.';
+
+  @override
+  String get settingsDangerSectionTitle => 'Session';
+
+  @override
+  String get settingsDangerSectionDescription => 'Sign out and end access on this device.';
+
+  @override
+  String get settingsQuickOpenProfile => 'Open profile';
+
+  @override
+  String get settingsQuickSwitchWorkspace => 'Switch current';
+
+  @override
+  String get settingsQuickDefaultWorkspace => 'Default workspace';
+
+  @override
+  String get settingsDataStatusLabel => 'Data';
+
+  @override
+  String get settingsDataStatusLive => 'Live';
+
+  @override
+  String get settingsDataStatusCached => 'Cached';
+
+  @override
+  String get settingsDataStatusRefreshing => 'Refreshing';
+
+  @override
+  String get settingsPullToRefreshAction => 'Refresh now';
+
+  @override
   String get settingsSignOut => 'Sign out';
+
+  @override
+  String get settingsSignOutDescription => 'End your session on this device.';
 
   @override
   String get settingsSignOutConfirm => 'Are you sure you want to sign out?';
 
   @override
+  String get settingsAboutSummary => 'Tuturuuu mobile keeps your workspace tools, assistant, and day-to-day workflows within quick reach.';
+
+  @override
+  String get settingsAboutSectionTitle => 'About the app';
+
+  @override
+  String get settingsAboutSectionDescription => 'Release details and product information for this build.';
+
+  @override
+  String get settingsVersionLabel => 'Version';
+
+  @override
+  String get settingsBuildLabel => 'Build';
+
+  @override
+  String get settingsPackageLabel => 'Package';
+
+  @override
+  String get settingsVersionTileDescription => 'Installed release currently running on this device.';
+
+  @override
+  String get settingsLicensesSectionTitle => 'Open-source licenses';
+
+  @override
+  String get settingsLicensesSectionDescription => 'Review the third-party software notices bundled with the app.';
+
+  @override
+  String get settingsLicenseViewerTitle => 'Open license viewer';
+
+  @override
+  String get settingsLicenseViewerDescription => 'Browse Flutter, plugin, and package licenses included in this build.';
+
+  @override
+  String get settingsLicenseVersionDescription => 'Reference the installed version while reviewing notices.';
+
+  @override
+  String get settingsMinutesUnit => 'min';
+
+  @override
   String get profileTitle => 'Profile';
+
+  @override
+  String get profileIdentitySectionTitle => 'Identity';
+
+  @override
+  String get profileIdentitySectionDescription => 'Keep the core details people see about your account up to date.';
 
   @override
   String get profileAvatar => 'Avatar';
 
   @override
+  String get profileAvatarSet => 'Photo attached';
+
+  @override
   String get profileAvatarDescription => 'Upload your profile picture';
+
+  @override
+  String get profileAvatarSectionTitle => 'Avatar';
+
+  @override
+  String get profileAvatarActionDescription => 'Choose a new photo or refresh the one already attached.';
+
+  @override
+  String get profileAvatarPickerDescription => 'Choose where to pick your new avatar image from.';
 
   @override
   String get profileUploadAvatar => 'Upload avatar';
@@ -3406,13 +3580,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileRemoveAvatar => 'Remove avatar';
 
   @override
+  String get profileRemoveAvatarDescription => 'Delete the current photo from your account profile.';
+
+  @override
   String get profileRemoveConfirm => 'Remove avatar?';
 
   @override
   String get profileAccountStatus => 'Account status';
 
   @override
+  String get profileAccountStatusDescription => 'Membership and verification details for this account.';
+
+  @override
   String get profileStatus => 'Status';
+
+  @override
+  String get profileStatusUnknown => 'Unknown';
 
   @override
   String get profileVerification => 'Verification';
@@ -3433,6 +3616,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameHint => 'Your display name';
 
   @override
+  String get profileDisplayNameDescription => 'This name appears in collaborative surfaces across the app.';
+
+  @override
   String get profileDisplayNameRequired => 'Display name cannot be empty';
 
   @override
@@ -3440,6 +3626,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileFullNameHint => 'Your full name';
+
+  @override
+  String get profileFullNameDescription => 'Use your legal or preferred full name for account records.';
 
   @override
   String get profileFullNameRequired => 'Full name cannot be empty';
@@ -3451,6 +3640,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileEmailHint => 'example@tuturuuu.com';
 
   @override
+  String get profileEmailDescription => 'Updating your email sends confirmation to both the old and new addresses.';
+
+  @override
   String get profileInvalidEmail => 'Please enter a valid email address';
 
   @override
@@ -3458,6 +3650,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileNewEmail => 'New email';
+
+  @override
+  String get profileMissingValue => 'Not set';
+
+  @override
+  String get profileDangerAction => 'Danger';
+
+  @override
+  String profileEmailPendingChange(String email) {
+    return 'Pending change to $email';
+  }
 
   @override
   String get profileEmailUpdateNote => 'Confirmation emails will be sent to both addresses';
@@ -3493,6 +3696,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspacePickerTitle => 'Workspaces';
 
   @override
+  String get workspaceDefaultPickerTitle => 'Default workspace';
+
+  @override
+  String get workspaceCurrentBadge => 'Current';
+
+  @override
+  String get workspaceDefaultBadge => 'Default';
+
+  @override
   String get workspacePersonalBadge => 'Personal';
 
   @override
@@ -3509,6 +3721,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceCreateTitle => 'Create workspace';
+
+  @override
+  String get workspaceCreateDescription => 'Create a fresh space for projects, habits, finance, and more.';
 
   @override
   String get workspaceCreateNew => 'New';
