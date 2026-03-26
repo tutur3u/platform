@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(15);
+select plan(14);
 
 insert into public.users (id)
 values ('00000000-0000-0000-0000-00000000010A')

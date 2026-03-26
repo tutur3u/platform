@@ -1,12 +1,12 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
 import { useQueryStates } from 'nuqs';
+import { useCallback, useEffect, useState } from 'react';
 import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
@@ -101,12 +101,7 @@ export default function PostsClient({
         activeStage={activeStage}
         filteredCount={postsData?.count || 0}
         summary={postsStatus}
-        toolbar={
-          <PostsFilters
-            wsId={wsId}
-            statusSummary={postsStatus}
-          />
-        }
+        toolbar={<PostsFilters wsId={wsId} statusSummary={postsStatus} />}
       />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.95fr)] xl:items-start">

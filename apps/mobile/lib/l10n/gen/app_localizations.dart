@@ -7150,7 +7150,7 @@ abstract class AppLocalizations {
   /// No description provided for @workspaceSystemSection.
   ///
   /// In en, this message translates to:
-  /// **'System'**
+  /// **'Internal'**
   String get workspaceSystemSection;
 
   /// No description provided for @workspaceTeamSection.
