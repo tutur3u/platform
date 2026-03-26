@@ -433,7 +433,10 @@ extension _ShellPageLayout on _ShellPageState {
       height: mobileSectionAppBarHeight,
       padding: mobileSectionAppBarPadding,
       trailingGap: 6,
-      trailing: const [AvatarDropdown()],
+      trailing: [
+        ShellNotificationsActionSlot(matchedLocation: widget.matchedLocation),
+        const AvatarDropdown(),
+      ],
       child: ShellTopBarTitle(matchedLocation: widget.matchedLocation),
     );
   }

@@ -1447,6 +1447,36 @@
     "settingsBuildLabel": "Bản dựng",
     "settingsPackageLabel": "Gói",
     "settingsVersionTileDescription": "Bản phát hành hiện được cài trên thiết bị này.",
+    "settingsInfrastructureSectionTitle": "Hạ tầng",
+    "settingsInfrastructureSectionDescription": "Các điều khiển toàn nền tảng chỉ có trong không gian làm việc nội bộ.",
+    "settingsMobileVersions": "Phiên bản di động",
+    "settingsMobileVersionsTileDescription": "Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng.",
+    "settingsMobileVersionsTitle": "Phiên bản di động",
+    "settingsMobileVersionsPageDescription": "Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng có thể tiếp tục.",
+    "settingsMobileVersionsIosTitle": "iOS",
+    "settingsMobileVersionsIosDescription": "Đặt ngưỡng App Store và lời nhắc cập nhật cho người dùng iPhone và iPad.",
+    "settingsMobileVersionsAndroidTitle": "Android",
+    "settingsMobileVersionsAndroidDescription": "Đặt ngưỡng Play Store và lời nhắc cập nhật cho người dùng Android.",
+    "settingsMobileVersionsEffectiveVersion": "Phiên bản hiệu lực",
+    "settingsMobileVersionsEffectiveVersionDescription": "Các phiên bản thấp hơn ngưỡng này sẽ thấy lời nhắc cập nhật.",
+    "settingsMobileVersionsMinimumVersion": "Phiên bản tối thiểu",
+    "settingsMobileVersionsMinimumVersionDescription": "Các phiên bản thấp hơn ngưỡng này buộc phải cập nhật mới được tiếp tục.",
+    "settingsMobileVersionsStoreUrl": "URL cửa hàng",
+    "settingsMobileVersionsStoreUrlDescription": "Bắt buộc khi đặt một trong hai ngưỡng phiên bản.",
+    "settingsMobileVersionsVersionPlaceholder": "1.2.3",
+    "settingsMobileVersionsStoreUrlPlaceholder": "https://apps.apple.com/app/id123456789",
+    "settingsMobileVersionsSave": "Lưu thay đổi",
+    "settingsMobileVersionsSaving": "Đang lưu...",
+    "settingsMobileVersionsSaveSuccess": "Đã lưu chính sách phiên bản di động.",
+    "settingsMobileVersionsSaveError": "Không thể lưu chính sách phiên bản di động.",
+    "settingsMobileVersionsLoadError": "Không thể tải chính sách phiên bản di động.",
+    "settingsMobileVersionsWorkspaceRequiredTitle": "Cần không gian nội bộ",
+    "settingsMobileVersionsWorkspaceRequiredDescription": "Chuyển sang không gian làm việc nội bộ để quản lý chính sách phiên bản di động của nền tảng.",
+    "settingsMobileVersionsAccessDeniedTitle": "Cần quyền truy cập",
+    "settingsMobileVersionsAccessDeniedDescription": "Bạn cần quyền quản lý vai trò trong không gian làm việc nội bộ để quản lý chính sách phiên bản di động.",
+    "settingsMobileVersionsValidationVersionFormat": "Dùng định dạng phiên bản x.y.z.",
+    "settingsMobileVersionsValidationStoreUrlRequired": "URL cửa hàng là bắt buộc khi có đặt phiên bản.",
+    "settingsMobileVersionsValidationEffectiveAtLeastMinimum": "Phiên bản hiệu lực phải lớn hơn hoặc bằng phiên bản tối thiểu.",
     "settingsLicensesSectionTitle": "Giấy phép mã nguồn mở",
     "settingsLicensesSectionDescription": "Xem các thông báo phần mềm bên thứ ba được đóng gói trong ứng dụng.",
     "settingsLicenseViewerTitle": "Mở trình xem giấy phép",
@@ -1537,6 +1567,53 @@
         "placeholders": {
             "current": { "type": "int" },
             "limit": { "type": "int" }
+        }
+    },
+
+    "notificationsTitle": "Thông báo",
+    "notificationsSubtitle": "{count} chưa đọc",
+    "@notificationsSubtitle": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsInbox": "Hộp thư",
+    "notificationsArchive": "Lưu trữ",
+    "notificationsArchiveAll": "Lưu trữ tất cả",
+    "notificationsArchiveAllError": "Không thể lưu trữ thông báo lúc này",
+    "notificationsMarkRead": "Đánh dấu đã đọc",
+    "notificationsMarkUnread": "Đánh dấu chưa đọc",
+    "notificationsLoadingMore": "Đang tải thêm...",
+    "notificationsInboxEmptyTitle": "Không có thông báo chưa đọc",
+    "notificationsInboxEmptyMessage": "Hoạt động mới, nhắc đến và lời mời sẽ xuất hiện ở đây.",
+    "notificationsArchiveEmptyTitle": "Không có thông báo đã lưu trữ",
+    "notificationsArchiveEmptyMessage": "Thông báo đã đọc sẽ chuyển vào đây sau khi bạn xử lý xong.",
+    "notificationsLoadErrorTitle": "Không thể tải thông báo",
+    "notificationsLoadErrorMessage": "Vui lòng thử lại sau ít phút.",
+    "notificationsAcceptInvite": "Chấp nhận",
+    "notificationsDeclineInvite": "Từ chối",
+    "notificationsInviteAccepted": "Đã chấp nhận lời mời",
+    "notificationsInviteDeclined": "Đã từ chối lời mời",
+    "notificationsInviteActionError": "Không thể cập nhật lời mời lúc này",
+    "notificationsOpenAction": "Mở công việc",
+    "notificationsOpenUnsupported": "Thông báo này chưa thể mở trên mobile",
+    "notificationsJustNow": "Vừa xong",
+    "notificationsMinutesAgo": "{count} phút trước",
+    "@notificationsMinutesAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsHoursAgo": "{count} giờ trước",
+    "@notificationsHoursAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "notificationsDaysAgo": "{count} ngày trước",
+    "@notificationsDaysAgo": {
+        "placeholders": {
+            "count": { "type": "int" }
         }
     },
 

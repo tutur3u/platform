@@ -21,6 +21,7 @@ import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
 import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
@@ -279,6 +280,10 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.settings,
             builder: (context, state) => const SettingsPage(),
+          ),
+          GoRoute(
+            path: Routes.settingsMobileVersions,
+            builder: (context, state) => const MobileVersionSettingsPage(),
           ),
           GoRoute(
             path: Routes.timerRequests,

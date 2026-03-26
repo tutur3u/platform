@@ -6,6 +6,7 @@ const manageTimeTrackingRequestsPermission = 'manage_time_tracking_requests';
 const bypassTimeTrackingRequestApprovalPermission =
     'bypass_time_tracking_request_approval';
 const manageWorkspaceSettingsPermission = 'manage_workspace_settings';
+const manageWorkspaceRolesPermission = 'manage_workspace_roles';
 const String _workspaceRolePermissionsPrefix = 'workspace_roles!inner(';
 const String _workspaceRolePermissionsSuffix =
     'workspace_role_permissions(permission, enabled))';
