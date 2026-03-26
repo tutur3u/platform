@@ -27,7 +27,9 @@ Future<T?> showAdaptiveSheet<T>({
       useSafeArea: useSafeArea,
       builder: (sheetContext) => BackButtonListener(
         onBackButtonPressed: () async {
-          if (sheetContext.mounted) Navigator.pop(sheetContext);
+          if (sheetContext.mounted) {
+            await Navigator.maybePop(sheetContext);
+          }
           return true;
         },
         child: builder(sheetContext),
@@ -39,7 +41,9 @@ Future<T?> showAdaptiveSheet<T>({
     context: context,
     builder: (dialogContext) => BackButtonListener(
       onBackButtonPressed: () async {
-        if (dialogContext.mounted) Navigator.pop(dialogContext);
+        if (dialogContext.mounted) {
+          await Navigator.maybePop(dialogContext);
+        }
         return true;
       },
       child: Center(
@@ -90,7 +94,9 @@ Future<void> showAdaptiveDrawer({
     context: context,
     builder: (dialogContext) => BackButtonListener(
       onBackButtonPressed: () async {
-        if (dialogContext.mounted) Navigator.pop(dialogContext);
+        if (dialogContext.mounted) {
+          await Navigator.maybePop(dialogContext);
+        }
         return true;
       },
       child: Center(

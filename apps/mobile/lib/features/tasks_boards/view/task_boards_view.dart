@@ -519,11 +519,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                 return InkWell(
                   onTap: () {
                     cubit.setFilter(filter);
-                    if (drawerContext.isCompact) {
-                      unawaited(shad.closeOverlay<void>(drawerContext));
-                    } else {
-                      Navigator.pop(drawerContext);
-                    }
+                    unawaited(Navigator.maybePop(drawerContext));
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(

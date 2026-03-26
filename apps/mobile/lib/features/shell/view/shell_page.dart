@@ -146,6 +146,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     final rootNav = Navigator.of(context, rootNavigator: true);
     if (rootNav.canPop()) {
       _debugBack('WidgetsBinding.didPopRoute.popNavigatorDialog');
+      _lastBackDispatchAt = DateTime.now();
       rootNav.pop();
       return true;
     }
@@ -179,6 +180,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
         final rootNav = Navigator.of(context, rootNavigator: true);
         if (rootNav.canPop()) {
           _debugBack('BackButtonListener.popNavigatorDialog');
+          _lastBackDispatchAt = DateTime.now();
           rootNav.pop();
           return true;
         }
