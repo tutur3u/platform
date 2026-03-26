@@ -160,6 +160,7 @@ export function useProgressiveBoardLoader(
         (_, index) => index
       );
 
+      const requestStartedAt = Date.now();
       const pageResults = await Promise.all(
         pageIndices.map((page) =>
           listWorkspaceTasks(wsId, {
@@ -181,10 +182,55 @@ export function useProgressiveBoardLoader(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           const existing = old ?? [];
-          const withoutTargetList = existing.filter(
-            (task) => task.list_id !== listId
+          const incomingById = new Map(
+            mergedListTasks.map((task) => [task.id, task] as const)
           );
-          return [...withoutTargetList, ...mergedListTasks];
+
+          const merged: Task[] = [];
+
+          const hasFreshLocalMutation = (task: Task) => {
+            const localTask = task as Task & { _localMutationAt?: number };
+            const localMutationAt = localTask._localMutationAt;
+            return (
+              typeof localMutationAt === 'number' &&
+              localMutationAt > requestStartedAt &&
+              Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS
+            );
+          };
+
+          for (const task of existing) {
+            const incomingTask = incomingById.get(task.id);
+            if (incomingTask) {
+              incomingById.delete(task.id);
+
+              if (
+                task.list_id !== incomingTask.list_id &&
+                hasFreshLocalMutation(task)
+              ) {
+                merged.push(task);
+                continue;
+              }
+
+              const sanitizedTask = {
+                ...(task as Task & { _localMutationAt?: number }),
+              };
+              delete sanitizedTask._localMutationAt;
+
+              merged.push({ ...sanitizedTask, ...incomingTask });
+              continue;
+            }
+
+            if (task.list_id !== listId) {
+              merged.push(task);
+              continue;
+            }
+
+            if (hasFreshLocalMutation(task)) {
+              merged.push(task);
+            }
+          }
+
+          return [...merged, ...incomingById.values()];
         }
       );
 

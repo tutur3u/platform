@@ -289,7 +289,7 @@ export function BoardViews({
       tasks.map((task) => [task.id, task] as const)
     );
     const merged = fullTasks.map(
-      (task) => progressiveById.get(task.id) ?? task
+      (task) => ({ ...(progressiveById.get(task.id) ?? {}), ...task }) as Task
     );
 
     for (const task of tasks) {
