@@ -215,3 +215,44 @@ export type QueueClaimUpdate = Pick<
 export type QueueClaimedRow = Omit<PostEmailQueueRow, 'status'> & {
   status: 'processing';
 };
+
+export type EligibleRecipientsDiagnostics = {
+  eligibleRecipients: number;
+  missingCompletion: number;
+  missingEmail: number;
+  missingUserRecord: number;
+  notApproved: number;
+  rowsWithUserData: number;
+  totalCheckRows: number;
+};
+
+export type EnqueueApprovedPostEmailsDiagnostics = {
+  alreadySent: number;
+  eligibleRecipients: number;
+  existingProcessing: number;
+  existingQueued: number;
+  existingSkipped: number;
+  missingCompletion: number;
+  missingEmail: number;
+  missingSenderPlatformUser: number;
+  missingUserRecord: number;
+  notApproved: number;
+  upserted: number;
+};
+
+export type ReconcileOrphanedApprovedPostsDiagnostics = {
+  alreadySent: number;
+  checked: number;
+  coveredByExistingQueue: number;
+  eligibleRecipients: number;
+  existingProcessing: number;
+  existingQueued: number;
+  existingSkipped: number;
+  missingCompletion: number;
+  missingEmail: number;
+  missingSenderPlatformUser: number;
+  missingUserRecord: number;
+  notApproved: number;
+  orphaned: number;
+  upserted: number;
+};

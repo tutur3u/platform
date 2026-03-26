@@ -1,4 +1,9 @@
-import type { QueueIdPostRow, QueueIdPostUserRow } from './types';
+import type {
+  EligibleRecipientsDiagnostics,
+  EnqueueApprovedPostEmailsDiagnostics,
+  QueueIdPostRow,
+  QueueIdPostUserRow,
+} from './types';
 import { isValidEmailAddress } from './utils';
 
 export type QueuePostRow = QueueIdPostRow;
@@ -20,6 +25,91 @@ export type SentPairRow = {
   post_id: string;
   receiver_id: string;
 };
+
+export type EligibleRecipientDiagnosticsInput = {
+  eligibleRecipients: number;
+  invalidEmail: number;
+  missingEmail: number;
+  missingFromUserTable: number;
+  missingIsCompleted: number;
+  missingUserObject: number;
+  notApproved: number;
+  rowsWithUserData: number;
+  totalCheckRows: number;
+};
+
+export type ExistingRecipientStatusRow = {
+  status: string;
+  user_id: string;
+};
+
+export function buildEligibleRecipientsDiagnostics({
+  eligibleRecipients,
+  invalidEmail,
+  missingEmail,
+  missingFromUserTable,
+  missingIsCompleted,
+  missingUserObject,
+  notApproved,
+  rowsWithUserData,
+  totalCheckRows,
+}: EligibleRecipientDiagnosticsInput): EligibleRecipientsDiagnostics {
+  return {
+    eligibleRecipients,
+    missingCompletion: missingIsCompleted,
+    missingEmail: missingEmail + invalidEmail,
+    missingUserRecord: missingFromUserTable + missingUserObject,
+    notApproved,
+    rowsWithUserData,
+    totalCheckRows,
+  };
+}
+
+export function buildEnqueueApprovedPostEmailsDiagnostics({
+  existingRows,
+  missingSenderPlatformUser,
+  recipientDiagnostics,
+  sentRecipientIds,
+  upserted,
+}: {
+  existingRows: ExistingRecipientStatusRow[];
+  missingSenderPlatformUser: number;
+  recipientDiagnostics: EligibleRecipientsDiagnostics;
+  sentRecipientIds: Iterable<string>;
+  upserted: number;
+}): EnqueueApprovedPostEmailsDiagnostics {
+  const sentSet = new Set(sentRecipientIds);
+  let alreadySent = sentSet.size;
+  let existingQueued = 0;
+  let existingProcessing = 0;
+  let existingSkipped = 0;
+
+  for (const row of existingRows) {
+    if (row.status === 'queued') {
+      existingQueued++;
+    } else if (row.status === 'processing') {
+      existingProcessing++;
+    } else if (row.status === 'skipped') {
+      existingSkipped++;
+    } else if (row.status === 'sent' && !sentSet.has(row.user_id)) {
+      alreadySent++;
+    }
+  }
+
+  return {
+    alreadySent,
+    eligibleRecipients: recipientDiagnostics.eligibleRecipients,
+    existingProcessing,
+    existingQueued,
+    existingSkipped,
+    missingCompletion: recipientDiagnostics.missingCompletion,
+    missingEmail: recipientDiagnostics.missingEmail,
+    missingSenderPlatformUser,
+    missingUserRecord: recipientDiagnostics.missingUserRecord,
+    notApproved: recipientDiagnostics.notApproved,
+    upserted,
+  };
+}
 
 export function getQueueIdsForOldPosts(
   candidateRows: QueuePostRow[],

@@ -11,15 +11,11 @@ import type { PostEmail } from './types';
 
 export default function PostsRowActions({ data }: { data: PostEmail }) {
   const t = useTranslations('post-email-data-table');
-  const {
-    icon: QueueIcon,
-    className: queueClassName,
-    iconClassName,
-    labelKey: queueLabelKey,
-  } = getPostEmailStatusAppearance(data.queue_status);
-
   const approvalAppearance = data.approval_status
     ? getPostApprovalStatusAppearance(data.approval_status)
+    : null;
+  const queueAppearance = data.queue_status
+    ? getPostEmailStatusAppearance(data.queue_status)
     : null;
 
   return (
@@ -33,10 +29,14 @@ export default function PostsRowActions({ data }: { data: PostEmail }) {
           {t(approvalAppearance.labelKey)}
         </Badge>
       )}
-      <Badge variant="outline" className={queueClassName}>
-        <QueueIcon className={cn('mr-1 h-3.5 w-3.5', iconClassName)} />
-        {t(queueLabelKey)}
-      </Badge>
+      {queueAppearance && (
+        <Badge variant="outline" className={queueAppearance.className}>
+          <queueAppearance.icon
+            className={cn('mr-1 h-3.5 w-3.5', queueAppearance.iconClassName)}
+          />
+          {t(queueAppearance.labelKey)}
+        </Badge>
+      )}
     </div>
   );
 }
