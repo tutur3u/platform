@@ -36,6 +36,8 @@ abstract final class ProfileEndpoints {
 /// Public mobile-specific endpoint paths.
 abstract final class MobileEndpoints {
   static const versionCheck = '/api/v1/mobile/version-check';
+  static const infrastructureMobileVersions =
+      '/api/v1/infrastructure/mobile-versions';
 }
 
 /// Finance endpoint paths.

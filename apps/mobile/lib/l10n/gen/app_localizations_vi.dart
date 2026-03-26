@@ -3537,6 +3537,96 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsVersionTileDescription => 'Bản phát hành hiện được cài trên thiết bị này.';
 
   @override
+  String get settingsInfrastructureSectionTitle => 'Hạ tầng';
+
+  @override
+  String get settingsInfrastructureSectionDescription => 'Các điều khiển toàn nền tảng chỉ có trong không gian làm việc nội bộ.';
+
+  @override
+  String get settingsMobileVersions => 'Phiên bản di động';
+
+  @override
+  String get settingsMobileVersionsTileDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng.';
+
+  @override
+  String get settingsMobileVersionsTitle => 'Phiên bản di động';
+
+  @override
+  String get settingsMobileVersionsPageDescription => 'Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng có thể tiếp tục.';
+
+  @override
+  String get settingsMobileVersionsIosTitle => 'iOS';
+
+  @override
+  String get settingsMobileVersionsIosDescription => 'Đặt ngưỡng App Store và lời nhắc cập nhật cho người dùng iPhone và iPad.';
+
+  @override
+  String get settingsMobileVersionsAndroidTitle => 'Android';
+
+  @override
+  String get settingsMobileVersionsAndroidDescription => 'Đặt ngưỡng Play Store và lời nhắc cập nhật cho người dùng Android.';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersion => 'Phiên bản hiệu lực';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersionDescription => 'Các phiên bản thấp hơn ngưỡng này sẽ thấy lời nhắc cập nhật.';
+
+  @override
+  String get settingsMobileVersionsMinimumVersion => 'Phiên bản tối thiểu';
+
+  @override
+  String get settingsMobileVersionsMinimumVersionDescription => 'Các phiên bản thấp hơn ngưỡng này buộc phải cập nhật mới được tiếp tục.';
+
+  @override
+  String get settingsMobileVersionsStoreUrl => 'URL cửa hàng';
+
+  @override
+  String get settingsMobileVersionsStoreUrlDescription => 'Bắt buộc khi đặt một trong hai ngưỡng phiên bản.';
+
+  @override
+  String get settingsMobileVersionsVersionPlaceholder => '1.2.3';
+
+  @override
+  String get settingsMobileVersionsStoreUrlPlaceholder => 'https://apps.apple.com/app/id123456789';
+
+  @override
+  String get settingsMobileVersionsSave => 'Lưu thay đổi';
+
+  @override
+  String get settingsMobileVersionsSaving => 'Đang lưu...';
+
+  @override
+  String get settingsMobileVersionsSaveSuccess => 'Đã lưu chính sách phiên bản di động.';
+
+  @override
+  String get settingsMobileVersionsSaveError => 'Không thể lưu chính sách phiên bản di động.';
+
+  @override
+  String get settingsMobileVersionsLoadError => 'Không thể tải chính sách phiên bản di động.';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredTitle => 'Cần không gian nội bộ';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredDescription => 'Chuyển sang không gian làm việc nội bộ để quản lý chính sách phiên bản di động của nền tảng.';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedTitle => 'Cần quyền truy cập';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedDescription => 'Bạn cần quyền quản lý vai trò trong không gian làm việc nội bộ để quản lý chính sách phiên bản di động.';
+
+  @override
+  String get settingsMobileVersionsValidationVersionFormat => 'Dùng định dạng phiên bản x.y.z.';
+
+  @override
+  String get settingsMobileVersionsValidationStoreUrlRequired => 'URL cửa hàng là bắt buộc khi có đặt phiên bản.';
+
+  @override
+  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum => 'Phiên bản hiệu lực phải lớn hơn hoặc bằng phiên bản tối thiểu.';
+
+  @override
   String get settingsLicensesSectionTitle => 'Giấy phép mã nguồn mở';
 
   @override

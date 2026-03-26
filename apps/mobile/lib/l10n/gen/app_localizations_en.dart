@@ -3543,6 +3543,96 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsVersionTileDescription => 'Installed release currently running on this device.';
 
   @override
+  String get settingsInfrastructureSectionTitle => 'Infrastructure';
+
+  @override
+  String get settingsInfrastructureSectionDescription => 'Platform-wide controls available in the internal workspace.';
+
+  @override
+  String get settingsMobileVersions => 'Mobile versions';
+
+  @override
+  String get settingsMobileVersionsTileDescription => 'Manage the effective and minimum versions enforced by the mobile app.';
+
+  @override
+  String get settingsMobileVersionsTitle => 'Mobile versions';
+
+  @override
+  String get settingsMobileVersionsPageDescription => 'Manage the effective and minimum app versions enforced by the mobile app before users can continue.';
+
+  @override
+  String get settingsMobileVersionsIosTitle => 'iOS';
+
+  @override
+  String get settingsMobileVersionsIosDescription => 'Set the App Store threshold and update prompt for iPhone and iPad users.';
+
+  @override
+  String get settingsMobileVersionsAndroidTitle => 'Android';
+
+  @override
+  String get settingsMobileVersionsAndroidDescription => 'Set the Play Store threshold and update prompt for Android users.';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersion => 'Effective version';
+
+  @override
+  String get settingsMobileVersionsEffectiveVersionDescription => 'Versions below this threshold see a recommended update prompt.';
+
+  @override
+  String get settingsMobileVersionsMinimumVersion => 'Minimum version';
+
+  @override
+  String get settingsMobileVersionsMinimumVersionDescription => 'Versions below this threshold must update before continuing.';
+
+  @override
+  String get settingsMobileVersionsStoreUrl => 'Store URL';
+
+  @override
+  String get settingsMobileVersionsStoreUrlDescription => 'Required whenever either version threshold is set.';
+
+  @override
+  String get settingsMobileVersionsVersionPlaceholder => '1.2.3';
+
+  @override
+  String get settingsMobileVersionsStoreUrlPlaceholder => 'https://apps.apple.com/app/id123456789';
+
+  @override
+  String get settingsMobileVersionsSave => 'Save changes';
+
+  @override
+  String get settingsMobileVersionsSaving => 'Saving...';
+
+  @override
+  String get settingsMobileVersionsSaveSuccess => 'Mobile version policy saved.';
+
+  @override
+  String get settingsMobileVersionsSaveError => 'Failed to save mobile version policy.';
+
+  @override
+  String get settingsMobileVersionsLoadError => 'Failed to load mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredTitle => 'Internal workspace required';
+
+  @override
+  String get settingsMobileVersionsWorkspaceRequiredDescription => 'Switch to the internal workspace to manage platform mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedTitle => 'Access required';
+
+  @override
+  String get settingsMobileVersionsAccessDeniedDescription => 'You need the workspace roles permission in the internal workspace to manage mobile version policies.';
+
+  @override
+  String get settingsMobileVersionsValidationVersionFormat => 'Use semantic version format x.y.z.';
+
+  @override
+  String get settingsMobileVersionsValidationStoreUrlRequired => 'Store URL is required when a version is set.';
+
+  @override
+  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum => 'Effective version must be greater than or equal to the minimum version.';
+
+  @override
   String get settingsLicensesSectionTitle => 'Open-source licenses';
 
   @override

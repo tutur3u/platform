@@ -6775,6 +6775,186 @@ abstract class AppLocalizations {
   /// **'Installed release currently running on this device.'**
   String get settingsVersionTileDescription;
 
+  /// No description provided for @settingsInfrastructureSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Infrastructure'**
+  String get settingsInfrastructureSectionTitle;
+
+  /// No description provided for @settingsInfrastructureSectionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform-wide controls available in the internal workspace.'**
+  String get settingsInfrastructureSectionDescription;
+
+  /// No description provided for @settingsMobileVersions.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile versions'**
+  String get settingsMobileVersions;
+
+  /// No description provided for @settingsMobileVersionsTileDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage the effective and minimum versions enforced by the mobile app.'**
+  String get settingsMobileVersionsTileDescription;
+
+  /// No description provided for @settingsMobileVersionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile versions'**
+  String get settingsMobileVersionsTitle;
+
+  /// No description provided for @settingsMobileVersionsPageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage the effective and minimum app versions enforced by the mobile app before users can continue.'**
+  String get settingsMobileVersionsPageDescription;
+
+  /// No description provided for @settingsMobileVersionsIosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'iOS'**
+  String get settingsMobileVersionsIosTitle;
+
+  /// No description provided for @settingsMobileVersionsIosDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the App Store threshold and update prompt for iPhone and iPad users.'**
+  String get settingsMobileVersionsIosDescription;
+
+  /// No description provided for @settingsMobileVersionsAndroidTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Android'**
+  String get settingsMobileVersionsAndroidTitle;
+
+  /// No description provided for @settingsMobileVersionsAndroidDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the Play Store threshold and update prompt for Android users.'**
+  String get settingsMobileVersionsAndroidDescription;
+
+  /// No description provided for @settingsMobileVersionsEffectiveVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective version'**
+  String get settingsMobileVersionsEffectiveVersion;
+
+  /// No description provided for @settingsMobileVersionsEffectiveVersionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Versions below this threshold see a recommended update prompt.'**
+  String get settingsMobileVersionsEffectiveVersionDescription;
+
+  /// No description provided for @settingsMobileVersionsMinimumVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum version'**
+  String get settingsMobileVersionsMinimumVersion;
+
+  /// No description provided for @settingsMobileVersionsMinimumVersionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Versions below this threshold must update before continuing.'**
+  String get settingsMobileVersionsMinimumVersionDescription;
+
+  /// No description provided for @settingsMobileVersionsStoreUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Store URL'**
+  String get settingsMobileVersionsStoreUrl;
+
+  /// No description provided for @settingsMobileVersionsStoreUrlDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Required whenever either version threshold is set.'**
+  String get settingsMobileVersionsStoreUrlDescription;
+
+  /// No description provided for @settingsMobileVersionsVersionPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'1.2.3'**
+  String get settingsMobileVersionsVersionPlaceholder;
+
+  /// No description provided for @settingsMobileVersionsStoreUrlPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'https://apps.apple.com/app/id123456789'**
+  String get settingsMobileVersionsStoreUrlPlaceholder;
+
+  /// No description provided for @settingsMobileVersionsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get settingsMobileVersionsSave;
+
+  /// No description provided for @settingsMobileVersionsSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get settingsMobileVersionsSaving;
+
+  /// No description provided for @settingsMobileVersionsSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile version policy saved.'**
+  String get settingsMobileVersionsSaveSuccess;
+
+  /// No description provided for @settingsMobileVersionsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save mobile version policy.'**
+  String get settingsMobileVersionsSaveError;
+
+  /// No description provided for @settingsMobileVersionsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load mobile version policies.'**
+  String get settingsMobileVersionsLoadError;
+
+  /// No description provided for @settingsMobileVersionsWorkspaceRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal workspace required'**
+  String get settingsMobileVersionsWorkspaceRequiredTitle;
+
+  /// No description provided for @settingsMobileVersionsWorkspaceRequiredDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to the internal workspace to manage platform mobile version policies.'**
+  String get settingsMobileVersionsWorkspaceRequiredDescription;
+
+  /// No description provided for @settingsMobileVersionsAccessDeniedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access required'**
+  String get settingsMobileVersionsAccessDeniedTitle;
+
+  /// No description provided for @settingsMobileVersionsAccessDeniedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You need the workspace roles permission in the internal workspace to manage mobile version policies.'**
+  String get settingsMobileVersionsAccessDeniedDescription;
+
+  /// No description provided for @settingsMobileVersionsValidationVersionFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Use semantic version format x.y.z.'**
+  String get settingsMobileVersionsValidationVersionFormat;
+
+  /// No description provided for @settingsMobileVersionsValidationStoreUrlRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Store URL is required when a version is set.'**
+  String get settingsMobileVersionsValidationStoreUrlRequired;
+
+  /// No description provided for @settingsMobileVersionsValidationEffectiveAtLeastMinimum.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective version must be greater than or equal to the minimum version.'**
+  String get settingsMobileVersionsValidationEffectiveAtLeastMinimum;
+
   /// No description provided for @settingsLicensesSectionTitle.
   ///
   /// In en, this message translates to:
