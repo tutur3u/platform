@@ -1312,7 +1312,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantActionsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Assistant actions'**
+  /// **'Action'**
   String get assistantActionsTitle;
 
   /// No description provided for @assistantRenameTitle.

@@ -626,7 +626,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSettingsTitle => 'Assistant settings';
 
   @override
-  String get assistantActionsTitle => 'Assistant actions';
+  String get assistantActionsTitle => 'Action';
 
   @override
   String get assistantRenameTitle => 'Rename Assistant';

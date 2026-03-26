@@ -626,7 +626,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSettingsTitle => 'Cài đặt Mira';
 
   @override
-  String get assistantActionsTitle => 'Thao tác Mira';
+  String get assistantActionsTitle => 'Thao tác';
 
   @override
   String get assistantRenameTitle => 'Đổi tên Mira';
