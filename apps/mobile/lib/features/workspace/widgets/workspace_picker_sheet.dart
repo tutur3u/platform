@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart'
     hide Chip, CircleAvatar, Divider, NavigationBar, NavigationBarTheme;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,148 +18,150 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 void showWorkspacePickerSheet(BuildContext parentContext) {
   final workspaceCubit = parentContext.read<WorkspaceCubit>();
 
-  showAdaptiveDrawer(
-    context: parentContext,
-    builder: (context) {
-      return BlocProvider<WorkspaceCubit>.value(
-        value: workspaceCubit,
-        child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
-          builder: (_, state) {
-            final l10n = context.l10n;
-            final theme = shad.Theme.of(context);
-            final sections = splitWorkspaceSections(state.workspaces);
+  unawaited(
+    showAdaptiveDrawer(
+      context: parentContext,
+      builder: (context) {
+        return BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
+            builder: (_, state) {
+              final l10n = context.l10n;
+              final theme = shad.Theme.of(context);
+              final sections = splitWorkspaceSections(state.workspaces);
 
-            return ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.66,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.workspacePickerTitle,
-                            style: theme.typography.h3.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        shad.GhostButton(
-                          size: shad.ButtonSize.small,
-                          onPressed: (state.limits?.canCreate ?? true)
-                              ? () async {
-                                  await Navigator.maybePop(context);
-                                  if (!parentContext.mounted) {
-                                    return;
-                                  }
-                                  await showCreateWorkspaceDialog(
-                                    parentContext,
-                                  );
-                                }
-                              : null,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.add_rounded, size: 16),
-                              const shad.Gap(4),
-                              Text(l10n.workspaceCreateNew),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (state.limits != null && state.limits!.limit > 0)
+              return ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.66,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: _CompactLimitsBar(
-                        currentCount: state.limits!.currentCount,
-                        limit: state.limits!.limit,
-                      ),
-                    ),
-                  const shad.Gap(10),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Column(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Row(
                         children: [
-                          if (sections.personal.isNotEmpty)
-                            _WorkspacePickerGroup(
-                              title: l10n.workspacePersonalSection,
+                          Expanded(
+                            child: Text(
+                              l10n.workspacePickerTitle,
+                              style: theme.typography.h3.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          shad.GhostButton(
+                            size: shad.ButtonSize.small,
+                            onPressed: (state.limits?.canCreate ?? true)
+                                ? () async {
+                                    await Navigator.maybePop(context);
+                                    if (!parentContext.mounted) {
+                                      return;
+                                    }
+                                    await showCreateWorkspaceDialog(
+                                      parentContext,
+                                    );
+                                  }
+                                : null,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                for (final workspace in sections.personal)
-                                  _PickerTile(
-                                    workspace: workspace,
-                                    isSelected:
-                                        workspace.id ==
-                                        state.currentWorkspace?.id,
-                                    onTap: () async {
-                                      await Navigator.maybePop(context);
-                                      await workspaceCubit.selectWorkspace(
-                                        workspace,
-                                      );
-                                    },
-                                  ),
+                                const Icon(Icons.add_rounded, size: 16),
+                                const shad.Gap(4),
+                                Text(l10n.workspaceCreateNew),
                               ],
                             ),
-                          if (sections.system.isNotEmpty) ...[
-                            if (sections.personal.isNotEmpty)
-                              const shad.Gap(10),
-                            _WorkspacePickerGroup(
-                              title: l10n.workspaceSystemSection,
-                              children: [
-                                for (final workspace in sections.system)
-                                  _PickerTile(
-                                    workspace: workspace,
-                                    isSelected:
-                                        workspace.id ==
-                                        state.currentWorkspace?.id,
-                                    onTap: () async {
-                                      await Navigator.maybePop(context);
-                                      await workspaceCubit.selectWorkspace(
-                                        workspace,
-                                      );
-                                    },
-                                  ),
-                              ],
-                            ),
-                          ],
-                          if (sections.team.isNotEmpty) ...[
-                            const shad.Gap(10),
-                            _WorkspacePickerGroup(
-                              title: l10n.workspaceTeamSection,
-                              children: [
-                                for (final workspace in sections.team)
-                                  _PickerTile(
-                                    workspace: workspace,
-                                    isSelected:
-                                        workspace.id ==
-                                        state.currentWorkspace?.id,
-                                    onTap: () async {
-                                      await Navigator.maybePop(context);
-                                      await workspaceCubit.selectWorkspace(
-                                        workspace,
-                                      );
-                                    },
-                                  ),
-                              ],
-                            ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      );
-    },
+                    if (state.limits != null && state.limits!.limit > 0)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: _CompactLimitsBar(
+                          currentCount: state.limits!.currentCount,
+                          limit: state.limits!.limit,
+                        ),
+                      ),
+                    const shad.Gap(10),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Column(
+                          children: [
+                            if (sections.personal.isNotEmpty)
+                              _WorkspacePickerGroup(
+                                title: l10n.workspacePersonalSection,
+                                children: [
+                                  for (final workspace in sections.personal)
+                                    _PickerTile(
+                                      workspace: workspace,
+                                      isSelected:
+                                          workspace.id ==
+                                          state.currentWorkspace?.id,
+                                      onTap: () async {
+                                        await Navigator.maybePop(context);
+                                        await workspaceCubit.selectWorkspace(
+                                          workspace,
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+                            if (sections.system.isNotEmpty) ...[
+                              if (sections.personal.isNotEmpty)
+                                const shad.Gap(10),
+                              _WorkspacePickerGroup(
+                                title: l10n.workspaceSystemSection,
+                                children: [
+                                  for (final workspace in sections.system)
+                                    _PickerTile(
+                                      workspace: workspace,
+                                      isSelected:
+                                          workspace.id ==
+                                          state.currentWorkspace?.id,
+                                      onTap: () async {
+                                        await Navigator.maybePop(context);
+                                        await workspaceCubit.selectWorkspace(
+                                          workspace,
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ],
+                            if (sections.team.isNotEmpty) ...[
+                              const shad.Gap(10),
+                              _WorkspacePickerGroup(
+                                title: l10n.workspaceTeamSection,
+                                children: [
+                                  for (final workspace in sections.team)
+                                    _PickerTile(
+                                      workspace: workspace,
+                                      isSelected:
+                                          workspace.id ==
+                                          state.currentWorkspace?.id,
+                                      onTap: () async {
+                                        await Navigator.maybePop(context);
+                                        await workspaceCubit.selectWorkspace(
+                                          workspace,
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    ),
   );
 }
 

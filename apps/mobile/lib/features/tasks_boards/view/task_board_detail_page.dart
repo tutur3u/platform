@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';

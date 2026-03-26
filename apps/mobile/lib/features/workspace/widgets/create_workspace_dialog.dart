@@ -12,7 +12,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 Future<void> showCreateWorkspaceDialog(BuildContext context) async {
   final workspaceCubit = context.read<WorkspaceCubit>();
 
-  showAdaptiveDrawer(
+  await showAdaptiveDrawer(
     context: context,
     builder: (context) {
       return BlocProvider<WorkspaceCubit>.value(

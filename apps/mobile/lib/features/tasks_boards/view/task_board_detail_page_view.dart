@@ -543,24 +543,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       ),
     );
 
-    if (context.isCompact) {
-      await shad.openDrawer<void>(
-        context: context,
-        position: shad.OverlayPosition.bottom,
-        builder: (_) => content,
-      );
-      return;
-    }
-
-    await shad.showDialog<void>(
-      context: context,
-      builder: (_) => Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: content,
-        ),
-      ),
-    );
+    await showAdaptiveDrawer(context: context, builder: (_) => content);
   }
 
   Future<void> _openTaskCreateSheet(
@@ -590,24 +573,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       ),
     );
 
-    if (context.isCompact) {
-      await shad.openDrawer<void>(
-        context: context,
-        position: shad.OverlayPosition.bottom,
-        builder: (_) => content,
-      );
-      return;
-    }
-
-    await shad.showDialog<void>(
-      context: context,
-      builder: (_) => Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: content,
-        ),
-      ),
-    );
+    await showAdaptiveDrawer(context: context, builder: (_) => content);
   }
 
   Future<void> _openMoveTaskPicker(

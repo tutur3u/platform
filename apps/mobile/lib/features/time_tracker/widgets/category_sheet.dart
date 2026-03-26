@@ -22,14 +22,16 @@ void showCategorySheet({
   })
   onCreateCategory,
 }) {
-  showAdaptiveDrawer(
-    context: context,
-    builder: (_) => CategorySheet(
-      hostContext: context,
-      categories: categories,
-      selectedCategoryId: selectedCategoryId,
-      onSelected: onSelected,
-      onCreateCategory: onCreateCategory,
+  unawaited(
+    showAdaptiveDrawer(
+      context: context,
+      builder: (_) => CategorySheet(
+        hostContext: context,
+        categories: categories,
+        selectedCategoryId: selectedCategoryId,
+        onSelected: onSelected,
+        onCreateCategory: onCreateCategory,
+      ),
     ),
   );
 }
