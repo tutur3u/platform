@@ -118,7 +118,7 @@ export class GameStateManager {
     const key = `${pos.getX()},${pos.getY()}`;
     const crop = this.state.crops.get(key);
 
-    if (!crop || !crop.isHarvestable()) return 0;
+    if (!crop?.isHarvestable()) return 0;
 
     const harvestValue = crop.harvest();
     if (harvestValue > 0) {

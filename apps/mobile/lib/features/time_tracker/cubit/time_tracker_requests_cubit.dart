@@ -10,23 +10,55 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
 
   final ITimeTrackerRepository _repo;
   int _latestLoadToken = 0;
+  static const Object _userIdNotProvided = Object();
 
-  Future<void> loadRequests(String wsId) async {
+  ApprovalStatus? _statusFromFilter(String? statusFilter) {
+    final normalized = statusFilter?.trim().toLowerCase();
+    return switch (normalized) {
+      null || '' || 'all' => null,
+      'pending' => ApprovalStatus.pending,
+      'approved' => ApprovalStatus.approved,
+      'rejected' => ApprovalStatus.rejected,
+      'needs_info' || 'needsinfo' => ApprovalStatus.needsInfo,
+      _ => null,
+    };
+  }
+
+  Future<void> loadRequests(
+    String wsId, {
+    Object? userId = _userIdNotProvided,
+    String? statusOverride,
+  }) async {
     final loadToken = ++_latestLoadToken;
+    final hasExplicitUserId = !identical(userId, _userIdNotProvided);
+    final requestedUserId = hasExplicitUserId ? userId as String? : null;
+    final userIdFromState = hasExplicitUserId
+        ? requestedUserId
+        : state.selectedUserId;
+    final statusFilter =
+        statusOverride ??
+        (state.selectedStatus != null
+            ? approvalStatusToString(state.selectedStatus!)
+            : null);
+    final selectedStatus = _statusFromFilter(statusFilter);
 
     emit(
       state.copyWith(
         status: TimeTrackerRequestsStatus.loading,
+        selectedStatus: selectedStatus,
+        clearSelectedStatus: selectedStatus == null,
+        selectedUserId: hasExplicitUserId ? requestedUserId : null,
+        clearSelectedUserId: hasExplicitUserId && requestedUserId == null,
         clearError: true,
       ),
     );
 
     try {
-      final statusFilter = state.selectedStatus != null
-          ? approvalStatusToString(state.selectedStatus!)
-          : null;
-
-      final requests = await _repo.getRequests(wsId, status: statusFilter);
+      final requests = await _repo.getRequests(
+        wsId,
+        status: statusFilter,
+        userId: userIdFromState,
+      );
 
       if (loadToken != _latestLoadToken) {
         return;
@@ -52,13 +84,27 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
     }
   }
 
-  Future<void> filterByStatus(ApprovalStatus? status, String wsId) async {
+  Future<void> filterByStatus(
+    ApprovalStatus? status,
+    String wsId, {
+    Object? userId = _userIdNotProvided,
+    String? statusOverride,
+  }) async {
     if (status == null) {
       emit(state.copyWith(clearSelectedStatus: true));
     } else {
       emit(state.copyWith(selectedStatus: status));
     }
-    await loadRequests(wsId);
+    await loadRequests(
+      wsId,
+      userId: userId,
+      statusOverride: statusOverride,
+    );
+  }
+
+  void reset() {
+    _latestLoadToken++;
+    emit(const TimeTrackerRequestsState());
   }
 
   Future<void> approveRequest(String requestId, String wsId) async {

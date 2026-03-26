@@ -239,9 +239,15 @@ class AuthRepository {
         return null;
       }
 
-      return const AuthActionResult.failure(AuthErrorCode.googleSignInFailed);
-    } on Exception {
-      return const AuthActionResult.failure(AuthErrorCode.googleSignInFailed);
+      return AuthActionResult.failure(
+        AuthErrorCode.googleSignInFailed,
+        errorMessage: e.description,
+      );
+    } on Exception catch (e) {
+      return AuthActionResult.failure(
+        AuthErrorCode.googleSignInFailed,
+        errorMessage: e.toString(),
+      );
     }
   }
 
@@ -256,10 +262,16 @@ class AuthRepository {
       );
 
       return const AuthActionResult.success();
-    } on AuthException {
-      return const AuthActionResult.failure(AuthErrorCode.googleSignInFailed);
-    } on Exception {
-      return const AuthActionResult.failure(AuthErrorCode.googleSignInFailed);
+    } on AuthException catch (e) {
+      return AuthActionResult.failure(
+        AuthErrorCode.googleSignInFailed,
+        errorMessage: e.message,
+      );
+    } on Exception catch (e) {
+      return AuthActionResult.failure(
+        AuthErrorCode.googleSignInFailed,
+        errorMessage: e.toString(),
+      );
     }
   }
 
@@ -297,9 +309,10 @@ class AuthRepository {
       }
 
       return const AuthActionResult.externalFlowStarted();
-    } on Exception {
-      return const AuthActionResult.failure(
+    } on Exception catch (e) {
+      return AuthActionResult.failure(
         AuthErrorCode.googleBrowserLaunchFailed,
+        errorMessage: e.toString(),
       );
     }
   }
@@ -323,9 +336,10 @@ class AuthRepository {
       }
 
       return const AuthActionResult.externalFlowStarted();
-    } on Exception {
-      return const AuthActionResult.failure(
+    } on Exception catch (e) {
+      return AuthActionResult.failure(
         AuthErrorCode.appleBrowserLaunchFailed,
+        errorMessage: e.toString(),
       );
     }
   }

@@ -23,6 +23,7 @@ import { PostApprovalActions } from '@/components/post-approval-actions';
 import {
   getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
+  getPostReviewStageAppearance,
 } from './status-meta';
 import type { PostEmail } from './types';
 
@@ -54,6 +55,7 @@ export function PostDisplay({
     );
   }
 
+  const stageAppearance = getPostReviewStageAppearance(postEmail.stage);
   const approvalAppearance = postEmail.approval_status
     ? getPostApprovalStatusAppearance(postEmail.approval_status)
     : null;
@@ -70,6 +72,15 @@ export function PostDisplay({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold text-lg">{t('details_title')}</h3>
           <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline" className={stageAppearance.className}>
+              <stageAppearance.icon
+                className={cn(
+                  'mr-1 h-3.5 w-3.5',
+                  stageAppearance.iconClassName
+                )}
+              />
+              {t(stageAppearance.labelKey)}
+            </Badge>
             {approvalAppearance && (
               <Badge variant="outline" className={approvalAppearance.className}>
                 <approvalAppearance.icon className="mr-1 h-3.5 w-3.5" />
@@ -89,16 +100,19 @@ export function PostDisplay({
             )}
           </div>
         </div>
-        {canApprovePosts && postEmail.post_id && postEmail.user_id && (
-          <PostApprovalActions
-            wsId={wsId}
-            itemId={`${postEmail.post_id}:${postEmail.user_id}`}
-            approvalStatus={postEmail.approval_status ?? 'PENDING'}
-            queueStatus={postEmail.queue_status}
-            canRemoveApproval={postEmail.can_remove_approval}
-            compact
-          />
-        )}
+        {canApprovePosts &&
+          postEmail.post_id &&
+          postEmail.user_id &&
+          postEmail.has_check && (
+            <PostApprovalActions
+              wsId={wsId}
+              itemId={`${postEmail.post_id}:${postEmail.user_id}`}
+              approvalStatus={postEmail.approval_status ?? 'PENDING'}
+              queueStatus={postEmail.queue_status}
+              canRemoveApproval={postEmail.can_remove_approval}
+              compact
+            />
+          )}
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
@@ -155,12 +169,23 @@ export function PostDisplay({
                     )}
                   >
                     <Check className="h-3 w-3" />
-                    {postEmail.is_completed ? t('completed') : t('pending')}
+                    {postEmail.is_completed ? t('completed') : t('incomplete')}
                   </div>
                 )}
               </div>
             </div>
           </div>
+
+          {!postEmail.has_check && (
+            <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3">
+              <p className="font-medium text-dynamic-blue text-xs uppercase tracking-wide">
+                {t('missing_check')}
+              </p>
+              <p className="mt-1 text-dynamic-blue text-sm">
+                {t('missing_check_description')}
+              </p>
+            </div>
+          )}
 
           <Separator />
 

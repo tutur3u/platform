@@ -17,8 +17,9 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   ///
   /// Resolution order:
   /// 1. Server-side default (`user_private_details.default_workspace_id`)
-  /// 2. SharedPreferences cache (offline fallback)
-  /// 3. Auto-select if only one workspace exists
+  /// 2. Local default workspace cache (offline fallback)
+  /// 3. SharedPreferences cache for the current session workspace
+  /// 4. Auto-select if only one workspace exists
   Future<void> loadWorkspaces() async {
     emit(state.copyWith(status: WorkspaceStatus.loading));
 
@@ -26,32 +27,49 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
       final workspaces = await _repo.getWorkspaces();
 
       Workspace? current;
+      Workspace? defaultWorkspace;
 
       // 1. Try server-side default
       final serverDefault = await _repo.getDefaultWorkspace();
       if (serverDefault != null) {
-        current = workspaces.where((w) => w.id == serverDefault.id).firstOrNull;
+        defaultWorkspace = workspaces
+            .where((w) => w.id == serverDefault.id)
+            .firstOrNull;
       }
 
-      // 2. Fallback to SharedPreferences cache
-      if (current == null) {
-        final saved = await _repo.loadSelectedWorkspace();
-        if (saved != null) {
-          current = workspaces.where((w) => w.id == saved.id).firstOrNull;
+      // 2. Fallback to local default cache
+      if (defaultWorkspace == null) {
+        final localDefaultId = await _repo.loadDefaultWorkspaceId();
+        if (localDefaultId != null) {
+          defaultWorkspace = workspaces
+              .where((w) => w.id == localDefaultId)
+              .firstOrNull;
         }
       }
 
-      // 3. Fallback to personal workspace
-      current ??= workspaces.where((w) => w.personal).firstOrNull;
+      // 3. Fallback to SharedPreferences cache for current session
+      final saved = await _repo.loadSelectedWorkspace();
+      if (saved != null) {
+        current = workspaces.where((w) => w.id == saved.id).firstOrNull;
+      }
 
-      // 4. Auto-select if only one workspace
+      // 4. Otherwise use the resolved default workspace
+      current ??= defaultWorkspace;
+
+      // 5. Fallback to personal workspace
+      defaultWorkspace ??= workspaces.where((w) => w.personal).firstOrNull;
+      current ??= defaultWorkspace;
+
+      // 6. Auto-select if only one workspace
       current ??= workspaces.length == 1 ? workspaces.first : null;
+      defaultWorkspace ??= current;
 
       emit(
         state.copyWith(
           status: WorkspaceStatus.loaded,
           workspaces: workspaces,
           currentWorkspace: current,
+          defaultWorkspace: defaultWorkspace,
         ),
       );
 
@@ -67,13 +85,15 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     }
   }
 
-  /// Selects a workspace, persists locally, and syncs to server.
+  /// Selects the active workspace for the current device/session.
   Future<void> selectWorkspace(Workspace workspace) async {
     emit(state.copyWith(currentWorkspace: workspace));
     await _repo.saveSelectedWorkspace(workspace);
+  }
 
-    // Fire-and-forget server-side sync
-    unawaited(_repo.updateDefaultWorkspace(workspace.id));
+  Future<void> setDefaultWorkspace(Workspace workspace) async {
+    await _repo.updateDefaultWorkspace(workspace.id);
+    emit(state.copyWith(defaultWorkspace: workspace));
   }
 
   /// Creates a new workspace and adds it to the list.

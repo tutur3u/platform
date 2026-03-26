@@ -31,6 +31,7 @@ class TimeTrackingRequest extends Equatable {
     this.categoryId,
     this.title,
     this.description,
+    this.userDisplayName,
     this.startTime,
     this.endTime,
     this.images = const [],
@@ -57,6 +58,7 @@ class TimeTrackingRequest extends Equatable {
         categoryId: json['category_id'] as String?,
         title: json['title'] as String?,
         description: json['description'] as String?,
+        userDisplayName: _nestedDisplayName(json['user']),
         startTime: json['start_time'] != null
             ? DateTime.parse(json['start_time'] as String)
             : null,
@@ -101,6 +103,7 @@ class TimeTrackingRequest extends Equatable {
   final String? categoryId;
   final String? title;
   final String? description;
+  final String? userDisplayName;
   final DateTime? startTime;
   final DateTime? endTime;
   final List<String> images;
@@ -131,6 +134,7 @@ class TimeTrackingRequest extends Equatable {
     categoryId,
     title,
     description,
+    userDisplayName,
     startTime,
     endTime,
     images,

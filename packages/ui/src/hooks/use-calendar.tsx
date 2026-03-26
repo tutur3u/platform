@@ -751,7 +751,7 @@ export const CalendarProvider = ({
       // Take the first item from the queue
       const update = updateQueueRef.current.shift();
 
-      if (!update || !update._eventId) {
+      if (!update?._eventId) {
         isProcessingQueueRef.current = false;
         return;
       }

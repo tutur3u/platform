@@ -16,6 +16,7 @@ class AuthActionResult {
   const AuthActionResult._({
     required this.status,
     this.errorCode,
+    this.errorMessage,
   });
 
   const AuthActionResult.success() : this._(status: AuthActionStatus.success);
@@ -26,12 +27,16 @@ class AuthActionResult {
   const AuthActionResult.cancelled()
     : this._(status: AuthActionStatus.cancelled);
 
-  const AuthActionResult.failure(AuthErrorCode errorCode)
-    : this._(
-        status: AuthActionStatus.failure,
-        errorCode: errorCode,
-      );
+  const AuthActionResult.failure(
+    AuthErrorCode errorCode, {
+    String? errorMessage,
+  }) : this._(
+         status: AuthActionStatus.failure,
+         errorCode: errorCode,
+         errorMessage: errorMessage,
+       );
 
   final AuthActionStatus status;
   final AuthErrorCode? errorCode;
+  final String? errorMessage;
 }

@@ -21,4 +21,9 @@ abstract final class AppColors {
   static const textPrimaryDark = Color(0xFFFAFAFA); // zinc-50
   static const textSecondaryLight = Color(0xFF71717A); // zinc-500
   static const textSecondaryDark = Color(0xFFA1A1AA); // zinc-400
+
+  // Destructive
+  static const destructiveLight = Color(0xFFD92D20);
+  static const destructiveDark = Color(0xFFFF6B6B);
+  static const destructiveDarkSurface = Color(0xFF3A161B);
 }

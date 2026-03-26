@@ -60,5 +60,28 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('rebuilds when only auth errorCode changes', (tester) async {
+      const initialState = AuthState.unauthenticated();
+      final errorState = const AuthState.unauthenticated().copyWith(
+        errorCode: AuthErrorCode.googleBrowserLaunchFailed,
+      );
+      when(() => authCubit.state).thenReturn(initialState);
+      whenListen(
+        authCubit,
+        Stream<AuthState>.fromIterable([errorState]),
+        initialState: initialState,
+      );
+
+      await tester.pumpApp(
+        BlocProvider.value(value: authCubit, child: const SignUpPage()),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('Unable to open Google sign-in right now.'),
+        findsOneWidget,
+      );
+    });
   });
 }

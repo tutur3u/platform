@@ -142,7 +142,7 @@ const composeSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
   content: z.any().refine((val) => {
     // Check if it's a valid JSONContent with some meaningful content
-    if (!val || !val.content) return false;
+    if (!val?.content) return false;
 
     // Helper function to check if a node has text content
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

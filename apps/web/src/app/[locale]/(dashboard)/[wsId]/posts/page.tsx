@@ -1,8 +1,10 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import PostsClient from './client';
 import { getPostsPageData } from './data';
+import { buildCanonicalPostsSearchParams } from './search-params';
 import type { PostsSearchParams } from './types';
 
 export const metadata: Metadata = {
@@ -23,6 +25,13 @@ export default async function PostsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
+        const canonicalSearchParams =
+          buildCanonicalPostsSearchParams(searchParamsData);
+
+        if (canonicalSearchParams) {
+          redirect(`/${wsId}/posts?${canonicalSearchParams}`);
+        }
+
         const permissions = await getPermissions({ wsId });
 
         const canApprovePosts =

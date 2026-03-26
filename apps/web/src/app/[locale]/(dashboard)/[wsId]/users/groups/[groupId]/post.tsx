@@ -4,10 +4,12 @@ import { Check, CircleHelp, Send, SkipForward, X } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 
 interface PostStatusData {
+  approved_awaiting_delivery: number | null;
   sent: number | null;
   checked: number | null;
   failed: number | null;
   tentative: number | null;
+  missing_check: number | null;
   count: number | null;
   queue: {
     queued: number;
@@ -77,7 +79,8 @@ export function PostEmailStatus({
           'flex w-fit items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 py-1 font-semibold text-dynamic-blue text-xs'
         )}
       >
-        {data?.tentative ?? '-'} <CircleHelp className="h-4 w-4" />
+        {data?.missing_check ?? data?.tentative ?? '-'}{' '}
+        <CircleHelp className="h-4 w-4" />
       </div>
       <div
         className={cn(

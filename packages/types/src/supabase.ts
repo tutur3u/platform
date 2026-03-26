@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.4';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -20958,7 +20953,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -24289,6 +24313,15 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_post_review_stage: {
+        Args: {
+          p_approval_status: Database['public']['Enums']['approval_status'];
+          p_email_id: string;
+          p_has_check: boolean;
+          p_queue_status: string;
+        };
+        Returns: string;
+      };
       get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
       get_power_users: {
         Args: { limit_count?: number };
@@ -24669,6 +24702,74 @@ export type Database = {
         }[];
       };
       get_user_email: { Args: { p_user_id: string }; Returns: string };
+      get_user_group_post_recipient_rows: {
+        Args: {
+          p_group_id: string;
+          p_post_id: string;
+          p_q?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approval_rejection_reason: string;
+          approval_status: Database['public']['Enums']['approval_status'];
+          can_remove_approval: boolean;
+          check_created_at: string;
+          email: string;
+          email_id: string;
+          group_id: string;
+          group_name: string;
+          has_check: boolean;
+          is_completed: boolean;
+          notes: string;
+          post_content: string;
+          post_created_at: string;
+          post_id: string;
+          post_title: string;
+          queue_attempt_count: number;
+          queue_last_error: string;
+          queue_sent_at: string;
+          queue_status: string;
+          recipient: string;
+          review_stage: string;
+          row_key: string;
+          subject: string;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_full_name: string;
+          user_id: string;
+          user_phone: string;
+          ws_id: string;
+        }[];
+      };
+      get_user_group_post_status_summary: {
+        Args: { p_group_id: string; p_post_id: string; p_ws_id: string };
+        Returns: {
+          approved_awaiting_delivery_count: number;
+          approved_count: number;
+          blocked_count: number;
+          cancelled_count: number;
+          completed_count: number;
+          delivery_failed_count: number;
+          failed_count: number;
+          incomplete_count: number;
+          missing_check_count: number;
+          pending_approval_count: number;
+          pending_approval_stage_count: number;
+          processing_count: number;
+          processing_stage_count: number;
+          queue_skipped_count: number;
+          queued_count: number;
+          queued_stage_count: number;
+          rejected_count: number;
+          rejected_stage_count: number;
+          sent_count: number;
+          sent_stage_count: number;
+          skipped_approval_count: number;
+          skipped_stage_count: number;
+          total_count: number;
+          unchecked_count: number;
+        }[];
+      };
       get_user_growth_comparison: {
         Args: never;
         Returns: {
@@ -25068,6 +25169,142 @@ export type Database = {
           rejected_count: number;
           sent_count: number;
           skipped_count: number;
+          total_count: number;
+        }[];
+      };
+      get_workspace_post_review_base_rows: {
+        Args: {
+          p_cutoff?: string;
+          p_excluded_group_ids?: string[];
+          p_group_id?: string;
+          p_included_group_ids?: string[];
+          p_post_id?: string;
+          p_q?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approval_rejection_reason: string;
+          approval_status: Database['public']['Enums']['approval_status'];
+          can_remove_approval: boolean;
+          check_created_at: string;
+          email: string;
+          email_id: string;
+          group_id: string;
+          group_name: string;
+          has_check: boolean;
+          is_completed: boolean;
+          notes: string;
+          post_content: string;
+          post_created_at: string;
+          post_id: string;
+          post_title: string;
+          queue_attempt_count: number;
+          queue_last_error: string;
+          queue_sent_at: string;
+          queue_status: string;
+          recipient: string;
+          review_stage: string;
+          row_key: string;
+          subject: string;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_full_name: string;
+          user_id: string;
+          user_phone: string;
+          ws_id: string;
+        }[];
+      };
+      get_workspace_post_review_filter_options: {
+        Args: {
+          p_cutoff?: string;
+          p_included_group_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          amount: number;
+          id: string;
+          label: string;
+          option_scope: string;
+        }[];
+      };
+      get_workspace_post_review_rows: {
+        Args: {
+          p_approval_status?: Database['public']['Enums']['approval_status'];
+          p_cutoff?: string;
+          p_excluded_group_ids?: string[];
+          p_included_group_ids?: string[];
+          p_limit?: number;
+          p_offset?: number;
+          p_queue_status?: string;
+          p_stage?: string[];
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approval_rejection_reason: string;
+          approval_status: Database['public']['Enums']['approval_status'];
+          can_remove_approval: boolean;
+          check_created_at: string;
+          email: string;
+          email_id: string;
+          group_id: string;
+          group_name: string;
+          has_check: boolean;
+          is_completed: boolean;
+          notes: string;
+          post_content: string;
+          post_created_at: string;
+          post_id: string;
+          post_title: string;
+          queue_attempt_count: number;
+          queue_last_error: string;
+          queue_sent_at: string;
+          queue_status: string;
+          recipient: string;
+          review_stage: string;
+          row_key: string;
+          subject: string;
+          total_count: number;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_full_name: string;
+          user_id: string;
+          user_phone: string;
+          ws_id: string;
+        }[];
+      };
+      get_workspace_post_review_summary: {
+        Args: {
+          p_approval_status?: Database['public']['Enums']['approval_status'];
+          p_cutoff?: string;
+          p_excluded_group_ids?: string[];
+          p_included_group_ids?: string[];
+          p_queue_status?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approved_awaiting_delivery_count: number;
+          approved_count: number;
+          blocked_count: number;
+          cancelled_count: number;
+          delivery_failed_count: number;
+          failed_count: number;
+          missing_check_count: number;
+          pending_approval_count: number;
+          pending_approval_stage_count: number;
+          processing_count: number;
+          processing_stage_count: number;
+          queue_skipped_count: number;
+          queued_count: number;
+          queued_stage_count: number;
+          rejected_count: number;
+          rejected_stage_count: number;
+          sent_count: number;
+          sent_stage_count: number;
+          skipped_approval_count: number;
+          skipped_stage_count: number;
           total_count: number;
         }[];
       };

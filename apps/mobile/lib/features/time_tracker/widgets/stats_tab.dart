@@ -187,7 +187,7 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
             Expanded(
               child: _tabIndex == 0
                   ? ListView(
-                      padding: const EdgeInsets.only(bottom: 32),
+                      padding: const EdgeInsets.only(bottom: 96),
                       children: [
                         StatsCards(stats: state.stats),
                         const shad.Gap(8),
@@ -197,7 +197,7 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
                       ],
                     )
                   : ListView(
-                      padding: const EdgeInsets.only(bottom: 32),
+                      padding: const EdgeInsets.only(bottom: 96),
                       children: [
                         if (wsId != null)
                           TimeTrackerGoalsSection(wsId: wsId)

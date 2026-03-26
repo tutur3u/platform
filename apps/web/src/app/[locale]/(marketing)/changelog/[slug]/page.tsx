@@ -320,7 +320,7 @@ async function getChangelog(slug: string): Promise<ChangelogEntry | null> {
     return null;
   }
 
-  if (!data || !data.published_at || !data.created_at) {
+  if (!data?.published_at || !data.created_at) {
     return null;
   }
 

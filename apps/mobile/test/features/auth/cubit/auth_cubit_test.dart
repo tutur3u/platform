@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
@@ -131,6 +133,56 @@ void main() {
           isLoading: false,
           error: null,
           errorCode: AuthErrorCode.appleBrowserLaunchFailed,
+        ),
+      ],
+    );
+
+    blocTest<AuthCubit, AuthState>(
+      'stores repository error messages when present',
+      build: () {
+        when(
+          () => authRepository.signInWithGoogle(),
+        ).thenAnswer(
+          (_) async => const AuthActionResult.failure(
+            AuthErrorCode.googleSignInFailed,
+            errorMessage: 'Unacceptable audience in id_token',
+          ),
+        );
+        return AuthCubit(authRepository: authRepository);
+      },
+      act: (cubit) => cubit.signInWithGoogle(),
+      expect: () => <AuthState>[
+        const AuthState.unauthenticated().copyWith(
+          isLoading: true,
+          error: null,
+          errorCode: null,
+        ),
+        const AuthState.unauthenticated().copyWith(
+          isLoading: false,
+          error: 'Unacceptable audience in id_token',
+          errorCode: AuthErrorCode.googleSignInFailed,
+        ),
+      ],
+    );
+
+    blocTest<AuthCubit, AuthState>(
+      'stores auth callback errors emitted by the Supabase auth stream',
+      build: () {
+        final controller = StreamController<supa.AuthState>();
+        addTearDown(controller.close);
+        when(
+          () => authRepository.onAuthStateChange(),
+        ).thenAnswer((_) => controller.stream);
+
+        final cubit = AuthCubit(authRepository: authRepository);
+        controller.addError(const supa.AuthException('OAuth callback failed'));
+        return cubit;
+      },
+      expect: () => <AuthState>[
+        const AuthState.unauthenticated().copyWith(
+          error: 'OAuth callback failed',
+          errorCode: null,
+          isLoading: false,
         ),
       ],
     );

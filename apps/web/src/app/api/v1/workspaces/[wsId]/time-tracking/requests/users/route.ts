@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -23,13 +26,15 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     // Verify workspace access
     const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (memberError) {
       return NextResponse.json(
@@ -45,7 +50,10 @@ export async function GET(
       );
     }
 
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
@@ -73,7 +81,7 @@ export async function GET(
         )
       `
       )
-      .eq('workspace_id', wsId);
+      .eq('workspace_id', normalizedWsId);
 
     if (error) throw error;
 

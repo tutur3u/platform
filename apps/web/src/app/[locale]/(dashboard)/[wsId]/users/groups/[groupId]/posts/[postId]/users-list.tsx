@@ -1,101 +1,36 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import type { UserGroupPost } from '@tuturuuu/types/db';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { PostEmailQueueRow } from '@/lib/post-email-queue';
+import type { Database, UserGroupPost } from '@tuturuuu/types/db';
 import UserCard from './card';
 
+type GroupPostRecipientRow =
+  Database['public']['Functions']['get_user_group_post_recipient_rows']['Returns'][number];
+
 interface Props {
-  users: WorkspaceUser[];
+  recipients: GroupPostRecipientRow[];
   wsId: string;
   post: UserGroupPost;
   canUpdateUserGroupsPosts: boolean;
   canApprovePosts?: boolean;
-  queueByUserId: Record<string, PostEmailQueueRow>;
-}
-
-interface UserGroupPostCheck {
-  user_id: string;
-  post_id: string;
-  is_completed: boolean | null;
-  notes: string;
-  created_at?: string;
-  email_id?: string | null;
-  approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
-  approved_at?: string | null;
-  rejected_at?: string | null;
-  rejection_reason?: string | null;
 }
 
 export function UsersList({
-  users,
+  recipients,
   wsId,
   post,
   canUpdateUserGroupsPosts,
   canApprovePosts = false,
-  queueByUserId,
 }: Props) {
-  const groupId = post.group_id;
-
-  // Fetch all user checks in a single query
-  const { data: checksMap, isLoading } = useQuery<
-    Record<string, UserGroupPostCheck>
-  >({
-    queryKey: ['group-post-checks', post.id, users.map((u) => u.id)],
-    queryFn: async () => {
-      if (!post.id || users.length === 0 || !groupId) return {};
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks?postId=${post.id}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) throw new Error('Failed to fetch post checks');
-      const data = (await response.json()) as UserGroupPostCheck[];
-
-      // Create a map of user_id -> check data
-      const checksMap: Record<string, UserGroupPostCheck> = {};
-
-      for (const check of data || []) {
-        checksMap[check.user_id] = {
-          ...check,
-          notes: check.notes || '',
-        };
-      }
-
-      // Initialize missing entries with default values
-      for (const user of users) {
-        if (!checksMap[user.id]) {
-          checksMap[user.id] = {
-            user_id: user.id,
-            post_id: post.id,
-            is_completed: null,
-            notes: '',
-            approval_status: 'PENDING',
-          };
-        }
-      }
-
-      return checksMap;
-    },
-    enabled: !!(post.id && users.length > 0 && groupId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      {users.map((user) => (
-        <div key={`post-${post.id}-${user.id}`} className="relative">
+      {recipients.map((recipient) => (
+        <div key={`post-${post.id}-${recipient.user_id}`} className="relative">
           <UserCard
-            user={user}
+            recipient={recipient}
             wsId={wsId}
             post={post}
             canUpdateUserGroupsPosts={canUpdateUserGroupsPosts}
             canApprovePosts={canApprovePosts}
-            initialCheck={checksMap?.[user.id]}
-            isLoadingChecks={isLoading}
-            queueItem={queueByUserId[user.id]}
           />
         </div>
       ))}

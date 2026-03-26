@@ -6,15 +6,50 @@ import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+type TriggerDiagnostics = {
+  phase4SkippedReason?: string | null;
+  queueAfter?: {
+    failed: number;
+    processing: number;
+    queued: number;
+    sent: number;
+  };
+  queueBefore?: {
+    failed: number;
+    processing: number;
+    queued: number;
+    sent: number;
+  };
+  reconciliationDiagnostics?: {
+    checked: number;
+    missingSenderPlatformUser: number;
+    orphaned: number;
+    upserted: number;
+  };
+};
+
+type TriggerResponse = {
+  claimed?: number;
+  diagnostics?: TriggerDiagnostics;
+  error?: string;
+  failed?: number;
+  ok: boolean;
+  processed?: number;
+  requestId?: string;
+  timedOut?: boolean;
+  totalDurationMs?: number;
+};
+
 export function TriggerForm() {
   const t = useTranslations('ws-post-emails');
+  const [cronSecret, setCronSecret] = useState('');
   const [limit, setLimit] = useState('200');
   const [sendLimit, setSendLimit] = useState('50');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
+    data?: TriggerResponse;
     ok: boolean;
     message: string;
-    data?: Record<string, unknown>;
   } | null>(null);
 
   const handleTrigger = async () => {
@@ -22,13 +57,13 @@ export function TriggerForm() {
     setResult(null);
 
     try {
-      const cronSecret = prompt('Enter CRON_SECRET:');
-      if (!cronSecret) {
+      if (!cronSecret.trim()) {
         setIsLoading(false);
         return;
       }
 
       const params = new URLSearchParams();
+      params.set('debug', '1');
       params.set('limit', limit);
       params.set('sendLimit', sendLimit);
 
@@ -37,24 +72,18 @@ export function TriggerForm() {
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${cronSecret}`,
+            Authorization: `Bearer ${cronSecret.trim()}`,
           },
         }
       );
 
-      const data = await response.json();
+      const data = (await response.json()) as TriggerResponse;
 
       if (data.ok) {
         setResult({
           ok: true,
           message: t('trigger_success'),
-          data: {
-            claimed: data.claimed,
-            processed: data.processed,
-            failed: data.failed,
-            timedOut: data.timedOut,
-            totalDurationMs: data.totalDurationMs,
-          },
+          data,
         });
       } else {
         setResult({
@@ -75,6 +104,16 @@ export function TriggerForm() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="cronSecret">{t('secret_label')}</Label>
+          <Input
+            id="cronSecret"
+            type="password"
+            value={cronSecret}
+            onChange={(e) => setCronSecret(e.target.value)}
+            placeholder="CRON_SECRET"
+          />
+        </div>
         <div className="space-y-2">
           <Label htmlFor="limit">{t('limit_label')}</Label>
           <Input
@@ -113,20 +152,79 @@ export function TriggerForm() {
           {result.data && (
             <div className="mt-2 text-sm">
               <p>
-                {t('claimed')}: {result.data.claimed as number}
+                {t('request_id')}: {result.data.requestId ?? '-'}
               </p>
               <p>
-                {t('processed')}: {result.data.processed as number}
+                {t('claimed')}: {result.data.claimed ?? 0}
               </p>
               <p>
-                {t('failed')}: {result.data.failed as number}
+                {t('processed')}: {result.data.processed ?? 0}
               </p>
-              {(result.data?.timedOut as boolean) && (
+              <p>
+                {t('failed')}: {result.data.failed ?? 0}
+              </p>
+              {(result.data?.timedOut ?? false) && (
                 <p className="text-orange-600">{t('timed_out')}</p>
               )}
               <p>
                 {t('duration')}:{' '}
-                {(result.data.totalDurationMs as number)?.toLocaleString()}ms
+                {(result.data.totalDurationMs ?? 0).toLocaleString()}ms
+              </p>
+              <p className="mt-3 font-medium">{t('reconciliation')}</p>
+              <p>
+                {t('checked')}:&nbsp;
+                {result.data.diagnostics?.reconciliationDiagnostics?.checked ??
+                  0}
+              </p>
+              <p>
+                {t('orphaned')}:&nbsp;
+                {result.data.diagnostics?.reconciliationDiagnostics?.orphaned ??
+                  0}
+              </p>
+              <p>
+                {t('upserted')}:&nbsp;
+                {result.data.diagnostics?.reconciliationDiagnostics?.upserted ??
+                  0}
+              </p>
+              <p>
+                {t('missing_sender_platform_user')}:&nbsp;
+                {result.data.diagnostics?.reconciliationDiagnostics
+                  ?.missingSenderPlatformUser ?? 0}
+              </p>
+              <p>
+                {t('phase4_skipped_reason')}:&nbsp;
+                {result.data.diagnostics?.phase4SkippedReason
+                  ? t(
+                      result.data.diagnostics
+                        .phase4SkippedReason as 'phase4_skipped_reason_no_queued_or_failed_rows_after_reconciliation'
+                    )
+                  : '-'}
+              </p>
+              <p className="mt-3 font-medium">{t('queue_before')}</p>
+              <p>
+                {t('queued')}:{' '}
+                {result.data.diagnostics?.queueBefore?.queued ?? 0}
+                {' • '}
+                {t('processing')}:{' '}
+                {result.data.diagnostics?.queueBefore?.processing ?? 0}
+                {' • '}
+                {t('failed')}:{' '}
+                {result.data.diagnostics?.queueBefore?.failed ?? 0}
+                {' • '}
+                {t('sent')}: {result.data.diagnostics?.queueBefore?.sent ?? 0}
+              </p>
+              <p className="mt-3 font-medium">{t('queue_after')}</p>
+              <p>
+                {t('queued')}:{' '}
+                {result.data.diagnostics?.queueAfter?.queued ?? 0}
+                {' • '}
+                {t('processing')}:&nbsp;
+                {result.data.diagnostics?.queueAfter?.processing ?? 0}
+                {' • '}
+                {t('failed')}:{' '}
+                {result.data.diagnostics?.queueAfter?.failed ?? 0}
+                {' • '}
+                {t('sent')}: {result.data.diagnostics?.queueAfter?.sent ?? 0}
               </p>
             </div>
           )}

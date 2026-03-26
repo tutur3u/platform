@@ -195,7 +195,7 @@ export async function GET(request: Request) {
 
     // Check if response is JSON
     const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
+    if (!contentType?.includes('application/json')) {
       // Non-JSON response (likely an error page)
       const text = await response.text();
       console.error(

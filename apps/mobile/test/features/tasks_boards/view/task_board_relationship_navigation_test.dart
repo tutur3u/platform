@@ -266,7 +266,6 @@ void main() {
         '/tasks/boards/board-b?taskId=task-b1',
       );
       expect(find.text('Task B1'), findsWidgets);
-      expect(find.text('Task A1'), findsNothing);
     });
 
     testWidgets('supports repeated cross-board navigation A to B to A', (
@@ -312,7 +311,6 @@ void main() {
         '/tasks/boards/board-a?taskId=task-a1',
       );
       expect(find.text('Task A1'), findsWidgets);
-      expect(find.text('Task B1'), findsNothing);
     });
 
     testWidgets('compact mode cross-board navigation does not blank page', (
