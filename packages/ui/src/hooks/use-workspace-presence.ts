@@ -48,6 +48,7 @@ const MAX_RETRIES = 3;
 const SESSION_STORAGE_SESSION_KEY = 'tuturuuu:workspace-presence:session-id';
 
 function createPresenceSessionId(): string {
+  // Prefer Web Crypto API if available
   if (
     typeof crypto !== 'undefined' &&
     typeof crypto.randomUUID === 'function'
@@ -55,7 +56,40 @@ function createPresenceSessionId(): string {
     return crypto.randomUUID();
   }
 
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  // Fallback to Node.js crypto if available
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const nodeCrypto = require('crypto') as
+      | { randomUUID?: () => string; randomBytes: (size: number) => Buffer }
+      | undefined;
+
+    if (nodeCrypto?.randomUUID) {
+      return nodeCrypto.randomUUID();
+    }
+
+    if (typeof nodeCrypto?.randomBytes === 'function') {
+      return nodeCrypto.randomBytes(16).toString('hex');
+    }
+  } catch {
+    // Ignore and fall through to final fallback
+  }
+
+  // Final fallback using Web Crypto getRandomValues if available
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.getRandomValues === 'function'
+  ) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  // As a last resort, return a constant-length string derived from Date.now().
+  // This path should be effectively unreachable in modern environments, but
+  // avoids using Math.random() while still providing a unique-ish identifier.
+  return `fallback-${Date.now().toString(36)}`;
 }
 
 function getOrCreatePresenceSessionId(): string {
