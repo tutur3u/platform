@@ -59,7 +59,7 @@ function createPresenceSessionId(): string {
   // Fallback to Node.js crypto if available
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const nodeCrypto = require('crypto') as
+    const nodeCrypto = require('node:crypto') as
       | { randomUUID?: () => string; randomBytes: (size: number) => Buffer }
       | undefined;
 
