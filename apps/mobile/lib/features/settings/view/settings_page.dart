@@ -19,6 +19,7 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
@@ -85,16 +86,38 @@ class _SettingsViewState extends State<_SettingsView> {
       context.deviceClass,
     );
 
-    return BlocListener<WorkspaceCubit, WorkspaceState>(
-      listenWhen: (previous, current) =>
-          previous.currentWorkspace?.id != current.currentWorkspace?.id,
-      listener: (context, state) {
-        final workspaceId = state.currentWorkspace?.id;
-        if (workspaceId != null) {
-          unawaited(_loadWorkspaceCalendarPreference(workspaceId));
-        }
-        unawaited(_loadMobileVersionsAccess(workspaceId));
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (previous, current) =>
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+          listener: (context, state) {
+            final workspaceId = state.currentWorkspace?.id;
+            if (workspaceId != null) {
+              unawaited(_loadWorkspaceCalendarPreference(workspaceId));
+            }
+            unawaited(_loadMobileVersionsAccess(workspaceId));
+          },
+        ),
+        BlocListener<ProfileCubit, ProfileState>(
+          listenWhen: (previous, current) =>
+              previous.profile != current.profile ||
+              previous.lastUpdatedAt != current.lastUpdatedAt,
+          listener: (context, state) {
+            final profile = state.profile;
+            if (profile == null) {
+              return;
+            }
+            unawaited(
+              context.read<ShellProfileCubit>().applyExternalProfile(
+                profile,
+                lastUpdatedAt: state.lastUpdatedAt,
+                isFromCache: state.isFromCache,
+              ),
+            );
+          },
+        ),
+      ],
       child: shad.Scaffold(
         child: FutureBuilder<PackageInfo>(
           future: _packageInfoFuture,

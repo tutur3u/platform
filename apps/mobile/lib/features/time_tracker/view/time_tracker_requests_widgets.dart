@@ -1,5 +1,105 @@
 part of 'time_tracker_requests_page.dart';
 
+class _RequestsToolbarCard extends StatelessWidget {
+  const _RequestsToolbarCard({
+    required this.title,
+    required this.requestCount,
+    required this.isRefreshing,
+    required this.hasActiveFilters,
+    required this.activeFilterLabel,
+    required this.onOpenFilters,
+    required this.onOpenSettings,
+    required this.isSettingsLoading,
+  });
+
+  final String title;
+  final int requestCount;
+  final bool isRefreshing;
+  final bool hasActiveFilters;
+  final String activeFilterLabel;
+  final VoidCallback? onOpenFilters;
+  final VoidCallback? onOpenSettings;
+  final bool isSettingsLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return shad.Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.typography.large.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const shad.Gap(6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      shad.OutlineBadge(
+                        child: Text('$requestCount'),
+                      ),
+                      if (hasActiveFilters)
+                        shad.OutlineBadge(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.filter_alt_outlined,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(activeFilterLabel),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            if (isRefreshing)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            if (onOpenFilters != null)
+              shad.IconButton.ghost(
+                onPressed: onOpenFilters,
+                icon: Icon(
+                  Icons.filter_alt_outlined,
+                  color: hasActiveFilters ? theme.colorScheme.primary : null,
+                ),
+              ),
+            if (onOpenSettings != null)
+              shad.IconButton.ghost(
+                onPressed: isSettingsLoading ? null : onOpenSettings,
+                icon: isSettingsLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: shad.CircularProgressIndicator(),
+                      )
+                    : const Icon(Icons.settings_outlined),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // _RequestTile
 // ---------------------------------------------------------------------------

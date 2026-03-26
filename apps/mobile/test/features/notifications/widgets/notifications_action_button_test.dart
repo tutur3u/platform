@@ -146,10 +146,26 @@ void main() {
       );
     });
 
-    testWidgets('shows bell only on exact root routes', (tester) async {
+    testWidgets('shows bell on shared shell root and module routes', (
+      tester,
+    ) async {
       await tester.pumpApp(
         _buildActionSlot(
           matchedLocation: Routes.home,
+          workspaceCubit: workspaceCubit,
+          notificationsRepository: notificationsRepository,
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('notifications-action-button')),
+        findsOneWidget,
+      );
+
+      await tester.pumpApp(
+        _buildActionSlot(
+          matchedLocation: Routes.tasks,
           workspaceCubit: workspaceCubit,
           notificationsRepository: notificationsRepository,
         ),

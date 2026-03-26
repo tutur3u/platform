@@ -8,6 +8,9 @@ class CalendarState extends Equatable {
   const CalendarState({
     this.status = CalendarStatus.initial,
     this.hasLoadedOnce = false,
+    this.isFromCache = false,
+    this.isRefreshing = false,
+    this.lastUpdatedAt,
     this.viewMode = CalendarViewMode.agenda,
     this.selectedDate,
     this.focusedMonth,
@@ -19,6 +22,9 @@ class CalendarState extends Equatable {
 
   final CalendarStatus status;
   final bool hasLoadedOnce;
+  final bool isFromCache;
+  final bool isRefreshing;
+  final DateTime? lastUpdatedAt;
   final CalendarViewMode viewMode;
   final DateTime? selectedDate;
   final DateTime? focusedMonth;
@@ -75,6 +81,9 @@ class CalendarState extends Equatable {
   CalendarState copyWith({
     CalendarStatus? status,
     bool? hasLoadedOnce,
+    bool? isFromCache,
+    bool? isRefreshing,
+    Object? lastUpdatedAt = _sentinel,
     CalendarViewMode? viewMode,
     Object? selectedDate = _sentinel,
     Object? focusedMonth = _sentinel,
@@ -86,6 +95,11 @@ class CalendarState extends Equatable {
   }) => CalendarState(
     status: status ?? this.status,
     hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce,
+    isFromCache: isFromCache ?? this.isFromCache,
+    isRefreshing: isRefreshing ?? this.isRefreshing,
+    lastUpdatedAt: lastUpdatedAt == _sentinel
+        ? this.lastUpdatedAt
+        : lastUpdatedAt as DateTime?,
     viewMode: viewMode ?? this.viewMode,
     selectedDate: selectedDate == _sentinel
         ? this.selectedDate
@@ -105,6 +119,9 @@ class CalendarState extends Equatable {
   List<Object?> get props => [
     status,
     hasLoadedOnce,
+    isFromCache,
+    isRefreshing,
+    lastUpdatedAt,
     viewMode,
     selectedDate,
     focusedMonth,

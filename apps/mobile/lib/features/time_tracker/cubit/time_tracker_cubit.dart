@@ -2,10 +2,15 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
+import 'package:mobile/data/models/time_tracking/period_stats.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
@@ -16,11 +21,15 @@ import 'package:mobile/features/time_tracker/utils/threshold.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TimeTrackerCubit extends Cubit<TimeTrackerState> {
-  TimeTrackerCubit({required ITimeTrackerRepository repository})
-    : _repo = repository,
-      super(const TimeTrackerState());
+  TimeTrackerCubit({
+    required ITimeTrackerRepository repository,
+    TimeTrackerState? initialState,
+  }) : _repo = repository,
+       super(initialState ?? const TimeTrackerState());
 
   final ITimeTrackerRepository _repo;
+  static const CachePolicy _cachePolicy = CachePolicies.moduleData;
+  static const _cacheTag = 'time-tracker:root';
   Timer? _ticker;
   static const _historyStatsAccordionPrefsKey =
       'time_tracker_history_stats_open';
@@ -29,7 +38,269 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   int _goalsWorkspaceRequestToken = 0;
   int _loadDataRequestToken = 0;
   String? _activeWorkspaceId;
+  String? _activeUserId;
   final Map<String, int> _goalsRequestVersionByWs = <String, int>{};
+
+  static CacheKey _cacheKey(String wsId, String userId) {
+    return CacheKey(
+      namespace: 'time_tracker.root',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+      params: {'scopeUserId': userId},
+    );
+  }
+
+  static Map<String, dynamic> _breakToJson(TimeTrackingBreak item) {
+    return {
+      'id': item.id,
+      'session_id': item.sessionId,
+      'break_type_id': item.breakTypeId,
+      'break_type_name': item.breakTypeName,
+      'break_start': item.breakStart?.toIso8601String(),
+      'break_end': item.breakEnd?.toIso8601String(),
+      'break_duration_seconds': item.breakDurationSeconds,
+      'notes': item.notes,
+      'created_by': item.createdBy,
+    };
+  }
+
+  static Map<String, dynamic> _dailyActivityToJson(DailyActivity item) {
+    return {
+      'date': item.date.toIso8601String(),
+      'duration': item.duration,
+      'sessions': item.sessions,
+    };
+  }
+
+  static Map<String, dynamic> _statsToJson(TimeTrackerStats stats) {
+    return {
+      'today_time': stats.todayTime,
+      'week_time': stats.weekTime,
+      'month_time': stats.monthTime,
+      'streak': stats.streak,
+      'daily_activity': stats.dailyActivity
+          .map(_dailyActivityToJson)
+          .toList(growable: false),
+    };
+  }
+
+  static Map<String, dynamic> _periodStatsToJson(
+    TimeTrackingPeriodStats stats,
+  ) {
+    return {
+      'totalDuration': stats.totalDuration,
+      'sessionCount': stats.sessionCount,
+      'breakdown': stats.breakdown
+          .map(
+            (entry) => {
+              'name': entry.name,
+              'duration': entry.duration,
+              'color': entry.color,
+            },
+          )
+          .toList(growable: false),
+    };
+  }
+
+  static Map<String, dynamic> _stateToCachePayload(TimeTrackerState state) {
+    return {
+      'runningSession': state.runningSession?.toJson(),
+      'activeBreak': state.activeBreak == null
+          ? null
+          : _breakToJson(state.activeBreak!),
+      'recentSessions': state.recentSessions
+          .map((session) => session.toJson())
+          .toList(growable: false),
+      'categories': state.categories
+          .map((category) => category.toJson())
+          .toList(growable: false),
+      'stats': state.stats == null ? null : _statsToJson(state.stats!),
+      'historyViewMode': state.historyViewMode.name,
+      'historyAnchorDate': state.historyAnchorDate?.toIso8601String(),
+      'historySessions': state.historySessions
+          .map((session) => session.toJson())
+          .toList(growable: false),
+      'historyPeriodStats': state.historyPeriodStats == null
+          ? null
+          : _periodStatsToJson(state.historyPeriodStats!),
+      'historyNextCursor': state.historyNextCursor,
+      'historyHasMore': state.historyHasMore,
+      'isHistoryStatsAccordionOpen': state.isHistoryStatsAccordionOpen,
+      'pomodoroSettings': state.pomodoroSettings.toJson(),
+      'thresholdDays': state.thresholdDays,
+      'isPaused': state.isPaused,
+      'runningSessionTaskName': state.runningSessionTaskName,
+      'runningSessionTaskTicketLabel': state.runningSessionTaskTicketLabel,
+    };
+  }
+
+  static Map<String, dynamic> _decodeCacheJson(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid time tracker cache payload.');
+    }
+
+    return Map<String, dynamic>.from(json);
+  }
+
+  static TimeTrackerState? seedStateFor({
+    required String wsId,
+    required String userId,
+  }) {
+    final cached = CacheStore.instance.peek<Map<String, dynamic>>(
+      key: _cacheKey(wsId, userId),
+      decode: _decodeCacheJson,
+    );
+    final json = cached.data;
+    if (!cached.hasValue || json == null) {
+      return null;
+    }
+
+    final runningSessionJson = json['runningSession'];
+    final activeBreakJson = json['activeBreak'];
+    final runningSession = runningSessionJson is Map<String, dynamic>
+        ? TimeTrackingSession.fromJson(runningSessionJson)
+        : null;
+    final activeBreak = activeBreakJson is Map<String, dynamic>
+        ? TimeTrackingBreak.fromJson(activeBreakJson)
+        : null;
+    final isPaused = json['isPaused'] as bool? ?? false;
+    final runningStartTime = runningSession?.startTime;
+    final elapsed = runningStartTime != null && !isPaused
+        ? DateTime.now().difference(runningStartTime)
+        : Duration.zero;
+
+    return TimeTrackerState(
+      status: TimeTrackerStatus.loaded,
+      isFromCache: true,
+      lastUpdatedAt: cached.fetchedAt,
+      runningSession: runningSession,
+      activeBreak: activeBreak,
+      elapsed: elapsed,
+      recentSessions:
+          ((json['recentSessions'] as List<dynamic>?) ?? const <dynamic>[])
+              .whereType<Map<String, dynamic>>()
+              .map(TimeTrackingSession.fromJson)
+              .toList(growable: false),
+      categories: ((json['categories'] as List<dynamic>?) ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(TimeTrackingCategory.fromJson)
+          .toList(growable: false),
+      stats: json['stats'] is Map<String, dynamic>
+          ? TimeTrackerStats.fromJson(json['stats'] as Map<String, dynamic>)
+          : null,
+      historyViewMode: HistoryViewMode.values.firstWhere(
+        (mode) => mode.name == json['historyViewMode'],
+        orElse: () => HistoryViewMode.week,
+      ),
+      historyAnchorDate: json['historyAnchorDate'] is String
+          ? DateTime.tryParse(json['historyAnchorDate'] as String)
+          : null,
+      historySessions:
+          ((json['historySessions'] as List<dynamic>?) ?? const <dynamic>[])
+              .whereType<Map<String, dynamic>>()
+              .map(TimeTrackingSession.fromJson)
+              .toList(growable: false),
+      historyPeriodStats: json['historyPeriodStats'] is Map<String, dynamic>
+          ? TimeTrackingPeriodStats.fromJson(
+              json['historyPeriodStats'] as Map<String, dynamic>,
+            )
+          : null,
+      historyNextCursor: json['historyNextCursor'] as String?,
+      historyHasMore: json['historyHasMore'] as bool? ?? false,
+      isHistoryStatsAccordionOpen:
+          json['isHistoryStatsAccordionOpen'] as bool? ?? false,
+      pomodoroSettings: json['pomodoroSettings'] is Map<String, dynamic>
+          ? PomodoroSettings.fromJson(
+              json['pomodoroSettings'] as Map<String, dynamic>,
+            )
+          : const PomodoroSettings(),
+      thresholdDays: json['thresholdDays'] as int?,
+      isPaused: isPaused,
+      runningSessionTaskName: json['runningSessionTaskName'] as String?,
+      runningSessionTaskTicketLabel:
+          json['runningSessionTaskTicketLabel'] as String?,
+    );
+  }
+
+  static Future<void> prewarm({
+    required ITimeTrackerRepository repository,
+    required String wsId,
+    required String userId,
+    bool forceRefresh = false,
+  }) async {
+    await CacheStore.instance.prefetch<Map<String, dynamic>>(
+      key: _cacheKey(wsId, userId),
+      policy: _cachePolicy,
+      decode: _decodeCacheJson,
+      forceRefresh: forceRefresh,
+      tags: [_cacheTag, 'workspace:$wsId', 'module:timer'],
+      fetch: () async {
+        final now = DateTime.now();
+        final weekStart = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: now.weekday - DateTime.monday));
+        final weekEnd = weekStart.add(const Duration(days: 7));
+        final normalizedUserId = userId.trim().isEmpty ? null : userId;
+        final runningSessionFuture = repository.getRunningSession(wsId);
+        final categoriesFuture = repository.getCategories(wsId);
+        final recentSessionsFuture = repository.getSessions(wsId, limit: 5);
+        final statsFuture = repository.getStats(
+          wsId,
+          userId,
+          timezone: DateTime.now().timeZoneName,
+        );
+        final historyPageFuture = repository.getHistorySessions(
+          wsId,
+          dateFrom: weekStart,
+          dateTo: weekEnd,
+          userId: normalizedUserId,
+        );
+        final historyStatsFuture = repository.getPeriodStats(
+          wsId,
+          dateFrom: weekStart,
+          dateTo: weekEnd,
+          userId: normalizedUserId,
+        );
+        final pomodoroFuture = repository.loadPomodoroSettings();
+        final settingsFuture = repository.getWorkspaceSettings(wsId);
+
+        final runningSession = await runningSessionFuture;
+        TimeTrackingBreak? activeBreak;
+        if (runningSession != null) {
+          activeBreak = await repository.getActiveBreak(
+            wsId,
+            runningSession.id,
+          );
+        }
+
+        final historyPage = await historyPageFuture;
+        final state = TimeTrackerState(
+          status: TimeTrackerStatus.loaded,
+          runningSession: runningSession,
+          activeBreak: activeBreak,
+          recentSessions: await recentSessionsFuture,
+          categories: await categoriesFuture,
+          stats: await statsFuture,
+          historyAnchorDate: now,
+          historySessions: historyPage.sessions,
+          historyPeriodStats: await historyStatsFuture,
+          historyHasMore: historyPage.hasMore,
+          historyNextCursor: historyPage.nextCursor,
+          pomodoroSettings: await pomodoroFuture,
+          thresholdDays: (await settingsFuture)?.missedEntryDateThreshold,
+          isPaused:
+              runningSession != null &&
+              !runningSession.isRunning &&
+              activeBreak != null,
+        );
+
+        return _stateToCachePayload(state);
+      },
+    );
+  }
 
   Map<String, bool> _setGoalFlag(
     Map<String, bool> source,
@@ -37,19 +308,122 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     bool value,
   ) => <String, bool>{...source, wsId: value};
 
+  TimeTrackerState? _cachedStateFor({
+    required String wsId,
+    required String userId,
+  }) {
+    final cachedState = seedStateFor(wsId: wsId, userId: userId);
+    if (cachedState == null) {
+      return null;
+    }
+
+    return cachedState.copyWith(
+      goals: state.goals,
+      goalsWorkspaceId: state.goalsWorkspaceId,
+      goalsLoadingByWs: state.goalsLoadingByWs,
+      goalsLoadedByWs: state.goalsLoadedByWs,
+      selectedCategoryId: state.selectedCategoryId,
+      sessionTitle: state.sessionTitle,
+      sessionDescription: state.sessionDescription,
+      sessionTaskId: state.sessionTaskId,
+      sessionTaskName: state.sessionTaskName,
+      sessionTaskTicketLabel: state.sessionTaskTicketLabel,
+    );
+  }
+
+  Future<void> _persistCurrentStateToCache() async {
+    final wsId = _activeWorkspaceId;
+    final userId = _activeUserId;
+    if (wsId == null || userId == null || wsId.isEmpty || userId.isEmpty) {
+      return;
+    }
+
+    await CacheStore.instance.write(
+      key: _cacheKey(wsId, userId),
+      policy: _cachePolicy,
+      payload: _stateToCachePayload(state),
+      tags: [_cacheTag, 'workspace:$wsId', 'module:timer'],
+    );
+  }
+
+  void prepareForWorkspaceSwitch() {
+    _stopTick();
+    emit(
+      state.copyWith(
+        status: TimeTrackerStatus.initial,
+        isFromCache: false,
+        isRefreshing: false,
+        lastUpdatedAt: null,
+        clearRunningSession: true,
+        clearActiveBreak: true,
+        clearRunningSessionTask: true,
+        elapsed: Duration.zero,
+        recentSessions: const [],
+        categories: const [],
+        stats: null,
+        historySessions: const [],
+        historyHasMore: false,
+        clearHistoryNextCursor: true,
+        clearHistoryPeriodStats: true,
+        isHistoryLoading: false,
+        isHistoryLoadingMore: false,
+        clearGoals: true,
+        clearGoalsLoaded: true,
+        goalsWorkspaceId: null,
+        goalsLoadingByWs: const {},
+        goalsLoadedByWs: const {},
+        clearError: true,
+      ),
+    );
+  }
+
   Future<void> loadData(
     String wsId,
     String userId, {
     int? firstDayOfWeek,
+    bool forceRefresh = false,
     bool throwOnError = false,
   }) async {
     final effectiveFirstDayOfWeek = firstDayOfWeek ?? _historyFirstDayOfWeek;
     _historyFirstDayOfWeek = effectiveFirstDayOfWeek;
     _activeWorkspaceId = wsId;
+    _activeUserId = userId;
     final loadDataRequestToken = ++_loadDataRequestToken;
     _goalsWorkspaceRequestToken++;
     _goalsRequestVersionByWs.clear();
-    emit(state.copyWith(status: TimeTrackerStatus.loading, clearError: true));
+    final cached = _cachedStateFor(wsId: wsId, userId: userId);
+    final cachedRead = await CacheStore.instance.read<Map<String, dynamic>>(
+      key: _cacheKey(wsId, userId),
+      decode: _decodeCacheJson,
+    );
+
+    if (cached != null) {
+      emit(
+        cached.copyWith(
+          status: TimeTrackerStatus.loaded,
+          isFromCache: true,
+          isRefreshing: forceRefresh || !cachedRead.isFresh,
+          lastUpdatedAt: cachedRead.fetchedAt,
+          clearError: true,
+        ),
+      );
+      if (!forceRefresh && cachedRead.isFresh) {
+        if (cached.runningSession != null && !cached.isPaused) {
+          _startTick();
+        }
+        return;
+      }
+    } else {
+      emit(
+        state.copyWith(
+          status: TimeTrackerStatus.loading,
+          isFromCache: false,
+          isRefreshing: false,
+          lastUpdatedAt: null,
+          clearError: true,
+        ),
+      );
+    }
 
     try {
       await _ensureHistoryPreferencesLoaded();
@@ -101,8 +475,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           runningSession != null &&
           !runningSession.isRunning &&
           activeBreak != null;
-      final elapsed = runningSession?.startTime != null && !isPaused
-          ? DateTime.now().difference(runningSession!.startTime!)
+      final runningStartTime = runningSession?.startTime;
+      final elapsed = runningStartTime != null && !isPaused
+          ? DateTime.now().difference(runningStartTime)
           : Duration.zero;
 
       // Fetch task display info separately if the running session has a task.
@@ -129,6 +504,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       emit(
         state.copyWith(
           status: TimeTrackerStatus.loaded,
+          isFromCache: false,
+          isRefreshing: false,
+          lastUpdatedAt: DateTime.now(),
           runningSession: runningSession,
           activeBreak: activeBreak,
           elapsed: elapsed,
@@ -158,11 +536,25 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           clearError: true,
         ),
       );
+      await _persistCurrentStateToCache();
 
       if (runningSession != null && !isPaused) {
         _startTick();
       }
     } on Exception catch (e) {
+      if (cached != null) {
+        emit(
+          state.copyWith(
+            status: TimeTrackerStatus.loaded,
+            isRefreshing: false,
+            error: e.toString(),
+          ),
+        );
+        if (throwOnError) {
+          rethrow;
+        }
+        return;
+      }
       emit(
         state.copyWith(status: TimeTrackerStatus.error, error: e.toString()),
       );
@@ -200,6 +592,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           clearError: true,
         ),
       );
+      await _persistCurrentStateToCache();
 
       _startTick();
     } on Exception catch (e) {
@@ -233,6 +626,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           clearError: true,
         ),
       );
+      await _persistCurrentStateToCache();
 
       final (recentSessions, stats) = await _loadRecentAndSummary(wsId, userId);
 
@@ -274,6 +668,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           isPaused: true,
         ),
       );
+      await _persistCurrentStateToCache();
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
     }
@@ -302,6 +697,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           clearActiveBreak: true,
         ),
       );
+      await _persistCurrentStateToCache();
 
       _startTick();
     } on Exception catch (e) {
@@ -469,10 +865,11 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         historyAnchorDate: anchorDate,
         isHistoryLoading: true,
         isHistoryLoadingMore: false,
-        historySessions: const [],
-        historyHasMore: false,
-        clearHistoryNextCursor: true,
-        clearHistoryPeriodStats: true,
+        historyHasMore:
+            state.historySessions.isNotEmpty && state.historyHasMore,
+        clearHistoryNextCursor: state.historySessions.isEmpty,
+        clearHistoryPeriodStats:
+            state.historySessions.isEmpty && state.historyPeriodStats == null,
         clearError: true,
       ),
     );
@@ -504,6 +901,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           clearError: true,
         ),
       );
+      await _persistCurrentStateToCache();
     } on Exception catch (e) {
       emit(
         state.copyWith(
@@ -560,6 +958,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           clearError: true,
         ),
       );
+      await _persistCurrentStateToCache();
     } on Exception catch (e) {
       emit(state.copyWith(isHistoryLoadingMore: false, error: e.toString()));
       if (throwOnError) {

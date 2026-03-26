@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -9,7 +10,6 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
@@ -64,11 +64,20 @@ class TimeTrackerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final userId = supabase.auth.currentUser?.id;
+
     return BlocProvider(
       create: (context) {
         final repo = repository ?? TimeTrackerRepository();
         return TimeTrackerCubit(
           repository: repo,
+          initialState: wsId != null && userId != null
+              ? TimeTrackerCubit.seedStateFor(
+                  wsId: wsId,
+                  userId: userId,
+                )
+              : null,
         );
       },
       child: _TimeTrackerView(
@@ -107,6 +116,9 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
     super.initState();
     _index = widget.initialSection.index;
     _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(CacheWarmupCoordinator.instance.prewarmModule('timer'));
+    });
   }
 
   @override
@@ -152,26 +164,9 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           anchorDate: widget.initialHistoryDate,
         );
         _hasAppliedInitialHistoryContext = true;
-
-        if ((widget.initialHistoryDate != null ||
-                widget.initialHistoryViewMode != null) &&
-            timeTrackerCubit.state.status == TimeTrackerStatus.loaded &&
-            wsId != null &&
-            userId != null) {
-          unawaited(
-            timeTrackerCubit.loadHistoryInitial(
-              wsId,
-              userId,
-              firstDayOfWeek: firstDayOfWeek,
-            ),
-          );
-        }
       }
 
-      // Avoid reloading if data is already loaded for this workspace
-      if (wsId == null ||
-          userId == null ||
-          timeTrackerCubit.state.status == TimeTrackerStatus.loaded) {
+      if (wsId == null || userId == null) {
         return;
       }
       unawaited(
@@ -186,8 +181,6 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (prev, curr) =>
           prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -195,6 +188,10 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         final wsId = wsState.currentWorkspace?.id;
         final userId = supabase.auth.currentUser?.id;
         if (wsId != null && userId != null) {
+          if (TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId) ==
+              null) {
+            context.read<TimeTrackerCubit>().prepareForWorkspaceSwitch();
+          }
           final calendarSettingsCubit = context.read<CalendarSettingsCubit>();
           await calendarSettingsCubit.loadWorkspacePreference(wsId);
           if (!context.mounted) return;
@@ -212,25 +209,18 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         }
       },
       child: shad.Scaffold(
-        headers: [
-          MobileSectionAppBar(
-            title: _getAppBarTitle(l10n),
-            actions: [
-              shad.IconButton.ghost(
-                onPressed: () => _showPomodoroSettings(context),
-                icon: const Icon(Icons.settings_outlined),
-              ),
-            ],
-          ),
-        ],
         child: BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
-          buildWhen: (prev, curr) => prev.status != curr.status,
+          buildWhen: (prev, curr) =>
+              prev.status != curr.status ||
+              prev.isRefreshing != curr.isRefreshing,
           builder: (context, state) {
-            if (state.status == TimeTrackerStatus.loading) {
+            if (state.status == TimeTrackerStatus.loading &&
+                !state.hasVisibleContent) {
               return const Center(child: shad.CircularProgressIndicator());
             }
 
-            if (state.status == TimeTrackerStatus.error) {
+            if (state.status == TimeTrackerStatus.error &&
+                !state.hasVisibleContent) {
               return _ErrorView(error: state.error);
             }
 
@@ -240,18 +230,36 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                   maxWidth: ResponsivePadding.maxContentWidth(
                     context.deviceClass,
                   ),
-                  child: IndexedStack(
-                    index: _index,
+                  child: Column(
                     children: [
-                      const TimerTab(),
-                      const HistoryTab(),
-                      StatsTab(initialScope: widget.initialStatsScope),
+                      if (state.isRefreshing)
+                        const LinearProgressIndicator(minHeight: 2),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: shad.IconButton.ghost(
+                            onPressed: () => _showPomodoroSettings(context),
+                            icon: const Icon(Icons.settings_outlined),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: IndexedStack(
+                          index: _index,
+                          children: [
+                            const TimerTab(),
+                            const HistoryTab(),
+                            StatsTab(initialScope: widget.initialStatsScope),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 ExtendedFab(
                   icon: shad.LucideIcons.plus,
-                  label: l10n.timerAddMissedEntry,
+                  label: context.l10n.timerAddMissedEntry,
                   onPressed: () => unawaited(_openMissedEntryDialog(context)),
                 ),
               ],
@@ -277,15 +285,6 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       wsId: wsId,
       userId: userId,
     );
-  }
-
-  String _getAppBarTitle(AppLocalizations l10n) {
-    // Show tab-specific title unless on the home (timer) tab
-    return switch (_index) {
-      1 => l10n.timerHistory,
-      2 => l10n.timerStatsTitle,
-      _ => l10n.timerTitle,
-    };
   }
 
   void _showPomodoroSettings(BuildContext context) {

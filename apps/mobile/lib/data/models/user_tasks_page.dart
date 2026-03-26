@@ -33,6 +33,17 @@ class UserTasksPage extends Equatable {
   final bool hasMoreCompleted;
   final int completedPage;
 
+  Map<String, dynamic> toJson() => {
+    'overdue': overdue.map((task) => task.toJson()).toList(growable: false),
+    'today': today.map((task) => task.toJson()).toList(growable: false),
+    'upcoming': upcoming.map((task) => task.toJson()).toList(growable: false),
+    'completed': completed.map((task) => task.toJson()).toList(growable: false),
+    'totalActiveTasks': totalActiveTasks,
+    'totalCompletedTasks': totalCompletedTasks,
+    'hasMoreCompleted': hasMoreCompleted,
+    'completedPage': completedPage,
+  };
+
   static List<UserTask> _parseTasks(dynamic value) {
     if (value is! List) return const <UserTask>[];
     return value

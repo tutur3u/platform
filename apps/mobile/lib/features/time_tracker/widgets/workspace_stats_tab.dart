@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Card, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -20,11 +24,34 @@ class WorkspaceStatsTab extends StatefulWidget {
 }
 
 class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
+  static const CachePolicy _cachePolicy = CachePolicies.moduleData;
+  static const _cacheTag = 'time-tracker:management-sessions';
   late final ITimeTrackerRepository _repo;
   final _searchCtrl = TextEditingController();
   List<TimeTrackingSession> _sessions = [];
   bool _loading = true;
+  bool _isRefreshing = false;
   String? _error;
+
+  static CacheKey _cacheKey(String wsId, String? search) {
+    return CacheKey(
+      namespace: 'time_tracker.management_sessions',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+      params: {'search': search ?? ''},
+    );
+  }
+
+  static Map<String, dynamic> _decodeCacheJson(Object? json) {
+    if (json is! Map) {
+      throw const FormatException(
+        'Invalid time tracker management sessions cache payload.',
+      );
+    }
+
+    return Map<String, dynamic>.from(json);
+  }
 
   @override
   void initState() {
@@ -95,6 +122,12 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
             ),
           ),
           const shad.Gap(8),
+          if (_isRefreshing)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
+          if (_isRefreshing) const shad.Gap(8),
           Expanded(
             child: _loading
                 ? const Center(child: shad.CircularProgressIndicator())
@@ -111,14 +144,14 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                         ),
                         const shad.Gap(8),
                         shad.SecondaryButton(
-                          onPressed: _load,
+                          onPressed: () => unawaited(_load(forceRefresh: true)),
                           child: Text(l10n.commonRetry),
                         ),
                       ],
                     ),
                   )
                 : RefreshIndicator(
-                    onRefresh: _load,
+                    onRefresh: () => _load(forceRefresh: true),
                     child: ListView.builder(
                       itemCount: _sessions.length,
                       padding: const EdgeInsets.only(bottom: 96),
@@ -134,29 +167,73 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
     );
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool forceRefresh = false}) async {
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    final search = _searchCtrl.text.isEmpty ? null : _searchCtrl.text;
+    final cacheKey = _cacheKey(wsId, search);
+    final cached = wsId.isEmpty
+        ? null
+        : await CacheStore.instance.read<Map<String, dynamic>>(
+            key: cacheKey,
+            decode: _decodeCacheJson,
+          );
+
+    if (cached != null && cached.hasValue && cached.data != null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _sessions =
+            ((cached.data!['sessions'] as List<dynamic>?) ?? const <dynamic>[])
+                .whereType<Map<String, dynamic>>()
+                .map(TimeTrackingSession.fromJson)
+                .toList(growable: false);
+        _loading = false;
+        _isRefreshing = !cached.isFresh;
+        _error = null;
+      });
+      if (!forceRefresh && cached.isFresh) {
+        return;
+      }
+    } else {
+      setState(() {
+        _loading = true;
+        _isRefreshing = false;
+        _error = null;
+      });
+    }
 
     try {
       final sessions = await _repo.getManagementSessions(
         wsId,
-        search: _searchCtrl.text.isEmpty ? null : _searchCtrl.text,
+        search: search,
       );
       if (!mounted) return;
+      await CacheStore.instance.write(
+        key: cacheKey,
+        policy: _cachePolicy,
+        payload: {
+          'sessions': sessions
+              .map((session) => session.toJson())
+              .toList(growable: false),
+        },
+        tags: [_cacheTag, 'workspace:$wsId', 'module:timer'],
+      );
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _sessions = sessions;
         _loading = false;
+        _isRefreshing = false;
       });
     } on Exception catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.toString();
-        _loading = false;
+        _loading = cached == null || !cached.hasValue;
+        _isRefreshing = false;
       });
     }
   }

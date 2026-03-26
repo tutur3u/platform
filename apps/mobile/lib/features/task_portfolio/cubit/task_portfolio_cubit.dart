@@ -1,5 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -7,16 +11,118 @@ import 'package:mobile/data/repositories/task_repository.dart';
 part 'task_portfolio_state.dart';
 
 class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
-  TaskPortfolioCubit({required TaskRepository taskRepository})
-    : _taskRepository = taskRepository,
-      super(const TaskPortfolioState());
+  TaskPortfolioCubit({
+    required TaskRepository taskRepository,
+    TaskPortfolioState? initialState,
+  }) : _taskRepository = taskRepository,
+       super(initialState ?? const TaskPortfolioState());
 
   final TaskRepository _taskRepository;
+  static const CachePolicy _cachePolicy = CachePolicies.moduleData;
+  static const _cacheTag = 'tasks:portfolio';
   int _loadRequestToken = 0;
+
+  static Map<String, dynamic> _decodeCacheJson(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid task portfolio cache payload.');
+    }
+
+    return Map<String, dynamic>.from(json);
+  }
+
+  static CacheKey _cacheKey(String wsId) {
+    return CacheKey(
+      namespace: 'tasks.portfolio',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+    );
+  }
+
+  static Future<void> prewarm({
+    required TaskRepository taskRepository,
+    required String wsId,
+    bool forceRefresh = false,
+  }) async {
+    await CacheStore.instance.prefetch<Map<String, dynamic>>(
+      key: _cacheKey(wsId),
+      policy: _cachePolicy,
+      decode: _decodeCacheJson,
+      forceRefresh: forceRefresh,
+      tags: [_cacheTag, 'workspace:$wsId', 'module:tasks'],
+      fetch: () async {
+        final projectsFuture = taskRepository.getTaskProjects(wsId);
+        final initiativesFuture = taskRepository.getTaskInitiatives(wsId);
+        final projects = await projectsFuture;
+        final initiatives = await initiativesFuture;
+        return {
+          'projects': projects
+              .map((project) => project.toJson())
+              .toList(growable: false),
+          'initiatives': initiatives
+              .map((initiative) => initiative.toJson())
+              .toList(growable: false),
+        };
+      },
+    );
+  }
+
+  static TaskPortfolioState? seedStateFor(String wsId) {
+    final cached = CacheStore.instance.peek<Map<String, dynamic>>(
+      key: _cacheKey(wsId),
+      decode: _decodeCacheJson,
+    );
+    final json = cached.data;
+    if (!cached.hasValue || json == null) {
+      return null;
+    }
+
+    return TaskPortfolioState(
+      status: TaskPortfolioStatus.loaded,
+      workspaceId: wsId,
+      projects: ((json['projects'] as List<dynamic>?) ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(TaskProjectSummary.fromJson)
+          .toList(growable: false),
+      initiatives:
+          ((json['initiatives'] as List<dynamic>?) ?? const <dynamic>[])
+              .whereType<Map<String, dynamic>>()
+              .map(TaskInitiativeSummary.fromJson)
+              .toList(growable: false),
+    );
+  }
 
   Future<void> load(String wsId) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
+    final cacheKey = _cacheKey(wsId);
+    final cached = await CacheStore.instance.read<Map<String, dynamic>>(
+      key: cacheKey,
+      decode: _decodeCacheJson,
+    );
+
+    if (cached.hasValue) {
+      final json = cached.data!;
+      emit(
+        state.copyWith(
+          status: TaskPortfolioStatus.loaded,
+          workspaceId: wsId,
+          projects: ((json['projects'] as List<dynamic>?) ?? const <dynamic>[])
+              .whereType<Map<String, dynamic>>()
+              .map(TaskProjectSummary.fromJson)
+              .toList(growable: false),
+          initiatives:
+              ((json['initiatives'] as List<dynamic>?) ?? const <dynamic>[])
+                  .whereType<Map<String, dynamic>>()
+                  .map(TaskInitiativeSummary.fromJson)
+                  .toList(growable: false),
+          clearError: true,
+        ),
+      );
+      if (cached.isFresh) {
+        return;
+      }
+    }
 
     emit(
       state.copyWith(
@@ -30,10 +136,10 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     );
 
     try {
-      final results = await Future.wait([
-        _taskRepository.getTaskProjects(wsId),
-        _taskRepository.getTaskInitiatives(wsId),
-      ]);
+      final projectsFuture = _taskRepository.getTaskProjects(wsId);
+      final initiativesFuture = _taskRepository.getTaskInitiatives(wsId);
+      final projects = await projectsFuture;
+      final initiatives = await initiativesFuture;
 
       if (requestToken != _loadRequestToken) return;
 
@@ -41,10 +147,23 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
         state.copyWith(
           status: TaskPortfolioStatus.loaded,
           workspaceId: wsId,
-          projects: results[0] as List<TaskProjectSummary>,
-          initiatives: results[1] as List<TaskInitiativeSummary>,
+          projects: projects,
+          initiatives: initiatives,
           clearError: true,
         ),
+      );
+      await CacheStore.instance.write(
+        key: cacheKey,
+        policy: _cachePolicy,
+        payload: {
+          'projects': projects
+              .map((project) => project.toJson())
+              .toList(growable: false),
+          'initiatives': initiatives
+              .map((initiative) => initiative.toJson())
+              .toList(growable: false),
+        },
+        tags: [_cacheTag, 'workspace:$wsId', 'module:tasks'],
       );
     } on Exception catch (error) {
       if (requestToken != _loadRequestToken) return;

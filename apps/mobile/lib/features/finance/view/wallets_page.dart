@@ -12,7 +12,6 @@ import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -62,18 +61,6 @@ class _WalletsViewState extends State<_WalletsView> {
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: l10n.financeWallets,
-          actions: [
-            shad.GhostButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: _onCreate,
-              child: const Icon(Icons.add_card_rounded, size: 18),
-            ),
-          ],
-        ),
-      ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -125,7 +112,7 @@ class _WalletsViewState extends State<_WalletsView> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
         children: [
-          const _WalletSummaryCard(walletCount: 0),
+          _WalletSummaryCard(walletCount: 0, onCreate: _onCreate),
           const shad.Gap(16),
           FinanceEmptyState(
             icon: Icons.account_balance_wallet_outlined,
@@ -147,7 +134,10 @@ class _WalletsViewState extends State<_WalletsView> {
       separatorBuilder: (context, index) => const shad.Gap(12),
       itemBuilder: (context, index) {
         if (index == 0) {
-          return _WalletSummaryCard(walletCount: _wallets.length);
+          return _WalletSummaryCard(
+            walletCount: _wallets.length,
+            onCreate: _onCreate,
+          );
         }
 
         final wallet = _wallets[index - 1];
@@ -328,15 +318,18 @@ class _WalletsCacheEntry {
 }
 
 class _WalletSummaryCard extends StatelessWidget {
-  const _WalletSummaryCard({required this.walletCount});
+  const _WalletSummaryCard({
+    required this.walletCount,
+    required this.onCreate,
+  });
 
   final int walletCount;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final palette = FinancePalette.of(context);
-    final theme = shad.Theme.of(context);
 
     return FinancePanel(
       padding: const EdgeInsets.all(20),
@@ -360,17 +353,13 @@ class _WalletSummaryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.financeOverviewWalletSectionTitle,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const shad.Gap(4),
-                Text(
-                  l10n.financeWalletSummaryHint(walletCount),
-                  style: theme.typography.textSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
+                FinanceSectionHeader(
+                  title: l10n.financeOverviewWalletSectionTitle,
+                  subtitle: l10n.financeWalletSummaryHint(walletCount),
+                  action: shad.GhostButton(
+                    density: shad.ButtonDensity.icon,
+                    onPressed: onCreate,
+                    child: const Icon(Icons.add_card_rounded, size: 18),
                   ),
                 ),
               ],

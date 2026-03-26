@@ -45,7 +45,11 @@ class MobileSectionAppBar extends StatelessWidget {
       leading: leading,
       trailing: [
         ...actions,
-        if (hasAuthCubit) const AvatarDropdown(),
+        if (hasAuthCubit)
+          const KeyedSubtree(
+            key: ValueKey('section-avatar'),
+            child: RepaintBoundary(child: AvatarDropdown()),
+          ),
       ],
       child: SizedBox(
         height: mobileSectionAppBarHeight,

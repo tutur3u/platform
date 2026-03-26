@@ -38,6 +38,16 @@ class TaskEstimateBoard extends Equatable {
   final bool allowZeroEstimates;
   final bool countUnestimatedIssues;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'created_at': createdAt?.toIso8601String(),
+    'estimation_type': estimationType,
+    'extended_estimation': extendedEstimation,
+    'allow_zero_estimates': allowZeroEstimates,
+    'count_unestimated_issues': countUnestimatedIssues,
+  };
+
   TaskEstimateBoard copyWith({
     String? id,
     Object? name = _sentinel,

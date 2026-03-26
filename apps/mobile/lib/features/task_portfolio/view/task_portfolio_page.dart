@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_view.dart';
@@ -14,18 +15,22 @@ class TaskPortfolioPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    unawaited(CacheWarmupCoordinator.instance.prewarmModule('tasks'));
     return RepositoryProvider<TaskRepository>(
       create: (_) => repository ?? TaskRepository(),
       child: BlocProvider(
         create: (context) {
-          final cubit = TaskPortfolioCubit(
-            taskRepository: context.read<TaskRepository>(),
-          );
           final wsId = context
               .read<WorkspaceCubit>()
               .state
               .currentWorkspace
               ?.id;
+          final cubit = TaskPortfolioCubit(
+            taskRepository: context.read<TaskRepository>(),
+            initialState: wsId == null
+                ? null
+                : TaskPortfolioCubit.seedStateFor(wsId),
+          );
           if (wsId != null) {
             unawaited(cubit.load(wsId));
           }

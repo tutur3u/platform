@@ -24,6 +24,12 @@ class TaskProjectUserSummary extends Equatable {
     return id;
   }
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'display_name': displayName,
+    'avatar_url': avatarUrl,
+  };
+
   @override
   List<Object?> get props => [id, displayName, avatarUrl];
 }
@@ -54,6 +60,14 @@ class TaskProjectLinkedTask extends Equatable {
   final DateTime? completedAt;
   final String? priority;
   final String? listName;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'completed_at': completedAt?.toIso8601String(),
+    'priority': priority,
+    'listName': listName,
+  };
 
   @override
   List<Object?> get props => [id, name, completedAt, priority, listName];
@@ -137,6 +151,29 @@ class TaskProjectSummary extends Equatable {
   final int tasksCount;
   final int completedTasksCount;
   final List<TaskProjectLinkedTask> linkedTasks;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'ws_id': wsId,
+    'creator_id': creatorId,
+    'lead_id': leadId,
+    'lead': lead?.toJson(),
+    'status': status,
+    'priority': priority,
+    'health_status': healthStatus,
+    'start_date': startDate?.toIso8601String(),
+    'end_date': endDate?.toIso8601String(),
+    'archived': archived,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt?.toIso8601String(),
+    'tasksCount': tasksCount,
+    'completedTasksCount': completedTasksCount,
+    'linkedTasks': linkedTasks
+        .map((task) => task.toJson())
+        .toList(growable: false),
+  };
 
   @override
   List<Object?> get props => [

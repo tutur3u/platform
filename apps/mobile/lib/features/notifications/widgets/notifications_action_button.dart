@@ -15,7 +15,22 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 bool shouldShowNotificationsActionForLocation(String matchedLocation) {
   return matchedLocation == Routes.home ||
       matchedLocation == Routes.assistant ||
-      matchedLocation == Routes.apps;
+      matchedLocation == Routes.apps ||
+      matchedLocation == Routes.tasks ||
+      matchedLocation == Routes.taskBoards ||
+      matchedLocation == Routes.taskEstimates ||
+      matchedLocation == Routes.taskPortfolio ||
+      matchedLocation == Routes.habits ||
+      matchedLocation == Routes.habitsActivity ||
+      matchedLocation == Routes.calendar ||
+      matchedLocation == Routes.finance ||
+      matchedLocation == Routes.transactions ||
+      matchedLocation == Routes.categories ||
+      matchedLocation == Routes.wallets ||
+      matchedLocation == Routes.timer ||
+      matchedLocation == Routes.timerHistory ||
+      matchedLocation == Routes.timerStats ||
+      matchedLocation == Routes.timerRequests;
 }
 
 class ShellNotificationsActionSlot extends StatelessWidget {
