@@ -116,6 +116,7 @@ describe('process-post-email-queue cron route', () => {
         alreadySent: 0,
         checked: 4,
         coveredByExistingQueue: 2,
+        coveredBySentEmail: 1,
         eligibleRecipients: 2,
         existingProcessing: 0,
         existingQueued: 0,
@@ -164,6 +165,7 @@ describe('process-post-email-queue cron route', () => {
           total: 4,
         },
         reconciliationDiagnostics: {
+          coveredBySentEmail: 1,
           missingSenderPlatformUser: 2,
           orphaned: 2,
           upserted: 0,

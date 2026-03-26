@@ -6,10 +6,7 @@ import {
   autoSkipOldPostEmails,
   getPostEmailMaxAgeCutoff,
 } from '@/lib/post-email-queue';
-import {
-  normalizeArrayParam,
-  normalizePostReviewStages,
-} from './search-params';
+import { normalizeArrayParam, normalizePostReviewStage } from './search-params';
 import { normalizePostEmailQueueStatus } from './status-derivation';
 import type {
   PostApprovalStatus,
@@ -142,7 +139,7 @@ export async function getPostsPageData(
   const activeApprovalStatus = normalizeApprovalStatus(approvalStatus);
   const includedGroupIds = normalizeArrayParam(includedGroups);
   const excludedGroupIds = normalizeArrayParam(excludedGroups);
-  const activeStages = normalizePostReviewStages(stage);
+  const activeStage = normalizePostReviewStage(stage);
   const activeQueueStatus = normalizeQueueStatus(queueStatus);
   const cutoff = getPostEmailMaxAgeCutoff();
   const offset = (safePage - 1) * safeSize;
@@ -157,7 +154,7 @@ export async function getPostsPageData(
     ...(excludedGroupIds.length > 0
       ? { p_excluded_group_ids: excludedGroupIds }
       : {}),
-    ...(activeStages.length > 0 ? { p_stage: activeStages } : {}),
+    ...(activeStage ? { p_stage: [activeStage] } : {}),
     ...(activeApprovalStatus
       ? { p_approval_status: activeApprovalStatus }
       : {}),

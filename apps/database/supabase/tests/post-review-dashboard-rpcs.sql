@@ -3,22 +3,42 @@ begin;
 create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
-set local role service_role;
 
-select set_config(
-  'request.jwt.claims',
-  jsonb_build_object(
-    'sub', '00000000-0000-0000-0000-00000000010A',
-    'role', 'service_role'
-  )::text,
-  true
-);
+select plan(11);
 
-select plan(10);
+insert into public.users (id)
+values ('00000000-0000-0000-0000-00000000010A')
+on conflict (id) do nothing;
 
-insert into public.users (id, email)
-values
-  ('00000000-0000-0000-0000-00000000010A', 'review-owner@example.com')
+insert into public.user_private_details (user_id, email, new_email)
+values (
+  '00000000-0000-0000-0000-00000000010A',
+  'review-owner@example.com',
+  null
+)
+on conflict (user_id) do update
+set
+  email = excluded.email,
+  new_email = excluded.new_email;
+
+insert into auth.users (
+  id,
+  aud,
+  role,
+  email,
+  email_confirmed_at,
+  created_at,
+  updated_at
+)
+values (
+  '00000000-0000-0000-0000-000000000111',
+  'authenticated',
+  'authenticated',
+  'sender@example.com',
+  now(),
+  now(),
+  now()
+)
 on conflict (id) do nothing;
 
 insert into public.workspaces (id, name, personal, creator_id)
@@ -126,7 +146,7 @@ values
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000112', true, 'Pending note', 'PENDING', null, null, null),
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000113', true, 'Approved awaiting note', 'APPROVED', '00000000-0000-0000-0000-000000000111', now(), null),
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000114', true, 'Queued note', 'APPROVED', '00000000-0000-0000-0000-000000000111', now(), null),
-  ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000115', true, 'Sent note', 'APPROVED', '00000000-0000-0000-0000-000000000111', now(), '00000000-0000-0000-0000-00000000010E'),
+  ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000115', true, 'Sent note', 'APPROVED', '00000000-0000-0000-0000-000000000111', now(), null),
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000116', false, 'Blocked note', 'APPROVED', '00000000-0000-0000-0000-000000000111', now(), null),
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000117', true, 'Skipped note', 'SKIPPED', null, null, null),
   ('00000000-0000-0000-0000-00000000010D', '00000000-0000-0000-0000-000000000118', false, 'Rejected note', 'REJECTED', null, null, null)
@@ -178,6 +198,19 @@ values
   )
 on conflict (post_id, user_id) do update
 set status = excluded.status;
+
+select is(
+  (
+    select review_stage
+    from public.get_workspace_post_review_rows(
+      p_ws_id => '00000000-0000-0000-0000-00000000010B',
+      p_limit => 20
+    )
+    where user_id = '00000000-0000-0000-0000-000000000115'
+  ),
+  'sent',
+  'approved recipients with direct sent_emails coverage resolve to sent'
+);
 
 select is(
   (

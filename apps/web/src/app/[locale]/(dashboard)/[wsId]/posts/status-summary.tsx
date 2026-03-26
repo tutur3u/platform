@@ -10,7 +10,7 @@ import {
   POST_REVIEW_STAGE_ORDER,
 } from './status-meta';
 import type { PostEmailStatusSummary, PostReviewStage } from './types';
-import { DEFAULT_POST_REVIEW_STAGES, POST_REVIEW_STAGES } from './types';
+import { DEFAULT_POST_REVIEW_STAGE } from './types';
 
 function getStatusPercentage(count: number, total: number) {
   if (total <= 0) return 0;
@@ -18,11 +18,11 @@ function getStatusPercentage(count: number, total: number) {
 }
 
 export function PostStatusSummary({
-  activeStages,
+  activeStage,
   filteredCount,
   summary,
 }: {
-  activeStages: PostReviewStage[];
+  activeStage?: PostReviewStage;
   filteredCount: number;
   summary: PostEmailStatusSummary;
 }) {
@@ -30,28 +30,8 @@ export function PostStatusSummary({
   const t = useTranslations('ws-post-emails');
   const tableT = useTranslations('post-email-data-table');
 
-  const activeStageSet = new Set(activeStages);
-  const isAllStagesSelected = POST_REVIEW_STAGES.every((stage) =>
-    activeStageSet.has(stage)
-  );
-  const isDefaultActionableView =
-    activeStages.length === DEFAULT_POST_REVIEW_STAGES.length &&
-    DEFAULT_POST_REVIEW_STAGES.every((stage) => activeStageSet.has(stage));
-
-  const toggleStage = (stage: PostReviewStage) => {
-    const nextStages = new Set(activeStages);
-
-    if (nextStages.has(stage)) {
-      nextStages.delete(stage);
-    } else {
-      nextStages.add(stage);
-    }
-
-    searchParams.set({
-      page: '1',
-      stage: Array.from(nextStages),
-    });
-  };
+  const isShowingAllRecipients = !activeStage;
+  const isDefaultActionableView = activeStage === DEFAULT_POST_REVIEW_STAGE;
 
   const hasAdvancedFilters = Boolean(
     searchParams.getSingle('queueStatus') ||
@@ -84,14 +64,14 @@ export function PostStatusSummary({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {!isAllStagesSelected && (
+              {!isShowingAllRecipients && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() =>
                     searchParams.set({
                       page: '1',
-                      stage: [...POST_REVIEW_STAGES],
+                      stage: undefined,
                     })
                   }
                 >
@@ -106,7 +86,7 @@ export function PostStatusSummary({
                   onClick={() =>
                     searchParams.set({
                       page: '1',
-                      stage: [...DEFAULT_POST_REVIEW_STAGES],
+                      stage: DEFAULT_POST_REVIEW_STAGE,
                     })
                   }
                 >
@@ -146,13 +126,18 @@ export function PostStatusSummary({
                   const percentage = getStatusPercentage(count, summary.total);
                   const appearance = getPostReviewStageAppearance(stage);
                   const Icon = appearance.icon;
-                  const isActive = activeStageSet.has(stage);
+                  const isActive = activeStage === stage;
 
                   return (
                     <button
                       key={stage}
                       type="button"
-                      onClick={() => toggleStage(stage)}
+                      onClick={() =>
+                        searchParams.set({
+                          page: '1',
+                          stage,
+                        })
+                      }
                       className={cn(
                         'group rounded-xl border bg-background px-3.5 py-3 text-left transition-all',
                         isActive

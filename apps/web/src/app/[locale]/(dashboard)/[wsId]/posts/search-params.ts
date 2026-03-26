@@ -1,5 +1,5 @@
 import {
-  DEFAULT_POST_REVIEW_STAGES,
+  DEFAULT_POST_REVIEW_STAGE,
   isPostReviewStage,
   type PostReviewStage,
   type PostsSearchParams,
@@ -13,17 +13,24 @@ export function normalizeArrayParam(value?: string | string[]) {
   return value ? [value] : [];
 }
 
+export function normalizePostReviewStage(
+  value?: string | string[]
+): PostReviewStage | undefined {
+  return normalizeArrayParam(value).find(isPostReviewStage);
+}
+
 export function normalizePostReviewStages(
   value?: string | string[]
 ): PostReviewStage[] {
-  return normalizeArrayParam(value).filter(isPostReviewStage);
+  const stage = normalizePostReviewStage(value);
+  return stage ? [stage] : [];
 }
 
 export function shouldApplyDefaultPostStageFilter(
   searchParams: PostsSearchParams
 ) {
   return (
-    normalizePostReviewStages(searchParams.stage).length === 0 &&
+    !normalizePostReviewStage(searchParams.stage) &&
     !searchParams.approvalStatus &&
     !searchParams.queueStatus
   );
@@ -42,10 +49,10 @@ export function buildPostsSearchParams(
 
   appendArray('includedGroups', searchParams.includedGroups);
   appendArray('excludedGroups', searchParams.excludedGroups);
-  appendArray('stage', searchParams.stage);
-
   if (searchParams.page) params.set('page', searchParams.page);
   if (searchParams.pageSize) params.set('pageSize', searchParams.pageSize);
+  const stage = normalizePostReviewStage(searchParams.stage);
+  if (stage) params.set('stage', stage);
   if (searchParams.userId) params.set('userId', searchParams.userId);
   if (searchParams.queueStatus)
     params.set('queueStatus', searchParams.queueStatus);
@@ -65,7 +72,7 @@ export function buildCanonicalPostsSearchParams(
 
   const params = buildPostsSearchParams({
     ...searchParams,
-    stage: [...DEFAULT_POST_REVIEW_STAGES],
+    stage: DEFAULT_POST_REVIEW_STAGE,
   });
 
   return params.toString();

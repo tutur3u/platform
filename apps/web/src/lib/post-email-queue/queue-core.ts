@@ -19,6 +19,8 @@ import {
   getQueueIdsForOldPosts,
   getQueueIdsToReenqueue,
   getSentPairIds,
+  partitionReconciliationCoverage,
+  type SentPairRow,
 } from './logic';
 import type {
   EligibleRecipient,
@@ -73,6 +75,7 @@ function createEmptyReconciliationDiagnostics(
     alreadySent: 0,
     checked,
     coveredByExistingQueue: 0,
+    coveredBySentEmail: 0,
     eligibleRecipients: 0,
     existingProcessing: 0,
     existingQueued: 0,
@@ -968,38 +971,104 @@ export async function reconcileOrphanedApprovedPosts(
   const existingQueueData: Array<
     Pick<PostEmailQueueRow, 'post_id' | 'user_id' | 'status'>
   > = [];
+  const sentEmailData: SentPairRow[] = [];
   for (const postChunk of chunkArray(postIds)) {
-    const { data, error: queueError } = await getQueueTable(sbAdmin)
-      .select('post_id, user_id, status')
-      .in('post_id', postChunk)
-      .in('status', ['queued', 'processing', 'sent', 'skipped']);
+    const [
+      { data: queueData, error: queueError },
+      { data: sentData, error: sentError },
+    ] = await Promise.all([
+      getQueueTable(sbAdmin)
+        .select('post_id, user_id, status')
+        .in('post_id', postChunk)
+        .in('status', ['queued', 'processing', 'sent', 'skipped']),
+      sbAdmin
+        .from('sent_emails')
+        .select('post_id, receiver_id')
+        .in('post_id', postChunk),
+    ]);
 
     if (queueError) throw queueError;
-    existingQueueData.push(...(data ?? []));
+    if (sentError) throw sentError;
+    existingQueueData.push(...(queueData ?? []));
+    sentEmailData.push(
+      ...((sentData ?? []).filter(
+        (row): row is SentPairRow =>
+          Boolean(row.post_id) && Boolean(row.receiver_id)
+      ) as SentPairRow[])
+    );
   }
 
-  const covered = new Set(
-    existingQueueData.map((row) => `${row.post_id}:${row.user_id}`)
-  );
-
-  const orphaned = checks.filter(
-    (check) => !covered.has(`${check.post_id}:${check.user_id}`)
-  );
-  const diagnostics = createEmptyReconciliationDiagnostics(checks.length);
-  diagnostics.coveredByExistingQueue = checks.length - orphaned.length;
-  diagnostics.orphaned = orphaned.length;
-
-  console.log('[reconcileOrphanedApprovedPosts] Orphaned after queue check', {
-    totalChecks: checks.length,
-    existingQueueCount: existingQueueData.length,
-    orphanedCount: orphaned.length,
-    sampleOrphaned: orphaned.slice(0, 3).map((check) => ({
+  const coverage = partitionReconciliationCoverage({
+    checks: checks.map((check) => ({
       post_id: check.post_id,
       user_id: check.user_id,
-      is_completed: check.is_completed,
-      email: check.user?.email,
     })),
+    existingQueueRows: existingQueueData.map((row) => ({
+      post_id: row.post_id,
+      user_id: row.user_id,
+    })),
+    sentRows: sentEmailData,
   });
+  const orphanedPairIds = new Set(coverage.orphaned);
+
+  const orphaned = checks.filter((check) =>
+    orphanedPairIds.has(`${check.post_id}:${check.user_id}`)
+  );
+  const diagnostics = createEmptyReconciliationDiagnostics(checks.length);
+  diagnostics.coveredByExistingQueue = coverage.coveredByExistingQueue.length;
+  diagnostics.coveredBySentEmail = coverage.coveredBySentEmail.length;
+  diagnostics.orphaned = orphaned.length;
+
+  console.log(
+    '[reconcileOrphanedApprovedPosts] Coverage after queue and sent email checks',
+    {
+      totalChecks: checks.length,
+      existingQueueCount: existingQueueData.length,
+      sentEmailCount: sentEmailData.length,
+      coveredByExistingQueueCount: diagnostics.coveredByExistingQueue,
+      coveredBySentEmailCount: diagnostics.coveredBySentEmail,
+      orphanedCount: orphaned.length,
+      sampleCoveredBySentEmail: checks
+        .filter((check) =>
+          coverage.coveredBySentEmail.includes(
+            `${check.post_id}:${check.user_id}`
+          )
+        )
+        .slice(0, 3)
+        .map((check) => ({
+          post_id: check.post_id,
+          user_id: check.user_id,
+          email: check.user?.email,
+        })),
+      sampleOrphaned: orphaned.slice(0, 3).map((check) => ({
+        post_id: check.post_id,
+        user_id: check.user_id,
+        is_completed: check.is_completed,
+        email: check.user?.email,
+      })),
+    }
+  );
+
+  if (diagnostics.coveredBySentEmail > 0) {
+    console.log(
+      '[reconcileOrphanedApprovedPosts] Already delivered via sent_emails without queue coverage',
+      {
+        coveredBySentEmailCount: diagnostics.coveredBySentEmail,
+        sampleCoveredBySentEmail: checks
+          .filter((check) =>
+            coverage.coveredBySentEmail.includes(
+              `${check.post_id}:${check.user_id}`
+            )
+          )
+          .slice(0, 3)
+          .map((check) => ({
+            post_id: check.post_id,
+            user_id: check.user_id,
+            email: check.user?.email,
+          })),
+      }
+    );
+  }
 
   if (orphaned.length === 0) {
     return {

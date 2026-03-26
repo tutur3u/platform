@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCanonicalPostsSearchParams,
   buildPostsSearchParams,
+  normalizePostReviewStage,
   normalizePostReviewStages,
   shouldApplyDefaultPostStageFilter,
 } from './search-params';
@@ -13,10 +14,7 @@ describe('posts search params helpers', () => {
     );
 
     expect(params.get('page')).toBe('2');
-    expect(params.getAll('stage')).toEqual([
-      'missing_check',
-      'pending_approval',
-    ]);
+    expect(params.get('stage')).toBe('pending_approval');
     expect(shouldApplyDefaultPostStageFilter({ page: '2' })).toBe(true);
   });
 
@@ -33,7 +31,7 @@ describe('posts search params helpers', () => {
     ).toBeNull();
   });
 
-  it('preserves multi-value stages and group filters when building URL params', () => {
+  it('canonicalizes multi-value stages down to the first valid value', () => {
     const params = buildPostsSearchParams({
       excludedGroups: ['group-b'],
       includedGroups: ['group-a'],
@@ -42,10 +40,7 @@ describe('posts search params helpers', () => {
       userId: 'user-1',
     });
 
-    expect(params.getAll('stage')).toEqual([
-      'missing_check',
-      'pending_approval',
-    ]);
+    expect(params.getAll('stage')).toEqual(['missing_check']);
     expect(params.getAll('includedGroups')).toEqual(['group-a']);
     expect(params.getAll('excludedGroups')).toEqual(['group-b']);
     expect(params.get('page')).toBe('3');
@@ -53,8 +48,9 @@ describe('posts search params helpers', () => {
   });
 
   it('drops unknown stage values during normalization', () => {
+    expect(normalizePostReviewStage(['unknown', 'queued'])).toBe('queued');
     expect(
       normalizePostReviewStages(['missing_check', 'unknown', 'queued'])
-    ).toEqual(['missing_check', 'queued']);
+    ).toEqual(['missing_check']);
   });
 });

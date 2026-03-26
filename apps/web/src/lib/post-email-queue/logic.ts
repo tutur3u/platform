@@ -26,6 +26,11 @@ export type SentPairRow = {
   receiver_id: string;
 };
 
+export type PostUserPairRow = {
+  post_id: string;
+  user_id: string;
+};
+
 export type EligibleRecipientDiagnosticsInput = {
   eligibleRecipients: number;
   invalidEmail: number;
@@ -157,6 +162,43 @@ export function getEligibleReenqueuePairIds(
 
 export function getSentPairIds(sentRows: SentPairRow[]): Set<string> {
   return new Set(sentRows.map((row) => `${row.post_id}:${row.receiver_id}`));
+}
+
+export function partitionReconciliationCoverage({
+  checks,
+  existingQueueRows,
+  sentRows,
+}: {
+  checks: PostUserPairRow[];
+  existingQueueRows: PostUserPairRow[];
+  sentRows: SentPairRow[];
+}) {
+  const queuePairIds = new Set(
+    existingQueueRows.map((row) => `${row.post_id}:${row.user_id}`)
+  );
+  const sentPairIds = getSentPairIds(sentRows);
+  const coveredByExistingQueue: string[] = [];
+  const coveredBySentEmail: string[] = [];
+  const orphaned: string[] = [];
+
+  for (const check of checks) {
+    const pairId = `${check.post_id}:${check.user_id}`;
+    if (queuePairIds.has(pairId)) {
+      coveredByExistingQueue.push(pairId);
+      continue;
+    }
+    if (sentPairIds.has(pairId)) {
+      coveredBySentEmail.push(pairId);
+      continue;
+    }
+    orphaned.push(pairId);
+  }
+
+  return {
+    coveredByExistingQueue,
+    coveredBySentEmail,
+    orphaned,
+  };
 }
 
 export function getQueueIdsToReenqueue(

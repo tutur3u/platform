@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildEligibleRecipientsDiagnostics,
   buildEnqueueApprovedPostEmailsDiagnostics,
+  partitionReconciliationCoverage,
 } from './logic';
 
 describe('buildEligibleRecipientsDiagnostics', () => {
@@ -96,5 +97,23 @@ describe('buildEnqueueApprovedPostEmailsDiagnostics', () => {
     expect(result.existingProcessing).toBe(1);
     expect(result.alreadySent).toBe(1);
     expect(result.upserted).toBe(0);
+  });
+});
+
+describe('partitionReconciliationCoverage', () => {
+  it('treats sent email pairs as covered before classifying checks as orphaned', () => {
+    const result = partitionReconciliationCoverage({
+      checks: [
+        { post_id: 'post-1', user_id: 'user-queue' },
+        { post_id: 'post-1', user_id: 'user-sent' },
+        { post_id: 'post-1', user_id: 'user-orphaned' },
+      ],
+      existingQueueRows: [{ post_id: 'post-1', user_id: 'user-queue' }],
+      sentRows: [{ post_id: 'post-1', receiver_id: 'user-sent' }],
+    });
+
+    expect(result.coveredByExistingQueue).toEqual(['post-1:user-queue']);
+    expect(result.coveredBySentEmail).toEqual(['post-1:user-sent']);
+    expect(result.orphaned).toEqual(['post-1:user-orphaned']);
   });
 });

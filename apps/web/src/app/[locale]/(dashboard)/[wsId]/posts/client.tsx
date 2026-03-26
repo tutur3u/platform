@@ -8,7 +8,7 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
-import { normalizePostReviewStages } from './search-params';
+import { normalizePostReviewStage } from './search-params';
 import { PostStatusSummary } from './status-summary';
 import type {
   PostEmail,
@@ -37,7 +37,7 @@ export default function PostsClient({
   const t = useTranslations();
   const [posts, setPosts] = usePosts();
   const [selectedPost, setSelectedPost] = useState<PostEmail | null>(null);
-  const activeStages = normalizePostReviewStages(searchParams.stage);
+  const activeStage = normalizePostReviewStage(searchParams.stage);
 
   useEffect(() => {
     if (posts.selected && postsData?.data) {
@@ -82,7 +82,7 @@ export default function PostsClient({
       />
 
       <PostStatusSummary
-        activeStages={activeStages}
+        activeStage={activeStage}
         filteredCount={postsData?.count || 0}
         summary={postsStatus}
       />

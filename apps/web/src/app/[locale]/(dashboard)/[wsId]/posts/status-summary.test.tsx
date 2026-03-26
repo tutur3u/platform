@@ -1,0 +1,109 @@
+/**
+ * @vitest-environment jsdom
+ */
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PostStatusSummary } from './status-summary';
+import type { PostEmailStatusSummary } from './types';
+
+const searchParamsMock = {
+  getSingle: vi.fn(),
+  set: vi.fn(),
+};
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, values?: Record<string, unknown>) =>
+    values ? `${key}:${JSON.stringify(values)}` : key,
+}));
+
+vi.mock('@tuturuuu/ui/hooks/useSearchParams', () => ({
+  default: () => searchParamsMock,
+}));
+
+const summary: PostEmailStatusSummary = {
+  approvals: {
+    approved: 4,
+    pending: 2,
+    rejected: 1,
+    skipped: 0,
+  },
+  queue: {
+    blocked: 0,
+    cancelled: 0,
+    failed: 0,
+    processing: 0,
+    queued: 1,
+    sent: 3,
+    skipped: 0,
+  },
+  stages: {
+    approved_awaiting_delivery: 4,
+    delivery_failed: 0,
+    missing_check: 5,
+    pending_approval: 2,
+    processing: 0,
+    queued: 1,
+    rejected: 1,
+    sent: 3,
+    skipped: 0,
+  },
+  total: 16,
+};
+
+describe('PostStatusSummary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    searchParamsMock.getSingle.mockReturnValue(undefined);
+  });
+
+  it('replaces the current stage when a stage card is clicked', () => {
+    render(
+      <PostStatusSummary
+        activeStage="sent"
+        filteredCount={3}
+        summary={summary}
+      />
+    );
+
+    fireEvent.click(screen.getByText('pending_approval'));
+
+    expect(searchParamsMock.set).toHaveBeenCalledWith({
+      page: '1',
+      stage: 'pending_approval',
+    });
+  });
+
+  it('clears stage when show all recipients is clicked', () => {
+    render(
+      <PostStatusSummary
+        activeStage="queued"
+        filteredCount={1}
+        summary={summary}
+      />
+    );
+
+    fireEvent.click(screen.getByText('show_all_recipients'));
+
+    expect(searchParamsMock.set).toHaveBeenCalledWith({
+      page: '1',
+      stage: undefined,
+    });
+  });
+
+  it('restores the default actionable stage when requested', () => {
+    render(
+      <PostStatusSummary
+        activeStage="sent"
+        filteredCount={3}
+        summary={summary}
+      />
+    );
+
+    fireEvent.click(screen.getByText('show_actionable_queue'));
+
+    expect(searchParamsMock.set).toHaveBeenCalledWith({
+      page: '1',
+      stage: 'pending_approval',
+    });
+  });
+});

@@ -66,6 +66,7 @@ export default function PostsFilters({
         tag="stage"
         title={t('post-email-data-table.stage')}
         icon={<CircleHelp className="mr-2 h-4 w-4" />}
+        multiple={false}
         extraQueryOnSet={{ page: '1' }}
         options={POST_REVIEW_STAGE_ORDER.map((stage) => {
           const appearance = getPostReviewStageAppearance(stage);

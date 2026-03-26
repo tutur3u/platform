@@ -244,6 +244,7 @@ export type ReconcileOrphanedApprovedPostsDiagnostics = {
   alreadySent: number;
   checked: number;
   coveredByExistingQueue: number;
+  coveredBySentEmail: number;
   eligibleRecipients: number;
   existingProcessing: number;
   existingQueued: number;

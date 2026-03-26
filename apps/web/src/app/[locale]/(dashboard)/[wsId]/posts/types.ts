@@ -27,10 +27,7 @@ export const POST_REVIEW_STAGES = [
   'rejected',
 ] as const;
 
-export const DEFAULT_POST_REVIEW_STAGES = [
-  'missing_check',
-  'pending_approval',
-] as const;
+export const DEFAULT_POST_REVIEW_STAGE = 'pending_approval' as const;
 
 export type PostApprovalStatus = (typeof POST_APPROVAL_STATUSES)[number];
 export type PostReviewStage = (typeof POST_REVIEW_STAGES)[number];
