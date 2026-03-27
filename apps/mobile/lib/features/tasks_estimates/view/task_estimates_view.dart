@@ -9,7 +9,6 @@ import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_labels_cubit.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimate_boards_section.dart';
@@ -40,12 +39,14 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
   static const _tabEstimates = 0;
   static const _tabLabels = 1;
   static const double _fabContentBottomPadding = 96;
+  static final Map<String, bool> _permissionCache = {};
 
   int _activeTab = _tabEstimates;
   late final WorkspacePermissionsRepository _permissionsRepository;
   String? _permissionsWorkspaceId;
   bool _canManageProjects = false;
   bool _isCheckingPermissions = false;
+  bool _hasResolvedPermissions = false;
 
   @override
   void initState() {
@@ -64,17 +65,20 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     }
 
     _permissionsWorkspaceId = wsId;
+    final cachedPermission = wsId == null ? null : _permissionCache[wsId];
+    if (cachedPermission != null) {
+      _canManageProjects = cachedPermission;
+      _hasResolvedPermissions = true;
+    } else {
+      _canManageProjects = false;
+      _hasResolvedPermissions = wsId == null;
+    }
     unawaited(_loadPermissions());
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(title: l10n.taskPlanningTitle),
-      ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -109,20 +113,15 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
   }
 
   Widget _buildContent(BuildContext context) {
-    if (_isCheckingPermissions) {
-      return const Center(child: shad.CircularProgressIndicator());
-    }
-
-    if (!_canManageProjects) {
-      return const TaskEstimatesAccessDenied();
-    }
-
     return BlocBuilder<TaskEstimatesCubit, TaskEstimatesState>(
       builder: (context, estimatesState) {
         return BlocBuilder<TaskLabelsCubit, TaskLabelsState>(
           builder: (context, labelsState) {
             final listBottomPadding =
                 _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
+            final hasVisibleData =
+                estimatesState.boards.isNotEmpty ||
+                labelsState.labels.isNotEmpty;
 
             final isEstimatesLoading =
                 estimatesState.status == TaskEstimatesStatus.loading &&
@@ -130,6 +129,18 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
             final isLabelsLoading =
                 labelsState.status == TaskLabelsStatus.loading &&
                 labelsState.labels.isEmpty;
+
+            if (_isCheckingPermissions &&
+                !_hasResolvedPermissions &&
+                !hasVisibleData) {
+              return const Center(child: shad.CircularProgressIndicator());
+            }
+
+            if (_hasResolvedPermissions &&
+                !_canManageProjects &&
+                !hasVisibleData) {
+              return const TaskEstimatesAccessDenied();
+            }
 
             if (_activeTab == _tabEstimates && isEstimatesLoading) {
               return const Center(child: shad.CircularProgressIndicator());
@@ -222,6 +233,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
       setState(() {
         _canManageProjects = false;
         _isCheckingPermissions = false;
+        _hasResolvedPermissions = true;
       });
       return;
     }
@@ -238,7 +250,9 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
       setState(() {
         _canManageProjects = permissions.containsPermission('manage_projects');
         _isCheckingPermissions = false;
+        _hasResolvedPermissions = true;
       });
+      _permissionCache[wsId] = _canManageProjects;
     } on Exception {
       if (!_canUpdatePermissionsState(capturedWsId)) {
         return;
@@ -246,6 +260,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
       setState(() {
         _canManageProjects = false;
         _isCheckingPermissions = false;
+        _hasResolvedPermissions = true;
       });
     }
   }

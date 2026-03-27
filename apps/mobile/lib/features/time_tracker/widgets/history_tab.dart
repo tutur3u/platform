@@ -148,7 +148,7 @@ class _HistoryTabState extends State<HistoryTab> {
                   ),
                 ),
               ),
-              if (state.isHistoryLoading)
+              if (state.isHistoryLoading && sessions.isEmpty)
                 const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
@@ -156,6 +156,13 @@ class _HistoryTabState extends State<HistoryTab> {
                   ),
                 )
               else ...[
+                if (state.isHistoryLoading)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: LinearProgressIndicator(minHeight: 2),
+                    ),
+                  ),
                 if (sessions.isEmpty)
                   SliverToBoxAdapter(
                     child: Padding(

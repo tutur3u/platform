@@ -8,6 +8,9 @@ class TaskListState extends Equatable {
   const TaskListState({
     this.status = TaskListStatus.initial,
     this.hasLoadedOnce = false,
+    this.isFromCache = false,
+    this.isRefreshing = false,
+    this.lastUpdatedAt,
     this.overdueTasks = const [],
     this.todayTasks = const [],
     this.upcomingTasks = const [],
@@ -26,6 +29,9 @@ class TaskListState extends Equatable {
 
   final TaskListStatus status;
   final bool hasLoadedOnce;
+  final bool isFromCache;
+  final bool isRefreshing;
+  final DateTime? lastUpdatedAt;
   final List<UserTask> overdueTasks;
   final List<UserTask> todayTasks;
   final List<UserTask> upcomingTasks;
@@ -44,6 +50,9 @@ class TaskListState extends Equatable {
   TaskListState copyWith({
     TaskListStatus? status,
     bool? hasLoadedOnce,
+    bool? isFromCache,
+    bool? isRefreshing,
+    Object? lastUpdatedAt = _sentinel,
     List<UserTask>? overdueTasks,
     List<UserTask>? todayTasks,
     List<UserTask>? upcomingTasks,
@@ -62,6 +71,11 @@ class TaskListState extends Equatable {
   }) => TaskListState(
     status: status ?? this.status,
     hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce,
+    isFromCache: isFromCache ?? this.isFromCache,
+    isRefreshing: isRefreshing ?? this.isRefreshing,
+    lastUpdatedAt: lastUpdatedAt == _sentinel
+        ? this.lastUpdatedAt
+        : lastUpdatedAt as DateTime?,
     overdueTasks: overdueTasks ?? this.overdueTasks,
     todayTasks: todayTasks ?? this.todayTasks,
     upcomingTasks: upcomingTasks ?? this.upcomingTasks,
@@ -83,6 +97,9 @@ class TaskListState extends Equatable {
   List<Object?> get props => [
     status,
     hasLoadedOnce,
+    isFromCache,
+    isRefreshing,
+    lastUpdatedAt,
     overdueTasks,
     todayTasks,
     upcomingTasks,

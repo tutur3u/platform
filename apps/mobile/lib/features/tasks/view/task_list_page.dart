@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/widgets/my_tasks_header.dart';
 import 'package:mobile/features/tasks/widgets/task_section_accordion.dart';
@@ -22,6 +22,7 @@ Future<void> _reload(BuildContext context) async {
   await context.read<TaskListCubit>().loadTasks(
     wsId: ws.id,
     isPersonal: ws.personal,
+    forceRefresh: true,
   );
 }
 
@@ -32,8 +33,19 @@ class TaskListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
-        final cubit = TaskListCubit(taskRepository: TaskRepository());
+        final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
+        final seededState = workspace == null
+            ? null
+            : TaskListCubit.seedStateFor(
+                wsId: workspace.id,
+                isPersonal: workspace.personal,
+              );
+        final cubit = TaskListCubit(
+          taskRepository: TaskRepository(),
+          initialState: seededState,
+        );
         _loadIfReady(context, cubit);
+        unawaited(CacheWarmupCoordinator.instance.prewarmModule('tasks'));
         return cubit;
       },
       child: const _TaskListView(),
@@ -100,9 +112,6 @@ class _TaskListViewState extends State<_TaskListView> {
     final bottomPadding = 32 + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(title: l10n.tasksTitle),
-      ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,

@@ -11,6 +11,7 @@ import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
+import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
@@ -44,177 +45,200 @@ class _ProfileView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return shad.Scaffold(
-      child: BlocBuilder<ProfileCubit, ProfileState>(
-        builder: (context, state) {
-          if (state.status == ProfileStatus.loading && state.profile == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const shad.CircularProgressIndicator(),
-                  const shad.Gap(16),
-                  Text(l10n.profileLoading),
-                ],
-              ),
-            );
-          }
-
-          if (state.status == ProfileStatus.error && state.profile == null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+    return BlocListener<ProfileCubit, ProfileState>(
+      listenWhen: (previous, current) =>
+          previous.profile != current.profile ||
+          previous.lastUpdatedAt != current.lastUpdatedAt,
+      listener: (context, state) {
+        final profile = state.profile;
+        if (profile == null) {
+          return;
+        }
+        unawaited(
+          context.read<ShellProfileCubit>().applyExternalProfile(
+            profile,
+            lastUpdatedAt: state.lastUpdatedAt,
+            isFromCache: state.isFromCache,
+          ),
+        );
+      },
+      child: shad.Scaffold(
+        child: BlocBuilder<ProfileCubit, ProfileState>(
+          builder: (context, state) {
+            if (state.status == ProfileStatus.loading &&
+                state.profile == null) {
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      state.error ?? l10n.profileUpdateError,
-                      textAlign: TextAlign.center,
-                    ),
+                    const shad.CircularProgressIndicator(),
                     const shad.Gap(16),
-                    shad.PrimaryButton(
-                      onPressed: () => context.read<ProfileCubit>().loadProfile(
-                        forceRefresh: true,
-                      ),
-                      child: Text(l10n.commonRetry),
-                    ),
+                    Text(l10n.profileLoading),
                   ],
                 ),
+              );
+            }
+
+            if (state.status == ProfileStatus.error && state.profile == null) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        state.error ?? l10n.profileUpdateError,
+                        textAlign: TextAlign.center,
+                      ),
+                      const shad.Gap(16),
+                      shad.PrimaryButton(
+                        onPressed: () =>
+                            context.read<ProfileCubit>().loadProfile(
+                              forceRefresh: true,
+                            ),
+                        child: Text(l10n.commonRetry),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final profile = state.profile;
+            if (profile == null) {
+              return const SizedBox.shrink();
+            }
+
+            return RefreshIndicator.adaptive(
+              onRefresh: () => context.read<ProfileCubit>().loadProfile(
+                forceRefresh: true,
+              ),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+                children: [
+                  _ProfileHeroCard(profile: profile, state: state),
+                  const shad.Gap(32),
+                  _ProfilePanel(
+                    title: l10n.profileIdentitySectionTitle,
+                    description: l10n.profileIdentitySectionDescription,
+                    child: Column(
+                      children: [
+                        _ProfileActionTile(
+                          icon: Icons.person_outline_rounded,
+                          title: l10n.profileDisplayName,
+                          value:
+                              profile.displayName ?? l10n.profileMissingValue,
+                          isValuePlaceholder:
+                              profile.displayName?.trim().isEmpty ?? true,
+                          onTap: () => _showEditFieldSheet(
+                            context,
+                            title: l10n.profileDisplayName,
+                            description: l10n.profileDisplayNameDescription,
+                            initialValue: profile.displayName ?? '',
+                            placeholder: l10n.profileDisplayNameHint,
+                            validator: (value) => value.trim().isEmpty
+                                ? l10n.profileDisplayNameRequired
+                                : null,
+                            onSave: (value) => context
+                                .read<ProfileCubit>()
+                                .updateDisplayName(value),
+                          ),
+                        ),
+                        const shad.Gap(12),
+                        _ProfileActionTile(
+                          icon: Icons.badge_outlined,
+                          title: l10n.profileFullName,
+                          value: profile.fullName ?? l10n.profileMissingValue,
+                          isValuePlaceholder:
+                              profile.fullName?.trim().isEmpty ?? true,
+                          onTap: () => _showEditFieldSheet(
+                            context,
+                            title: l10n.profileFullName,
+                            description: l10n.profileFullNameDescription,
+                            initialValue: profile.fullName ?? '',
+                            placeholder: l10n.profileFullNameHint,
+                            validator: (value) => value.trim().isEmpty
+                                ? l10n.profileFullNameRequired
+                                : null,
+                            onSave: (value) => context
+                                .read<ProfileCubit>()
+                                .updateFullName(value),
+                          ),
+                        ),
+                        const shad.Gap(12),
+                        _ProfileActionTile(
+                          icon: Icons.alternate_email_rounded,
+                          title: l10n.profileEmail,
+                          value: profile.email ?? l10n.profileMissingValue,
+                          subtitle: profile.newEmail == null
+                              ? null
+                              : l10n.profileEmailPendingChange(
+                                  profile.newEmail!,
+                                ),
+                          isValuePlaceholder:
+                              profile.email?.trim().isEmpty ?? true,
+                          onTap: () => _showEditFieldSheet(
+                            context,
+                            title: l10n.profileEmail,
+                            description: l10n.profileEmailDescription,
+                            initialValue: profile.email ?? '',
+                            placeholder: l10n.profileEmailHint,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) => value.contains('@')
+                                ? null
+                                : l10n.profileInvalidEmail,
+                            onSave: (value) =>
+                                context.read<ProfileCubit>().updateEmail(value),
+                            successMessage: l10n.profileEmailUpdateNote,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const shad.Gap(32),
+                  _ProfilePanel(
+                    title: l10n.profileAvatarSectionTitle,
+                    description: l10n.profileAvatarDescription,
+                    child: Column(
+                      children: [
+                        _ProfileActionTile(
+                          icon: Icons.photo_camera_back_outlined,
+                          title: profile.avatarUrl != null
+                              ? l10n.profileChangeAvatar
+                              : l10n.profileUploadAvatar,
+                          value: profile.avatarUrl?.trim().isNotEmpty ?? false
+                              ? l10n.profileAvatarSet
+                              : l10n.profileMissingValue,
+                          isValuePlaceholder:
+                              profile.avatarUrl?.trim().isEmpty ?? true,
+                          onTap: () => _pickAndUploadAvatar(context),
+                        ),
+                        if (profile.avatarUrl != null) const shad.Gap(12),
+                        if (profile.avatarUrl != null)
+                          _ProfileActionTile(
+                            icon: Icons.delete_outline_rounded,
+                            title: l10n.profileRemoveAvatar,
+                            value: l10n.profileDangerAction,
+                            isDestructive: true,
+                            onTap: () => _confirmRemoveAvatar(context),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const shad.Gap(32),
+                  _ProfilePanel(
+                    title: l10n.profileAccountStatus,
+                    description: l10n.profileAccountStatusDescription,
+                    child: _ProfileStatusGrid(profile: profile),
+                  ),
+                ],
               ),
             );
-          }
-
-          final profile = state.profile;
-          if (profile == null) {
-            return const SizedBox.shrink();
-          }
-
-          return RefreshIndicator.adaptive(
-            onRefresh: () => context.read<ProfileCubit>().loadProfile(
-              forceRefresh: true,
-            ),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
-              children: [
-                _ProfileHeroCard(profile: profile, state: state),
-                const shad.Gap(32),
-                _ProfilePanel(
-                  title: l10n.profileIdentitySectionTitle,
-                  description: l10n.profileIdentitySectionDescription,
-                  child: Column(
-                    children: [
-                      _ProfileActionTile(
-                        icon: Icons.person_outline_rounded,
-                        title: l10n.profileDisplayName,
-                        value: profile.displayName ?? l10n.profileMissingValue,
-                        isValuePlaceholder:
-                            profile.displayName?.trim().isEmpty ?? true,
-                        onTap: () => _showEditFieldSheet(
-                          context,
-                          title: l10n.profileDisplayName,
-                          description: l10n.profileDisplayNameDescription,
-                          initialValue: profile.displayName ?? '',
-                          placeholder: l10n.profileDisplayNameHint,
-                          validator: (value) => value.trim().isEmpty
-                              ? l10n.profileDisplayNameRequired
-                              : null,
-                          onSave: (value) => context
-                              .read<ProfileCubit>()
-                              .updateDisplayName(value),
-                        ),
-                      ),
-                      const shad.Gap(12),
-                      _ProfileActionTile(
-                        icon: Icons.badge_outlined,
-                        title: l10n.profileFullName,
-                        value: profile.fullName ?? l10n.profileMissingValue,
-                        isValuePlaceholder:
-                            profile.fullName?.trim().isEmpty ?? true,
-                        onTap: () => _showEditFieldSheet(
-                          context,
-                          title: l10n.profileFullName,
-                          description: l10n.profileFullNameDescription,
-                          initialValue: profile.fullName ?? '',
-                          placeholder: l10n.profileFullNameHint,
-                          validator: (value) => value.trim().isEmpty
-                              ? l10n.profileFullNameRequired
-                              : null,
-                          onSave: (value) => context
-                              .read<ProfileCubit>()
-                              .updateFullName(value),
-                        ),
-                      ),
-                      const shad.Gap(12),
-                      _ProfileActionTile(
-                        icon: Icons.alternate_email_rounded,
-                        title: l10n.profileEmail,
-                        value: profile.email ?? l10n.profileMissingValue,
-                        subtitle: profile.newEmail == null
-                            ? null
-                            : l10n.profileEmailPendingChange(profile.newEmail!),
-                        isValuePlaceholder:
-                            profile.email?.trim().isEmpty ?? true,
-                        onTap: () => _showEditFieldSheet(
-                          context,
-                          title: l10n.profileEmail,
-                          description: l10n.profileEmailDescription,
-                          initialValue: profile.email ?? '',
-                          placeholder: l10n.profileEmailHint,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) => value.contains('@')
-                              ? null
-                              : l10n.profileInvalidEmail,
-                          onSave: (value) =>
-                              context.read<ProfileCubit>().updateEmail(value),
-                          successMessage: l10n.profileEmailUpdateNote,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const shad.Gap(32),
-                _ProfilePanel(
-                  title: l10n.profileAvatarSectionTitle,
-                  description: l10n.profileAvatarDescription,
-                  child: Column(
-                    children: [
-                      _ProfileActionTile(
-                        icon: Icons.photo_camera_back_outlined,
-                        title: profile.avatarUrl != null
-                            ? l10n.profileChangeAvatar
-                            : l10n.profileUploadAvatar,
-                        value: profile.avatarUrl?.trim().isNotEmpty ?? false
-                            ? l10n.profileAvatarSet
-                            : l10n.profileMissingValue,
-                        isValuePlaceholder:
-                            profile.avatarUrl?.trim().isEmpty ?? true,
-                        onTap: () => _pickAndUploadAvatar(context),
-                      ),
-                      if (profile.avatarUrl != null) const shad.Gap(12),
-                      if (profile.avatarUrl != null)
-                        _ProfileActionTile(
-                          icon: Icons.delete_outline_rounded,
-                          title: l10n.profileRemoveAvatar,
-                          value: l10n.profileDangerAction,
-                          isDestructive: true,
-                          onTap: () => _confirmRemoveAvatar(context),
-                        ),
-                    ],
-                  ),
-                ),
-                const shad.Gap(32),
-                _ProfilePanel(
-                  title: l10n.profileAccountStatus,
-                  description: l10n.profileAccountStatusDescription,
-                  child: _ProfileStatusGrid(profile: profile),
-                ),
-              ],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

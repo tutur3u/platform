@@ -2,6 +2,7 @@ part of 'task_boards_view.dart';
 
 class _TaskBoardCard extends StatelessWidget {
   const _TaskBoardCard({
+    required this.canManage,
     required this.board,
     required this.onTap,
     required this.onEdit,
@@ -13,6 +14,7 @@ class _TaskBoardCard extends StatelessWidget {
     required this.onDeleteForever,
   });
 
+  final bool canManage;
   final TaskBoardSummary board;
   final VoidCallback onTap;
   final VoidCallback onEdit;
@@ -67,10 +69,11 @@ class _TaskBoardCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  shad.IconButton.ghost(
-                    icon: const Icon(Icons.more_horiz),
-                    onPressed: () => _showActionMenu(context),
-                  ),
+                  if (canManage)
+                    shad.IconButton.ghost(
+                      icon: const Icon(Icons.more_horiz),
+                      onPressed: () => _showActionMenu(context),
+                    ),
                 ],
               ),
               const shad.Gap(10),

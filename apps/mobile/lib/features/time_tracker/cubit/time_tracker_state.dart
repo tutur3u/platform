@@ -16,6 +16,9 @@ enum HistoryViewMode { day, week, month }
 class TimeTrackerState extends Equatable {
   const TimeTrackerState({
     this.status = TimeTrackerStatus.initial,
+    this.isFromCache = false,
+    this.isRefreshing = false,
+    this.lastUpdatedAt,
     this.runningSession,
     this.activeBreak,
     this.elapsed = Duration.zero,
@@ -52,6 +55,9 @@ class TimeTrackerState extends Equatable {
   });
 
   final TimeTrackerStatus status;
+  final bool isFromCache;
+  final bool isRefreshing;
+  final DateTime? lastUpdatedAt;
   final TimeTrackingSession? runningSession;
   final TimeTrackingBreak? activeBreak;
   final Duration elapsed;
@@ -91,6 +97,13 @@ class TimeTrackerState extends Equatable {
   final String? error;
 
   bool get isRunning => runningSession != null && !isPaused;
+  bool get hasVisibleContent =>
+      runningSession != null ||
+      recentSessions.isNotEmpty ||
+      categories.isNotEmpty ||
+      stats != null ||
+      historySessions.isNotEmpty ||
+      historyPeriodStats != null;
 
   bool get isGoalsLoading =>
       goalsWorkspaceId != null && isGoalsLoadingFor(goalsWorkspaceId!);
@@ -105,6 +118,9 @@ class TimeTrackerState extends Equatable {
 
   TimeTrackerState copyWith({
     TimeTrackerStatus? status,
+    bool? isFromCache,
+    bool? isRefreshing,
+    Object? lastUpdatedAt = _sentinel,
     TimeTrackingSession? runningSession,
     TimeTrackingBreak? activeBreak,
     Duration? elapsed,
@@ -114,7 +130,7 @@ class TimeTrackerState extends Equatable {
     Object? goalsWorkspaceId = _sentinel,
     Map<String, bool>? goalsLoadingByWs,
     Map<String, bool>? goalsLoadedByWs,
-    TimeTrackerStats? stats,
+    Object? stats = _sentinel,
     String? selectedCategoryId,
     String? sessionTitle,
     String? sessionDescription,
@@ -169,6 +185,11 @@ class TimeTrackerState extends Equatable {
 
     return TimeTrackerState(
       status: status ?? this.status,
+      isFromCache: isFromCache ?? this.isFromCache,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      lastUpdatedAt: lastUpdatedAt == _sentinel
+          ? this.lastUpdatedAt
+          : lastUpdatedAt as DateTime?,
       runningSession: nextRunningSession,
       activeBreak: clearActiveBreak ? null : (activeBreak ?? this.activeBreak),
       elapsed: elapsed ?? this.elapsed,
@@ -184,7 +205,7 @@ class TimeTrackerState extends Equatable {
       goalsLoadedByWs: clearGoalsLoaded
           ? const {}
           : (goalsLoadedByWs ?? this.goalsLoadedByWs),
-      stats: stats ?? this.stats,
+      stats: stats == _sentinel ? this.stats : stats as TimeTrackerStats?,
       selectedCategoryId: clearSelectedCategory
           ? null
           : (selectedCategoryId ?? this.selectedCategoryId),
@@ -240,6 +261,9 @@ class TimeTrackerState extends Equatable {
   @override
   List<Object?> get props => [
     status,
+    isFromCache,
+    isRefreshing,
+    lastUpdatedAt,
     runningSession,
     activeBreak,
     elapsed,

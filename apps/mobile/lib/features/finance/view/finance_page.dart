@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -18,7 +19,6 @@ import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -54,6 +54,7 @@ class FinancePage extends StatelessWidget {
           if (wsId != null) {
             unawaited(cubit.loadFinanceData(wsId));
           }
+          unawaited(CacheWarmupCoordinator.instance.prewarmModule('finance'));
           return cubit;
         },
         child: const _FinanceView(),
@@ -67,21 +68,7 @@ class _FinanceView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: l10n.financeTitle,
-          actions: [
-            shad.GhostButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () => context.push(Routes.transactions),
-              child: const Icon(Icons.timeline_rounded, size: 18),
-            ),
-          ],
-        ),
-      ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,

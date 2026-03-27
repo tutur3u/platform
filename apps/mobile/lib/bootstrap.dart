@@ -4,6 +4,8 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -54,6 +56,9 @@ Future<void> bootstrap(
   } on Object catch (e, st) {
     log('Failed to initialize Supabase: $e', stackTrace: st);
   }
+
+  await CacheStore.instance.init();
+  await OfflineMutationQueue.instance.init();
 
   // Pre-load the user's last routes so the router starts there directly.
   // Prefer the more specific tab route if it's a sub-route of a mini-app,
