@@ -13,7 +13,6 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_boards_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_form_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -41,6 +40,7 @@ class TaskBoardsView extends StatefulWidget {
 
 class _TaskBoardsViewState extends State<TaskBoardsView> {
   static const double _fabContentBottomPadding = 96;
+  static final Map<String, bool> _permissionCache = {};
 
   late final WorkspacePermissionsRepository _permissionsRepository;
   final ScrollController _scrollController = ScrollController();
@@ -48,6 +48,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   bool _canManageProjects = false;
   bool _isCheckingPermissions = false;
   bool _permissionsLoadFailed = false;
+  bool _hasResolvedPermissions = false;
 
   @override
   void initState() {
@@ -75,70 +76,62 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     }
 
     _permissionsWorkspaceId = wsId;
+    final cachedPermission = wsId == null ? null : _permissionCache[wsId];
+    if (cachedPermission != null) {
+      _canManageProjects = cachedPermission;
+      _hasResolvedPermissions = true;
+    } else {
+      _canManageProjects = false;
+      _hasResolvedPermissions = wsId == null;
+    }
     unawaited(_loadPermissions());
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: l10n.taskBoardsTitle,
-          actions: [
-            BlocBuilder<TaskBoardsCubit, TaskBoardsState>(
-              buildWhen: (prev, curr) => prev.filter != curr.filter,
-              builder: (context, state) {
-                return Tooltip(
-                  message: _filterLabel(context, state.filter),
-                  child: shad.IconButton.ghost(
-                    icon: const Icon(shad.LucideIcons.filter),
-                    onPressed: () => _showFilterMenu(context, state.filter),
-                  ),
-                );
-              },
+    return BlocListener<WorkspaceCubit, WorkspaceState>(
+      listenWhen: (prev, curr) =>
+          prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+      listener: (context, state) {
+        unawaited(_loadPermissions());
+      },
+      child: Stack(
+        children: [
+          _buildContent(context),
+          if (_canManageProjects)
+            SpeedDialFab(
+              label: l10n.taskBoardsTitle,
+              icon: Icons.add,
+              actions: [
+                FabAction(
+                  icon: Icons.add_box_outlined,
+                  label: l10n.taskBoardsCreate,
+                  onPressed: _openCreateBoard,
+                ),
+              ],
             ),
-          ],
-        ),
-      ],
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, state) {
-          unawaited(_loadPermissions());
-        },
-        child: Stack(
-          children: [
-            _buildContent(context),
-            if (_canManageProjects)
-              SpeedDialFab(
-                label: l10n.taskBoardsTitle,
-                icon: Icons.add,
-                actions: [
-                  FabAction(
-                    icon: Icons.add_box_outlined,
-                    label: l10n.taskBoardsCreate,
-                    onPressed: _openCreateBoard,
-                  ),
-                ],
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildContent(BuildContext context) {
-    if (_isCheckingPermissions) {
+    final taskBoardsState = context.watch<TaskBoardsCubit>().state;
+    final hasVisibleBoards = taskBoardsState.boards.isNotEmpty;
+
+    if (_isCheckingPermissions &&
+        !_hasResolvedPermissions &&
+        !hasVisibleBoards) {
       return const Center(child: shad.CircularProgressIndicator());
     }
-    if (_permissionsLoadFailed) {
+    if (_permissionsLoadFailed && !hasVisibleBoards) {
       return _ErrorView(
         error: context.l10n.commonSomethingWentWrong,
         onRetry: _loadPermissions,
       );
     }
-    if (!_canManageProjects) {
+    if (_hasResolvedPermissions && !_canManageProjects && !hasVisibleBoards) {
       return _AccessDeniedView(
         title: context.l10n.taskBoardsAccessDeniedTitle,
         description: context.l10n.taskBoardsAccessDeniedDescription,
@@ -170,6 +163,18 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
               children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _BoardsToolbarCard(
+                    title: context.l10n.taskBoardsTitle,
+                    filterLabel: _filterLabel(context, state.filter),
+                    boardCount: state.filteredBoards.length,
+                    isRefreshing:
+                        state.status == TaskBoardsStatus.loading &&
+                        state.boards.isNotEmpty,
+                    onOpenFilter: () => _showFilterMenu(context, state.filter),
+                  ),
+                ),
                 if (state.filteredBoards.isEmpty)
                   _EmptyView(filter: state.filter)
                 else
@@ -177,6 +182,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                     (board) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _TaskBoardCard(
+                        canManage: _canManageProjects,
                         board: board,
                         onTap: () => context.push(
                           Routes.taskBoardDetailPath(board.id),
@@ -234,6 +240,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         _canManageProjects = false;
         _isCheckingPermissions = false;
         _permissionsLoadFailed = false;
+        _hasResolvedPermissions = true;
       });
       return;
     }
@@ -250,7 +257,9 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         _canManageProjects = canManageProjects;
         _isCheckingPermissions = false;
         _permissionsLoadFailed = false;
+        _hasResolvedPermissions = true;
       });
+      _permissionCache[wsId] = canManageProjects;
 
       if (canManageProjects && mounted) {
         unawaited(
@@ -265,6 +274,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         _canManageProjects = false;
         _isCheckingPermissions = false;
         _permissionsLoadFailed = true;
+        _hasResolvedPermissions = true;
       });
     }
   }

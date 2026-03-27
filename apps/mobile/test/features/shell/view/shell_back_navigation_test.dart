@@ -11,6 +11,10 @@ import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
+import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
+import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -25,17 +29,54 @@ class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
 
+class _MockShellProfileCubit extends MockCubit<ShellProfileState>
+    implements ShellProfileCubit {}
+
+class _FallbackShellProfileCubit extends Cubit<ShellProfileState>
+    implements ShellProfileCubit {
+  _FallbackShellProfileCubit() : super(const ShellProfileState());
+
+  @override
+  void primeFromAuthenticatedUser(dynamic user) {}
+
+  @override
+  Future<void> loadFromAuthenticatedUser(
+    dynamic user, {
+    bool forceRefresh = false,
+  }) async {}
+
+  @override
+  Future<void> refreshIfStale(dynamic user) async {}
+
+  @override
+  Future<void> applyExternalProfile(
+    dynamic profile, {
+    DateTime? lastUpdatedAt,
+    bool isFromCache = false,
+  }) async {}
+
+  @override
+  Future<void> clear() async {}
+}
+
 Widget _buildTestApp({
   required GoRouter router,
   required AppTabCubit appTabCubit,
   required AuthCubit authCubit,
   required WorkspaceCubit workspaceCubit,
+  ShellProfileCubit? shellProfileCubit,
 }) {
   return MultiBlocProvider(
     providers: [
       BlocProvider.value(value: appTabCubit),
       BlocProvider<AuthCubit>.value(value: authCubit),
       BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+      if (shellProfileCubit != null)
+        BlocProvider<ShellProfileCubit>.value(value: shellProfileCubit)
+      else
+        BlocProvider<ShellProfileCubit>(
+          create: (_) => _FallbackShellProfileCubit(),
+        ),
     ],
     child: shad.ShadcnApp.router(
       theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
@@ -143,12 +184,14 @@ void main() {
     late AppTabCubit appTabCubit;
     late _MockAuthCubit authCubit;
     late _MockWorkspaceCubit workspaceCubit;
+    late _MockShellProfileCubit shellProfileCubit;
 
     setUp(() {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       appTabCubit = AppTabCubit(settingsRepository: SettingsRepository());
       authCubit = _MockAuthCubit();
       workspaceCubit = _MockWorkspaceCubit();
+      shellProfileCubit = _MockShellProfileCubit();
 
       whenListen(
         authCubit,
@@ -160,12 +203,18 @@ void main() {
         const Stream<WorkspaceState>.empty(),
         initialState: const WorkspaceState(),
       );
+      whenListen(
+        shellProfileCubit,
+        const Stream<ShellProfileState>.empty(),
+        initialState: const ShellProfileState(),
+      );
     });
 
     tearDown(() async {
       await appTabCubit.close();
       await authCubit.close();
       await workspaceCubit.close();
+      await shellProfileCubit.close();
     });
 
     testWidgets('system back navigates through in-session route history', (
@@ -187,6 +236,7 @@ void main() {
           appTabCubit: appTabCubit,
           authCubit: authCubit,
           workspaceCubit: workspaceCubit,
+          shellProfileCubit: shellProfileCubit,
         ),
       );
       await _pumpForTransitions(tester);
@@ -205,6 +255,98 @@ void main() {
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+    });
+
+    testWidgets(
+      'shared shell header actions stay mounted between apps and module roots',
+      (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(390, 844);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final router = _buildRouter(initialLocation: Routes.apps);
+        addTearDown(router.dispose);
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            router: router,
+            appTabCubit: appTabCubit,
+            authCubit: authCubit,
+            workspaceCubit: workspaceCubit,
+            shellProfileCubit: shellProfileCubit,
+          ),
+        );
+        await _pumpForTransitions(tester);
+
+        final avatarStateBefore = tester.state(find.byType(AvatarDropdown));
+        final notificationsStateBefore = tester.state(
+          find.byType(NotificationsActionButton),
+        );
+
+        router.go(Routes.tasks);
+        await _pumpForTransitions(tester);
+
+        expect(find.byType(AvatarDropdown), findsOneWidget);
+        expect(find.byType(NotificationsActionButton), findsOneWidget);
+        expect(
+          identical(
+            tester.state(find.byType(AvatarDropdown)),
+            avatarStateBefore,
+          ),
+          isTrue,
+        );
+        expect(
+          identical(
+            tester.state(find.byType(NotificationsActionButton)),
+            notificationsStateBefore,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    testWidgets('module routes show app-specific bottom navigation', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final router = _buildRouter(initialLocation: Routes.apps);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+          shellProfileCubit: shellProfileCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      final shellContext = tester.element(find.byType(ShellPage));
+      final l10n = AppLocalizations.of(shellContext);
+
+      expect(find.text(l10n.navBack), findsNothing);
+      expect(find.text(l10n.taskBoardsTitle), findsNothing);
+
+      router.go(Routes.tasks);
+      await _pumpForTransitions(tester);
+
+      expect(find.text(l10n.navBack), findsOneWidget);
+      expect(find.text(l10n.taskBoardsTitle), findsOneWidget);
+      expect(find.text(l10n.taskPlanningTitle), findsOneWidget);
+      expect(find.text(l10n.taskPortfolioTitle), findsOneWidget);
     });
 
     testWidgets('system back from mini-app root goes to apps picker', (

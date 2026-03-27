@@ -16,6 +16,11 @@ class ProfileCubit extends Cubit<ProfileState> {
   static UserProfile? _memoryCachedProfile;
   static DateTime? _memoryCachedAt;
 
+  static void clearMemoryCache() {
+    _memoryCachedProfile = null;
+    _memoryCachedAt = null;
+  }
+
   /// Loads the user's profile.
   Future<void> loadProfile({
     bool forceRefresh = false,

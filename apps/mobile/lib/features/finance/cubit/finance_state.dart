@@ -5,6 +5,9 @@ enum FinanceStatus { initial, loading, loaded, error }
 class FinanceState extends Equatable {
   const FinanceState({
     this.status = FinanceStatus.initial,
+    this.isFromCache = false,
+    this.isRefreshing = false,
+    this.lastUpdatedAt,
     this.wallets = const [],
     this.recentTransactions = const [],
     this.workspaceCurrency = 'USD',
@@ -13,6 +16,9 @@ class FinanceState extends Equatable {
   });
 
   final FinanceStatus status;
+  final bool isFromCache;
+  final bool isRefreshing;
+  final DateTime? lastUpdatedAt;
   final List<Wallet> wallets;
   final List<Transaction> recentTransactions;
   final String workspaceCurrency;
@@ -53,6 +59,9 @@ class FinanceState extends Equatable {
 
   FinanceState copyWith({
     FinanceStatus? status,
+    bool? isFromCache,
+    bool? isRefreshing,
+    Object? lastUpdatedAt = _sentinel,
     List<Wallet>? wallets,
     List<Transaction>? recentTransactions,
     String? workspaceCurrency,
@@ -61,6 +70,11 @@ class FinanceState extends Equatable {
     bool clearError = false,
   }) => FinanceState(
     status: status ?? this.status,
+    isFromCache: isFromCache ?? this.isFromCache,
+    isRefreshing: isRefreshing ?? this.isRefreshing,
+    lastUpdatedAt: lastUpdatedAt == _sentinel
+        ? this.lastUpdatedAt
+        : lastUpdatedAt as DateTime?,
     wallets: wallets ?? this.wallets,
     recentTransactions: recentTransactions ?? this.recentTransactions,
     workspaceCurrency: workspaceCurrency ?? this.workspaceCurrency,
@@ -71,6 +85,9 @@ class FinanceState extends Equatable {
   @override
   List<Object?> get props => [
     status,
+    isFromCache,
+    isRefreshing,
+    lastUpdatedAt,
     wallets,
     recentTransactions,
     workspaceCurrency,

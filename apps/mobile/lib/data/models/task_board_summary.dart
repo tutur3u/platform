@@ -123,6 +123,19 @@ class TaskBoardSummary extends Equatable {
   bool get isArchived => archivedAt != null && deletedAt == null;
   bool get isRecentlyDeleted => deletedAt != null;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'ws_id': wsId,
+    'name': name,
+    'icon': icon,
+    'ticket_prefix': ticketPrefix,
+    'created_at': createdAt?.toIso8601String(),
+    'archived_at': archivedAt?.toIso8601String(),
+    'deleted_at': deletedAt?.toIso8601String(),
+    'listCount': listCount,
+    'taskCount': taskCount,
+  };
+
   @override
   List<Object?> get props => [
     id,

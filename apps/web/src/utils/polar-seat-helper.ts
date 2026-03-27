@@ -31,7 +31,7 @@ export async function ensurePersonalPolarCustomer(
   const { data: userPrivate } = await supabase
     .from('user_private_details')
     .select('email')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .single();
 
   if (!userPrivate?.email) {

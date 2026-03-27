@@ -15,12 +15,14 @@ class WalletDetailMetadataCard extends StatelessWidget {
     required this.wallet,
     required this.workspaceCurrency,
     required this.exchangeRates,
+    this.onEdit,
     super.key,
   });
 
   final Wallet wallet;
   final String workspaceCurrency;
   final List<ExchangeRate> exchangeRates;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +67,12 @@ class WalletDetailMetadataCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      wallet.name ?? '-',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
+                    FinanceSectionHeader(
+                      title: wallet.name ?? '-',
+                      action: shad.OutlineButton(
+                        density: shad.ButtonDensity.icon,
+                        onPressed: onEdit,
+                        child: const Icon(Icons.edit_outlined, size: 16),
                       ),
                     ),
                     const shad.Gap(6),

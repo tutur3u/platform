@@ -13,7 +13,6 @@ import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -83,20 +82,6 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     final wallet = _wallet;
 
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: _wallet?.name ?? l10n.financeWallet,
-          actions: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: (_wallet == null || _isLoadingInitial)
-                  ? null
-                  : _onEditWallet,
-              child: const Icon(Icons.edit_outlined, size: 16),
-            ),
-          ],
-        ),
-      ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -160,6 +145,9 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                                 wallet: wallet,
                                 workspaceCurrency: _workspaceCurrency,
                                 exchangeRates: _exchangeRates,
+                                onEdit: _isLoadingInitial
+                                    ? null
+                                    : _onEditWallet,
                               ),
                               const shad.Gap(12),
                               WalletDetailStatsCard(

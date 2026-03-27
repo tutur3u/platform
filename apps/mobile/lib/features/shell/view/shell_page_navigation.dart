@@ -18,46 +18,79 @@ extension _ShellPageNavigation on _ShellPageState {
       shad.NavigationItem(
         key: _ShellPageState._homeKey,
         spacing: _ShellPageState._navItemSpacing,
-        label: isCompact ? _buildNavLabel(l10n.navHome, labelStyle) : null,
+        label: isCompact
+            ? _buildNavLabel(
+                l10n.navHome,
+                labelStyle,
+                itemIndex: 0,
+              )
+            : null,
         child: isCompact
-            ? const Icon(
-                Icons.home_outlined,
-                size: _ShellPageState._navIconSize,
+            ? _buildAnimatedNavElement(
+                itemIndex: 0,
+                slotDelay: 0,
+                child: const Icon(
+                  Icons.home_outlined,
+                  size: _ShellPageState._navIconSize,
+                ),
               )
             : _buildHorizontalNavItem(
                 icon: Icons.home_outlined,
                 label: l10n.navHome,
                 style: labelStyle,
+                itemIndex: 0,
               ),
       ),
       shad.NavigationItem(
         key: _ShellPageState._assistantKey,
         spacing: _ShellPageState._navItemSpacing,
-        label: isCompact ? _buildNavLabel(l10n.navAssistant, labelStyle) : null,
+        label: isCompact
+            ? _buildNavLabel(
+                l10n.navAssistant,
+                labelStyle,
+                itemIndex: 1,
+              )
+            : null,
         child: isCompact
-            ? const Icon(
-                Icons.auto_awesome_outlined,
-                size: _ShellPageState._navIconSize,
+            ? _buildAnimatedNavElement(
+                itemIndex: 1,
+                slotDelay: 0,
+                child: const Icon(
+                  Icons.auto_awesome_outlined,
+                  size: _ShellPageState._navIconSize,
+                ),
               )
             : _buildHorizontalNavItem(
                 icon: Icons.auto_awesome_outlined,
                 label: l10n.navAssistant,
                 style: labelStyle,
+                itemIndex: 1,
               ),
       ),
       shad.NavigationItem(
         key: useGlobalKey ? _appsTabKey : _ShellPageState._appsKey,
         spacing: _ShellPageState._navItemSpacing,
-        label: isCompact ? _buildNavLabel(l10n.navApps, labelStyle) : null,
+        label: isCompact
+            ? _buildNavLabel(
+                l10n.navApps,
+                labelStyle,
+                itemIndex: 2,
+              )
+            : null,
         child: isCompact
-            ? const Icon(
-                Icons.apps_outlined,
-                size: _ShellPageState._navIconSize,
+            ? _buildAnimatedNavElement(
+                itemIndex: 2,
+                slotDelay: 0,
+                child: const Icon(
+                  Icons.apps_outlined,
+                  size: _ShellPageState._navIconSize,
+                ),
               )
             : _buildHorizontalNavItem(
                 icon: Icons.apps_outlined,
                 label: l10n.navApps,
                 style: labelStyle,
+                itemIndex: 2,
               ),
       ),
     ];
@@ -67,36 +100,54 @@ extension _ShellPageNavigation on _ShellPageState {
     required IconData icon,
     required String label,
     required TextStyle style,
+    required int itemIndex,
   }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: _ShellPageState._navIconSize),
+        _buildAnimatedNavElement(
+          itemIndex: itemIndex,
+          slotDelay: 0,
+          child: Icon(icon, size: _ShellPageState._navIconSize),
+        ),
         const SizedBox(width: 6),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: style,
+        _buildAnimatedNavElement(
+          itemIndex: itemIndex,
+          slotDelay: 0.08,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildNavLabel(String text, TextStyle style) {
-    return Text(
-      text,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      textAlign: TextAlign.center,
-      style: style,
+  Widget _buildNavLabel(
+    String text,
+    TextStyle style, {
+    required int itemIndex,
+  }) {
+    return _buildAnimatedNavElement(
+      itemIndex: itemIndex,
+      slotDelay: 0.08,
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: style,
+      ),
     );
   }
 
   List<shad.NavigationItem> _buildMiniAppNavItems(
     BuildContext context,
     AppModule module,
+    List<MiniAppNavItem> miniNavItems,
   ) {
     final theme = shad.Theme.of(context);
     final labelStyle = theme.typography.p.copyWith(
@@ -105,8 +156,7 @@ extension _ShellPageNavigation on _ShellPageState {
     );
     final l10n = context.l10n;
     final isCompact = context.isCompact;
-    final useDenseCompactLabels =
-        isCompact && module.miniAppNavItems.length >= 4;
+    final useDenseCompactLabels = isCompact && miniNavItems.length >= 4;
     final miniLabelStyle = useDenseCompactLabels
         ? labelStyle.copyWith(fontSize: 10)
         : labelStyle;
@@ -123,38 +173,76 @@ extension _ShellPageNavigation on _ShellPageState {
         spacing: miniItemSpacing,
         alignment: Alignment.center,
         marginAlignment: Alignment.center,
-        label: isCompact ? _buildNavLabel(l10n.navBack, miniLabelStyle) : null,
+        label: isCompact
+            ? _buildNavLabel(
+                l10n.navBack,
+                miniLabelStyle,
+                itemIndex: 0,
+              )
+            : null,
         child: isCompact
-            ? Icon(Icons.chevron_left, size: miniIconSize)
+            ? _buildAnimatedNavElement(
+                itemIndex: 0,
+                slotDelay: 0,
+                child: Icon(Icons.chevron_left, size: miniIconSize),
+              )
             : _buildHorizontalNavItem(
                 icon: Icons.chevron_left,
                 label: l10n.navBack,
                 style: labelStyle,
+                itemIndex: 0,
               ),
       ),
-      ...module.miniAppNavItems.map(
-        (item) => shad.NavigationItem(
-          key: _miniNavKey(module.id, item.id),
+      ...miniNavItems.indexed.map(
+        (entry) => shad.NavigationItem(
+          key: _miniNavKey(module.id, entry.$2.id),
           spacing: miniItemSpacing,
           label: isCompact
-              ? _buildNavLabel(item.label(l10n), miniLabelStyle)
+              ? _buildAnimatedNavElement(
+                  itemIndex: entry.$1 + 1,
+                  slotDelay: 0.08,
+                  child: Text(
+                    entry.$2.label(l10n),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: miniLabelStyle,
+                  ),
+                )
               : null,
           child: isCompact
-              ? Icon(item.icon, size: miniIconSize)
+              ? _buildAnimatedNavElement(
+                  itemIndex: entry.$1 + 1,
+                  slotDelay: 0,
+                  child: Icon(entry.$2.icon, size: miniIconSize),
+                )
               : _buildHorizontalNavItem(
-                  icon: item.icon,
-                  label: item.label(l10n),
+                  icon: entry.$2.icon,
+                  label: entry.$2.label(l10n),
                   style: labelStyle,
+                  itemIndex: entry.$1 + 1,
                 ),
         ),
       ),
     ];
   }
 
+  Widget _buildAnimatedNavElement({
+    required int itemIndex,
+    required double slotDelay,
+    required Widget child,
+  }) {
+    return child;
+  }
+
   ValueKey<String> _miniNavKey(String moduleId, String itemId) =>
       ValueKey<String>('mini-nav-$moduleId-$itemId');
 
   Key _miniSelectedKey(BuildContext context, List<MiniAppNavItem> items) {
+    if (items.isEmpty) {
+      return _ShellPageState._backToRootKey;
+    }
+
     final location = widget.matchedLocation;
     final selected = _miniSelectedIndex(location, items);
     final item = items[selected];
@@ -167,6 +255,10 @@ extension _ShellPageNavigation on _ShellPageState {
   }
 
   int _miniSelectedIndex(String location, List<MiniAppNavItem> items) {
+    if (items.isEmpty) {
+      return 0;
+    }
+
     String normalize(String value) {
       var normalized = value;
       while (normalized.length > 1 && normalized.endsWith('/')) {
@@ -216,11 +308,5 @@ extension _ShellPageNavigation on _ShellPageState {
     return location == Routes.home ||
         location == Routes.assistant ||
         location == Routes.apps;
-  }
-
-  int _rootTabIndex(String location) {
-    if (location == Routes.assistant) return 1;
-    if (location == Routes.apps) return 2;
-    return 0;
   }
 }

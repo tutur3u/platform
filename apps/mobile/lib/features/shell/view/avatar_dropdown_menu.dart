@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -17,12 +18,14 @@ class AvatarDropdownMenuData {
     required this.workspaceName,
     this.email,
     this.avatarUrl,
+    this.avatarIdentityKey,
     this.currentWorkspace,
   });
 
   final String name;
   final String? email;
   final String? avatarUrl;
+  final String? avatarIdentityKey;
   final String workspaceName;
   final Workspace? currentWorkspace;
 }
@@ -65,11 +68,14 @@ class AvatarDropdownTrigger extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Center(
-                  child: _UserAvatar(
-                    name: data.name,
-                    avatarUrl: data.avatarUrl,
-                    size: 28,
-                    rounded: 10,
+                  child: RepaintBoundary(
+                    child: _UserAvatar(
+                      name: data.name,
+                      avatarUrl: data.avatarUrl,
+                      avatarCacheKey: data.avatarIdentityKey,
+                      size: 28,
+                      rounded: 10,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -399,6 +405,7 @@ class _AccountHeader extends StatelessWidget {
           _UserAvatar(
             name: data.name,
             avatarUrl: data.avatarUrl,
+            avatarCacheKey: data.avatarIdentityKey,
             size: compact ? 54 : 52,
             rounded: 18,
           ),
@@ -713,18 +720,69 @@ class _InteractiveCard extends StatelessWidget {
   }
 }
 
-class _UserAvatar extends StatelessWidget {
+class _UserAvatar extends StatefulWidget {
   const _UserAvatar({
     required this.name,
     this.avatarUrl,
+    this.avatarCacheKey,
     this.size = 36,
     this.rounded = 12,
   });
 
   final String name;
   final String? avatarUrl;
+  final String? avatarCacheKey;
   final double size;
   final double rounded;
+
+  @override
+  State<_UserAvatar> createState() => _UserAvatarState();
+}
+
+class _UserAvatarState extends State<_UserAvatar> {
+  ImageProvider<Object>? _imageProvider;
+  String? _resolvedAvatarUrl;
+  String? _resolvedAvatarCacheKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncImageProvider();
+  }
+
+  @override
+  void didUpdateWidget(covariant _UserAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncImageProvider();
+  }
+
+  void _syncImageProvider() {
+    final avatarUrl = widget.avatarUrl?.trim();
+    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
+    if (!hasAvatar) {
+      _imageProvider = null;
+      _resolvedAvatarUrl = null;
+      _resolvedAvatarCacheKey = null;
+      return;
+    }
+
+    final avatarCacheKey = widget.avatarCacheKey?.trim().isNotEmpty == true
+        ? widget.avatarCacheKey!.trim()
+        : avatarUrl;
+
+    if (avatarUrl == _resolvedAvatarUrl &&
+        avatarCacheKey == _resolvedAvatarCacheKey &&
+        _imageProvider != null) {
+      return;
+    }
+
+    _resolvedAvatarUrl = avatarUrl;
+    _resolvedAvatarCacheKey = avatarCacheKey;
+    _imageProvider = CachedNetworkImageProvider(
+      avatarUrl,
+      cacheKey: avatarCacheKey,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -732,22 +790,23 @@ class _UserAvatar extends StatelessWidget {
     final theme = shad.Theme.of(context);
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(rounded),
+      borderRadius: BorderRadius.circular(widget.rounded),
       child: Container(
-        width: size,
-        height: size,
+        width: widget.size,
+        height: widget.size,
         color: colorScheme.surfaceContainerHighest,
-        child: avatarUrl != null && avatarUrl!.trim().isNotEmpty
-            ? Image.network(
-                avatarUrl!,
+        child: _imageProvider != null
+            ? Image(
+                image: _imageProvider!,
                 fit: BoxFit.cover,
+                gaplessPlayback: true,
                 errorBuilder: (context, error, stackTrace) => _AvatarFallback(
-                  name: name,
+                  name: widget.name,
                   textStyle: theme.typography.small,
                 ),
               )
             : _AvatarFallback(
-                name: name,
+                name: widget.name,
                 textStyle: theme.typography.small,
               ),
       ),

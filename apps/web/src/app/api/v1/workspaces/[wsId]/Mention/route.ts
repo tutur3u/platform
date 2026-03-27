@@ -15,11 +15,11 @@ export async function GET(_: Request, { params }: Params) {
   }
   const { wsId } = await params;
   const { data: wsAccess } = await supabase
-    .from('workspace_users')
-    .select('role')
+    .from('workspace_members')
+    .select('user_id')
     .eq('ws_id', wsId)
     .eq('user_id', session.data.session.user.id)
-    .single();
+    .maybeSingle();
   if (!wsAccess) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

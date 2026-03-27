@@ -82,6 +82,35 @@
         ".next/cache/.tsbuildinfo"
       ]
     },
+    "dart-format": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "analysis_options.yaml"
+      ],
+      "outputs": []
+    },
+    "flutter-analyze": {
+      "dependsOn": ["dart-format"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "analysis_options.yaml"
+      ],
+      "outputs": []
+    },
+    "flutter-test": {
+      "dependsOn": ["flutter-analyze"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "analysis_options.yaml"
+      ],
+      "outputs": []
+    },
     "i18n:check": {
       "inputs": [
         "apps/*/messages/**/*.json",

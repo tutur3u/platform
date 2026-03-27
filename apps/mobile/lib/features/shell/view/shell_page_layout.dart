@@ -72,7 +72,9 @@ extension _ShellPageLayout on _ShellPageState {
         context: context,
         removeTop: true,
         child: IndexedStack(
-          index: _rootTabIndex(widget.matchedLocation),
+          index: _ShellPageState._calculateSelectedIndex(
+            widget.matchedLocation,
+          ),
           children: const [DashboardPage(), AssistantPage(), AppsHubPage()],
         ),
       );
@@ -202,17 +204,30 @@ extension _ShellPageLayout on _ShellPageState {
     AppTabState state, {
     required AppModule? activeModule,
   }) {
-    if (activeModule == null) {
-      return _buildGlobalCompactScaffold(context, state);
-    }
-
-    return _buildLayeredCompactLayout(context, state, activeModule);
+    return _buildGlobalCompactScaffold(
+      context,
+      state,
+      activeModule: activeModule,
+    );
   }
 
-  Widget _buildGlobalCompactScaffold(BuildContext context, AppTabState state) {
+  Widget _buildGlobalCompactScaffold(
+    BuildContext context,
+    AppTabState state, {
+    AppModule? activeModule,
+  }) {
     final l10n = context.l10n;
-    final items = _buildNavItems(context, state, l10n);
-    final selectedKey = _selectedKeyForLocation(widget.matchedLocation);
+    final isMiniAppRoute = activeModule != null;
+    final activeMiniNavItems = isMiniAppRoute
+        ? activeModule.miniAppNavItemsFor(context)
+        : const <MiniAppNavItem>[];
+    final selectedKey = isMiniAppRoute
+        ? _miniSelectedKey(context, activeMiniNavItems)
+        : _selectedKeyForLocation(widget.matchedLocation);
+    final globalItems = _buildNavItems(context, state, l10n);
+    final miniItems = isMiniAppRoute
+        ? _buildMiniAppNavItems(context, activeModule, activeMiniNavItems)
+        : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final showBottomNav =
@@ -220,6 +235,61 @@ extension _ShellPageLayout on _ShellPageState {
             !assistantChrome.isFullscreen) &&
         !keyboardVisible;
     final isCompact = context.isCompact;
+    final compactMiniItems = isMiniAppRoute
+        ? <Widget>[
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: _ShellPageState._compactMiniBackButtonMinWidth,
+              ),
+              child: miniItems.first,
+            ),
+            ...miniItems.skip(1).map((item) => Expanded(child: item)),
+          ]
+        : const <Widget>[];
+    final navVariantKey = ValueKey<String>(
+      isMiniAppRoute ? 'mini-nav-${activeModule.id}' : 'global-nav',
+    );
+    final navContent = isCompact
+        ? shad.NavigationBar(
+            key: navVariantKey,
+            selectedKey: selectedKey,
+            padding: EdgeInsets.symmetric(
+              horizontal: isMiniAppRoute ? 4 : 8,
+              vertical: 4,
+            ),
+            onSelected: (key) => isMiniAppRoute
+                ? _onMiniAppItemTapped(
+                    key,
+                    context,
+                    activeModule,
+                    activeMiniNavItems,
+                  )
+                : _onItemTapped(
+                    _ShellPageState._indexForKey(key),
+                    context,
+                  ),
+            children: isMiniAppRoute
+                ? compactMiniItems
+                : globalItems.map((item) => Expanded(child: item)).toList(),
+          )
+        : CustomNavigationBar(
+            key: navVariantKey,
+            selectedKey: selectedKey,
+            onSelected: (key) => isMiniAppRoute
+                ? _onMiniAppItemTapped(
+                    key,
+                    context,
+                    activeModule,
+                    activeMiniNavItems,
+                  )
+                : _onItemTapped(
+                    _ShellPageState._indexForKey(key),
+                    context,
+                  ),
+            expandItems: false,
+            minItemWidth: _ShellPageState._floatingNavMinItemWidth,
+            children: isMiniAppRoute ? miniItems : globalItems,
+          );
     final navigationBar = _buildNavigationBarContainer(
       context: context,
       isCompact: isCompact,
@@ -228,32 +298,32 @@ extension _ShellPageLayout on _ShellPageState {
         isCompact: isCompact,
         child: Listener(
           behavior: HitTestBehavior.translucent,
-          onPointerDown: _startLongPressTimer,
-          onPointerUp: _handlePointerUp,
-          onPointerCancel: _stopLongPressTimer,
-          child: isCompact
-              ? shad.NavigationBar(
-                  selectedKey: selectedKey,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  onSelected: (key) => _onItemTapped(
-                    _ShellPageState._indexForKey(key),
-                    context,
-                  ),
-                  children: items.map((item) => Expanded(child: item)).toList(),
-                )
-              : CustomNavigationBar(
-                  selectedKey: selectedKey,
-                  onSelected: (key) => _onItemTapped(
-                    _ShellPageState._indexForKey(key),
-                    context,
-                  ),
-                  expandItems: false,
-                  minItemWidth: _ShellPageState._floatingNavMinItemWidth,
-                  children: items,
-                ),
+          onPointerDown: isMiniAppRoute ? null : _startLongPressTimer,
+          onPointerUp: isMiniAppRoute ? null : _handlePointerUp,
+          onPointerCancel: isMiniAppRoute ? null : _stopLongPressTimer,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            layoutBuilder: (currentChild, previousChildren) => Stack(
+              alignment: Alignment.center,
+              children: [
+                ...previousChildren,
+                if (currentChild != null) currentChild,
+              ],
+            ),
+            transitionBuilder: (child, animation) {
+              final slideAnimation = Tween<Offset>(
+                begin: const Offset(0.05, 0),
+                end: Offset.zero,
+              ).animate(animation);
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(position: slideAnimation, child: child),
+              );
+            },
+            child: RepaintBoundary(child: navContent),
+          ),
         ),
       ),
     );
@@ -277,16 +347,23 @@ extension _ShellPageLayout on _ShellPageState {
     );
   }
 
+  // Retained while the layered compact-shell variant is still under review.
+  // ignore: unused_element
   Widget _buildLayeredCompactLayout(
     BuildContext context,
     AppTabState state,
     AppModule activeModule,
   ) {
     final globalBody = _cachedGlobalBody ?? const DashboardPage();
-    final miniItems = _buildMiniAppNavItems(context, activeModule);
+    final activeMiniNavItems = activeModule.miniAppNavItemsFor(context);
+    final miniItems = _buildMiniAppNavItems(
+      context,
+      activeModule,
+      activeMiniNavItems,
+    );
     final miniSelectedKey = _miniSelectedKey(
       context,
-      activeModule.miniAppNavItems,
+      activeMiniNavItems,
     );
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final isCompact = context.isCompact;
@@ -322,15 +399,23 @@ extension _ShellPageLayout on _ShellPageState {
                             horizontal: 4,
                             vertical: 4,
                           ),
-                          onSelected: (key) =>
-                              _onMiniAppItemTapped(key, context, activeModule),
+                          onSelected: (key) => _onMiniAppItemTapped(
+                            key,
+                            context,
+                            activeModule,
+                            activeMiniNavItems,
+                          ),
                           children: compactMiniItems,
                         )
                       : CustomNavigationBar(
                           key: _ShellPageState._miniLayerKey,
                           selectedKey: miniSelectedKey,
-                          onSelected: (key) =>
-                              _onMiniAppItemTapped(key, context, activeModule),
+                          onSelected: (key) => _onMiniAppItemTapped(
+                            key,
+                            context,
+                            activeModule,
+                            activeMiniNavItems,
+                          ),
                           expandItems: false,
                           minItemWidth:
                               _ShellPageState._floatingNavMinItemWidth,
@@ -421,10 +506,22 @@ extension _ShellPageLayout on _ShellPageState {
       padding: mobileSectionAppBarPadding,
       trailingGap: 6,
       trailing: [
-        ShellNotificationsActionSlot(matchedLocation: widget.matchedLocation),
-        const AvatarDropdown(),
+        KeyedSubtree(
+          key: _ShellPageState._shellNotificationsKey,
+          child: RepaintBoundary(
+            child: ShellNotificationsActionSlot(
+              matchedLocation: widget.matchedLocation,
+            ),
+          ),
+        ),
+        const KeyedSubtree(
+          key: _ShellPageState._shellAvatarKey,
+          child: RepaintBoundary(child: AvatarDropdown()),
+        ),
       ],
-      child: ShellTopBarTitle(matchedLocation: widget.matchedLocation),
+      child: RepaintBoundary(
+        child: ShellTopBarTitle(matchedLocation: widget.matchedLocation),
+      ),
     );
   }
 }

@@ -12,7 +12,6 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -75,20 +74,6 @@ class _TransactionCategoriesViewState
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: l10n.financeManageLabel,
-          actions: [
-            shad.GhostButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: _activeTab == _tabCategories
-                  ? _onCreateCategory
-                  : _onCreateTag,
-              child: const Icon(Icons.add_circle_outline_rounded, size: 18),
-            ),
-          ],
-        ),
-      ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -186,6 +171,9 @@ class _TransactionCategoriesViewState
             activeTab: _activeTab,
             categoryCount: _categories.length,
             tagCount: _tags.length,
+            onCreate: _activeTab == _tabCategories
+                ? _onCreateCategory
+                : _onCreateTag,
           ),
           const shad.Gap(14),
           FinanceEmptyState(
@@ -209,6 +197,9 @@ class _TransactionCategoriesViewState
             activeTab: _activeTab,
             categoryCount: _categories.length,
             tagCount: _tags.length,
+            onCreate: _activeTab == _tabCategories
+                ? _onCreateCategory
+                : _onCreateTag,
           ),
           const shad.Gap(14),
           FinanceEmptyState(
@@ -234,6 +225,9 @@ class _TransactionCategoriesViewState
             activeTab: _activeTab,
             categoryCount: _categories.length,
             tagCount: _tags.length,
+            onCreate: _activeTab == _tabCategories
+                ? _onCreateCategory
+                : _onCreateTag,
           );
         }
         final category = _categories[index - 1];
@@ -262,6 +256,9 @@ class _TransactionCategoriesViewState
             activeTab: _activeTab,
             categoryCount: _categories.length,
             tagCount: _tags.length,
+            onCreate: _activeTab == _tabCategories
+                ? _onCreateCategory
+                : _onCreateTag,
           ),
           const shad.Gap(14),
           FinanceEmptyState(
@@ -285,6 +282,9 @@ class _TransactionCategoriesViewState
             activeTab: _activeTab,
             categoryCount: _categories.length,
             tagCount: _tags.length,
+            onCreate: _activeTab == _tabCategories
+                ? _onCreateCategory
+                : _onCreateTag,
           ),
           const shad.Gap(14),
           FinanceEmptyState(
@@ -310,6 +310,9 @@ class _TransactionCategoriesViewState
             activeTab: _activeTab,
             categoryCount: _categories.length,
             tagCount: _tags.length,
+            onCreate: _activeTab == _tabCategories
+                ? _onCreateCategory
+                : _onCreateTag,
           );
         }
         final tag = _tags[index - 1];
@@ -1254,11 +1257,13 @@ class _ManageHeaderCard extends StatelessWidget {
     required this.activeTab,
     required this.categoryCount,
     required this.tagCount,
+    required this.onCreate,
   });
 
   final int activeTab;
   final int categoryCount;
   final int tagCount;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
@@ -1278,6 +1283,11 @@ class _ManageHeaderCard extends StatelessWidget {
                 activeTab == _TransactionCategoriesViewState._tabCategories
                 ? l10n.financeManageCategoriesSubtitle
                 : l10n.financeManageTagsSubtitle,
+            action: shad.GhostButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: onCreate,
+              child: const Icon(Icons.add_circle_outline_rounded, size: 18),
+            ),
           ),
           const shad.Gap(14),
           Row(

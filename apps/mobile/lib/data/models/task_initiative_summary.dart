@@ -19,6 +19,12 @@ class TaskInitiativeLinkedProject extends Equatable {
   final String name;
   final String? status;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'status': status,
+  };
+
   @override
   List<Object?> get props => [id, name, status];
 }
@@ -58,6 +64,18 @@ class TaskInitiativeSummary extends Equatable {
   final DateTime createdAt;
   final int projectsCount;
   final List<TaskInitiativeLinkedProject> linkedProjects;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'status': status,
+    'created_at': createdAt.toIso8601String(),
+    'projectsCount': projectsCount,
+    'linkedProjects': linkedProjects
+        .map((project) => project.toJson())
+        .toList(growable: false),
+  };
 
   @override
   List<Object?> get props => [

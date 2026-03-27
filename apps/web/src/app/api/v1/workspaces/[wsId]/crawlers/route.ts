@@ -5,6 +5,7 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
   params: Promise<{
@@ -40,12 +41,7 @@ async function getDataWithApiKey(
 
   const sbAdmin = await createAdminClient();
 
-  const apiCheckQuery = sbAdmin
-    .from('workspace_api_keys')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('value', apiKey)
-    .single();
+  const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
 
   const mainQuery = sbAdmin
     .from('crawled_urls')
@@ -53,10 +49,7 @@ async function getDataWithApiKey(
 
   const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
 
-  const { error: apiError } = apiCheck;
-
-  if (apiError) {
-    console.log(apiError);
+  if (!apiCheck) {
     return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
   }
 

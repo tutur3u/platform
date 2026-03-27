@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -208,6 +209,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> signOut() async {
     emit(state.copyWith(isLoading: true));
+    await CacheStore.instance.clearScope(userId: state.user?.id);
     await _repo.signOut();
     emit(const AuthState.unauthenticated());
   }
