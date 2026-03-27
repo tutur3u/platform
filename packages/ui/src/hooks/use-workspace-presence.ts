@@ -440,13 +440,41 @@ export function useWorkspacePresence({
   // Derived helpers
   // ---------------------------------------------------------------------------
   const allPresences = useMemo(() => {
-    const result: WorkspacePresenceState[] = [];
-    for (const presences of Object.values(presenceState)) {
+    const latestBySession = new Map<string, WorkspacePresenceState>();
+
+    for (const [presenceKey, presences] of Object.entries(presenceState)) {
       for (const p of presences) {
-        if (p) result.push(p);
+        if (!p) continue;
+
+        const userId = p.user?.id || presenceKey;
+        if (!userId) continue;
+
+        const sessionId =
+          p.session_id ||
+          (p as { presence_ref?: string }).presence_ref ||
+          `${userId}:${presenceKey}`;
+        const dedupeKey = `${userId}:${sessionId}`;
+
+        const existing = latestBySession.get(dedupeKey);
+        if (!existing) {
+          latestBySession.set(dedupeKey, p);
+          continue;
+        }
+
+        const existingTimestamp = Date.parse(existing.online_at);
+        const nextTimestamp = Date.parse(p.online_at);
+        const shouldReplace = Number.isFinite(nextTimestamp)
+          ? !Number.isFinite(existingTimestamp) ||
+            nextTimestamp >= existingTimestamp
+          : !Number.isFinite(existingTimestamp);
+
+        if (shouldReplace) {
+          latestBySession.set(dedupeKey, p);
+        }
       }
     }
-    return result;
+
+    return Array.from(latestBySession.values());
   }, [presenceState]);
 
   const getBoardViewers = useCallback(

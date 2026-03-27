@@ -107,6 +107,7 @@ abstract class ITimeTrackerRepository {
     required DateTime dateFrom,
     required DateTime dateTo,
     String? userId,
+    String? timezone,
   });
 
   Future<List<TimeTrackingGoal>> getGoals(String wsId, {String? userId});
@@ -614,7 +615,7 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   }) async {
     final resolvedTimezone = (timezone != null && timezone.isNotEmpty)
         ? timezone
-        : DateTime.now().timeZoneName;
+        : 'UTC';
     final data = await _api.getJson(
       _withQuery('/api/v1/workspaces/$wsId/time-tracker/stats', {
         if (userId != null && userId.isNotEmpty) 'userId': userId,
@@ -646,12 +647,17 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     required DateTime dateFrom,
     required DateTime dateTo,
     String? userId,
+    String? timezone,
   }) async {
+    final resolvedTimezone = (timezone != null && timezone.isNotEmpty)
+        ? timezone
+        : 'UTC';
     final data = await _api.getJson(
       _withQuery('/api/v1/workspaces/$wsId/time-tracking/stats/period', {
         'dateFrom': _toApiIso(dateFrom),
         'dateTo': _toApiIso(dateTo),
         if (userId != null) 'userId': userId,
+        'timezone': resolvedTimezone,
       }),
     );
     return TimeTrackingPeriodStats.fromJson(data);
