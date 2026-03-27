@@ -769,6 +769,10 @@ export function CustomWhiteboard({
   useEffect(() => {
     if (!wsUpdateLocation) return;
     wsUpdateLocation({ type: 'whiteboard', boardId });
+
+    return () => {
+      wsUpdateLocation({ type: 'other' });
+    };
   }, [wsUpdateLocation, boardId]);
 
   // Update Excalidraw collaborators when they change
