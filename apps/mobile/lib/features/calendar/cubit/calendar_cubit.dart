@@ -111,6 +111,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     final hasVisibleData = _wsId == wsId && state.hasLoadedOnce;
     _wsId = wsId;
     final cacheKey = _cacheKey(wsId);
+    final shouldReadDiskCache = cached == null && !hasVisibleData;
 
     if (forceRefresh) {
       if (cached != null && !hasVisibleData) {
@@ -128,15 +129,19 @@ class CalendarCubit extends Cubit<CalendarState> {
       );
     }
 
-    final diskCached = await CacheStore.instance.read<CalendarState>(
-      key: cacheKey,
-      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
-    );
+    final diskCached = shouldReadDiskCache
+        ? await CacheStore.instance.read<CalendarState>(
+            key: cacheKey,
+            decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+          )
+        : null;
 
-    if (diskCached.hasValue && !hasVisibleData && diskCached.data != null) {
+    if (diskCached?.hasValue == true &&
+        !hasVisibleData &&
+        diskCached?.data != null) {
       _rememberCachedState(
         wsId,
-        diskCached.data!,
+        diskCached!.data!,
         fetchedAt: diskCached.fetchedAt,
       );
       emit(diskCached.data!);
@@ -157,7 +162,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         ((cached != null &&
                 isCalendarCacheFresh(cached.fetchedAt) &&
                 (hasVisibleData || cached.state.hasLoadedOnce)) ||
-            diskCached.isFresh)) {
+            (diskCached?.isFresh ?? false))) {
       return;
     }
 
@@ -166,9 +171,9 @@ class CalendarCubit extends Cubit<CalendarState> {
         state.copyWith(
           status: CalendarStatus.loading,
           hasLoadedOnce: true,
-          isFromCache: cached != null || diskCached.hasValue,
+          isFromCache: cached != null || (diskCached?.hasValue ?? false),
           isRefreshing: true,
-          lastUpdatedAt: cached?.fetchedAt ?? diskCached.fetchedAt,
+          lastUpdatedAt: cached?.fetchedAt ?? diskCached?.fetchedAt,
           clearError: true,
         ),
       );
@@ -212,7 +217,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         tags: [_cacheTag, 'workspace:$wsId', 'module:calendar'],
       );
     } on Exception catch (e) {
-      if (cached != null || hasVisibleData || diskCached.hasValue) {
+      if (cached != null || hasVisibleData || (diskCached?.hasValue ?? false)) {
         emit(
           state.copyWith(
             status: CalendarStatus.loaded,
