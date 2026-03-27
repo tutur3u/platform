@@ -80,8 +80,10 @@ export async function POST(
       );
     }
 
-    const uniqueSuffix = generateRandomUUID();
-    const filenameWithSuffix = `${uniqueSuffix}-${sanitizedFilename}`;
+    const filenameWithSuffix =
+      parsed.data.upsert === true
+        ? sanitizedFilename
+        : `${generateRandomUUID()}-${sanitizedFilename}`;
 
     const storagePath = sanitizedPath
       ? posix.join(normalizedWsId, sanitizedPath, filenameWithSuffix)
