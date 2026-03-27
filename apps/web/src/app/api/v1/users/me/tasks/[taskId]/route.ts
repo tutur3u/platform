@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -69,7 +70,7 @@ export async function GET(
           board:workspace_boards(
             id,
             ws_id,
-            workspace:workspaces(personal)
+            workspace:workspaces(personal, tier)
           )
         ),
         assignees:task_assignees(
@@ -164,6 +165,9 @@ export async function GET(
       availableLists: (availableLists || []) as TaskList[],
       taskWsId,
       taskWorkspacePersonal: taskAny.list?.board?.workspace?.personal ?? false,
+      taskWorkspaceTier:
+        (taskAny.list?.board?.workspace?.tier as WorkspaceProductTier | null) ??
+        'FREE',
     });
   } catch (error) {
     console.error('Error fetching current user task:', error);

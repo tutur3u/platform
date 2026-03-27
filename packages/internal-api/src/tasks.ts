@@ -73,6 +73,7 @@ export interface CurrentUserTaskDialogResponse {
   availableLists: TaskList[];
   taskWsId: string;
   taskWorkspacePersonal: boolean;
+  taskWorkspaceTier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
 }
 
 export interface ListWorkspaceTasksOptions {
