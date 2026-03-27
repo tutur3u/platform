@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -29,12 +30,7 @@ class CacheStore {
   Future<void> init() async {
     if (_initialized) return;
     WidgetsFlutterBinding.ensureInitialized();
-    Directory dir;
-    try {
-      dir = await getApplicationDocumentsDirectory();
-    } on MissingPluginException {
-      dir = await Directory.systemTemp.createTemp('mobile-cache-');
-    }
+    final dir = await _resolveHiveDirectory();
     Hive.init(dir.path);
     _resourceBox = await Hive.openBox<dynamic>(_resourceBoxName);
     _mutationBox = await Hive.openBox<dynamic>(_mutationBoxName);
@@ -46,6 +42,65 @@ class CacheStore {
       }
     }
     _initialized = true;
+  }
+
+  Future<Directory> _resolveHiveDirectory() async {
+    // Temp storage is a bootstrap/test fallback only. It keeps startup alive
+    // when path_provider is unavailable, but the OS may clear it at any time.
+    Future<Directory> fallbackDirectory() async {
+      debugPrint(
+        'CacheStore: using temp-directory fallback; '
+        'cached data may not persist.',
+      );
+      final suffix = _cacheDirectorySuffix();
+      final directory = Directory(
+        '${Directory.systemTemp.path}/tuturuuu_mobile_cache$suffix',
+      );
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
+      }
+      return directory;
+    }
+
+    try {
+      return await getApplicationDocumentsDirectory();
+    } on MissingPluginException {
+      debugPrint(
+        'CacheStore.init path_provider missing; '
+        'falling back to temp cache directory.',
+      );
+      return fallbackDirectory();
+    } on PlatformException catch (error) {
+      debugPrint(
+        'CacheStore.init path_provider unavailable during bootstrap: '
+        '${error.code} ${error.message}',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      try {
+        return await getApplicationDocumentsDirectory();
+      } on MissingPluginException {
+        debugPrint(
+          'CacheStore.init retry still missing path_provider; '
+          'using temp cache directory.',
+        );
+        return fallbackDirectory();
+      } on PlatformException catch (retryError) {
+        debugPrint(
+          'CacheStore.init retry failed: ${retryError.code} '
+          '${retryError.message}; using temp cache directory.',
+        );
+        return fallbackDirectory();
+      }
+    }
+  }
+
+  String _cacheDirectorySuffix() {
+    final isFlutterTest = Platform.environment.containsKey('FLUTTER_TEST');
+    if (!isFlutterTest) {
+      return '';
+    }
+
+    return '_test_${identityHashCode(Isolate.current)}';
   }
 
   Future<CacheReadResult<T>> read<T>({
@@ -60,7 +115,19 @@ class CacheStore {
       );
     }
 
-    final decoded = decode(jsonDecode(record.jsonPayload));
+    final decoded = _decodeRecordPayload(
+      record,
+      decode: decode,
+      onCorrupt: () async {
+        _memory.remove(key.value);
+        await _resourceBox.delete(key.value);
+      },
+    );
+    if (decoded == null) {
+      return CacheReadResult<T>(
+        state: CacheEntryState.missing,
+      );
+    }
     return CacheReadResult<T>(
       state: record.state,
       data: decoded,
@@ -87,7 +154,19 @@ class CacheStore {
       );
     }
 
-    final decoded = decode(jsonDecode(record.jsonPayload));
+    final decoded = _decodeRecordPayload(
+      record,
+      decode: decode,
+      onCorrupt: () {
+        _memory.remove(key.value);
+        unawaited(_resourceBox.delete(key.value));
+      },
+    );
+    if (decoded == null) {
+      return CacheReadResult<T>(
+        state: CacheEntryState.missing,
+      );
+    }
     return CacheReadResult<T>(
       state: record.state,
       data: decoded,
@@ -138,7 +217,8 @@ class CacheStore {
   }) async {
     await init();
     final tagSet = tags.toSet();
-    final keysToDelete = <String>[];
+    final now = DateTime.now();
+    final recordsToInvalidate = <String, CachedResourceRecord>{};
 
     for (final entry in _memory.entries) {
       final record = entry.value;
@@ -147,13 +227,14 @@ class CacheStore {
           workspaceId == null || record.workspaceId == workspaceId;
       final matchesUser = userId == null || record.userId == userId;
       if (matchesTags && matchesWorkspace && matchesUser) {
-        keysToDelete.add(entry.key);
+        recordsToInvalidate[entry.key] = record;
       }
     }
 
-    for (final key in keysToDelete) {
-      _memory.remove(key);
-      await _resourceBox.delete(key);
+    for (final entry in recordsToInvalidate.entries) {
+      final invalidatedRecord = _markRecordStale(entry.value, now: now);
+      _memory[entry.key] = invalidatedRecord;
+      await _resourceBox.put(entry.key, invalidatedRecord.toJson());
     }
   }
 
@@ -262,5 +343,64 @@ class CacheStore {
       fetchedAt: DateTime.now(),
       hasValue: true,
     );
+  }
+
+  CachedResourceRecord _markRecordStale(
+    CachedResourceRecord record, {
+    required DateTime now,
+  }) {
+    return record.copyWith(
+      staleAt: now.subtract(const Duration(milliseconds: 1)),
+      expireAt: record.expireAt.isAfter(now)
+          ? record.expireAt
+          : now.add(const Duration(hours: 1)),
+    );
+  }
+
+  T? _decodeRecordPayload<T>(
+    CachedResourceRecord record, {
+    required CacheJsonDecoder<T> decode,
+    required FutureOr<void> Function() onCorrupt,
+  }) {
+    try {
+      return decode(jsonDecode(record.jsonPayload));
+    } on Object catch (error, stackTrace) {
+      debugPrint(
+        'CacheStore: dropping corrupt cache record ${record.key}: $error',
+      );
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'mobile cache',
+          context: ErrorDescription(
+            'while decoding cached resource ${record.key}',
+          ),
+        ),
+      );
+      Future<void> dispatchOnCorrupt() async {
+        try {
+          await onCorrupt();
+        } on Object catch (cleanupError, cleanupStackTrace) {
+          debugPrint(
+            'CacheStore: failed to clean corrupt cache record '
+            '${record.key}: $cleanupError',
+          );
+          FlutterError.reportError(
+            FlutterErrorDetails(
+              exception: cleanupError,
+              stack: cleanupStackTrace,
+              library: 'mobile cache',
+              context: ErrorDescription(
+                'while clearing corrupt cached resource ${record.key}',
+              ),
+            ),
+          );
+        }
+      }
+
+      unawaited(dispatchOnCorrupt());
+      return null;
+    }
   }
 }

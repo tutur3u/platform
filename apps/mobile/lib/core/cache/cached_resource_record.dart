@@ -56,6 +56,40 @@ class CachedResourceRecord {
   bool get isFresh => DateTime.now().isBefore(staleAt);
   bool get isExpired => !DateTime.now().isBefore(expireAt);
 
+  CachedResourceRecord copyWith({
+    String? key,
+    String? namespace,
+    String? jsonPayload,
+    DateTime? fetchedAt,
+    DateTime? staleAt,
+    DateTime? expireAt,
+    Object? userId = _cacheRecordSentinel,
+    Object? workspaceId = _cacheRecordSentinel,
+    Object? locale = _cacheRecordSentinel,
+    int? schemaVersion,
+    Object? etag = _cacheRecordSentinel,
+    List<String>? tags,
+    Map<String, String>? params,
+  }) {
+    return CachedResourceRecord(
+      key: key ?? this.key,
+      namespace: namespace ?? this.namespace,
+      jsonPayload: jsonPayload ?? this.jsonPayload,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      staleAt: staleAt ?? this.staleAt,
+      expireAt: expireAt ?? this.expireAt,
+      userId: userId == _cacheRecordSentinel ? this.userId : userId as String?,
+      workspaceId: workspaceId == _cacheRecordSentinel
+          ? this.workspaceId
+          : workspaceId as String?,
+      locale: locale == _cacheRecordSentinel ? this.locale : locale as String?,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      etag: etag == _cacheRecordSentinel ? this.etag : etag as String?,
+      tags: tags ?? this.tags,
+      params: params ?? this.params,
+    );
+  }
+
   CacheEntryState get state {
     if (isExpired) return CacheEntryState.expired;
     if (isFresh) return CacheEntryState.fresh;
@@ -78,6 +112,8 @@ class CachedResourceRecord {
     'params': params,
   };
 }
+
+const _cacheRecordSentinel = Object();
 
 class CacheReadResult<T> {
   const CacheReadResult({

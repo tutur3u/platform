@@ -31,6 +31,7 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
@@ -47,11 +48,13 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class App extends StatefulWidget {
   const App({
     this.initialRoute,
+    this.initialThemeMode = shad.ThemeMode.system,
     super.key,
   });
 
   /// Shell route to start on (loaded from SharedPreferences in bootstrap).
   final String? initialRoute;
+  final shad.ThemeMode initialThemeMode;
 
   @override
   State<App> createState() => _AppState();
@@ -74,6 +77,7 @@ class _AppState extends State<App> {
   late final ThemeCubit _themeCubit;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final AppTabCubit _appTabCubit;
+  late final ShellChromeActionsCubit _shellChromeActionsCubit;
   late final ShellProfileCubit _shellProfileCubit;
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
@@ -100,10 +104,13 @@ class _AppState extends State<App> {
     );
     _workspaceCubit = WorkspaceCubit(workspaceRepository: _workspaceRepo);
     _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
-    _themeCubit = ThemeCubit(settingsRepository: _settingsRepo);
-    unawaited(_themeCubit.loadThemeMode());
+    _themeCubit = ThemeCubit(
+      settingsRepository: _settingsRepo,
+      initialThemeMode: widget.initialThemeMode,
+    );
     _calendarSettingsCubit = CalendarSettingsCubit();
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
+    _shellChromeActionsCubit = ShellChromeActionsCubit();
     _shellProfileCubit = ShellProfileCubit(
       profileRepository: _profileRepository,
     );
@@ -304,6 +311,7 @@ class _AppState extends State<App> {
     unawaited(_themeCubit.close());
     unawaited(_calendarSettingsCubit.close());
     unawaited(_appTabCubit.close());
+    unawaited(_shellChromeActionsCubit.close());
     unawaited(_shellProfileCubit.close());
     super.dispose();
   }
@@ -319,6 +327,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _calendarSettingsCubit),
         BlocProvider.value(value: _appTabCubit),
+        BlocProvider.value(value: _shellChromeActionsCubit),
         BlocProvider.value(value: _shellProfileCubit),
       ],
       child: MultiBlocListener(

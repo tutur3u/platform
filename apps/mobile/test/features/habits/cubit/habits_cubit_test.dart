@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
@@ -126,8 +127,9 @@ void main() {
     late _MockHabitTrackerRepository repository;
     late HabitsCubit cubit;
 
-    setUp(() {
+    setUp(() async {
       HabitsCubit.clearCache();
+      await CacheStore.instance.clearScope();
       repository = _MockHabitTrackerRepository();
       cubit = HabitsCubit(repository: repository);
     });

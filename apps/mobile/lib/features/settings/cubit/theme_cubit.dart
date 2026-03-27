@@ -5,9 +5,11 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 /// Cubit for managing user theme preferences.
 class ThemeCubit extends Cubit<ThemeState> {
-  ThemeCubit({required SettingsRepository settingsRepository})
-    : _settingsRepository = settingsRepository,
-      super(const ThemeState());
+  ThemeCubit({
+    required SettingsRepository settingsRepository,
+    ThemeMode initialThemeMode = ThemeMode.system,
+  }) : _settingsRepository = settingsRepository,
+       super(ThemeState(themeMode: initialThemeMode));
 
   final SettingsRepository _settingsRepository;
 

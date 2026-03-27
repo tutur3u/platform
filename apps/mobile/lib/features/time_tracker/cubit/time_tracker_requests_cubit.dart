@@ -238,6 +238,22 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
     );
   }
 
+  Future<void> _persistCurrentStateToCache(String wsId) {
+    final statusFilter = state.selectedStatus != null
+        ? approvalStatusToString(state.selectedStatus!)
+        : null;
+    return CacheStore.instance.write(
+      key: _cacheKey(
+        wsId,
+        selectedUserId: state.selectedUserId,
+        statusFilter: statusFilter,
+      ),
+      policy: _cachePolicy,
+      payload: _stateToCachePayload(state.requests),
+      tags: [_cacheTag, 'workspace:$wsId', 'module:timer'],
+    );
+  }
+
   Future<List<TimeTrackingRequest>> _fetchRequests(
     String wsId, {
     required String? status,
@@ -410,6 +426,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         requestId,
         ApprovalStatus.approved,
       );
+      await _persistCurrentStateToCache(wsId);
       await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
     } on Exception catch (e) {
@@ -435,6 +452,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         ApprovalStatus.rejected,
         reason: reason,
       );
+      await _persistCurrentStateToCache(wsId);
       await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
     } on Exception catch (e) {
@@ -460,6 +478,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         ApprovalStatus.needsInfo,
         reason: reason,
       );
+      await _persistCurrentStateToCache(wsId);
       await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
     } on Exception catch (e) {
@@ -479,6 +498,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         requestId,
         ApprovalStatus.pending,
       );
+      await _persistCurrentStateToCache(wsId);
       await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
     } on Exception catch (e) {

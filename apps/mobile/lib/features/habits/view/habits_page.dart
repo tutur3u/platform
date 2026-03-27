@@ -6,6 +6,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
@@ -17,6 +18,8 @@ import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_detail_sheet.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_entry_sheet.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_form_sheet.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -43,7 +46,7 @@ class HabitsPage extends StatelessWidget {
         final cubit = HabitsCubit(
           repository: repository ?? HabitTrackerRepository(),
           initialState: wsId != null && wsId.isNotEmpty
-              ? HabitsCubit.cachedStateForWorkspace(wsId)
+              ? HabitsCubit.seedStateForWorkspace(wsId)
               : null,
         );
         if (wsId != null && wsId.isNotEmpty) {
@@ -121,148 +124,186 @@ class _HabitsViewState extends State<_HabitsView> {
             if (workspace == null) {
               return Center(child: Text(context.l10n.assistantSelectWorkspace));
             }
+            final isActivitySection =
+                widget.initialSection == HabitsSection.activity;
+            final shellOwnerId = isActivitySection
+                ? 'habits-activity'
+                : 'habits-overview';
+            final shellLocation = isActivitySection
+                ? Routes.habitsActivity
+                : Routes.habits;
 
-            return BlocBuilder<HabitsCubit, HabitsState>(
-              builder: (context, state) {
-                if (state.status == HabitsStatus.loading &&
-                    state.trackers.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (state.status == HabitsStatus.error &&
-                    state.trackers.isEmpty) {
-                  return HabitsErrorView(error: state.error);
-                }
-
-                final visibleTrackers =
-                    widget.initialSection == HabitsSection.overview
-                    ? state.filteredTrackers
-                    : state.trackers;
-                final summary = buildHabitSummaryMetrics(
-                  visibleTrackers,
-                  state.selectedScope,
-                );
-                final isPersonalWorkspace = workspace.personal;
-
-                return ResponsiveWrapper(
-                  maxWidth: ResponsivePadding.maxContentWidth(
-                    context.deviceClass,
-                  ),
-                  child: RefreshIndicator(
-                    onRefresh: _refreshCurrentSection,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        ResponsivePadding.horizontal(context.deviceClass),
-                        12,
-                        ResponsivePadding.horizontal(context.deviceClass),
-                        24 + MediaQuery.paddingOf(context).bottom,
+            final shellActionRegistration =
+                BlocBuilder<HabitsCubit, HabitsState>(
+                  builder: (context, state) {
+                    final shellActions = <ShellActionSpec>[
+                      if (_supportsSearch)
+                        ShellActionSpec(
+                          id: 'habits-search',
+                          icon: _isSearchVisible
+                              ? Icons.close_rounded
+                              : Icons.search_rounded,
+                          tooltip: _isSearchVisible
+                              ? context.l10n.commonClearSearch
+                              : context.l10n.habitsSearchHint,
+                          highlighted:
+                              _isSearchVisible || state.searchQuery.isNotEmpty,
+                          onPressed: _toggleSearch,
+                        ),
+                      ShellActionSpec(
+                        id: 'habits-create',
+                        icon: Icons.add,
+                        tooltip: context.l10n.habitsCreateTrackerAction,
+                        onPressed: () => unawaited(_openCreateTracker()),
                       ),
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            if (_supportsSearch)
-                              shad.IconButton.ghost(
-                                key: const Key('habits-search-toggle'),
-                                icon: Icon(
-                                  _isSearchVisible
-                                      ? Icons.close_rounded
-                                      : Icons.search_rounded,
-                                ),
-                                onPressed: _toggleSearch,
-                              ),
-                            shad.IconButton.ghost(
-                              icon: const Icon(Icons.add),
-                              onPressed: _openCreateTracker,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        HabitsSummaryHeader(
-                          summary: summary,
-                          title: widget.initialSection == HabitsSection.activity
-                              ? context.l10n.habitsActivityTitle
-                              : context.l10n.habitsTitle,
-                          subtitle:
-                              widget.initialSection == HabitsSection.activity
-                              ? context.l10n.habitsActivitySubtitle
-                              : context.l10n.habitsSummarySubtitle,
-                          leadingIcon:
-                              widget.initialSection == HabitsSection.activity
-                              ? null
-                              : Icons.auto_graph_rounded,
-                        ),
-                        if (!isPersonalWorkspace) ...[
-                          const SizedBox(height: 16),
-                          HabitsScopeControls(
-                            selectedScope: state.selectedScope,
-                            onScopeSelected: (scope) async {
-                              final cubit = context.read<HabitsCubit>();
-                              await cubit.setScope(scope);
-                              if (!context.mounted) {
-                                return;
-                              }
-                              if (widget.initialSection ==
-                                  HabitsSection.activity) {
-                                await cubit.loadActivity();
-                              }
-                            },
-                          ),
-                        ],
-                        if (!isPersonalWorkspace &&
-                            state.selectedScope ==
-                                HabitTrackerScope.member) ...[
-                          const SizedBox(height: 12),
-                          HabitsMemberPicker(
-                            members: state.members,
-                            selectedMemberId: state.selectedMemberId,
-                            onChanged: (value) async {
-                              final cubit = context.read<HabitsCubit>();
-                              await cubit.setSelectedMember(value);
-                              if (!context.mounted) {
-                                return;
-                              }
-                              if (widget.initialSection ==
-                                  HabitsSection.activity) {
-                                await cubit.loadActivity();
-                              }
-                            },
-                          ),
-                        ],
-                        if (_supportsSearch) ...[
-                          const SizedBox(height: 12),
-                          HabitsSearchField(
-                            controller: _searchController,
-                            isVisible: _isSearchVisible,
-                            onChanged: (value) => context
-                                .read<HabitsCubit>()
-                                .setSearchQuery(value),
-                          ),
-                        ] else
-                          const SizedBox(height: 16),
-                        const SizedBox(height: 16),
-                        if (widget.initialSection == HabitsSection.activity)
-                          HabitsActivitySection(
-                            state: state,
-                            onOpenTracker: _openTrackerDetail,
-                          )
-                        else
-                          HabitsOverviewSection(
-                            filteredTrackers: state.filteredTrackers,
-                            state: state,
-                            onCreateTracker: _openCreateTracker,
-                            onEditTracker: _openEditTracker,
-                            onOpenTracker: _openTrackerDetail,
-                            onQuickLog: _quickLogTracker,
-                            onQuickValueChanged: (trackerId, value) => context
-                                .read<HabitsCubit>()
-                                .setQuickLogDraft(trackerId, value),
-                          ),
-                      ],
-                    ),
-                  ),
+                    ];
+
+                    return ShellChromeActions(
+                      ownerId: shellOwnerId,
+                      locations: {shellLocation},
+                      actions: shellActions,
+                    );
+                  },
                 );
-              },
+
+            return Stack(
+              children: [
+                shellActionRegistration,
+                Positioned.fill(
+                  child: BlocBuilder<HabitsCubit, HabitsState>(
+                    builder: (context, state) {
+                      if (state.status == HabitsStatus.loading &&
+                          state.trackers.isEmpty) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (state.status == HabitsStatus.error &&
+                          state.trackers.isEmpty) {
+                        return HabitsErrorView(error: state.error);
+                      }
+
+                      final visibleTrackers =
+                          widget.initialSection == HabitsSection.overview
+                          ? state.filteredTrackers
+                          : state.trackers;
+                      final summary = buildHabitSummaryMetrics(
+                        visibleTrackers,
+                        state.selectedScope,
+                      );
+                      final isPersonalWorkspace = workspace.personal;
+
+                      return ResponsiveWrapper(
+                        maxWidth: ResponsivePadding.maxContentWidth(
+                          context.deviceClass,
+                        ),
+                        child: RefreshIndicator(
+                          onRefresh: _refreshCurrentSection,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(
+                              ResponsivePadding.horizontal(
+                                context.deviceClass,
+                              ),
+                              12,
+                              ResponsivePadding.horizontal(
+                                context.deviceClass,
+                              ),
+                              24 + MediaQuery.paddingOf(context).bottom,
+                            ),
+                            children: [
+                              HabitsSummaryHeader(
+                                summary: summary,
+                                title:
+                                    widget.initialSection ==
+                                        HabitsSection.activity
+                                    ? context.l10n.habitsActivityTitle
+                                    : context.l10n.habitsTitle,
+                                subtitle:
+                                    widget.initialSection ==
+                                        HabitsSection.activity
+                                    ? context.l10n.habitsActivitySubtitle
+                                    : context.l10n.habitsSummarySubtitle,
+                                leadingIcon:
+                                    widget.initialSection ==
+                                        HabitsSection.activity
+                                    ? null
+                                    : Icons.auto_graph_rounded,
+                              ),
+                              if (!isPersonalWorkspace) ...[
+                                const SizedBox(height: 16),
+                                HabitsScopeControls(
+                                  selectedScope: state.selectedScope,
+                                  onScopeSelected: (scope) async {
+                                    final cubit = context.read<HabitsCubit>();
+                                    await cubit.setScope(scope);
+                                    if (!context.mounted) {
+                                      return;
+                                    }
+                                    if (widget.initialSection ==
+                                        HabitsSection.activity) {
+                                      await cubit.loadActivity();
+                                    }
+                                  },
+                                ),
+                              ],
+                              if (!isPersonalWorkspace &&
+                                  state.selectedScope ==
+                                      HabitTrackerScope.member) ...[
+                                const SizedBox(height: 12),
+                                HabitsMemberPicker(
+                                  members: state.members,
+                                  selectedMemberId: state.selectedMemberId,
+                                  onChanged: (value) async {
+                                    final cubit = context.read<HabitsCubit>();
+                                    await cubit.setSelectedMember(value);
+                                    if (!context.mounted) {
+                                      return;
+                                    }
+                                    if (widget.initialSection ==
+                                        HabitsSection.activity) {
+                                      await cubit.loadActivity();
+                                    }
+                                  },
+                                ),
+                              ],
+                              if (_supportsSearch) ...[
+                                const SizedBox(height: 12),
+                                HabitsSearchField(
+                                  controller: _searchController,
+                                  isVisible: _isSearchVisible,
+                                  onChanged: (value) => context
+                                      .read<HabitsCubit>()
+                                      .setSearchQuery(value),
+                                ),
+                              ] else
+                                const SizedBox(height: 16),
+                              const SizedBox(height: 16),
+                              if (widget.initialSection ==
+                                  HabitsSection.activity)
+                                HabitsActivitySection(
+                                  state: state,
+                                  onOpenTracker: _openTrackerDetail,
+                                )
+                              else
+                                HabitsOverviewSection(
+                                  filteredTrackers: state.filteredTrackers,
+                                  state: state,
+                                  onCreateTracker: _openCreateTracker,
+                                  onEditTracker: _openEditTracker,
+                                  onOpenTracker: _openTrackerDetail,
+                                  onQuickLog: _quickLogTracker,
+                                  onQuickValueChanged: (trackerId, value) =>
+                                      context
+                                          .read<HabitsCubit>()
+                                          .setQuickLogDraft(trackerId, value),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             );
           },
         ),

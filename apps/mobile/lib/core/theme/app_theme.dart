@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/colors.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Material 3 theme data for light and dark modes.
 abstract final class AppTheme {
+  static Brightness resolveBrightness(
+    shad.ThemeMode themeMode,
+    Brightness systemBrightness,
+  ) {
+    switch (themeMode) {
+      case shad.ThemeMode.light:
+        return Brightness.light;
+      case shad.ThemeMode.dark:
+        return Brightness.dark;
+      case shad.ThemeMode.system:
+        return systemBrightness;
+    }
+  }
+
   static SystemUiOverlayStyle systemUiOverlayStyleFor(
     Brightness brightness,
   ) {

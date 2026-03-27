@@ -165,6 +165,34 @@ void main() {
 
       await tester.pumpApp(
         _buildActionSlot(
+          matchedLocation: Routes.profileRoot,
+          workspaceCubit: workspaceCubit,
+          notificationsRepository: notificationsRepository,
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('notifications-action-button')),
+        findsOneWidget,
+      );
+
+      await tester.pumpApp(
+        _buildActionSlot(
+          matchedLocation: Routes.settings,
+          workspaceCubit: workspaceCubit,
+          notificationsRepository: notificationsRepository,
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('notifications-action-button')),
+        findsOneWidget,
+      );
+
+      await tester.pumpApp(
+        _buildActionSlot(
           matchedLocation: Routes.tasks,
           workspaceCubit: workspaceCubit,
           notificationsRepository: notificationsRepository,

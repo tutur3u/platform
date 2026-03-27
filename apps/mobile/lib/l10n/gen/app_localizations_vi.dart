@@ -778,6 +778,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardTodayTitle => 'Tổng quan hôm nay';
 
   @override
+  String get dashboardActiveTasksLabel => 'Công việc đang hoạt động';
+
+  @override
   String get dashboardQuickLaunch => 'Mở nhanh';
 
   @override
@@ -3216,6 +3219,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonCancel => 'Hủy';
+
+  @override
+  String get commonClearSearch => 'Xóa tìm kiếm';
 
   @override
   String get timerTotalSessions => 'Tổng số phiên';

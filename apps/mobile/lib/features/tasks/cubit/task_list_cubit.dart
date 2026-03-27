@@ -111,9 +111,11 @@ class TaskListCubit extends Cubit<TaskListState> {
       key: cacheKey,
       decode: (json) => UserTasksPage.fromJson(_decodeCacheJson(json)),
     );
+    final cachedPage = cached.data;
+    final hasCachedValue = cached.hasValue && cachedPage != null;
 
-    if (cached.hasValue && cached.data != null) {
-      final page = cached.data!;
+    if (hasCachedValue) {
+      final page = cachedPage;
       emit(
         state.copyWith(
           status: TaskListStatus.loaded,
@@ -138,25 +140,41 @@ class TaskListCubit extends Cubit<TaskListState> {
       }
     }
 
-    emit(
-      state.copyWith(
-        status: TaskListStatus.loading,
-        hasLoadedOnce: preserveData && state.hasLoadedOnce,
-        isFromCache: cached.hasValue,
-        isRefreshing: cached.hasValue,
-        lastUpdatedAt: cached.fetchedAt,
-        overdueTasks: preserveData ? null : const [],
-        todayTasks: preserveData ? null : const [],
-        upcomingTasks: preserveData ? null : const [],
-        completedTasks: preserveData ? null : const [],
-        totalActiveTasks: preserveData ? null : 0,
-        totalCompletedTasks: preserveData ? null : 0,
-        hasMoreCompleted: preserveData ? null : false,
-        completedPage: preserveData ? null : 0,
-        isLoadingMoreCompleted: false,
-        clearError: true,
-      ),
-    );
+    final shouldServeVisibleData = preserveData || hasCachedValue;
+
+    if (shouldServeVisibleData) {
+      emit(
+        state.copyWith(
+          status: TaskListStatus.loaded,
+          hasLoadedOnce: true,
+          isFromCache: hasCachedValue || state.isFromCache,
+          isRefreshing: true,
+          lastUpdatedAt: cached.fetchedAt ?? state.lastUpdatedAt,
+          isLoadingMoreCompleted: false,
+          clearError: true,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: TaskListStatus.loading,
+          hasLoadedOnce: false,
+          isFromCache: false,
+          isRefreshing: false,
+          lastUpdatedAt: cached.fetchedAt,
+          overdueTasks: const [],
+          todayTasks: const [],
+          upcomingTasks: const [],
+          completedTasks: const [],
+          totalActiveTasks: 0,
+          totalCompletedTasks: 0,
+          hasMoreCompleted: false,
+          completedPage: 0,
+          isLoadingMoreCompleted: false,
+          clearError: true,
+        ),
+      );
+    }
 
     try {
       final page = await _repo.getMyTasks(wsId: wsId, isPersonal: isPersonal);
@@ -189,7 +207,7 @@ class TaskListCubit extends Cubit<TaskListState> {
       );
     } on Exception catch (e) {
       if (requestVersion != _requestVersion) return;
-      if (cached.hasValue) {
+      if (shouldServeVisibleData) {
         emit(
           state.copyWith(
             status: TaskListStatus.loaded,

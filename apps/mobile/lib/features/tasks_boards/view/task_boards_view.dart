@@ -13,6 +13,8 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_boards_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_form_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -119,35 +121,74 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   Widget _buildContent(BuildContext context) {
     final taskBoardsState = context.watch<TaskBoardsCubit>().state;
     final hasVisibleBoards = taskBoardsState.boards.isNotEmpty;
+    final shellActions = [
+      ShellActionSpec(
+        id: 'task-boards-filter',
+        icon: shad.LucideIcons.slidersHorizontal,
+        tooltip: _filterLabel(context, taskBoardsState.filter),
+        highlighted: taskBoardsState.filter != TaskBoardsFilter.active,
+        onPressed: () => _showFilterMenu(context, taskBoardsState.filter),
+      ),
+    ];
+    final shellActionRegistration = ShellChromeActions(
+      ownerId: 'task-boards-root',
+      locations: const {Routes.taskBoards},
+      actions: shellActions,
+    );
 
     if (_isCheckingPermissions &&
         !_hasResolvedPermissions &&
         !hasVisibleBoards) {
-      return const Center(child: shad.CircularProgressIndicator());
+      return Stack(
+        children: [
+          shellActionRegistration,
+          const Center(child: shad.CircularProgressIndicator()),
+        ],
+      );
     }
     if (_permissionsLoadFailed && !hasVisibleBoards) {
-      return _ErrorView(
-        error: context.l10n.commonSomethingWentWrong,
-        onRetry: _loadPermissions,
+      return Stack(
+        children: [
+          shellActionRegistration,
+          _ErrorView(
+            error: context.l10n.commonSomethingWentWrong,
+            onRetry: _loadPermissions,
+          ),
+        ],
       );
     }
     if (_hasResolvedPermissions && !_canManageProjects && !hasVisibleBoards) {
-      return _AccessDeniedView(
-        title: context.l10n.taskBoardsAccessDeniedTitle,
-        description: context.l10n.taskBoardsAccessDeniedDescription,
+      return Stack(
+        children: [
+          shellActionRegistration,
+          _AccessDeniedView(
+            title: context.l10n.taskBoardsAccessDeniedTitle,
+            description: context.l10n.taskBoardsAccessDeniedDescription,
+          ),
+        ],
       );
     }
 
     return BlocBuilder<TaskBoardsCubit, TaskBoardsState>(
       builder: (context, state) {
         if (state.status == TaskBoardsStatus.loading && state.boards.isEmpty) {
-          return const Center(child: shad.CircularProgressIndicator());
+          return Stack(
+            children: [
+              shellActionRegistration,
+              const Center(child: shad.CircularProgressIndicator()),
+            ],
+          );
         }
 
         if (state.status == TaskBoardsStatus.error && state.boards.isEmpty) {
-          return _ErrorView(
-            error: state.error,
-            onRetry: _reload,
+          return Stack(
+            children: [
+              shellActionRegistration,
+              _ErrorView(
+                error: state.error,
+                onRetry: _reload,
+              ),
+            ],
           );
         }
 
@@ -163,16 +204,12 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
               children: [
+                shellActionRegistration,
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: _BoardsToolbarCard(
-                    title: context.l10n.taskBoardsTitle,
+                  child: _BoardsMetaRow(
                     filterLabel: _filterLabel(context, state.filter),
                     boardCount: state.filteredBoards.length,
-                    isRefreshing:
-                        state.status == TaskBoardsStatus.loading &&
-                        state.boards.isNotEmpty,
-                    onOpenFilter: () => _showFilterMenu(context, state.filter),
                   ),
                 ),
                 if (state.filteredBoards.isEmpty)

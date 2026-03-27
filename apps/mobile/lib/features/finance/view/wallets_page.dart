@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -40,6 +44,8 @@ class _WalletsView extends StatefulWidget {
 
 class _WalletsViewState extends State<_WalletsView> {
   static const double _fabContentBottomPadding = 96;
+  static const CachePolicy _cachePolicy = CachePolicies.moduleData;
+  static const _cacheTag = 'finance:wallets';
   static final Map<String, _WalletsCacheEntry> _cache = {};
 
   List<Wallet> _wallets = const [];
@@ -47,11 +53,65 @@ class _WalletsViewState extends State<_WalletsView> {
   String? _error;
   int _currentWalletsRequestToken = 0;
   String? _loadedWorkspaceId;
+  String? _seededWorkspaceId;
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadWallets());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _seedWalletsFromCacheIfNeeded();
+  }
+
+  CacheKey _cacheKey(String wsId) {
+    return CacheKey(
+      namespace: 'finance.wallets',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+    );
+  }
+
+  void _seedWalletsFromCacheIfNeeded({String? wsId}) {
+    final resolvedWsId =
+        wsId ?? context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (_seededWorkspaceId == resolvedWsId) {
+      return;
+    }
+    _seededWorkspaceId = resolvedWsId;
+
+    if (!mounted || resolvedWsId == null) {
+      return;
+    }
+
+    final cached = CacheStore.instance.peek<List<Wallet>>(
+      key: _cacheKey(resolvedWsId),
+      decode: _decodeWallets,
+    );
+    if (!cached.hasValue || cached.data == null) {
+      return;
+    }
+
+    setState(() {
+      _wallets = cached.data!;
+      _loadedWorkspaceId = resolvedWsId;
+      _isLoading = false;
+      _error = null;
+    });
+  }
+
+  List<Wallet> _decodeWallets(Object? json) {
+    if (json is! List) {
+      throw const FormatException('Invalid wallets cache payload.');
+    }
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(Wallet.fromJson)
+        .toList(growable: false);
   }
 
   @override
@@ -64,7 +124,12 @@ class _WalletsViewState extends State<_WalletsView> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, _) => unawaited(_loadWallets()),
+        listener: (context, state) {
+          _seedWalletsFromCacheIfNeeded(
+            wsId: state.currentWorkspace?.id,
+          );
+          unawaited(_loadWallets());
+        },
         child: Stack(
           children: [
             RefreshIndicator(
@@ -216,14 +281,17 @@ class _WalletsViewState extends State<_WalletsView> {
 
   Future<void> _loadWallets({bool forceRefresh = false}) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final repository = context.read<FinanceRepository>();
     if (wsId == null) {
       if (!mounted) {
         _loadedWorkspaceId = null;
+        _seededWorkspaceId = null;
         return;
       }
       setState(() {
         _wallets = const [];
         _loadedWorkspaceId = null;
+        _seededWorkspaceId = null;
         _isLoading = false;
         _error = null;
       });
@@ -231,19 +299,25 @@ class _WalletsViewState extends State<_WalletsView> {
     }
     final requestToken = ++_currentWalletsRequestToken;
     final cached = _cache[wsId];
+    final diskCached = await CacheStore.instance.read<List<Wallet>>(
+      key: _cacheKey(wsId),
+      decode: _decodeWallets,
+    );
+    final resolvedWallets = cached?.wallets ?? diskCached.data;
     final hasVisibleData = _loadedWorkspaceId == wsId;
 
-    if (!forceRefresh && cached != null) {
+    if (!forceRefresh && resolvedWallets != null) {
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;
       }
       setState(() {
-        _wallets = cached.wallets;
+        _wallets = resolvedWallets;
         _loadedWorkspaceId = wsId;
         _isLoading = false;
         _error = null;
       });
-      if (isFinanceCacheFresh(cached.fetchedAt)) {
+      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
+          diskCached.isFresh) {
         return;
       }
     } else if (!hasVisibleData) {
@@ -261,13 +335,21 @@ class _WalletsViewState extends State<_WalletsView> {
     }
 
     try {
-      final wallets = await context.read<FinanceRepository>().getWallets(wsId);
+      final wallets = await repository.getWallets(wsId);
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;
       }
       _cache[wsId] = _WalletsCacheEntry(
         wallets: wallets,
         fetchedAt: DateTime.now(),
+      );
+      await CacheStore.instance.write(
+        key: _cacheKey(wsId),
+        policy: _cachePolicy,
+        payload: wallets
+            .map((wallet) => wallet.toJson())
+            .toList(growable: false),
+        tags: [_cacheTag, 'workspace:$wsId', 'module:finance'],
       );
       setState(() {
         _wallets = wallets;
@@ -278,7 +360,7 @@ class _WalletsViewState extends State<_WalletsView> {
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;
       }
-      if (cached != null || hasVisibleData) {
+      if (resolvedWallets != null || hasVisibleData) {
         setState(() => _error = null);
       } else {
         setState(() => _error = context.l10n.commonSomethingWentWrong);

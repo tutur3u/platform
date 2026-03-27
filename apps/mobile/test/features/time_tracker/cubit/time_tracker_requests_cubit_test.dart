@@ -315,7 +315,8 @@ void main() {
       await cubit.approveRequest('req_1', 'ws_1');
 
       expect(cubit.state.requests, isEmpty);
-      expect(cubit.state.status, TimeTrackerRequestsStatus.error);
+      expect(cubit.state.status, TimeTrackerRequestsStatus.loaded);
+      expect(cubit.state.error, contains('reload failed'));
 
       await cubit.close();
     });

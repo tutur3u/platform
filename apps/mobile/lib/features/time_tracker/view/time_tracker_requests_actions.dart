@@ -171,6 +171,7 @@ extension _RequestsViewActions on _RequestsViewState {
         return;
       }
       _applyState(() {
+        _hasResolvedPermissions = true;
         _canManageRequests = false;
         _canManageThresholdSettings = false;
         _selectedUserId = null;
@@ -184,7 +185,10 @@ extension _RequestsViewActions on _RequestsViewState {
     }
 
     if (canApplyState()) {
-      _applyState(() => _isThresholdLoading = true);
+      _applyState(() {
+        _hasResolvedPermissions = false;
+        _isThresholdLoading = true;
+      });
     }
 
     final repository = context.read<ITimeTrackerRepository>();
@@ -273,6 +277,7 @@ extension _RequestsViewActions on _RequestsViewState {
         return;
       }
       _applyState(() {
+        _hasResolvedPermissions = true;
         _canManageRequests = false;
         _canManageThresholdSettings = false;
         _selectedUserId = null;
@@ -289,6 +294,7 @@ extension _RequestsViewActions on _RequestsViewState {
       return;
     }
     _applyState(() {
+      _hasResolvedPermissions = true;
       _canManageRequests = canManageRequests;
       _canManageThresholdSettings = canManageThresholdSettings;
       if (!canManageRequests) {

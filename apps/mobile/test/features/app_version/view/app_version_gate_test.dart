@@ -27,6 +27,19 @@ void main() {
       settingsRepository = _MockSettingsRepository();
     });
 
+    testWidgets('renders child immediately before version checks complete', (
+      tester,
+    ) async {
+      final cubit = AppVersionCubit(
+        versionCheckRepository: versionCheckRepository,
+        settingsRepository: settingsRepository,
+      );
+
+      await tester.pumpWidget(_buildTestApp(cubit));
+
+      expect(find.text('Home'), findsOneWidget);
+    });
+
     testWidgets('renders the blocking update screen for required updates', (
       tester,
     ) async {

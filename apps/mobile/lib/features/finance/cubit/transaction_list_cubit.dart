@@ -1,5 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -8,27 +12,80 @@ import 'package:mobile/features/finance/finance_cache.dart';
 part 'transaction_list_state.dart';
 
 class TransactionListCubit extends Cubit<TransactionListState> {
-  TransactionListCubit({required FinanceRepository financeRepository})
-    : _repo = financeRepository,
-      super(const TransactionListState());
+  TransactionListCubit({
+    required FinanceRepository financeRepository,
+    TransactionListState? initialState,
+  }) : _repo = financeRepository,
+       super(initialState ?? const TransactionListState());
 
   final FinanceRepository _repo;
+  static const CachePolicy _cachePolicy = CachePolicies.moduleData;
+  static const _cacheTag = 'finance:transactions';
   static final Map<String, _TransactionListCacheEntry> _cache = {};
 
   String _wsId = '';
   String? _loadedWorkspaceId;
   String get _cacheKey => '$_wsId::${state.search}';
 
+  static Map<String, dynamic> _decodeCacheJson(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid transaction list cache payload.');
+    }
+
+    return Map<String, dynamic>.from(json);
+  }
+
+  static CacheKey _storeKey(String wsId, {String search = ''}) {
+    return CacheKey(
+      namespace: 'finance.transactions',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+      params: {'search': search},
+    );
+  }
+
+  static TransactionListState? seedStateForWorkspace(
+    String wsId, {
+    String search = '',
+  }) {
+    final cached = CacheStore.instance.peek<TransactionListState>(
+      key: _storeKey(wsId, search: search),
+      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+    );
+    if (!cached.hasValue || cached.data == null) {
+      return null;
+    }
+    return cached.data;
+  }
+
   /// Initialise with workspace ID and load the first page.
   Future<void> load(String wsId, {bool forceRefresh = false}) async {
     _wsId = wsId;
-    final cached = _cache['$wsId::'];
-    if (!forceRefresh && cached != null) {
+    final cacheId = '$wsId::';
+    final cached = _cache[cacheId];
+    final diskCached = await CacheStore.instance.read<TransactionListState>(
+      key: _storeKey(wsId),
+      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+    );
+    final resolvedCached = cached?.state ?? diskCached.data;
+    final hasResolvedCache = resolvedCached != null;
+
+    if (!forceRefresh && hasResolvedCache) {
       _loadedWorkspaceId = wsId;
-      emit(cached.state);
-      if (isFinanceCacheFresh(cached.fetchedAt)) {
+      emit(resolvedCached);
+      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
+          diskCached.isFresh) {
         return;
       }
+      emit(
+        resolvedCached.copyWith(
+          status: TransactionListStatus.loading,
+          hasMore: true,
+          clearCursor: true,
+          clearError: true,
+        ),
+      );
     } else if (_loadedWorkspaceId != wsId) {
       emit(
         state.copyWith(
@@ -42,7 +99,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
           search: '',
         ),
       );
-    } else if (state.transactions.isEmpty) {
+    } else {
       emit(
         state.copyWith(
           status: TransactionListStatus.loading,
@@ -70,7 +127,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       ),
     );
 
-    await _fetch();
+    await _fetch(replaceExisting: true);
   }
 
   /// Load the next page (no-op if already loading or no more pages).
@@ -84,19 +141,32 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         clearError: true,
       ),
     );
-    await _fetch();
+    await _fetch(replaceExisting: false);
   }
 
   /// Update the search query and reload from scratch.
   Future<void> setSearch(String query) async {
     if (query == state.search) return;
     final cached = _cache['$_wsId::$query'];
-    if (cached != null) {
-      emit(cached.state);
-      if (isFinanceCacheFresh(cached.fetchedAt)) {
+    final diskCached = await CacheStore.instance.read<TransactionListState>(
+      key: _storeKey(_wsId, search: query),
+      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+    );
+    final resolvedCached = cached?.state ?? diskCached.data;
+    if (resolvedCached != null) {
+      emit(resolvedCached);
+      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
+          diskCached.isFresh) {
         return;
       }
-      emit(cached.state.copyWith(status: TransactionListStatus.loading));
+      emit(
+        resolvedCached.copyWith(
+          status: TransactionListStatus.loading,
+          hasMore: true,
+          clearCursor: true,
+          clearError: true,
+        ),
+      );
     } else {
       emit(
         state.copyWith(
@@ -109,10 +179,10 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         ),
       );
     }
-    await _fetch();
+    await _fetch(replaceExisting: true);
   }
 
-  Future<void> _fetch() async {
+  Future<void> _fetch({required bool replaceExisting}) async {
     if (_wsId.isEmpty) {
       emit(
         state.copyWith(
@@ -127,15 +197,13 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     try {
       final result = await _repo.getTransactionsInfinite(
         wsId: _wsId,
-        cursor: state.cursor,
+        cursor: replaceExisting ? null : state.cursor,
         search: state.search.isEmpty ? null : state.search,
       );
 
-      final allTransactions = [
-        ...state.transactions,
-        ...result.data,
-      ];
-
+      final allTransactions = replaceExisting
+          ? result.data
+          : [...state.transactions, ...result.data];
       final nextState = state.copyWith(
         status: TransactionListStatus.loaded,
         transactions: allTransactions,
@@ -148,9 +216,24 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         state: nextState,
         fetchedAt: DateTime.now(),
       );
+      await CacheStore.instance.write(
+        key: _storeKey(_wsId, search: state.search),
+        policy: _cachePolicy,
+        payload: _stateToCacheJson(nextState),
+        tags: [_cacheTag, 'workspace:$_wsId', 'module:finance'],
+      );
       _loadedWorkspaceId = _wsId;
       emit(nextState);
     } on Exception catch (e) {
+      if (state.transactions.isNotEmpty) {
+        emit(
+          state.copyWith(
+            status: TransactionListStatus.loaded,
+            error: e.toString(),
+          ),
+        );
+        return;
+      }
       emit(
         state.copyWith(
           status: TransactionListStatus.error,
@@ -169,4 +252,39 @@ class _TransactionListCacheEntry {
 
   final TransactionListState state;
   final DateTime fetchedAt;
+}
+
+Map<String, dynamic> _stateToCacheJson(TransactionListState state) {
+  return {
+    'transactions': state.transactions
+        .map((transaction) => transaction.toJson())
+        .toList(growable: false),
+    'workspaceCurrency': state.workspaceCurrency,
+    'exchangeRates': state.exchangeRates
+        .map((rate) => rate.toJson())
+        .toList(growable: false),
+    'hasMore': state.hasMore,
+    'cursor': state.cursor,
+    'search': state.search,
+  };
+}
+
+TransactionListState _stateFromCacheJson(Map<String, dynamic> json) {
+  return TransactionListState(
+    status: TransactionListStatus.loaded,
+    transactions:
+        ((json['transactions'] as List<dynamic>?) ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(Transaction.fromJson)
+            .toList(growable: false),
+    workspaceCurrency: json['workspaceCurrency'] as String? ?? 'USD',
+    exchangeRates:
+        ((json['exchangeRates'] as List<dynamic>?) ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(ExchangeRate.fromJson)
+            .toList(growable: false),
+    hasMore: json['hasMore'] as bool? ?? true,
+    cursor: json['cursor'] as String?,
+    search: json['search'] as String? ?? '',
+  );
 }

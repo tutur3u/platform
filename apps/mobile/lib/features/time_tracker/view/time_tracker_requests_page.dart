@@ -9,6 +9,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
@@ -17,6 +18,8 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.dart';
 import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
@@ -89,6 +92,7 @@ class _RequestsViewState extends State<_RequestsView> {
   int? _missedEntryDateThreshold;
   int _statusChangeGracePeriodMinutes = 0;
   bool _isThresholdLoading = false;
+  bool _hasResolvedPermissions = false;
   int _permissionLoadToken = 0;
   int _requestLoadToken = 0;
   final Map<String, bool> _isMissedEntryDialogLoadingByWorkspace =
@@ -160,6 +164,73 @@ class _RequestsViewState extends State<_RequestsView> {
     }
   }
 
+  void _applyFilter(
+    String wsId,
+    TimeTrackerRequestStatusFilter filter,
+    String? userId,
+  ) {
+    setState(() {
+      _selectedFilter = filter;
+      _selectedUserId = _canManageRequests ? userId : null;
+    });
+
+    final cubit = context.read<TimeTrackerRequestsCubit>();
+    unawaited(
+      cubit.filterByStatus(
+        statusFromFilter(filter),
+        wsId,
+        userId: _requestUserFilterId(),
+        statusOverride: _statusOverrideForFilter(filter),
+      ),
+    );
+  }
+
+  void _openFilters(String wsId) {
+    unawaited(
+      showFilterSheet(
+        context,
+        selectedFilter: _selectedFilter,
+        selectedUserId: _selectedUserId,
+        availableRequestUsers: _availableRequestUsers,
+        canManageRequests: _canManageRequests,
+        onApply: (filter, userId) => _applyFilter(wsId, filter, userId),
+      ),
+    );
+  }
+
+  List<ShellActionSpec> _shellActions(BuildContext context, String wsId) {
+    final l10n = context.l10n;
+    final showSettingsAction =
+        !_hasResolvedPermissions || _canManageThresholdSettings;
+
+    return [
+      ShellActionSpec(
+        id: 'requests-filter',
+        icon: shad.LucideIcons.filter,
+        tooltip: l10n.timerRequestsFilterTitle,
+        highlighted: hasActiveFilters(
+          selectedFilter: _selectedFilter,
+          canManageRequests: _canManageRequests,
+          selectedUserId: _selectedUserId,
+        ),
+        enabled: wsId.isNotEmpty,
+        onPressed: () => _openFilters(wsId),
+      ),
+      if (showSettingsAction)
+        ShellActionSpec(
+          id: 'requests-settings',
+          icon: shad.LucideIcons.settings2,
+          tooltip: l10n.settingsTitle,
+          enabled:
+              _hasResolvedPermissions &&
+              _canManageThresholdSettings &&
+              !_isThresholdLoading,
+          isLoading: !_hasResolvedPermissions || _isThresholdLoading,
+          onPressed: () => unawaited(_showThresholdSettingsDialog()),
+        ),
+    ];
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -196,6 +267,12 @@ class _RequestsViewState extends State<_RequestsView> {
       child: shad.Scaffold(
         child: Stack(
           children: [
+            if (wsId != null && wsId.isNotEmpty)
+              ShellChromeActions(
+                ownerId: 'time-tracker-requests',
+                locations: const {Routes.timerRequests},
+                actions: _shellActions(context, wsId),
+              ),
             ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: Builder(
@@ -257,98 +334,89 @@ class _RequestsViewState extends State<_RequestsView> {
 
                       return RefreshIndicator(
                         onRefresh: () => _loadRequests(forceRefresh: true),
-                        child: ListView.builder(
-                          itemCount: state.requests.length + 1,
-                          padding: const EdgeInsets.only(top: 8, bottom: 96),
-                          itemBuilder: (context, index) {
-                            if (index == 0) {
-                              return Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  4,
-                                  16,
-                                  12,
+                        child: state.requests.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 96,
                                 ),
-                                child: _RequestsToolbarCard(
-                                  title: l10n.timerRequestsTitle,
-                                  requestCount: state.requests.length,
-                                  isRefreshing: state.isRefreshing,
-                                  hasActiveFilters: hasActiveFilters(
-                                    selectedFilter: _selectedFilter,
-                                    canManageRequests: _canManageRequests,
-                                    selectedUserId: _selectedUserId,
-                                  ),
-                                  activeFilterLabel: _selectedFilterLabel(
-                                    context,
-                                  ),
-                                  onOpenFilters: wsId == null || wsId.isEmpty
-                                      ? null
-                                      : () => unawaited(
-                                          showFilterSheet(
-                                            context,
-                                            selectedFilter: _selectedFilter,
-                                            selectedUserId: _selectedUserId,
-                                            availableRequestUsers:
-                                                _availableRequestUsers,
-                                            canManageRequests:
-                                                _canManageRequests,
-                                            onApply: (filter, userId) {
-                                              setState(() {
-                                                _selectedFilter = filter;
-                                                _selectedUserId =
-                                                    _canManageRequests
-                                                    ? userId
-                                                    : null;
-                                              });
-
-                                              final cubit = context
-                                                  .read<
-                                                    TimeTrackerRequestsCubit
-                                                  >();
-                                              unawaited(
-                                                cubit.filterByStatus(
-                                                  statusFromFilter(filter),
-                                                  wsId,
-                                                  userId:
-                                                      _requestUserFilterId(),
-                                                  statusOverride:
-                                                      _statusOverrideForFilter(
-                                                        filter,
-                                                      ),
-                                                ),
-                                              );
-                                            },
-                                          ),
+                                children: [
+                                  if (_showMetaRow(state))
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        4,
+                                        16,
+                                        16,
+                                      ),
+                                      child: _RequestsMetaRow(
+                                        requestCount: 0,
+                                        hasActiveFilters: hasActiveFilters(
+                                          selectedFilter: _selectedFilter,
+                                          canManageRequests: _canManageRequests,
+                                          selectedUserId: _selectedUserId,
                                         ),
-                                  onOpenSettings: _canManageThresholdSettings
-                                      ? () => unawaited(
-                                          _showThresholdSettingsDialog(),
-                                        )
-                                      : null,
-                                  isSettingsLoading: _isThresholdLoading,
-                                ),
-                              );
-                            }
-                            if (state.requests.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 48),
-                                child: Center(
-                                  child: Text(
-                                    l10n.timerNoSessions,
-                                    style: shad.Theme.of(
-                                      context,
-                                    ).typography.textMuted,
+                                        activeFilterLabel: _selectedFilterLabel(
+                                          context,
+                                        ),
+                                      ),
+                                    ),
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      top: _showMetaRow(state) ? 24 : 48,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        l10n.timerNoSessions,
+                                        style: shad.Theme.of(
+                                          context,
+                                        ).typography.textMuted,
+                                      ),
+                                    ),
                                   ),
+                                ],
+                              )
+                            : ListView.builder(
+                                itemCount:
+                                    state.requests.length +
+                                    (_showMetaRow(state) ? 1 : 0),
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 96,
                                 ),
-                              );
-                            }
-                            final request = state.requests[index - 1];
-                            return _RequestTile(
-                              request: request,
-                              onTap: () => _showRequestDetail(context, request),
-                            );
-                          },
-                        ),
+                                itemBuilder: (context, index) {
+                                  final showMetaRow = _showMetaRow(state);
+                                  if (showMetaRow && index == 0) {
+                                    return Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        4,
+                                        16,
+                                        16,
+                                      ),
+                                      child: _RequestsMetaRow(
+                                        requestCount: state.requests.length,
+                                        hasActiveFilters: hasActiveFilters(
+                                          selectedFilter: _selectedFilter,
+                                          canManageRequests: _canManageRequests,
+                                          selectedUserId: _selectedUserId,
+                                        ),
+                                        activeFilterLabel: _selectedFilterLabel(
+                                          context,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final request = state
+                                      .requests[index - (showMetaRow ? 1 : 0)];
+                                  return _RequestTile(
+                                    request: request,
+                                    onTap: () =>
+                                        _showRequestDetail(context, request),
+                                  );
+                                },
+                              ),
                       );
                     },
                   );
@@ -375,5 +443,14 @@ class _RequestsViewState extends State<_RequestsView> {
       TimeTrackerRequestStatusFilter.rejected => l10n.timerRequestRejected,
       TimeTrackerRequestStatusFilter.needsInfo => l10n.timerRequestNeedsInfo,
     };
+  }
+
+  bool _showMetaRow(TimeTrackerRequestsState state) {
+    return state.requests.isNotEmpty ||
+        hasActiveFilters(
+          selectedFilter: _selectedFilter,
+          canManageRequests: _canManageRequests,
+          selectedUserId: _selectedUserId,
+        );
   }
 }

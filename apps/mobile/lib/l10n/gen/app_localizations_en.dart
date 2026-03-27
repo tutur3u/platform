@@ -778,6 +778,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardTodayTitle => 'Today at a glance';
 
   @override
+  String get dashboardActiveTasksLabel => 'Active tasks';
+
+  @override
   String get dashboardQuickLaunch => 'Quick launch';
 
   @override
@@ -3222,6 +3225,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonCancel => 'Cancel';
+
+  @override
+  String get commonClearSearch => 'Clear search';
 
   @override
   String get timerTotalSessions => 'Total sessions';

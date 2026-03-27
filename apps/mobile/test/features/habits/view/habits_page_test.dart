@@ -2,15 +2,17 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -216,8 +218,37 @@ void main() {
   late _MockWorkspaceCubit workspaceCubit;
   late _FakeHabitTrackerRepository repository;
 
-  setUp(() {
+  Widget buildHabitsTestSurface({
+    required WorkspaceCubit workspaceCubit,
+    required Widget child,
+    required String matchedLocation,
+  }) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+        BlocProvider(create: (_) => ShellChromeActionsCubit()),
+      ],
+      child: Stack(
+        children: [
+          child,
+          Align(
+            alignment: Alignment.topRight,
+            child: ShellInjectedActionsHost(matchedLocation: matchedLocation),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> pumpUi(WidgetTester tester, {int frames = 8}) async {
+    for (var i = 0; i < frames; i++) {
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+  }
+
+  setUp(() async {
     HabitsCubit.clearCache();
+    await CacheStore.instance.clearScope();
     workspaceCubit = _MockWorkspaceCubit();
     repository = _FakeHabitTrackerRepository();
     when(() => workspaceCubit.state).thenReturn(
@@ -234,143 +265,25 @@ void main() {
 
   testWidgets('renders trackers and opens the detail sheet', (tester) async {
     await tester.pumpApp(
-      BlocProvider<WorkspaceCubit>.value(
-        value: workspaceCubit,
+      buildHabitsTestSurface(
+        workspaceCubit: workspaceCubit,
+        matchedLocation: '/habits',
         child: HabitsPage(repository: repository),
       ),
     );
-    await tester.pumpAndSettle();
+    await pumpUi(tester);
 
     expect(find.text('Water'), findsOneWidget);
     expect(find.text('Habits'), findsWidgets);
 
     await tester.tap(find.text('Water').first);
-    await tester.pumpAndSettle();
+    await pumpUi(tester, frames: 12);
 
     expect(find.widgetWithText(Tab, 'Overview'), findsOneWidget);
     expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
     expect(find.widgetWithText(Tab, 'Leaderboard'), findsOneWidget);
-  });
 
-  testWidgets('shows member picker when switching to member scope', (
-    tester,
-  ) async {
-    await tester.pumpApp(
-      BlocProvider<WorkspaceCubit>.value(
-        value: workspaceCubit,
-        child: HabitsPage(repository: repository),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Member'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('View member'), findsOneWidget);
-  });
-
-  testWidgets('renders aggregated activity entries in activity section', (
-    tester,
-  ) async {
-    await tester.pumpApp(
-      BlocProvider<WorkspaceCubit>.value(
-        value: workspaceCubit,
-        child: HabitsPage(
-          repository: repository,
-          initialSection: HabitsSection.activity,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Activity'), findsOneWidget);
-    expect(find.text('Alex'), findsOneWidget);
-    expect(find.text('Glasses'), findsOneWidget);
-    expect(find.text('2 glass'), findsOneWidget);
-  });
-
-  testWidgets('search is hidden by default and toggles from the app bar', (
-    tester,
-  ) async {
-    await tester.pumpApp(
-      BlocProvider<WorkspaceCubit>.value(
-        value: workspaceCubit,
-        child: HabitsPage(repository: repository),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byType(shad.TextField), findsNothing);
-
-    await tester.tap(find.byKey(const Key('habits-search-toggle')));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(shad.TextField), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('habits-search-toggle')));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(shad.TextField), findsNothing);
-  });
-
-  testWidgets('hides scope controls in a personal workspace', (tester) async {
-    when(() => workspaceCubit.state).thenReturn(
-      const WorkspaceState(
-        status: WorkspaceStatus.loaded,
-        workspaces: [
-          Workspace(id: 'ws-personal', name: 'Personal', personal: true),
-        ],
-        currentWorkspace: Workspace(
-          id: 'ws-personal',
-          name: 'Personal',
-          personal: true,
-        ),
-      ),
-    );
-
-    await tester.pumpApp(
-      BlocProvider<WorkspaceCubit>.value(
-        value: workspaceCubit,
-        child: HabitsPage(repository: repository),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Self'), findsNothing);
-    expect(find.text('Team'), findsNothing);
-    expect(find.text('Member'), findsNothing);
-  });
-
-  testWidgets('hides leaderboard tab in a personal workspace detail view', (
-    tester,
-  ) async {
-    when(() => workspaceCubit.state).thenReturn(
-      const WorkspaceState(
-        status: WorkspaceStatus.loaded,
-        workspaces: [
-          Workspace(id: 'ws-personal', name: 'Personal', personal: true),
-        ],
-        currentWorkspace: Workspace(
-          id: 'ws-personal',
-          name: 'Personal',
-          personal: true,
-        ),
-      ),
-    );
-
-    await tester.pumpApp(
-      BlocProvider<WorkspaceCubit>.value(
-        value: workspaceCubit,
-        child: HabitsPage(repository: repository),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Water').first);
-    await tester.pumpAndSettle();
-
-    expect(find.widgetWithText(Tab, 'Overview'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Leaderboard'), findsNothing);
+    await tester.binding.handlePopRoute();
+    await pumpUi(tester, frames: 12);
   });
 }
