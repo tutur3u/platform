@@ -11,6 +11,7 @@ import {
   useQueryState,
 } from 'nuqs';
 import { useMemo } from 'react';
+import type { GroupMembershipFilter } from './group-membership';
 import {
   useFeaturedGroupCounts,
   useFeaturedGroups,
@@ -21,12 +22,14 @@ interface Props {
   wsId: string;
   initialFeaturedGroupIds?: string[];
   effectiveExcludedGroups?: string[];
+  groupMembership?: GroupMembershipFilter;
 }
 
 export function QuickGroupFilters({
   wsId,
   initialFeaturedGroupIds,
   effectiveExcludedGroups = [],
+  groupMembership = 'all',
 }: Props) {
   const t = useTranslations('user-data-table');
 
@@ -93,6 +96,7 @@ export function QuickGroupFilters({
       linkStatus,
     }
   );
+  const showCounts = groupMembership === 'all';
 
   if (isLoadingFeatured || isLoadingGroups) return null;
   if (!featuredGroups.length) return null;
@@ -124,7 +128,7 @@ export function QuickGroupFilters({
             onClick={() => toggleGroup(group.id)}
           >
             {group.name}
-            {count != null && (
+            {showCounts && count != null && (
               <Badge
                 variant="secondary"
                 className="ml-1 h-4 min-w-4 justify-center px-1 text-[10px] leading-none"

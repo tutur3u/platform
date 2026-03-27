@@ -1,25 +1,8 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  Activity,
-  Archive,
-  Clock,
-  Layers,
-  Link,
-  Link2Off,
-  Loader2,
-  ShieldAlert,
-  Users,
-} from '@tuturuuu/icons';
+import { Loader2 } from '@tuturuuu/icons';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import {
   parseAsArrayOf,
@@ -27,16 +10,16 @@ import {
   parseAsString,
   useQueryState,
 } from 'nuqs';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
-import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
 import { getUserColumns } from './columns';
-import Filters from './filters';
+import type { GroupMembershipFilter } from './group-membership';
 import {
   useDefaultExcludedGroups,
   useWorkspaceUserFields,
   useWorkspaceUsers,
 } from './hooks';
-import { QuickGroupFilters } from './quick-group-filters';
+import { UsersFilterPanel } from './users-filter-panel';
 
 interface Props {
   wsId: string;
@@ -51,9 +34,9 @@ interface Props {
   };
   initialDefaultExcludedGroups?: string[];
   initialFeaturedGroupIds?: string[];
-  toolbarImportContent?: React.ReactNode;
-  toolbarExportContent?: React.ReactNode;
-  toolbarActions?: React.ReactNode;
+  toolbarImportContent?: ReactNode;
+  toolbarExportContent?: ReactNode;
+  toolbarActions?: ReactNode;
 }
 
 export function WorkspaceUsersTable({
@@ -67,7 +50,6 @@ export function WorkspaceUsersTable({
   toolbarActions,
 }: Props) {
   const t = useTranslations();
-  const userStatusLabels = useUserStatusLabels(wsId);
   const queryClient = useQueryClient();
 
   // Use nuqs for URL state management (shallow: true for client-side only)
@@ -109,6 +91,13 @@ export function WorkspaceUsersTable({
 
   const [requireAttention, setRequireAttention] = useQueryState(
     'requireAttention',
+    parseAsString.withDefault('all').withOptions({
+      shallow: true,
+    })
+  );
+
+  const [groupMembership, setGroupMembership] = useQueryState(
+    'groupMembership',
     parseAsString.withDefault('all').withOptions({
       shallow: true,
     })
@@ -177,6 +166,7 @@ export function WorkspaceUsersTable({
       status: status as 'active' | 'archived' | 'archived_until' | 'all',
       linkStatus: linkStatus as 'all' | 'linked' | 'virtual',
       requireAttention: requireAttention as 'all' | 'true' | 'false',
+      groupMembership: groupMembership as GroupMembershipFilter,
     },
     {
       enabled: isInitialized,
@@ -236,6 +226,7 @@ export function WorkspaceUsersTable({
     setStatus(null);
     setLinkStatus(null);
     setRequireAttention(null);
+    setGroupMembership(null);
     setIncludedGroups(null);
     setExcludedGroups(null);
   }, [
@@ -245,6 +236,7 @@ export function WorkspaceUsersTable({
     setStatus,
     setLinkStatus,
     setRequireAttention,
+    setGroupMembership,
     setIncludedGroups,
     setExcludedGroups,
   ]);
@@ -289,116 +281,31 @@ export function WorkspaceUsersTable({
         pageSize={pageSize}
         defaultQuery={q}
         filters={
-          <div className="flex flex-wrap items-center gap-2">
-            <QuickGroupFilters
-              wsId={wsId}
-              initialFeaturedGroupIds={initialFeaturedGroupIds}
-              effectiveExcludedGroups={effectiveExcludedGroups}
-            />
-            <Select
-              value={status}
-              onValueChange={(val) => {
-                setStatus(val);
-                setPage(1); // Reset to first page when toggling
-              }}
-            >
-              <SelectTrigger className="h-8 w-37.5 border-dashed bg-background">
-                <SelectValue placeholder={t('ws-users.status_filter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-4 w-4" />
-                    <span>{t('ws-users.status_active')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="archived">
-                  <div className="flex items-center gap-2">
-                    <Archive className="h-4 w-4" />
-                    <span>{userStatusLabels.archived}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="archived_until">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>{userStatusLabels.archived_until}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Layers className="h-4 w-4" />
-                    <span>{t('ws-users.status_all')}</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={linkStatus}
-              onValueChange={(val) => {
-                setLinkStatus(val);
-                setPage(1); // Reset to first page when toggling
-              }}
-            >
-              <SelectTrigger className="h-8 w-37.5 border-dashed bg-background">
-                <SelectValue placeholder={t('ws-users.link_status_filter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>{t('ws-users.link_status_all')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="linked">
-                  <div className="flex items-center gap-2">
-                    <Link className="h-4 w-4" />
-                    <span>{t('ws-users.link_status_linked')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="virtual">
-                  <div className="flex items-center gap-2">
-                    <Link2Off className="h-4 w-4" />
-                    <span>{t('ws-users.link_status_virtual')}</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={requireAttention}
-              onValueChange={(val) => {
-                setRequireAttention(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="h-8 w-44 border-dashed bg-background">
-                <SelectValue placeholder={t('ws-users.attention_filter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>{t('ws-users.attention_all')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="true">
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4" />
-                    <span>{t('ws-users.attention_only')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="false">
-                  <div className="flex items-center gap-2">
-                    <Link2Off className="h-4 w-4" />
-                    <span>{t('ws-users.attention_none')}</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Filters
-              wsId={wsId}
-              effectiveExcludedGroups={effectiveExcludedGroups}
-            />
-          </div>
+          <UsersFilterPanel
+            wsId={wsId}
+            status={status as 'active' | 'archived' | 'archived_until' | 'all'}
+            linkStatus={linkStatus as 'all' | 'linked' | 'virtual'}
+            requireAttention={requireAttention as 'all' | 'true' | 'false'}
+            groupMembership={groupMembership as GroupMembershipFilter}
+            effectiveExcludedGroups={effectiveExcludedGroups}
+            initialFeaturedGroupIds={initialFeaturedGroupIds}
+            onStatusChange={(val) => {
+              setStatus(val);
+              setPage(1);
+            }}
+            onLinkStatusChange={(val) => {
+              setLinkStatus(val);
+              setPage(1);
+            }}
+            onRequireAttentionChange={(val) => {
+              setRequireAttention(val);
+              setPage(1);
+            }}
+            onGroupMembershipChange={(val) => {
+              setGroupMembership(val === 'all' ? null : val);
+              setPage(1);
+            }}
+          />
         }
         toolbarImportContent={toolbarImportContent}
         toolbarExportContent={toolbarExportContent}
@@ -411,6 +318,7 @@ export function WorkspaceUsersTable({
           status !== 'active' ||
           linkStatus !== 'all' ||
           requireAttention !== 'all' ||
+          groupMembership !== 'all' ||
           includedGroups.length > 0 ||
           effectiveExcludedGroups.length > 0
         }

@@ -28,6 +28,10 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
+import {
+  type GroupMembershipFilter,
+  getGroupMembershipTranslationKey,
+} from './group-membership';
 
 type ExportDataType = 'all-users' | 'users-with-promotions';
 type UserStatus = 'active' | 'archived' | 'archived_until' | 'all';
@@ -41,6 +45,7 @@ interface SearchParams {
   excludedGroups?: string | string[];
   status?: UserStatus;
   linkStatus?: LinkStatus;
+  groupMembership?: GroupMembershipFilter;
 }
 
 type ExportWorkspaceUser = WorkspaceUser & {
@@ -82,6 +87,7 @@ export default function ExportDialogContent({
         ...searchParamsProp,
         status: parseUserStatus(searchParamsProp.status),
         linkStatus: parseLinkStatus(searchParamsProp.linkStatus),
+        groupMembership: parseGroupMembership(searchParamsProp.groupMembership),
       };
     }
 
@@ -91,6 +97,9 @@ export default function ExportDialogContent({
       excludedGroups: urlSearchParams.getAll('excludedGroups'),
       status: parseUserStatus(urlSearchParams.get('status')),
       linkStatus: parseLinkStatus(urlSearchParams.get('linkStatus')),
+      groupMembership: parseGroupMembership(
+        urlSearchParams.get('groupMembership')
+      ),
     };
   }, [searchParamsProp, urlSearchParams]);
 
@@ -121,6 +130,7 @@ export default function ExportDialogContent({
     [searchParams.excludedGroups]
   );
   const linkStatus = searchParams.linkStatus ?? 'all';
+  const groupMembership = searchParams.groupMembership ?? 'all';
 
   useEffect(() => {
     setExportStatus(searchParams.status ?? 'active');
@@ -165,6 +175,7 @@ export default function ExportDialogContent({
           excludedGroups,
           status: exportStatus,
           linkStatus,
+          groupMembership,
         });
 
         matchingUsers = pageResult.count;
@@ -252,6 +263,15 @@ export default function ExportDialogContent({
               label={t('ws-users.link_status_filter')}
               value={t(`ws-users.${getLinkStatusTranslationKey(linkStatus)}`)}
             />
+            {groupMembership !== 'all' ? (
+              <ScopeBadge
+                icon={<Users className="h-3.5 w-3.5" />}
+                label={t('ws-users.group_membership_filter')}
+                value={t(
+                  `ws-users.${getGroupMembershipTranslationKey(groupMembership)}`
+                )}
+              />
+            ) : null}
             {searchParams.q ? (
               <ScopeBadge
                 icon={<Search className="h-3.5 w-3.5" />}
@@ -425,6 +445,7 @@ async function getData(
     excludedGroups = [],
     status = 'active',
     linkStatus = 'all',
+    groupMembership = 'all',
   }: SearchParams = {}
 ): Promise<ExportPageResult> {
   const response = await fetchWorkspaceUsersPage(wsId, {
@@ -435,6 +456,7 @@ async function getData(
     excludedGroups,
     status,
     linkStatus,
+    groupMembership,
   });
 
   return {
@@ -454,6 +476,7 @@ async function getUsersWithLinkedPromotions(
     excludedGroups = [],
     status = 'active',
     linkStatus = 'all',
+    groupMembership = 'all',
   }: SearchParams = {}
 ): Promise<ExportPageResult> {
   const response = await fetchWorkspaceUsersPage(wsId, {
@@ -464,6 +487,7 @@ async function getUsersWithLinkedPromotions(
     excludedGroups,
     status,
     linkStatus,
+    groupMembership,
     withPromotions: true,
   });
 
@@ -484,6 +508,7 @@ async function fetchWorkspaceUsersPage(
     excludedGroups = [],
     status = 'active',
     linkStatus = 'all',
+    groupMembership = 'all',
     withPromotions = false,
   }: SearchParams & { withPromotions?: boolean } = {}
 ): Promise<WorkspaceUsersApiResponse> {
@@ -497,6 +522,7 @@ async function fetchWorkspaceUsersPage(
   searchParams.set('pageSize', String(pageSize));
   searchParams.set('status', status);
   searchParams.set('linkStatus', linkStatus);
+  searchParams.set('groupMembership', groupMembership);
   if (withPromotions) {
     searchParams.set('withPromotions', 'true');
   }
@@ -616,6 +642,20 @@ function getLinkStatusTranslationKey(status: LinkStatus) {
       return 'link_status_virtual';
     default:
       return 'link_status_all';
+  }
+}
+
+function parseGroupMembership(
+  value?: string | null
+): GroupMembershipFilter | undefined {
+  switch (value) {
+    case 'all':
+    case 'at-least-one':
+    case 'exactly-one':
+    case 'none':
+      return value;
+    default:
+      return undefined;
   }
 }
 
