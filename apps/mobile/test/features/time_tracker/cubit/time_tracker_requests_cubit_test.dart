@@ -189,7 +189,13 @@ void main() {
       expect(cubit.state.selectedStatus, ApprovalStatus.approved);
       expect(cubit.state.isFromCache, true);
       verify(
-        () => repository.getRequests('ws_1', status: 'approved'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'approved',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).called(1);
 
       await cubit.close();
@@ -214,9 +220,14 @@ void main() {
       expect(cubit.state.selectedStatus, isNull);
       expect(cubit.state.isFromCache, true);
       verify(
-        () => repository.getRequests('ws_1', status: 'all'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'all',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).called(1);
-      verifyNever(() => repository.getRequests('ws_1'));
 
       await cubit.close();
     });
@@ -225,7 +236,13 @@ void main() {
       final cubit = TimeTrackerRequestsCubit(repository: repository);
 
       when(
-        () => repository.getRequests('ws_1', status: 'pending'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer((_) async => [_request('req_1', ApprovalStatus.pending)]);
 
       await cubit.loadRequests('ws_1', statusOverride: 'pending');
@@ -238,14 +255,26 @@ void main() {
         ),
       ).thenAnswer((_) async {});
       when(
-        () => repository.getRequests('ws_1', status: 'pending'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer((_) async => const <TimeTrackingRequest>[]);
 
       await cubit.approveRequest('req_1', 'ws_1');
 
       expect(cubit.state.requests, isEmpty);
       verify(
-        () => repository.getRequests('ws_1', status: 'pending'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).called(2);
 
       await cubit.close();
@@ -255,7 +284,13 @@ void main() {
       final cubit = TimeTrackerRequestsCubit(repository: repository);
 
       when(
-        () => repository.getRequests('ws_1', status: 'pending'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer((_) async => [_request('req_1', ApprovalStatus.pending)]);
 
       await cubit.loadRequests('ws_1', statusOverride: 'pending');
@@ -268,7 +303,13 @@ void main() {
         ),
       ).thenAnswer((_) async {});
       when(
-        () => repository.getRequests('ws_1', status: 'pending'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenThrow(Exception('reload failed'));
 
       await cubit.approveRequest('req_1', 'ws_1');
@@ -283,7 +324,13 @@ void main() {
       final cubit = TimeTrackerRequestsCubit(repository: repository);
 
       when(
-        () => repository.getRequests('ws_1', status: 'pending'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer(
         (_) async => [_request('req_cached', ApprovalStatus.pending)],
       );
@@ -291,7 +338,13 @@ void main() {
       await cubit.loadRequests('ws_1', statusOverride: 'pending');
 
       when(
-        () => repository.getRequests('ws_1', status: 'pending'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer(
         (_) async => [_request('req_fresh', ApprovalStatus.pending)],
       );
@@ -306,7 +359,15 @@ void main() {
         cubit.state.requests,
         [_request('req_fresh', ApprovalStatus.pending)],
       );
-      verify(() => repository.getRequests('ws_1', status: 'pending')).called(2);
+      verify(
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
+      ).called(2);
 
       await cubit.close();
     });
