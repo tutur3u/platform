@@ -96,6 +96,11 @@ class _ShellPageState extends State<ShellPage>
   DateTime? _lastBackDispatchAt;
   String? _lastBackDispatchSource;
   static const Duration _backDispatchDedupWindow = Duration(milliseconds: 250);
+  final Map<String, int> _rootTabReplayTokens = <String, int>{
+    Routes.home: 0,
+    Routes.assistant: 0,
+    Routes.apps: 0,
+  };
   shad.ToastOverlay? _exitConfirmationToast;
   late final AnimationController _assistantSpinController;
   late final Animation<double> _assistantSpinTurns;
@@ -187,6 +192,10 @@ class _ShellPageState extends State<ShellPage>
   @override
   void didUpdateWidget(covariant ShellPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _incrementRootTabReplayTokenIfNeeded(
+      oldLocation: oldWidget.matchedLocation,
+      newLocation: widget.matchedLocation,
+    );
     _recordRouteVisit(
       oldLocation: oldWidget.matchedLocation,
       newLocation: widget.matchedLocation,
@@ -194,6 +203,18 @@ class _ShellPageState extends State<ShellPage>
     _syncCompactLayoutState(oldMatchedLocation: oldWidget.matchedLocation);
     _syncAndroidBackState();
     _persistCurrentRoute();
+  }
+
+  void _incrementRootTabReplayTokenIfNeeded({
+    required String oldLocation,
+    required String newLocation,
+  }) {
+    final previous = _normalizeRouteLocation(oldLocation);
+    final current = _normalizeRouteLocation(newLocation);
+    if (previous == current || !_isRootTabLocation(current)) {
+      return;
+    }
+    _rootTabReplayTokens[current] = (_rootTabReplayTokens[current] ?? 0) + 1;
   }
 
   @override

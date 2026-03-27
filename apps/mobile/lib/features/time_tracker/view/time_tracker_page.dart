@@ -19,11 +19,11 @@ import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
 import 'package:mobile/features/time_tracker/widgets/pomodoro_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
+import 'package:mobile/features/time_tracker/widgets/time_tracker_add_entry_fab.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerSection { timer, history, stats }
@@ -264,10 +264,9 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                     ],
                   ),
                 ),
-                ExtendedFab(
-                  icon: shad.LucideIcons.plus,
-                  label: context.l10n.timerAddMissedEntry,
-                  onPressed: () => unawaited(_openMissedEntryDialog(context)),
+                TimeTrackerAddEntryFab(
+                  enabled: _canOpenAddEntryFab(context),
+                  onPressed: () => _openMissedEntryDialog(context),
                 ),
               ],
             );
@@ -292,6 +291,12 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       wsId: wsId,
       userId: userId,
     );
+  }
+
+  bool _canOpenAddEntryFab(BuildContext context) {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final userId = supabase.auth.currentUser?.id;
+    return (wsId?.isNotEmpty ?? false) && (userId?.isNotEmpty ?? false);
   }
 
   void _showPomodoroSettings(BuildContext context) {

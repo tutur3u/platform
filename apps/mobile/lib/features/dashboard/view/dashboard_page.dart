@@ -20,10 +20,17 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({
+    this.replayToken = 0,
+    super.key,
+  });
+
+  final int replayToken;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +73,7 @@ class DashboardPage extends StatelessWidget {
           },
         ),
       ],
-      child: const _DashboardView(),
+      child: _DashboardView(replayToken: replayToken),
     );
   }
 
@@ -86,7 +93,9 @@ class DashboardPage extends StatelessWidget {
 }
 
 class _DashboardView extends StatelessWidget {
-  const _DashboardView();
+  const _DashboardView({required this.replayToken});
+
+  final int replayToken;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +126,7 @@ class _DashboardView extends StatelessWidget {
                 workspaceState.status == WorkspaceStatus.loading;
             if (isWorkspaceLoading) {
               return const shad.Scaffold(
-                child: Center(child: shad.CircularProgressIndicator()),
+                child: Center(child: NovaLoadingIndicator()),
               );
             }
 
@@ -138,7 +147,7 @@ class _DashboardView extends StatelessWidget {
 
                   if (showInitialLoading) {
                     return const shad.Scaffold(
-                      child: Center(child: shad.CircularProgressIndicator()),
+                      child: Center(child: NovaLoadingIndicator()),
                     );
                   }
 
@@ -170,48 +179,67 @@ class _DashboardView extends StatelessWidget {
                                 ),
                                 sliver: SliverList.list(
                                   children: [
-                                    const _DashboardWorkspacePickerCard(),
+                                    StaggeredEntrance(
+                                      replayKey: replayToken,
+                                      child:
+                                          const _DashboardWorkspacePickerCard(),
+                                    ),
                                     const SizedBox(height: 12),
-                                    _TodaySummaryCard(
-                                      workspaceName: displayWorkspaceName(
-                                        context,
-                                        workspace,
+                                    StaggeredEntrance(
+                                      replayKey: replayToken,
+                                      delay: const Duration(milliseconds: 70),
+                                      child: _TodaySummaryCard(
+                                        workspaceName: displayWorkspaceName(
+                                          context,
+                                          workspace,
+                                        ),
+                                        activeTasks: taskState.totalActiveTasks,
+                                        overdueTasks:
+                                            taskState.overdueTasks.length,
+                                        nextEvents: upcomingEvents.length,
                                       ),
-                                      activeTasks: taskState.totalActiveTasks,
-                                      overdueTasks:
-                                          taskState.overdueTasks.length,
-                                      nextEvents: upcomingEvents.length,
                                     ),
                                     const SizedBox(height: 14),
-                                    _SectionCard(
-                                      title: context.l10n.dashboardAssignedToMe,
-                                      icon: Icons.checklist_rounded,
-                                      accent: const Color(0xFF8B5CF6),
-                                      actionLabel:
-                                          context.l10n.dashboardOpenTasks,
-                                      actionIcon: Icons.arrow_outward_rounded,
-                                      onTap: () => context.go(Routes.tasks),
-                                      child: _AssignedTasksBlock(
-                                        state: taskState,
-                                        tasks: focusTasks,
+                                    StaggeredEntrance(
+                                      replayKey: replayToken,
+                                      delay: const Duration(milliseconds: 140),
+                                      child: _SectionCard(
+                                        title:
+                                            context.l10n.dashboardAssignedToMe,
+                                        icon: Icons.checklist_rounded,
+                                        accent: const Color(0xFF8B5CF6),
+                                        actionLabel:
+                                            context.l10n.dashboardOpenTasks,
+                                        actionIcon: Icons.arrow_outward_rounded,
+                                        onTap: () => context.go(Routes.tasks),
+                                        child: _AssignedTasksBlock(
+                                          state: taskState,
+                                          tasks: focusTasks,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 12),
-                                    _SectionCard(
-                                      title:
-                                          context.l10n.dashboardUpcomingEvents,
-                                      icon: Icons.event_rounded,
-                                      accent: const Color(0xFF0EA5E9),
-                                      actionLabel:
-                                          context.l10n.dashboardOpenCalendar,
-                                      actionIcon: Icons.arrow_outward_rounded,
-                                      onTap: () => context.go(Routes.calendar),
-                                      child: _UpcomingEventsBlock(
-                                        status: calendarState.status,
-                                        hasLoadedOnce:
-                                            calendarState.hasLoadedOnce,
-                                        error: calendarState.error,
-                                        events: upcomingEvents,
+                                    StaggeredEntrance(
+                                      replayKey: replayToken,
+                                      delay: const Duration(milliseconds: 210),
+                                      child: _SectionCard(
+                                        title: context
+                                            .l10n
+                                            .dashboardUpcomingEvents,
+                                        icon: Icons.event_rounded,
+                                        accent: const Color(0xFF0EA5E9),
+                                        actionLabel:
+                                            context.l10n.dashboardOpenCalendar,
+                                        actionIcon: Icons.arrow_outward_rounded,
+                                        onTap: () =>
+                                            context.go(Routes.calendar),
+                                        child: _UpcomingEventsBlock(
+                                          status: calendarState.status,
+                                          hasLoadedOnce:
+                                              calendarState.hasLoadedOnce,
+                                          error: calendarState.error,
+                                          events: upcomingEvents,
+                                        ),
                                       ),
                                     ),
                                   ],

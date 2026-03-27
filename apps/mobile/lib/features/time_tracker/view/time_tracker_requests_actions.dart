@@ -16,9 +16,6 @@ extension _RequestsViewActions on _RequestsViewState {
     final requestVersion =
         (_missedEntryDialogRequestVersionByWorkspace[snapshotWsId] ?? 0) + 1;
     _missedEntryDialogRequestVersionByWorkspace[snapshotWsId] = requestVersion;
-    _applyState(() {
-      _isMissedEntryDialogLoadingByWorkspace[snapshotWsId] = true;
-    });
 
     bool isCurrentRequest() {
       if (!mounted) {
@@ -41,9 +38,6 @@ extension _RequestsViewActions on _RequestsViewState {
       if (!isCurrentRequest()) {
         return;
       }
-      _applyState(() {
-        _hasLoadedMissedEntryCategoriesByWorkspace[snapshotWsId] = true;
-      });
     } on ApiException catch (e) {
       if (!isCurrentRequest()) {
         return;
@@ -77,16 +71,6 @@ extension _RequestsViewActions on _RequestsViewState {
         ),
       );
       return;
-    } finally {
-      if (mounted) {
-        final latestRequestVersion =
-            _missedEntryDialogRequestVersionByWorkspace[snapshotWsId];
-        if (latestRequestVersion == requestVersion) {
-          _applyState(() {
-            _isMissedEntryDialogLoadingByWorkspace[snapshotWsId] = false;
-          });
-        }
-      }
     }
     if (!isCurrentRequest()) {
       return;

@@ -27,11 +27,11 @@ import 'package:mobile/features/time_tracker/view/time_tracker_filters.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_shared.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
+import 'package:mobile/features/time_tracker/widgets/time_tracker_add_entry_fab.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_filter_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
@@ -95,10 +95,6 @@ class _RequestsViewState extends State<_RequestsView> {
   bool _hasResolvedPermissions = false;
   int _permissionLoadToken = 0;
   int _requestLoadToken = 0;
-  final Map<String, bool> _isMissedEntryDialogLoadingByWorkspace =
-      <String, bool>{};
-  final Map<String, bool> _hasLoadedMissedEntryCategoriesByWorkspace =
-      <String, bool>{};
   final Map<String, int> _missedEntryDialogRequestVersionByWorkspace =
       <String, int>{};
   final Map<String, int> _thresholdSaveRequestVersionByWorkspace =
@@ -225,7 +221,6 @@ class _RequestsViewState extends State<_RequestsView> {
               _hasResolvedPermissions &&
               _canManageThresholdSettings &&
               !_isThresholdLoading,
-          isLoading: !_hasResolvedPermissions || _isThresholdLoading,
           onPressed: () => unawaited(_showThresholdSettingsDialog()),
         ),
     ];
@@ -423,10 +418,9 @@ class _RequestsViewState extends State<_RequestsView> {
                 },
               ),
             ),
-            ExtendedFab(
-              icon: shad.LucideIcons.plus,
-              label: l10n.timerAddMissedEntry,
-              onPressed: () => unawaited(_openMissedEntryDialog()),
+            TimeTrackerAddEntryFab(
+              enabled: _canOpenAddEntryFab(),
+              onPressed: _openMissedEntryDialog,
             ),
           ],
         ),
@@ -452,5 +446,11 @@ class _RequestsViewState extends State<_RequestsView> {
           canManageRequests: _canManageRequests,
           selectedUserId: _selectedUserId,
         );
+  }
+
+  bool _canOpenAddEntryFab() {
+    final wsId = _permissionsWorkspaceId;
+    final userId = _currentUserId();
+    return (wsId?.isNotEmpty ?? false) && (userId?.isNotEmpty ?? false);
   }
 }

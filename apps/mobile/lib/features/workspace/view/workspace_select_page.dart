@@ -11,6 +11,7 @@ import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
 import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class WorkspaceSelectPage extends StatefulWidget {
@@ -51,7 +52,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, state) {
           if (state.status == WorkspaceStatus.loading) {
-            return const Center(child: shad.CircularProgressIndicator());
+            return const Center(child: NovaLoadingIndicator());
           }
 
           if (state.status == WorkspaceStatus.error) {

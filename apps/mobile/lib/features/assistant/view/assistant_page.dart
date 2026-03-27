@@ -27,9 +27,16 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/staggered_entrance.dart';
 
 class AssistantPage extends StatefulWidget {
-  const AssistantPage({super.key});
+  const AssistantPage({
+    this.replayToken = 0,
+    super.key,
+  });
+
+  final int replayToken;
 
   @override
   State<AssistantPage> createState() => _AssistantPageState();
@@ -112,6 +119,10 @@ class _AssistantPageState extends State<AssistantPage> {
         builder: (context, workspaceState) {
           final currentWorkspace = workspaceState.personalWorkspaceOrCurrent;
           if (currentWorkspace == null) {
+            if (workspaceState.status == WorkspaceStatus.initial ||
+                workspaceState.status == WorkspaceStatus.loading) {
+              return const Center(child: NovaLoadingIndicator());
+            }
             return Center(child: Text(context.l10n.assistantSelectWorkspace));
           }
 
@@ -177,6 +188,10 @@ class _AssistantPageState extends State<AssistantPage> {
                       (AssistantChromeCubit cubit) => cubit.state.isFullscreen,
                     );
                     final theme = Theme.of(context);
+                    final shellBottomInset = _assistantBottomInset(
+                      context,
+                      isFullscreen: isFullscreen,
+                    );
                     final hasConversation =
                         chatState.messages.isNotEmpty ||
                         chatState.queuedMessages.isNotEmpty ||
@@ -206,17 +221,20 @@ class _AssistantPageState extends State<AssistantPage> {
                             child: Stack(
                               children: [
                                 Positioned.fill(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: hasConversation
-                                          ? composerInset
-                                          : 0,
-                                    ),
-                                    child: _buildConversation(
-                                      context,
-                                      currentWorkspace,
-                                      shellState,
-                                      chatState,
+                                  child: StaggeredEntrance(
+                                    replayKey: widget.replayToken,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom: hasConversation
+                                            ? composerInset + shellBottomInset
+                                            : shellBottomInset,
+                                      ),
+                                      child: _buildConversation(
+                                        context,
+                                        currentWorkspace,
+                                        shellState,
+                                        chatState,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -224,12 +242,16 @@ class _AssistantPageState extends State<AssistantPage> {
                                   Positioned(
                                     left: 0,
                                     right: 0,
-                                    bottom: 8,
-                                    child: _buildComposer(
-                                      context,
-                                      currentWorkspace.id,
-                                      shellState,
-                                      chatState,
+                                    bottom: 8 + shellBottomInset,
+                                    child: StaggeredEntrance(
+                                      replayKey: widget.replayToken,
+                                      delay: const Duration(milliseconds: 90),
+                                      child: _buildComposer(
+                                        context,
+                                        currentWorkspace.id,
+                                        shellState,
+                                        chatState,
+                                      ),
                                     ),
                                   ),
                               ],
@@ -271,7 +293,9 @@ class _AssistantPageState extends State<AssistantPage> {
         context,
         workspace,
         shellState,
-        bottomInset: shellState.isViewOnly ? 0 : _composerDockHeight(chatState),
+        bottomInset:
+            (shellState.isViewOnly ? 0 : _composerDockHeight(chatState)) +
+            _assistantBottomInset(context),
       );
     }
 
@@ -633,20 +657,31 @@ class _AssistantPageState extends State<AssistantPage> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: prompts.length,
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 260,
-                mainAxisExtent: 156,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-              ),
+              gridDelegate: context.isCompact
+                  ? const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 260,
+                      mainAxisExtent: 156,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                    )
+                  : const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisExtent: 156,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                    ),
               itemBuilder: (context, index) {
                 final prompt = prompts[index];
-                return _PromptChip(
-                  prompt: prompt,
-                  onTap: () => _submitText(
-                    workspace.id,
-                    shellState,
-                    prompt.label,
+                return StaggeredEntrance(
+                  replayKey: '${widget.replayToken}-$index',
+                  delay: Duration(milliseconds: 50 + (index * 55)),
+                  child: _PromptChip(
+                    prompt: prompt,
+                    onTap: () => _submitText(
+                      workspace.id,
+                      shellState,
+                      prompt.label,
+                    ),
                   ),
                 );
               },
@@ -778,6 +813,16 @@ class _AssistantPageState extends State<AssistantPage> {
 
   double _composerDockHeight(AssistantChatState chatState) {
     return chatState.composerAttachments.isNotEmpty ? 168 : 118;
+  }
+
+  double _assistantBottomInset(
+    BuildContext context, {
+    bool isFullscreen = false,
+  }) {
+    if (isFullscreen || context.isCompact) {
+      return 0;
+    }
+    return MediaQuery.paddingOf(context).bottom;
   }
 
   Future<void> _submitCurrentInput(

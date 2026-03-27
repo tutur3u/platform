@@ -23,6 +23,7 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum HabitsSection { overview, activity }
@@ -122,6 +123,10 @@ class _HabitsViewState extends State<_HabitsView> {
           builder: (context, workspaceState) {
             final workspace = workspaceState.currentWorkspace;
             if (workspace == null) {
+              if (workspaceState.status == WorkspaceStatus.initial ||
+                  workspaceState.status == WorkspaceStatus.loading) {
+                return const Center(child: NovaLoadingIndicator());
+              }
               return Center(child: Text(context.l10n.assistantSelectWorkspace));
             }
             final isActivitySection =
