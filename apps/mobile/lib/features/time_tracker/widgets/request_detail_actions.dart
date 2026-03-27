@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
+import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -165,6 +166,11 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
   }
 
   Future<void> _handleApprove() async {
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final dismissOverlay = context.isCompact
+        ? () => shad.closeOverlay<void>(context)
+        : () => Navigator.maybePop(context);
+
     setState(() => _isProcessing = true);
 
     try {
@@ -173,22 +179,25 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
         return;
       }
 
+      await dismissOverlay();
+      if (!toastContext.mounted) {
+        return;
+      }
+
       shad.showToast(
-        context: context,
+        context: toastContext,
         builder: (context, overlay) => shad.Alert(
           title: Text(context.l10n.timerRequestApproved),
         ),
       );
-
-      Navigator.of(context).pop();
     } on Exception catch (e) {
-      if (!mounted) {
+      if (!toastContext.mounted) {
         return;
       }
 
       final message = e.toString().trim();
       shad.showToast(
-        context: context,
+        context: toastContext,
         builder: (context, overlay) => shad.Alert.destructive(
           title: Text(context.l10n.commonSomethingWentWrong),
           content: Text(

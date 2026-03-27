@@ -264,22 +264,26 @@ export function CustomWhiteboard({
         user: (typeof whiteboardViewers)[0]['user'];
         online_at: string;
         away: boolean;
-        count: number;
+        sessionIds: Set<string>;
       }
     >();
-    for (const viewer of whiteboardViewers) {
+    for (const [index, viewer] of whiteboardViewers.entries()) {
       const userId = viewer.user.id;
       if (!userId) continue;
+      const sessionId =
+        viewer.session_id ||
+        (viewer as { presence_ref?: string }).presence_ref ||
+        `${userId}-${viewer.online_at}-${index}`;
       const existing = byUser.get(userId);
       if (existing) {
-        existing.count++;
+        existing.sessionIds.add(sessionId);
         if (!viewer.away) existing.away = false;
       } else {
         byUser.set(userId, {
           user: viewer.user,
           online_at: viewer.online_at,
           away: !!viewer.away,
-          count: 1,
+          sessionIds: new Set([sessionId]),
         });
       }
     }
@@ -287,7 +291,7 @@ export function CustomWhiteboard({
       user: v.user,
       online_at: v.online_at,
       away: v.away,
-      presenceCount: v.count,
+      presenceCount: v.sessionIds.size,
     }));
   }, [whiteboardViewers]);
 

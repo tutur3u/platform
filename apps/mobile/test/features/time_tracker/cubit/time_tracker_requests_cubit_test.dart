@@ -21,6 +21,14 @@ void main() {
       await CacheStore.instance.clearScope();
     });
 
+    setUpAll(() async {
+      await CacheStore.instance.init();
+    });
+
+    tearDown(() async {
+      await CacheStore.instance.clearScope();
+    });
+
     blocTest<TimeTrackerRequestsCubit, TimeTrackerRequestsState>(
       'filters approved requests correctly',
       build: () {
@@ -181,13 +189,7 @@ void main() {
       expect(cubit.state.selectedStatus, ApprovalStatus.approved);
       expect(cubit.state.isFromCache, true);
       verify(
-        () => repository.getRequests(
-          'ws_1',
-          status: 'approved',
-          userId: any(named: 'userId'),
-          limit: any(named: 'limit'),
-          offset: any(named: 'offset'),
-        ),
+        () => repository.getRequests('ws_1', status: 'approved'),
       ).called(1);
 
       await cubit.close();
@@ -212,14 +214,99 @@ void main() {
       expect(cubit.state.selectedStatus, isNull);
       expect(cubit.state.isFromCache, true);
       verify(
-        () => repository.getRequests(
-          'ws_1',
-          status: 'all',
-          userId: any(named: 'userId'),
-          limit: any(named: 'limit'),
-          offset: any(named: 'offset'),
-        ),
+        () => repository.getRequests('ws_1', status: 'all'),
       ).called(1);
+      verifyNever(() => repository.getRequests('ws_1'));
+
+      await cubit.close();
+    });
+
+    test('approve invalidates cached request list before reload', () async {
+      final cubit = TimeTrackerRequestsCubit(repository: repository);
+
+      when(
+        () => repository.getRequests('ws_1', status: 'pending'),
+      ).thenAnswer((_) async => [_request('req_1', ApprovalStatus.pending)]);
+
+      await cubit.loadRequests('ws_1', statusOverride: 'pending');
+
+      when(
+        () => repository.updateRequestStatus(
+          'ws_1',
+          'req_1',
+          status: ApprovalStatus.approved,
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => repository.getRequests('ws_1', status: 'pending'),
+      ).thenAnswer((_) async => const <TimeTrackingRequest>[]);
+
+      await cubit.approveRequest('req_1', 'ws_1');
+
+      expect(cubit.state.requests, isEmpty);
+      verify(
+        () => repository.getRequests('ws_1', status: 'pending'),
+      ).called(2);
+
+      await cubit.close();
+    });
+
+    test('approve updates current list even if reload fails', () async {
+      final cubit = TimeTrackerRequestsCubit(repository: repository);
+
+      when(
+        () => repository.getRequests('ws_1', status: 'pending'),
+      ).thenAnswer((_) async => [_request('req_1', ApprovalStatus.pending)]);
+
+      await cubit.loadRequests('ws_1', statusOverride: 'pending');
+
+      when(
+        () => repository.updateRequestStatus(
+          'ws_1',
+          'req_1',
+          status: ApprovalStatus.approved,
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => repository.getRequests('ws_1', status: 'pending'),
+      ).thenThrow(Exception('reload failed'));
+
+      await cubit.approveRequest('req_1', 'ws_1');
+
+      expect(cubit.state.requests, isEmpty);
+      expect(cubit.state.status, TimeTrackerRequestsStatus.error);
+
+      await cubit.close();
+    });
+
+    test('force refresh bypasses fresh cache and reloads repository', () async {
+      final cubit = TimeTrackerRequestsCubit(repository: repository);
+
+      when(
+        () => repository.getRequests('ws_1', status: 'pending'),
+      ).thenAnswer(
+        (_) async => [_request('req_cached', ApprovalStatus.pending)],
+      );
+
+      await cubit.loadRequests('ws_1', statusOverride: 'pending');
+
+      when(
+        () => repository.getRequests('ws_1', status: 'pending'),
+      ).thenAnswer(
+        (_) async => [_request('req_fresh', ApprovalStatus.pending)],
+      );
+
+      await cubit.loadRequests(
+        'ws_1',
+        statusOverride: 'pending',
+        forceRefresh: true,
+      );
+
+      expect(
+        cubit.state.requests,
+        [_request('req_fresh', ApprovalStatus.pending)],
+      );
+      verify(() => repository.getRequests('ws_1', status: 'pending')).called(2);
 
       await cubit.close();
     });

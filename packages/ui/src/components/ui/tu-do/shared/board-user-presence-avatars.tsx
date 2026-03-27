@@ -151,6 +151,7 @@ export function BoardUserPresenceAvatarsComponent({
         state[userId]!.push({
           user: viewer.user,
           online_at: viewer.online_at,
+          session_id: viewer.session_id,
           metadata: {
             ...viewer.metadata,
             _away: viewer.away,
@@ -500,7 +501,16 @@ export function BoardUserPresenceAvatars({
 
         const isCurrentUser = user.id === currentUserId;
         const presences = presenceState[user.id] || [];
-        const presenceCount = presences.length;
+        const uniqueSessionIds = new Set(
+          presences.map((p, index) => {
+            return (
+              p.session_id ||
+              (p as { presence_ref?: string }).presence_ref ||
+              `${user.id}-${p.online_at}-${index}`
+            );
+          })
+        );
+        const presenceCount = uniqueSessionIds.size;
         const isAway = !!(presence.metadata as any)?._away;
         const isViewingTask = !!(presence.metadata as any)?._viewingTaskId;
         const userMetadata = presence.metadata as

@@ -157,6 +157,18 @@ export function calculateSortKey(
   return result;
 }
 
+export function calculateTopSortKey(
+  nextSortKey: number | null | undefined
+): number {
+  return calculateSortKey(null, nextSortKey);
+}
+
+export function calculateBottomSortKey(
+  prevSortKey: number | null | undefined
+): number {
+  return calculateSortKey(prevSortKey, null);
+}
+
 export function resetSortKeySequence(): void {
   sortKeySequence = 0;
 }

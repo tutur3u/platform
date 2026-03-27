@@ -233,6 +233,59 @@ describe('useProgressiveBoardLoader', () => {
     expect(tasks?.[0]).not.toHaveProperty('_localMutationAt');
   });
 
+  it('preserves a newly created task when stale list revalidation misses it', async () => {
+    const createdTask = {
+      id: 'task-new',
+      display_number: 2,
+      name: 'New task',
+      list_id: 'list-1',
+      created_at: '2026-03-19T02:00:00.000Z',
+      sort_key: 500_000,
+      _localMutationAt: Date.now() + 1_000,
+    } as Task;
+
+    const existingTask: Task = {
+      id: 'task-1',
+      display_number: 1,
+      name: 'Existing task',
+      list_id: 'list-1',
+      created_at: '2026-03-19T00:00:00.000Z',
+      sort_key: 1_000_000,
+    };
+
+    queryClient.setQueryData(['tasks', 'board-1'], [existingTask, createdTask]);
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1'),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.loadListPage('list-1', 0);
+    });
+
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [existingTask],
+    });
+
+    await act(async () => {
+      await result.current.revalidateLoadedLists();
+    });
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+      expect.objectContaining({
+        id: 'task-1',
+        list_id: 'list-1',
+      }),
+      expect.objectContaining({
+        id: 'task-new',
+        list_id: 'list-1',
+        sort_key: 500_000,
+        _localMutationAt: expect.any(Number),
+      }),
+    ]);
+  });
+
   it('revalidates loaded lists without clearing other list tasks', async () => {
     const existingOtherListTask: Task = {
       id: 'task-other',
