@@ -7,6 +7,7 @@ class _BoardListSection extends StatelessWidget {
     required this.board,
     required this.list,
     required this.tasks,
+    required this.isTasksLoaded,
     required this.onTaskTap,
     required this.onTaskMove,
     required this.onCreateTask,
@@ -22,6 +23,7 @@ class _BoardListSection extends StatelessWidget {
   final TaskBoardDetail board;
   final TaskBoardList list;
   final List<TaskBoardTask> tasks;
+  final bool isTasksLoaded;
   final bool isExpanded;
   final bool collapsible;
   final VoidCallback? onToggleExpanded;
@@ -166,7 +168,47 @@ class _BoardListSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const shad.Gap(10),
-                      if (tasks.isEmpty)
+                      if (tasks.isEmpty && (!isTasksLoaded || isLoadingTasks))
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(minHeight: 140),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.background.withValues(
+                                alpha: 0.65,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: style.surfaceBorder.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: shad.CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  const shad.Gap(10),
+                                  Text(
+                                    context.l10n.notificationsLoadingMore,
+                                    textAlign: TextAlign.center,
+                                    style: theme.typography.textMuted,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      else if (tasks.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Container(
@@ -523,6 +565,7 @@ class _KanbanColumn extends StatelessWidget {
     required this.board,
     required this.list,
     required this.tasks,
+    required this.isTasksLoaded,
     required this.height,
     required this.isLoadingTasks,
     required this.hasMoreTasks,
@@ -536,6 +579,7 @@ class _KanbanColumn extends StatelessWidget {
   final TaskBoardDetail board;
   final TaskBoardList list;
   final List<TaskBoardTask> tasks;
+  final bool isTasksLoaded;
   final double height;
   final bool isLoadingTasks;
   final bool hasMoreTasks;
@@ -647,7 +691,49 @@ class _KanbanColumn extends StatelessWidget {
                         ),
                       ),
                       Expanded(
-                        child: tasks.isEmpty && !isLoadingTasks
+                        child:
+                            tasks.isEmpty && (!isTasksLoaded || isLoadingTasks)
+                            ? Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Container(
+                                  width: double.infinity,
+                                  constraints: const BoxConstraints(
+                                    minHeight: 170,
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.background
+                                        .withValues(alpha: 0.65),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: style.surfaceBorder.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: shad.CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        const shad.Gap(10),
+                                        Text(
+                                          context.l10n.notificationsLoadingMore,
+                                          textAlign: TextAlign.center,
+                                          style: theme.typography.textMuted,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : tasks.isEmpty && !isLoadingTasks
                             ? Padding(
                                 padding: const EdgeInsets.all(10),
                                 child: Container(

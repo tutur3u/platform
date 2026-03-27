@@ -507,6 +507,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
           board: board,
           list: list,
           tasks: listTasks,
+          isTasksLoaded: state.loadedListIds.contains(list.id),
           isLoadingTasks: state.loadingListIds.contains(list.id),
           hasMoreTasks: state.listHasMoreById[list.id] ?? true,
           onLoadMoreTasks: () => unawaited(
@@ -633,6 +634,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                 board: board,
                 list: list,
                 tasks: tasksByList[list.id] ?? const <TaskBoardTask>[],
+                isTasksLoaded: state.loadedListIds.contains(list.id),
                 height: columnHeight,
                 isLoadingTasks: state.loadingListIds.contains(list.id),
                 hasMoreTasks: state.listHasMoreById[list.id] ?? true,
