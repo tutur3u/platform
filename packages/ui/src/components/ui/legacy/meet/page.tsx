@@ -261,7 +261,7 @@ async function getData({
 
   if (wsId) {
     createdPlansQuery.eq('ws_id', wsId);
-    joinedPlansQuery.eq('ws_id', wsId);
+    joinedPlansQuery.eq('meet_together_plans.ws_id', wsId);
   }
 
   const [createdPlansResult, joinedPlansResult] = await Promise.all([

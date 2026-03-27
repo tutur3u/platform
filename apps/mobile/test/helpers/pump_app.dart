@@ -13,7 +13,10 @@ extension PumpApp on WidgetTester {
           path: '/',
           builder: (context, state) => const SizedBox.shrink(),
         ),
-        GoRoute(path: '/test', builder: (context, state) => widget),
+        GoRoute(
+          path: '/test',
+          builder: (context, state) => shad.DrawerOverlay(child: widget),
+        ),
       ],
     );
     addTearDown(router.dispose);

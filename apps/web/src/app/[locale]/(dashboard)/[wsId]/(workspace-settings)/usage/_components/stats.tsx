@@ -338,8 +338,8 @@ export async function TasksUsageStats({ wsId }: { wsId: string }) {
 
   const { count } = await supabase
     .from('task_lists')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId);
+    .select('id, workspace_boards!inner(id)', { count: 'exact', head: true })
+    .eq('workspace_boards.ws_id', wsId);
 
   return <StatisticCard title="Task Lists" value={count || 0} />;
 }
@@ -473,10 +473,20 @@ export async function ChatUsageStats({ wsId }: { wsId: string }) {
     );
   }
 
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user?.id) {
+    return (
+      <StatisticCard title="Chat Messages" value="***" className="opacity-50" />
+    );
+  }
+
   const { count } = await supabase
     .from('ai_chat_messages')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId);
+    .select('id, ai_chats!chat_id!inner(creator_id)', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ai_chats.creator_id', user.user.id);
 
   return <StatisticCard title="Chat Messages" value={count || 0} />;
 }

@@ -13,6 +13,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type FinishReason, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import { validateApiKeyHash } from '../api-key-hash';
 
 const ALLOWED_MODELS = [
   {
@@ -186,13 +187,17 @@ export function createPOST(
 
       const { data: apiKeyData, error: apiKeyError } = await sbAdmin
         .from('workspace_api_keys')
-        .select('id, scopes')
+        .select('id, scopes, key_hash')
         .eq('ws_id', configs.wsId)
         .eq('id', accessKey.id)
-        .eq('value', accessKey.value)
         .single();
 
-      if (apiKeyError) {
+      const isValidAccessKey =
+        !apiKeyError &&
+        !!apiKeyData?.key_hash &&
+        (await validateApiKeyHash(accessKey.value, apiKeyData.key_hash));
+
+      if (!isValidAccessKey || !apiKeyData) {
         console.error('Invalid accessId or accessKey', apiKeyError);
         return new Response('Invalid accessId or accessKey', { status: 400 });
       }

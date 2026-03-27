@@ -11,6 +11,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 const userUpdateSchema = z.object({
   id: z.string().max(MAX_NAME_LENGTH).optional(),
@@ -253,12 +254,7 @@ async function getDataWithApiKey({
 }) {
   const sbAdmin = await createAdminClient();
 
-  const apiCheckQuery = sbAdmin
-    .from('workspace_api_keys')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('value', apiKey)
-    .single();
+  const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
 
   const mainQuery = sbAdmin
     .from('workspace_users')
@@ -268,10 +264,7 @@ async function getDataWithApiKey({
 
   const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
 
-  const { error: apiError } = apiCheck;
-
-  if (apiError) {
-    console.log(apiError);
+  if (!apiCheck) {
     return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
   }
 
