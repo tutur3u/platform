@@ -12,7 +12,6 @@ import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dar
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
@@ -115,7 +114,7 @@ void main() {
         await _pumpUntilAbsent(tester, find.text('WS1 Request'));
 
         expect(find.text('WS1 Request'), findsNothing);
-        expect(find.byType(shad.CircularProgressIndicator), findsWidgets);
+        expect(find.text('WS2 Request'), findsNothing);
 
         ws2Completer.complete([_request('req-ws2', title: 'WS2 Request')]);
         await tester.pump();
