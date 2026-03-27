@@ -1082,10 +1082,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailUntitledTask => 'Công việc chưa đặt tên';
 
   @override
-  String get taskBoardDetailListView => 'Chế độ danh sách';
+  String get taskBoardDetailListView => 'Danh sách';
 
   @override
-  String get taskBoardDetailKanbanView => 'Chế độ kanban';
+  String get taskBoardDetailKanbanView => 'Kanban';
 
   @override
   String get taskBoardDetailSearchPlaceholder => 'Tìm kiếm công việc';

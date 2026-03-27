@@ -217,14 +217,13 @@ class TaskRepository {
     final results = await Future.wait<dynamic>([
       _getTaskBoardMetadata(wsId, boardId),
       getBoardLists(wsId, boardId),
-      getBoardTasks(wsId, boardId),
       getTaskLabels(wsId),
       getWorkspaceUsers(wsId),
       getTaskProjects(wsId),
       getTaskEstimateBoards(wsId),
     ]);
 
-    final estimateBoards = results[6] as List<TaskEstimateBoard>;
+    final estimateBoards = results[5] as List<TaskEstimateBoard>;
     TaskEstimateBoard? boardEstimation;
     for (final estimateBoard in estimateBoards) {
       if (estimateBoard.id == boardId) {
@@ -233,19 +232,13 @@ class TaskRepository {
       }
     }
 
-    final labels = results[3] as List<TaskLabel>;
-    final members = results[4] as List<WorkspaceUserOption>;
-    final projects = results[5] as List<TaskProjectSummary>;
-    final tasks = _hydrateTaskRelations(
-      tasks: results[2] as List<TaskBoardTask>,
-      members: members,
-      labels: labels,
-      projects: projects,
-    );
+    final labels = results[2] as List<TaskLabel>;
+    final members = results[3] as List<WorkspaceUserOption>;
+    final projects = results[4] as List<TaskProjectSummary>;
 
     return (results[0] as TaskBoardDetail).copyWith(
       lists: results[1] as List<TaskBoardList>,
-      tasks: tasks,
+      tasks: const <TaskBoardTask>[],
       labels: labels,
       members: members,
       projects: projects,
@@ -253,6 +246,46 @@ class TaskRepository {
       extendedEstimation: boardEstimation?.extendedEstimation ?? false,
       allowZeroEstimates: boardEstimation?.allowZeroEstimates ?? true,
       countUnestimatedIssues: boardEstimation?.countUnestimatedIssues ?? false,
+    );
+  }
+
+  Future<List<TaskBoardTask>> getBoardTasksForList(
+    String wsId, {
+    required String listId,
+    int limit = 50,
+    int offset = 0,
+    List<WorkspaceUserOption> members = const <WorkspaceUserOption>[],
+    List<TaskLabel> labels = const <TaskLabel>[],
+    List<TaskProjectSummary> projects = const <TaskProjectSummary>[],
+  }) async {
+    final normalizedLimit = limit.clamp(1, 200);
+    final normalizedOffset = offset < 0 ? 0 : offset;
+    final query = _encodeQueryParameters({
+      'listId': listId,
+      'limit': normalizedLimit.toString(),
+      'offset': normalizedOffset.toString(),
+    });
+
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/tasks?$query',
+    );
+    final taskRows = response['tasks'] as List<dynamic>? ?? const [];
+    final pageTasks = taskRows
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardTask.fromJson)
+        .toList(growable: false);
+
+    if (members.isEmpty && labels.isEmpty && projects.isEmpty) {
+      return List.unmodifiable(pageTasks);
+    }
+
+    return List.unmodifiable(
+      _hydrateTaskRelations(
+        tasks: pageTasks,
+        members: members,
+        labels: labels,
+        projects: projects,
+      ),
     );
   }
 

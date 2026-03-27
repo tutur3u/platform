@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
@@ -14,6 +16,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   TaskBoardDetailCubit({required TaskRepository taskRepository})
     : _taskRepository = taskRepository,
       super(const TaskBoardDetailState());
+
+  static const int _listTaskPageSize = 50;
+  static const int _initialPrefetchListCount = 3;
 
   final TaskRepository _taskRepository;
   int _loadRequestToken = 0;
@@ -35,6 +40,20 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         taskDescriptionSearchIndex: targetChanged
             ? const <String, String>{}
             : state.taskDescriptionSearchIndex,
+        listTasksByListId: targetChanged
+            ? const <String, List<TaskBoardTask>>{}
+            : state.listTasksByListId,
+        loadedListIds: targetChanged ? const <String>{} : state.loadedListIds,
+        loadingListIds: targetChanged ? const <String>{} : state.loadingListIds,
+        listHasMoreById: targetChanged
+            ? const <String, bool>{}
+            : state.listHasMoreById,
+        listOffsetsById: targetChanged
+            ? const <String, int>{}
+            : state.listOffsetsById,
+        listPageSizeById: targetChanged
+            ? const <String, int>{}
+            : state.listPageSizeById,
         selectedTaskId: targetChanged ? null : state.selectedTaskId,
         clearError: true,
       ),
@@ -53,9 +72,17 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
             detail.tasks,
           ),
+          listTasksByListId: const <String, List<TaskBoardTask>>{},
+          loadedListIds: const <String>{},
+          loadingListIds: const <String>{},
+          listHasMoreById: const <String, bool>{},
+          listOffsetsById: const <String, int>{},
+          listPageSizeById: const <String, int>{},
           clearError: true,
         ),
       );
+
+      await _prefetchInitialLists(requestToken: requestToken, detail: detail);
     } on Exception catch (error) {
       if (requestToken != _loadRequestToken) return;
       emit(
@@ -74,6 +101,113 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     final boardId = state.boardId;
     if (wsId == null || boardId == null) return;
     await loadBoardDetail(wsId: wsId, boardId: boardId);
+  }
+
+  Future<void> loadListTasks({
+    required String listId,
+    bool loadMore = false,
+    bool forceRefresh = false,
+    int? pageSizeHint,
+  }) async {
+    final wsId = state.workspaceId;
+    final board = state.board;
+    final requestToken = _loadRequestToken;
+    if (wsId == null || board == null) {
+      return;
+    }
+
+    if (!board.lists.any((list) => list.id == listId)) {
+      return;
+    }
+
+    if (state.loadingListIds.contains(listId)) {
+      return;
+    }
+
+    if (!loadMore && !forceRefresh && state.loadedListIds.contains(listId)) {
+      return;
+    }
+
+    if (loadMore && !(state.listHasMoreById[listId] ?? true)) {
+      return;
+    }
+
+    final pageSize =
+        state.listPageSizeById[listId] ?? _normalizePageSize(pageSizeHint);
+    final offset = loadMore ? (state.listOffsetsById[listId] ?? 0) : 0;
+    final nextLoading = {...state.loadingListIds, listId};
+    emit(state.copyWith(loadingListIds: nextLoading));
+
+    try {
+      final page = await _taskRepository.getBoardTasksForList(
+        wsId,
+        listId: listId,
+        limit: pageSize,
+        offset: offset,
+        members: board.members,
+        labels: board.labels,
+        projects: board.projects,
+      );
+
+      if (requestToken != _loadRequestToken ||
+          state.workspaceId != wsId ||
+          state.board?.id != board.id) {
+        return;
+      }
+
+      final existing = loadMore
+          ? (state.listTasksByListId[listId] ?? const <TaskBoardTask>[])
+          : const <TaskBoardTask>[];
+      final merged = _mergeTaskPages(existing, page);
+      final nextTasksByList = Map<String, List<TaskBoardTask>>.from(
+        state.listTasksByListId,
+      )..[listId] = List.unmodifiable(merged);
+      final nextLoaded = {...state.loadedListIds, listId};
+      final nextLoadingDone = {...state.loadingListIds}..remove(listId);
+      final nextHasMore = Map<String, bool>.from(state.listHasMoreById)
+        ..[listId] = page.length >= pageSize;
+      final nextOffsets = Map<String, int>.from(state.listOffsetsById)
+        ..[listId] = merged.length;
+      final nextPageSizes = Map<String, int>.from(state.listPageSizeById)
+        ..[listId] = pageSize;
+      final nextBoard = board.copyWith(
+        tasks: _flattenTasks(board.lists, nextTasksByList),
+      );
+
+      emit(
+        state.copyWith(
+          board: nextBoard,
+          taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
+            nextBoard.tasks,
+          ),
+          listTasksByListId: nextTasksByList,
+          loadedListIds: nextLoaded,
+          loadingListIds: nextLoadingDone,
+          listHasMoreById: nextHasMore,
+          listOffsetsById: nextOffsets,
+          listPageSizeById: nextPageSizes,
+        ),
+      );
+    } on Exception {
+      if (requestToken != _loadRequestToken) {
+        return;
+      }
+      if (state.workspaceId != wsId || state.board?.id != board.id) {
+        return;
+      }
+      final nextLoadingDone = {...state.loadingListIds}..remove(listId);
+      emit(state.copyWith(loadingListIds: nextLoadingDone));
+    }
+  }
+
+  Future<void> ensureAllListsLoaded() async {
+    final board = state.board;
+    if (board == null) return;
+
+    final futures = board.lists
+        .map((list) => loadListTasks(listId: list.id))
+        .toList(growable: false);
+    await Future.wait<void>(futures);
   }
 
   Future<void> createTask({
@@ -307,10 +441,16 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
   void setSearchQuery(String value) {
     emit(state.copyWith(searchQuery: value));
+    if (value.trim().isNotEmpty) {
+      unawaited(ensureAllListsLoaded());
+    }
   }
 
   void setFilters(TaskBoardDetailFilters filters) {
     emit(state.copyWith(filters: filters));
+    if (filters.hasAdvancedFilters) {
+      unawaited(ensureAllListsLoaded());
+    }
   }
 
   void clearAdvancedFilters() {
@@ -447,5 +587,71 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       );
       rethrow;
     }
+  }
+
+  Future<void> _prefetchInitialLists({
+    required int requestToken,
+    required TaskBoardDetail detail,
+  }) async {
+    final sortedLists = [...detail.lists]
+      ..sort((a, b) {
+        final aPosition = a.position ?? 0;
+        final bPosition = b.position ?? 0;
+        if (aPosition != bPosition) {
+          return aPosition.compareTo(bPosition);
+        }
+        final aName = a.name?.trim().toLowerCase() ?? '';
+        final bName = b.name?.trim().toLowerCase() ?? '';
+        return aName.compareTo(bName);
+      });
+
+    final initialIds = sortedLists
+        .take(_initialPrefetchListCount)
+        .map((list) => list.id)
+        .toList(growable: false);
+
+    for (final listId in initialIds) {
+      if (requestToken != _loadRequestToken) {
+        return;
+      }
+      await loadListTasks(listId: listId);
+    }
+  }
+
+  static int _normalizePageSize(int? pageSizeHint) {
+    final raw = pageSizeHint ?? _listTaskPageSize;
+    return raw.clamp(10, 100);
+  }
+
+  static List<TaskBoardTask> _mergeTaskPages(
+    List<TaskBoardTask> existing,
+    List<TaskBoardTask> incoming,
+  ) {
+    if (existing.isEmpty) return List<TaskBoardTask>.from(incoming);
+    if (incoming.isEmpty) return List<TaskBoardTask>.from(existing);
+
+    final byId = <String, TaskBoardTask>{
+      for (final task in existing) task.id: task,
+    };
+    for (final task in incoming) {
+      byId[task.id] = task;
+    }
+
+    return byId.values.toList(growable: false);
+  }
+
+  static List<TaskBoardTask> _flattenTasks(
+    List<TaskBoardList> lists,
+    Map<String, List<TaskBoardTask>> tasksByListId,
+  ) {
+    final flattened = <TaskBoardTask>[];
+    for (final list in lists) {
+      final listTasks = tasksByListId[list.id];
+      if (listTasks == null || listTasks.isEmpty) {
+        continue;
+      }
+      flattened.addAll(listTasks);
+    }
+    return List.unmodifiable(flattened);
   }
 }
