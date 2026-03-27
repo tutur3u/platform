@@ -44,28 +44,10 @@ extension _ShellPageNavigation on _ShellPageState {
       shad.NavigationItem(
         key: _ShellPageState._assistantKey,
         spacing: _ShellPageState._navItemSpacing,
-        label: isCompact
-            ? _buildNavLabel(
-                l10n.navAssistant,
-                labelStyle,
-                itemIndex: 1,
-              )
-            : null,
-        child: isCompact
-            ? _buildAnimatedNavElement(
-                itemIndex: 1,
-                slotDelay: 0,
-                child: const Icon(
-                  Icons.auto_awesome_outlined,
-                  size: _ShellPageState._navIconSize,
-                ),
-              )
-            : _buildHorizontalNavItem(
-                icon: Icons.auto_awesome_outlined,
-                label: l10n.navAssistant,
-                style: labelStyle,
-                itemIndex: 1,
-              ),
+        child: _buildAssistantNavIcon(
+          semanticLabel: l10n.navAssistant,
+          itemIndex: 1,
+        ),
       ),
       shad.NavigationItem(
         key: useGlobalKey ? _appsTabKey : _ShellPageState._appsKey,
@@ -140,6 +122,32 @@ extension _ShellPageNavigation on _ShellPageState {
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
         style: style,
+      ),
+    );
+  }
+
+  Widget _buildAssistantNavIcon({
+    required String semanticLabel,
+    required int itemIndex,
+  }) {
+    return _buildAnimatedNavElement(
+      itemIndex: itemIndex,
+      slotDelay: 0,
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        child: ExcludeSemantics(
+          child: RotationTransition(
+            turns: _assistantSpinTurns,
+            child: Image.asset(
+              'assets/logos/nova-transparent.png',
+              width: _ShellPageState._assistantNavIconSize,
+              height: _ShellPageState._assistantNavIconSize,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+        ),
       ),
     );
   }

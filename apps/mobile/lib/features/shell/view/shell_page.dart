@@ -53,7 +53,8 @@ class ShellPage extends StatefulWidget {
   State<ShellPage> createState() => _ShellPageState();
 }
 
-class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
+class _ShellPageState extends State<ShellPage>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   static const ValueKey<String> _homeKey = ValueKey('home');
   static const ValueKey<String> _appsKey = ValueKey('apps');
   static const ValueKey<String> _assistantKey = ValueKey('assistant');
@@ -65,9 +66,11 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     'shell-notifications',
   );
   static const double _navIconSize = 22;
+  static const double _assistantNavIconSize = 38;
   static const double _navItemSpacing = 2;
   static const double _floatingNavMinItemWidth = 96;
   static const Duration _exitConfirmationWindow = Duration(seconds: 2);
+  static const Duration _assistantSpinDuration = Duration(milliseconds: 680);
   static const MethodChannel _androidBackChannel = MethodChannel(
     'mobile/shell_back',
   );
@@ -94,6 +97,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   String? _lastBackDispatchSource;
   static const Duration _backDispatchDedupWindow = Duration(milliseconds: 250);
   shad.ToastOverlay? _exitConfirmationToast;
+  late final AnimationController _assistantSpinController;
+  late final Animation<double> _assistantSpinTurns;
 
   void _markBackDispatch({required String source}) {
     _lastBackDispatchAt = DateTime.now();
@@ -139,6 +144,20 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     unawaited(SystemNavigator.setFrameworkHandlesBack(true));
     _layerController = PageController(initialPage: 1);
+    _assistantSpinController = AnimationController(
+      vsync: this,
+      duration: _assistantSpinDuration,
+    );
+    _assistantSpinTurns = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _assistantSpinController,
+        curve: Curves.easeInOutCubicEmphasized,
+      ),
+    );
+  }
+
+  void _triggerAssistantTabSpin() {
+    unawaited(_assistantSpinController.forward(from: 0));
   }
 
   @override
@@ -485,6 +504,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     _stopLongPressTimer();
     _dismissExitConfirmationToast();
     _suppressPointerTimer?.cancel();
+    _assistantSpinController.dispose();
     _layerController.dispose();
     super.dispose();
   }
