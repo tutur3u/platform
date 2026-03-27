@@ -81,15 +81,10 @@ class _AppState extends State<App> {
   late final ShellProfileCubit _shellProfileCubit;
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
-  late final Brightness _launchSplashBrightness;
 
   @override
   void initState() {
     super.initState();
-    _launchSplashBrightness = AppTheme.resolveBrightness(
-      widget.initialThemeMode,
-      WidgetsBinding.instance.platformDispatcher.platformBrightness,
-    );
     _authRepo = AuthRepository();
     _workspaceRepo = WorkspaceRepository();
     _settingsRepo = SettingsRepository();
@@ -401,10 +396,7 @@ class _AppState extends State<App> {
                   routerConfig: _router,
                   builder: (context, child) {
                     return _ShadcnMaterialBridge(
-                      child: _LaunchSplash(
-                        initialBrightness: _launchSplashBrightness,
-                        child: AppVersionGate(child: child!),
-                      ),
+                      child: AppVersionGate(child: child!),
                     );
                   },
                 );
@@ -450,85 +442,6 @@ class _ShadcnMaterialBridge extends StatelessWidget {
         value: overlayStyle,
         child: child,
       ),
-    );
-  }
-}
-
-class _LaunchSplash extends StatefulWidget {
-  const _LaunchSplash({
-    required this.child,
-    required this.initialBrightness,
-  });
-
-  final Widget child;
-  final Brightness initialBrightness;
-
-  @override
-  State<_LaunchSplash> createState() => _LaunchSplashState();
-}
-
-class _LaunchSplashState extends State<_LaunchSplash> {
-  static const _minimumDisplayDuration = Duration(milliseconds: 320);
-  bool _showSplash = true;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future<void>.delayed(_minimumDisplayDuration);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _showSplash = false;
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = widget.initialBrightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? AppColors.backgroundDark
-        : AppColors.backgroundLight;
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        widget.child,
-        IgnorePointer(
-          ignoring: !_showSplash,
-          child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeOutCubic,
-            opacity: _showSplash ? 1 : 0,
-            child: ColoredBox(
-              color: backgroundColor,
-              child: Center(
-                child: TweenAnimationBuilder<double>(
-                  duration: const Duration(milliseconds: 300),
-                  tween: Tween<double>(begin: 0.985, end: 1),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: value,
-                      child: Opacity(
-                        opacity: value.clamp(0, 1),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: SizedBox(
-                    width: 104,
-                    height: 104,
-                    child: Image.asset('assets/logos/transparent.png'),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

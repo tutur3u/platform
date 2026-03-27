@@ -25,6 +25,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_markdown: ^0.7.7+1
+  flutter_native_splash: ^2.4.7
   flutter_secure_storage: ^10.0.0
   flutter_svg: ^2.2.4
   go_router: ^17.1.0
@@ -62,6 +63,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/app_icon.png
+  image_path_ios: assets/app_icon.png
   remove_alpha_ios: true
 
 flutter:
