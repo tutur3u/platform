@@ -8,7 +8,10 @@ import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_label.dart';
+import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -23,6 +26,14 @@ class _TipTapSheetTaskRepository extends TaskRepository {
   _TipTapSheetTaskRepository(this._descriptionJson);
 
   final String _descriptionJson;
+
+  static const TaskBoardTask _task = TaskBoardTask(
+    id: 'task-1',
+    listId: 'list-1',
+    displayNumber: 1,
+    name: 'Long task',
+    relationshipsLoaded: true,
+  );
 
   @override
   Future<TaskBoardDetail> getTaskBoardDetail(
@@ -43,17 +54,25 @@ class _TipTapSheetTaskRepository extends TaskRepository {
           color: 'BLUE',
         ),
       ],
-      tasks: [
-        TaskBoardTask(
-          id: 'task-1',
-          listId: 'list-1',
-          displayNumber: 1,
-          name: 'Long task',
-          description: _descriptionJson,
-          relationshipsLoaded: true,
-        ),
-      ],
+      tasks: [_task.copyWith(description: _descriptionJson)],
     );
+  }
+
+  @override
+  Future<List<TaskBoardTask>> getBoardTasksForList(
+    String wsId, {
+    required String listId,
+    int limit = 50,
+    int offset = 0,
+    List<WorkspaceUserOption> members = const <WorkspaceUserOption>[],
+    List<TaskLabel> labels = const <TaskLabel>[],
+    List<TaskProjectSummary> projects = const <TaskProjectSummary>[],
+  }) async {
+    if (listId != 'list-1' || offset > 0) {
+      return const <TaskBoardTask>[];
+    }
+
+    return <TaskBoardTask>[_task.copyWith(description: _descriptionJson)];
   }
 }
 
