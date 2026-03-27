@@ -1,8 +1,21 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+bool _hasDrawerOverlay(BuildContext context) {
+  var hasOverlay = false;
+  context.visitAncestorElements((element) {
+    if (element.widget.runtimeType.toString() == 'DrawerOverlay') {
+      hasOverlay = true;
+      return false;
+    }
+    return true;
+  });
+  return hasOverlay;
+}
 
 /// Shows a bottom sheet on compact screens and a centered dialog on
 /// medium / expanded screens.
@@ -80,23 +93,46 @@ Future<void> showAdaptiveDrawer({
   required Widget Function(BuildContext) builder,
   double maxDialogWidth = 560,
 }) async {
-  final rootNavigatorContext = Navigator.of(
-    context,
-    rootNavigator: true,
-  ).context;
-
   if (context.isCompact) {
-    await shad.openDrawer<void>(
-      context: rootNavigatorContext,
-      position: shad.OverlayPosition.bottom,
-      builder: (drawerContext) => BackButtonListener(
+    Widget drawerContent(BuildContext drawerContext) => BackButtonListener(
+      onBackButtonPressed: () async {
+        if (drawerContext.mounted) {
+          await shad.closeOverlay<void>(drawerContext);
+        }
+        return true;
+      },
+      child: builder(drawerContext),
+    );
+
+    if (_hasDrawerOverlay(context)) {
+      await shad.openDrawer<void>(
+        context: context,
+        position: shad.OverlayPosition.bottom,
+        builder: drawerContent,
+      );
+      return;
+    }
+
+    if (kDebugMode) {
+      debugPrint(
+        'showAdaptiveDrawer fallback: DrawerOverlay missing; '
+        'using modal bottom sheet.',
+      );
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.48),
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => BackButtonListener(
         onBackButtonPressed: () async {
-          if (drawerContext.mounted) {
-            await shad.closeOverlay<void>(drawerContext);
+          if (sheetContext.mounted) {
+            await Navigator.maybePop(sheetContext);
           }
           return true;
         },
-        child: builder(drawerContext),
+        child: builder(sheetContext),
       ),
     );
     return;

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
@@ -15,8 +16,9 @@ void main() {
   group('TimeTrackerRequestsCubit', () {
     late _MockTimeTrackerRepository repository;
 
-    setUp(() {
+    setUp(() async {
       repository = _MockTimeTrackerRepository();
+      await CacheStore.instance.clearScope();
     });
 
     blocTest<TimeTrackerRequestsCubit, TimeTrackerRequestsState>(
@@ -33,15 +35,36 @@ void main() {
       act: (cubit) => cubit.filterByStatus(ApprovalStatus.approved, 'ws_1'),
       expect: () => [
         const TimeTrackerRequestsState(selectedStatus: ApprovalStatus.approved),
-        const TimeTrackerRequestsState(
-          status: TimeTrackerRequestsStatus.loading,
-          selectedStatus: ApprovalStatus.approved,
-        ),
-        TimeTrackerRequestsState(
-          status: TimeTrackerRequestsStatus.loaded,
-          selectedStatus: ApprovalStatus.approved,
-          requests: [_request('req_approved', ApprovalStatus.approved)],
-        ),
+        isA<TimeTrackerRequestsState>()
+            .having(
+              (state) => state.status,
+              'status',
+              TimeTrackerRequestsStatus.loading,
+            )
+            .having((state) => state.workspaceId, 'workspaceId', 'ws_1')
+            .having(
+              (state) => state.selectedStatus,
+              'selectedStatus',
+              ApprovalStatus.approved,
+            ),
+        isA<TimeTrackerRequestsState>()
+            .having(
+              (state) => state.status,
+              'status',
+              TimeTrackerRequestsStatus.loaded,
+            )
+            .having((state) => state.workspaceId, 'workspaceId', 'ws_1')
+            .having(
+              (state) => state.selectedStatus,
+              'selectedStatus',
+              ApprovalStatus.approved,
+            )
+            .having(
+              (state) => state.requests,
+              'requests',
+              [_request('req_approved', ApprovalStatus.approved)],
+            )
+            .having((state) => state.lastUpdatedAt, 'lastUpdatedAt', isNotNull),
       ],
       verify: (_) {
         verify(
@@ -54,13 +77,11 @@ void main() {
       final cubit = TimeTrackerRequestsCubit(repository: repository);
       final pendingCompleter = Completer<List<TimeTrackingRequest>>();
 
-      when(
-        () => repository.getRequests('ws_1', status: 'pending'),
-      ).thenAnswer((_) => pendingCompleter.future);
+      when(() => repository.getRequests('ws_1', status: 'pending')).thenAnswer(
+        (_) => pendingCompleter.future,
+      );
 
-      when(
-        () => repository.getRequests('ws_1', status: 'approved'),
-      ).thenAnswer(
+      when(() => repository.getRequests('ws_1', status: 'approved')).thenAnswer(
         (_) async => [_request('req_approved', ApprovalStatus.approved)],
       );
 
@@ -90,9 +111,7 @@ void main() {
     test('persists status override for subsequent reloads', () async {
       final cubit = TimeTrackerRequestsCubit(repository: repository);
 
-      when(
-        () => repository.getRequests('ws_1', status: 'approved'),
-      ).thenAnswer(
+      when(() => repository.getRequests('ws_1', status: 'approved')).thenAnswer(
         (_) async => [_request('req_approved', ApprovalStatus.approved)],
       );
 
@@ -102,7 +121,7 @@ void main() {
       expect(cubit.state.selectedStatus, ApprovalStatus.approved);
       verify(
         () => repository.getRequests('ws_1', status: 'approved'),
-      ).called(2);
+      ).called(1);
 
       await cubit.close();
     });
@@ -110,25 +129,16 @@ void main() {
     test('persists all override as no status filter', () async {
       final cubit = TimeTrackerRequestsCubit(repository: repository);
 
-      when(
-        () => repository.getRequests('ws_1', status: 'all'),
-      ).thenAnswer((_) async => [_request('req_all', ApprovalStatus.pending)]);
-      when(
-        () => repository.getRequests('ws_1'),
-      ).thenAnswer(
-        (_) async => [_request('req_all_2', ApprovalStatus.pending)],
+      when(() => repository.getRequests('ws_1', status: 'all')).thenAnswer(
+        (_) async => [_request('req_all', ApprovalStatus.pending)],
       );
 
       await cubit.loadRequests('ws_1', statusOverride: 'all');
       await cubit.loadRequests('ws_1');
 
       expect(cubit.state.selectedStatus, isNull);
-      verify(
-        () => repository.getRequests('ws_1', status: 'all'),
-      ).called(1);
-      verify(
-        () => repository.getRequests('ws_1'),
-      ).called(1);
+      verify(() => repository.getRequests('ws_1', status: 'all')).called(1);
+      verifyNever(() => repository.getRequests('ws_1'));
 
       await cubit.close();
     });
