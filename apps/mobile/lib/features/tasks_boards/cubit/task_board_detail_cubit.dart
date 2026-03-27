@@ -152,6 +152,8 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       if (requestToken != _loadRequestToken ||
           state.workspaceId != wsId ||
           state.board?.id != board.id) {
+        final nextLoadingDone = {...state.loadingListIds}..remove(listId);
+        emit(state.copyWith(loadingListIds: nextLoadingDone));
         return;
       }
 

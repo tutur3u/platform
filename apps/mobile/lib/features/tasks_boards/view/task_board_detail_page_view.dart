@@ -124,6 +124,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               previous.currentView != current.currentView ||
               previous.searchQuery != current.searchQuery ||
               previous.filters != current.filters ||
+              previous.loadingListIds != current.loadingListIds ||
               previous.taskDescriptionSearchIndex !=
                   current.taskDescriptionSearchIndex,
           builder: (context, state) {
