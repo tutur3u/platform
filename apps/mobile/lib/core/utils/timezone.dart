@@ -6,19 +6,42 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 Future<String>? _timezoneIdentifierFuture;
 
 Future<String> getCurrentTimezoneIdentifier() {
-  return _timezoneIdentifierFuture ??= _loadCurrentTimezoneIdentifier();
+  final inFlightOrCached = _timezoneIdentifierFuture;
+  if (inFlightOrCached != null) {
+    return inFlightOrCached;
+  }
+
+  final future = _loadCurrentTimezoneIdentifier().then((resolved) {
+    if (!resolved.shouldCache) {
+      _timezoneIdentifierFuture = null;
+    }
+    return resolved.identifier;
+  });
+
+  _timezoneIdentifierFuture = future;
+  return future;
 }
 
 bool isLikelyIanaTimezoneIdentifier(String value) {
   return value.contains('/');
 }
 
-Future<String> _loadCurrentTimezoneIdentifier() async {
+class _ResolvedTimezoneIdentifier {
+  const _ResolvedTimezoneIdentifier(
+    this.identifier, {
+    required this.shouldCache,
+  });
+
+  final String identifier;
+  final bool shouldCache;
+}
+
+Future<_ResolvedTimezoneIdentifier> _loadCurrentTimezoneIdentifier() async {
   try {
     final timezone = await FlutterTimezone.getLocalTimezone();
     final identifier = timezone.identifier.trim();
     if (identifier.isNotEmpty) {
-      return identifier;
+      return _ResolvedTimezoneIdentifier(identifier, shouldCache: true);
     }
   } on Object catch (error, stackTrace) {
     developer.log(
@@ -31,8 +54,8 @@ Future<String> _loadCurrentTimezoneIdentifier() async {
 
   final fallbackIdentifier = DateTime.now().timeZoneName.trim();
   if (isLikelyIanaTimezoneIdentifier(fallbackIdentifier)) {
-    return fallbackIdentifier;
+    return _ResolvedTimezoneIdentifier(fallbackIdentifier, shouldCache: true);
   }
 
-  return 'UTC';
+  return const _ResolvedTimezoneIdentifier('UTC', shouldCache: false);
 }
