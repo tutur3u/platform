@@ -903,11 +903,16 @@ async function handleCreateTask({
       projects: nextProjects,
     };
 
+    const locallyCreatedTask = {
+      ...(createdTaskWithRelations as Task & { _localMutationAt?: number }),
+      _localMutationAt: Date.now(),
+    } as Task;
+
     // Update cache
     queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-      if (!old) return [createdTaskWithRelations];
+      if (!old) return [locallyCreatedTask];
       if (old.some((t) => t.id === newTask.id)) return old;
-      return [...old, createdTaskWithRelations];
+      return [...old, locallyCreatedTask];
     });
     await queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
 
