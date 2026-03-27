@@ -2,12 +2,27 @@ import { act, renderHook } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { TaskFilters } from '../../boards/boardId/task-filter';
 import {
   TaskDialogProvider,
   useTaskDialogContext,
 } from '../task-dialog-provider';
+
+const { mockGetCurrentUserTask } = vi.hoisted(() => ({
+  mockGetCurrentUserTask: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/internal-api/tasks', async () => {
+  const actual = await vi.importActual<
+    typeof import('@tuturuuu/internal-api/tasks')
+  >('@tuturuuu/internal-api/tasks');
+
+  return {
+    ...actual,
+    getCurrentUserTask: mockGetCurrentUserTask,
+  };
+});
 
 // Mock task data
 const mockTask: Task = {
@@ -45,6 +60,50 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 );
 
 describe('TaskDialogProvider', () => {
+  it('should enable collaborationMode for paid task workspaces opened by id', async () => {
+    mockGetCurrentUserTask.mockResolvedValueOnce({
+      task: {
+        ...mockTask,
+        list: { board_id: 'board-1' },
+      },
+      availableLists: [mockList],
+      taskWsId: 'workspace-1',
+      taskWorkspacePersonal: false,
+      taskWorkspaceTier: 'PRO',
+    });
+
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+
+    await act(async () => {
+      await result.current.openTaskById(mockTask.id);
+    });
+
+    expect(result.current.state.collaborationMode).toBe(true);
+    expect(result.current.state.taskWorkspaceTier).toBe('PRO');
+  });
+
+  it('should disable collaborationMode for free task workspaces opened by id', async () => {
+    mockGetCurrentUserTask.mockResolvedValueOnce({
+      task: {
+        ...mockTask,
+        list: { board_id: 'board-1' },
+      },
+      availableLists: [mockList],
+      taskWsId: 'workspace-1',
+      taskWorkspacePersonal: false,
+      taskWorkspaceTier: 'FREE',
+    });
+
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+
+    await act(async () => {
+      await result.current.openTaskById(mockTask.id);
+    });
+
+    expect(result.current.state.collaborationMode).toBe(false);
+    expect(result.current.state.taskWorkspaceTier).toBe('FREE');
+  });
+
   it('should provide initial dialog state', () => {
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
 

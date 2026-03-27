@@ -390,7 +390,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     return (
       <WorkspacePresenceProvider
         wsId={state.taskWsId}
-        tier={null}
+        tier={state.taskWorkspaceTier ?? null}
         enabled={!state.taskWorkspacePersonal}
       >
         {dialog}

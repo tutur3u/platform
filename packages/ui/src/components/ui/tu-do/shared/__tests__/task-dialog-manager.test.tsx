@@ -230,6 +230,7 @@ beforeEach(() => {
     availableLists: [mockList],
     taskWsId: 'workspace-1',
     taskWorkspacePersonal: false,
+    taskWorkspaceTier: 'PRO',
   });
   mockListWorkspaceLabels.mockResolvedValue({ labels: [] });
   mockListWorkspaceMembers.mockResolvedValue({ members: [] });

@@ -9,6 +9,7 @@ import {
   listWorkspaceTaskProjectsByIds,
   resolveTaskProjectWorkspaceId,
 } from '@tuturuuu/internal-api/tasks';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
@@ -49,6 +50,8 @@ interface TaskDialogState {
   taskWsId?: string;
   /** Whether the task's workspace is personal (affects realtime/presence decisions) */
   taskWorkspacePersonal?: boolean;
+  /** The task workspace tier used to gate cursor tracking for edit mode */
+  taskWorkspaceTier?: WorkspaceProductTier;
 }
 
 interface TaskDialogContextValue {
@@ -70,6 +73,8 @@ interface TaskDialogContextValue {
       taskWsId?: string;
       /** Whether the task's workspace is personal (affects realtime features) */
       taskWorkspacePersonal?: boolean;
+      /** The task's workspace tier (affects cursor tracking) */
+      taskWorkspaceTier?: WorkspaceProductTier;
     }
   ) => void;
 
@@ -169,6 +174,18 @@ export function TaskDialogProvider({
   const wsPresence = useOptionalWorkspacePresenceContext();
   const cursorsEnabled = wsPresence?.cursorsEnabled ?? false;
 
+  const canUseTaskCursors = useCallback(
+    (
+      isTaskWorkspacePersonal: boolean,
+      taskWorkspaceTier?: WorkspaceProductTier
+    ) => {
+      if (isTaskWorkspacePersonal) return false;
+      if (taskWorkspaceTier) return taskWorkspaceTier !== 'FREE';
+      return cursorsEnabled;
+    },
+    [cursorsEnabled]
+  );
+
   // Store all update callbacks in a ref set for multiple registrations
   const updateCallbacksRef = useRef<Set<() => void>>(new Set());
   // Store the close callback in a ref for dynamic registration
@@ -184,6 +201,7 @@ export function TaskDialogProvider({
         preserveUrl?: boolean;
         taskWsId?: string;
         taskWorkspacePersonal?: boolean;
+        taskWorkspaceTier?: WorkspaceProductTier;
       }
     ) => {
       // Use task's workspace personal flag if provided, otherwise fall back to current workspace
@@ -192,7 +210,10 @@ export function TaskDialogProvider({
 
       // Realtime sync (auto-save via Yjs) is always enabled in edit mode.
       // Cursor presence requires tier check and non-personal workspace.
-      const shouldEnableCursors = !isTaskWorkspacePersonal && cursorsEnabled;
+      const shouldEnableCursors = canUseTaskCursors(
+        isTaskWorkspacePersonal,
+        options?.taskWorkspaceTier
+      );
 
       setState({
         isOpen: true,
@@ -205,9 +226,10 @@ export function TaskDialogProvider({
         fakeTaskUrl,
         taskWsId: options?.taskWsId,
         taskWorkspacePersonal: isTaskWorkspacePersonal,
+        taskWorkspaceTier: options?.taskWorkspaceTier,
       });
     },
-    [isPersonalWorkspace, cursorsEnabled]
+    [canUseTaskCursors, isPersonalWorkspace]
   );
 
   const openTaskById = useCallback(
@@ -223,6 +245,7 @@ export function TaskDialogProvider({
               availableLists: TaskList[];
               taskWsId: string;
               taskWorkspacePersonal: boolean;
+              taskWorkspaceTier: WorkspaceProductTier;
             }
           | undefined;
 
@@ -245,12 +268,16 @@ export function TaskDialogProvider({
         const transformedTask = response.task;
         const taskWsId = response.taskWsId;
         const taskWorkspacePersonal = response.taskWorkspacePersonal;
+        const taskWorkspaceTier = response.taskWorkspaceTier;
         const isTaskWorkspacePersonal =
           taskWorkspacePersonal ?? isPersonalWorkspace;
 
         // Realtime sync (auto-save via Yjs) is always enabled in edit mode.
         // Cursor presence requires tier check and non-personal workspace.
-        const shouldEnableCursors = !isTaskWorkspacePersonal && cursorsEnabled;
+        const shouldEnableCursors = canUseTaskCursors(
+          isTaskWorkspacePersonal,
+          taskWorkspaceTier
+        );
 
         // Open the task in edit mode
         setState({
@@ -263,12 +290,13 @@ export function TaskDialogProvider({
           realtimeEnabled: true,
           taskWsId,
           taskWorkspacePersonal: isTaskWorkspacePersonal,
+          taskWorkspaceTier,
         });
       } catch (error) {
         console.error('Failed to open task:', error);
       }
     },
-    [isPersonalWorkspace, cursorsEnabled]
+    [canUseTaskCursors, isPersonalWorkspace]
   );
 
   const createTask = useCallback(
