@@ -9,6 +9,7 @@ import {
   MAX_TASK_DESCRIPTION_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { calculateTopSortKey } from '@tuturuuu/utils/task-helper';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -19,22 +20,6 @@ import {
   type TaskRecord,
   type TaskRelationshipSummary,
 } from './get-tasks-helpers';
-
-const SORT_KEY_BASE_UNIT = 1000000;
-const SORT_KEY_DEFAULT = SORT_KEY_BASE_UNIT * 1000;
-
-function calculateEndSortKey(prevSortKey: number | null | undefined) {
-  const uniqueSuffix =
-    typeof performance !== 'undefined'
-      ? Math.floor(performance.now() * 1000) % 1000
-      : Math.floor((Date.now() % 1000) + Math.random() * 1000) % 1000;
-
-  if (prevSortKey === null || prevSortKey === undefined) {
-    return SORT_KEY_DEFAULT + uniqueSuffix;
-  }
-
-  return prevSortKey + SORT_KEY_BASE_UNIT + uniqueSuffix;
-}
 
 async function cleanupCreatedTask(
   sbAdmin: TypedSupabaseClient,
@@ -712,24 +697,24 @@ export async function POST(
       }
     }
 
-    const { data: lastTask, error: lastTaskError } = await sbAdmin
+    const { data: firstTask, error: firstTaskError } = await sbAdmin
       .from('tasks')
       .select('sort_key')
       .eq('list_id', listId)
       .is('deleted_at', null)
-      .order('sort_key', { ascending: false })
+      .order('sort_key', { ascending: true, nullsFirst: false })
       .limit(1)
       .maybeSingle();
 
-    if (lastTaskError) {
-      console.error('Error fetching last sort key:', lastTaskError);
+    if (firstTaskError) {
+      console.error('Error fetching first sort key:', firstTaskError);
       return NextResponse.json(
         { error: 'Failed to create task' },
         { status: 500 }
       );
     }
 
-    const sort_key = calculateEndSortKey(lastTask?.sort_key ?? null);
+    const sort_key = calculateTopSortKey(firstTask?.sort_key ?? null);
     const now = new Date().toISOString();
     const isDoneList = listRow.status === 'done';
     const isClosedList = listRow.status === 'closed';
@@ -768,6 +753,7 @@ export async function POST(
         start_date,
         end_date,
         estimation_points,
+        sort_key,
         created_at,
         list_id,
           task_lists!inner(
@@ -893,6 +879,7 @@ export async function POST(
       start_date: data.start_date,
       end_date: data.end_date,
       estimation_points: data.estimation_points,
+      sort_key: data.sort_key,
       created_at: data.created_at,
       list_id: data.list_id,
       board_name: data.task_lists?.workspace_boards?.name,

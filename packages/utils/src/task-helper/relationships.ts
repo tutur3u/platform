@@ -314,13 +314,18 @@ export function useCreateTaskWithRelationship(boardId: string, wsId: string) {
       };
     },
     onSuccess: async (result, variables) => {
+      const locallyCreatedTask = {
+        ...(result.task as Task & { _localMutationAt?: number }),
+        _localMutationAt: Date.now(),
+      } as Task;
+
       if (boardId) {
         queryClient.setQueryData(
           ['tasks', boardId],
           (old: Task[] | undefined) => {
-            if (!old) return [result.task];
+            if (!old) return [locallyCreatedTask];
             if (old.some((t) => t.id === result.task.id)) return old;
-            return [...old, result.task];
+            return [...old, locallyCreatedTask];
           }
         );
       }
