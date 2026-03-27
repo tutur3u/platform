@@ -367,21 +367,30 @@ export function TaskViewerAvatarsComponent({
   const viewers = useMemo<PresenceViewerEntry[]>(() => {
     const byUser = new Map<
       string,
-      { user: User; online_at: string; away: boolean; count: number }
+      {
+        user: User;
+        online_at: string;
+        away: boolean;
+        sessionIds: Set<string>;
+      }
     >();
-    for (const viewer of taskViewers) {
+    for (const [index, viewer] of taskViewers.entries()) {
       const userId = viewer.user.id;
       if (!userId) continue;
+      const sessionId =
+        viewer.session_id ||
+        (viewer as { presence_ref?: string }).presence_ref ||
+        `${userId}-${viewer.online_at}-${index}`;
       const existing = byUser.get(userId);
       if (existing) {
-        existing.count++;
+        existing.sessionIds.add(sessionId);
         if (!viewer.away) existing.away = false;
       } else {
         byUser.set(userId, {
           user: viewer.user,
           online_at: viewer.online_at,
           away: !!viewer.away,
-          count: 1,
+          sessionIds: new Set([sessionId]),
         });
       }
     }
@@ -389,7 +398,7 @@ export function TaskViewerAvatarsComponent({
       user: v.user,
       online_at: v.online_at,
       away: v.away,
-      presenceCount: v.count,
+      presenceCount: v.sessionIds.size,
     }));
   }, [taskViewers]);
 
