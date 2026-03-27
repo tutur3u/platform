@@ -144,7 +144,7 @@ class _HabitsViewState extends State<_HabitsView> {
                               ? Icons.close_rounded
                               : Icons.search_rounded,
                           tooltip: _isSearchVisible
-                              ? context.l10n.financeActivityClearSearch
+                              ? context.l10n.commonClearSearch
                               : context.l10n.habitsSearchHint,
                           highlighted:
                               _isSearchVisible || state.searchQuery.isNotEmpty,

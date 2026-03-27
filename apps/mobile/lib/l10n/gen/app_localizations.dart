@@ -6175,6 +6175,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get commonCancel;
 
+  /// No description provided for @commonClearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get commonClearSearch;
+
   /// No description provided for @timerTotalSessions.
   ///
   /// In en, this message translates to:

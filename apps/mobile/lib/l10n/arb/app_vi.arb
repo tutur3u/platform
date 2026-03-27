@@ -1322,6 +1322,7 @@
     "timerAutoStartBreaks": "Tự động bắt đầu nghỉ",
     "timerAutoStartFocus": "Tự động bắt đầu tập trung",
     "commonCancel": "Hủy",
+    "commonClearSearch": "Xóa tìm kiếm",
     "timerTotalSessions": "Tổng số phiên",
     "timerActiveUsers": "Người dùng hoạt động",
     "timerGoalsTitle": "Mục tiêu",

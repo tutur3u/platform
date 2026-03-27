@@ -28,7 +28,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final nextCubit = _findShellChromeActionsCubit(context);
+    final nextCubit = _lookupShellChromeActionsCubit(context);
     if (_cubit != nextCubit) {
       _cubit?.unregister(_registrationId);
       _cubit = nextCubit;
@@ -82,11 +82,55 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
   List<ShellActionSpec> _retainedActions = const <ShellActionSpec>[];
   String? _pendingClearLocation;
 
+  @override
+  void didUpdateWidget(covariant ShellInjectedActionsHost oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.matchedLocation == widget.matchedLocation) {
+      return;
+    }
+
+    final cubit = _lookupShellChromeActionsCubit(context);
+    if (cubit == null) {
+      return;
+    }
+    _handleResolvedActions(
+      cubit.state.resolveForLocation(widget.matchedLocation),
+      widget.matchedLocation,
+    );
+  }
+
+  void _handleResolvedActions(
+    List<ShellActionSpec> resolvedActions,
+    String matchedLocation,
+  ) {
+    if (resolvedActions.isNotEmpty) {
+      final shouldUpdatePending = _pendingClearLocation != null;
+      final shouldUpdateActions = !listEquals(
+        _retainedActions,
+        resolvedActions,
+      );
+      if (!shouldUpdatePending && !shouldUpdateActions) {
+        return;
+      }
+      setState(() {
+        _pendingClearLocation = null;
+        _retainedActions = resolvedActions;
+      });
+      return;
+    }
+
+    if (_retainedActions.isNotEmpty) {
+      _scheduleClearRetainedActions(matchedLocation);
+    }
+  }
+
   void _scheduleClearRetainedActions(String matchedLocation) {
     if (_pendingClearLocation == matchedLocation) {
       return;
     }
-    _pendingClearLocation = matchedLocation;
+    setState(() {
+      _pendingClearLocation = matchedLocation;
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _pendingClearLocation != matchedLocation) {
         return;
@@ -100,13 +144,23 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = _findShellChromeActionsCubit(context);
+    final cubit = _lookupShellChromeActionsCubit(context);
     if (cubit == null) {
       return const SizedBox.shrink();
     }
 
-    return BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
+    return BlocConsumer<ShellChromeActionsCubit, ShellChromeActionsState>(
       bloc: cubit,
+      listenWhen: (previous, current) => !listEquals(
+        previous.resolveForLocation(widget.matchedLocation),
+        current.resolveForLocation(widget.matchedLocation),
+      ),
+      listener: (context, state) {
+        _handleResolvedActions(
+          state.resolveForLocation(widget.matchedLocation),
+          widget.matchedLocation,
+        );
+      },
       buildWhen: (previous, current) => !listEquals(
         previous.resolveForLocation(widget.matchedLocation),
         current.resolveForLocation(widget.matchedLocation),
@@ -123,13 +177,6 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
           (false, true) => _retainedActions,
           (false, false) => resolvedActions,
         };
-
-        if (resolvedActions.isNotEmpty) {
-          _pendingClearLocation = null;
-          _retainedActions = resolvedActions;
-        } else if (_retainedActions.isNotEmpty) {
-          _scheduleClearRetainedActions(widget.matchedLocation);
-        }
 
         return AnimatedSize(
           duration: const Duration(milliseconds: 220),
@@ -156,7 +203,7 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
   }
 }
 
-ShellChromeActionsCubit? _findShellChromeActionsCubit(BuildContext context) {
+ShellChromeActionsCubit? _lookupShellChromeActionsCubit(BuildContext context) {
   var hasProvider = false;
   context.visitAncestorElements((element) {
     if (element.widget is BlocProvider<ShellChromeActionsCubit>) {

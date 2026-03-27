@@ -3221,6 +3221,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonCancel => 'Hủy';
 
   @override
+  String get commonClearSearch => 'Xóa tìm kiếm';
+
+  @override
   String get timerTotalSessions => 'Tổng số phiên';
 
   @override

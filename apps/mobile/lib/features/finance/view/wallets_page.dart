@@ -53,11 +53,18 @@ class _WalletsViewState extends State<_WalletsView> {
   String? _error;
   int _currentWalletsRequestToken = 0;
   String? _loadedWorkspaceId;
+  String? _seededWorkspaceId;
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadWallets());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _seedWalletsFromCacheIfNeeded();
   }
 
   CacheKey _cacheKey(String wsId) {
@@ -69,20 +76,32 @@ class _WalletsViewState extends State<_WalletsView> {
     );
   }
 
-  void _seedWalletsFromCache() {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) {
+  void _seedWalletsFromCacheIfNeeded({String? wsId}) {
+    final resolvedWsId =
+        wsId ?? context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (_seededWorkspaceId == resolvedWsId) {
       return;
     }
+    _seededWorkspaceId = resolvedWsId;
+
+    if (!mounted || resolvedWsId == null) {
+      return;
+    }
+
     final cached = CacheStore.instance.peek<List<Wallet>>(
-      key: _cacheKey(wsId),
+      key: _cacheKey(resolvedWsId),
       decode: _decodeWallets,
     );
     if (!cached.hasValue || cached.data == null) {
       return;
     }
-    _wallets = cached.data!;
-    _loadedWorkspaceId = wsId;
+
+    setState(() {
+      _wallets = cached.data!;
+      _loadedWorkspaceId = resolvedWsId;
+      _isLoading = false;
+      _error = null;
+    });
   }
 
   List<Wallet> _decodeWallets(Object? json) {
@@ -100,13 +119,17 @@ class _WalletsViewState extends State<_WalletsView> {
     final l10n = context.l10n;
     final listBottomPadding =
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
-    _seedWalletsFromCache();
 
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, _) => unawaited(_loadWallets()),
+        listener: (context, state) {
+          _seedWalletsFromCacheIfNeeded(
+            wsId: state.currentWorkspace?.id,
+          );
+          unawaited(_loadWallets());
+        },
         child: Stack(
           children: [
             RefreshIndicator(
@@ -262,11 +285,13 @@ class _WalletsViewState extends State<_WalletsView> {
     if (wsId == null) {
       if (!mounted) {
         _loadedWorkspaceId = null;
+        _seededWorkspaceId = null;
         return;
       }
       setState(() {
         _wallets = const [];
         _loadedWorkspaceId = null;
+        _seededWorkspaceId = null;
         _isLoading = false;
         _error = null;
       });

@@ -99,13 +99,6 @@ class TransactionListCubit extends Cubit<TransactionListState> {
           search: '',
         ),
       );
-    } else if (state.transactions.isEmpty) {
-      emit(
-        state.copyWith(
-          status: TransactionListStatus.loading,
-          clearError: true,
-        ),
-      );
     } else {
       emit(
         state.copyWith(
@@ -204,7 +197,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     try {
       final result = await _repo.getTransactionsInfinite(
         wsId: _wsId,
-        cursor: state.cursor,
+        cursor: replaceExisting ? null : state.cursor,
         search: state.search.isEmpty ? null : state.search,
       );
 

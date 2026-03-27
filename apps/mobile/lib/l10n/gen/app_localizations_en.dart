@@ -3227,6 +3227,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
+  String get commonClearSearch => 'Clear search';
+
+  @override
   String get timerTotalSessions => 'Total sessions';
 
   @override

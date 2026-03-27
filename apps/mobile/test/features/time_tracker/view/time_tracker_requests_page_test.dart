@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -38,7 +39,8 @@ void main() {
     const ws1 = Workspace(id: 'ws-1', name: 'Workspace 1');
     const ws2 = Workspace(id: 'ws-2', name: 'Workspace 2');
 
-    setUp(() {
+    setUp(() async {
+      await CacheStore.instance.clearScope();
       repository = _MockTimeTrackerRepository();
       workspaceCubit = _MockWorkspaceCubit();
       authCubit = _MockAuthCubit();
@@ -66,6 +68,7 @@ void main() {
 
     setUpAll(() async {
       SharedPreferences.setMockInitialValues(const <String, Object>{});
+      await CacheStore.instance.init();
       await supa.Supabase.initialize(
         url: 'https://example.supabase.co',
         anonKey:
@@ -75,6 +78,7 @@ void main() {
 
     tearDown(() async {
       await workspaceController.close();
+      await CacheStore.instance.clearScope();
     });
 
     testWidgets(

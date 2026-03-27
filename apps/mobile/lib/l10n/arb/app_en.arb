@@ -1318,6 +1318,7 @@
     "timerAutoStartBreaks": "Auto-start breaks",
     "timerAutoStartFocus": "Auto-start focus",
     "commonCancel": "Cancel",
+    "commonClearSearch": "Clear search",
     "timerTotalSessions": "Total sessions",
     "timerActiveUsers": "Active users",
     "timerGoalsTitle": "Goals",

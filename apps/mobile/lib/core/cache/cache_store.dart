@@ -378,7 +378,28 @@ class CacheStore {
           ),
         ),
       );
-      unawaited(Future<void>.sync(onCorrupt));
+      Future<void> dispatchOnCorrupt() async {
+        try {
+          await onCorrupt();
+        } on Object catch (cleanupError, cleanupStackTrace) {
+          debugPrint(
+            'CacheStore: failed to clean corrupt cache record '
+            '${record.key}: $cleanupError',
+          );
+          FlutterError.reportError(
+            FlutterErrorDetails(
+              exception: cleanupError,
+              stack: cleanupStackTrace,
+              library: 'mobile cache',
+              context: ErrorDescription(
+                'while clearing corrupt cached resource ${record.key}',
+              ),
+            ),
+          );
+        }
+      }
+
+      unawaited(dispatchOnCorrupt());
       return null;
     }
   }
