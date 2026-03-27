@@ -120,6 +120,7 @@ void main() {
           dateFrom: any(named: 'dateFrom'),
           dateTo: any(named: 'dateTo'),
           userId: any(named: 'userId'),
+          timezone: any(named: 'timezone'),
         ),
       ).thenAnswer(
         (_) async => const TimeTrackingPeriodStats(
@@ -175,6 +176,7 @@ void main() {
           dateFrom: any(named: 'dateFrom'),
           dateTo: any(named: 'dateTo'),
           userId: any(named: 'userId'),
+          timezone: any(named: 'timezone'),
         ),
       ).thenAnswer((_) async => const TimeTrackingPeriodStats());
 

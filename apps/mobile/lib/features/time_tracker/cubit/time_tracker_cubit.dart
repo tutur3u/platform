@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
@@ -244,13 +245,14 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         ).subtract(Duration(days: now.weekday - DateTime.monday));
         final weekEnd = weekStart.add(const Duration(days: 7));
         final normalizedUserId = userId.trim().isEmpty ? null : userId;
+        final timezone = await getCurrentTimezoneIdentifier();
         final runningSessionFuture = repository.getRunningSession(wsId);
         final categoriesFuture = repository.getCategories(wsId);
         final recentSessionsFuture = repository.getSessions(wsId, limit: 5);
         final statsFuture = repository.getStats(
           wsId,
           userId,
-          timezone: DateTime.now().timeZoneName,
+          timezone: timezone,
         );
         final historyPageFuture = repository.getHistorySessions(
           wsId,
@@ -263,6 +265,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           dateFrom: weekStart,
           dateTo: weekEnd,
           userId: normalizedUserId,
+          timezone: timezone,
         );
         final pomodoroFuture = repository.loadPomodoroSettings();
         final settingsFuture = repository.getWorkspaceSettings(wsId);
@@ -428,6 +431,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     try {
       await _ensureHistoryPreferencesLoaded();
       final anchorDate = state.historyAnchorDate ?? DateTime.now();
+      final timezone = await getCurrentTimezoneIdentifier();
       final periodRange = _historyPeriodRange(
         state.historyViewMode,
         anchorDate,
@@ -440,7 +444,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       final statsFuture = _repo.getStats(
         wsId,
         userId,
-        timezone: _currentTimezone(),
+        timezone: timezone,
       );
       final historyPageFuture = _repo.getHistorySessions(
         wsId,
@@ -453,6 +457,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         dateFrom: periodRange.start,
         dateTo: periodRange.end,
         userId: normalizedUserId,
+        timezone: timezone,
       );
       final pomodoroSettingsFuture = _repo.loadPomodoroSettings();
       final workspaceSettingsFuture = _safeGetWorkspaceSettings(wsId);
@@ -875,6 +880,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     );
 
     try {
+      final timezone = await getCurrentTimezoneIdentifier();
       final (page, periodStats) = await (
         _repo.getHistorySessions(
           wsId,
@@ -887,6 +893,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           dateFrom: periodRange.start,
           dateTo: periodRange.end,
           userId: normalizedUserId,
+          timezone: timezone,
         ),
       ).wait;
 
@@ -1599,14 +1606,13 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     String wsId,
     String? userId,
   ) async {
+    final timezone = await getCurrentTimezoneIdentifier();
     final (recentSessions, stats) = await (
       _repo.getSessions(wsId, limit: 5),
-      _repo.getStats(wsId, userId, timezone: _currentTimezone()),
+      _repo.getStats(wsId, userId, timezone: timezone),
     ).wait;
     return (recentSessions, stats);
   }
-
-  String _currentTimezone() => DateTime.now().timeZoneName;
 
   @override
   Future<void> close() {
