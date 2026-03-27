@@ -135,11 +135,6 @@ class _DashboardView extends StatelessWidget {
                       taskState.status == TaskListStatus.loading &&
                       !calendarState.hasLoadedOnce &&
                       calendarState.status == CalendarStatus.loading;
-                  final showRefreshingIndicator =
-                      (taskState.status == TaskListStatus.loading &&
-                          taskState.hasLoadedOnce) ||
-                      (calendarState.status == CalendarStatus.loading &&
-                          calendarState.hasLoadedOnce);
 
                   if (showInitialLoading) {
                     return const shad.Scaffold(
@@ -150,100 +145,81 @@ class _DashboardView extends StatelessWidget {
                   return shad.Scaffold(
                     child: RefreshIndicator(
                       onRefresh: () => _refresh(context, workspace),
-                      child: Stack(
-                        children: [
-                          SafeArea(
-                            top: false,
-                            bottom: false,
-                            child: ResponsiveWrapper(
-                              maxWidth: ResponsivePadding.maxContentWidth(
-                                context.deviceClass,
-                              ),
-                              child: CustomScrollView(
-                                physics: const AlwaysScrollableScrollPhysics(
-                                  parent: BouncingScrollPhysics(),
-                                ),
-                                slivers: [
-                                  SliverPadding(
-                                    padding: EdgeInsets.fromLTRB(
-                                      ResponsivePadding.horizontal(
-                                        context.deviceClass,
-                                      ),
-                                      10,
-                                      ResponsivePadding.horizontal(
-                                        context.deviceClass,
-                                      ),
-                                      24 + MediaQuery.paddingOf(context).bottom,
-                                    ),
-                                    sliver: SliverList.list(
-                                      children: [
-                                        const _DashboardWorkspacePickerCard(),
-                                        const SizedBox(height: 12),
-                                        _TodaySummaryCard(
-                                          workspaceName: displayWorkspaceName(
-                                            context,
-                                            workspace,
-                                          ),
-                                          activeTasks:
-                                              taskState.totalActiveTasks,
-                                          overdueTasks:
-                                              taskState.overdueTasks.length,
-                                          nextEvents: upcomingEvents.length,
-                                        ),
-                                        const SizedBox(height: 14),
-                                        _SectionCard(
-                                          title: context
-                                              .l10n
-                                              .dashboardAssignedToMe,
-                                          icon: Icons.checklist_rounded,
-                                          accent: const Color(0xFF8B5CF6),
-                                          actionLabel:
-                                              context.l10n.dashboardOpenTasks,
-                                          actionIcon:
-                                              Icons.arrow_outward_rounded,
-                                          onTap: () => context.go(Routes.tasks),
-                                          child: _AssignedTasksBlock(
-                                            state: taskState,
-                                            tasks: focusTasks,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _SectionCard(
-                                          title: context
-                                              .l10n
-                                              .dashboardUpcomingEvents,
-                                          icon: Icons.event_rounded,
-                                          accent: const Color(0xFF0EA5E9),
-                                          actionLabel: context
-                                              .l10n
-                                              .dashboardOpenCalendar,
-                                          actionIcon:
-                                              Icons.arrow_outward_rounded,
-                                          onTap: () =>
-                                              context.go(Routes.calendar),
-                                          child: _UpcomingEventsBlock(
-                                            status: calendarState.status,
-                                            hasLoadedOnce:
-                                                calendarState.hasLoadedOnce,
-                                            error: calendarState.error,
-                                            events: upcomingEvents,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                      child: SafeArea(
+                        top: false,
+                        bottom: false,
+                        child: ResponsiveWrapper(
+                          maxWidth: ResponsivePadding.maxContentWidth(
+                            context.deviceClass,
                           ),
-                          if (showRefreshingIndicator)
-                            const Positioned(
-                              top: 0,
-                              left: 16,
-                              right: 16,
-                              child: IgnorePointer(child: _RefreshStrip()),
+                          child: CustomScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(
+                              parent: BouncingScrollPhysics(),
                             ),
-                        ],
+                            slivers: [
+                              SliverPadding(
+                                padding: EdgeInsets.fromLTRB(
+                                  ResponsivePadding.horizontal(
+                                    context.deviceClass,
+                                  ),
+                                  10,
+                                  ResponsivePadding.horizontal(
+                                    context.deviceClass,
+                                  ),
+                                  24 + MediaQuery.paddingOf(context).bottom,
+                                ),
+                                sliver: SliverList.list(
+                                  children: [
+                                    const _DashboardWorkspacePickerCard(),
+                                    const SizedBox(height: 12),
+                                    _TodaySummaryCard(
+                                      workspaceName: displayWorkspaceName(
+                                        context,
+                                        workspace,
+                                      ),
+                                      activeTasks: taskState.totalActiveTasks,
+                                      overdueTasks:
+                                          taskState.overdueTasks.length,
+                                      nextEvents: upcomingEvents.length,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _SectionCard(
+                                      title: context.l10n.dashboardAssignedToMe,
+                                      icon: Icons.checklist_rounded,
+                                      accent: const Color(0xFF8B5CF6),
+                                      actionLabel:
+                                          context.l10n.dashboardOpenTasks,
+                                      actionIcon: Icons.arrow_outward_rounded,
+                                      onTap: () => context.go(Routes.tasks),
+                                      child: _AssignedTasksBlock(
+                                        state: taskState,
+                                        tasks: focusTasks,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _SectionCard(
+                                      title:
+                                          context.l10n.dashboardUpcomingEvents,
+                                      icon: Icons.event_rounded,
+                                      accent: const Color(0xFF0EA5E9),
+                                      actionLabel:
+                                          context.l10n.dashboardOpenCalendar,
+                                      actionIcon: Icons.arrow_outward_rounded,
+                                      onTap: () => context.go(Routes.calendar),
+                                      child: _UpcomingEventsBlock(
+                                        status: calendarState.status,
+                                        hasLoadedOnce:
+                                            calendarState.hasLoadedOnce,
+                                        error: calendarState.error,
+                                        events: upcomingEvents,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   );
@@ -1270,16 +1246,4 @@ class _Tone {
   final Color background;
   final Color border;
   final Color foreground;
-}
-
-class _RefreshStrip extends StatelessWidget {
-  const _RefreshStrip();
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: const LinearProgressIndicator(minHeight: 3),
-    );
-  }
 }

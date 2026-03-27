@@ -37,8 +37,16 @@ class TransactionListPage extends StatelessWidget {
       create: (_) => FinanceRepository(),
       child: BlocProvider(
         create: (context) {
+          final wsId = context
+              .read<WorkspaceCubit>()
+              .state
+              .currentWorkspace
+              ?.id;
           final cubit = TransactionListCubit(
             financeRepository: context.read<FinanceRepository>(),
+            initialState: wsId == null
+                ? null
+                : TransactionListCubit.seedStateForWorkspace(wsId),
           );
           unawaited(_loadFromWorkspace(context, cubit));
           return cubit;

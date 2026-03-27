@@ -164,7 +164,8 @@ class CacheStore {
   }) async {
     await init();
     final tagSet = tags.toSet();
-    final keysToDelete = <String>[];
+    final now = DateTime.now();
+    final recordsToInvalidate = <String, CachedResourceRecord>{};
 
     for (final entry in _memory.entries) {
       final record = entry.value;
@@ -173,13 +174,14 @@ class CacheStore {
           workspaceId == null || record.workspaceId == workspaceId;
       final matchesUser = userId == null || record.userId == userId;
       if (matchesTags && matchesWorkspace && matchesUser) {
-        keysToDelete.add(entry.key);
+        recordsToInvalidate[entry.key] = record;
       }
     }
 
-    for (final key in keysToDelete) {
-      _memory.remove(key);
-      await _resourceBox.delete(key);
+    for (final entry in recordsToInvalidate.entries) {
+      final invalidatedRecord = _markRecordStale(entry.value, now: now);
+      _memory[entry.key] = invalidatedRecord;
+      await _resourceBox.put(entry.key, invalidatedRecord.toJson());
     }
   }
 
@@ -287,6 +289,18 @@ class CacheStore {
       data: decode(payload),
       fetchedAt: DateTime.now(),
       hasValue: true,
+    );
+  }
+
+  CachedResourceRecord _markRecordStale(
+    CachedResourceRecord record, {
+    required DateTime now,
+  }) {
+    return record.copyWith(
+      staleAt: now.subtract(const Duration(milliseconds: 1)),
+      expireAt: record.expireAt.isAfter(now)
+          ? record.expireAt
+          : now.add(const Duration(hours: 1)),
     );
   }
 }

@@ -46,7 +46,12 @@ class HabitsPage extends StatelessWidget {
         final cubit = HabitsCubit(
           repository: repository ?? HabitTrackerRepository(),
           initialState: wsId != null && wsId.isNotEmpty
-              ? HabitsCubit.cachedStateForWorkspace(wsId)
+              ? HabitsCubit.seedStateForWorkspace(
+                  wsId,
+                  initialScope: workspace?.personal ?? false
+                      ? HabitTrackerScope.self
+                      : HabitTrackerScope.self,
+                )
               : null,
         );
         if (wsId != null && wsId.isNotEmpty) {
