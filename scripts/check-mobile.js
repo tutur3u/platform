@@ -16,15 +16,12 @@
  */
 
 const { spawn } = require('node:child_process');
+const os = require('node:os');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
-const TURBO_BIN = path.join(
-  ROOT_DIR,
-  'node_modules',
-  '.bin',
-  process.platform === 'win32' ? 'turbo.cmd' : 'turbo'
-);
+const TURBO_COMMAND = 'bun';
+const TURBO_ARGS = ['x', 'turbo'];
 const useTable = process.argv.includes('--table');
 const showTiming = process.argv.includes('--timing');
 const showDetails = process.argv.includes('--details');
@@ -60,8 +57,8 @@ const colors = {
 const checks = [
   {
     name: 'dart-format',
-    command: TURBO_BIN,
-    args: ['run', 'dart-format', '--filter=@tuturuuu/mobile'],
+    command: TURBO_COMMAND,
+    args: [...TURBO_ARGS, 'run', 'dart-format', '--filter=@tuturuuu/mobile'],
     allowNonZeroWhen: (code, stdout, stderr) => {
       const output = stdout + stderr;
       return code === 1 && output.includes('Formatted');
@@ -77,8 +74,13 @@ const checks = [
   },
   {
     name: 'flutter-analyze',
-    command: TURBO_BIN,
-    args: ['run', 'flutter-analyze', '--filter=@tuturuuu/mobile'],
+    command: TURBO_COMMAND,
+    args: [
+      ...TURBO_ARGS,
+      'run',
+      'flutter-analyze',
+      '--filter=@tuturuuu/mobile',
+    ],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       if (clean.includes('No issues found')) {
@@ -93,8 +95,8 @@ const checks = [
   },
   {
     name: 'flutter-test',
-    command: TURBO_BIN,
-    args: ['run', 'flutter-test', '--filter=@tuturuuu/mobile'],
+    command: TURBO_COMMAND,
+    args: [...TURBO_ARGS, 'run', 'flutter-test', '--filter=@tuturuuu/mobile'],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       // Match "All tests passed!" or "+N: All tests passed!"
@@ -119,6 +121,26 @@ const checks = [
   },
 ];
 
+function resolvePubCache(env = process.env) {
+  if (env.PUB_CACHE) {
+    return env.PUB_CACHE;
+  }
+
+  if (process.platform !== 'win32') {
+    return undefined;
+  }
+
+  if (env.LOCALAPPDATA) {
+    return path.join(env.LOCALAPPDATA, 'Pub', 'Cache');
+  }
+
+  if (env.USERPROFILE) {
+    return path.join(env.USERPROFILE, 'AppData', 'Local', 'Pub', 'Cache');
+  }
+
+  return path.join(os.homedir(), 'AppData', 'Local', 'Pub', 'Cache');
+}
+
 /**
  * Run a single check and capture output
  */
@@ -137,7 +159,11 @@ function runCheck(check, options = {}) {
     const proc = spawnImpl(check.command, check.args, {
       cwd: ROOT_DIR,
       shell: process.platform === 'win32',
-      env: { ...process.env, FORCE_COLOR: '1' },
+      env: {
+        ...process.env,
+        FORCE_COLOR: '1',
+        PUB_CACHE: resolvePubCache(process.env),
+      },
     });
 
     proc.stdout.on('data', (data) => {
@@ -364,5 +390,6 @@ if (require.main === module) {
 
 module.exports = {
   checks,
+  resolvePubCache,
   runCheck,
 };

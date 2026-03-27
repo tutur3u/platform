@@ -1,8 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
+const path = require('node:path');
 
-const { runCheck } = require('./check-mobile.js');
+const { checks, resolvePubCache, runCheck } = require('./check-mobile.js');
 
 function createMockProc() {
   const proc = new EventEmitter();
@@ -69,4 +70,25 @@ test('runCheck prints buffered output when a check fails', async () => {
   assert.equal(result.success, false);
   assert.deepEqual(stdoutWrites, []);
   assert.deepEqual(stderrWrites, ['analysis failed\nstacktrace\n']);
+});
+
+test('mobile checks invoke turbo through bun', () => {
+  assert.equal(checks[0].command, 'bun');
+  assert.deepEqual(checks[0].args.slice(0, 2), ['x', 'turbo']);
+});
+
+test('resolvePubCache prefers explicit PUB_CACHE', () => {
+  const value = resolvePubCache({ PUB_CACHE: 'C:/custom/pub-cache' });
+  assert.equal(value, 'C:/custom/pub-cache');
+});
+
+test('resolvePubCache derives Windows fallback cache path', () => {
+  if (process.platform !== 'win32') {
+    return;
+  }
+
+  const value = resolvePubCache({
+    LOCALAPPDATA: 'C:/Users/Test/AppData/Local',
+  });
+  assert.equal(value, path.join('C:/Users/Test/AppData/Local', 'Pub', 'Cache'));
 });

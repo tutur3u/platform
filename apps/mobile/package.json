@@ -4,6 +4,7 @@
   "scripts": {
     "dart-format": "dart format --set-exit-if-changed lib test",
     "flutter-analyze": "flutter analyze",
-    "flutter-test": "flutter test -r failures-only"
+    "flutter-test": "flutter test -r failures-only",
+    "check:mobile": "node ../../scripts/check-mobile.js"
   }
 }
