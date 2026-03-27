@@ -363,29 +363,18 @@ class _SettingsViewState extends State<_SettingsView> {
       });
     }
 
-    try {
-      final permissions = await _workspacePermissionsRepository.getPermissions(
-        wsId: workspaceId,
-      );
-      if (!mounted || token != _workspacePermissionLoadToken) {
-        return;
-      }
-
-      setState(() {
-        _canManageWorkspaceSettings = permissions.containsPermission(
-          manageWorkspaceSettingsPermission,
-        );
-        _isWorkspacePermissionLoading = false;
-      });
-    } on Exception {
-      if (!mounted || token != _workspacePermissionLoadToken) {
-        return;
-      }
-      setState(() {
-        _canManageWorkspaceSettings = false;
-        _isWorkspacePermissionLoading = false;
-      });
+    final permissions = await _workspacePermissionsRepository.getPermissions(
+      wsId: workspaceId,
+    );
+    if (!mounted || token != _workspacePermissionLoadToken) {
+      return;
     }
+    setState(() {
+      _canManageWorkspaceSettings = permissions.containsPermission(
+        manageWorkspaceSettingsPermission,
+      );
+      _isWorkspacePermissionLoading = false;
+    });
   }
 
   Future<void> _loadMobileVersionsAccess(

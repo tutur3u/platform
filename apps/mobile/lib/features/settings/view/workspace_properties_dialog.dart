@@ -19,6 +19,9 @@ Future<void> showWorkspacePropertiesDialog(
 }) {
   return showAdaptiveSheet<void>(
     context: context,
+    isDismissible: false,
+    enableDrag: false,
+    barrierDismissible: false,
     builder: (dialogContext) {
       return _WorkspacePropertiesDialog(workspace: workspace);
     },
@@ -73,7 +76,7 @@ class _WorkspacePropertiesDialogState
     final source = await showImageSourcePickerDialog(
       context: context,
       title: l10n.selectImageSource,
-      description: l10n.profileAvatarPickerDescription,
+      description: l10n.workspaceAvatarPickerDescription,
       cameraLabel: l10n.camera,
       galleryLabel: l10n.gallery,
     );
@@ -228,98 +231,101 @@ class _WorkspacePropertiesDialogState
       avatarImage = NetworkImage(widget.workspace.avatarUrl!);
     }
 
-    return AppDialogScaffold(
-      title: l10n.settingsWorkspacePropertiesTitle,
-      description: l10n.settingsWorkspacePropertiesDescription,
-      icon: Icons.business_center_outlined,
-      maxWidth: 520,
-      actions: [
-        shad.OutlineButton(
-          onPressed: _isSaving ? null : () => Navigator.maybePop(context),
-          child: Text(l10n.commonCancel),
-        ),
-        shad.PrimaryButton(
-          onPressed: _isSaving ? null : _onSave,
-          child: _isSaving
-              ? const shad.CircularProgressIndicator(size: 16)
-              : Text(l10n.profileSave),
-        ),
-      ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: _isSaving ? null : _pickAvatar,
-                child: CircleAvatar(
-                  radius: 28,
-                  backgroundImage: avatarImage,
-                  child: hasAvatarPreview
-                      ? null
-                      : Text(
-                          initials,
-                          style: theme.typography.large.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                ),
-              ),
-            ],
+    return PopScope<void>(
+      canPop: !_isSaving,
+      child: AppDialogScaffold(
+        title: l10n.settingsWorkspacePropertiesTitle,
+        description: l10n.settingsWorkspacePropertiesDescription,
+        icon: Icons.business_center_outlined,
+        maxWidth: 520,
+        actions: [
+          shad.OutlineButton(
+            onPressed: _isSaving ? null : () => Navigator.maybePop(context),
+            child: Text(l10n.commonCancel),
           ),
-          const shad.Gap(12),
-          Row(
-            children: [
-              Expanded(
-                child: shad.OutlineButton(
-                  onPressed: _isSaving ? null : _pickAvatar,
-                  child: Text(l10n.profileUploadAvatar),
-                ),
-              ),
-              if (_avatarFile != null || _hadInitialAvatar) ...[
-                const shad.Gap(12),
-                Expanded(
-                  child: shad.DestructiveButton(
-                    onPressed: _isSaving
+          shad.PrimaryButton(
+            onPressed: _isSaving ? null : _onSave,
+            child: _isSaving
+                ? const shad.CircularProgressIndicator(size: 16)
+                : Text(l10n.profileSave),
+          ),
+        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: _isSaving ? null : _pickAvatar,
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundImage: avatarImage,
+                    child: hasAvatarPreview
                         ? null
-                        : () {
-                            setState(() {
-                              _avatarFile = null;
-                              _removeAvatar = _hadInitialAvatar;
-                            });
-                          },
-                    child: Text(l10n.profileRemoveAvatar),
+                        : Text(
+                            initials,
+                            style: theme.typography.large.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                 ),
               ],
+            ),
+            const shad.Gap(12),
+            Row(
+              children: [
+                Expanded(
+                  child: shad.OutlineButton(
+                    onPressed: _isSaving ? null : _pickAvatar,
+                    child: Text(l10n.profileUploadAvatar),
+                  ),
+                ),
+                if (_avatarFile != null || _hadInitialAvatar) ...[
+                  const shad.Gap(12),
+                  Expanded(
+                    child: shad.DestructiveButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () {
+                              setState(() {
+                                _avatarFile = null;
+                                _removeAvatar = _hadInitialAvatar;
+                              });
+                            },
+                      child: Text(l10n.profileRemoveAvatar),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (_removeAvatar) ...[
+              const shad.Gap(8),
+              Text(
+                l10n.settingsWorkspaceAvatarRemovePending,
+                style: theme.typography.textSmall.copyWith(
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ),
             ],
-          ),
-          if (_removeAvatar) ...[
-            const shad.Gap(8),
-            Text(
-              l10n.settingsWorkspaceAvatarRemovePending,
-              style: theme.typography.textSmall.copyWith(
-                color: theme.colorScheme.mutedForeground,
-              ),
+            const shad.Gap(16),
+            shad.TextField(
+              controller: _nameController,
+              enabled: !_isSaving,
+              placeholder: Text(l10n.settingsWorkspaceNameHint),
             ),
-          ],
-          const shad.Gap(16),
-          shad.TextField(
-            controller: _nameController,
-            enabled: !_isSaving,
-            placeholder: Text(l10n.settingsWorkspaceNameHint),
-          ),
-          if (_error?.trim().isNotEmpty ?? false) ...[
-            const shad.Gap(8),
-            Text(
-              _error!,
-              style: theme.typography.small.copyWith(
-                color: theme.colorScheme.destructive,
+            if (_error?.trim().isNotEmpty ?? false) ...[
+              const shad.Gap(8),
+              Text(
+                _error!,
+                style: theme.typography.small.copyWith(
+                  color: theme.colorScheme.destructive,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

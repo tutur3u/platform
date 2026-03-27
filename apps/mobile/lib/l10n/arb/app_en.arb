@@ -1489,6 +1489,7 @@
     "profileAvatarSectionTitle": "Avatar",
     "profileAvatarActionDescription": "Choose a new photo or refresh the one already attached.",
     "profileAvatarPickerDescription": "Choose where to pick your new avatar image from.",
+    "workspaceAvatarPickerDescription": "Choose where to pick your new workspace avatar image from.",
     "profileUploadAvatar": "Upload avatar",
     "profileChangeAvatar": "Change avatar",
     "profileRemoveAvatar": "Remove avatar",

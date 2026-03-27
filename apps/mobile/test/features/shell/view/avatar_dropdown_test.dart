@@ -36,8 +36,7 @@ void main() {
     );
 
     final image = tester.widget<Image>(find.byType(Image).first);
-    final provider =
-        image.image as CachedNetworkImageProvider;
+    final provider = image.image as CachedNetworkImageProvider;
 
     expect(provider.url, 'https://cdn.example.com/avatar.png?token=abc');
     expect(provider.cacheKey, 'https://cdn.example.com/avatar.png');
