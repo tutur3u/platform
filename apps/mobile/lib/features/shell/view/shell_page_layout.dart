@@ -218,12 +218,15 @@ extension _ShellPageLayout on _ShellPageState {
   }) {
     final l10n = context.l10n;
     final isMiniAppRoute = activeModule != null;
+    final activeMiniNavItems = isMiniAppRoute
+        ? activeModule.miniAppNavItemsFor(context)
+        : const <MiniAppNavItem>[];
     final selectedKey = isMiniAppRoute
-        ? _miniSelectedKey(context, activeModule.miniAppNavItems)
+        ? _miniSelectedKey(context, activeMiniNavItems)
         : _selectedKeyForLocation(widget.matchedLocation);
     final globalItems = _buildNavItems(context, state, l10n);
     final miniItems = isMiniAppRoute
-        ? _buildMiniAppNavItems(context, activeModule)
+        ? _buildMiniAppNavItems(context, activeModule, activeMiniNavItems)
         : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -255,7 +258,12 @@ extension _ShellPageLayout on _ShellPageState {
               vertical: 4,
             ),
             onSelected: (key) => isMiniAppRoute
-                ? _onMiniAppItemTapped(key, context, activeModule)
+                ? _onMiniAppItemTapped(
+                    key,
+                    context,
+                    activeModule,
+                    activeMiniNavItems,
+                  )
                 : _onItemTapped(
                     _ShellPageState._indexForKey(key),
                     context,
@@ -268,7 +276,12 @@ extension _ShellPageLayout on _ShellPageState {
             key: navVariantKey,
             selectedKey: selectedKey,
             onSelected: (key) => isMiniAppRoute
-                ? _onMiniAppItemTapped(key, context, activeModule)
+                ? _onMiniAppItemTapped(
+                    key,
+                    context,
+                    activeModule,
+                    activeMiniNavItems,
+                  )
                 : _onItemTapped(
                     _ShellPageState._indexForKey(key),
                     context,
@@ -353,7 +366,6 @@ extension _ShellPageLayout on _ShellPageState {
       activeMiniNavItems,
     );
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
-    final miniItems = _buildMiniAppNavItems(context, activeModule);
     final isCompact = context.isCompact;
     final showBottomNav = MediaQuery.viewInsetsOf(context).bottom <= 0;
     final compactMiniItems = <Widget>[
