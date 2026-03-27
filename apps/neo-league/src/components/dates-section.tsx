@@ -6,7 +6,7 @@ export default function DatesSection() {
   const importantDates = [
     {
       round: '01',
-      date: 'March 28',
+      date: 'April 04',
       event: 'OPENING CEREMONY',
       type: 'Virtual',
       description: 'Kickoff event introducing the competition and guidelines',
