@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import type * as Y from 'yjs';
 import { RichTextEditor } from '../../../../text-editor/editor';
+import CursorOverlayMultiWrapper from '../../cursor-overlay-multi-wrapper';
 import { fetchWorkspaceTask, updateWorkspaceTask } from '../hooks/task-api';
 import { getTaskDescriptionStorageLength } from '../utils';
 
@@ -91,6 +92,7 @@ export function TaskDescriptionEditor({
   isYjsSyncing,
   wsId,
   boardId,
+  taskId,
   availableLists,
   queryClient,
   editorRef,
@@ -344,6 +346,13 @@ export function TaskDescriptionEditor({
           readOnly={isYjsSyncing || disabled}
           mentionTranslations={mentionTranslations}
         />
+
+        {showCollaborationCursors && taskId && (
+          <CursorOverlayMultiWrapper
+            channelName={`task-cursor-${taskId}`}
+            containerRef={richTextEditorRef}
+          />
+        )}
 
         {/* Collaboration sync indicator - shows while Yjs is syncing */}
         {isYjsSyncing && (
