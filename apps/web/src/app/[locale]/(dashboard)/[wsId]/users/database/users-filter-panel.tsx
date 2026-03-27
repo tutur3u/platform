@@ -58,8 +58,8 @@ export function UsersFilterPanel({
   const userStatusLabels = useUserStatusLabels(wsId);
 
   return (
-    <section className="w-full rounded-[28px] border border-border/70 bg-gradient-to-r from-background via-background to-muted/35 p-3.5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="flex w-full flex-col gap-2 rounded-[24px] border border-border/60 bg-gradient-to-r from-background via-background to-muted/25 p-3 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2">
         <QuickGroupFilters
           wsId={wsId}
           initialFeaturedGroupIds={initialFeaturedGroupIds}
@@ -68,7 +68,7 @@ export function UsersFilterPanel({
         />
       </div>
 
-      <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(11rem,1fr)_minmax(11rem,1fr)_minmax(11rem,1fr)]">
+      <div className="flex flex-wrap items-stretch gap-2">
         <GroupMembershipFilterControl
           value={groupMembership}
           onChange={onGroupMembershipChange}
@@ -76,7 +76,7 @@ export function UsersFilterPanel({
 
         <FilterSelectCard label={t('status_filter')}>
           <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger className="h-10 w-full bg-background/80">
+            <SelectTrigger className="h-9 w-full border-border/60 bg-background/80">
               <SelectValue placeholder={t('status_filter')} />
             </SelectTrigger>
             <SelectContent>
@@ -110,7 +110,7 @@ export function UsersFilterPanel({
 
         <FilterSelectCard label={t('link_status_filter')}>
           <Select value={linkStatus} onValueChange={onLinkStatusChange}>
-            <SelectTrigger className="h-10 w-full bg-background/80">
+            <SelectTrigger className="h-9 w-full border-border/60 bg-background/80">
               <SelectValue placeholder={t('link_status_filter')} />
             </SelectTrigger>
             <SelectContent>
@@ -141,7 +141,7 @@ export function UsersFilterPanel({
             value={requireAttention}
             onValueChange={onRequireAttentionChange}
           >
-            <SelectTrigger className="h-10 w-full bg-background/80">
+            <SelectTrigger className="h-9 w-full border-border/60 bg-background/80">
               <SelectValue placeholder={t('attention_filter')} />
             </SelectTrigger>
             <SelectContent>
@@ -166,9 +166,7 @@ export function UsersFilterPanel({
             </SelectContent>
           </Select>
         </FilterSelectCard>
-      </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
         <Filters
           wsId={wsId}
           effectiveExcludedGroups={effectiveExcludedGroups}
@@ -186,8 +184,10 @@ function FilterSelectCard({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-[20px] border border-border/70 bg-background/80 p-3 shadow-sm">
-      <div className="mb-2 text-muted-foreground text-xs">{label}</div>
+    <div className="flex min-w-[11rem] flex-col gap-1.5 rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5 shadow-sm">
+      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
+        {label}
+      </div>
       {children}
     </div>
   );

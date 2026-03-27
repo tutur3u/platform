@@ -43,12 +43,10 @@ export function GroupMembershipFilterControl({
   const t = useTranslations('ws-users');
 
   return (
-    <div className="rounded-[20px] border border-border/70 bg-background/80 p-3 shadow-sm">
-      <div className="mb-3 space-y-1">
-        <p className="font-medium text-sm">{t('group_membership_filter')}</p>
-        <p className="text-muted-foreground text-xs">
-          {t('group_membership_hint')}
-        </p>
+    <div className="flex min-w-[18rem] flex-1 flex-col gap-2 rounded-2xl border border-border/60 bg-background/70 px-3 py-2.5 shadow-sm">
+      <div className="flex items-center gap-2 text-muted-foreground text-xs">
+        <Users className="h-3.5 w-3.5" />
+        <span className="font-medium">{t('group_membership_filter')}</span>
       </div>
 
       <ToggleGroup
@@ -58,7 +56,7 @@ export function GroupMembershipFilterControl({
           if (!nextValue) return;
           onChange(nextValue as GroupMembershipFilter);
         }}
-        className="flex w-full flex-wrap justify-start gap-1 rounded-xl bg-muted/30 p-1"
+        className="grid w-full grid-cols-2 gap-1 rounded-xl bg-muted/30 p-1 xl:grid-cols-4"
         aria-label={t('group_membership_filter')}
       >
         {GROUP_MEMBERSHIP_OPTIONS.map((option) => {
@@ -69,7 +67,7 @@ export function GroupMembershipFilterControl({
               key={option.value}
               value={option.value}
               variant="outline"
-              className="h-9 min-w-[10.5rem] flex-1 justify-start gap-2 rounded-lg border-0 bg-transparent px-3 text-left text-xs shadow-none data-[state=on]:bg-background data-[state=on]:shadow-sm"
+              className="h-9 justify-center gap-1.5 rounded-lg border-0 bg-transparent px-2 text-center text-xs shadow-none data-[state=on]:bg-background data-[state=on]:shadow-sm"
               aria-label={t(getGroupMembershipTranslationKey(option.value))}
             >
               <Icon className="h-3.5 w-3.5 shrink-0" />
