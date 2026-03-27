@@ -1,0 +1,9 @@
+{
+  "name": "@tuturuuu/mobile",
+  "private": true,
+  "scripts": {
+    "dart-format": "dart format --set-exit-if-changed lib test",
+    "flutter-analyze": "flutter analyze",
+    "flutter-test": "flutter test -r failures-only"
+  }
+}
