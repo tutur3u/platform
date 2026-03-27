@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
@@ -802,7 +803,8 @@ class _AssistantPageState extends State<AssistantPage> {
     String wsId,
     AssistantShellState shellState,
     String text,
-  ) {
+  ) async {
+    final timezone = await getCurrentTimezoneIdentifier();
     return _chatCubit.submit(
       wsId: wsId,
       message: text,
@@ -810,7 +812,7 @@ class _AssistantPageState extends State<AssistantPage> {
       thinkingMode: shellState.thinkingMode,
       creditSource: shellState.creditSource,
       workspaceContextId: shellState.workspaceContextId,
-      timezone: DateTime.now().timeZoneName,
+      timezone: timezone,
       creditWsId: shellState.creditSource == AssistantCreditSource.personal
           ? shellState.personalWorkspaceId
           : shellState.workspace?.id,
