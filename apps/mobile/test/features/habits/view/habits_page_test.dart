@@ -302,12 +302,12 @@ void main() {
 
     expect(find.byType(shad.TextField), findsNothing);
 
-    await tester.tap(find.byIcon(Icons.search_rounded));
+    await tester.tap(find.byKey(const Key('habits-search-toggle')));
     await tester.pumpAndSettle();
 
     expect(find.byType(shad.TextField), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.tap(find.byKey(const Key('habits-search-toggle')));
     await tester.pumpAndSettle();
 
     expect(find.byType(shad.TextField), findsNothing);
