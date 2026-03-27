@@ -230,9 +230,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       },
       child: shad.Scaffold(
         child: BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
-          buildWhen: (prev, curr) =>
-              prev.status != curr.status ||
-              prev.isRefreshing != curr.isRefreshing,
+          buildWhen: (prev, curr) => prev.status != curr.status,
           builder: (context, state) {
             if (state.status == TimeTrackerStatus.loading &&
                 !state.hasVisibleContent) {

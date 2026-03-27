@@ -61,7 +61,18 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId,
     HabitTrackerEntryInput input,
   ) async {
-    throw UnimplementedError();
+    return HabitTrackerEntry(
+      id: 'entry-1',
+      wsId: wsId,
+      trackerId: trackerId,
+      userId: 'user-1',
+      entryKind: HabitTrackerEntryKind.eventLog,
+      entryDate: input.entryDate,
+      values: input.values,
+      tags: input.tags,
+      createdAt: DateTime(2026, 3, 25),
+      updatedAt: DateTime(2026, 3, 25),
+    );
   }
 
   @override

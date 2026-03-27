@@ -25,26 +25,10 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
   late final String _registrationId =
       '${widget.ownerId}#${identityHashCode(this)}';
 
-  ShellChromeActionsCubit? _maybeCubit(BuildContext context) {
-    var hasProvider = false;
-    context.visitAncestorElements((element) {
-      if (element.widget is BlocProvider<ShellChromeActionsCubit>) {
-        hasProvider = true;
-        return false;
-      }
-      return true;
-    });
-    if (!hasProvider) {
-      return null;
-    }
-
-    return BlocProvider.of<ShellChromeActionsCubit>(context);
-  }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final nextCubit = _maybeCubit(context);
+    final nextCubit = _findShellChromeActionsCubit(context);
     if (_cubit != nextCubit) {
       _cubit?.unregister(_registrationId);
       _cubit = nextCubit;

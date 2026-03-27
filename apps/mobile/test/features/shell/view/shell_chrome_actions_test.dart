@@ -6,6 +6,12 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 
 import '../../../helpers/helpers.dart';
 
+Future<void> _pumpFrames(WidgetTester tester, {int frames = 6}) async {
+  for (var i = 0; i < frames; i++) {
+    await tester.pump(const Duration(milliseconds: 60));
+  }
+}
+
 class _ShellChromeActionsHarness extends StatefulWidget {
   const _ShellChromeActionsHarness();
 
@@ -95,7 +101,7 @@ void main() {
       expect(find.text('tap-count:0'), findsOneWidget);
 
       await tester.tap(find.text('enable'));
-      await tester.pumpAndSettle();
+      await _pumpFrames(tester);
 
       await tester.tap(find.byIcon(Icons.filter_alt_outlined));
       await tester.pump();
@@ -116,7 +122,7 @@ void main() {
       expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
 
       await tester.tap(find.text('switch-route'));
-      await tester.pumpAndSettle();
+      await _pumpFrames(tester);
 
       expect(find.byIcon(Icons.filter_alt_outlined), findsNothing);
     });

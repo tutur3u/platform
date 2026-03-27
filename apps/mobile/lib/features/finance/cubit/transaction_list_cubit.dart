@@ -78,6 +78,14 @@ class TransactionListCubit extends Cubit<TransactionListState> {
           diskCached.isFresh) {
         return;
       }
+      emit(
+        resolvedCached.copyWith(
+          status: TransactionListStatus.loading,
+          hasMore: true,
+          clearCursor: true,
+          clearError: true,
+        ),
+      );
     } else if (_loadedWorkspaceId != wsId) {
       emit(
         state.copyWith(
@@ -126,7 +134,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       ),
     );
 
-    await _fetch();
+    await _fetch(replaceExisting: true);
   }
 
   /// Load the next page (no-op if already loading or no more pages).
@@ -140,7 +148,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         clearError: true,
       ),
     );
-    await _fetch();
+    await _fetch(replaceExisting: false);
   }
 
   /// Update the search query and reload from scratch.
@@ -158,7 +166,14 @@ class TransactionListCubit extends Cubit<TransactionListState> {
           diskCached.isFresh) {
         return;
       }
-      emit(resolvedCached.copyWith(status: TransactionListStatus.loading));
+      emit(
+        resolvedCached.copyWith(
+          status: TransactionListStatus.loading,
+          hasMore: true,
+          clearCursor: true,
+          clearError: true,
+        ),
+      );
     } else {
       emit(
         state.copyWith(
@@ -171,10 +186,10 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         ),
       );
     }
-    await _fetch();
+    await _fetch(replaceExisting: true);
   }
 
-  Future<void> _fetch() async {
+  Future<void> _fetch({required bool replaceExisting}) async {
     if (_wsId.isEmpty) {
       emit(
         state.copyWith(
@@ -193,7 +208,9 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         search: state.search.isEmpty ? null : state.search,
       );
 
-      final allTransactions = [...state.transactions, ...result.data];
+      final allTransactions = replaceExisting
+          ? result.data
+          : [...state.transactions, ...result.data];
       final nextState = state.copyWith(
         status: TransactionListStatus.loaded,
         transactions: allTransactions,

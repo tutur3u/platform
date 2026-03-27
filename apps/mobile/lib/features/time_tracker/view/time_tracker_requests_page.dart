@@ -334,55 +334,89 @@ class _RequestsViewState extends State<_RequestsView> {
 
                       return RefreshIndicator(
                         onRefresh: () => _loadRequests(forceRefresh: true),
-                        child: ListView.builder(
-                          itemCount:
-                              state.requests.length +
-                              (_showMetaRow(state) ? 1 : 0),
-                          padding: const EdgeInsets.only(top: 8, bottom: 96),
-                          itemBuilder: (context, index) {
-                            final showMetaRow = _showMetaRow(state);
-                            if (showMetaRow && index == 0) {
-                              return Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  4,
-                                  16,
-                                  16,
+                        child: state.requests.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 96,
                                 ),
-                                child: _RequestsMetaRow(
-                                  requestCount: state.requests.length,
-                                  hasActiveFilters: hasActiveFilters(
-                                    selectedFilter: _selectedFilter,
-                                    canManageRequests: _canManageRequests,
-                                    selectedUserId: _selectedUserId,
+                                children: [
+                                  if (_showMetaRow(state))
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        4,
+                                        16,
+                                        16,
+                                      ),
+                                      child: _RequestsMetaRow(
+                                        requestCount: 0,
+                                        hasActiveFilters: hasActiveFilters(
+                                          selectedFilter: _selectedFilter,
+                                          canManageRequests: _canManageRequests,
+                                          selectedUserId: _selectedUserId,
+                                        ),
+                                        activeFilterLabel: _selectedFilterLabel(
+                                          context,
+                                        ),
+                                      ),
+                                    ),
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      top: _showMetaRow(state) ? 24 : 48,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        l10n.timerNoSessions,
+                                        style: shad.Theme.of(
+                                          context,
+                                        ).typography.textMuted,
+                                      ),
+                                    ),
                                   ),
-                                  activeFilterLabel: _selectedFilterLabel(
-                                    context,
-                                  ),
+                                ],
+                              )
+                            : ListView.builder(
+                                itemCount:
+                                    state.requests.length +
+                                    (_showMetaRow(state) ? 1 : 0),
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  bottom: 96,
                                 ),
-                              );
-                            }
-                            if (state.requests.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 48),
-                                child: Center(
-                                  child: Text(
-                                    l10n.timerNoSessions,
-                                    style: shad.Theme.of(
-                                      context,
-                                    ).typography.textMuted,
-                                  ),
-                                ),
-                              );
-                            }
-                            final request =
-                                state.requests[index - (showMetaRow ? 1 : 0)];
-                            return _RequestTile(
-                              request: request,
-                              onTap: () => _showRequestDetail(context, request),
-                            );
-                          },
-                        ),
+                                itemBuilder: (context, index) {
+                                  final showMetaRow = _showMetaRow(state);
+                                  if (showMetaRow && index == 0) {
+                                    return Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        4,
+                                        16,
+                                        16,
+                                      ),
+                                      child: _RequestsMetaRow(
+                                        requestCount: state.requests.length,
+                                        hasActiveFilters: hasActiveFilters(
+                                          selectedFilter: _selectedFilter,
+                                          canManageRequests: _canManageRequests,
+                                          selectedUserId: _selectedUserId,
+                                        ),
+                                        activeFilterLabel: _selectedFilterLabel(
+                                          context,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final request = state
+                                      .requests[index - (showMetaRow ? 1 : 0)];
+                                  return _RequestTile(
+                                    request: request,
+                                    onTap: () =>
+                                        _showRequestDetail(context, request),
+                                  );
+                                },
+                              ),
                       );
                     },
                   );

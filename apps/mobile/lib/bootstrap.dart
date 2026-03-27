@@ -37,9 +37,18 @@ Future<void> bootstrap(
   WidgetsFlutterBinding.ensureInitialized();
 
   final settingsRepository = SettingsRepository();
-  final initialThemeMode = _parseThemeMode(
-    await settingsRepository.getThemeMode(),
-  );
+  shad.ThemeMode initialThemeMode;
+  try {
+    initialThemeMode = _parseThemeMode(
+      await settingsRepository.getThemeMode(),
+    );
+  } on Object catch (e, st) {
+    log(
+      'Failed to load theme mode, defaulting to system: $e',
+      stackTrace: st,
+    );
+    initialThemeMode = shad.ThemeMode.system;
+  }
   final resolvedBrightness = AppTheme.resolveBrightness(
     initialThemeMode,
     WidgetsBinding.instance.platformDispatcher.platformBrightness,

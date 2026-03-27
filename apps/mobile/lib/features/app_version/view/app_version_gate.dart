@@ -33,7 +33,13 @@ class _AppVersionGateState extends State<AppVersionGate> {
         unawaited(_showRecommendedDialog(context, state));
       },
       child: BlocBuilder<AppVersionCubit, AppVersionState>(
-        buildWhen: (previous, current) => previous.status != current.status,
+        buildWhen: (previous, current) {
+          if (previous.status != current.status) {
+            return true;
+          }
+          return current.status == AppVersionGateStatus.updateRequired &&
+              previous.versionCheck != current.versionCheck;
+        },
         builder: (context, state) {
           if (state.status == AppVersionGateStatus.updateRequired) {
             return _RequiredUpdateScreen(versionState: state);

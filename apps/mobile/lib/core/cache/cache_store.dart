@@ -45,7 +45,13 @@ class CacheStore {
   }
 
   Future<Directory> _resolveHiveDirectory() async {
+    // Temp storage is a bootstrap/test fallback only. It keeps startup alive
+    // when path_provider is unavailable, but the OS may clear it at any time.
     Future<Directory> fallbackDirectory() async {
+      debugPrint(
+        'CacheStore: using temp-directory fallback; '
+        'cached data may not persist.',
+      );
       final suffix = _cacheDirectorySuffix();
       final directory = Directory(
         '${Directory.systemTemp.path}/tuturuuu_mobile_cache$suffix',
@@ -59,6 +65,10 @@ class CacheStore {
     try {
       return await getApplicationDocumentsDirectory();
     } on MissingPluginException {
+      debugPrint(
+        'CacheStore.init path_provider missing; '
+        'falling back to temp cache directory.',
+      );
       return fallbackDirectory();
     } on PlatformException catch (error) {
       debugPrint(
@@ -69,8 +79,16 @@ class CacheStore {
       try {
         return await getApplicationDocumentsDirectory();
       } on MissingPluginException {
+        debugPrint(
+          'CacheStore.init retry still missing path_provider; '
+          'using temp cache directory.',
+        );
         return fallbackDirectory();
-      } on PlatformException {
+      } on PlatformException catch (retryError) {
+        debugPrint(
+          'CacheStore.init retry failed: ${retryError.code} '
+          '${retryError.message}; using temp cache directory.',
+        );
         return fallbackDirectory();
       }
     }
@@ -97,7 +115,19 @@ class CacheStore {
       );
     }
 
-    final decoded = decode(jsonDecode(record.jsonPayload));
+    final decoded = _decodeRecordPayload(
+      record,
+      decode: decode,
+      onCorrupt: () async {
+        _memory.remove(key.value);
+        await _resourceBox.delete(key.value);
+      },
+    );
+    if (decoded == null) {
+      return CacheReadResult<T>(
+        state: CacheEntryState.missing,
+      );
+    }
     return CacheReadResult<T>(
       state: record.state,
       data: decoded,
@@ -124,7 +154,19 @@ class CacheStore {
       );
     }
 
-    final decoded = decode(jsonDecode(record.jsonPayload));
+    final decoded = _decodeRecordPayload(
+      record,
+      decode: decode,
+      onCorrupt: () {
+        _memory.remove(key.value);
+        unawaited(_resourceBox.delete(key.value));
+      },
+    );
+    if (decoded == null) {
+      return CacheReadResult<T>(
+        state: CacheEntryState.missing,
+      );
+    }
     return CacheReadResult<T>(
       state: record.state,
       data: decoded,
@@ -313,5 +355,31 @@ class CacheStore {
           ? record.expireAt
           : now.add(const Duration(hours: 1)),
     );
+  }
+
+  T? _decodeRecordPayload<T>(
+    CachedResourceRecord record, {
+    required CacheJsonDecoder<T> decode,
+    required FutureOr<void> Function() onCorrupt,
+  }) {
+    try {
+      return decode(jsonDecode(record.jsonPayload));
+    } on Object catch (error, stackTrace) {
+      debugPrint(
+        'CacheStore: dropping corrupt cache record ${record.key}: $error',
+      );
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'mobile cache',
+          context: ErrorDescription(
+            'while decoding cached resource ${record.key}',
+          ),
+        ),
+      );
+      unawaited(Future<void>.sync(onCorrupt));
+      return null;
+    }
   }
 }

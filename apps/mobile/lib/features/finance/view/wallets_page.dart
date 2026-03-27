@@ -57,7 +57,6 @@ class _WalletsViewState extends State<_WalletsView> {
   @override
   void initState() {
     super.initState();
-    _seedWalletsFromCache();
     unawaited(_loadWallets());
   }
 
@@ -101,6 +100,7 @@ class _WalletsViewState extends State<_WalletsView> {
     final l10n = context.l10n;
     final listBottomPadding =
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
+    _seedWalletsFromCache();
 
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
