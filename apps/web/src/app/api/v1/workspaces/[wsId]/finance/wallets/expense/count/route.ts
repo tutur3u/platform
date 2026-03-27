@@ -1,9 +1,7 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
   params: Promise<{
@@ -26,17 +24,9 @@ async function getDataWithApiKey({
   wsId: string;
   apiKey: string;
 }) {
-  const sbAdmin = await createAdminClient();
+  const isValidApiKey = await validateWorkspaceApiKey(wsId, apiKey);
 
-  const { data: apiKeyData, error: apiError } = await sbAdmin
-    .from('workspace_api_keys')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('value', apiKey)
-    .single();
-
-  if (apiError || !apiKeyData) {
-    console.log(apiError);
+  if (!isValidApiKey) {
     return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
   }
 

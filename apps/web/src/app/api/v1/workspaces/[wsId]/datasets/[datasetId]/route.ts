@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
   params: Promise<{
@@ -12,24 +13,12 @@ interface Params {
   }>;
 }
 
-async function validateApiKey(wsId: string, apiKey: string) {
-  const sbAdmin = await createAdminClient();
-  const { error } = await sbAdmin
-    .from('workspace_api_keys')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('value', apiKey)
-    .single();
-
-  return !error;
-}
-
 export async function PUT(req: NextRequest, { params }: Params) {
   const { wsId, datasetId } = await params;
   const apiKey = (await headers()).get('API_KEY');
 
   if (apiKey) {
-    const isValid = await validateApiKey(wsId, apiKey);
+    const isValid = await validateWorkspaceApiKey(wsId, apiKey);
     if (!isValid) {
       return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
     }
@@ -59,7 +48,7 @@ export async function DELETE(_: NextRequest, { params }: Params) {
   const apiKey = (await headers()).get('API_KEY');
 
   if (apiKey) {
-    const isValid = await validateApiKey(wsId, apiKey);
+    const isValid = await validateWorkspaceApiKey(wsId, apiKey);
     if (!isValid) {
       return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
     }

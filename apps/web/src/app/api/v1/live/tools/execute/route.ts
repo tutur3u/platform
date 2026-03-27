@@ -490,7 +490,7 @@ async function createTask(
     .from('task_lists')
     .select('id')
     .eq('board_id', board.id)
-    .eq('is_archived', false)
+    .eq('archived', false)
     .order('created_at', { ascending: true })
     .limit(1)
     .single();
