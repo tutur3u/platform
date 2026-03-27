@@ -25,7 +25,6 @@
  * ```
  */
 
-import type { ZodSchema } from 'zod';
 import packageJson from '../package.json';
 import {
   createErrorFromResponse,
@@ -86,7 +85,12 @@ function transformStorageObject(apiObject: any): StorageObject {
 /**
  * Helper function to validate data with Zod schema and convert errors to ValidationError
  */
-function validateWithSchema<T>(schema: ZodSchema<T>, data: unknown): T {
+function validateWithSchema<T>(
+  schema: {
+    parse: (data: unknown) => T;
+  },
+  data: unknown
+): T {
   try {
     return schema.parse(data);
   } catch (error) {
@@ -109,6 +113,18 @@ function validateWithSchema<T>(schema: ZodSchema<T>, data: unknown): T {
     }
     throw error;
   }
+}
+
+function getEnvValue(key: 'TUTURUUU_API_KEY' | 'TUTURUUU_BASE_URL'): string {
+  const env = (
+    globalThis as typeof globalThis & {
+      process?: {
+        env?: Record<string, string | undefined>;
+      };
+    }
+  ).process?.env;
+
+  return env?.[key] ?? '';
 }
 
 function appendImageTransformParams(
@@ -807,19 +823,19 @@ export class TuturuuuClient {
       this.fetch = globalThis.fetch;
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG };
     } else if (config) {
-      this.apiKey = config.apiKey || process.env.TUTURUUU_API_KEY || '';
+      this.apiKey = config.apiKey || getEnvValue('TUTURUUU_API_KEY');
       this.baseUrl =
         config.baseUrl ||
-        process.env.TUTURUUU_BASE_URL ||
+        getEnvValue('TUTURUUU_BASE_URL') ||
         'https://tuturuuu.com/api/v1';
       this.timeout = config.timeout || 30000;
       this.fetch = config.fetch || globalThis.fetch;
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry };
     } else {
       // Auto-load from environment variables
-      this.apiKey = process.env.TUTURUUU_API_KEY || '';
+      this.apiKey = getEnvValue('TUTURUUU_API_KEY');
       this.baseUrl =
-        process.env.TUTURUUU_BASE_URL || 'https://tuturuuu.com/api/v1';
+        getEnvValue('TUTURUUU_BASE_URL') || 'https://tuturuuu.com/api/v1';
       this.timeout = 30000;
       this.fetch = globalThis.fetch;
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG };
