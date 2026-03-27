@@ -9,6 +9,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppBlocObserver extends BlocObserver {
   const AppBlocObserver();
@@ -28,20 +29,28 @@ class AppBlocObserver extends BlocObserver {
 
 Future<void> bootstrap(
   FutureOr<Widget> Function({
+    required shad.ThemeMode initialThemeMode,
     String? initialRoute,
   })
   builder,
 ) async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  final settingsRepository = SettingsRepository();
+  final initialThemeMode = _parseThemeMode(
+    await settingsRepository.getThemeMode(),
+  );
+  final resolvedBrightness = AppTheme.resolveBrightness(
+    initialThemeMode,
+    WidgetsBinding.instance.platformDispatcher.platformBrightness,
+  );
+
   // Ensure system UI is visible and properly configured
   await SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.edgeToEdge,
   );
   SystemChrome.setSystemUIOverlayStyle(
-    AppTheme.systemUiOverlayStyleFor(
-      WidgetsBinding.instance.platformDispatcher.platformBrightness,
-    ),
+    AppTheme.systemUiOverlayStyleFor(resolvedBrightness),
   );
 
   FlutterError.onError = (details) {
@@ -57,14 +66,18 @@ Future<void> bootstrap(
     log('Failed to initialize Supabase: $e', stackTrace: st);
   }
 
-  await CacheStore.instance.init();
-  await OfflineMutationQueue.instance.init();
+  try {
+    await CacheStore.instance.init();
+    await OfflineMutationQueue.instance.init();
+  } on Object catch (e, st) {
+    log('Failed to initialize offline cache: $e', stackTrace: st);
+  }
 
   // Pre-load the user's last routes so the router starts there directly.
   // Prefer the more specific tab route if it's a sub-route of a mini-app,
   // otherwise fall back to the app route or generic tab route.
-  final lastTabRoute = await SettingsRepository().getLastTabRoute();
-  final lastAppRoute = await SettingsRepository().getLastAppRoute();
+  final lastTabRoute = await settingsRepository.getLastTabRoute();
+  final lastAppRoute = await settingsRepository.getLastAppRoute();
   // Use lastTabRoute if it's more specific (e.g., /timer/history vs /timer)
   // otherwise fall back to lastAppRoute or lastTabRoute
   final initialRoute = lastTabRoute ?? lastAppRoute;
@@ -72,6 +85,19 @@ Future<void> bootstrap(
   runApp(
     await builder(
       initialRoute: initialRoute,
+      initialThemeMode: initialThemeMode,
     ),
   );
+}
+
+shad.ThemeMode _parseThemeMode(String mode) {
+  switch (mode) {
+    case 'light':
+      return shad.ThemeMode.light;
+    case 'dark':
+      return shad.ThemeMode.dark;
+    case 'system':
+    default:
+      return shad.ThemeMode.system;
+  }
 }

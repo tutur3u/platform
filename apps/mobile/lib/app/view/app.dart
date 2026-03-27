@@ -31,6 +31,7 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
@@ -47,11 +48,13 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class App extends StatefulWidget {
   const App({
     this.initialRoute,
+    this.initialThemeMode = shad.ThemeMode.system,
     super.key,
   });
 
   /// Shell route to start on (loaded from SharedPreferences in bootstrap).
   final String? initialRoute;
+  final shad.ThemeMode initialThemeMode;
 
   @override
   State<App> createState() => _AppState();
@@ -74,6 +77,7 @@ class _AppState extends State<App> {
   late final ThemeCubit _themeCubit;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final AppTabCubit _appTabCubit;
+  late final ShellChromeActionsCubit _shellChromeActionsCubit;
   late final ShellProfileCubit _shellProfileCubit;
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
@@ -100,10 +104,13 @@ class _AppState extends State<App> {
     );
     _workspaceCubit = WorkspaceCubit(workspaceRepository: _workspaceRepo);
     _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
-    _themeCubit = ThemeCubit(settingsRepository: _settingsRepo);
-    unawaited(_themeCubit.loadThemeMode());
+    _themeCubit = ThemeCubit(
+      settingsRepository: _settingsRepo,
+      initialThemeMode: widget.initialThemeMode,
+    );
     _calendarSettingsCubit = CalendarSettingsCubit();
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
+    _shellChromeActionsCubit = ShellChromeActionsCubit();
     _shellProfileCubit = ShellProfileCubit(
       profileRepository: _profileRepository,
     );
@@ -304,6 +311,7 @@ class _AppState extends State<App> {
     unawaited(_themeCubit.close());
     unawaited(_calendarSettingsCubit.close());
     unawaited(_appTabCubit.close());
+    unawaited(_shellChromeActionsCubit.close());
     unawaited(_shellProfileCubit.close());
     super.dispose();
   }
@@ -319,6 +327,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _calendarSettingsCubit),
         BlocProvider.value(value: _appTabCubit),
+        BlocProvider.value(value: _shellChromeActionsCubit),
         BlocProvider.value(value: _shellProfileCubit),
       ],
       child: MultiBlocListener(
@@ -387,7 +396,9 @@ class _AppState extends State<App> {
                   routerConfig: _router,
                   builder: (context, child) {
                     return _ShadcnMaterialBridge(
-                      child: AppVersionGate(child: child!),
+                      child: _LaunchSplash(
+                        child: AppVersionGate(child: child!),
+                      ),
                     );
                   },
                 );
@@ -433,6 +444,82 @@ class _ShadcnMaterialBridge extends StatelessWidget {
         value: overlayStyle,
         child: child,
       ),
+    );
+  }
+}
+
+class _LaunchSplash extends StatefulWidget {
+  const _LaunchSplash({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_LaunchSplash> createState() => _LaunchSplashState();
+}
+
+class _LaunchSplashState extends State<_LaunchSplash> {
+  static const _minimumDisplayDuration = Duration(milliseconds: 320);
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future<void>.delayed(_minimumDisplayDuration);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _showSplash = false;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = shad.Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+    final backgroundColor = isDark
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        widget.child,
+        IgnorePointer(
+          ignoring: !_showSplash,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            opacity: _showSplash ? 1 : 0,
+            child: ColoredBox(
+              color: backgroundColor,
+              child: Center(
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 300),
+                  tween: Tween<double>(begin: 0.985, end: 1),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Opacity(
+                        opacity: value.clamp(0, 1),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    width: 104,
+                    height: 104,
+                    child: Image.asset('assets/logos/transparent.png'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -33,11 +33,8 @@ class _AppVersionGateState extends State<AppVersionGate> {
         unawaited(_showRecommendedDialog(context, state));
       },
       child: BlocBuilder<AppVersionCubit, AppVersionState>(
+        buildWhen: (previous, current) => previous.status != current.status,
         builder: (context, state) {
-          if (!state.hasCompletedInitialCheck) {
-            return const _AppVersionLoadingScreen();
-          }
-
           if (state.status == AppVersionGateStatus.updateRequired) {
             return _RequiredUpdateScreen(versionState: state);
           }
@@ -91,33 +88,6 @@ class _AppVersionGateState extends State<AppVersionGate> {
     if (uri == null) return;
 
     await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-}
-
-class _AppVersionLoadingScreen extends StatelessWidget {
-  const _AppVersionLoadingScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return shad.Scaffold(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/logos/transparent.png',
-              width: 96,
-              height: 96,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
-            ),
-            const shad.Gap(20),
-            const shad.CircularProgressIndicator(size: 32),
-          ],
-        ),
-      ),
-    );
   }
 }
 

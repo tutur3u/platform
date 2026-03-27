@@ -29,12 +29,7 @@ class CacheStore {
   Future<void> init() async {
     if (_initialized) return;
     WidgetsFlutterBinding.ensureInitialized();
-    Directory dir;
-    try {
-      dir = await getApplicationDocumentsDirectory();
-    } on MissingPluginException {
-      dir = await Directory.systemTemp.createTemp('mobile-cache-');
-    }
+    final dir = await _resolveHiveDirectory();
     Hive.init(dir.path);
     _resourceBox = await Hive.openBox<dynamic>(_resourceBoxName);
     _mutationBox = await Hive.openBox<dynamic>(_mutationBoxName);
@@ -46,6 +41,37 @@ class CacheStore {
       }
     }
     _initialized = true;
+  }
+
+  Future<Directory> _resolveHiveDirectory() async {
+    Future<Directory> fallbackDirectory() async {
+      final directory = Directory(
+        '${Directory.systemTemp.path}/tuturuuu_mobile_cache',
+      );
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
+      }
+      return directory;
+    }
+
+    try {
+      return await getApplicationDocumentsDirectory();
+    } on MissingPluginException {
+      return fallbackDirectory();
+    } on PlatformException catch (error) {
+      debugPrint(
+        'CacheStore.init path_provider unavailable during bootstrap: '
+        '${error.code} ${error.message}',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      try {
+        return await getApplicationDocumentsDirectory();
+      } on MissingPluginException {
+        return fallbackDirectory();
+      } on PlatformException {
+        return fallbackDirectory();
+      }
+    }
   }
 
   Future<CacheReadResult<T>> read<T>({
