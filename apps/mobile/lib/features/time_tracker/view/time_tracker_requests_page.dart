@@ -129,7 +129,10 @@ class _RequestsViewState extends State<_RequestsView> {
     setState(updater);
   }
 
-  Future<void> _loadRequests({String? wsIdOverride}) async {
+  Future<void> _loadRequests({
+    String? wsIdOverride,
+    bool forceRefresh = false,
+  }) async {
     final wsId =
         wsIdOverride ??
         context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -144,6 +147,7 @@ class _RequestsViewState extends State<_RequestsView> {
       wsId,
       userId: _requestUserFilterId(),
       statusOverride: _statusOverrideForFilter(_selectedFilter),
+      forceRefresh: forceRefresh,
     );
 
     if (!mounted) {
@@ -329,7 +333,7 @@ class _RequestsViewState extends State<_RequestsView> {
                       }
 
                       return RefreshIndicator(
-                        onRefresh: _loadRequests,
+                        onRefresh: () => _loadRequests(forceRefresh: true),
                         child: ListView.builder(
                           itemCount:
                               state.requests.length +

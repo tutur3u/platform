@@ -16,6 +16,7 @@ export interface PresenceLocation {
 export interface WorkspacePresenceState {
   user: User;
   online_at: string;
+  session_id?: string;
   location: PresenceLocation;
   away?: boolean;
   metadata?: Record<string, any>;
@@ -44,6 +45,77 @@ export interface UseWorkspacePresenceResult {
 }
 
 const MAX_RETRIES = 3;
+const SESSION_STORAGE_SESSION_KEY = 'tuturuuu:workspace-presence:session-id';
+
+function createPresenceSessionId(): string {
+  // Prefer Web Crypto API if available
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
+    return crypto.randomUUID();
+  }
+
+  // Fallback to Node.js crypto if available
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const nodeCrypto = require('node:crypto') as
+      | { randomUUID?: () => string; randomBytes: (size: number) => Buffer }
+      | undefined;
+
+    if (nodeCrypto?.randomUUID) {
+      return nodeCrypto.randomUUID();
+    }
+
+    if (typeof nodeCrypto?.randomBytes === 'function') {
+      return nodeCrypto.randomBytes(16).toString('hex');
+    }
+  } catch {
+    // Ignore and fall through to final fallback
+  }
+
+  // Final fallback using Web Crypto getRandomValues if available
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.getRandomValues === 'function'
+  ) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  // As a last resort, return a constant-length string derived from Date.now().
+  // This path should be effectively unreachable in modern environments, but
+  // avoids using Math.random() while still providing a unique-ish identifier.
+  return `fallback-${Date.now().toString(36)}`;
+}
+
+function getOrCreatePresenceSessionId(): string {
+  if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') {
+    return createPresenceSessionId();
+  }
+
+  try {
+    const existing = sessionStorage.getItem(SESSION_STORAGE_SESSION_KEY);
+    if (existing) {
+      return existing;
+    }
+
+    const next = createPresenceSessionId();
+    sessionStorage.setItem(SESSION_STORAGE_SESSION_KEY, next);
+    return next;
+  } catch {
+    return createPresenceSessionId();
+  }
+}
+
+function buildTrackSignature(
+  payload: Omit<WorkspacePresenceState, 'online_at'>
+): string {
+  return JSON.stringify(payload);
+}
 
 /**
  * Workspace-level presence hook with **lazy channel initialization**.
@@ -71,6 +143,8 @@ export function useWorkspacePresence({
   const awayRef = useRef(false);
   const userDataRef = useRef<User | null>(null);
   const setupPromiseRef = useRef<Promise<boolean> | null>(null);
+  const presenceSessionIdRef = useRef<string>(getOrCreatePresenceSessionId());
+  const lastTrackSignatureRef = useRef<string | null>(null);
   // Stable ref so subscribe callbacks can call the latest trackPresence
   // without a circular useCallback dependency.
   const trackPresenceRef = useRef<(() => Promise<void>) | null>(null);
@@ -130,6 +204,7 @@ export function useWorkspacePresence({
         if (channelRef.current) {
           await supabase.removeChannel(channelRef.current);
           channelRef.current = null;
+          lastTrackSignatureRef.current = null;
         }
 
         const channel = supabase.channel(channelKey, {
@@ -179,6 +254,7 @@ export function useWorkspacePresence({
                   const deadCh = channelRef.current;
                   channelRef.current = null;
                   setupPromiseRef.current = null;
+                  lastTrackSignatureRef.current = null;
                   if (deadCh) {
                     supabase.removeChannel(deadCh).catch(() => {});
                   }
@@ -209,6 +285,7 @@ export function useWorkspacePresence({
                     const deadCh = channelRef.current;
                     channelRef.current = null;
                     setupPromiseRef.current = null;
+                    lastTrackSignatureRef.current = null;
                     if (deadCh) {
                       supabase.removeChannel(deadCh).catch(() => {});
                     }
@@ -232,6 +309,7 @@ export function useWorkspacePresence({
         }
         channelRef.current = null;
         setupPromiseRef.current = null;
+        lastTrackSignatureRef.current = null;
         if (retryCountRef.current < MAX_RETRIES && !isCleanedUpRef.current) {
           retryCountRef.current++;
           setTimeout(() => {
@@ -259,8 +337,10 @@ export function useWorkspacePresence({
       retryCountRef.current = 0;
       setupPromiseRef.current = null;
       if (channelRef.current) {
+        channelRef.current.untrack?.().catch(() => {});
         createClient().removeChannel(channelRef.current);
         channelRef.current = null;
+        lastTrackSignatureRef.current = null;
       }
     };
   }, [channelKey]);
@@ -281,13 +361,24 @@ export function useWorkspacePresence({
       return;
 
     try {
-      await channelRef.current.track({
+      const payload: Omit<WorkspacePresenceState, 'online_at'> = {
         user: userDataRef.current,
-        online_at: new Date().toISOString(),
+        session_id: presenceSessionIdRef.current,
         location: locationRef.current,
         away: awayRef.current,
         metadata: metadataRef.current,
+      };
+
+      const nextSignature = buildTrackSignature(payload);
+      if (nextSignature === lastTrackSignatureRef.current) {
+        return;
+      }
+
+      await channelRef.current.track({
+        ...payload,
+        online_at: new Date().toISOString(),
       });
+      lastTrackSignatureRef.current = nextSignature;
     } catch (error) {
       if (DEV_MODE) {
         console.error('Error tracking workspace presence:', error);
