@@ -16,8 +16,9 @@ void main() {
   group('TimeTrackerRequestsCubit', () {
     late _MockTimeTrackerRepository repository;
 
-    setUp(() {
+    setUp(() async {
       repository = _MockTimeTrackerRepository();
+      await CacheStore.instance.clearScope();
     });
 
     setUpAll(() async {
@@ -32,7 +33,13 @@ void main() {
       'filters approved requests correctly',
       build: () {
         when(
-          () => repository.getRequests('ws_1', status: 'approved'),
+          () => repository.getRequests(
+            'ws_1',
+            status: 'approved',
+            userId: any(named: 'userId'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          ),
         ).thenAnswer(
           (_) async => [_request('req_approved', ApprovalStatus.approved)],
         );
@@ -41,24 +48,43 @@ void main() {
       },
       act: (cubit) => cubit.filterByStatus(ApprovalStatus.approved, 'ws_1'),
       expect: () => [
-        const TimeTrackerRequestsState(selectedStatus: ApprovalStatus.approved),
-        const TimeTrackerRequestsState(
-          status: TimeTrackerRequestsStatus.loading,
-          workspaceId: 'ws_1',
-          selectedStatus: ApprovalStatus.approved,
-        ),
+        isA<TimeTrackerRequestsState>()
+            .having(
+              (state) => state.status,
+              'status',
+              TimeTrackerRequestsStatus.initial,
+            )
+            .having(
+              (state) => state.selectedStatus,
+              'selectedStatus',
+              ApprovalStatus.approved,
+            )
+            .having((state) => state.workspaceId, 'workspaceId', isNull),
+        isA<TimeTrackerRequestsState>()
+            .having(
+              (state) => state.status,
+              'status',
+              TimeTrackerRequestsStatus.loading,
+            )
+            .having(
+              (state) => state.selectedStatus,
+              'selectedStatus',
+              ApprovalStatus.approved,
+            )
+            .having((state) => state.workspaceId, 'workspaceId', 'ws_1')
+            .having((state) => state.requests, 'requests', isEmpty),
         isA<TimeTrackerRequestsState>()
             .having(
               (state) => state.status,
               'status',
               TimeTrackerRequestsStatus.loaded,
             )
-            .having((state) => state.workspaceId, 'workspaceId', 'ws_1')
             .having(
               (state) => state.selectedStatus,
               'selectedStatus',
               ApprovalStatus.approved,
             )
+            .having((state) => state.workspaceId, 'workspaceId', 'ws_1')
             .having(
               (state) => state.requests,
               'requests',
@@ -68,7 +94,13 @@ void main() {
       ],
       verify: (_) {
         verify(
-          () => repository.getRequests('ws_1', status: 'approved'),
+          () => repository.getRequests(
+            'ws_1',
+            status: 'approved',
+            userId: any(named: 'userId'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          ),
         ).called(1);
       },
     );
@@ -78,11 +110,23 @@ void main() {
       final pendingCompleter = Completer<List<TimeTrackingRequest>>();
 
       when(
-        () => repository.getRequests('ws_1', status: 'pending'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer((_) => pendingCompleter.future);
 
       when(
-        () => repository.getRequests('ws_1', status: 'approved'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'approved',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer(
         (_) async => [_request('req_approved', ApprovalStatus.approved)],
       );
@@ -102,9 +146,23 @@ void main() {
         [_request('req_approved', ApprovalStatus.approved)],
       );
 
-      verify(() => repository.getRequests('ws_1', status: 'pending')).called(1);
       verify(
-        () => repository.getRequests('ws_1', status: 'approved'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'pending',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
+      ).called(1);
+      verify(
+        () => repository.getRequests(
+          'ws_1',
+          status: 'approved',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).called(1);
 
       await cubit.close();
@@ -114,7 +172,13 @@ void main() {
       final cubit = TimeTrackerRequestsCubit(repository: repository);
 
       when(
-        () => repository.getRequests('ws_1', status: 'approved'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'approved',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer(
         (_) async => [_request('req_approved', ApprovalStatus.approved)],
       );
@@ -123,6 +187,7 @@ void main() {
       await cubit.loadRequests('ws_1');
 
       expect(cubit.state.selectedStatus, ApprovalStatus.approved);
+      expect(cubit.state.isFromCache, true);
       verify(
         () => repository.getRequests('ws_1', status: 'approved'),
       ).called(1);
@@ -134,17 +199,24 @@ void main() {
       final cubit = TimeTrackerRequestsCubit(repository: repository);
 
       when(
-        () => repository.getRequests('ws_1', status: 'all'),
+        () => repository.getRequests(
+          'ws_1',
+          status: 'all',
+          userId: any(named: 'userId'),
+          limit: any(named: 'limit'),
+          offset: any(named: 'offset'),
+        ),
       ).thenAnswer((_) async => [_request('req_all', ApprovalStatus.pending)]);
 
       await cubit.loadRequests('ws_1', statusOverride: 'all');
       await cubit.loadRequests('ws_1');
 
       expect(cubit.state.selectedStatus, isNull);
+      expect(cubit.state.isFromCache, true);
       verify(
         () => repository.getRequests('ws_1', status: 'all'),
       ).called(1);
-      verifyNever(() => repository.getRequests('ws_1', status: null));
+      verifyNever(() => repository.getRequests('ws_1'));
 
       await cubit.close();
     });

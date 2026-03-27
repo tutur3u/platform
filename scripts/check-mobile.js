@@ -18,7 +18,13 @@
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 
-const MOBILE_DIR = path.resolve(__dirname, '..', 'apps', 'mobile');
+const ROOT_DIR = path.resolve(__dirname, '..');
+const TURBO_BIN = path.join(
+  ROOT_DIR,
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'turbo.cmd' : 'turbo'
+);
 const useTable = process.argv.includes('--table');
 const showTiming = process.argv.includes('--timing');
 const showDetails = process.argv.includes('--details');
@@ -54,8 +60,8 @@ const colors = {
 const checks = [
   {
     name: 'dart-format',
-    command: 'dart',
-    args: ['format', '--set-exit-if-changed', 'lib', 'test'],
+    command: TURBO_BIN,
+    args: ['run', 'dart-format', '--filter=@tuturuuu/mobile'],
     allowNonZeroWhen: (code, stdout, stderr) => {
       const output = stdout + stderr;
       return code === 1 && output.includes('Formatted');
@@ -71,8 +77,8 @@ const checks = [
   },
   {
     name: 'flutter-analyze',
-    command: 'flutter',
-    args: ['analyze'],
+    command: TURBO_BIN,
+    args: ['run', 'flutter-analyze', '--filter=@tuturuuu/mobile'],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       if (clean.includes('No issues found')) {
@@ -87,14 +93,8 @@ const checks = [
   },
   {
     name: 'flutter-test',
-    command: 'flutter',
-    args: (() => {
-      const args = ['test'];
-      if (!showDetails) {
-        args.push('-r', 'failures-only');
-      }
-      return args;
-    })(),
+    command: TURBO_BIN,
+    args: ['run', 'flutter-test', '--filter=@tuturuuu/mobile'],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       // Match "All tests passed!" or "+N: All tests passed!"
@@ -122,34 +122,51 @@ const checks = [
 /**
  * Run a single check and capture output
  */
-function runCheck(check) {
+function runCheck(check, options = {}) {
   return new Promise((resolve) => {
     const startTime = Date.now();
     let stdout = '';
     let stderr = '';
+    const spawnImpl = options.spawnImpl ?? spawn;
+    const stdoutWriter =
+      options.stdoutWriter ?? ((str) => process.stdout.write(str));
+    const stderrWriter =
+      options.stderrWriter ?? ((str) => process.stderr.write(str));
+    const streamOutput = options.streamOutput ?? showDetails;
 
-    const proc = spawn(check.command, check.args, {
-      cwd: MOBILE_DIR,
-      shell: true,
+    const proc = spawnImpl(check.command, check.args, {
+      cwd: ROOT_DIR,
+      shell: process.platform === 'win32',
       env: { ...process.env, FORCE_COLOR: '1' },
     });
 
     proc.stdout.on('data', (data) => {
       const str = data.toString();
       stdout += str;
-      process.stdout.write(str);
+      if (streamOutput) {
+        stdoutWriter(str);
+      }
     });
 
     proc.stderr.on('data', (data) => {
       const str = data.toString();
       stderr += str;
-      process.stderr.write(str);
+      if (streamOutput) {
+        stderrWriter(str);
+      }
     });
 
     proc.on('close', (code) => {
       const duration = Date.now() - startTime;
       const allowedNonZero = check.allowNonZeroWhen?.(code, stdout, stderr);
       const success = code === 0 || Boolean(allowedNonZero);
+      const combinedOutput = `${stdout}${stderr}`;
+
+      if (!streamOutput && !success && combinedOutput) {
+        stderrWriter(
+          combinedOutput.endsWith('\n') ? combinedOutput : `${combinedOutput}\n`
+        );
+      }
 
       resolve({
         name: check.name,
@@ -158,7 +175,7 @@ function runCheck(check) {
         stdout,
         stderr,
         duration,
-        status: success ? check.parseOutput(stdout + stderr) : 'Failed',
+        status: success ? check.parseOutput(combinedOutput) : 'Failed',
       });
     });
 
@@ -320,10 +337,16 @@ async function main() {
   const results = [];
 
   for (const check of checks) {
-    console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
+    if (showDetails) {
+      console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
+    } else {
+      console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}`);
+    }
     const result = await runCheck(check);
     results.push(result);
-    console.log('\n');
+    if (showDetails || !result.success) {
+      console.log('');
+    }
   }
 
   printSummaryTable(results);
@@ -332,7 +355,14 @@ async function main() {
   process.exit(allPassed ? 0 : 1);
 }
 
-main().catch((err) => {
-  console.error('Unexpected error:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Unexpected error:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  checks,
+  runCheck,
+};

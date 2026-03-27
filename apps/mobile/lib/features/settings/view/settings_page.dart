@@ -19,6 +19,7 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -60,6 +61,9 @@ class _SettingsViewState extends State<_SettingsView> {
   late final Future<PackageInfo> _packageInfoFuture;
   late final WorkspacePermissionsRepository _workspacePermissionsRepository;
   String? _loadedWorkspaceId;
+  int _workspacePermissionLoadToken = 0;
+  bool _canManageWorkspaceSettings = false;
+  bool _isWorkspacePermissionLoading = false;
   bool _canManageMobileVersions = false;
   String? _mobileVersionsAccessWorkspaceId;
   int _mobileVersionsAccessLoadToken = 0;
@@ -74,9 +78,11 @@ class _SettingsViewState extends State<_SettingsView> {
         .state
         .currentWorkspace
         ?.id;
+    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     if (workspaceId != null) {
       unawaited(_loadWorkspaceCalendarPreference(workspaceId));
     }
+    unawaited(_loadWorkspaceSettingsPermission(workspace));
     unawaited(_loadMobileVersionsAccess(workspaceId, forceReload: true));
   }
 
@@ -85,7 +91,6 @@ class _SettingsViewState extends State<_SettingsView> {
     final horizontalPadding = ResponsivePadding.horizontal(
       context.deviceClass,
     );
-
     return MultiBlocListener(
       listeners: [
         BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -96,6 +101,7 @@ class _SettingsViewState extends State<_SettingsView> {
             if (workspaceId != null) {
               unawaited(_loadWorkspaceCalendarPreference(workspaceId));
             }
+            unawaited(_loadWorkspaceSettingsPermission(state.currentWorkspace));
             unawaited(_loadMobileVersionsAccess(workspaceId));
           },
         ),
@@ -194,6 +200,11 @@ class _SettingsViewState extends State<_SettingsView> {
                         context,
                         mode: WorkspacePickerMode.defaultWorkspace,
                       ),
+                      canEditWorkspaceProperties: _canManageWorkspaceSettings,
+                      isWorkspacePermissionLoading:
+                          _isWorkspacePermissionLoading,
+                      onEditWorkspaceProperties: (workspace) =>
+                          unawaited(_showWorkspacePropertiesDialog(workspace)),
                     ),
                     const shad.Gap(32),
                     _PreferencesSection(
@@ -319,6 +330,53 @@ class _SettingsViewState extends State<_SettingsView> {
     );
   }
 
+  Future<void> _loadWorkspaceSettingsPermission(Workspace? workspace) async {
+    final workspaceId = workspace?.id;
+    final isPersonalWorkspace = workspace?.personal ?? false;
+    final token = ++_workspacePermissionLoadToken;
+
+    if (workspaceId == null || workspaceId.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _canManageWorkspaceSettings = false;
+        _isWorkspacePermissionLoading = false;
+      });
+      return;
+    }
+
+    if (isPersonalWorkspace) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _canManageWorkspaceSettings = true;
+        _isWorkspacePermissionLoading = false;
+      });
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isWorkspacePermissionLoading = true;
+      });
+    }
+
+    final permissions = await _workspacePermissionsRepository.getPermissions(
+      wsId: workspaceId,
+    );
+    if (!mounted || token != _workspacePermissionLoadToken) {
+      return;
+    }
+    setState(() {
+      _canManageWorkspaceSettings = permissions.containsPermission(
+        manageWorkspaceSettingsPermission,
+      );
+      _isWorkspacePermissionLoading = false;
+    });
+  }
+
   Future<void> _loadMobileVersionsAccess(
     String? workspaceId, {
     bool forceReload = false,
@@ -367,6 +425,21 @@ class _SettingsViewState extends State<_SettingsView> {
       if (currentWorkspaceId != null)
         calendarCubit.loadWorkspacePreference(currentWorkspaceId),
     ]);
+
+    if (!mounted) {
+      return;
+    }
+    await _loadWorkspaceSettingsPermission(
+      workspaceCubit.state.currentWorkspace,
+    );
+  }
+
+  Future<void> _showWorkspacePropertiesDialog(Workspace workspace) async {
+    if (_isWorkspacePermissionLoading || !_canManageWorkspaceSettings) {
+      return;
+    }
+
+    await showWorkspacePropertiesDialog(context, workspace: workspace);
   }
 
   Future<void> _showCalendarDialog() async {
@@ -737,15 +810,28 @@ class _WorkspaceSection extends StatelessWidget {
   const _WorkspaceSection({
     required this.onSelectCurrentWorkspace,
     required this.onSelectDefaultWorkspace,
+    required this.canEditWorkspaceProperties,
+    required this.isWorkspacePermissionLoading,
+    required this.onEditWorkspaceProperties,
   });
 
   final VoidCallback onSelectCurrentWorkspace;
   final VoidCallback onSelectDefaultWorkspace;
+  final bool canEditWorkspaceProperties;
+  final bool isWorkspacePermissionLoading;
+  final ValueChanged<Workspace> onEditWorkspaceProperties;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final workspaceState = context.watch<WorkspaceCubit>().state;
+    final currentWorkspace = workspaceState.currentWorkspace;
+
+    final workspacePropertiesSubtitle = isWorkspacePermissionLoading
+        ? l10n.settingsWorkspacePropertiesPermissionLoading
+        : canEditWorkspaceProperties
+        ? l10n.settingsWorkspacePropertiesDescription
+        : l10n.settingsWorkspacePropertiesNoAccess;
 
     return SettingsSection(
       title: l10n.settingsWorkspaceSectionTitle,
@@ -755,9 +841,7 @@ class _WorkspaceSection extends StatelessWidget {
           icon: Icons.apartment_rounded,
           title: l10n.settingsCurrentWorkspace,
           subtitle: l10n.settingsCurrentWorkspaceDescription,
-          value:
-              workspaceState.currentWorkspace?.name ??
-              l10n.settingsNoWorkspaceSelected,
+          value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
           onTap: onSelectCurrentWorkspace,
         ),
         SettingsTile(
@@ -768,6 +852,18 @@ class _WorkspaceSection extends StatelessWidget {
               workspaceState.defaultWorkspace?.name ??
               l10n.settingsNoWorkspaceSelected,
           onTap: onSelectDefaultWorkspace,
+        ),
+        SettingsTile(
+          icon: Icons.drive_file_rename_outline_rounded,
+          title: l10n.settingsWorkspacePropertiesTitle,
+          subtitle: workspacePropertiesSubtitle,
+          value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
+          onTap:
+              currentWorkspace != null &&
+                  !isWorkspacePermissionLoading &&
+                  canEditWorkspaceProperties
+              ? () => onEditWorkspaceProperties(currentWorkspace)
+              : null,
         ),
       ],
     );

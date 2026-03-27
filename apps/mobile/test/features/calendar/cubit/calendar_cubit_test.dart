@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
@@ -32,8 +33,9 @@ void main() {
     late _MockCalendarRepository repository;
     late CalendarCubit cubit;
 
-    setUp(() {
+    setUp(() async {
       CalendarCubit.clearCache();
+      await CacheStore.instance.clearScope();
       repository = _MockCalendarRepository();
       cubit = CalendarCubit(calendarRepository: repository);
     });

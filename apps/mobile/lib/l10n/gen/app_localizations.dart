@@ -6601,6 +6601,66 @@ abstract class AppLocalizations {
   /// **'The app opens here by default on every launch.'**
   String get settingsDefaultWorkspaceDescription;
 
+  /// No description provided for @settingsWorkspacePropertiesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace information'**
+  String get settingsWorkspacePropertiesTitle;
+
+  /// No description provided for @settingsWorkspacePropertiesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the workspace name and avatar.'**
+  String get settingsWorkspacePropertiesDescription;
+
+  /// No description provided for @settingsWorkspacePropertiesNoAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You need workspace settings permission to edit these properties.'**
+  String get settingsWorkspacePropertiesNoAccess;
+
+  /// No description provided for @settingsWorkspacePropertiesPermissionLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your workspace permissions...'**
+  String get settingsWorkspacePropertiesPermissionLoading;
+
+  /// No description provided for @settingsWorkspacePropertiesUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace information updated.'**
+  String get settingsWorkspacePropertiesUpdated;
+
+  /// No description provided for @settingsWorkspacePropertiesNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace name cannot be empty'**
+  String get settingsWorkspacePropertiesNameRequired;
+
+  /// No description provided for @settingsWorkspaceAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace avatar'**
+  String get settingsWorkspaceAvatar;
+
+  /// No description provided for @settingsWorkspaceAvatarDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a new image or remove the current avatar.'**
+  String get settingsWorkspaceAvatarDescription;
+
+  /// No description provided for @settingsWorkspaceAvatarRemovePending.
+  ///
+  /// In en, this message translates to:
+  /// **'The current avatar will be removed when you save.'**
+  String get settingsWorkspaceAvatarRemovePending;
+
+  /// No description provided for @settingsWorkspaceNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace name'**
+  String get settingsWorkspaceNameHint;
+
   /// No description provided for @settingsNoEmail.
   ///
   /// In en, this message translates to:
@@ -7044,6 +7104,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose where to pick your new avatar image from.'**
   String get profileAvatarPickerDescription;
+
+  /// No description provided for @workspaceAvatarPickerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where to pick your new workspace avatar image from.'**
+  String get workspaceAvatarPickerDescription;
 
   /// No description provided for @profileUploadAvatar.
   ///
