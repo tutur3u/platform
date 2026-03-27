@@ -4,6 +4,6 @@
   "scripts": {
     "dart-format": "dart format --set-exit-if-changed lib test",
     "flutter-analyze": "flutter analyze",
-    "flutter-test": "flutter test -r failures-only"
+    "flutter-test": "flutter test --concurrency=1 -r failures-only"
   }
 }

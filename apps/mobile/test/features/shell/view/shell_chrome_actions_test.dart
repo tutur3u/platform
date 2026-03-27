@@ -38,6 +38,19 @@ class _ShellChromeActionsHarnessState
             ),
           ],
         ),
+        ShellChromeActions(
+          ownerId: 'stats',
+          locations: const {'/stats'},
+          actions: [
+            ShellActionSpec(
+              id: 'filter',
+              icon: Icons.filter_alt_outlined,
+              tooltip: 'Filter stats',
+              enabled: _enabled,
+              onPressed: () => setState(() => _tapCount++),
+            ),
+          ],
+        ),
         TextButton(
           onPressed: () => setState(() => _enabled = true),
           child: const Text('enable'),
@@ -45,6 +58,10 @@ class _ShellChromeActionsHarnessState
         TextButton(
           onPressed: () => setState(() => _matchedLocation = '/other'),
           child: const Text('switch-route'),
+        ),
+        TextButton(
+          onPressed: () => setState(() => _matchedLocation = '/stats'),
+          child: const Text('switch-shared-route'),
         ),
         Text('tap-count:$_tapCount'),
       ],
@@ -70,7 +87,10 @@ void main() {
       expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
       expect(find.text('tap-count:0'), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.filter_alt_outlined));
+      await tester.tap(
+        find.byIcon(Icons.filter_alt_outlined),
+        warnIfMissed: false,
+      );
       await tester.pump();
       expect(find.text('tap-count:0'), findsOneWidget);
 
@@ -100,5 +120,27 @@ void main() {
 
       expect(find.byIcon(Icons.filter_alt_outlined), findsNothing);
     });
+
+    testWidgets(
+      'keeps shared action visible across routes with same action id',
+      (tester) async {
+        await tester.pumpApp(
+          BlocProvider(
+            create: (_) => ShellChromeActionsCubit(),
+            child: const Material(
+              child: _ShellChromeActionsHarness(),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
+
+        await tester.tap(find.text('switch-shared-route'));
+        await tester.pump();
+
+        expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
+      },
+    );
   });
 }

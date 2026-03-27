@@ -22,6 +22,8 @@ class ShellChromeActions extends StatefulWidget {
 
 class _ShellChromeActionsState extends State<ShellChromeActions> {
   ShellChromeActionsCubit? _cubit;
+  late final String _registrationId =
+      '${widget.ownerId}#${identityHashCode(this)}';
 
   ShellChromeActionsCubit? _maybeCubit(BuildContext context) {
     var hasProvider = false;
@@ -44,7 +46,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
     super.didChangeDependencies();
     final nextCubit = _maybeCubit(context);
     if (_cubit != nextCubit) {
-      _cubit?.unregister(widget.ownerId);
+      _cubit?.unregister(_registrationId);
       _cubit = nextCubit;
     }
     _syncRegistration();
@@ -53,12 +55,8 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
   @override
   void didUpdateWidget(covariant ShellChromeActions oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.ownerId != widget.ownerId) {
-      _cubit?.unregister(oldWidget.ownerId);
-      _syncRegistration();
-      return;
-    }
     if (!setEquals(oldWidget.locations, widget.locations) ||
+        oldWidget.ownerId != widget.ownerId ||
         !listEquals(oldWidget.actions, widget.actions)) {
       _syncRegistration();
     }
@@ -66,6 +64,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
 
   void _syncRegistration() {
     _cubit?.register(
+      registrationId: _registrationId,
       ownerId: widget.ownerId,
       locations: widget.locations,
       actions: widget.actions,
@@ -74,7 +73,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
 
   @override
   void dispose() {
-    _cubit?.unregister(widget.ownerId);
+    _cubit?.unregister(_registrationId);
     super.dispose();
   }
 
@@ -82,13 +81,38 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-class ShellInjectedActionsHost extends StatelessWidget {
+class ShellInjectedActionsHost extends StatefulWidget {
   const ShellInjectedActionsHost({
     required this.matchedLocation,
     super.key,
   });
 
   final String matchedLocation;
+
+  @override
+  State<ShellInjectedActionsHost> createState() =>
+      _ShellInjectedActionsHostState();
+}
+
+class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
+  List<ShellActionSpec> _retainedActions = const <ShellActionSpec>[];
+  String? _pendingClearLocation;
+
+  void _scheduleClearRetainedActions(String matchedLocation) {
+    if (_pendingClearLocation == matchedLocation) {
+      return;
+    }
+    _pendingClearLocation = matchedLocation;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _pendingClearLocation != matchedLocation) {
+        return;
+      }
+      setState(() {
+        _pendingClearLocation = null;
+        _retainedActions = const <ShellActionSpec>[];
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,44 +124,43 @@ class ShellInjectedActionsHost extends StatelessWidget {
     return BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
       bloc: cubit,
       buildWhen: (previous, current) => !listEquals(
-        previous.resolveForLocation(matchedLocation),
-        current.resolveForLocation(matchedLocation),
+        previous.resolveForLocation(widget.matchedLocation),
+        current.resolveForLocation(widget.matchedLocation),
       ),
       builder: (context, state) {
-        final actions = state.resolveForLocation(matchedLocation);
-        final actionIds = actions.map((action) => action.id).join('|');
+        final resolvedActions = state.resolveForLocation(
+          widget.matchedLocation,
+        );
+        final actions = switch ((
+          resolvedActions.isNotEmpty,
+          _retainedActions.isNotEmpty,
+        )) {
+          (true, _) => resolvedActions,
+          (false, true) => _retainedActions,
+          (false, false) => resolvedActions,
+        };
 
-        return AnimatedSwitcher(
+        if (resolvedActions.isNotEmpty) {
+          _pendingClearLocation = null;
+          _retainedActions = resolvedActions;
+        } else if (_retainedActions.isNotEmpty) {
+          _scheduleClearRetainedActions(widget.matchedLocation);
+        }
+
+        return AnimatedSize(
           duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          layoutBuilder: (currentChild, previousChildren) => Stack(
-            alignment: Alignment.centerRight,
-            children: [
-              ...previousChildren,
-              if (currentChild != null) currentChild,
-            ],
-          ),
-          transitionBuilder: (child, animation) {
-            final offsetAnimation = Tween<Offset>(
-              begin: const Offset(0.08, 0),
-              end: Offset.zero,
-            ).animate(animation);
-            return FadeTransition(
-              opacity: animation,
-              child: SlideTransition(position: offsetAnimation, child: child),
-            );
-          },
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.centerRight,
           child: actions.isEmpty
               ? const SizedBox(
                   key: ValueKey<String>('shell-actions-empty'),
                 )
               : Row(
-                  key: ValueKey<String>('shell-actions-$actionIds'),
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     for (final action in actions)
                       Padding(
+                        key: ValueKey<String>('shell-action-slot-${action.id}'),
                         padding: const EdgeInsets.only(right: 2),
                         child: _ShellActionButton(action: action),
                       ),
@@ -200,14 +223,17 @@ class _ShellActionButton extends StatelessWidget {
       ),
     );
 
-    final button = AnimatedOpacity(
-      duration: const Duration(milliseconds: 180),
-      opacity: action.enabled && !action.isLoading ? 1 : 0.6,
-      child: shad.IconButton.ghost(
-        onPressed: action.enabled && !action.isLoading
-            ? action.onPressed
-            : null,
-        icon: iconChild,
+    final button = KeyedSubtree(
+      key: ValueKey<String>('shell-action-button-${action.id}'),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 180),
+        opacity: action.enabled && !action.isLoading ? 1 : 0.6,
+        child: shad.IconButton.ghost(
+          onPressed: action.enabled && !action.isLoading
+              ? action.onPressed
+              : null,
+          icon: iconChild,
+        ),
       ),
     );
 

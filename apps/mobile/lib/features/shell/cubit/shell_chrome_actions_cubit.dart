@@ -44,9 +44,14 @@ class ShellChromeActionsState extends Equatable {
 
   List<ShellActionSpec> resolveForLocation(String matchedLocation) {
     final resolved = <ShellActionSpec>[];
+    final seenActionIds = <String>{};
     for (final registration in registrations.values) {
       if (registration.locations.contains(matchedLocation)) {
-        resolved.addAll(registration.actions);
+        for (final action in registration.actions) {
+          if (seenActionIds.add(action.id)) {
+            resolved.add(action);
+          }
+        }
       }
     }
     return resolved;
@@ -87,6 +92,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
   ShellChromeActionsCubit() : super(const ShellChromeActionsState());
 
   void register({
+    required String registrationId,
     required String ownerId,
     required Set<String> locations,
     required List<ShellActionSpec> actions,
@@ -96,7 +102,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
       locations: Set<String>.from(locations),
       actions: List<ShellActionSpec>.from(actions),
     );
-    final currentRegistration = state.registrations[ownerId];
+    final currentRegistration = state.registrations[registrationId];
     if (currentRegistration == nextRegistration) {
       return;
     }
@@ -105,20 +111,20 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
       state.copyWith(
         registrations: <String, ShellChromeActionRegistration>{
           ...state.registrations,
-          ownerId: nextRegistration,
+          registrationId: nextRegistration,
         },
       ),
     );
   }
 
-  void unregister(String ownerId) {
-    if (!state.registrations.containsKey(ownerId)) {
+  void unregister(String registrationId) {
+    if (!state.registrations.containsKey(registrationId)) {
       return;
     }
 
     final nextRegistrations = Map<String, ShellChromeActionRegistration>.from(
       state.registrations,
-    )..remove(ownerId);
+    )..remove(registrationId);
     emit(state.copyWith(registrations: nextRegistrations));
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
@@ -113,6 +114,7 @@ HabitTrackerDetailResponse _detailResponse(String trackerId) {
 
 void main() {
   setUpAll(() {
+    registerFallbackValue(HabitTrackerScope.self);
     registerFallbackValue(
       const HabitTrackerEntryInput(
         entryDate: '2026-03-25',
@@ -125,8 +127,9 @@ void main() {
     late _MockHabitTrackerRepository repository;
     late HabitsCubit cubit;
 
-    setUp(() {
+    setUp(() async {
       HabitsCubit.clearCache();
+      await CacheStore.instance.clearScope();
       repository = _MockHabitTrackerRepository();
       cubit = HabitsCubit(repository: repository);
     });
@@ -334,7 +337,14 @@ void main() {
       expect(cachedCubit.state.status, HabitsStatus.loaded);
       expect(cachedCubit.state.activityStatus, HabitsStatus.loaded);
       verify(() => repository.listTrackers('ws-1')).called(1);
-      verify(() => repository.getTrackerDetail('ws-1', 'tracker-1')).called(2);
+      verify(
+        () => repository.getTrackerDetail(
+          'ws-1',
+          'tracker-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
+      ).called(2);
     });
   });
 }

@@ -24,7 +24,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
 
   final HabitTracker tracker = HabitTracker(
     id: 'tracker-1',
-    wsId: 'ws-1',
+    wsId: 'ws-personal',
     name: 'Water',
     color: 'CYAN',
     icon: 'Droplets',
@@ -61,18 +61,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId,
     HabitTrackerEntryInput input,
   ) async {
-    return HabitTrackerEntry(
-      id: 'entry-1',
-      wsId: wsId,
-      trackerId: trackerId,
-      userId: 'user-1',
-      entryKind: HabitTrackerEntryKind.eventLog,
-      entryDate: input.entryDate,
-      values: input.values,
-      tags: input.tags,
-      createdAt: DateTime(2026, 3, 25),
-      updatedAt: DateTime(2026, 3, 25),
-    );
+    throw UnimplementedError();
   }
 
   @override
@@ -106,24 +95,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
   }) async {
     return HabitTrackerDetailResponse(
       tracker: tracker,
-      entries: [
-        HabitTrackerEntry(
-          id: 'entry-1',
-          wsId: 'ws-1',
-          trackerId: 'tracker-1',
-          userId: 'user-1',
-          entryKind: HabitTrackerEntryKind.eventLog,
-          entryDate: '2026-03-25',
-          values: const {'glasses': 2.0},
-          tags: const ['morning'],
-          member: const HabitTrackerMember(
-            userId: 'user-1',
-            displayName: 'Alex',
-          ),
-          createdAt: DateTime(2026, 3, 25),
-          updatedAt: DateTime(2026, 3, 25),
-        ),
-      ],
+      entries: const [],
       currentMember: const HabitTrackerMemberSummary(
         member: HabitTrackerMember(
           userId: 'user-1',
@@ -143,9 +115,9 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
         ),
       ),
       team: const HabitTrackerTeamSummary(
-        activeMembers: 2,
-        totalEntries: 6,
-        totalValue: 12,
+        activeMembers: 1,
+        totalEntries: 4,
+        totalValue: 8,
         averageConsistencyRate: 0.8,
         topStreak: 5,
       ),
@@ -184,18 +156,16 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
             ),
           ),
           team: const HabitTrackerTeamSummary(
-            activeMembers: 2,
-            totalEntries: 6,
-            totalValue: 12,
+            activeMembers: 1,
+            totalEntries: 4,
+            totalValue: 8,
             averageConsistencyRate: 0.8,
             topStreak: 5,
           ),
           leaderboard: const [],
         ),
       ],
-      members: const [
-        HabitTrackerMember(userId: 'user-1', displayName: 'Alex'),
-      ],
+      members: const [],
       scope: scope,
       viewerUserId: 'viewer-1',
       scopeUserId: userId,
@@ -218,10 +188,9 @@ void main() {
   late _MockWorkspaceCubit workspaceCubit;
   late _FakeHabitTrackerRepository repository;
 
-  Widget buildHabitsTestSurface({
+  Widget buildSurface({
     required WorkspaceCubit workspaceCubit,
     required Widget child,
-    required String matchedLocation,
   }) {
     return MultiBlocProvider(
       providers: [
@@ -231,9 +200,9 @@ void main() {
       child: Stack(
         children: [
           child,
-          Align(
+          const Align(
             alignment: Alignment.topRight,
-            child: ShellInjectedActionsHost(matchedLocation: matchedLocation),
+            child: ShellInjectedActionsHost(matchedLocation: '/habits'),
           ),
         ],
       ),
@@ -255,33 +224,35 @@ void main() {
       const WorkspaceState(
         status: WorkspaceStatus.loaded,
         workspaces: [
-          Workspace(id: 'ws-1', name: 'Workspace'),
+          Workspace(id: 'ws-personal', name: 'Personal', personal: true),
         ],
-        currentWorkspace: Workspace(id: 'ws-1', name: 'Workspace'),
+        currentWorkspace: Workspace(
+          id: 'ws-personal',
+          name: 'Personal',
+          personal: true,
+        ),
       ),
     );
     when(() => workspaceCubit.stream).thenAnswer((_) => const Stream.empty());
   });
 
-  testWidgets('renders trackers and opens the detail sheet', (tester) async {
+  testWidgets('hides leaderboard tab in a personal workspace detail view', (
+    tester,
+  ) async {
     await tester.pumpApp(
-      buildHabitsTestSurface(
+      buildSurface(
         workspaceCubit: workspaceCubit,
-        matchedLocation: '/habits',
         child: HabitsPage(repository: repository),
       ),
     );
     await pumpUi(tester);
-
-    expect(find.text('Water'), findsOneWidget);
-    expect(find.text('Habits'), findsWidgets);
 
     await tester.tap(find.text('Water').first);
     await pumpUi(tester, frames: 12);
 
     expect(find.widgetWithText(Tab, 'Overview'), findsOneWidget);
     expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Leaderboard'), findsOneWidget);
+    expect(find.widgetWithText(Tab, 'Leaderboard'), findsNothing);
 
     await tester.binding.handlePopRoute();
     await pumpUi(tester, frames: 12);

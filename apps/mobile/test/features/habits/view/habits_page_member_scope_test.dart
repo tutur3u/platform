@@ -106,24 +106,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
   }) async {
     return HabitTrackerDetailResponse(
       tracker: tracker,
-      entries: [
-        HabitTrackerEntry(
-          id: 'entry-1',
-          wsId: 'ws-1',
-          trackerId: 'tracker-1',
-          userId: 'user-1',
-          entryKind: HabitTrackerEntryKind.eventLog,
-          entryDate: '2026-03-25',
-          values: const {'glasses': 2.0},
-          tags: const ['morning'],
-          member: const HabitTrackerMember(
-            userId: 'user-1',
-            displayName: 'Alex',
-          ),
-          createdAt: DateTime(2026, 3, 25),
-          updatedAt: DateTime(2026, 3, 25),
-        ),
-      ],
+      entries: const [],
       currentMember: const HabitTrackerMemberSummary(
         member: HabitTrackerMember(
           userId: 'user-1',
@@ -218,10 +201,9 @@ void main() {
   late _MockWorkspaceCubit workspaceCubit;
   late _FakeHabitTrackerRepository repository;
 
-  Widget buildHabitsTestSurface({
+  Widget buildSurface({
     required WorkspaceCubit workspaceCubit,
     required Widget child,
-    required String matchedLocation,
   }) {
     return MultiBlocProvider(
       providers: [
@@ -231,9 +213,9 @@ void main() {
       child: Stack(
         children: [
           child,
-          Align(
+          const Align(
             alignment: Alignment.topRight,
-            child: ShellInjectedActionsHost(matchedLocation: matchedLocation),
+            child: ShellInjectedActionsHost(matchedLocation: '/habits'),
           ),
         ],
       ),
@@ -263,27 +245,20 @@ void main() {
     when(() => workspaceCubit.stream).thenAnswer((_) => const Stream.empty());
   });
 
-  testWidgets('renders trackers and opens the detail sheet', (tester) async {
+  testWidgets('shows member picker when switching to member scope', (
+    tester,
+  ) async {
     await tester.pumpApp(
-      buildHabitsTestSurface(
+      buildSurface(
         workspaceCubit: workspaceCubit,
-        matchedLocation: '/habits',
         child: HabitsPage(repository: repository),
       ),
     );
     await pumpUi(tester);
 
-    expect(find.text('Water'), findsOneWidget);
-    expect(find.text('Habits'), findsWidgets);
+    await tester.tap(find.text('Member'));
+    await pumpUi(tester);
 
-    await tester.tap(find.text('Water').first);
-    await pumpUi(tester, frames: 12);
-
-    expect(find.widgetWithText(Tab, 'Overview'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Leaderboard'), findsOneWidget);
-
-    await tester.binding.handlePopRoute();
-    await pumpUi(tester, frames: 12);
+    expect(find.text('View member'), findsOneWidget);
   });
 }

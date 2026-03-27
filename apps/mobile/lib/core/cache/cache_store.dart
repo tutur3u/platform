@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -45,8 +46,9 @@ class CacheStore {
 
   Future<Directory> _resolveHiveDirectory() async {
     Future<Directory> fallbackDirectory() async {
+      final suffix = _cacheDirectorySuffix();
       final directory = Directory(
-        '${Directory.systemTemp.path}/tuturuuu_mobile_cache',
+        '${Directory.systemTemp.path}/tuturuuu_mobile_cache$suffix',
       );
       if (!directory.existsSync()) {
         directory.createSync(recursive: true);
@@ -72,6 +74,15 @@ class CacheStore {
         return fallbackDirectory();
       }
     }
+  }
+
+  String _cacheDirectorySuffix() {
+    final isFlutterTest = Platform.environment.containsKey('FLUTTER_TEST');
+    if (!isFlutterTest) {
+      return '';
+    }
+
+    return '_test_${identityHashCode(Isolate.current)}';
   }
 
   Future<CacheReadResult<T>> read<T>({

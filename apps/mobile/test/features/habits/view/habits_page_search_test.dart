@@ -13,6 +13,7 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -106,24 +107,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
   }) async {
     return HabitTrackerDetailResponse(
       tracker: tracker,
-      entries: [
-        HabitTrackerEntry(
-          id: 'entry-1',
-          wsId: 'ws-1',
-          trackerId: 'tracker-1',
-          userId: 'user-1',
-          entryKind: HabitTrackerEntryKind.eventLog,
-          entryDate: '2026-03-25',
-          values: const {'glasses': 2.0},
-          tags: const ['morning'],
-          member: const HabitTrackerMember(
-            userId: 'user-1',
-            displayName: 'Alex',
-          ),
-          createdAt: DateTime(2026, 3, 25),
-          updatedAt: DateTime(2026, 3, 25),
-        ),
-      ],
+      entries: const [],
       currentMember: const HabitTrackerMemberSummary(
         member: HabitTrackerMember(
           userId: 'user-1',
@@ -218,10 +202,9 @@ void main() {
   late _MockWorkspaceCubit workspaceCubit;
   late _FakeHabitTrackerRepository repository;
 
-  Widget buildHabitsTestSurface({
+  Widget buildSurface({
     required WorkspaceCubit workspaceCubit,
     required Widget child,
-    required String matchedLocation,
   }) {
     return MultiBlocProvider(
       providers: [
@@ -231,9 +214,9 @@ void main() {
       child: Stack(
         children: [
           child,
-          Align(
+          const Align(
             alignment: Alignment.topRight,
-            child: ShellInjectedActionsHost(matchedLocation: matchedLocation),
+            child: ShellInjectedActionsHost(matchedLocation: '/habits'),
           ),
         ],
       ),
@@ -263,27 +246,27 @@ void main() {
     when(() => workspaceCubit.stream).thenAnswer((_) => const Stream.empty());
   });
 
-  testWidgets('renders trackers and opens the detail sheet', (tester) async {
+  testWidgets('search is hidden by default and toggles from the app bar', (
+    tester,
+  ) async {
     await tester.pumpApp(
-      buildHabitsTestSurface(
+      buildSurface(
         workspaceCubit: workspaceCubit,
-        matchedLocation: '/habits',
         child: HabitsPage(repository: repository),
       ),
     );
     await pumpUi(tester);
 
-    expect(find.text('Water'), findsOneWidget);
-    expect(find.text('Habits'), findsWidgets);
+    expect(find.byType(shad.TextField), findsNothing);
 
-    await tester.tap(find.text('Water').first);
-    await pumpUi(tester, frames: 12);
+    await tester.tap(find.byIcon(Icons.search_rounded));
+    await pumpUi(tester);
 
-    expect(find.widgetWithText(Tab, 'Overview'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Leaderboard'), findsOneWidget);
+    expect(find.byType(shad.TextField), findsOneWidget);
 
-    await tester.binding.handlePopRoute();
-    await pumpUi(tester, frames: 12);
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await pumpUi(tester);
+
+    expect(find.byType(shad.TextField), findsNothing);
   });
 }

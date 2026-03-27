@@ -218,7 +218,7 @@ void main() {
   late _MockWorkspaceCubit workspaceCubit;
   late _FakeHabitTrackerRepository repository;
 
-  Widget buildHabitsTestSurface({
+  Widget buildSurface({
     required WorkspaceCubit workspaceCubit,
     required Widget child,
     required String matchedLocation,
@@ -263,27 +263,24 @@ void main() {
     when(() => workspaceCubit.stream).thenAnswer((_) => const Stream.empty());
   });
 
-  testWidgets('renders trackers and opens the detail sheet', (tester) async {
+  testWidgets('renders aggregated activity entries in activity section', (
+    tester,
+  ) async {
     await tester.pumpApp(
-      buildHabitsTestSurface(
+      buildSurface(
         workspaceCubit: workspaceCubit,
-        matchedLocation: '/habits',
-        child: HabitsPage(repository: repository),
+        matchedLocation: '/habits/activity',
+        child: HabitsPage(
+          repository: repository,
+          initialSection: HabitsSection.activity,
+        ),
       ),
     );
     await pumpUi(tester);
 
-    expect(find.text('Water'), findsOneWidget);
-    expect(find.text('Habits'), findsWidgets);
-
-    await tester.tap(find.text('Water').first);
-    await pumpUi(tester, frames: 12);
-
-    expect(find.widgetWithText(Tab, 'Overview'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Entries'), findsOneWidget);
-    expect(find.widgetWithText(Tab, 'Leaderboard'), findsOneWidget);
-
-    await tester.binding.handlePopRoute();
-    await pumpUi(tester, frames: 12);
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Alex'), findsOneWidget);
+    expect(find.text('Glasses'), findsOneWidget);
+    expect(find.text('2 glass'), findsOneWidget);
   });
 }
