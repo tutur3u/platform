@@ -5,6 +5,7 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
   params: Promise<{
@@ -60,12 +61,7 @@ async function getDataWithApiKey(
 ) {
   const sbAdmin = await createAdminClient();
 
-  const apiCheckQuery = sbAdmin
-    .from('workspace_api_keys')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('value', apiKey)
-    .single();
+  const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
 
   const secretCheckQuery = sbAdmin
     .from('workspace_secrets')
@@ -84,7 +80,6 @@ async function getDataWithApiKey(
     crawledUrlQuery,
   ]);
 
-  const { error: workspaceError } = apiCheck;
   const { count: secretCount, error: secretError } = secretCheck;
   const {
     data: crawledUrlData,
@@ -110,8 +105,12 @@ async function getDataWithApiKey(
     );
   }
 
-  if (workspaceError || secretError || crawledUrlError) {
-    console.log(workspaceError || secretError || crawledUrlError);
+  if (!apiCheck) {
+    return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
+  }
+
+  if (secretError || crawledUrlError) {
+    console.log(secretError || crawledUrlError);
     return NextResponse.json(
       { message: 'Error fetching workspace crawlers' },
       { status: 500 }

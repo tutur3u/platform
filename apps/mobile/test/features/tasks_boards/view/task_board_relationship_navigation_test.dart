@@ -179,10 +179,12 @@ void main() {
               if (boardId == null || boardId.isEmpty) {
                 return const SizedBox.shrink();
               }
-              return TaskBoardDetailPage(
-                boardId: boardId,
-                initialTaskId: state.uri.queryParameters['taskId'],
-                taskRepository: taskRepository,
+              return shad.DrawerOverlay(
+                child: TaskBoardDetailPage(
+                  boardId: boardId,
+                  initialTaskId: state.uri.queryParameters['taskId'],
+                  taskRepository: taskRepository,
+                ),
               );
             },
           ),
@@ -211,10 +213,12 @@ void main() {
               if (boardId == null || boardId.isEmpty) {
                 return const SizedBox.shrink();
               }
-              return TaskBoardDetailPage(
-                boardId: boardId,
-                initialTaskId: state.uri.queryParameters['taskId'],
-                taskRepository: taskRepository,
+              return shad.DrawerOverlay(
+                child: TaskBoardDetailPage(
+                  boardId: boardId,
+                  initialTaskId: state.uri.queryParameters['taskId'],
+                  taskRepository: taskRepository,
+                ),
               );
             },
           ),
