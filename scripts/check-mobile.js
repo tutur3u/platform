@@ -121,13 +121,16 @@ const checks = [
   },
 ];
 
-function resolvePubCache(env = process.env) {
+function resolvePubCache(
+  env = process.env,
+  { platform = process.platform, homeDir = os.homedir() } = {}
+) {
   if (env.PUB_CACHE) {
     return env.PUB_CACHE;
   }
 
-  if (process.platform !== 'win32') {
-    return undefined;
+  if (platform !== 'win32') {
+    return path.join(homeDir, '.pub-cache');
   }
 
   if (env.LOCALAPPDATA) {
@@ -138,7 +141,7 @@ function resolvePubCache(env = process.env) {
     return path.join(env.USERPROFILE, 'AppData', 'Local', 'Pub', 'Cache');
   }
 
-  return path.join(os.homedir(), 'AppData', 'Local', 'Pub', 'Cache');
+  return path.join(homeDir, 'AppData', 'Local', 'Pub', 'Cache');
 }
 
 /**

@@ -83,12 +83,26 @@ test('resolvePubCache prefers explicit PUB_CACHE', () => {
 });
 
 test('resolvePubCache derives Windows fallback cache path', () => {
-  if (process.platform !== 'win32') {
-    return;
-  }
-
-  const value = resolvePubCache({
-    LOCALAPPDATA: 'C:/Users/Test/AppData/Local',
-  });
+  const value = resolvePubCache(
+    {
+      LOCALAPPDATA: 'C:/Users/Test/AppData/Local',
+    },
+    {
+      platform: 'win32',
+      homeDir: 'C:/Users/Test',
+    }
+  );
   assert.equal(value, path.join('C:/Users/Test/AppData/Local', 'Pub', 'Cache'));
+});
+
+test('resolvePubCache derives macOS fallback cache path', () => {
+  const value = resolvePubCache(
+    {},
+    {
+      platform: 'darwin',
+      homeDir: '/Users/Test',
+    }
+  );
+
+  assert.equal(value, path.join('/Users/Test', '.pub-cache'));
 });
