@@ -3702,6 +3702,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileAvatarPickerDescription => 'Chọn nơi lấy ảnh đại diện mới của bạn.';
 
   @override
+  String get workspaceAvatarPickerDescription => 'Chọn nơi lấy ảnh đại diện mới cho không gian làm việc.';
+
+  @override
   String get profileUploadAvatar => 'Tải lên ảnh đại diện';
 
   @override

@@ -3708,6 +3708,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileAvatarPickerDescription => 'Choose where to pick your new avatar image from.';
 
   @override
+  String get workspaceAvatarPickerDescription => 'Choose where to pick your new workspace avatar image from.';
+
+  @override
   String get profileUploadAvatar => 'Upload avatar';
 
   @override

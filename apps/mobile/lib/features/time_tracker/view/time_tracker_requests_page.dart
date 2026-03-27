@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -16,7 +17,6 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.dart';
 import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
@@ -42,12 +42,21 @@ class TimeTrackerRequestsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final currentUserId = context.read<AuthCubit>().state.user?.id;
     return RepositoryProvider<ITimeTrackerRepository>(
       create: (_) => repository ?? TimeTrackerRepository(),
       child: BlocProvider(
         create: (context) {
           return TimeTrackerRequestsCubit(
             repository: context.read<ITimeTrackerRepository>(),
+            initialState: wsId != null
+                ? TimeTrackerRequestsCubit.seedStateFor(
+                    wsId,
+                    selectedUserId: currentUserId,
+                    statusFilter: 'pending',
+                  )
+                : null,
           );
         },
         child: const _RequestsView(),
@@ -159,8 +168,10 @@ class _RequestsViewState extends State<_RequestsView> {
     _didInitializeWorkspaceLoad = true;
     _permissionsWorkspaceId = wsId;
     _requestLoadToken++;
-    context.read<TimeTrackerRequestsCubit>().reset();
     unawaited(_loadPermissionsAndThreshold(wsId));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(CacheWarmupCoordinator.instance.prewarmModule('timer'));
+    });
   }
 
   @override
@@ -176,75 +187,9 @@ class _RequestsViewState extends State<_RequestsView> {
         final nextWsId = state.currentWorkspace?.id;
         _permissionsWorkspaceId = nextWsId;
         _requestLoadToken++;
-        context.read<TimeTrackerRequestsCubit>().reset();
         unawaited(_loadPermissionsAndThreshold(nextWsId));
       },
       child: shad.Scaffold(
-        headers: [
-          MobileSectionAppBar(
-            title: l10n.timerRequestsTitle,
-            actions: [
-              shad.IconButton.ghost(
-                onPressed: wsId == null || wsId.isEmpty
-                    ? null
-                    : () => unawaited(
-                        showFilterSheet(
-                          context,
-                          selectedFilter: _selectedFilter,
-                          selectedUserId: _selectedUserId,
-                          availableRequestUsers: _availableRequestUsers,
-                          canManageRequests: _canManageRequests,
-                          onApply: (filter, userId) {
-                            setState(() {
-                              _selectedFilter = filter;
-                              _selectedUserId = _canManageRequests
-                                  ? userId
-                                  : null;
-                            });
-
-                            final cubit = context
-                                .read<TimeTrackerRequestsCubit>();
-                            unawaited(
-                              cubit.filterByStatus(
-                                statusFromFilter(filter),
-                                wsId,
-                                userId: _requestUserFilterId(),
-                                statusOverride: _statusOverrideForFilter(
-                                  filter,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                icon: Icon(
-                  Icons.filter_alt_outlined,
-                  color:
-                      hasActiveFilters(
-                        selectedFilter: _selectedFilter,
-                        canManageRequests: _canManageRequests,
-                        selectedUserId: _selectedUserId,
-                      )
-                      ? shad.Theme.of(context).colorScheme.primary
-                      : null,
-                ),
-              ),
-              if (_canManageThresholdSettings)
-                shad.IconButton.ghost(
-                  onPressed: _isThresholdLoading
-                      ? null
-                      : () => unawaited(_showThresholdSettingsDialog()),
-                  icon: _isThresholdLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: shad.CircularProgressIndicator(),
-                        )
-                      : const Icon(Icons.settings_outlined),
-                ),
-            ],
-          ),
-        ],
         child: Stack(
           children: [
             ResponsiveWrapper(
@@ -272,14 +217,17 @@ class _RequestsViewState extends State<_RequestsView> {
                     TimeTrackerRequestsState
                   >(
                     builder: (context, state) {
-                      if (state.status == TimeTrackerRequestsStatus.initial ||
-                          state.status == TimeTrackerRequestsStatus.loading) {
+                      if ((state.status == TimeTrackerRequestsStatus.initial ||
+                              state.status ==
+                                  TimeTrackerRequestsStatus.loading) &&
+                          state.requests.isEmpty) {
                         return const Center(
                           child: shad.CircularProgressIndicator(),
                         );
                       }
 
-                      if (state.status == TimeTrackerRequestsStatus.error) {
+                      if (state.status == TimeTrackerRequestsStatus.error &&
+                          state.requests.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -303,22 +251,94 @@ class _RequestsViewState extends State<_RequestsView> {
                         );
                       }
 
-                      if (state.requests.isEmpty) {
-                        return Center(
-                          child: Text(
-                            l10n.timerNoSessions,
-                            style: shad.Theme.of(context).typography.textMuted,
-                          ),
-                        );
-                      }
-
                       return RefreshIndicator(
                         onRefresh: _loadRequests,
                         child: ListView.builder(
-                          itemCount: state.requests.length,
+                          itemCount: state.requests.length + 1,
                           padding: const EdgeInsets.only(top: 8, bottom: 96),
                           itemBuilder: (context, index) {
-                            final request = state.requests[index];
+                            if (index == 0) {
+                              return Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  4,
+                                  16,
+                                  12,
+                                ),
+                                child: _RequestsToolbarCard(
+                                  title: l10n.timerRequestsTitle,
+                                  requestCount: state.requests.length,
+                                  isRefreshing: state.isRefreshing,
+                                  hasActiveFilters: hasActiveFilters(
+                                    selectedFilter: _selectedFilter,
+                                    canManageRequests: _canManageRequests,
+                                    selectedUserId: _selectedUserId,
+                                  ),
+                                  activeFilterLabel: _selectedFilterLabel(
+                                    context,
+                                  ),
+                                  onOpenFilters: wsId == null || wsId.isEmpty
+                                      ? null
+                                      : () => unawaited(
+                                          showFilterSheet(
+                                            context,
+                                            selectedFilter: _selectedFilter,
+                                            selectedUserId: _selectedUserId,
+                                            availableRequestUsers:
+                                                _availableRequestUsers,
+                                            canManageRequests:
+                                                _canManageRequests,
+                                            onApply: (filter, userId) {
+                                              setState(() {
+                                                _selectedFilter = filter;
+                                                _selectedUserId =
+                                                    _canManageRequests
+                                                    ? userId
+                                                    : null;
+                                              });
+
+                                              final cubit = context
+                                                  .read<
+                                                    TimeTrackerRequestsCubit
+                                                  >();
+                                              unawaited(
+                                                cubit.filterByStatus(
+                                                  statusFromFilter(filter),
+                                                  wsId,
+                                                  userId:
+                                                      _requestUserFilterId(),
+                                                  statusOverride:
+                                                      _statusOverrideForFilter(
+                                                        filter,
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                  onOpenSettings: _canManageThresholdSettings
+                                      ? () => unawaited(
+                                          _showThresholdSettingsDialog(),
+                                        )
+                                      : null,
+                                  isSettingsLoading: _isThresholdLoading,
+                                ),
+                              );
+                            }
+                            if (state.requests.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 48),
+                                child: Center(
+                                  child: Text(
+                                    l10n.timerNoSessions,
+                                    style: shad.Theme.of(
+                                      context,
+                                    ).typography.textMuted,
+                                  ),
+                                ),
+                              );
+                            }
+                            final request = state.requests[index - 1];
                             return _RequestTile(
                               request: request,
                               onTap: () => _showRequestDetail(context, request),
@@ -340,5 +360,16 @@ class _RequestsViewState extends State<_RequestsView> {
         ),
       ),
     );
+  }
+
+  String _selectedFilterLabel(BuildContext context) {
+    final l10n = context.l10n;
+    return switch (_selectedFilter) {
+      TimeTrackerRequestStatusFilter.all => l10n.timerRequestsFilterAllStatuses,
+      TimeTrackerRequestStatusFilter.pending => l10n.timerRequestPending,
+      TimeTrackerRequestStatusFilter.approved => l10n.timerRequestApproved,
+      TimeTrackerRequestStatusFilter.rejected => l10n.timerRequestRejected,
+      TimeTrackerRequestStatusFilter.needsInfo => l10n.timerRequestNeedsInfo,
+    };
   }
 }

@@ -1493,6 +1493,7 @@
     "profileAvatarSectionTitle": "Ảnh đại diện",
     "profileAvatarActionDescription": "Chọn ảnh mới hoặc làm mới ảnh hiện đang gắn với tài khoản.",
     "profileAvatarPickerDescription": "Chọn nơi lấy ảnh đại diện mới của bạn.",
+    "workspaceAvatarPickerDescription": "Chọn nơi lấy ảnh đại diện mới cho không gian làm việc.",
     "profileUploadAvatar": "Tải lên ảnh đại diện",
     "profileChangeAvatar": "Thay đổi ảnh đại diện",
     "profileRemoveAvatar": "Xóa ảnh đại diện",

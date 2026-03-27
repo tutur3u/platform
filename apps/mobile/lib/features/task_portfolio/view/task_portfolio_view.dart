@@ -11,7 +11,6 @@ import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_actions.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_permissions_controller.dart';
@@ -67,15 +66,13 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (!_permissionsController.shouldReloadForWorkspace(wsId)) return;
 
+    _permissionsController.primeCachedPermission(wsId);
     unawaited(_loadPermissions());
   }
 
   @override
   Widget build(BuildContext context) {
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(title: context.l10n.taskPortfolioTitle),
-      ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -112,10 +109,18 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   }
 
   Widget _buildContent(BuildContext context) {
-    if (_permissionsController.isCheckingPermissions) {
+    final taskState = context.watch<TaskPortfolioCubit>().state;
+    final hasVisibleData =
+        taskState.projects.isNotEmpty || taskState.initiatives.isNotEmpty;
+
+    if (_permissionsController.isCheckingPermissions &&
+        !_permissionsController.hasResolvedPermissions &&
+        !hasVisibleData) {
       return const Center(child: shad.CircularProgressIndicator());
     }
-    if (!_permissionsController.canManageProjects) {
+    if (_permissionsController.hasResolvedPermissions &&
+        !_permissionsController.canManageProjects &&
+        !hasVisibleData) {
       return const TaskPortfolioAccessDenied();
     }
 

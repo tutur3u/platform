@@ -15,6 +15,12 @@ class TaskWorkspaceInfo extends Equatable {
   final String? name;
   final bool? personal;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'personal': personal,
+  };
+
   @override
   List<Object?> get props => [id, name, personal];
 }
@@ -47,6 +53,13 @@ class TaskBoardInfo extends Equatable {
   final String? wsId;
   final TaskWorkspaceInfo? workspace;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'ws_id': wsId,
+    'workspace': workspace?.toJson(),
+  };
+
   @override
   List<Object?> get props => [id, name, wsId, workspace];
 }
@@ -70,6 +83,13 @@ class TaskListInfo extends Equatable {
   /// One of `'not_started'`, `'active'`, `'done'`.
   final String? status;
   final TaskBoardInfo? board;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'status': status,
+    'board': board?.toJson(),
+  };
 
   @override
   List<Object?> get props => [id, name, status, board];
@@ -150,6 +170,18 @@ class UserTask extends Equatable {
     createdAt: createdAt,
     list: listInfo,
   );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'priority': priority,
+    'start_date': startDate?.toIso8601String(),
+    'end_date': endDate?.toIso8601String(),
+    'list_id': listId,
+    'created_at': createdAt?.toIso8601String(),
+    'list': list?.toJson(),
+  };
 
   @override
   List<Object?> get props => [

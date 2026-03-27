@@ -238,8 +238,12 @@ class _DashboardView extends StatelessWidget {
       context.read<TaskListCubit>().loadTasks(
         wsId: workspace.id,
         isPersonal: workspace.personal,
+        forceRefresh: true,
       ),
-      context.read<CalendarCubit>().loadEvents(workspace.id),
+      context.read<CalendarCubit>().loadEvents(
+        workspace.id,
+        forceRefresh: true,
+      ),
     ]);
   }
 

@@ -28,6 +28,15 @@ class TaskLabel extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'ws_id': wsId,
+    'name': name,
+    'color': color,
+    'created_at': createdAt?.toIso8601String(),
+    'updated_at': updatedAt?.toIso8601String(),
+  };
+
   static DateTime? _parseDate(dynamic value) {
     if (value is! String || value.isEmpty) {
       return null;

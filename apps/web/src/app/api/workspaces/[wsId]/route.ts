@@ -21,18 +21,17 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json(
-      { message: 'Error fetching user' },
-      { status: 500 }
-    );
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const { data, error } = await supabase
     .from('workspaces')
@@ -57,7 +56,6 @@ export async function GET(req: Request, { params }: Params) {
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   try {
     const {
@@ -68,6 +66,8 @@ export async function PUT(req: Request, { params }: Params) {
     if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
@@ -141,10 +141,20 @@ export async function PUT(req: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id);
+  
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Block deletion of personal workspaces
   const { data: wsData } = await supabase

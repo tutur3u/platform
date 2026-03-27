@@ -1,6 +1,10 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/calendar/calendar_cache.dart';
@@ -17,24 +21,132 @@ class CalendarCubit extends Cubit<CalendarState> {
        super(initialState ?? CalendarState(selectedDate: DateTime.now()));
 
   final CalendarRepository _repo;
+  static const CachePolicy _cachePolicy = CachePolicies.summary;
+  static const _cacheTag = 'calendar:events';
   static final Map<String, _CalendarCacheEntry> _cache = {};
   String? _wsId;
 
+  static Map<String, dynamic> _decodeCacheJson(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid calendar cache payload.');
+    }
+
+    return Map<String, dynamic>.from(json);
+  }
+
+  static CacheKey _cacheKey(String wsId) {
+    return CacheKey(
+      namespace: 'calendar.events',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+    );
+  }
+
   static CalendarState? cachedStateForWorkspace(String wsId) {
     return _cache[wsId]?.state;
+  }
+
+  static void _rememberCachedState(
+    String wsId,
+    CalendarState state, {
+    DateTime? fetchedAt,
+  }) {
+    _cache[wsId] = _CalendarCacheEntry(
+      state: state,
+      fetchedAt: fetchedAt ?? DateTime.now(),
+    );
   }
 
   static void clearCache() {
     _cache.clear();
   }
 
+  static Future<void> prewarm({
+    required CalendarRepository calendarRepository,
+    required String wsId,
+    bool forceRefresh = false,
+  }) async {
+    final center = DateTime.now();
+    final start = DateTime(center.year, center.month - 1);
+    final end = DateTime(center.year, center.month + 2);
+    await CacheStore.instance.prefetch<Map<String, dynamic>>(
+      key: _cacheKey(wsId),
+      policy: _cachePolicy,
+      decode: _decodeCacheJson,
+      forceRefresh: forceRefresh,
+      tags: [_cacheTag, 'workspace:$wsId', 'module:calendar'],
+      fetch: () async {
+        final events = await calendarRepository.getEvents(
+          wsId,
+          start: start,
+          end: end,
+        );
+        return {
+          'selectedDate': center.toIso8601String(),
+          'focusedMonth': DateTime(center.year, center.month).toIso8601String(),
+          'viewMode': CalendarViewMode.agenda.name,
+          'events': events
+              .map((event) => event.toJson())
+              .toList(growable: false),
+          'fetchedRange': {
+            'start': start.toIso8601String(),
+            'end': end.toIso8601String(),
+          },
+        };
+      },
+    );
+  }
+
   /// Loads events within a 3-month window around the selected date.
   Future<void> loadEvents(String wsId, {bool forceRefresh = false}) async {
-    final cached = _cache[wsId];
+    final cached =
+        _cache[wsId] ??
+        (state.hasLoadedOnce && state.events.isNotEmpty
+            ? _CalendarCacheEntry(
+                state: state,
+                fetchedAt: state.lastUpdatedAt ?? DateTime.now(),
+              )
+            : null);
     final hasVisibleData = _wsId == wsId && state.hasLoadedOnce;
     _wsId = wsId;
+    final cacheKey = _cacheKey(wsId);
+
+    if (forceRefresh) {
+      if (cached != null && !hasVisibleData) {
+        emit(cached.state);
+      }
+      emit(
+        state.copyWith(
+          status: CalendarStatus.loading,
+          hasLoadedOnce: state.hasLoadedOnce || cached != null,
+          isFromCache: state.hasLoadedOnce || cached != null,
+          isRefreshing: state.hasLoadedOnce || cached != null,
+          lastUpdatedAt: cached?.fetchedAt,
+          clearError: true,
+        ),
+      );
+    }
+
+    final diskCached = await CacheStore.instance.read<CalendarState>(
+      key: cacheKey,
+      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+    );
+
+    if (diskCached.hasValue && !hasVisibleData && diskCached.data != null) {
+      _rememberCachedState(
+        wsId,
+        diskCached.data!,
+        fetchedAt: diskCached.fetchedAt,
+      );
+      emit(diskCached.data!);
+      if (!forceRefresh && diskCached.isFresh) {
+        return;
+      }
+    }
 
     if (cached != null && !hasVisibleData) {
+      _rememberCachedState(wsId, cached.state, fetchedAt: cached.fetchedAt);
       emit(cached.state);
       if (!forceRefresh && isCalendarCacheFresh(cached.fetchedAt)) {
         return;
@@ -42,9 +154,10 @@ class CalendarCubit extends Cubit<CalendarState> {
     }
 
     if (!forceRefresh &&
-        cached != null &&
-        isCalendarCacheFresh(cached.fetchedAt) &&
-        (hasVisibleData || cached.state.hasLoadedOnce)) {
+        ((cached != null &&
+                isCalendarCacheFresh(cached.fetchedAt) &&
+                (hasVisibleData || cached.state.hasLoadedOnce)) ||
+            diskCached.isFresh)) {
       return;
     }
 
@@ -53,6 +166,9 @@ class CalendarCubit extends Cubit<CalendarState> {
         state.copyWith(
           status: CalendarStatus.loading,
           hasLoadedOnce: true,
+          isFromCache: cached != null || diskCached.hasValue,
+          isRefreshing: true,
+          lastUpdatedAt: cached?.fetchedAt ?? diskCached.fetchedAt,
           clearError: true,
         ),
       );
@@ -61,6 +177,8 @@ class CalendarCubit extends Cubit<CalendarState> {
         state.copyWith(
           status: CalendarStatus.loading,
           hasLoadedOnce: false,
+          isFromCache: false,
+          isRefreshing: false,
           events: const [],
           fetchedRange: null,
           clearError: true,
@@ -78,17 +196,27 @@ class CalendarCubit extends Cubit<CalendarState> {
       final nextState = state.copyWith(
         status: CalendarStatus.loaded,
         hasLoadedOnce: true,
+        isFromCache: false,
+        isRefreshing: false,
+        lastUpdatedAt: DateTime.now(),
         events: events,
         fetchedRange: DateTimeRange(start: start, end: end),
         clearError: true,
       );
       emit(nextState);
       _storeCache(nextState);
+      await CacheStore.instance.write(
+        key: cacheKey,
+        policy: _cachePolicy,
+        payload: _stateToCacheJson(nextState),
+        tags: [_cacheTag, 'workspace:$wsId', 'module:calendar'],
+      );
     } on Exception catch (e) {
-      if (cached != null || hasVisibleData) {
+      if (cached != null || hasVisibleData || diskCached.hasValue) {
         emit(
           state.copyWith(
             status: CalendarStatus.loaded,
+            isRefreshing: false,
             clearError: true,
           ),
         );
@@ -278,16 +406,72 @@ class CalendarCubit extends Cubit<CalendarState> {
     return nextState;
   }
 
+  static Map<String, dynamic> _stateToCacheJson(CalendarState state) {
+    return {
+      'selectedDate': state.selectedDate?.toIso8601String(),
+      'focusedMonth': state.focusedMonth?.toIso8601String(),
+      'viewMode': state.viewMode.name,
+      'events': state.events
+          .map((event) => event.toJson())
+          .toList(growable: false),
+      'fetchedRange': state.fetchedRange == null
+          ? null
+          : {
+              'start': state.fetchedRange!.start.toIso8601String(),
+              'end': state.fetchedRange!.end.toIso8601String(),
+            },
+      'hasLoadedOnce': state.hasLoadedOnce,
+      'lastUpdatedAt': state.lastUpdatedAt?.toIso8601String(),
+    };
+  }
+
+  static CalendarState _stateFromCacheJson(Map<String, dynamic> json) {
+    final fetchedRangeJson = json['fetchedRange'];
+    DateTimeRange? fetchedRange;
+    if (fetchedRangeJson is Map<String, dynamic>) {
+      final start = DateTime.tryParse(
+        fetchedRangeJson['start'] as String? ?? '',
+      );
+      final end = DateTime.tryParse(fetchedRangeJson['end'] as String? ?? '');
+      if (start != null && end != null) {
+        fetchedRange = DateTimeRange(start: start, end: end);
+      }
+    }
+
+    final viewMode = CalendarViewMode.values.firstWhere(
+      (value) => value.name == json['viewMode'],
+      orElse: () => CalendarViewMode.agenda,
+    );
+
+    return CalendarState(
+      status: CalendarStatus.loaded,
+      hasLoadedOnce: json['hasLoadedOnce'] as bool? ?? true,
+      isFromCache: true,
+      lastUpdatedAt: json['lastUpdatedAt'] != null
+          ? DateTime.tryParse(json['lastUpdatedAt'] as String)
+          : null,
+      viewMode: viewMode,
+      selectedDate: json['selectedDate'] != null
+          ? DateTime.tryParse(json['selectedDate'] as String)
+          : null,
+      focusedMonth: json['focusedMonth'] != null
+          ? DateTime.tryParse(json['focusedMonth'] as String)
+          : null,
+      events: ((json['events'] as List<dynamic>?) ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(CalendarEvent.fromJson)
+          .toList(growable: false),
+      fetchedRange: fetchedRange,
+    );
+  }
+
   void _storeCache(CalendarState nextState) {
     final wsId = _wsId;
     if (wsId == null || wsId.isEmpty) {
       return;
     }
 
-    _cache[wsId] = _CalendarCacheEntry(
-      state: nextState,
-      fetchedAt: DateTime.now(),
-    );
+    _rememberCachedState(wsId, nextState);
   }
 }
 

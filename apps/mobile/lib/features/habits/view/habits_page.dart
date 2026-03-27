@@ -17,7 +17,6 @@ import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_detail_sheet.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_entry_sheet.dart';
 import 'package:mobile/features/habits/widgets/habit_tracker_form_sheet.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -116,28 +115,6 @@ class _HabitsViewState extends State<_HabitsView> {
         }
       },
       child: shad.Scaffold(
-        headers: [
-          MobileSectionAppBar(
-            title: widget.initialSection == HabitsSection.activity
-                ? context.l10n.habitsActivityTitle
-                : context.l10n.habitsTitle,
-            actions: [
-              if (_supportsSearch)
-                shad.IconButton.ghost(
-                  icon: Icon(
-                    _isSearchVisible
-                        ? Icons.close_rounded
-                        : Icons.search_rounded,
-                  ),
-                  onPressed: _toggleSearch,
-                ),
-              shad.IconButton.ghost(
-                icon: const Icon(Icons.add),
-                onPressed: _openCreateTracker,
-              ),
-            ],
-          ),
-        ],
         child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
           builder: (context, workspaceState) {
             final workspace = workspaceState.currentWorkspace;
@@ -181,10 +158,29 @@ class _HabitsViewState extends State<_HabitsView> {
                         24 + MediaQuery.paddingOf(context).bottom,
                       ),
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (_supportsSearch)
+                              shad.IconButton.ghost(
+                                icon: Icon(
+                                  _isSearchVisible
+                                      ? Icons.close_rounded
+                                      : Icons.search_rounded,
+                                ),
+                                onPressed: _toggleSearch,
+                              ),
+                            shad.IconButton.ghost(
+                              icon: const Icon(Icons.add),
+                              onPressed: _openCreateTracker,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         HabitsSummaryHeader(
                           summary: summary,
                           title: widget.initialSection == HabitsSection.activity
-                              ? null
+                              ? context.l10n.habitsActivityTitle
                               : context.l10n.habitsTitle,
                           subtitle:
                               widget.initialSection == HabitsSection.activity

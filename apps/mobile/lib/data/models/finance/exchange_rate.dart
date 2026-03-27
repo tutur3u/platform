@@ -26,6 +26,13 @@ class ExchangeRate extends Equatable {
   final double rate;
   final String date;
 
+  Map<String, dynamic> toJson() => {
+    'base_currency': baseCurrency,
+    'target_currency': targetCurrency,
+    'rate': rate,
+    'date': date,
+  };
+
   @override
   List<Object?> get props => [baseCurrency, targetCurrency, rate, date];
 }

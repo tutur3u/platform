@@ -80,256 +80,203 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
 
   @override
   Widget build(BuildContext context) {
-    return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.taskBoards);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
-          titleWidget: BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
-            buildWhen: (prev, curr) => prev.board != curr.board,
-            builder: (context, state) {
-              final title = state.board?.name?.trim().isNotEmpty == true
-                  ? state.board!.name!.trim()
-                  : context.l10n.taskBoardDetailUntitledBoard;
-              return Text(title);
-            },
+    return BlocListener<WorkspaceCubit, WorkspaceState>(
+      listenWhen: (prev, curr) =>
+          prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+      listener: (context, state) {
+        final wsId = state.currentWorkspace?.id;
+        if (wsId == null) return;
+        unawaited(
+          context.read<TaskBoardDetailCubit>().loadBoardDetail(
+            wsId: wsId,
+            boardId: widget.boardId,
           ),
-          actions: [
-            BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
-              buildWhen: (prev, curr) => prev.filters != curr.filters,
-              builder: (context, state) {
-                final hasActiveFilters = state.filters.hasAdvancedFilters;
-                return Tooltip(
-                  message: hasActiveFilters
-                      ? context.l10n.taskBoardDetailFiltersActive
-                      : context.l10n.taskBoardDetailFilters,
-                  child: shad.IconButton.ghost(
-                    icon: Icon(
-                      hasActiveFilters
-                          ? Icons.filter_alt
-                          : Icons.filter_alt_outlined,
-                    ),
-                    onPressed: () => unawaited(
-                      _openAdvancedFilterSheet(
-                        context,
-                        context.read<TaskBoardDetailCubit>().state,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            PopupMenuButton<_BoardAction>(
-              tooltip: context.l10n.taskBoardDetailBoardActions,
-              onSelected: (action) => _handleBoardAction(context, action),
-              itemBuilder: (context) => [
-                PopupMenuItem<_BoardAction>(
-                  value: _BoardAction.renameBoard,
-                  child: Text(context.l10n.taskBoardDetailRenameBoard),
-                ),
-                PopupMenuItem<_BoardAction>(
-                  value: _BoardAction.refresh,
-                  child: Text(context.l10n.taskBoardDetailRefresh),
-                ),
-              ],
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
-                child: Icon(Icons.more_vert),
-              ),
-            ),
-          ],
-        ),
-      ],
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+        );
+      },
+      child: BlocListener<TaskBoardDetailCubit, TaskBoardDetailState>(
+        listenWhen: (_, curr) => curr.board != null,
         listener: (context, state) {
-          final wsId = state.currentWorkspace?.id;
-          if (wsId == null) return;
-          unawaited(
-            context.read<TaskBoardDetailCubit>().loadBoardDetail(
-              wsId: wsId,
-              boardId: widget.boardId,
-            ),
+          final detail = state.board;
+          if (detail == null || detail.lists.isEmpty) {
+            return;
+          }
+
+          _maybeOpenInitialTask(
+            context,
+            detail: detail,
+            lists: _sortedLists(detail.lists),
           );
         },
-        child: BlocListener<TaskBoardDetailCubit, TaskBoardDetailState>(
-          listenWhen: (_, curr) => curr.board != null,
-          listener: (context, state) {
+        child: BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
+          builder: (context, state) {
             final detail = state.board;
-            if (detail == null || detail.lists.isEmpty) {
-              return;
+            if (state.status == TaskBoardDetailStatus.loading &&
+                detail == null) {
+              return const Center(child: shad.CircularProgressIndicator());
             }
 
-            _maybeOpenInitialTask(
-              context,
-              detail: detail,
-              lists: _sortedLists(detail.lists),
-            );
-          },
-          child: BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
-            builder: (context, state) {
-              final detail = state.board;
-              if (state.status == TaskBoardDetailStatus.loading &&
-                  detail == null) {
-                return const Center(child: shad.CircularProgressIndicator());
-              }
+            if (state.status == TaskBoardDetailStatus.error && detail == null) {
+              return _TaskBoardDetailErrorState(
+                message: context.l10n.taskBoardDetailLoadError,
+                onRetry: () => context.read<TaskBoardDetailCubit>().reload(),
+              );
+            }
 
-              if (state.status == TaskBoardDetailStatus.error &&
-                  detail == null) {
-                return _TaskBoardDetailErrorState(
-                  message: context.l10n.taskBoardDetailLoadError,
-                  onRetry: () => context.read<TaskBoardDetailCubit>().reload(),
-                );
-              }
+            if (detail == null) {
+              return _TaskBoardDetailErrorState(
+                message: context.l10n.taskBoardDetailLoadError,
+                onRetry: () => context.read<TaskBoardDetailCubit>().reload(),
+              );
+            }
 
-              if (detail == null) {
-                return _TaskBoardDetailErrorState(
-                  message: context.l10n.taskBoardDetailLoadError,
-                  onRetry: () => context.read<TaskBoardDetailCubit>().reload(),
-                );
-              }
+            if (detail.lists.isEmpty) {
+              return _NoListsState(
+                onCreateList: () => unawaited(_openCreateListDialog(context)),
+              );
+            }
 
-              if (detail.lists.isEmpty) {
-                return _NoListsState(
-                  onCreateList: () => unawaited(_openCreateListDialog(context)),
-                );
-              }
+            final sortedLists = _sortedLists(detail.lists);
+            final filteredByList = state.filteredTasksByListId;
+            final bottomPadding =
+                _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
+            final listIds = sortedLists.map((list) => list.id).toSet();
+            _collapsedListIds.removeWhere((id) => !listIds.contains(id));
+            if (_searchController.text != state.searchQuery) {
+              _searchController.value = TextEditingValue(
+                text: state.searchQuery,
+                selection: TextSelection.collapsed(
+                  offset: state.searchQuery.length,
+                ),
+              );
+            }
 
-              final sortedLists = _sortedLists(detail.lists);
-              final filteredByList = state.filteredTasksByListId;
-              final bottomPadding =
-                  _fabContentBottomPadding +
-                  MediaQuery.paddingOf(context).bottom;
-              final listIds = sortedLists.map((list) => list.id).toSet();
-              _collapsedListIds.removeWhere((id) => !listIds.contains(id));
-              if (_searchController.text != state.searchQuery) {
-                _searchController.value = TextEditingValue(
-                  text: state.searchQuery,
-                  selection: TextSelection.collapsed(
-                    offset: state.searchQuery.length,
+            return Stack(
+              children: [
+                ResponsiveWrapper(
+                  maxWidth: ResponsivePadding.maxContentWidth(
+                    context.deviceClass,
                   ),
-                );
-              }
-
-              return Stack(
-                children: [
-                  ResponsiveWrapper(
-                    maxWidth: ResponsivePadding.maxContentWidth(
-                      context.deviceClass,
-                    ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              shad.Tabs(
-                                index:
-                                    state.currentView ==
-                                        TaskBoardDetailView.list
-                                    ? 0
-                                    : 1,
-                                onChanged: (value) {
-                                  final nextView = value == 0
-                                      ? TaskBoardDetailView.list
-                                      : TaskBoardDetailView.kanban;
-                                  context.read<TaskBoardDetailCubit>().setView(
-                                    nextView,
-                                  );
-                                },
-                                children: [
-                                  shad.TabItem(
-                                    child: Text(
-                                      context.l10n.taskBoardDetailListView,
-                                    ),
-                                  ),
-                                  shad.TabItem(
-                                    child: Text(
-                                      context.l10n.taskBoardDetailKanbanView,
-                                    ),
-                                  ),
-                                ],
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _TaskBoardDetailToolbarCard(
+                              title: detail.name?.trim().isNotEmpty == true
+                                  ? detail.name!.trim()
+                                  : context.l10n.taskBoardDetailUntitledBoard,
+                              hasActiveFilters:
+                                  state.filters.hasAdvancedFilters,
+                              onBack: () {
+                                final router = GoRouter.of(context);
+                                if (router.canPop()) {
+                                  router.pop();
+                                  return;
+                                }
+                                context.go(Routes.taskBoards);
+                              },
+                              onOpenFilters: () => unawaited(
+                                _openAdvancedFilterSheet(
+                                  context,
+                                  context.read<TaskBoardDetailCubit>().state,
+                                ),
                               ),
-                              const shad.Gap(10),
-                              shad.TextField(
-                                controller: _searchController,
-                                hintText: context
-                                    .l10n
-                                    .taskBoardDetailSearchPlaceholder,
-                                onChanged: (value) => context
-                                    .read<TaskBoardDetailCubit>()
-                                    .setSearchQuery(value),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: RefreshIndicator(
-                            onRefresh: () =>
-                                context.read<TaskBoardDetailCubit>().reload(),
-                            child: state.currentView == TaskBoardDetailView.list
-                                ? _buildListView(
-                                    context,
-                                    sortedLists,
-                                    filteredByList,
-                                    state,
-                                    detail,
-                                    bottomPadding,
-                                  )
-                                : _buildKanbanView(
-                                    context,
-                                    sortedLists,
-                                    filteredByList,
-                                    state,
-                                    detail,
-                                    bottomPadding,
+                              onSelectedAction: (action) =>
+                                  _handleBoardAction(context, action),
+                            ),
+                            const shad.Gap(12),
+                            shad.Tabs(
+                              index:
+                                  state.currentView == TaskBoardDetailView.list
+                                  ? 0
+                                  : 1,
+                              onChanged: (value) {
+                                final nextView = value == 0
+                                    ? TaskBoardDetailView.list
+                                    : TaskBoardDetailView.kanban;
+                                context.read<TaskBoardDetailCubit>().setView(
+                                  nextView,
+                                );
+                              },
+                              children: [
+                                shad.TabItem(
+                                  child: Text(
+                                    context.l10n.taskBoardDetailListView,
                                   ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SpeedDialFab(
-                    label: context.l10n.taskBoardDetailCreateTask,
-                    icon: Icons.add,
-                    actions: [
-                      FabAction(
-                        icon: Icons.add_task,
-                        label: context.l10n.taskBoardDetailCreateTask,
-                        onPressed: () => unawaited(
-                          _openTaskCreateSheet(
-                            context,
-                            lists: sortedLists,
-                            defaultListId: sortedLists.first.id,
-                          ),
+                                ),
+                                shad.TabItem(
+                                  child: Text(
+                                    context.l10n.taskBoardDetailKanbanView,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const shad.Gap(10),
+                            shad.TextField(
+                              controller: _searchController,
+                              hintText:
+                                  context.l10n.taskBoardDetailSearchPlaceholder,
+                              onChanged: (value) => context
+                                  .read<TaskBoardDetailCubit>()
+                                  .setSearchQuery(value),
+                            ),
+                          ],
                         ),
                       ),
-                      FabAction(
-                        icon: Icons.playlist_add,
-                        label: context.l10n.taskBoardDetailCreateList,
-                        onPressed: () =>
-                            unawaited(_openCreateListDialog(context)),
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: () =>
+                              context.read<TaskBoardDetailCubit>().reload(),
+                          child: state.currentView == TaskBoardDetailView.list
+                              ? _buildListView(
+                                  context,
+                                  sortedLists,
+                                  filteredByList,
+                                  state,
+                                  detail,
+                                  bottomPadding,
+                                )
+                              : _buildKanbanView(
+                                  context,
+                                  sortedLists,
+                                  filteredByList,
+                                  state,
+                                  detail,
+                                  bottomPadding,
+                                ),
+                        ),
                       ),
                     ],
                   ),
-                ],
-              );
-            },
-          ),
+                ),
+                SpeedDialFab(
+                  label: context.l10n.taskBoardDetailCreateTask,
+                  icon: Icons.add,
+                  actions: [
+                    FabAction(
+                      icon: Icons.add_task,
+                      label: context.l10n.taskBoardDetailCreateTask,
+                      onPressed: () => unawaited(
+                        _openTaskCreateSheet(
+                          context,
+                          lists: sortedLists,
+                          defaultListId: sortedLists.first.id,
+                        ),
+                      ),
+                    ),
+                    FabAction(
+                      icon: Icons.playlist_add,
+                      label: context.l10n.taskBoardDetailCreateList,
+                      onPressed: () =>
+                          unawaited(_openCreateListDialog(context)),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -626,5 +573,84 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             shad.Alert.destructive(content: Text(fallbackErrorMessage)),
       );
     }
+  }
+}
+
+class _TaskBoardDetailToolbarCard extends StatelessWidget {
+  const _TaskBoardDetailToolbarCard({
+    required this.title,
+    required this.hasActiveFilters,
+    required this.onBack,
+    required this.onOpenFilters,
+    required this.onSelectedAction,
+  });
+
+  final String title;
+  final bool hasActiveFilters;
+  final VoidCallback onBack;
+  final VoidCallback onOpenFilters;
+  final ValueChanged<_BoardAction> onSelectedAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return shad.Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            shad.OutlineButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: onBack,
+              child: const Icon(Icons.arrow_back),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.large.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Tooltip(
+              message: hasActiveFilters
+                  ? context.l10n.taskBoardDetailFiltersActive
+                  : context.l10n.taskBoardDetailFilters,
+              child: shad.IconButton.ghost(
+                icon: Icon(
+                  hasActiveFilters
+                      ? Icons.filter_alt
+                      : Icons.filter_alt_outlined,
+                ),
+                onPressed: onOpenFilters,
+              ),
+            ),
+            PopupMenuButton<_BoardAction>(
+              tooltip: context.l10n.taskBoardDetailBoardActions,
+              onSelected: onSelectedAction,
+              itemBuilder: (context) => [
+                PopupMenuItem<_BoardAction>(
+                  value: _BoardAction.renameBoard,
+                  child: Text(context.l10n.taskBoardDetailRenameBoard),
+                ),
+                PopupMenuItem<_BoardAction>(
+                  value: _BoardAction.refresh,
+                  child: Text(context.l10n.taskBoardDetailRefresh),
+                ),
+              ],
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(Icons.more_vert),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -143,7 +143,7 @@ jobs:
         run: uv run pytest --cov=. --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./apps/discord/coverage.xml
           flags: discord-python

@@ -7105,6 +7105,12 @@ abstract class AppLocalizations {
   /// **'Choose where to pick your new avatar image from.'**
   String get profileAvatarPickerDescription;
 
+  /// No description provided for @workspaceAvatarPickerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where to pick your new workspace avatar image from.'**
+  String get workspaceAvatarPickerDescription;
+
   /// No description provided for @profileUploadAvatar.
   ///
   /// In en, this message translates to:

@@ -59,6 +59,10 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const ValueKey<String> _globalLayerKey = ValueKey('global-layer');
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
+  static const ValueKey<String> _shellAvatarKey = ValueKey('shell-avatar');
+  static const ValueKey<String> _shellNotificationsKey = ValueKey(
+    'shell-notifications',
+  );
   static const double _navIconSize = 22;
   static const double _navItemSpacing = 2;
   static const double _floatingNavMinItemWidth = 96;

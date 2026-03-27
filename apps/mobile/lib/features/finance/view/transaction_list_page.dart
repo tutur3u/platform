@@ -7,7 +7,6 @@ import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -141,22 +140,6 @@ class _TransactionListViewState extends State<_TransactionListView> {
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: l10n.financeActivityLabel,
-          actions: [
-            shad.GhostButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () =>
-                  setState(() => _isSearchVisible = !_isSearchVisible),
-              child: Icon(
-                _isSearchVisible ? Icons.close_rounded : Icons.search_rounded,
-                size: 18,
-              ),
-            ),
-          ],
-        ),
-      ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -205,6 +188,9 @@ class _TransactionListViewState extends State<_TransactionListView> {
                         onChanged: _onSearchChanged,
                         isSearchVisible: _isSearchVisible,
                         state: state,
+                        onToggleSearch: () => setState(
+                          () => _isSearchVisible = !_isSearchVisible,
+                        ),
                       ),
                       const shad.Gap(14),
                       FinanceEmptyState(
@@ -256,6 +242,9 @@ class _TransactionListViewState extends State<_TransactionListView> {
                         onChanged: _onSearchChanged,
                         isSearchVisible: _isSearchVisible,
                         state: state,
+                        onToggleSearch: () => setState(
+                          () => _isSearchVisible = !_isSearchVisible,
+                        ),
                       ),
                     ],
                     onTransactionTap: (transaction) async {
@@ -305,12 +294,14 @@ class _ActivityHeaderCard extends StatelessWidget {
     required this.onChanged,
     required this.isSearchVisible,
     required this.state,
+    required this.onToggleSearch,
   });
 
   final TextEditingController searchController;
   final ValueChanged<String> onChanged;
   final bool isSearchVisible;
   final TransactionListState state;
+  final VoidCallback onToggleSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -328,6 +319,14 @@ class _ActivityHeaderCard extends StatelessWidget {
                 : (isSearchVisible
                       ? l10n.financeActivitySearchHint
                       : l10n.financeActivityDefaultHint),
+            action: shad.GhostButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: onToggleSearch,
+              child: Icon(
+                isSearchVisible ? Icons.close_rounded : Icons.search_rounded,
+                size: 18,
+              ),
+            ),
           ),
           if (isSearchVisible) ...[
             const shad.Gap(14),

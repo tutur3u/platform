@@ -16,7 +16,6 @@ import 'package:mobile/features/calendar/widgets/month_view.dart';
 import 'package:mobile/features/calendar/widgets/three_day_view.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -57,58 +56,6 @@ class _CalendarView extends StatelessWidget {
     );
 
     return shad.Scaffold(
-      headers: [
-        MobileSectionAppBar(
-          title: l10n.calendarTitle,
-          actions: [
-            if (Env.isCalendarIntegrationsEnabled)
-              Tooltip(
-                message: l10n.calendarConnectionsTitle,
-                child: shad.IconButton.ghost(
-                  icon: const Icon(Icons.sync_alt),
-                  onPressed: () {
-                    final wsId = context
-                        .read<WorkspaceCubit>()
-                        .state
-                        .currentWorkspace
-                        ?.id;
-                    if (wsId != null) {
-                      unawaited(
-                        showCalendarConnectionsSheet(context, wsId: wsId),
-                      );
-                    }
-                  },
-                ),
-              ),
-            Tooltip(
-              message: l10n.calendarToday,
-              child: shad.IconButton.ghost(
-                icon: const Icon(Icons.today),
-                onPressed: () {
-                  final cubit = context.read<CalendarCubit>()..goToToday();
-                  final wsId = context
-                      .read<WorkspaceCubit>()
-                      .state
-                      .currentWorkspace
-                      ?.id;
-                  if (wsId != null) {
-                    unawaited(cubit.ensureRangeLoaded(wsId, DateTime.now()));
-                  }
-                },
-              ),
-            ),
-            BlocBuilder<CalendarCubit, CalendarState>(
-              buildWhen: (prev, curr) => prev.viewMode != curr.viewMode,
-              builder: (context, state) {
-                return shad.IconButton.ghost(
-                  icon: Icon(_viewModeIcon(state.viewMode)),
-                  onPressed: () => _showViewModeMenu(context, state.viewMode),
-                );
-              },
-            ),
-          ],
-        ),
-      ],
       child: Stack(
         children: [
           BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -136,6 +83,75 @@ class _CalendarView extends StatelessWidget {
                   onRefresh: () async => _reload(context),
                   child: Column(
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Wrap(
+                            spacing: 6,
+                            children: [
+                              if (Env.isCalendarIntegrationsEnabled)
+                                Tooltip(
+                                  message: l10n.calendarConnectionsTitle,
+                                  child: shad.IconButton.ghost(
+                                    icon: const Icon(Icons.sync_alt),
+                                    onPressed: () {
+                                      final wsId = context
+                                          .read<WorkspaceCubit>()
+                                          .state
+                                          .currentWorkspace
+                                          ?.id;
+                                      if (wsId != null) {
+                                        unawaited(
+                                          showCalendarConnectionsSheet(
+                                            context,
+                                            wsId: wsId,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              Tooltip(
+                                message: l10n.calendarToday,
+                                child: shad.IconButton.ghost(
+                                  icon: const Icon(Icons.today),
+                                  onPressed: () {
+                                    final cubit = context.read<CalendarCubit>()
+                                      ..goToToday();
+                                    final wsId = context
+                                        .read<WorkspaceCubit>()
+                                        .state
+                                        .currentWorkspace
+                                        ?.id;
+                                    if (wsId != null) {
+                                      unawaited(
+                                        cubit.ensureRangeLoaded(
+                                          wsId,
+                                          DateTime.now(),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                              BlocBuilder<CalendarCubit, CalendarState>(
+                                buildWhen: (prev, curr) =>
+                                    prev.viewMode != curr.viewMode,
+                                builder: (context, state) {
+                                  return shad.IconButton.ghost(
+                                    icon: Icon(_viewModeIcon(state.viewMode)),
+                                    onPressed: () => _showViewModeMenu(
+                                      context,
+                                      state.viewMode,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       // Month strip (day, 3-day, and agenda views).
                       if (state.viewMode == CalendarViewMode.day ||
                           state.viewMode == CalendarViewMode.threeDays ||
