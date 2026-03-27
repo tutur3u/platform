@@ -506,6 +506,7 @@ extension _ShellPageLayout on _ShellPageState {
       padding: mobileSectionAppBarPadding,
       trailingGap: 6,
       trailing: [
+        ShellInjectedActionsHost(matchedLocation: widget.matchedLocation),
         KeyedSubtree(
           key: _ShellPageState._shellNotificationsKey,
           child: RepaintBoundary(

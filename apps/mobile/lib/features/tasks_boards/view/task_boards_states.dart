@@ -1,80 +1,35 @@
 part of 'task_boards_view.dart';
 
-class _BoardsToolbarCard extends StatelessWidget {
-  const _BoardsToolbarCard({
-    required this.title,
+class _BoardsMetaRow extends StatelessWidget {
+  const _BoardsMetaRow({
     required this.filterLabel,
     required this.boardCount,
-    required this.isRefreshing,
-    required this.onOpenFilter,
   });
 
-  final String title;
   final String filterLabel;
   final int boardCount;
-  final bool isRefreshing;
-  final VoidCallback onOpenFilter;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
     final countLabel = NumberFormat.compact().format(boardCount);
 
-    return shad.Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.typography.large.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const shad.Gap(6),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      shad.OutlineBadge(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(shad.LucideIcons.filter, size: 14),
-                            const SizedBox(width: 6),
-                            Text(filterLabel),
-                          ],
-                        ),
-                      ),
-                      shad.OutlineBadge(child: Text(countLabel)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            if (isRefreshing)
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              Tooltip(
-                message: filterLabel,
-                child: shad.IconButton.ghost(
-                  icon: const Icon(shad.LucideIcons.slidersHorizontal),
-                  onPressed: onOpenFilter,
-                ),
-              ),
-          ],
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        shad.OutlineBadge(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(shad.LucideIcons.filter, size: 14),
+              const SizedBox(width: 6),
+              Text(filterLabel),
+            ],
+          ),
         ),
-      ),
+        shad.OutlineBadge(child: Text(countLabel)),
+      ],
     );
   }
 }

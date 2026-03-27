@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -146,6 +149,25 @@ class _TransactionListViewState extends State<_TransactionListView> {
         listener: (context, _) => unawaited(_onRefresh()),
         child: Stack(
           children: [
+            ShellChromeActions(
+              ownerId: 'finance-transactions',
+              locations: const {Routes.transactions},
+              actions: [
+                ShellActionSpec(
+                  id: 'finance-transactions-search',
+                  icon: _isSearchVisible
+                      ? Icons.close_rounded
+                      : Icons.search_rounded,
+                  tooltip: _isSearchVisible
+                      ? l10n.financeActivityClearSearch
+                      : l10n.financeSearchTransactions,
+                  highlighted: _isSearchVisible,
+                  onPressed: () => setState(
+                    () => _isSearchVisible = !_isSearchVisible,
+                  ),
+                ),
+              ],
+            ),
             BlocBuilder<TransactionListCubit, TransactionListState>(
               builder: (context, state) {
                 if (_searchController.text != state.search &&
@@ -188,9 +210,6 @@ class _TransactionListViewState extends State<_TransactionListView> {
                         onChanged: _onSearchChanged,
                         isSearchVisible: _isSearchVisible,
                         state: state,
-                        onToggleSearch: () => setState(
-                          () => _isSearchVisible = !_isSearchVisible,
-                        ),
                       ),
                       const shad.Gap(14),
                       FinanceEmptyState(
@@ -242,9 +261,6 @@ class _TransactionListViewState extends State<_TransactionListView> {
                         onChanged: _onSearchChanged,
                         isSearchVisible: _isSearchVisible,
                         state: state,
-                        onToggleSearch: () => setState(
-                          () => _isSearchVisible = !_isSearchVisible,
-                        ),
                       ),
                     ],
                     onTransactionTap: (transaction) async {
@@ -294,14 +310,12 @@ class _ActivityHeaderCard extends StatelessWidget {
     required this.onChanged,
     required this.isSearchVisible,
     required this.state,
-    required this.onToggleSearch,
   });
 
   final TextEditingController searchController;
   final ValueChanged<String> onChanged;
   final bool isSearchVisible;
   final TransactionListState state;
-  final VoidCallback onToggleSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -319,14 +333,6 @@ class _ActivityHeaderCard extends StatelessWidget {
                 : (isSearchVisible
                       ? l10n.financeActivitySearchHint
                       : l10n.financeActivityDefaultHint),
-            action: shad.GhostButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: onToggleSearch,
-              child: Icon(
-                isSearchVisible ? Icons.close_rounded : Icons.search_rounded,
-                size: 18,
-              ),
-            ),
           ),
           if (isSearchVisible) ...[
             const shad.Gap(14),

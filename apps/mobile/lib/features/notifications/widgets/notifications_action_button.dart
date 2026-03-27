@@ -16,6 +16,7 @@ bool shouldShowNotificationsActionForLocation(String matchedLocation) {
   return matchedLocation == Routes.home ||
       matchedLocation == Routes.assistant ||
       matchedLocation == Routes.apps ||
+      matchedLocation == Routes.profileRoot ||
       matchedLocation == Routes.tasks ||
       matchedLocation == Routes.taskBoards ||
       matchedLocation == Routes.taskEstimates ||
@@ -30,7 +31,9 @@ bool shouldShowNotificationsActionForLocation(String matchedLocation) {
       matchedLocation == Routes.timer ||
       matchedLocation == Routes.timerHistory ||
       matchedLocation == Routes.timerStats ||
-      matchedLocation == Routes.timerRequests;
+      matchedLocation == Routes.timerRequests ||
+      matchedLocation == Routes.settings ||
+      matchedLocation == Routes.settingsMobileVersions;
 }
 
 class ShellNotificationsActionSlot extends StatelessWidget {
