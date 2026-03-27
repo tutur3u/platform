@@ -168,12 +168,53 @@ class _BoardListSection extends StatelessWidget {
                       const shad.Gap(10),
                       if (tasks.isEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(left: 12, right: 12),
-                          child: Text(
-                            isLoadingTasks
-                                ? context.l10n.notificationsLoadingMore
-                                : context.l10n.taskBoardDetailNoTasksInList,
-                            style: theme.typography.textMuted,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(minHeight: 140),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.background.withValues(
+                                alpha: 0.65,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: style.surfaceBorder.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.inbox_outlined,
+                                    size: 28,
+                                    color: style.accent,
+                                  ),
+                                  const shad.Gap(10),
+                                  Text(
+                                    isLoadingTasks
+                                        ? context.l10n.notificationsLoadingMore
+                                        : context
+                                              .l10n
+                                              .taskBoardDetailNoTasksInList,
+                                    textAlign: TextAlign.center,
+                                    style: theme.typography.textMuted,
+                                  ),
+                                  const shad.Gap(12),
+                                  shad.PrimaryButton(
+                                    leading: const Icon(Icons.add),
+                                    size: shad.ButtonSize.small,
+                                    onPressed: onCreateTask,
+                                    child: Text(
+                                      context.l10n.taskBoardDetailCreateTask,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         )
                       else
@@ -608,13 +649,44 @@ class _KanbanColumn extends StatelessWidget {
                       Expanded(
                         child: tasks.isEmpty && !isLoadingTasks
                             ? Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 12,
-                                ),
-                                child: Text(
-                                  context.l10n.taskBoardDetailNoTasksInList,
-                                  style: theme.typography.textMuted,
+                                padding: const EdgeInsets.all(10),
+                                child: Container(
+                                  width: double.infinity,
+                                  constraints: const BoxConstraints(
+                                    minHeight: 170,
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.inbox_outlined,
+                                          size: 28,
+                                          color: style.accent,
+                                        ),
+                                        const shad.Gap(10),
+                                        Text(
+                                          context
+                                              .l10n
+                                              .taskBoardDetailNoTasksInList,
+                                          textAlign: TextAlign.center,
+                                          style: theme.typography.textMuted,
+                                        ),
+                                        const shad.Gap(12),
+                                        shad.PrimaryButton(
+                                          leading: const Icon(Icons.add),
+                                          size: shad.ButtonSize.small,
+                                          onPressed: onCreateTask,
+                                          child: Text(
+                                            context
+                                                .l10n
+                                                .taskBoardDetailCreateTask,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               )
                             : ListView.separated(

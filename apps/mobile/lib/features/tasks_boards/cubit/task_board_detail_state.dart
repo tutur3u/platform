@@ -66,7 +66,7 @@ class TaskBoardDetailState extends Equatable {
     this.workspaceId,
     this.boardId,
     this.board,
-    this.currentView = TaskBoardDetailView.list,
+    this.currentView = TaskBoardDetailView.kanban,
     this.searchQuery = '',
     this.filters = const TaskBoardDetailFilters(),
     this.taskDescriptionSearchIndex = const <String, String>{},

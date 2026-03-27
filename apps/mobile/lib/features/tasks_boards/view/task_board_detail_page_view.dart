@@ -1,5 +1,3 @@
-import 'package:lucide_icons/lucide_icons.dart';
-
 part of 'task_board_detail_page.dart';
 
 class _TaskBoardDetailPageView extends StatefulWidget {
@@ -26,6 +24,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   String? _pendingInitialTaskId;
   bool _didHandleInitialTaskNavigation = false;
   bool _isHandlingInitialTaskNavigation = false;
+  bool _showSearchField = false;
 
   @override
   void initState() {
@@ -168,6 +167,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                 ),
               );
             }
+            final searchFieldVisible =
+                _showSearchField || state.searchQuery.trim().isNotEmpty;
 
             return Stack(
               children: [
@@ -206,53 +207,97 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                                   _handleBoardAction(context, action),
                             ),
                             const shad.Gap(12),
-                            shad.Tabs(
-                              index:
-                                  state.currentView == TaskBoardDetailView.list
-                                  ? 0
-                                  : 1,
-                              onChanged: (value) {
-                                final nextView = value == 0
-                                    ? TaskBoardDetailView.list
-                                    : TaskBoardDetailView.kanban;
-                                context.read<TaskBoardDetailCubit>().setView(
-                                  nextView,
-                                );
-                              },
+                            Row(
                               children: [
-                                shad.TabItem(
-                                  child: Row(
+                                Expanded(
+                                  child: shad.Tabs(
+                                    expand: true,
+                                    index:
+                                        state.currentView ==
+                                            TaskBoardDetailView.kanban
+                                        ? 0
+                                        : 1,
+                                    onChanged: (value) {
+                                      final nextView = value == 0
+                                          ? TaskBoardDetailView.kanban
+                                          : TaskBoardDetailView.list;
+                                      context
+                                          .read<TaskBoardDetailCubit>()
+                                          .setView(nextView);
+                                    },
                                     children: [
-                                      Icon(LucideIcons.list),
-                                      const shad.Gap(5),
-                                      Text(
-                                        context.l10n.taskBoardDetailListView,
+                                      shad.TabItem(
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                LucideIcons.squareKanban,
+                                              ),
+                                              const shad.Gap(5),
+                                              Text(
+                                                context
+                                                    .l10n
+                                                    .taskBoardDetailKanbanView,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      shad.TabItem(
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(LucideIcons.list),
+                                              const shad.Gap(5),
+                                              Text(
+                                                context
+                                                    .l10n
+                                                    .taskBoardDetailListView,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                shad.TabItem(
-                                  child: Row(
-                                    children: [
-                                      Icon(LucideIcons.squareKanban),
-                                      const shad.Gap(5),
-                                      Text(
-                                        context.l10n.taskBoardDetailKanbanView,
-                                      ),
-                                    ],
+                                const shad.Gap(8),
+                                shad.IconButton.ghost(
+                                  icon: Icon(
+                                    searchFieldVisible
+                                        ? Icons.close
+                                        : Icons.search,
                                   ),
+                                  onPressed: () {
+                                    final cubit = context
+                                        .read<TaskBoardDetailCubit>();
+                                    if (searchFieldVisible) {
+                                      setState(() => _showSearchField = false);
+                                      _searchController.clear();
+                                      cubit.setSearchQuery('');
+                                      return;
+                                    }
+                                    setState(() => _showSearchField = true);
+                                  },
                                 ),
                               ],
                             ),
-                            const shad.Gap(10),
-                            shad.TextField(
-                              controller: _searchController,
-                              hintText:
-                                  context.l10n.taskBoardDetailSearchPlaceholder,
-                              onChanged: (value) => context
-                                  .read<TaskBoardDetailCubit>()
-                                  .setSearchQuery(value),
-                            ),
+                            if (searchFieldVisible) ...[
+                              const shad.Gap(10),
+                              shad.TextField(
+                                controller: _searchController,
+                                hintText: context
+                                    .l10n
+                                    .taskBoardDetailSearchPlaceholder,
+                                onChanged: (value) => context
+                                    .read<TaskBoardDetailCubit>()
+                                    .setSearchQuery(value),
+                              ),
+                            ],
                           ],
                         ),
                       ),
