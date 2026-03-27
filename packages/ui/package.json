@@ -53,7 +53,7 @@
     "@tiptap/extension-collaboration": "3.20.6",
     "@tiptap/extension-collaboration-caret": "3.20.6",
     "@tiptap/extension-drag-handle-react": "3.20.6",
-    "@tiptap/extension-highlight": "3.20.6",
+    "@tiptap/extension-highlight": "3.21.0",
     "@tiptap/extension-horizontal-rule": "3.20.6",
     "@tiptap/extension-image": "3.20.6",
     "@tiptap/extension-link": "3.20.6",
