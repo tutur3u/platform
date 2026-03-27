@@ -158,6 +158,86 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
     };
   }
 
+  bool _currentFilterIncludesStatus(ApprovalStatus status) {
+    final selectedStatus = state.selectedStatus;
+    return selectedStatus == null || selectedStatus == status;
+  }
+
+  TimeTrackingRequest _requestWithUpdatedStatus(
+    TimeTrackingRequest request,
+    ApprovalStatus status, {
+    String? reason,
+  }) {
+    final now = DateTime.now();
+
+    return TimeTrackingRequest(
+      id: request.id,
+      workspaceId: request.workspaceId,
+      userId: request.userId,
+      taskId: request.taskId,
+      categoryId: request.categoryId,
+      title: request.title,
+      description: request.description,
+      userDisplayName: request.userDisplayName,
+      userAvatarUrl: request.userAvatarUrl,
+      startTime: request.startTime,
+      endTime: request.endTime,
+      images: request.images,
+      approvalStatus: status,
+      approvedBy: status == ApprovalStatus.approved ? request.approvedBy : null,
+      approvedByName: status == ApprovalStatus.approved
+          ? request.approvedByName
+          : null,
+      approvedAt: status == ApprovalStatus.approved ? now : null,
+      rejectedBy: status == ApprovalStatus.rejected ? request.rejectedBy : null,
+      rejectedByName: status == ApprovalStatus.rejected
+          ? request.rejectedByName
+          : null,
+      rejectedAt: status == ApprovalStatus.rejected ? now : null,
+      needsInfoRequestedByName: status == ApprovalStatus.needsInfo
+          ? request.needsInfoRequestedByName
+          : null,
+      rejectionReason: status == ApprovalStatus.rejected ? reason : null,
+      needsInfoReason: status == ApprovalStatus.needsInfo ? reason : null,
+      createdAt: request.createdAt,
+      updatedAt: now,
+    );
+  }
+
+  void _applyStatusMutationToCurrentState(
+    String requestId,
+    ApprovalStatus status, {
+    String? reason,
+  }) {
+    final hasTarget = state.requests.any((request) => request.id == requestId);
+    if (!hasTarget) {
+      return;
+    }
+
+    final nextRequests = _currentFilterIncludesStatus(status)
+        ? state.requests
+              .map(
+                (request) => request.id == requestId
+                    ? _requestWithUpdatedStatus(request, status, reason: reason)
+                    : request,
+              )
+              .toList(growable: false)
+        : state.requests
+              .where((request) => request.id != requestId)
+              .toList(growable: false);
+
+    emit(
+      state.copyWith(
+        requests: nextRequests,
+        status: TimeTrackerRequestsStatus.loaded,
+        isFromCache: false,
+        isRefreshing: false,
+        lastUpdatedAt: DateTime.now(),
+        clearError: true,
+      ),
+    );
+  }
+
   Future<List<TimeTrackingRequest>> _fetchRequests(
     String wsId, {
     required String? status,
@@ -174,6 +254,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
     String wsId, {
     Object? userId = _userIdNotProvided,
     String? statusOverride,
+    bool forceRefresh = false,
   }) async {
     final loadToken = ++_latestLoadToken;
     final hasExplicitUserId = !identical(userId, _userIdNotProvided);
@@ -209,7 +290,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
                   .map(TimeTrackingRequest.fromJson)
                   .toList(growable: false),
           isFromCache: true,
-          isRefreshing: !cached.isFresh,
+          isRefreshing: forceRefresh || !cached.isFresh,
           lastUpdatedAt: cached.fetchedAt,
           selectedStatus: selectedStatus,
           clearSelectedStatus: selectedStatus == null,
@@ -220,7 +301,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
           clearError: true,
         ),
       );
-      if (cached.isFresh) {
+      if (!forceRefresh && cached.isFresh) {
         return;
       }
     } else {
@@ -325,6 +406,11 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         requestId,
         status: ApprovalStatus.approved,
       );
+      _applyStatusMutationToCurrentState(
+        requestId,
+        ApprovalStatus.approved,
+      );
+      await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
@@ -344,6 +430,12 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         status: ApprovalStatus.rejected,
         reason: reason,
       );
+      _applyStatusMutationToCurrentState(
+        requestId,
+        ApprovalStatus.rejected,
+        reason: reason,
+      );
+      await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
@@ -363,6 +455,12 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         status: ApprovalStatus.needsInfo,
         reason: reason,
       );
+      _applyStatusMutationToCurrentState(
+        requestId,
+        ApprovalStatus.needsInfo,
+        reason: reason,
+      );
+      await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
@@ -377,6 +475,11 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         requestId,
         status: ApprovalStatus.pending,
       );
+      _applyStatusMutationToCurrentState(
+        requestId,
+        ApprovalStatus.pending,
+      );
+      await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
