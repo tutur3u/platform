@@ -144,7 +144,7 @@ export async function PUT(req: Request, { params }: Params) {
 export async function DELETE(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId: id } = await params;
-  
+
   const {
     data: { user },
     error: authError,
