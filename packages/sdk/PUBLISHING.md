@@ -22,7 +22,7 @@ Before publishing, ensure:
 - [ ] CHANGELOG or release notes are updated
 - [ ] README.md is up to date
 - [ ] LICENSE file exists
-- [ ] Build succeeds: `bun run build`
+- [ ] `npm pack --dry-run` includes both `dist/` and `src/`
 
 ## Publishing Steps
 
@@ -42,8 +42,10 @@ bun test
 ### 3. Build Package
 
 ```bash
-bun run build
+npm pack --dry-run
 ```
+
+`prepack` runs the clean build automatically, so `npm pack --dry-run` is the canonical way to verify the published artifact.
 
 ### 4. Verify Package Contents (Optional)
 
@@ -202,7 +204,7 @@ bun run build
 ### Import Errors After Publishing
 
 - Verify `exports` field in package.json
-- Check that `dist/` folder is included in published package
+- Check that both `dist/` and `src/` are included in the published package
 - Test locally: `npm link` in SDK folder, then `npm link tuturuuu` in test project
 
 ## Package Structure
@@ -211,7 +213,7 @@ After build, the package includes:
 
 ```
 tuturuuu/
-├── dist/           # Compiled JavaScript and TypeScript declarations
+├── dist/           # Compiled JavaScript for Node/npm consumers
 │   ├── index.js
 │   ├── index.d.ts
 │   ├── storage.js
@@ -220,6 +222,11 @@ tuturuuu/
 │   ├── types.d.ts
 │   ├── errors.js
 │   └── errors.d.ts
+├── src/            # Source entrypoints for Bun/type resolution
+│   ├── index.ts
+│   ├── storage.ts
+│   ├── types.ts
+│   └── errors.ts
 ├── README.md       # Package documentation
 ├── LICENSE         # MIT License
 └── package.json    # Package manifest
