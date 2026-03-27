@@ -81,10 +81,15 @@ class _AppState extends State<App> {
   late final ShellProfileCubit _shellProfileCubit;
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
+  late final Brightness _launchSplashBrightness;
 
   @override
   void initState() {
     super.initState();
+    _launchSplashBrightness = AppTheme.resolveBrightness(
+      widget.initialThemeMode,
+      WidgetsBinding.instance.platformDispatcher.platformBrightness,
+    );
     _authRepo = AuthRepository();
     _workspaceRepo = WorkspaceRepository();
     _settingsRepo = SettingsRepository();
@@ -397,6 +402,7 @@ class _AppState extends State<App> {
                   builder: (context, child) {
                     return _ShadcnMaterialBridge(
                       child: _LaunchSplash(
+                        initialBrightness: _launchSplashBrightness,
                         child: AppVersionGate(child: child!),
                       ),
                     );
@@ -449,9 +455,13 @@ class _ShadcnMaterialBridge extends StatelessWidget {
 }
 
 class _LaunchSplash extends StatefulWidget {
-  const _LaunchSplash({required this.child});
+  const _LaunchSplash({
+    required this.child,
+    required this.initialBrightness,
+  });
 
   final Widget child;
+  final Brightness initialBrightness;
 
   @override
   State<_LaunchSplash> createState() => _LaunchSplashState();
@@ -477,8 +487,7 @@ class _LaunchSplashState extends State<_LaunchSplash> {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = shad.Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
+    final isDark = widget.initialBrightness == Brightness.dark;
     final backgroundColor = isDark
         ? AppColors.backgroundDark
         : AppColors.backgroundLight;
