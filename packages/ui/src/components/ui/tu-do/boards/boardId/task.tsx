@@ -378,18 +378,27 @@ function TaskCardInner({
       return duplicatedTasks;
     },
     onSuccess: (duplicatedTasks) => {
+      const localMutationAt = Date.now();
+      const locallyDuplicatedTasks = duplicatedTasks.map(
+        (duplicatedTask) =>
+          ({
+            ...(duplicatedTask as Task & { _localMutationAt?: number }),
+            _localMutationAt: localMutationAt,
+          }) as Task
+      );
+
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
-          if (!old) return duplicatedTasks;
-          const newTasks = duplicatedTasks.filter(
+          if (!old) return locallyDuplicatedTasks;
+          const newTasks = locallyDuplicatedTasks.filter(
             (newTask) => !old.some((task) => task.id === newTask.id)
           );
           return [...old, ...newTasks];
         }
       );
 
-      for (const duplicatedTask of duplicatedTasks) {
+      for (const duplicatedTask of locallyDuplicatedTasks) {
         broadcast?.('task:upsert', { task: duplicatedTask });
         if (
           (duplicatedTask.assignees && duplicatedTask.assignees.length > 0) ||

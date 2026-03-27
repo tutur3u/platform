@@ -113,6 +113,7 @@ HabitTrackerDetailResponse _detailResponse(String trackerId) {
 
 void main() {
   setUpAll(() {
+    registerFallbackValue(HabitTrackerScope.self);
     registerFallbackValue(
       const HabitTrackerEntryInput(
         entryDate: '2026-03-25',
@@ -137,10 +138,19 @@ void main() {
 
     test('loadWorkspace selects the first tracker and loads detail', () async {
       when(
-        () => repository.listTrackers('ws-1'),
+        () => repository.listTrackers(
+          'ws-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
       when(
-        () => repository.getTrackerDetail('ws-1', 'tracker-1'),
+        () => repository.getTrackerDetail(
+          'ws-1',
+          'tracker-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
 
       await cubit.loadWorkspace('ws-1');
@@ -156,10 +166,19 @@ void main() {
         HabitTrackerMember(userId: 'user-3', displayName: 'Casey'),
       ];
       when(
-        () => repository.listTrackers('ws-1'),
+        () => repository.listTrackers(
+          'ws-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
       when(
-        () => repository.getTrackerDetail('ws-1', 'tracker-1'),
+        () => repository.getTrackerDetail(
+          'ws-1',
+          'tracker-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
       when(
         () => repository.listTrackers(
@@ -207,13 +226,26 @@ void main() {
       final ws2Completer = Completer<HabitTrackerListResponse>();
 
       when(
-        () => repository.listTrackers('ws-1'),
+        () => repository.listTrackers(
+          'ws-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) => ws1Completer.future);
       when(
-        () => repository.listTrackers('ws-2'),
+        () => repository.listTrackers(
+          'ws-2',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) => ws2Completer.future);
       when(
-        () => repository.getTrackerDetail(any(), any()),
+        () => repository.getTrackerDetail(
+          any(),
+          any(),
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((invocation) async {
         final trackerId = invocation.positionalArguments[1] as String;
         return _detailResponse(trackerId);
@@ -236,10 +268,19 @@ void main() {
       'createEntry clears quick drafts after a successful mutation',
       () async {
         when(
-          () => repository.listTrackers('ws-1'),
+          () => repository.listTrackers(
+            'ws-1',
+            scope: any(named: 'scope'),
+            userId: any(named: 'userId'),
+          ),
         ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
         when(
-          () => repository.getTrackerDetail('ws-1', 'tracker-1'),
+          () => repository.getTrackerDetail(
+            'ws-1',
+            'tracker-1',
+            scope: any(named: 'scope'),
+            userId: any(named: 'userId'),
+          ),
         ).thenAnswer((_) async => _detailResponse('tracker-1'));
         when(
           () => repository.createEntry(
@@ -279,7 +320,11 @@ void main() {
 
     test('loadActivity aggregates entries across trackers', () async {
       when(
-        () => repository.listTrackers('ws-1'),
+        () => repository.listTrackers(
+          'ws-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer(
         (_) async => HabitTrackerListResponse(
           trackers: [
@@ -295,10 +340,20 @@ void main() {
         ),
       );
       when(
-        () => repository.getTrackerDetail('ws-1', 'tracker-1'),
+        () => repository.getTrackerDetail(
+          'ws-1',
+          'tracker-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
       when(
-        () => repository.getTrackerDetail('ws-1', 'tracker-2'),
+        () => repository.getTrackerDetail(
+          'ws-1',
+          'tracker-2',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) async => _detailResponse('tracker-2'));
 
       await cubit.loadWorkspace('ws-1');
@@ -312,10 +367,19 @@ void main() {
 
     test('reuses fresh cached state across cubit instances', () async {
       when(
-        () => repository.listTrackers('ws-1'),
+        () => repository.listTrackers(
+          'ws-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) async => _listResponse(trackerId: 'tracker-1'));
       when(
-        () => repository.getTrackerDetail('ws-1', 'tracker-1'),
+        () => repository.getTrackerDetail(
+          'ws-1',
+          'tracker-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
 
       await cubit.loadWorkspace('ws-1');
@@ -333,8 +397,21 @@ void main() {
 
       expect(cachedCubit.state.status, HabitsStatus.loaded);
       expect(cachedCubit.state.activityStatus, HabitsStatus.loaded);
-      verify(() => repository.listTrackers('ws-1')).called(1);
-      verify(() => repository.getTrackerDetail('ws-1', 'tracker-1')).called(2);
+      verify(
+        () => repository.listTrackers(
+          'ws-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
+      ).called(1);
+      verify(
+        () => repository.getTrackerDetail(
+          'ws-1',
+          'tracker-1',
+          scope: any(named: 'scope'),
+          userId: any(named: 'userId'),
+        ),
+      ).called(2);
     });
   });
 }

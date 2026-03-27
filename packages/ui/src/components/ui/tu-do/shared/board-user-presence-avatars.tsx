@@ -130,6 +130,10 @@ export function BoardUserPresenceAvatarsComponent({
     } else {
       wsUpdateLocation({ type: 'board', boardId });
     }
+
+    return () => {
+      wsUpdateLocation({ type: 'other' });
+    };
   }, [wsUpdateLocation, boardId, dialogOpen, dialogTaskId]);
 
   // Update metadata (filters) separately so it doesn't overwrite task-level location

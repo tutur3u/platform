@@ -137,8 +137,8 @@ export function sanitizeFilename(filename: string): string | null {
     return null;
   }
 
-  // Enforce conservative allowlist: ASCII letters, digits, space, underscore, hyphen, dot
-  const allowedPattern = /^[a-zA-Z0-9\s._-]+$/;
+  // Allows: Letters, Numbers, Spaces, Dots, Underscores, Hyphens, and Parentheses
+  const allowedPattern = /^[a-zA-Z0-9\s._()/-]+$/;
   if (!allowedPattern.test(normalized)) {
     return null;
   }

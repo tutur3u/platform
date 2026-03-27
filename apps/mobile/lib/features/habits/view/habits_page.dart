@@ -163,6 +163,7 @@ class _HabitsViewState extends State<_HabitsView> {
                           children: [
                             if (_supportsSearch)
                               shad.IconButton.ghost(
+                                key: const Key('habits-search-toggle'),
                                 icon: Icon(
                                   _isSearchVisible
                                       ? Icons.close_rounded
