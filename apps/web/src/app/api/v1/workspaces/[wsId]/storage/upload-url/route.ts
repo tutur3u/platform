@@ -4,6 +4,7 @@ import {
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -79,9 +80,12 @@ export async function POST(
       );
     }
 
+    const uniqueSuffix = generateRandomUUID();
+    const filenameWithSuffix = `${uniqueSuffix}-${sanitizedFilename}`;
+
     const storagePath = sanitizedPath
-      ? posix.join(normalizedWsId, sanitizedPath, sanitizedFilename)
-      : posix.join(normalizedWsId, sanitizedFilename);
+      ? posix.join(normalizedWsId, sanitizedPath, filenameWithSuffix)
+      : posix.join(normalizedWsId, filenameWithSuffix);
 
     const sbStorageAdmin = await createDynamicAdminClient();
     const { data, error } = await sbStorageAdmin.storage
