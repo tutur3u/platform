@@ -56,6 +56,30 @@ export interface CreateSignedUploadUrlOptions {
  */
 export interface ShareOptions {
   expiresIn?: number; // In seconds
+  transform?: ImageTransformOptions;
+}
+
+/**
+ * Supported resize strategies for Supabase image transformations
+ */
+export type ImageResizeMode = 'cover' | 'contain' | 'fill';
+
+/**
+ * Supabase Storage image transformation options
+ */
+export interface ImageTransformOptions {
+  width?: number;
+  height?: number;
+  resize?: ImageResizeMode;
+  quality?: number;
+  format?: 'origin';
+}
+
+/**
+ * Download options for storage file downloads
+ */
+export interface DownloadOptions {
+  transform?: ImageTransformOptions;
 }
 
 /**
@@ -288,9 +312,28 @@ export const createSignedUploadUrlOptionsSchema = z.object({
   upsert: z.boolean().optional(),
 });
 
+export const imageTransformOptionsSchema = z
+  .object({
+    width: z.number().int().min(1).max(2500).finite().optional(),
+    height: z.number().int().min(1).max(2500).finite().optional(),
+    resize: z.enum(['cover', 'contain', 'fill']).optional(),
+    quality: z.number().int().min(20).max(100).finite().optional(),
+    format: z.literal('origin').optional(),
+  })
+  .refine((data) => data.width !== undefined || data.height !== undefined, {
+    message: 'transform must include width or height',
+  });
+
 export const shareOptionsSchema = z
   .object({
     expiresIn: z.number().int().min(60).max(604800).finite(),
+    transform: imageTransformOptionsSchema,
+  })
+  .partial();
+
+export const downloadOptionsSchema = z
+  .object({
+    transform: imageTransformOptionsSchema,
   })
   .partial();
 

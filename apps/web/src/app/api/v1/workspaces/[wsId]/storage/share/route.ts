@@ -2,6 +2,7 @@ import {
   createClient,
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
+import { imageTransformOptionsSchema } from '@tuturuuu/types';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
@@ -14,17 +15,44 @@ import { z } from 'zod';
 const shareSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
   expiresIn: z.number().int().min(60).max(31_536_000).optional(),
+  transform: imageTransformOptionsSchema.optional(),
 });
 
-const shareQuerySchema = z.object({
-  path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
-  expiresIn: z.coerce.number().int().min(60).max(31_536_000).optional(),
-});
+const shareQuerySchema = z
+  .object({
+    path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
+    expiresIn: z.coerce.number().int().min(60).max(31_536_000).optional(),
+    width: z.coerce.number().int().min(1).max(2500).finite().optional(),
+    height: z.coerce.number().int().min(1).max(2500).finite().optional(),
+    resize: z.enum(['cover', 'contain', 'fill']).optional(),
+    quality: z.coerce.number().int().min(20).max(100).finite().optional(),
+    format: z.literal('origin').optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasTransform =
+      data.width !== undefined ||
+      data.height !== undefined ||
+      data.resize !== undefined ||
+      data.quality !== undefined ||
+      data.format !== undefined;
+
+    if (hasTransform && data.width === undefined && data.height === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['width'],
+        message: 'transform must include width or height',
+      });
+    }
+  });
 
 async function resolveSignedUrl(
   request: Request,
   params: Promise<{ wsId: string }>,
-  input: { path: string; expiresIn?: number }
+  input: {
+    path: string;
+    expiresIn?: number;
+    transform?: z.infer<typeof imageTransformOptionsSchema>;
+  }
 ) {
   const { wsId } = await params;
   const supabase = await createClient(request);
@@ -59,7 +87,9 @@ async function resolveSignedUrl(
 
   const { data, error } = await sbStorageAdmin.storage
     .from('workspaces')
-    .createSignedUrl(storagePath, expiresIn);
+    .createSignedUrl(storagePath, expiresIn, {
+      transform: input.transform,
+    });
 
   if (error || !data?.signedUrl) {
     return NextResponse.json(
@@ -109,6 +139,11 @@ export async function GET(
     const parsed = shareQuerySchema.safeParse({
       path: searchParams.get('path'),
       expiresIn: searchParams.get('expiresIn') ?? undefined,
+      width: searchParams.get('width') ?? undefined,
+      height: searchParams.get('height') ?? undefined,
+      resize: searchParams.get('resize') ?? undefined,
+      quality: searchParams.get('quality') ?? undefined,
+      format: searchParams.get('format') ?? undefined,
     });
 
     if (!parsed.success) {
@@ -118,7 +153,21 @@ export async function GET(
       );
     }
 
-    const signedUrl = await resolveSignedUrl(request, params, parsed.data);
+    const { width, height, resize, quality, format, ...baseInput } =
+      parsed.data;
+    const hasTransform =
+      width !== undefined ||
+      height !== undefined ||
+      resize !== undefined ||
+      quality !== undefined ||
+      format !== undefined;
+
+    const signedUrl = await resolveSignedUrl(request, params, {
+      ...baseInput,
+      transform: hasTransform
+        ? { width, height, resize, quality, format }
+        : undefined,
+    });
 
     if (signedUrl instanceof NextResponse) {
       return signedUrl;

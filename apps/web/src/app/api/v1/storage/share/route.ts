@@ -6,6 +6,7 @@
  */
 
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { imageTransformOptionsSchema } from '@tuturuuu/types';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -19,6 +20,7 @@ import {
 const shareSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
   expiresIn: z.number().int().min(60).max(604800).optional().default(3600), // 1 minute to 7 days, default 1 hour
+  transform: imageTransformOptionsSchema.optional(),
 });
 
 export const POST = withApiAuth(
@@ -42,7 +44,9 @@ export const POST = withApiAuth(
       // Generate signed URL
       const { data, error } = await supabase.storage
         .from('workspaces')
-        .createSignedUrl(storagePath, expiresIn);
+        .createSignedUrl(storagePath, expiresIn, {
+          transform: bodyResult.data.transform,
+        });
 
       if (error) {
         console.error('Error creating signed URL:', error);

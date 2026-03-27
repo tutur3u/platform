@@ -42,6 +42,7 @@ const doc = await client.documents.create({
 - ✅ **Direct Uploads** - Generate signed URLs for client-side uploads without proxying
 - ✅ **Document Management** - Create, read, update, delete workspace documents
 - ✅ **Signed URLs** - Generate temporary shareable links for files
+- ✅ **Image Resizing** - Request Supabase-powered image transforms on share/download
 - ✅ **Storage Analytics** - Track usage, file counts, and limits
 - ✅ **Type-Safe** - Full TypeScript support with type inference
 - ✅ **Error Handling** - Comprehensive error classes for all scenarios
@@ -96,6 +97,19 @@ const result = await client.storage.upload(file, {
 const blob = await client.storage.download('documents/report.pdf');
 ```
 
+Resize an image during download:
+
+```typescript
+const blob = await client.storage.download('images/photo.png', {
+  transform: {
+    width: 320,
+    height: 180,
+    resize: 'cover',
+    quality: 80
+  }
+});
+```
+
 #### Delete Files
 
 ```typescript
@@ -143,6 +157,20 @@ const { data } = await client.storage.share('documents/report.pdf', {
   expiresIn: 3600 // 1 hour in seconds
 });
 console.log(data.signedUrl);
+```
+
+Resize an image before sharing it:
+
+```typescript
+const { data } = await client.storage.share('images/photo.png', {
+  expiresIn: 3600,
+  transform: {
+    width: 320,
+    height: 180,
+    resize: 'contain',
+    quality: 85
+  }
+});
 ```
 
 #### Get Analytics

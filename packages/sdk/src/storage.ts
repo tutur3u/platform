@@ -43,7 +43,9 @@ import type {
   DeleteDocumentResponse,
   DeleteResponse,
   DocumentResponse,
+  DownloadOptions,
   GetDocumentResponse,
+  ImageTransformOptions,
   ListDocumentsOptions,
   ListDocumentsResponse,
   ListStorageOptions,
@@ -59,6 +61,7 @@ import type {
 import {
   createDocumentDataSchema,
   createSignedUploadUrlOptionsSchema,
+  downloadOptionsSchema,
   listDocumentsOptionsSchema,
   listStorageOptionsSchema,
   shareOptionsSchema,
@@ -105,6 +108,35 @@ function validateWithSchema<T>(schema: ZodSchema<T>, data: unknown): T {
       throw new ValidationError(message);
     }
     throw error;
+  }
+}
+
+function appendImageTransformParams(
+  params: URLSearchParams,
+  transform?: ImageTransformOptions
+): void {
+  if (!transform) {
+    return;
+  }
+
+  if (transform.width !== undefined) {
+    params.set('width', transform.width.toString());
+  }
+
+  if (transform.height !== undefined) {
+    params.set('height', transform.height.toString());
+  }
+
+  if (transform.resize) {
+    params.set('resize', transform.resize);
+  }
+
+  if (transform.quality !== undefined) {
+    params.set('quality', transform.quality.toString());
+  }
+
+  if (transform.format) {
+    params.set('format', transform.format);
   }
 }
 
@@ -341,10 +373,12 @@ export class StorageClient {
    * const blob = await client.storage.download('documents/report.pdf');
    * ```
    */
-  async download(path: string): Promise<Blob> {
+  async download(path: string, options: DownloadOptions = {}): Promise<Blob> {
     if (!path) {
       throw new ValidationError('Path is required');
     }
+
+    const validatedOptions = validateWithSchema(downloadOptionsSchema, options);
 
     // Properly encode path to handle spaces and special characters
     // Normalize backslashes to forward slashes
@@ -353,21 +387,23 @@ export class StorageClient {
     // Split path into segments, encode each segment, and rejoin
     const segments = normalizedPath.split('/').filter((s) => s.length > 0);
     const encodedPath = segments.map((s) => encodeURIComponent(s)).join('/');
+    const queryParams = new URLSearchParams();
+    appendImageTransformParams(queryParams, validatedOptions.transform);
 
     // Ensure baseUrl doesn't end with slash to avoid double slashes
     const baseUrl = this.client.baseUrl.replace(/\/$/, '');
+    const downloadUrl = `${baseUrl}/storage/download/${encodedPath}${
+      queryParams.size > 0 ? `?${queryParams.toString()}` : ''
+    }`;
 
-    const response = await this.client.fetch(
-      `${baseUrl}/storage/download/${encodedPath}`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${this.client.apiKey}`,
-          'X-SDK-Client': `tuturuuu/${packageJson.version || '0.0.1'}`,
-          Accept: 'application/octet-stream, */*',
-        },
-      }
-    );
+    const response = await this.client.fetch(downloadUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${this.client.apiKey}`,
+        'X-SDK-Client': `tuturuuu/${packageJson.version || '0.0.1'}`,
+        Accept: 'application/octet-stream, */*',
+      },
+    });
 
     if (!response.ok) {
       // Check if response is JSON before attempting to parse
@@ -491,6 +527,7 @@ export class StorageClient {
       body: JSON.stringify({
         path,
         expiresIn: validatedOptions.expiresIn,
+        transform: validatedOptions.transform,
       }),
     });
   }

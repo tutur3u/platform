@@ -8,10 +8,23 @@
 import { posix } from 'node:path';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
+const transformQuerySchema = z
+  .object({
+    width: z.coerce.number().int().min(1).max(2500).finite().optional(),
+    height: z.coerce.number().int().min(1).max(2500).finite().optional(),
+    resize: z.enum(['cover', 'contain', 'fill']).optional(),
+    quality: z.coerce.number().int().min(20).max(100).finite().optional(),
+    format: z.literal('origin').optional(),
+  })
+  .refine((data) => data.width !== undefined || data.height !== undefined, {
+    message: 'transform must include width or height',
+  });
+
 export const GET = withApiAuth(
-  async (_, { params, context }) => {
+  async (request, { params, context }) => {
     const { wsId } = context;
     const { path } = (await params) as unknown as { path: string[] };
 
@@ -26,6 +39,20 @@ export const GET = withApiAuth(
 
     try {
       const supabase = await createDynamicAdminClient();
+      const { searchParams } = new URL(request.url);
+      const transformInput = {
+        width: searchParams.get('width') ?? undefined,
+        height: searchParams.get('height') ?? undefined,
+        resize: searchParams.get('resize') ?? undefined,
+        quality: searchParams.get('quality') ?? undefined,
+        format: searchParams.get('format') ?? undefined,
+      };
+      const hasTransform = Object.values(transformInput).some(
+        (value) => value !== undefined
+      );
+      const transform = hasTransform
+        ? transformQuerySchema.parse(transformInput)
+        : undefined;
 
       // Construct the storage path relative to bucket
       // Path format matches Drive page: [wsId]/[path]
@@ -35,7 +62,7 @@ export const GET = withApiAuth(
       // Download file from Supabase Storage
       const { data, error } = await supabase.storage
         .from('workspaces')
-        .download(storagePath);
+        .download(storagePath, transform ? { transform } : undefined);
 
       if (error) {
         console.error('Error downloading file:', error);
@@ -78,6 +105,15 @@ export const GET = withApiAuth(
         },
       });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return createErrorResponse(
+          'Bad Request',
+          'Invalid image transform options',
+          400,
+          'INVALID_TRANSFORM'
+        );
+      }
+
       console.error('Unexpected error downloading file:', error);
       return createErrorResponse(
         'Internal Server Error',

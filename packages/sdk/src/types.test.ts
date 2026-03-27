@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   createDocumentDataSchema,
+  downloadOptionsSchema,
+  imageTransformOptionsSchema,
   listDocumentsOptionsSchema,
   listStorageOptionsSchema,
   shareOptionsSchema,
@@ -264,6 +266,83 @@ describe('shareOptionsSchema', () => {
       expiresIn: undefined,
     });
     expect(result.success).toBe(true);
+  });
+
+  it('should validate image transform options', () => {
+    const result = shareOptionsSchema.parse({
+      expiresIn: 3600,
+      transform: {
+        width: 320,
+        height: 180,
+        resize: 'cover',
+        quality: 80,
+        format: 'origin',
+      },
+    });
+
+    expect(result.transform).toEqual({
+      width: 320,
+      height: 180,
+      resize: 'cover',
+      quality: 80,
+      format: 'origin',
+    });
+  });
+
+  it('should reject transform without width or height', () => {
+    const result = shareOptionsSchema.safeParse({
+      transform: { resize: 'cover' },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('imageTransformOptionsSchema', () => {
+  it('should validate width-only transforms', () => {
+    const result = imageTransformOptionsSchema.parse({ width: 200 });
+    expect(result).toEqual({ width: 200 });
+  });
+
+  it('should validate height-only transforms', () => {
+    const result = imageTransformOptionsSchema.parse({ height: 200 });
+    expect(result).toEqual({ height: 200 });
+  });
+
+  it('should reject invalid resize mode', () => {
+    const result = imageTransformOptionsSchema.safeParse({
+      width: 200,
+      resize: 'stretch',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject out-of-range quality', () => {
+    const result = imageTransformOptionsSchema.safeParse({
+      width: 200,
+      quality: 10,
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('downloadOptionsSchema', () => {
+  it('should validate empty options', () => {
+    const result = downloadOptionsSchema.parse({});
+    expect(result).toEqual({});
+  });
+
+  it('should validate transform options', () => {
+    const result = downloadOptionsSchema.parse({
+      transform: {
+        width: 640,
+        height: 480,
+      },
+    });
+
+    expect(result.transform).toEqual({
+      width: 640,
+      height: 480,
+    });
   });
 });
 
