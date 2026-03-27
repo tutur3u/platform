@@ -147,6 +147,7 @@ extension _ShellPageNavigation on _ShellPageState {
   List<shad.NavigationItem> _buildMiniAppNavItems(
     BuildContext context,
     AppModule module,
+    List<MiniAppNavItem> miniNavItems,
   ) {
     final theme = shad.Theme.of(context);
     final labelStyle = theme.typography.p.copyWith(
@@ -155,8 +156,7 @@ extension _ShellPageNavigation on _ShellPageState {
     );
     final l10n = context.l10n;
     final isCompact = context.isCompact;
-    final useDenseCompactLabels =
-        isCompact && module.miniAppNavItems.length >= 4;
+    final useDenseCompactLabels = isCompact && miniNavItems.length >= 4;
     final miniLabelStyle = useDenseCompactLabels
         ? labelStyle.copyWith(fontSize: 10)
         : labelStyle;
@@ -193,7 +193,7 @@ extension _ShellPageNavigation on _ShellPageState {
                 itemIndex: 0,
               ),
       ),
-      ...module.miniAppNavItems.indexed.map(
+      ...miniNavItems.indexed.map(
         (entry) => shad.NavigationItem(
           key: _miniNavKey(module.id, entry.$2.id),
           spacing: miniItemSpacing,
@@ -239,6 +239,10 @@ extension _ShellPageNavigation on _ShellPageState {
       ValueKey<String>('mini-nav-$moduleId-$itemId');
 
   Key _miniSelectedKey(BuildContext context, List<MiniAppNavItem> items) {
+    if (items.isEmpty) {
+      return _ShellPageState._backToRootKey;
+    }
+
     final location = widget.matchedLocation;
     final selected = _miniSelectedIndex(location, items);
     final item = items[selected];
@@ -251,6 +255,10 @@ extension _ShellPageNavigation on _ShellPageState {
   }
 
   int _miniSelectedIndex(String location, List<MiniAppNavItem> items) {
+    if (items.isEmpty) {
+      return 0;
+    }
+
     String normalize(String value) {
       var normalized = value;
       while (normalized.length > 1 && normalized.endsWith('/')) {

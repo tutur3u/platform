@@ -5,6 +5,7 @@ extension _ShellPageInteractions on _ShellPageState {
     Key? key,
     BuildContext context,
     AppModule activeModule,
+    List<MiniAppNavItem> activeMiniNavItems,
   ) async {
     _debugBack(
       'miniAppNav.tap',
@@ -16,9 +17,13 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
 
-    final selected = activeModule.miniAppNavItems.firstWhere(
+    if (activeMiniNavItems.isEmpty) {
+      return;
+    }
+
+    final selected = activeMiniNavItems.firstWhere(
       (item) => _miniNavKey(activeModule.id, item.id) == key,
-      orElse: () => activeModule.miniAppNavItems.first,
+      orElse: () => activeMiniNavItems.first,
     );
 
     if (!context.mounted) {
