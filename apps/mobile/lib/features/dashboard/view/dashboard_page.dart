@@ -17,6 +17,7 @@ import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -30,15 +31,35 @@ class DashboardPage extends StatelessWidget {
       providers: [
         BlocProvider(
           create: (context) {
-            final cubit = TaskListCubit(taskRepository: TaskRepository());
+            final workspace = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace;
+            final cubit = TaskListCubit(
+              taskRepository: TaskRepository(),
+              initialState: workspace != null
+                  ? TaskListCubit.seedStateFor(
+                      wsId: workspace.id,
+                      isPersonal: workspace.personal,
+                    )
+                  : null,
+            );
             _loadTasksIfReady(context, cubit);
             return cubit;
           },
         ),
         BlocProvider(
           create: (context) {
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
             final cubit = CalendarCubit(
               calendarRepository: CalendarRepository(),
+              initialState: wsId != null
+                  ? CalendarCubit.seedStateForWorkspace(wsId)
+                  : null,
             );
             _loadEventsIfReady(context, cubit);
             return cubit;
@@ -156,6 +177,8 @@ class _DashboardView extends StatelessWidget {
                                     ),
                                     sliver: SliverList.list(
                                       children: [
+                                        const _DashboardWorkspacePickerCard(),
+                                        const SizedBox(height: 12),
                                         _TodaySummaryCard(
                                           workspaceName: displayWorkspaceName(
                                             context,
@@ -320,6 +343,118 @@ class _DashboardView extends StatelessWidget {
   }
 }
 
+class _DashboardWorkspacePickerCard extends StatelessWidget {
+  const _DashboardWorkspacePickerCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<WorkspaceCubit, WorkspaceState>(
+      buildWhen: (previous, current) =>
+          previous.currentWorkspace != current.currentWorkspace,
+      builder: (context, state) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final workspaceName = displayWorkspaceNameOrFallback(
+          context,
+          state.currentWorkspace,
+        );
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => showWorkspacePickerSheet(context),
+            child: Ink(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? const [
+                          Color(0xFF1A2437),
+                          Color(0xFF2A2145),
+                          Color(0xFF16363E),
+                        ]
+                      : const [
+                          Color(0xFFE9F2FF),
+                          Color(0xFFF0E9FF),
+                          Color(0xFFE8FAF6),
+                        ],
+                  stops: const [0, 0.62, 1],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.14)
+                      : theme.colorScheme.primary.withValues(alpha: 0.18),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(
+                      alpha: isDark ? 0.18 : 0.1,
+                    ),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(
+                        alpha: isDark ? 0.22 : 0.12,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      Icons.workspaces_outlined,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.settingsCurrentWorkspace,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          workspaceName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 22,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _TodaySummaryCard extends StatelessWidget {
   const _TodaySummaryCard({
     required this.workspaceName,
@@ -375,15 +510,43 @@ class _TodaySummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            context.l10n.dashboardTodayTitle,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.l10n.dashboardTodayTitle,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface.withValues(
+                    alpha: isDark ? 0.18 : 0.6,
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.14),
+                  ),
+                ),
+                child: Text(
+                  dateLabel,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
-            '$workspaceName • $dateLabel',
+            workspaceName,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -394,7 +557,7 @@ class _TodaySummaryCard extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   value: '$activeTasks',
-                  label: context.l10n.dashboardTasksMetric(activeTasks),
+                  label: context.l10n.dashboardActiveTasksLabel,
                   icon: Icons.task_alt_rounded,
                   foreground: isDark
                       ? const Color(0xFFF8FAFC)
@@ -408,7 +571,7 @@ class _TodaySummaryCard extends StatelessWidget {
               Expanded(
                 child: _MetricTile(
                   value: '$overdueTasks',
-                  label: context.l10n.dashboardOverdueMetric(overdueTasks),
+                  label: context.l10n.dashboardTaskOverdue,
                   icon: Icons.warning_amber_rounded,
                   foreground: isDark
                       ? const Color(0xFFFFE3E3)
@@ -418,21 +581,20 @@ class _TodaySummaryCard extends StatelessWidget {
                       : const Color(0xFFFFDDE3),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _MetricTile(
-                  value: '$nextEvents',
-                  label: context.l10n.dashboardEventsMetric(nextEvents),
-                  icon: Icons.calendar_month_rounded,
-                  foreground: isDark
-                      ? const Color(0xFFD3F4FF)
-                      : const Color(0xFF0D4258),
-                  background: isDark
-                      ? const Color(0xFF173A48)
-                      : const Color(0xFFD6F2FF),
-                ),
-              ),
             ],
+          ),
+          const SizedBox(height: 8),
+          _MetricTile(
+            value: '$nextEvents',
+            label: context.l10n.dashboardUpcomingEvents,
+            icon: Icons.calendar_month_rounded,
+            foreground: isDark
+                ? const Color(0xFFD3F4FF)
+                : const Color(0xFF0D4258),
+            background: isDark
+                ? const Color(0xFF173A48)
+                : const Color(0xFFD6F2FF),
+            fullWidth: true,
           ),
         ],
       ),
@@ -447,6 +609,7 @@ class _MetricTile extends StatelessWidget {
     required this.icon,
     this.foreground,
     this.background,
+    this.fullWidth = false,
   });
 
   final String value;
@@ -454,6 +617,7 @@ class _MetricTile extends StatelessWidget {
   final IconData icon;
   final Color? foreground;
   final Color? background;
+  final bool fullWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -463,7 +627,10 @@ class _MetricTile extends StatelessWidget {
         background ?? theme.colorScheme.surfaceContainerHighest;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: fullWidth ? 14 : 12,
+        vertical: fullWidth ? 14 : 12,
+      ),
       decoration: BoxDecoration(
         color: resolvedBackground,
         borderRadius: BorderRadius.circular(16),
@@ -471,35 +638,74 @@ class _MetricTile extends StatelessWidget {
           color: resolvedForeground.withValues(alpha: 0.18),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: resolvedForeground.withValues(alpha: 0.9),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: resolvedForeground,
-              fontWeight: FontWeight.w800,
+      child: fullWidth
+          ? Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: resolvedForeground.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color: resolvedForeground.withValues(alpha: 0.9),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: resolvedForeground.withValues(alpha: 0.92),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  value,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: resolvedForeground,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  icon,
+                  size: 16,
+                  color: resolvedForeground.withValues(alpha: 0.9),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: resolvedForeground,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: resolvedForeground.withValues(alpha: 0.84),
+                    fontWeight: FontWeight.w600,
+                    height: 1.15,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: resolvedForeground.withValues(alpha: 0.84),
-              fontWeight: FontWeight.w600,
-              height: 1.2,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

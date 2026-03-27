@@ -47,6 +47,20 @@ class CalendarCubit extends Cubit<CalendarState> {
     return _cache[wsId]?.state;
   }
 
+  static CalendarState? seedStateForWorkspace(String wsId) {
+    final cached = CacheStore.instance.peek<CalendarState>(
+      key: _cacheKey(wsId),
+      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+    );
+    final state = cached.data;
+    if (!cached.hasValue || state == null) {
+      return cachedStateForWorkspace(wsId);
+    }
+
+    _rememberCachedState(wsId, state, fetchedAt: cached.fetchedAt);
+    return state;
+  }
+
   static void _rememberCachedState(
     String wsId,
     CalendarState state, {

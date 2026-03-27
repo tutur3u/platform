@@ -7,7 +7,6 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -26,6 +25,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -147,122 +147,131 @@ class _SettingsViewState extends State<_SettingsView> {
                     32,
                   ),
                   children: [
-                    BlocBuilder<ProfileCubit, ProfileState>(
-                      builder: (context, profileState) {
-                        return _SettingsHeroCard(
-                          profile: profileState.profile,
-                          isRefreshing: profileState.isRefreshing,
-                          currentWorkspace: context
-                              .watch<WorkspaceCubit>()
-                              .state
-                              .currentWorkspace,
-                          defaultWorkspace: context
-                              .watch<WorkspaceCubit>()
-                              .state
-                              .defaultWorkspace,
-                        );
-                      },
+                    StaggeredEntry(
+                      index: 0,
+                      playOnceKey: 'settings-hero',
+                      child: BlocBuilder<ProfileCubit, ProfileState>(
+                        builder: (context, profileState) {
+                          return _SettingsHeroCard(
+                            isRefreshing: profileState.isRefreshing,
+                          );
+                        },
+                      ),
                     ),
                     const shad.Gap(32),
-                    SettingsSection(
-                      title: context.l10n.settingsAccountSectionTitle,
-                      description:
-                          context.l10n.settingsAccountSectionDescription,
-                      children: [
-                        BlocBuilder<ProfileCubit, ProfileState>(
-                          builder: (context, profileState) {
-                            final profile = profileState.profile;
-                            final value =
-                                profile?.displayName?.trim().isNotEmpty ?? false
-                                ? profile!.displayName!.trim()
-                                : profile?.fullName?.trim().isNotEmpty ?? false
-                                ? profile!.fullName!.trim()
-                                : profile?.email ??
-                                      context.l10n.settingsNoEmail;
-
-                            return SettingsTile(
-                              icon: Icons.person_outline_rounded,
-                              title: context.l10n.settingsProfile,
-                              value: value,
-                              subtitle: context.l10n.settingsProfileDescription,
-                              onTap: () => context.push(Routes.profileRoot),
-                            );
-                          },
+                    StaggeredEntry(
+                      index: 1,
+                      playOnceKey: 'settings-account',
+                      child: SettingsSection(
+                        title: context.l10n.settingsAccountSectionTitle,
+                        description:
+                            context.l10n.settingsAccountSectionDescription,
+                        children: [
+                          SettingsTile(
+                            icon: Icons.person_outline_rounded,
+                            title: context.l10n.settingsProfile,
+                            subtitle: context.l10n.settingsProfileDescription,
+                            onTap: () => context.push(Routes.profileRoot),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const shad.Gap(32),
+                    StaggeredEntry(
+                      index: 2,
+                      playOnceKey: 'settings-workspace',
+                      child: _WorkspaceSection(
+                        onSelectCurrentWorkspace: () =>
+                            showWorkspacePickerSheet(
+                              context,
+                            ),
+                        onSelectDefaultWorkspace: () =>
+                            showWorkspacePickerSheet(
+                              context,
+                              mode: WorkspacePickerMode.defaultWorkspace,
+                            ),
+                        canEditWorkspaceProperties: _canManageWorkspaceSettings,
+                        isWorkspacePermissionLoading:
+                            _isWorkspacePermissionLoading,
+                        onEditWorkspaceProperties: (workspace) => unawaited(
+                          _showWorkspacePropertiesDialog(workspace),
                         ),
-                      ],
+                      ),
                     ),
                     const shad.Gap(32),
-                    _WorkspaceSection(
-                      onSelectCurrentWorkspace: () => showWorkspacePickerSheet(
-                        context,
-                      ),
-                      onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
-                        context,
-                        mode: WorkspacePickerMode.defaultWorkspace,
-                      ),
-                      canEditWorkspaceProperties: _canManageWorkspaceSettings,
-                      isWorkspacePermissionLoading:
-                          _isWorkspacePermissionLoading,
-                      onEditWorkspaceProperties: (workspace) =>
-                          unawaited(_showWorkspacePropertiesDialog(workspace)),
-                    ),
-                    const shad.Gap(32),
-                    _PreferencesSection(
-                      themeLabel: _themeDisplayName(
-                        context.watch<ThemeCubit>().state.themeMode,
-                        context.l10n,
-                      ),
-                      languageLabel: _localeDisplayName(
-                        Localizations.localeOf(context),
-                        context.read<LocaleCubit>().state.locale,
-                        context.l10n,
-                      ),
-                      calendarLabel: _calendarDisplayName(
-                        context.watch<CalendarSettingsCubit>().state,
-                        context.l10n,
-                      ),
-                      onChangeLanguage: () => unawaited(_showLanguageDialog()),
-                      onChangeTheme: () => unawaited(_showThemeDialog()),
-                      onChangeFirstDayOfWeek: () => unawaited(
-                        _showCalendarDialog(),
+                    StaggeredEntry(
+                      index: 3,
+                      playOnceKey: 'settings-preferences',
+                      child: _PreferencesSection(
+                        themeLabel: _themeDisplayName(
+                          context.watch<ThemeCubit>().state.themeMode,
+                          context.l10n,
+                        ),
+                        languageLabel: _localeDisplayName(
+                          Localizations.localeOf(context),
+                          context.read<LocaleCubit>().state.locale,
+                          context.l10n,
+                        ),
+                        calendarLabel: _calendarDisplayName(
+                          context.watch<CalendarSettingsCubit>().state,
+                          context.l10n,
+                        ),
+                        onChangeLanguage: () =>
+                            unawaited(_showLanguageDialog()),
+                        onChangeTheme: () => unawaited(_showThemeDialog()),
+                        onChangeFirstDayOfWeek: () =>
+                            unawaited(_showCalendarDialog()),
                       ),
                     ),
                     if (_canManageMobileVersions) ...[
                       const shad.Gap(32),
-                      SettingsSection(
-                        title: context.l10n.settingsInfrastructureSectionTitle,
-                        description: context
-                            .l10n
-                            .settingsInfrastructureSectionDescription,
-                        children: [
-                          SettingsTile(
-                            icon: Icons.system_update_alt_rounded,
-                            title: context.l10n.settingsMobileVersions,
-                            subtitle: context
-                                .l10n
-                                .settingsMobileVersionsTileDescription,
-                            onTap: () =>
-                                context.push(Routes.settingsMobileVersions),
-                          ),
-                        ],
+                      StaggeredEntry(
+                        index: 4,
+                        playOnceKey: 'settings-infrastructure',
+                        child: SettingsSection(
+                          title:
+                              context.l10n.settingsInfrastructureSectionTitle,
+                          description: context
+                              .l10n
+                              .settingsInfrastructureSectionDescription,
+                          children: [
+                            SettingsTile(
+                              icon: Icons.system_update_alt_rounded,
+                              title: context.l10n.settingsMobileVersions,
+                              subtitle: context
+                                  .l10n
+                                  .settingsMobileVersionsTileDescription,
+                              onTap: () =>
+                                  context.push(Routes.settingsMobileVersions),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                     const shad.Gap(32),
-                    _AboutSection(packageInfo: packageInfo),
+                    StaggeredEntry(
+                      index: _canManageMobileVersions ? 5 : 4,
+                      playOnceKey: 'settings-about',
+                      child: _AboutSection(packageInfo: packageInfo),
+                    ),
                     const shad.Gap(32),
-                    SettingsSection(
-                      title: context.l10n.settingsDangerSectionTitle,
-                      description:
-                          context.l10n.settingsDangerSectionDescription,
-                      children: [
-                        SettingsTile(
-                          icon: Icons.logout_rounded,
-                          title: context.l10n.settingsSignOut,
-                          subtitle: context.l10n.settingsSignOutDescription,
-                          isDestructive: true,
-                          onTap: () => unawaited(_showSignOutDialog()),
-                        ),
-                      ],
+                    StaggeredEntry(
+                      index: _canManageMobileVersions ? 6 : 5,
+                      playOnceKey: 'settings-danger',
+                      child: SettingsSection(
+                        title: context.l10n.settingsDangerSectionTitle,
+                        description:
+                            context.l10n.settingsDangerSectionDescription,
+                        children: [
+                          SettingsTile(
+                            icon: Icons.logout_rounded,
+                            title: context.l10n.settingsSignOut,
+                            subtitle: context.l10n.settingsSignOutDescription,
+                            isDestructive: true,
+                            onTap: () => unawaited(_showSignOutDialog()),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -662,29 +671,15 @@ class _PreferencesSection extends StatelessWidget {
 
 class _SettingsHeroCard extends StatelessWidget {
   const _SettingsHeroCard({
-    required this.profile,
     required this.isRefreshing,
-    required this.currentWorkspace,
-    required this.defaultWorkspace,
   });
 
-  final UserProfile? profile;
   final bool isRefreshing;
-  final Workspace? currentWorkspace;
-  final Workspace? defaultWorkspace;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final l10n = context.l10n;
-    final authEmail = context.select<AuthCubit, String?>(
-      (cubit) => cubit.state.user?.email,
-    );
-    final displayName = profile?.displayName?.trim().isNotEmpty ?? false
-        ? profile!.displayName!.trim()
-        : profile?.fullName?.trim().isNotEmpty ?? false
-        ? profile!.fullName!.trim()
-        : authEmail ?? l10n.settingsTitle;
 
     return Container(
       decoration: BoxDecoration(
@@ -709,7 +704,23 @@ class _SettingsHeroCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ProfileAvatar(profile: profile, fallbackEmail: authEmail),
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.background.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: theme.colorScheme.border.withValues(alpha: 0.72),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.tune_rounded,
+                  size: 26,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
               const shad.Gap(14),
               Expanded(
                 child: Column(
@@ -723,20 +734,10 @@ class _SettingsHeroCard extends StatelessWidget {
                     ),
                     const shad.Gap(6),
                     Text(
-                      displayName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const shad.Gap(2),
-                    Text(
-                      profile?.email ?? authEmail ?? l10n.settingsNoEmail,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      l10n.settingsHeroDescription,
                       style: theme.typography.textSmall.copyWith(
                         color: theme.colorScheme.mutedForeground,
+                        height: 1.45,
                       ),
                     ),
                   ],
@@ -749,59 +750,8 @@ class _SettingsHeroCard extends StatelessWidget {
                 ),
             ],
           ),
-          const shad.Gap(16),
-          Text(
-            l10n.settingsHeroDescription,
-            style: theme.typography.textSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
         ],
       ),
-    );
-  }
-}
-
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({
-    required this.profile,
-    required this.fallbackEmail,
-  });
-
-  final UserProfile? profile;
-  final String? fallbackEmail;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final source =
-        profile?.displayName ?? profile?.fullName ?? fallbackEmail ?? '?';
-    final initials = source.trim().isEmpty
-        ? '?'
-        : source.trim()[0].toUpperCase();
-
-    return Container(
-      width: 66,
-      height: 66,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      alignment: Alignment.center,
-      child: profile?.avatarUrl?.trim().isNotEmpty ?? false
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.network(
-                profile!.avatarUrl!,
-                width: 66,
-                height: 66,
-                fit: BoxFit.cover,
-              ),
-            )
-          : Text(
-              initials,
-              style: theme.typography.h3.copyWith(fontWeight: FontWeight.w800),
-            ),
     );
   }
 }

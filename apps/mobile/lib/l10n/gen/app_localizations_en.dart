@@ -778,6 +778,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardTodayTitle => 'Today at a glance';
 
   @override
+  String get dashboardActiveTasksLabel => 'Active tasks';
+
+  @override
   String get dashboardQuickLaunch => 'Quick launch';
 
   @override

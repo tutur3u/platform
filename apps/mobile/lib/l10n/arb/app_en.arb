@@ -300,6 +300,7 @@
     "dashboardGreeting": "Welcome back!",
     "dashboardQuickActions": "Quick actions",
     "dashboardTodayTitle": "Today at a glance",
+    "dashboardActiveTasksLabel": "Active tasks",
     "dashboardQuickLaunch": "Quick launch",
     "dashboardAssignedToMe": "Assigned to me",
     "dashboardUpcomingEvents": "Upcoming events",

@@ -778,6 +778,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dashboardTodayTitle => 'Tổng quan hôm nay';
 
   @override
+  String get dashboardActiveTasksLabel => 'Công việc đang hoạt động';
+
+  @override
   String get dashboardQuickLaunch => 'Mở nhanh';
 
   @override

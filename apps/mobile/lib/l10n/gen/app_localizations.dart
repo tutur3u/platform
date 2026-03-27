@@ -1609,6 +1609,12 @@ abstract class AppLocalizations {
   /// **'Today at a glance'**
   String get dashboardTodayTitle;
 
+  /// No description provided for @dashboardActiveTasksLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Active tasks'**
+  String get dashboardActiveTasksLabel;
+
   /// No description provided for @dashboardQuickLaunch.
   ///
   /// In en, this message translates to:
