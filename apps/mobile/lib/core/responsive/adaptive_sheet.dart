@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -19,6 +17,9 @@ Future<T?> showAdaptiveSheet<T>({
   double maxDialogWidth = 560,
   bool isScrollControlled = true,
   bool useSafeArea = true,
+  bool isDismissible = true,
+  bool enableDrag = true,
+  bool barrierDismissible = true,
 }) {
   if (context.isCompact) {
     return showModalBottomSheet<T>(
@@ -27,8 +28,14 @@ Future<T?> showAdaptiveSheet<T>({
       barrierColor: Colors.black.withValues(alpha: 0.48),
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
+      isDismissible: isDismissible,
+      enableDrag: enableDrag,
       builder: (sheetContext) => BackButtonListener(
         onBackButtonPressed: () async {
+          if (!isDismissible && !enableDrag) {
+            return true;
+          }
+
           if (sheetContext.mounted) {
             await Navigator.maybePop(sheetContext);
           }
@@ -42,8 +49,13 @@ Future<T?> showAdaptiveSheet<T>({
   return showDialog<T>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.48),
+    barrierDismissible: barrierDismissible,
     builder: (dialogContext) => BackButtonListener(
       onBackButtonPressed: () async {
+        if (!barrierDismissible) {
+          return true;
+        }
+
         if (dialogContext.mounted) {
           await Navigator.maybePop(dialogContext);
         }

@@ -1,9 +1,12 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_WORKSPACE_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const UpdateWorkspaceSchema = z.object({
   name: z.string().min(1).max(MAX_WORKSPACE_NAME_LENGTH),
@@ -15,21 +18,20 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id);
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json(
-      { message: 'Error fetching user' },
-      { status: 500 }
-    );
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const { data, error } = await supabase
     .from('workspaces')
@@ -52,19 +54,62 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id);
 
   try {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
+    const { data: workspace, error: workspaceError } = await supabase
+      .from('workspaces')
+      .select('id, personal, workspace_members!inner(user_id)')
+      .eq('id', wsId)
+      .eq('workspace_members.user_id', user.id)
+      .maybeSingle();
+
+    if (workspaceError) {
+      return NextResponse.json(
+        { message: 'Error verifying workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!workspace) {
+      return NextResponse.json(
+        { message: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    if (!workspace.personal) {
+      const permissions = await getPermissions({ wsId, request: req });
+
+      if (!permissions?.containsPermission('manage_workspace_settings')) {
+        return NextResponse.json(
+          { message: 'Insufficient permissions to update workspace' },
+          { status: 403 }
+        );
+      }
+    }
+
     const body = await req.json();
     const { name } = UpdateWorkspaceSchema.parse(body);
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('workspaces')
       .update({
         name,
       })
+      .select('id')
       .eq('id', wsId);
 
     if (error)
@@ -72,6 +117,13 @@ export async function PUT(req: Request, { params }: Params) {
         { message: 'Error updating workspace' },
         { status: 500 }
       );
+
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { message: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ message: 'success' });
   } catch (error) {
@@ -89,10 +141,20 @@ export async function PUT(req: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id);
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Block deletion of personal workspaces
   const { data: wsData } = await supabase

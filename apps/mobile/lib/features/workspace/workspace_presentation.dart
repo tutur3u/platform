@@ -42,7 +42,6 @@ String humanizeWorkspaceLabel(String value) {
   }
 
   return value
-      .toLowerCase()
       .split(RegExp(r'\s+'))
       .where((part) => part.isNotEmpty)
       .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
