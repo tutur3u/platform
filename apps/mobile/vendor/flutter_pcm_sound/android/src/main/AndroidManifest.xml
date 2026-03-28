@@ -1,0 +1,3 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- This file must be here to fix build errors in Flutter V2 -->
+</manifest>

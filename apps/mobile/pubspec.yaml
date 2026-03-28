@@ -66,6 +66,10 @@ dev_dependencies:
   mocktail: ^1.0.4
   very_good_analysis: ^10.2.0
 
+dependency_overrides:
+  flutter_pcm_sound:
+    path: vendor/flutter_pcm_sound
+
 flutter_launcher_icons:
   android: true
   ios: true

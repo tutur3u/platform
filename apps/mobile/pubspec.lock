@@ -718,10 +718,9 @@ packages:
   flutter_pcm_sound:
     dependency: "direct main"
     description:
-      name: flutter_pcm_sound
-      sha256: "15c6894da8195122001375084d51449bd77849579c93fca2800c00b615699dc0"
-      url: "https://pub.dev"
-    source: hosted
+      path: "vendor/flutter_pcm_sound"
+      relative: true
+    source: path
     version: "3.3.3"
   flutter_plugin_android_lifecycle:
     dependency: transitive

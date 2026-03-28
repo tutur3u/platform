@@ -68,6 +68,8 @@ The authoritative repo-wide instructions live in [`../../AGENTS.md`](../../AGENT
 
 ## 4. Flutter Tooling & Platform Details
 
+- **Android compileSdk Floor for Plugin Bumps**: When upgrading Flutter plugins that pull newer AndroidX AARs, do not rely blindly on `flutter.compileSdkVersion` in `apps/mobile/android/app/build.gradle.kts`. Keep `compileSdk` pinned to `maxOf(flutter.compileSdkVersion, <required floor>)` so plugin metadata requirements (for example API 34+) do not break release builds when the inherited Flutter default lags behind.
+- **Vendored Flutter Dependency Hygiene**: If a Flutter package must be patched locally under `apps/mobile/vendor`, point `dependency_overrides` at that path and exclude `vendor/**` from `apps/mobile/analysis_options.yaml` so `flutter analyze` / `bun check:mobile` validate first-party app code without turning third-party package lints into repo failures.
 - **iOS Lockstep**: After bumping FlutterFire or other iOS-backed Flutter dependencies in `apps/mobile/pubspec.yaml` or `apps/mobile/pubspec.lock`, refresh and commit `apps/mobile/ios/Podfile.lock`.
 - **iOS Podspec Snapshot Drift**: If dependency bumps change iOS plugin podspec constraints, run `flutter pub get`, then `cd apps/mobile/ios && pod update <affected pod/plugin>`, and commit the updated lockfile.
 - **iOS Native Asset Archive Sanitization**: If App Store validation reports `Runner.app/Frameworks/*` binaries built for `IOSSIMULATOR`, add or preserve a post-embed archive script that scans Flutter native-asset frameworks and swaps in the matching `iphoneos` dylib from `.dart_tool/hooks_runner/shared` before signing.
