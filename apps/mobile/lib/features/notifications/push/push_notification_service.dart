@@ -18,6 +18,7 @@ const _pushNotificationChannelId = 'tuturuuu_notifications';
 const _pushNotificationChannelName = 'Notifications';
 const _pushNotificationChannelDescription =
     'Push notifications for the Tuturuuu inbox';
+const _androidNotificationIcon = 'ic_notification';
 
 class PushNavigationRequest {
   const PushNavigationRequest({
@@ -195,7 +196,7 @@ class PushNotificationService {
     }
 
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
+      _androidNotificationIcon,
     );
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -333,6 +334,7 @@ class PushNotificationService {
           channelDescription: _pushNotificationChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
+          icon: _androidNotificationIcon,
         ),
         iOS: DarwinNotificationDetails(),
       ),
