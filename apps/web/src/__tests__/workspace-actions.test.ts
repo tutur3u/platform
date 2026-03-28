@@ -1,3 +1,4 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
@@ -159,5 +160,26 @@ describe('fetchWorkspaceSummaries', () => {
         created_by_me: false,
       }),
     ]);
+  });
+
+  it('forwards request headers to createClient when provided', async () => {
+    mocks.workspacesEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const { fetchWorkspaceSummaries } = await import(
+      '@tuturuuu/ui/lib/workspace-actions'
+    );
+
+    const request = new Request('https://example.com/api/v1/workspaces', {
+      headers: {
+        Authorization: 'Bearer test-token',
+      },
+    });
+
+    await fetchWorkspaceSummaries({ request });
+
+    expect(createClient).toHaveBeenCalledWith(request);
   });
 });

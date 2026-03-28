@@ -90,6 +90,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Supabase Browser Client Deprecation Migration**: When `@tuturuuu/supabase/next/client` or `createDynamicClient` is flagged as deprecated in app code, do not swap to temporary browser clients (`auth-browser`/`realtime-browser`) for CRUD or storage paths. Migrate the call site to an authenticated Internal API route and consume it through `@tuturuuu/internal-api` helpers.
 - **Internal API First for App CRUD**: When app code needs authenticated workspace/user CRUD, add or extend the route and consume it through `packages/internal-api/src/*` instead of scattering raw `fetch('/api/...')` calls across components. Treat `packages/internal-api` as the canonical client contract for internal APIs.
 - **API-Only Table Parity Across Surfaces**: If a mobile or web feature already has an API-backed repository/helper for a protected table, reuse that path for dashboard/summary/home views too. Do not mix API-backed list screens with direct Supabase table reads for the same entity, or protected-table permission errors will appear only on some surfaces.
+- **Shared Route Helpers Must Forward Request Auth**: When extracting server-side data loaders that are reused by both Server Actions and Route Handlers, make the helper accept an optional `request` and pass it into `createClient(request)` whenever a route invokes it. Helpers that always call cookie-only `createClient()` will work on the web but return `401` for mobile/API callers sending Bearer tokens.
 
 ## 6. Known Gotchas & Patterns
 

@@ -61,10 +61,12 @@ function resolveWorkspaceTier(workspace: {
 
 export async function fetchWorkspaceSummaries({
   requireAuth = false,
+  request,
 }: {
   requireAuth?: boolean;
+  request?: Pick<Request, 'headers'>;
 } = {}): Promise<InternalApiWorkspaceSummary[]> {
-  const supabase = await createClient();
+  const supabase = await (request ? createClient(request) : createClient());
   const sbAdmin = await createAdminClient();
 
   const {

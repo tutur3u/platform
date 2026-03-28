@@ -1,10 +1,10 @@
 import { fetchWorkspaceSummaries } from '@tuturuuu/ui/lib/workspace-actions';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     return NextResponse.json(
-      await fetchWorkspaceSummaries({ requireAuth: true })
+      await fetchWorkspaceSummaries({ requireAuth: true, request })
     );
   } catch (error) {
     if (
