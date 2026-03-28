@@ -264,6 +264,7 @@ describe('enqueueApprovedPostEmails', () => {
       expect(args).toMatchObject({
         p_cutoff: expect.any(String),
         p_max_posts: 25,
+        p_skip_posts: 0,
         p_ws_id: WS_ID,
       });
 

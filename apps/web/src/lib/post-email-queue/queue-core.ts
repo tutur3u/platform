@@ -58,6 +58,7 @@ type RpcCapableSupabaseClient = TypedSupabaseClient & {
 type ReconcileOrphanedApprovedPostsRpcArgs = {
   p_cutoff: string;
   p_max_posts: number | null;
+  p_skip_posts: number;
   p_ws_id: string | null;
 };
 
@@ -223,6 +224,50 @@ function createEmptyReconciliationDiagnostics(
     notApproved: 0,
     orphaned: 0,
     upserted: 0,
+  };
+}
+
+function mergeReconciliationResults(
+  base: ReconcileOrphanedApprovedPostsResult,
+  next: ReconcileOrphanedApprovedPostsResult
+): ReconcileOrphanedApprovedPostsResult {
+  return {
+    checked: base.checked || next.checked,
+    diagnostics: {
+      alreadySent: base.diagnostics.alreadySent || next.diagnostics.alreadySent,
+      checked: base.diagnostics.checked || next.diagnostics.checked,
+      coveredByExistingQueue:
+        base.diagnostics.coveredByExistingQueue ||
+        next.diagnostics.coveredByExistingQueue,
+      coveredBySentEmail:
+        base.diagnostics.coveredBySentEmail ||
+        next.diagnostics.coveredBySentEmail,
+      eligibleRecipients:
+        base.diagnostics.eligibleRecipients +
+        next.diagnostics.eligibleRecipients,
+      existingProcessing:
+        base.diagnostics.existingProcessing +
+        next.diagnostics.existingProcessing,
+      existingQueued:
+        base.diagnostics.existingQueued + next.diagnostics.existingQueued,
+      existingSkipped:
+        base.diagnostics.existingSkipped + next.diagnostics.existingSkipped,
+      missingCompletion:
+        base.diagnostics.missingCompletion + next.diagnostics.missingCompletion,
+      missingEmail:
+        base.diagnostics.missingEmail + next.diagnostics.missingEmail,
+      missingSenderPlatformUser:
+        base.diagnostics.missingSenderPlatformUser +
+        next.diagnostics.missingSenderPlatformUser,
+      missingUserRecord:
+        base.diagnostics.missingUserRecord + next.diagnostics.missingUserRecord,
+      notApproved: base.diagnostics.notApproved + next.diagnostics.notApproved,
+      orphaned: base.diagnostics.orphaned || next.diagnostics.orphaned,
+      upserted: base.diagnostics.upserted + next.diagnostics.upserted,
+    },
+    enqueued: base.enqueued + next.enqueued,
+    processedPosts: base.processedPosts + next.processedPosts,
+    remainingPosts: next.remainingPosts,
   };
 }
 
@@ -1103,8 +1148,10 @@ async function reconcileOrphanedApprovedPostsInApp(
   sbAdmin: TypedSupabaseClient,
   {
     maxPosts,
+    skipPosts = 0,
   }: {
     maxPosts?: number;
+    skipPosts?: number;
   } = {}
 ): Promise<ReconcileOrphanedApprovedPostsResult> {
   const cutoff = getPostEmailMaxAgeCutoff();
@@ -1294,8 +1341,14 @@ async function reconcileOrphanedApprovedPostsInApp(
   let totalEnqueued = 0;
   let postsWithZero = 0;
   let processedPosts = 0;
+  let skippedPosts = 0;
 
   for (const [postId, info] of byPost) {
+    if (skippedPosts < skipPosts) {
+      skippedPosts++;
+      continue;
+    }
+
     if (maxPosts && processedPosts >= maxPosts) {
       break;
     }
@@ -1327,7 +1380,7 @@ async function reconcileOrphanedApprovedPostsInApp(
     diagnostics,
     enqueued: totalEnqueued,
     processedPosts,
-    remainingPosts: Math.max(0, byPost.size - processedPosts),
+    remainingPosts: Math.max(0, byPost.size - skippedPosts - processedPosts),
   };
 }
 
@@ -1335,9 +1388,11 @@ export async function reconcileOrphanedApprovedPosts(
   sbAdmin: TypedSupabaseClient,
   {
     maxPosts,
+    skipPosts = 0,
     wsId,
   }: {
     maxPosts?: number;
+    skipPosts?: number;
     wsId?: string;
   } = {}
 ): Promise<ReconcileOrphanedApprovedPostsResult> {
@@ -1350,6 +1405,7 @@ export async function reconcileOrphanedApprovedPosts(
       {
         p_cutoff: cutoff,
         p_max_posts: maxPosts ?? null,
+        p_skip_posts: Math.max(skipPosts, 0),
         p_ws_id: wsId ?? null,
       }
     );
@@ -1372,8 +1428,10 @@ export async function reconcileOrphanedApprovedPosts(
     }
   }
 
-  return reconcileOrphanedApprovedPostsInApp(sbAdmin, { maxPosts });
+  return reconcileOrphanedApprovedPostsInApp(sbAdmin, { maxPosts, skipPosts });
 }
+
+export { mergeReconciliationResults };
 
 async function getEligibleReenqueuePairs(
   sbAdmin: TypedSupabaseClient,

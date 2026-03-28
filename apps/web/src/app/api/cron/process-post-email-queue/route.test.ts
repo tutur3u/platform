@@ -8,6 +8,7 @@ const {
   autoSkipRejectedPostsMock,
   cleanupStaleProcessingRowsMock,
   createAdminClientMock,
+  mergeReconciliationResultsMock,
   processPostEmailQueueBatchMock,
   reconcileOrphanedApprovedPostsMock,
   reEnqueueSkippedPostEmailsMock,
@@ -23,6 +24,48 @@ const {
     autoSkipRejectedPostsMock: vi.fn(),
     cleanupStaleProcessingRowsMock: vi.fn(),
     createAdminClientMock: vi.fn(() => adminClient),
+    mergeReconciliationResultsMock: vi.fn((base, next) => ({
+      checked: base.checked || next.checked,
+      diagnostics: {
+        alreadySent:
+          base.diagnostics.alreadySent || next.diagnostics.alreadySent,
+        checked: base.diagnostics.checked || next.diagnostics.checked,
+        coveredByExistingQueue:
+          base.diagnostics.coveredByExistingQueue ||
+          next.diagnostics.coveredByExistingQueue,
+        coveredBySentEmail:
+          base.diagnostics.coveredBySentEmail ||
+          next.diagnostics.coveredBySentEmail,
+        eligibleRecipients:
+          base.diagnostics.eligibleRecipients +
+          next.diagnostics.eligibleRecipients,
+        existingProcessing:
+          base.diagnostics.existingProcessing +
+          next.diagnostics.existingProcessing,
+        existingQueued:
+          base.diagnostics.existingQueued + next.diagnostics.existingQueued,
+        existingSkipped:
+          base.diagnostics.existingSkipped + next.diagnostics.existingSkipped,
+        missingCompletion:
+          base.diagnostics.missingCompletion +
+          next.diagnostics.missingCompletion,
+        missingEmail:
+          base.diagnostics.missingEmail + next.diagnostics.missingEmail,
+        missingSenderPlatformUser:
+          base.diagnostics.missingSenderPlatformUser +
+          next.diagnostics.missingSenderPlatformUser,
+        missingUserRecord:
+          base.diagnostics.missingUserRecord +
+          next.diagnostics.missingUserRecord,
+        notApproved:
+          base.diagnostics.notApproved + next.diagnostics.notApproved,
+        orphaned: base.diagnostics.orphaned || next.diagnostics.orphaned,
+        upserted: base.diagnostics.upserted + next.diagnostics.upserted,
+      },
+      enqueued: base.enqueued + next.enqueued,
+      processedPosts: base.processedPosts + next.processedPosts,
+      remainingPosts: next.remainingPosts,
+    })),
     processPostEmailQueueBatchMock: vi.fn(),
     reconcileOrphanedApprovedPostsMock: vi.fn(),
     reEnqueueSkippedPostEmailsMock: vi.fn(),
@@ -38,6 +81,7 @@ vi.mock('@/lib/post-email-queue', () => ({
   autoSkipOldPostEmails: autoSkipOldPostEmailsMock,
   autoSkipRejectedPosts: autoSkipRejectedPostsMock,
   cleanupStaleProcessingRows: cleanupStaleProcessingRowsMock,
+  mergeReconciliationResults: mergeReconciliationResultsMock,
   processPostEmailQueueBatch: processPostEmailQueueBatchMock,
   reconcileOrphanedApprovedPosts: reconcileOrphanedApprovedPostsMock,
   reEnqueueSkippedPostEmails: reEnqueueSkippedPostEmailsMock,
@@ -291,6 +335,126 @@ describe('process-post-email-queue cron route', () => {
       },
     });
 
+    expect(processPostEmailQueueBatchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps scanning reconciliation pages when the queue is idle and the first page enqueues nothing', async () => {
+    mockQueueStatusSnapshots([
+      makeQueueRows({ skipped: 5 }),
+      makeQueueRows({ queued: 3 }),
+      makeQueueRows({ sent: 3, skipped: 5 }),
+    ]);
+
+    reconcileOrphanedApprovedPostsMock
+      .mockResolvedValueOnce({
+        checked: 120,
+        diagnostics: {
+          alreadySent: 10,
+          checked: 120,
+          coveredByExistingQueue: 80,
+          coveredBySentEmail: 10,
+          eligibleRecipients: 0,
+          existingProcessing: 0,
+          existingQueued: 0,
+          existingSkipped: 0,
+          missingCompletion: 0,
+          missingEmail: 30,
+          missingSenderPlatformUser: 0,
+          missingUserRecord: 0,
+          notApproved: 0,
+          orphaned: 30,
+          upserted: 0,
+        },
+        enqueued: 0,
+        processedPosts: 50,
+        remainingPosts: 20,
+      })
+      .mockResolvedValueOnce({
+        checked: 120,
+        diagnostics: {
+          alreadySent: 10,
+          checked: 120,
+          coveredByExistingQueue: 80,
+          coveredBySentEmail: 10,
+          eligibleRecipients: 3,
+          existingProcessing: 0,
+          existingQueued: 0,
+          existingSkipped: 0,
+          missingCompletion: 0,
+          missingEmail: 2,
+          missingSenderPlatformUser: 0,
+          missingUserRecord: 0,
+          notApproved: 0,
+          orphaned: 30,
+          upserted: 3,
+        },
+        enqueued: 3,
+        processedPosts: 20,
+        remainingPosts: 0,
+      });
+
+    processPostEmailQueueBatchMock.mockResolvedValue({
+      claimed: 3,
+      failed: 0,
+      processed: 3,
+      results: [],
+      timedOut: false,
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/cron/process-post-email-queue', {
+        headers: {
+          Authorization: 'Bearer cron-secret',
+        },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      diagnostics: {
+        phase4SkippedReason: null,
+        queueAfterReconciliation: {
+          queued: 3,
+          sent: 0,
+          skipped: 0,
+          total: 3,
+        },
+        reconciliationDiagnostics: {
+          alreadySent: 10,
+          coveredByExistingQueue: 80,
+          coveredBySentEmail: 10,
+          eligibleRecipients: 3,
+          missingEmail: 32,
+          orphaned: 30,
+          upserted: 3,
+        },
+      },
+      reconciliation: {
+        checked: 120,
+        enqueued: 3,
+        processedPosts: 70,
+        remainingPosts: 0,
+      },
+      processed: 3,
+    });
+
+    expect(reconcileOrphanedApprovedPostsMock).toHaveBeenCalledTimes(2);
+    expect(reconcileOrphanedApprovedPostsMock).toHaveBeenNthCalledWith(
+      1,
+      adminClientMock,
+      {
+        maxPosts: 250,
+      }
+    );
+    expect(reconcileOrphanedApprovedPostsMock).toHaveBeenNthCalledWith(
+      2,
+      adminClientMock,
+      {
+        maxPosts: 250,
+        skipPosts: 50,
+      }
+    );
     expect(processPostEmailQueueBatchMock).toHaveBeenCalledTimes(1);
   });
 });

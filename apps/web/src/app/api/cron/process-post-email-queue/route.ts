@@ -7,6 +7,7 @@ import {
   autoSkipOldPostEmails,
   autoSkipRejectedPosts,
   cleanupStaleProcessingRows,
+  mergeReconciliationResults,
   type PostEmailQueueRow,
   processPostEmailQueueBatch,
   reconcileOrphanedApprovedPosts,
@@ -17,6 +18,8 @@ const LOG_PREFIX = '[PostEmailQueueCron]';
 const POST_EMAIL_SELECT_PAGE_SIZE = 1000;
 const RECONCILIATION_MAX_POSTS = 250;
 const RECONCILIATION_MAX_POSTS_WHEN_QUEUE_ACTIVE = 50;
+const RECONCILIATION_EMPTY_PAGE_SCAN_BUDGET_MS = 10_000;
+const RECONCILIATION_MAX_EMPTY_PAGES = 20;
 
 type RpcCapableSupabaseClient = TypedSupabaseClient & {
   rpc?: TypedSupabaseClient['rpc'];
@@ -259,10 +262,39 @@ export async function GET(req: NextRequest) {
       ? { maxPosts: RECONCILIATION_MAX_POSTS_WHEN_QUEUE_ACTIVE }
       : { maxPosts: RECONCILIATION_MAX_POSTS };
     const reconciliationStart = Date.now();
-    const reconciliation = await reconcileOrphanedApprovedPosts(
+    let reconciliation = await reconcileOrphanedApprovedPosts(
       sbAdmin,
       reconciliationOptions
     );
+
+    if (!hasActiveDeliveryBacklog) {
+      let scannedPages = 1;
+      let skipPosts = reconciliation.processedPosts;
+
+      while (
+        reconciliation.enqueued === 0 &&
+        reconciliation.remainingPosts > 0 &&
+        reconciliation.processedPosts > 0 &&
+        scannedPages < RECONCILIATION_MAX_EMPTY_PAGES &&
+        Date.now() - reconciliationStart <
+          RECONCILIATION_EMPTY_PAGE_SCAN_BUDGET_MS
+      ) {
+        const nextPage = await reconcileOrphanedApprovedPosts(sbAdmin, {
+          ...reconciliationOptions,
+          skipPosts,
+        });
+
+        reconciliation = mergeReconciliationResults(reconciliation, nextPage);
+        scannedPages++;
+
+        if (nextPage.processedPosts <= 0) {
+          break;
+        }
+
+        skipPosts += nextPage.processedPosts;
+      }
+    }
+
     phaseTimingsMs.phase3Reconcile = Date.now() - reconciliationStart;
     log('info', `[${requestId}] Phase 3 complete`, {
       durationMs: phaseTimingsMs.phase3Reconcile,

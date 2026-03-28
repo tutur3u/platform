@@ -19,6 +19,7 @@ export {
   enqueueApprovedPostEmails,
   getPostEmailQueueRows,
   hasPostEmailBeenSent,
+  mergeReconciliationResults,
   reconcileOrphanedApprovedPosts,
   reEnqueueSkippedPostEmails,
 } from './post-email-queue/queue-core';
