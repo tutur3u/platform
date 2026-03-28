@@ -14,6 +14,7 @@ import {
   fetchAllChunkedPaginatedRows,
   fetchAllPaginatedRows,
   getNotificationSkipReason,
+  NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON,
 } from '@/lib/notifications/cron-helpers';
 import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 
@@ -582,7 +583,26 @@ export async function GET(req: NextRequest) {
           const devices = await fetchPushDevicesForUser(sbAdmin, batch.user_id);
 
           if (devices.length === 0) {
-            throw new Error('No registered push devices found for batch');
+            await markDeliveryLogsSkipped(
+              sbAdmin,
+              deliverableLogs.map((log) => log.id),
+              NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON
+            );
+            await markBatchSent(
+              sbAdmin,
+              batch.id,
+              notifications.length + skippedCount
+            );
+
+            results.push({
+              batch_id: batch.id,
+              channel: 'push',
+              notification_count: notifications.length + skippedCount,
+              reason: NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON,
+              status: 'skipped',
+            });
+            processedCount++;
+            continue;
           }
 
           const latestNotification = deliverableLogs[0]!.notifications!;

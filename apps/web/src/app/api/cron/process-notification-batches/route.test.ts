@@ -309,6 +309,102 @@ describe('process-notification-batches route', () => {
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
   });
 
+  it('skips push batches when the user has no registered devices', async () => {
+    mocks.fromMock.mockImplementation((table: string) => {
+      switch (table) {
+        case 'notification_batches':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({ data: batches, error: null })
+            ),
+            update: vi.fn(() =>
+              createResolvedChain({ data: null, error: null })
+            ),
+          };
+        case 'notification_delivery_log':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: deliveryLogs,
+                error: null,
+              })
+            ),
+            update: vi.fn(() =>
+              createResolvedChain({ data: null, error: null })
+            ),
+          };
+        case 'notification_push_devices':
+          return {
+            delete: vi.fn(() => ({
+              in: mocks.pushDeleteInMock.mockResolvedValue({ error: null }),
+            })),
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: [],
+                error: null,
+              })
+            ),
+          };
+        case 'workspace_members':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: workspaceMembership,
+                error: null,
+              })
+            ),
+          };
+        case 'users':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: users,
+                error: null,
+              })
+            ),
+          };
+        case 'workspaces':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: { name: 'Root Workspace' },
+                error: null,
+              })
+            ),
+          };
+        default:
+          throw new Error(`Unexpected table ${table}`);
+      }
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/cron/process-notification-batches',
+        {
+          headers: {
+            authorization: 'Bearer cron-secret',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'push',
+          notification_count: 1,
+          reason: 'skipped: no_registered_push_devices',
+          status: 'skipped',
+        }),
+      ],
+    });
+    expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
+  });
+
   it('skips external-recipient email batches before send', async () => {
     batches[0] = {
       ...batches[0]!,

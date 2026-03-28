@@ -10,6 +10,8 @@ export const NOTIFICATION_OLDER_THAN_ONE_DAY_SKIP_REASON =
   'skipped: older_than_1_day';
 export const NOTIFICATION_STALE_WORKSPACE_MEMBERSHIP_SKIP_REASON =
   'skipped: stale_workspace_membership';
+export const NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON =
+  'skipped: no_registered_push_devices';
 export const NOTIFICATION_UNDELIVERABLE_EMAIL_SKIP_REASON_PREFIX =
   'skipped: undeliverable_email';
 
