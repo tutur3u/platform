@@ -24,6 +24,13 @@ export interface PushSendResult {
   invalidTokens: string[];
 }
 
+export interface CustomPushMessageInput {
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+  dataOnly?: boolean;
+}
+
 const INVALID_TOKEN_CODES = new Set([
   'messaging/invalid-registration-token',
   'messaging/registration-token-not-registered',
@@ -71,12 +78,12 @@ export function buildPushData(
   };
 }
 
-export async function sendPushNotificationBatch({
-  notification,
+export async function sendCustomPushMessageBatch({
   devices,
+  message,
 }: {
-  notification: PushNotificationRecord;
   devices: PushDeviceRegistration[];
+  message: CustomPushMessageInput;
 }): Promise<PushSendResult> {
   if (devices.length === 0) {
     return {
@@ -98,16 +105,14 @@ export async function sendPushNotificationBatch({
 
   const payload: MulticastMessage = {
     tokens,
-    notification: {
-      title: notification.title,
-      body: notification.description ?? undefined,
-    },
-    data: buildPushData(notification),
+    data: message.data,
     android: {
       priority: 'high',
-      notification: {
-        channelId: 'tuturuuu_notifications',
-      },
+      notification: message.dataOnly
+        ? undefined
+        : {
+            channelId: 'tuturuuu_notifications',
+          },
     },
     apns: {
       headers: {
@@ -119,6 +124,12 @@ export async function sendPushNotificationBatch({
         },
       },
     },
+    notification: message.dataOnly
+      ? undefined
+      : {
+          title: message.title,
+          body: message.body,
+        },
   };
 
   const response =
@@ -138,4 +149,21 @@ export async function sendPushNotificationBatch({
     deliveredCount: response.successCount,
     invalidTokens,
   };
+}
+
+export async function sendPushNotificationBatch({
+  notification,
+  devices,
+}: {
+  notification: PushNotificationRecord;
+  devices: PushDeviceRegistration[];
+}): Promise<PushSendResult> {
+  return sendCustomPushMessageBatch({
+    devices,
+    message: {
+      title: notification.title,
+      body: notification.description ?? '',
+      data: buildPushData(notification),
+    },
+  });
 }

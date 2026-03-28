@@ -4833,6 +4833,7 @@
     "otp_limits": "Giới hạn OTP",
     "overview": "Tổng quan",
     "post_email_queue": "Hàng Đợi Email Bài Viết",
+    "push_notifications": "Thông báo đẩy",
     "realtime": "Thời gian thực",
     "storage": "Lưu trữ",
     "timezones": "Múi giờ",
@@ -7963,6 +7964,110 @@
     "provider-benefit-default": "Bảo mật nâng cao và đăng nhập dễ dàng hơn với {provider}",
     "provider-benefit-github": "Truy cập kho lưu trữ và quy trình phát triển của bạn",
     "provider-benefit-google": "Truy cập Gmail, Google Drive và các dịch vụ Google khác",
+    "push-notification-dashboard": {
+      "config": {
+        "not_available": "Không có",
+        "project_id": "Firebase project ID",
+        "source": "Nguồn thông tin xác thực",
+        "title": "Trạng thái Firebase Admin"
+      },
+      "config_source": {
+        "application_default": "Application Default Credentials",
+        "service_account_env": "Các biến FIREBASE_* tách riêng",
+        "service_account_json": "FIREBASE_SERVICE_ACCOUNT_JSON"
+      },
+      "config_state": {
+        "application-default": "Dùng mặc định ứng dụng",
+        "configured": "Đã cấu hình",
+        "invalid": "Không hợp lệ",
+        "partial": "Thiếu một phần"
+      },
+      "coverage": {
+        "by_flavor": "Thiết bị đã đăng ký theo môi trường",
+        "by_platform": "Thiết bị đã đăng ký theo nền tảng",
+        "queue_health": "Tình trạng hàng đợi push",
+        "queue_pending": "{count, number} lô đang chờ",
+        "queue_processing": "{count, number} lô đang xử lý",
+        "queue_sent": "{count, number} lô đã gửi",
+        "title": "Phạm vi phủ"
+      },
+      "delivery_kind": {
+        "data_only": "Payload chỉ có data",
+        "notification": "Payload thông báo"
+      },
+      "description": "Kiểm tra cấu hình Firebase Admin, các thiết bị đã đăng ký gần đây, và gửi push test theo mục tiêu hoặc broadcast có giới hạn tới các bản cài development, staging, hoặc production.",
+      "flavors": {
+        "development": "Development",
+        "production": "Production",
+        "staging": "Staging"
+      },
+      "form": {
+        "app_flavor": "Môi trường ứng dụng",
+        "body": "Nội dung",
+        "body_placeholder": "Nhập nội dung push hiển thị trong banner thông báo của hệ điều hành.",
+        "card_title": "Gửi push test",
+        "data_json": "JSON data",
+        "data_json_description": "Payload data FCM tùy chọn. Tất cả giá trị phải là chuỗi.",
+        "data_json_placeholder": "{\n  \"source\": \"infra-dashboard\"\n}",
+        "delivery_kind": "Loại payload",
+        "delivery_kind_description": "Dùng notification payload cho banner thông thường hoặc data-only để kiểm tra phần xử lý trong ứng dụng.",
+        "device_id": "Device ID",
+        "device_id_placeholder": "device-123",
+        "invalid_tokens_removed": "Đã xóa {count, number} token không hợp lệ sau lần gửi thử.",
+        "last_result": "Kết quả gần nhất",
+        "permission_note": "Bạn có thể xem đăng ký thiết bị ở đây, nhưng gửi push test yêu cầu quyền vai trò nền tảng dùng cho các thao tác ghi ở khu vực infrastructure.",
+        "platform": "Nền tảng",
+        "result_summary": "Đã gửi thành công tới {delivered, number} trên {matched, number} thiết bị khớp.",
+        "selection_count": "{count, number} thiết bị đã đăng ký khớp với lựa chọn môi trường/nền tảng hiện tại.",
+        "selection_empty": "Không có thiết bị đã đăng ký nào khớp với lựa chọn môi trường/nền tảng hiện tại.",
+        "selection_suggestion": "Chưa có thiết bị nào khớp với lựa chọn này. Hãy thử {flavor} hoặc đăng ký thiết bị trong môi trường này.",
+        "send": "Gửi push test",
+        "send_error": "Gửi push test thất bại.",
+        "send_success": "Đã gửi push test.",
+        "send_to_all": "Broadcast tới tất cả thiết bị khớp",
+        "send_to_all_description": "Chế độ broadcast được giới hạn ở 50 thiết bị khớp được nhìn thấy gần đây nhất theo môi trường và nền tảng đã chọn.",
+        "target_description": "Tắt broadcast để nhắm tới một người dùng, thiết bị, hoặc token cụ thể.",
+        "title": "Tiêu đề",
+        "title_placeholder": "Kiểm tra push infrastructure",
+        "token": "Token chính xác",
+        "token_placeholder": "fcm-registration-token",
+        "truncated_result": "Chế độ broadcast đã chạm ngưỡng của dashboard; chỉ 50 thiết bị khớp được nhìn thấy gần đây nhất được nhắm tới.",
+        "user_id": "User ID",
+        "user_id_placeholder": "00000000-0000-0000-0000-000000000000"
+      },
+      "platforms": {
+        "all": "Tất cả nền tảng",
+        "android": "Android",
+        "ios": "iOS"
+      },
+      "recent_batches": {
+        "empty": "Chưa có lô push nào được xếp hàng.",
+        "notification_count": "{count, number} thông báo trong lô",
+        "sent_at": "Gửi lúc: {value}",
+        "title": "Các lô push gần đây",
+        "updated_at": "Cập nhật lúc: {value}"
+      },
+      "recent_devices": {
+        "empty": "Chưa có thiết bị di động nào đăng ký push.",
+        "last_seen": "Nhìn thấy lần cuối: {value}",
+        "title": "Thiết bị đăng ký gần đây",
+        "unknown_user": "Người dùng không xác định"
+      },
+      "summary": {
+        "active_24h": "Hoạt động trong 24h",
+        "failed_batches": "Lô thất bại",
+        "pending_batches": "Lô đang chờ",
+        "total_devices": "Thiết bị đã đăng ký"
+      },
+      "title": "Thông báo đẩy",
+      "validation": {
+        "broadcast_conflict": "Chỉ chọn một trong hai: broadcast hoặc bộ lọc cụ thể.",
+        "data_json_invalid": "JSON data phải là JSON hợp lệ.",
+        "data_json_string_values": "JSON data phải là một object có toàn bộ giá trị là chuỗi.",
+        "target_required": "Hãy nhập user, device, hoặc token, hoặc bật chế độ broadcast.",
+        "user_id_invalid": "User ID phải là UUID hợp lệ."
+      }
+    },
     "push-notifications": "Thông báo đẩy",
     "push-notifications-description": "Nhận thông báo đẩy trong trình duyệt",
     "recovery-codes": "Mã khôi phục",

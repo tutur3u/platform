@@ -4833,6 +4833,7 @@
     "otp_limits": "OTP Limits",
     "overview": "Overview",
     "post_email_queue": "Post Email Queue",
+    "push_notifications": "Push Notifications",
     "realtime": "Realtime",
     "storage": "Storage",
     "timezones": "Timezones",
@@ -7963,6 +7964,110 @@
     "provider-benefit-default": "Enhanced security and easier sign-in with {provider}",
     "provider-benefit-github": "Access your repositories and development workflow",
     "provider-benefit-google": "Access Gmail, Google Drive, and other Google services",
+    "push-notification-dashboard": {
+      "config": {
+        "not_available": "Not available",
+        "project_id": "Firebase project ID",
+        "source": "Credential source",
+        "title": "Firebase Admin status"
+      },
+      "config_source": {
+        "application_default": "Application Default Credentials",
+        "service_account_env": "Split FIREBASE_* envs",
+        "service_account_json": "FIREBASE_SERVICE_ACCOUNT_JSON"
+      },
+      "config_state": {
+        "application-default": "Application default",
+        "configured": "Configured",
+        "invalid": "Invalid",
+        "partial": "Partial"
+      },
+      "coverage": {
+        "by_flavor": "Registered devices by environment",
+        "by_platform": "Registered devices by platform",
+        "queue_health": "Push batch health",
+        "queue_pending": "{count, number} pending batches",
+        "queue_processing": "{count, number} processing batches",
+        "queue_sent": "{count, number} sent batches",
+        "title": "Coverage"
+      },
+      "delivery_kind": {
+        "data_only": "Data-only payload",
+        "notification": "Notification payload"
+      },
+      "description": "Inspect Firebase Admin configuration, recent registered devices, and send targeted or capped broadcast test pushes to development, staging, or production app installs.",
+      "flavors": {
+        "development": "Development",
+        "production": "Production",
+        "staging": "Staging"
+      },
+      "form": {
+        "app_flavor": "App environment",
+        "body": "Body",
+        "body_placeholder": "Write the push body shown in the OS notification banner.",
+        "card_title": "Send test push",
+        "data_json": "Data JSON",
+        "data_json_description": "Optional FCM data payload. Values must all be strings.",
+        "data_json_placeholder": "{\n  \"source\": \"infra-dashboard\"\n}",
+        "delivery_kind": "Payload type",
+        "delivery_kind_description": "Use notification payloads for regular banners or data-only payloads to test app-side handling.",
+        "device_id": "Device ID",
+        "device_id_placeholder": "device-123",
+        "invalid_tokens_removed": "{count, number} invalid tokens removed after the send attempt.",
+        "last_result": "Last result",
+        "permission_note": "You can inspect registrations here, but sending test pushes requires the platform role permission used for infrastructure write actions.",
+        "platform": "Platform",
+        "result_summary": "Delivered to {delivered, number} of {matched, number} matched devices.",
+        "selection_count": "{count, number} registered devices match the current environment/platform selection.",
+        "selection_empty": "No registered devices match the current environment/platform selection.",
+        "selection_suggestion": "No devices match this selection yet. Try {flavor} or register a device in this environment.",
+        "send": "Send test push",
+        "send_error": "Failed to send test push.",
+        "send_success": "Test push sent.",
+        "send_to_all": "Broadcast to all matching devices",
+        "send_to_all_description": "Broadcast mode is capped to the 50 most recently seen devices for the selected environment and platform.",
+        "target_description": "Leave broadcast off to target a specific user, device, or exact token.",
+        "title": "Title",
+        "title_placeholder": "Infrastructure push test",
+        "token": "Exact token",
+        "token_placeholder": "fcm-registration-token",
+        "truncated_result": "Broadcast mode hit the dashboard cap; only the 50 most recently seen matching devices were targeted.",
+        "user_id": "User ID",
+        "user_id_placeholder": "00000000-0000-0000-0000-000000000000"
+      },
+      "platforms": {
+        "all": "All platforms",
+        "android": "Android",
+        "ios": "iOS"
+      },
+      "recent_batches": {
+        "empty": "No push batches have been queued yet.",
+        "notification_count": "{count, number} notifications in batch",
+        "sent_at": "Sent at: {value}",
+        "title": "Recent push batches",
+        "updated_at": "Updated at: {value}"
+      },
+      "recent_devices": {
+        "empty": "No mobile devices have registered for push yet.",
+        "last_seen": "Last seen: {value}",
+        "title": "Recent registered devices",
+        "unknown_user": "Unknown user"
+      },
+      "summary": {
+        "active_24h": "Active in 24h",
+        "failed_batches": "Failed batches",
+        "pending_batches": "Pending batches",
+        "total_devices": "Registered devices"
+      },
+      "title": "Push Notifications",
+      "validation": {
+        "broadcast_conflict": "Choose either broadcast mode or a specific filter.",
+        "data_json_invalid": "Data JSON must be valid JSON.",
+        "data_json_string_values": "Data JSON must be an object with string values.",
+        "target_required": "Set a user, device, or token filter, or enable broadcast mode.",
+        "user_id_invalid": "User ID must be a valid UUID."
+      }
+    },
     "push-notifications": "Push Notifications",
     "push-notifications-description": "Receive push notifications in your browser",
     "recovery-codes": "Recovery codes",
