@@ -1,7 +1,12 @@
 # AGENTS.md - Mobile Flutter/Dart Playbook
 
 This file contains Flutter/Dart and mobile-app-specific rules for `apps/mobile`.
-Global repo rules still apply from the root `AGENTS.md`.
+The authoritative repo-wide instructions live in [`../../AGENTS.md`](../../AGENTS.md) and apply in full here. This file is additive only; if anything here appears to conflict with the root file, follow the root `AGENTS.md`.
+
+## 0. Inheritance
+
+- **Read Order**: Read [`../../AGENTS.md`](../../AGENTS.md) first, then this file.
+- **Scope**: Use this file only for `apps/mobile`-specific guidance on top of the root rules.
 
 ## 1. Mandatory Actions
 
@@ -58,6 +63,8 @@ Global repo rules still apply from the root `AGENTS.md`.
 - **Stable Shell Top Bars Across Tabs**: Keep shell navbar layout stable across Home, Assistant, and Apps; place assistant-only actions in the assistant surface.
 - **Opt-In Mobile Fullscreen Chat**: Do not auto-enter fullscreen because the assistant tab opened or workspace reloaded.
 - **Inline Mobile Streaming State**: Create/update the pending assistant message as soon as stream starts and keep streaming/thinking indicators inline with transcript.
+- **Explicit Mobile Live Entry**: Do not auto-create Gemini Live sessions on workspace/chat load. Keep normal text chat on the standard `AssistantChatCubit` path, and only route text/audio through `AssistantLiveCubit` after the user explicitly enters live mode for the current chat.
+- **Branded Mobile Loading States**: Use `NovaLoadingIndicator` for primary page and section loading states in `apps/mobile`; reserve circular progress spinners for compact inline actions where the Nova mark would be too large or ambiguous.
 
 ## 4. Flutter Tooling & Platform Details
 
@@ -76,3 +83,5 @@ Global repo rules still apply from the root `AGENTS.md`.
 ## 5. Maintainability
 
 - **Module Boundaries**: When a file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
+- **Atomic Assistant Widgets**: In `features/assistant`, default to reusable stateless widgets under `widgets/` before adding more `part` files or growing a page-level state class. Keep the page/view focused on orchestration only.
+- **Small File Bias**: Treat ~200 LOC for Flutter widgets and ~300 LOC for pages/views as a refactor trigger, not a suggestion. Extract shared badges, bubbles, banners, sheets, and cards into dedicated widget files early.

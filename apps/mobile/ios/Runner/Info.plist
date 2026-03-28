@@ -61,6 +61,8 @@
 		<true/>
 		<key>NSCameraUsageDescription</key>
 		<string>The application requires access to camera to allow instant captures to be used inside the app.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>The application requires access to microphone so you can talk with the live assistant.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>The application requires access to photo library to allow instant captures to be used inside the app.</string>
 		<key>UIApplicationSceneManifest</key>

@@ -10,6 +10,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_inappwebview_windows
   flutter_secure_storage_windows
   flutter_timezone
+  permission_handler_windows
+  record_windows
   share_plus
   url_launcher_windows
 )
