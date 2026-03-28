@@ -23,6 +23,7 @@ interface PostsClientProps {
   wsId: string;
   locale: string;
   canApprovePosts: boolean;
+  canForceSendPosts: boolean;
   searchParams: PostsSearchParams;
   postsData: { data: PostEmail[]; count: number };
   postsStatus: PostEmailStatusSummary;
@@ -32,6 +33,7 @@ export default function PostsClient({
   wsId,
   locale,
   canApprovePosts,
+  canForceSendPosts,
   searchParams,
   postsData,
   postsStatus,
@@ -158,6 +160,7 @@ export default function PostsClient({
             wsId={wsId}
             postEmail={selectedPost}
             canApprovePosts={canApprovePosts}
+            canForceSendPosts={canForceSendPosts}
           />
         </div>
       </div>

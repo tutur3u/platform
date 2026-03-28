@@ -5833,6 +5833,7 @@ export type Database = {
           created_at: string | null;
           expires_at: string;
           id: string;
+          scope_key: string;
           session_handle: string;
           updated_at: string | null;
           user_id: string;
@@ -5842,6 +5843,7 @@ export type Database = {
           created_at?: string | null;
           expires_at: string;
           id?: string;
+          scope_key: string;
           session_handle: string;
           updated_at?: string | null;
           user_id: string;
@@ -5851,6 +5853,7 @@ export type Database = {
           created_at?: string | null;
           expires_at?: string;
           id?: string;
+          scope_key?: string;
           session_handle?: string;
           updated_at?: string | null;
           user_id?: string;
@@ -7039,6 +7042,71 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_push_devices: {
+        Row: {
+          app_flavor: string;
+          created_at: string;
+          device_id: string;
+          id: string;
+          last_seen_at: string;
+          platform: string;
+          token: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          app_flavor: string;
+          created_at?: string;
+          device_id: string;
+          id?: string;
+          last_seen_at?: string;
+          platform: string;
+          token: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          app_flavor?: string;
+          created_at?: string;
+          device_id?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          token?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_push_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'notification_push_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'notification_push_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_push_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];

@@ -1,3 +1,4 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -40,10 +41,16 @@ export default async function PostsPage({
           redirect(`/${wsId}/posts?${canonicalSearchParams}`);
         }
 
-        const permissions = await getPermissions({ wsId });
+        const [permissions, rootPermissions] = await Promise.all([
+          getPermissions({ wsId }),
+          getPermissions({ wsId: ROOT_WORKSPACE_ID }),
+        ]);
 
         const canApprovePosts =
           permissions?.containsPermission('send_user_group_post_emails') ??
+          false;
+        const canForceSendPosts =
+          rootPermissions?.containsPermission('manage_workspace_roles') ??
           false;
 
         const { postsData, postsStatus } = await getPostsPageData(
@@ -56,6 +63,7 @@ export default async function PostsPage({
             wsId={wsId}
             locale={locale}
             canApprovePosts={canApprovePosts}
+            canForceSendPosts={canForceSendPosts}
             searchParams={parsedSearchParams}
             postsData={postsData}
             postsStatus={postsStatus}

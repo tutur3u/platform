@@ -7154,6 +7154,8 @@
     "email": "Email",
     "error": "Error",
     "failed": "Failed",
+    "force_send": "Force send",
+    "force_send_success": "Post email sent immediately.",
     "group_name": "Group Name",
     "id": "ID",
     "incomplete": "Incomplete",

@@ -7154,6 +7154,8 @@
     "email": "Email",
     "error": "Lỗi",
     "failed": "Thất bại",
+    "force_send": "Buộc gửi",
+    "force_send_success": "Email bài viết đã được gửi ngay lập tức.",
     "group_name": "Tên nhóm",
     "id": "Mã số",
     "incomplete": "Chưa hoàn thành",
