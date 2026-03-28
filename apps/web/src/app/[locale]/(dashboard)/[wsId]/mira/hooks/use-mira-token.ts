@@ -5,6 +5,8 @@ import { useCallback, useRef } from 'react';
 
 async function fetchMiraToken(wsId: string): Promise<{
   token: string;
+  scopeKey: string;
+  model: string;
   fetchedAt: number;
 }> {
   const response = await fetch('/api/v1/mira/token', {
@@ -16,8 +18,8 @@ async function fetchMiraToken(wsId: string): Promise<{
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch Mira voice token');
   }
-  const { token } = await response.json();
-  return { token, fetchedAt: Date.now() };
+  const { token, scopeKey, model } = await response.json();
+  return { token, scopeKey, model, fetchedAt: Date.now() };
 }
 
 // Token is valid for 30 minutes, refresh if older than 5 minutes
@@ -61,6 +63,8 @@ export function useMiraToken(wsId: string) {
 
   return {
     token: data?.token ?? null,
+    scopeKey: data?.scopeKey ?? null,
+    model: data?.model ?? null,
     isLoading,
     error: error as Error | null,
     refreshToken,

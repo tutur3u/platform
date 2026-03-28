@@ -1249,13 +1249,14 @@ interface AssistantClientProps {
 }
 
 export default function AssistantClient({ wsId }: AssistantClientProps) {
-  const { token, isLoading, error, refreshToken } = useEphemeralToken(wsId);
+  const { token, scopeKey, isLoading, error, refreshToken } =
+    useEphemeralToken(wsId);
 
   if (isLoading) {
     return <LoadingOrb />;
   }
 
-  if (error || !token) {
+  if (error || !token || !scopeKey) {
     return (
       <div className="relative -m-4 flex h-screen min-h-screen flex-col items-center justify-center gap-6 overflow-hidden">
         {/* Background */}
@@ -1331,7 +1332,12 @@ export default function AssistantClient({ wsId }: AssistantClientProps) {
   }
 
   return (
-    <LiveAPIProvider key={token} apiKey={token} wsId={wsId}>
+    <LiveAPIProvider
+      key={`${scopeKey}:${token}`}
+      apiKey={token}
+      wsId={wsId}
+      scopeKey={scopeKey}
+    >
       <GameApp wsId={wsId} />
     </LiveAPIProvider>
   );

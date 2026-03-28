@@ -6,18 +6,26 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
 import {
+  ensureAssistantLiveChat,
+  loadAssistantLiveSeedHistory,
+} from '@/lib/live/assistant-history';
+import {
   ASSISTANT_LIVE_MODEL,
   ASSISTANT_LIVE_TOOL_CONFIG,
   ASSISTANT_LIVE_TOOL_DECLARATIONS,
   ASSISTANT_SYSTEM_INSTRUCTION,
 } from '@/lib/live/assistant-tools';
-import { WEB_ASSISTANT_LIVE_SCOPE_KEY } from '@/lib/live/session-scope';
+import { assistantChatScopeKey } from '@/lib/live/session-scope';
 import { createConstrainedLiveToken } from '@/lib/live/token-builder';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { wsId } = body as { wsId?: string };
+    const { wsId, chatId, model } = body as {
+      wsId?: string;
+      chatId?: string;
+      model?: string;
+    };
 
     if (!wsId) {
       return Response.json(
@@ -61,8 +69,21 @@ export async function POST(request: Request) {
       );
     }
 
+    const resolvedModel = model ?? ASSISTANT_LIVE_MODEL;
+    const chat = await ensureAssistantLiveChat({
+      supabase,
+      userId: user.id,
+      chatId,
+      model: resolvedModel,
+    });
+    const seedHistory = await loadAssistantLiveSeedHistory({
+      supabase,
+      chatId: chat.id,
+      userId: user.id,
+    });
+
     const token = await createConstrainedLiveToken({
-      model: ASSISTANT_LIVE_MODEL,
+      model: resolvedModel,
       systemInstruction: ASSISTANT_SYSTEM_INSTRUCTION,
       tools: [
         { functionDeclarations: ASSISTANT_LIVE_TOOL_DECLARATIONS },
@@ -75,13 +96,15 @@ export async function POST(request: Request) {
 
     return Response.json({
       token,
-      scopeKey: WEB_ASSISTANT_LIVE_SCOPE_KEY,
-      model: ASSISTANT_LIVE_MODEL,
+      chatId: chat.id,
+      scopeKey: assistantChatScopeKey(chat.id),
+      model: resolvedModel,
+      seedHistory,
     });
   } catch (error) {
-    console.error('Error generating ephemeral token:', error);
+    console.error('Error generating mobile assistant live token:', error);
     return Response.json(
-      { error: 'Failed to generate token' },
+      { error: 'Failed to generate assistant live token' },
       { status: 500 }
     );
   }

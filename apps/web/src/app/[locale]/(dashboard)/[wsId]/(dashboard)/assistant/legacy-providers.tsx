@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { LiveAPIProvider } from '@/hooks/use-live-api';
+import { WEB_ASSISTANT_LIVE_SCOPE_KEY } from '@/lib/live/session-scope';
 
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY as string;
 const host = 'generativelanguage.googleapis.com';
@@ -12,7 +13,12 @@ export function LegacyProviders({ children }: { children: React.ReactNode }) {
   const wsId = params.wsId as string;
 
   return (
-    <LiveAPIProvider url={uri} apiKey={API_KEY} wsId={wsId}>
+    <LiveAPIProvider
+      url={uri}
+      apiKey={API_KEY}
+      wsId={wsId}
+      scopeKey={WEB_ASSISTANT_LIVE_SCOPE_KEY}
+    >
       {children}
     </LiveAPIProvider>
   );

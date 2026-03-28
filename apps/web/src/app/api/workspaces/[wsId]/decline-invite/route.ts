@@ -7,8 +7,8 @@ interface Params {
   }>;
 }
 
-export async function POST(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function POST(request: Request, { params }: Params) {
+  const supabase = await createClient(request);
   const { wsId } = await params;
 
   // Get authenticated user

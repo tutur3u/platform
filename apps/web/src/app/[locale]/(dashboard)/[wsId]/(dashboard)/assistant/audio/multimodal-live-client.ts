@@ -195,6 +195,14 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         }
       }
 
+      if (config.sessionResumption) {
+        sdkConfig.sessionResumption = config.sessionResumption;
+      }
+
+      if (config.historyConfig) {
+        sdkConfig.historyConfig = config.historyConfig;
+      }
+
       // Detect ephemeral token usage: no tools/systemInstruction in client config
       // When using ephemeral tokens, these are embedded in the token itself.
       // Passing config here would OVERRIDE the token's embedded configuration.
@@ -584,7 +592,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
    */
   send(
     parts: { text?: string } | Array<{ text?: string }>,
-    turnComplete: boolean = true
+    _turnComplete: boolean = true
   ) {
     if (!this.session) {
       throw new Error('Session is not connected');
@@ -593,16 +601,8 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     const partsArray = Array.isArray(parts) ? parts : [parts];
     const text = partsArray.map((p) => p.text || '').join('');
 
-    // Use proper Content format - turns must be Content[] not string
-    // This is required for function calling to work
-    this.session.sendClientContent({
-      turns: [
-        {
-          role: 'user',
-          parts: [{ text }],
-        },
-      ],
-      turnComplete,
+    this.session.sendRealtimeInput({
+      text,
     });
     this.log('client.send', text);
   }

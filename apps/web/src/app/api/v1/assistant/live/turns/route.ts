@@ -1,0 +1,133 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/db';
+import {
+  getWorkspaceTier,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
+import { z } from 'zod';
+import { isFeatureAvailable } from '@/lib/feature-tiers';
+
+const liveMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().default(''),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const persistLiveTurnSchema = z.object({
+  wsId: z.string().min(1),
+  chatId: z.string().uuid(),
+  turnId: z.string().min(1),
+  model: z.string().min(1),
+  messages: z.array(liveMessageSchema).min(1),
+});
+
+type ChatRole = Database['public']['Enums']['chat_role'];
+
+export async function POST(request: Request) {
+  try {
+    const parsed = persistLiveTurnSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid request body', issues: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { wsId, chatId, turnId, model, messages } = parsed.data;
+    const supabase = await createClient(request);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const { error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (membershipError) {
+      return Response.json(
+        { error: 'You are not a member of this workspace' },
+        { status: 403 }
+      );
+    }
+
+    const currentTier = await getWorkspaceTier(normalizedWsId, {
+      useAdmin: true,
+    });
+
+    if (!isFeatureAvailable('voice_assistant', currentTier)) {
+      return Response.json(
+        { error: 'Voice Assistant requires PRO tier or higher' },
+        { status: 403 }
+      );
+    }
+
+    const { data: chat, error: chatError } = await supabase
+      .from('ai_chats')
+      .select('id')
+      .eq('id', chatId)
+      .eq('creator_id', user.id)
+      .maybeSingle();
+
+    if (chatError != null) {
+      return Response.json({ error: chatError.message }, { status: 500 });
+    }
+
+    if (chat == null) {
+      return Response.json({ error: 'Chat not found' }, { status: 404 });
+    }
+
+    const { data: existingRows, error: existingError } = await supabase
+      .from('ai_chat_messages')
+      .select('id')
+      .eq('chat_id', chatId)
+      .contains('metadata', { liveTurnId: turnId });
+
+    if (existingError != null) {
+      return Response.json({ error: existingError.message }, { status: 500 });
+    }
+
+    if ((existingRows ?? []).length > 0) {
+      return Response.json({ success: true, inserted: 0, deduped: true });
+    }
+
+    const bareModel = model.includes('/')
+      ? model.split('/').pop()!.toLowerCase()
+      : model.toLowerCase();
+    const payload = messages.map((message) => ({
+      chat_id: chatId,
+      creator_id: user.id,
+      role: message.role.toUpperCase() as ChatRole,
+      content: message.content,
+      model: message.role === 'assistant' ? bareModel : null,
+      metadata: {
+        liveTurnId: turnId,
+        source: 'Mira',
+        ...(message.metadata ?? {}),
+      },
+    }));
+
+    const { error: insertError } = await supabase
+      .from('ai_chat_messages')
+      .insert(payload);
+
+    if (insertError != null) {
+      return Response.json({ error: insertError.message }, { status: 500 });
+    }
+
+    return Response.json({ success: true, inserted: payload.length });
+  } catch (error) {
+    console.error('Unexpected assistant live turn persistence error:', error);
+    return Response.json(
+      { error: 'Failed to persist assistant live turn' },
+      { status: 500 }
+    );
+  }
+}
