@@ -292,38 +292,56 @@ async function getEligibleRecipients(
   diagnostics: EligibleRecipientsDiagnostics;
   recipients: EligibleRecipient[];
 }> {
-  // Query 1: Get check records with user data (with ws_id filter)
-  let query = sbAdmin
-    .from('user_group_post_checks')
-    .select(
-      'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id(id, email, ws_id)'
-    )
-    .eq('post_id', postId)
-    .eq('user.ws_id', wsId);
+  const dedupedUserIds =
+    userIds && userIds.length > 0 ? [...new Set(userIds)] : null;
+  const userIdChunks = dedupedUserIds ? chunkArray(dedupedUserIds) : [null];
+  const rows: EligibleRecipientCheckRow[] = [];
+  const allCheckRows: Array<
+    Pick<
+      GroupPostCheck,
+      'user_id' | 'is_completed' | 'approval_status' | 'approved_by'
+    >
+  > = [];
 
-  if (userIds && userIds.length > 0) {
-    query = query.in('user_id', userIds);
+  for (const userIdChunk of userIdChunks) {
+    let query = sbAdmin
+      .from('user_group_post_checks')
+      .select(
+        'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id(id, email, ws_id)'
+      )
+      .eq('post_id', postId)
+      .eq('user.ws_id', wsId);
+
+    if (userIdChunk && userIdChunk.length > 0) {
+      query = query.in('user_id', userIdChunk);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    rows.push(...((data ?? []) as EligibleRecipientCheckRow[]));
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
+  for (const userIdChunk of userIdChunks) {
+    let allChecksQuery = sbAdmin
+      .from('user_group_post_checks')
+      .select('user_id, is_completed, approval_status, approved_by')
+      .eq('post_id', postId);
 
-  const rows = (data ?? []) as EligibleRecipientCheckRow[];
+    if (userIdChunk && userIdChunk.length > 0) {
+      allChecksQuery = allChecksQuery.in('user_id', userIdChunk);
+    }
 
-  // Query 2: Get all check records for this post (without user filter) to diagnose missing users
-  let allChecksQuery = sbAdmin
-    .from('user_group_post_checks')
-    .select('user_id, is_completed, approval_status, approved_by')
-    .eq('post_id', postId);
-
-  if (userIds && userIds.length > 0) {
-    allChecksQuery = allChecksQuery.in('user_id', userIds);
+    const { data: allChecksData, error: allChecksError } = await allChecksQuery;
+    if (allChecksError) throw allChecksError;
+    allCheckRows.push(
+      ...((allChecksData ?? []) as Array<
+        Pick<
+          GroupPostCheck,
+          'user_id' | 'is_completed' | 'approval_status' | 'approved_by'
+        >
+      >)
+    );
   }
-
-  const { data: allChecksData, error: allChecksError } = await allChecksQuery;
-  if (allChecksError) throw allChecksError;
-
-  const allCheckRows = allChecksData ?? [];
   const foundUserIds = new Set(rows.map((r) => r.user_id));
   const missingFromUserTable = allCheckRows
     .filter((r) => !foundUserIds.has(r.user_id))
@@ -491,23 +509,25 @@ export async function enqueueApprovedPostEmails(
   }
 
   const recipientIds = recipients.map((recipient) => recipient.user_id);
-  const [sentEmailResult, existingQueueResult] = await Promise.all([
-    sbAdmin
+  const sentEmailRows: SentReceiverRow[] = [];
+  for (const recipientIdChunk of chunkArray(recipientIds)) {
+    const { data, error } = await sbAdmin
       .from('sent_emails')
       .select('receiver_id')
       .eq('post_id', postId)
-      .in('receiver_id', recipientIds),
-    getQueueTable(sbAdmin).select('id, user_id, status').eq('post_id', postId),
-  ]);
+      .in('receiver_id', recipientIdChunk);
 
-  if (sentEmailResult.error) throw sentEmailResult.error;
+    if (error) throw error;
+    sentEmailRows.push(...((data ?? []) as SentReceiverRow[]));
+  }
+
+  const existingQueueResult = await getQueueTable(sbAdmin)
+    .select('id, user_id, status')
+    .eq('post_id', postId);
+
   if (existingQueueResult.error) throw existingQueueResult.error;
 
-  const sentRecipientIds = new Set(
-    ((sentEmailResult.data ?? []) as SentReceiverRow[]).map(
-      (row) => row.receiver_id
-    )
-  );
+  const sentRecipientIds = new Set(sentEmailRows.map((row) => row.receiver_id));
   const existingByUserId = new Map<string, ExistingQueueState>(
     (existingQueueResult.data ?? []).map((row) => [
       row.user_id,
