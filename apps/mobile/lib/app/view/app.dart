@@ -109,6 +109,7 @@ class _AppState extends State<App> {
       settingsRepository: _settingsRepo,
       onOpen: _handlePushNavigation,
     );
+    unawaited(PushNotificationService.instance.initialize());
     _authCubit = AuthCubit(
       authRepository: _authRepo,
       onBeforeSignOut: PushNotificationService.instance.stopSession,

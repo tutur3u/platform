@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/utils/device_info.dart';
@@ -14,6 +13,11 @@ enum PushNotificationEventType {
   received,
   opened,
 }
+
+const _pushNotificationChannelId = 'tuturuuu_notifications';
+const _pushNotificationChannelName = 'Notifications';
+const _pushNotificationChannelDescription =
+    'Push notifications for the Tuturuuu inbox';
 
 class PushNavigationRequest {
   const PushNavigationRequest({
@@ -36,6 +40,12 @@ class PushNavigationRequest {
       entityId!.isNotEmpty &&
       boardId != null &&
       boardId!.isNotEmpty;
+
+  bool get hasNavigationMetadata =>
+      notificationId.isNotEmpty ||
+      (wsId != null && wsId!.isNotEmpty) ||
+      (entityId != null && entityId!.isNotEmpty) ||
+      (boardId != null && boardId!.isNotEmpty);
 }
 
 class PushNotificationEvent {
@@ -52,6 +62,30 @@ typedef PushNavigationHandler =
     Future<void> Function(
       PushNavigationRequest request,
     );
+
+PushNavigationRequest requestFromPushData(Map<String, dynamic> data) {
+  return PushNavigationRequest(
+    notificationId: (data['notificationId'] as String?) ?? '',
+    openTarget: (data['openTarget'] as String?) ?? 'inbox',
+    wsId: data['wsId'] as String?,
+    entityId: data['entityId'] as String?,
+    boardId: data['boardId'] as String?,
+  );
+}
+
+String? payloadFromPushRequest(PushNavigationRequest request) {
+  if (!request.hasNavigationMetadata) {
+    return null;
+  }
+
+  return jsonEncode({
+    'notificationId': request.notificationId,
+    'openTarget': request.openTarget,
+    'wsId': request.wsId,
+    'entityId': request.entityId,
+    'boardId': request.boardId,
+  });
+}
 
 class PushNotificationService {
   PushNotificationService._();
@@ -90,6 +124,8 @@ class PushNotificationService {
     _settingsRepository = settingsRepository;
     _navigationHandler = onOpen;
   }
+
+  Future<void> initialize() => _ensureInitialized();
 
   Future<void> startSession(String userId) async {
     _currentUserId = userId;
@@ -216,17 +252,11 @@ class PushNotificationService {
       return;
     }
 
-    final localeCode =
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    final isVietnamese = localeCode.toLowerCase().startsWith('vi');
-
     await androidImplementation.createNotificationChannel(
-      AndroidNotificationChannel(
-        'tuturuuu_notifications',
-        isVietnamese ? 'Thong bao' : 'Notifications',
-        description: isVietnamese
-            ? 'Thong bao day cho hop thu Tuturuuu'
-            : 'Push notifications for the Tuturuuu inbox',
+      const AndroidNotificationChannel(
+        _pushNotificationChannelId,
+        _pushNotificationChannelName,
+        description: _pushNotificationChannelDescription,
         importance: Importance.high,
       ),
     );
@@ -235,6 +265,9 @@ class PushNotificationService {
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     final request = _requestFromData(message.data);
     await _showForegroundNotification(message, request);
+    if (!request.hasNavigationMetadata) {
+      return;
+    }
     _emitEvent(
       PushNotificationEvent(
         type: PushNotificationEventType.received,
@@ -245,6 +278,9 @@ class PushNotificationService {
 
   Future<void> _handleRemoteMessageOpened(RemoteMessage message) async {
     final request = _requestFromData(message.data);
+    if (!request.hasNavigationMetadata) {
+      return;
+    }
     _emitEvent(
       PushNotificationEvent(
         type: PushNotificationEventType.opened,
@@ -261,6 +297,9 @@ class PushNotificationService {
     }
 
     final request = _requestFromData(decoded);
+    if (!request.hasNavigationMetadata) {
+      return;
+    }
     _emitEvent(
       PushNotificationEvent(
         type: PushNotificationEventType.opened,
@@ -289,32 +328,20 @@ class PushNotificationService {
       body: body.isEmpty ? null : body,
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
-          'tuturuuu_notifications',
-          'Notifications',
-          channelDescription: 'Push notifications for the Tuturuuu inbox',
+          _pushNotificationChannelId,
+          _pushNotificationChannelName,
+          channelDescription: _pushNotificationChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
         ),
         iOS: DarwinNotificationDetails(),
       ),
-      payload: jsonEncode({
-        'notificationId': request.notificationId,
-        'openTarget': request.openTarget,
-        'wsId': request.wsId,
-        'entityId': request.entityId,
-        'boardId': request.boardId,
-      }),
+      payload: payloadFromPushRequest(request),
     );
   }
 
   PushNavigationRequest _requestFromData(Map<String, dynamic> data) {
-    return PushNavigationRequest(
-      notificationId: (data['notificationId'] as String?) ?? '',
-      openTarget: (data['openTarget'] as String?) ?? 'inbox',
-      wsId: data['wsId'] as String?,
-      entityId: data['entityId'] as String?,
-      boardId: data['boardId'] as String?,
-    );
+    return requestFromPushData(data);
   }
 
   Future<void> _syncRegistrationIfAuthorized() async {

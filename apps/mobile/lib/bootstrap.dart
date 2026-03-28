@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/cache/cache_store.dart';
@@ -12,6 +13,7 @@ import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/notifications/push/push_background_handler.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppBlocObserver extends BlocObserver {
@@ -78,6 +80,7 @@ Future<void> bootstrap(
     await Firebase.initializeApp(
       options: firebaseOptionsForFlavor(appFlavor),
     );
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   } on Object catch (e, st) {
     log('Failed to initialize Firebase: $e', stackTrace: st);
   }
