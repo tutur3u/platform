@@ -4,6 +4,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
@@ -143,6 +144,16 @@ async function prefetchBatchData(
     });
   }
 
+  const blockedEmailCache = await preloadBlockedEmailCache(
+    sbAdmin,
+    checkRows.map((check) => check.user?.email ?? null)
+  );
+  const blockedRecipientEmails = new Set(
+    [...blockedEmailCache.entries()]
+      .filter(([, isBlocked]) => isBlocked)
+      .map(([email]) => email)
+  );
+
   const emailServices = new Map<string, EmailService>();
   const sourceInfos = new Map<string, BatchSourceInfo>();
 
@@ -170,6 +181,7 @@ async function prefetchBatchData(
   });
 
   const batchPrefetch: BatchPrefetchContext = {
+    blockedRecipientEmails,
     posts,
     checks,
     existingSentEmails,
@@ -251,6 +263,18 @@ async function processEmailWithContext(
     });
 
     return { id: row.id, status: 'sent' };
+  }
+
+  if (
+    prefetch.blockedRecipientEmails.has(context.recipient.email.toLowerCase())
+  ) {
+    await markQueueRow(sbAdmin, row.id, {
+      status: 'skipped',
+      batch_id: null,
+      blocked_reason: 'blacklist',
+      last_error: 'Blocked: blacklist',
+    });
+    return { id: row.id, status: 'skipped' };
   }
 
   const emailService = prefetch.emailServices.get(row.ws_id);

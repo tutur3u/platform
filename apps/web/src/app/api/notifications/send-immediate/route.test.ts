@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
+  const rpcMock = vi.fn();
   const sendPushNotificationBatchMock = vi.fn();
   const sendSystemEmailMock = vi.fn();
 
   return {
     fromMock,
+    rpcMock,
     sendPushNotificationBatchMock,
     sendSystemEmailMock,
   };
@@ -17,6 +19,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() =>
     Promise.resolve({
       from: mocks.fromMock,
+      rpc: mocks.rpcMock,
     })
   ),
 }));
@@ -88,6 +91,7 @@ describe('send-immediate route', () => {
     };
   }>;
   let workspaceMembership: { user_id: string } | null;
+  let blockedEmails: Set<string>;
   let users: Array<{
     display_name: string;
     email: Array<{ email: string }>;
@@ -97,6 +101,17 @@ describe('send-immediate route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('CRON_SECRET', 'cron-secret');
+    blockedEmails = new Set<string>();
+    mocks.rpcMock.mockImplementation(
+      async (_name: string, args: { p_emails: string[] }) => ({
+        data: args.p_emails.map((email) => ({
+          email,
+          is_blocked: blockedEmails.has(email),
+          reason: null,
+        })),
+        error: null,
+      })
+    );
     mocks.sendPushNotificationBatchMock.mockResolvedValue({
       deliveredCount: 1,
       invalidTokens: [],
@@ -381,6 +396,38 @@ describe('send-immediate route', () => {
         }),
       ],
     });
+  });
+
+  it('skips blacklisted email batches before send', async () => {
+    batches[0] = {
+      ...batches[0]!,
+      channel: 'email',
+    };
+    blockedEmails.add('member@tuturuuu.com');
+
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        body: JSON.stringify({ batch_id: 'batch-1' }),
+        headers: {
+          authorization: 'Bearer cron-secret',
+        },
+        method: 'POST',
+      }) as any
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'email',
+          status: 'skipped',
+        }),
+      ],
+    });
+    expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
   });
 
   it('drains more than the old 20-batch cap in one run', async () => {

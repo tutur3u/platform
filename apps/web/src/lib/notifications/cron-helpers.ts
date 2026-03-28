@@ -1,5 +1,6 @@
 import type { SendEmailResult } from '@tuturuuu/email-service';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isEmailBlacklisted } from '@/lib/email-blacklist';
 
 export const NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const NOTIFICATION_QUERY_CHUNK_SIZE = 500;
@@ -14,6 +15,7 @@ export const NOTIFICATION_UNDELIVERABLE_EMAIL_SKIP_REASON_PREFIX =
 
 type SupabaseLike = {
   from: (table: string) => any;
+  rpc?: unknown;
 };
 
 export type NotificationSkipCandidate = {
@@ -25,6 +27,7 @@ export type NotificationSkipCandidate = {
 };
 
 export type NotificationSkipReasonOptions = {
+  blockedEmailCache?: Map<string, boolean>;
   errorMessage?: string | null;
   membershipCache?: Map<string, boolean>;
   notification: NotificationSkipCandidate;
@@ -138,6 +141,26 @@ async function hasWorkspaceMembership(
   return isMember;
 }
 
+async function getBlacklistSkipReason(
+  sbAdmin: SupabaseLike,
+  recipientEmail?: string | null,
+  blockedEmailCache?: Map<string, boolean>
+): Promise<string | null> {
+  if (!recipientEmail || !isValidTuturuuuEmail(recipientEmail)) {
+    return null;
+  }
+
+  const isBlocked = await isEmailBlacklisted(
+    sbAdmin,
+    recipientEmail,
+    blockedEmailCache
+  );
+
+  return isBlocked
+    ? buildNotificationUndeliverableSkipReason('blocked_recipient_blacklist')
+    : null;
+}
+
 export function buildNotificationUndeliverableSkipReason(
   detail?: string
 ): string {
@@ -151,6 +174,7 @@ export function buildNotificationUndeliverableSkipReason(
 export async function getNotificationSkipReason(
   sbAdmin: SupabaseLike,
   {
+    blockedEmailCache,
     errorMessage,
     membershipCache,
     notification,
@@ -175,6 +199,15 @@ export async function getNotificationSkipReason(
   const recipientReason = getRecipientSkipReason(recipientEmail);
   if (recipientReason) {
     return recipientReason;
+  }
+
+  const blacklistReason = await getBlacklistSkipReason(
+    sbAdmin,
+    recipientEmail,
+    blockedEmailCache
+  );
+  if (blacklistReason) {
+    return blacklistReason;
   }
 
   return getProviderSkipReason({ errorMessage, sendResult });

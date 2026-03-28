@@ -8,6 +8,7 @@ import NotificationDigestEmail, {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import {
   chunkValues,
   fetchAllChunkedPaginatedRows,
@@ -56,6 +57,18 @@ type NotificationWorkspaceCheckRow = {
     data: Record<string, unknown> | null;
     entity_id: string | null;
   } | null;
+};
+
+type UserLookupRow = {
+  display_name: string | null;
+  email: Array<{ email: string }> | null;
+  id: string;
+};
+
+type UserData = {
+  display_name: string | null;
+  email: string | null;
+  id: string;
 };
 
 type PendingDeliveryLogRetryRow = {
@@ -229,6 +242,41 @@ async function fetchPushDevicesForUser(
   );
 }
 
+async function fetchUsersByIds(
+  sbAdmin: any,
+  userIds: string[]
+): Promise<Map<string, UserData>> {
+  const usersMap = new Map<string, UserData>();
+
+  if (userIds.length === 0) {
+    return usersMap;
+  }
+
+  const rows = await fetchAllChunkedPaginatedRows<UserLookupRow, string>(
+    userIds,
+    (userIdChunk, from, to) =>
+      sbAdmin
+        .from('users')
+        .select('id, display_name, email:user_private_details(email)')
+        .in('id', userIdChunk)
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      chunkSize: 500,
+    }
+  );
+
+  for (const user of rows) {
+    usersMap.set(user.id, {
+      id: user.id,
+      display_name: user.display_name,
+      email: user.email?.[0]?.email || null,
+    });
+  }
+
+  return usersMap;
+}
+
 async function markDeliveryLogsSentByIds(
   sbAdmin: any,
   logIds: string[],
@@ -356,6 +404,7 @@ export async function GET(req: NextRequest) {
 
     const sbAdmin = await createAdminClient();
     const processingDeadline = Date.now() + PROCESSING_DEADLINE_MS;
+    const blockedEmailCache = new Map<string, boolean>();
     const membershipCache = new Map<string, boolean>();
 
     const batches = await fetchPendingBatchedNotificationBatches(sbAdmin);
@@ -378,6 +427,27 @@ export async function GET(req: NextRequest) {
         failed: 0,
       });
     }
+
+    const usersMap = await fetchUsersByIds(sbAdmin, [
+      ...new Set(
+        filteredBatches
+          .filter((batch) => batch.channel === 'email')
+          .map((batch) => batch.user_id)
+          .filter(Boolean)
+      ),
+    ] as string[]);
+
+    await preloadBlockedEmailCache(
+      sbAdmin,
+      filteredBatches
+        .filter((batch) => batch.channel === 'email')
+        .map((batch) =>
+          batch.user_id
+            ? (usersMap.get(batch.user_id)?.email ?? null)
+            : batch.email
+        ),
+      blockedEmailCache
+    );
 
     let processedCount = 0;
     let failedCount = 0;
@@ -439,6 +509,7 @@ export async function GET(req: NextRequest) {
           }
 
           const skipReason = await getNotificationSkipReason(sbAdmin, {
+            blockedEmailCache,
             membershipCache,
             notification,
           });
@@ -564,16 +635,8 @@ export async function GET(req: NextRequest) {
           let userName: string;
 
           if (batch.user_id) {
-            const { data: user } = await sbAdmin
-              .from('users')
-              .select('email:user_private_details(email), display_name')
-              .eq('id', batch.user_id)
-              .single();
-
-            const emailData = user?.email as unknown as Array<{
-              email: string;
-            }>;
-            userEmail = emailData?.[0]?.email || batch.email || '';
+            const user = usersMap.get(batch.user_id);
+            userEmail = user?.email || batch.email || '';
             userName = user?.display_name || userEmail;
           } else {
             userEmail = batch.email || '';
@@ -581,6 +644,7 @@ export async function GET(req: NextRequest) {
           }
 
           const preSendSkipReason = await getNotificationSkipReason(sbAdmin, {
+            blockedEmailCache,
             membershipCache,
             notification: batchNotification,
             recipientEmail: userEmail || null,
@@ -663,6 +727,7 @@ export async function GET(req: NextRequest) {
 
           if (!result.success) {
             const sendSkipReason = await getNotificationSkipReason(sbAdmin, {
+              blockedEmailCache,
               errorMessage: result.error,
               membershipCache,
               notification: batchNotification,

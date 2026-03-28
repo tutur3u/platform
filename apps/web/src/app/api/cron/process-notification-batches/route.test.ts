@@ -5,12 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
   const pushDeleteInMock = vi.fn();
+  const rpcMock = vi.fn();
   const sendPushNotificationBatchMock = vi.fn();
   const sendSystemEmailMock = vi.fn();
 
   return {
     fromMock,
     pushDeleteInMock,
+    rpcMock,
     sendPushNotificationBatchMock,
     sendSystemEmailMock,
   };
@@ -20,6 +22,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() =>
     Promise.resolve({
       from: mocks.fromMock,
+      rpc: mocks.rpcMock,
     })
   ),
 }));
@@ -95,10 +98,12 @@ describe('process-notification-batches route', () => {
     };
   }>;
   let workspaceMembership: { user_id: string } | null;
-  let userRow: {
+  let blockedEmails: Set<string>;
+  let users: Array<{
     display_name: string;
-    email: Array<{ email: string }>;
-  };
+    email: Array<{ email: string }> | null;
+    id: string;
+  }>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -107,6 +112,17 @@ describe('process-notification-batches route', () => {
       deliveredCount: 1,
       invalidTokens: ['stale-token'],
     });
+    blockedEmails = new Set<string>();
+    mocks.rpcMock.mockImplementation(
+      async (_name: string, args: { p_emails: string[] }) => ({
+        data: args.p_emails.map((email) => ({
+          email,
+          is_blocked: blockedEmails.has(email),
+          reason: null,
+        })),
+        error: null,
+      })
+    );
     mocks.sendSystemEmailMock.mockResolvedValue({
       success: true,
     });
@@ -143,10 +159,13 @@ describe('process-notification-batches route', () => {
       },
     ];
     workspaceMembership = { user_id: 'user-1' };
-    userRow = {
-      display_name: 'User One',
-      email: [{ email: 'member@tuturuuu.com' }],
-    };
+    users = [
+      {
+        display_name: 'User One',
+        email: [{ email: 'member@tuturuuu.com' }],
+        id: 'user-1',
+      },
+    ];
 
     mocks.fromMock.mockImplementation((table: string) => {
       switch (table) {
@@ -196,7 +215,7 @@ describe('process-notification-batches route', () => {
           return {
             select: vi.fn(() =>
               createResolvedChain({
-                data: userRow,
+                data: users,
                 error: null,
               })
             ),
@@ -295,7 +314,7 @@ describe('process-notification-batches route', () => {
       ...batches[0]!,
       channel: 'email',
     };
-    userRow.email = [{ email: 'member@example.com' }];
+    users[0]!.email = [{ email: 'member@example.com' }];
 
     const response = await GET(
       new NextRequest(
@@ -363,6 +382,39 @@ describe('process-notification-batches route', () => {
         }),
       ],
     });
+  });
+
+  it('skips blacklisted email batches before send', async () => {
+    batches[0] = {
+      ...batches[0]!,
+      channel: 'email',
+    };
+    blockedEmails.add('member@tuturuuu.com');
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/cron/process-notification-batches',
+        {
+          headers: {
+            authorization: 'Bearer cron-secret',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'email',
+          status: 'skipped',
+        }),
+      ],
+    });
+    expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
   });
 
   it('drains more than the old 50-batch cap in one run', async () => {

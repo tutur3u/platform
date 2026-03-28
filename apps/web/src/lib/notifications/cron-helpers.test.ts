@@ -171,6 +171,41 @@ describe('getNotificationSkipReason', () => {
     );
   });
 
+  it('skips blacklisted internal recipient emails before send', async () => {
+    const reason = await getNotificationSkipReason(
+      {
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: vi.fn(async () => ({
+                  data: { user_id: 'user-1' },
+                  error: null,
+                })),
+              })),
+            })),
+          })),
+        })),
+        rpc: vi.fn(async (_name: string, args: { p_emails: string[] }) => ({
+          data: args.p_emails.map((email) => ({
+            email,
+            is_blocked: email === 'member@tuturuuu.com',
+            reason: null,
+          })),
+          error: null,
+        })),
+      },
+      {
+        notification,
+        recipientEmail: 'member@tuturuuu.com',
+      }
+    );
+
+    expect(reason).toBe(
+      buildNotificationUndeliverableSkipReason('blocked_recipient_blacklist')
+    );
+  });
+
   it('skips sender-domain verification failures as undeliverable', async () => {
     const reason = await getNotificationSkipReason(
       {

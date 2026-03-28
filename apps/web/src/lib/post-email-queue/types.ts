@@ -157,6 +157,7 @@ export type BatchSourceInfo = Pick<
 >;
 
 export type BatchPrefetchContext = BatchPrefetch & {
+  blockedRecipientEmails: Set<string>;
   emailServices: Map<string, EmailService>;
   sourceInfos: Map<string, BatchSourceInfo>;
 };

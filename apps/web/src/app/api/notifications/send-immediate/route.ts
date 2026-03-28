@@ -8,6 +8,7 @@ import { MAX_NAME_LENGTH, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import {
   chunkValues,
   fetchAllChunkedPaginatedRows,
@@ -627,6 +628,7 @@ export async function POST(req: NextRequest) {
     }
 
     const sbAdmin = await createAdminClient();
+    const blockedEmailCache = new Map<string, boolean>();
     const processingDeadline = Date.now() + PROCESSING_DEADLINE_MS;
     const membershipCache = new Map<string, boolean>();
 
@@ -657,6 +659,18 @@ export async function POST(req: NextRequest) {
     const usersMap = await fetchUsersByIds(sbAdmin, [
       ...new Set(filteredBatches.map((batch) => batch.user_id).filter(Boolean)),
     ] as string[]);
+
+    await preloadBlockedEmailCache(
+      sbAdmin,
+      filteredBatches
+        .filter((batch) => batch.channel === 'email')
+        .map((batch) =>
+          batch.user_id
+            ? (usersMap.get(batch.user_id)?.email ?? null)
+            : batch.email
+        ),
+      blockedEmailCache
+    );
 
     const workspacesMap = await fetchWorkspacesByIds(sbAdmin, [
       ...new Set(filteredBatches.map((batch) => batch.ws_id).filter(Boolean)),
@@ -741,6 +755,7 @@ export async function POST(req: NextRequest) {
           }
 
           const skipReason = await getNotificationSkipReason(sbAdmin, {
+            blockedEmailCache,
             membershipCache,
             notification: logNotification,
           });
@@ -831,6 +846,7 @@ export async function POST(req: NextRequest) {
           }
 
           const preSendSkipReason = await getNotificationSkipReason(sbAdmin, {
+            blockedEmailCache,
             membershipCache,
             notification: deliverableNotification,
             recipientEmail: userEmail || null,
@@ -924,6 +940,7 @@ export async function POST(req: NextRequest) {
 
           if (!result.success) {
             const sendSkipReason = await getNotificationSkipReason(sbAdmin, {
+              blockedEmailCache,
               errorMessage: result.error,
               membershipCache,
               notification: deliverableNotification,
