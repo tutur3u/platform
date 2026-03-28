@@ -13,6 +13,7 @@ import 'package:mobile/features/tasks/widgets/task_section_accordion.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<void> _reload(BuildContext context) async {
@@ -131,7 +132,7 @@ class _TaskListViewState extends State<_TaskListView> {
             if (state.status == TaskListStatus.loading &&
                 state.totalActiveTasks == 0 &&
                 state.completedTasks.isEmpty) {
-              return const Center(child: shad.CircularProgressIndicator());
+              return const Center(child: NovaLoadingIndicator());
             }
 
             if (state.status == TaskListStatus.error &&
@@ -241,7 +242,7 @@ class _TaskListViewState extends State<_TaskListView> {
                         state.isLoadingMoreCompleted)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Center(child: shad.CircularProgressIndicator()),
+                        child: Center(child: NovaLoadingIndicator()),
                       ),
                   ],
                 ),

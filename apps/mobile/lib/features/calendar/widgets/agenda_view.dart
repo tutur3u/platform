@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// Scrollable agenda showing upcoming events grouped by date.
 ///
@@ -147,7 +148,7 @@ class _AgendaViewState extends State<AgendaView> {
         if (index >= items.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(child: NovaLoadingIndicator()),
           );
         }
 

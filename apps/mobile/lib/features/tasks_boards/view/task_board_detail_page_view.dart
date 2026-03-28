@@ -146,7 +146,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               return Stack(
                 children: [
                   shellActionRegistration,
-                  const Center(child: shad.CircularProgressIndicator()),
+                  const Center(child: NovaLoadingIndicator()),
                 ],
               );
             }

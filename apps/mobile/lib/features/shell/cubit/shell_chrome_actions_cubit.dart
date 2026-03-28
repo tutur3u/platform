@@ -8,6 +8,7 @@ class ShellActionSpec extends Equatable {
     required this.icon,
     this.tooltip,
     this.onPressed,
+    this.callbackToken,
     this.enabled = true,
     this.isLoading = false,
     this.highlighted = false,
@@ -17,6 +18,7 @@ class ShellActionSpec extends Equatable {
   final IconData icon;
   final String? tooltip;
   final VoidCallback? onPressed;
+  final Object? callbackToken;
   final bool enabled;
   final bool isLoading;
   final bool highlighted;
@@ -29,6 +31,7 @@ class ShellActionSpec extends Equatable {
     icon.fontPackage,
     icon.matchTextDirection,
     tooltip,
+    callbackToken,
     enabled,
     isLoading,
     highlighted,

@@ -22,6 +22,7 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class CalendarPage extends StatelessWidget {
@@ -128,7 +129,7 @@ class _CalendarView extends StatelessWidget {
               builder: (context, state) {
                 if (state.status == CalendarStatus.loading &&
                     state.events.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: NovaLoadingIndicator());
                 }
 
                 if (state.status == CalendarStatus.error &&

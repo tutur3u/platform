@@ -462,6 +462,10 @@ class _ShellPageState extends State<ShellPage>
   }
 
   bool _isSameMiniAppFamily(String locationA, String locationB) {
+    if (Routes.isSettingsHubLocation(locationA) &&
+        Routes.isSettingsHubLocation(locationB)) {
+      return true;
+    }
     final rootA = Routes.miniAppRootForLocation(locationA);
     final rootB = Routes.miniAppRootForLocation(locationB);
     return rootA != null && rootA == rootB;

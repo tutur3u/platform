@@ -179,7 +179,7 @@ class _HabitsViewState extends State<_HabitsView> {
                     builder: (context, state) {
                       if (state.status == HabitsStatus.loading &&
                           state.trackers.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Center(child: NovaLoadingIndicator());
                       }
                       if (state.status == HabitsStatus.error &&
                           state.trackers.isEmpty) {

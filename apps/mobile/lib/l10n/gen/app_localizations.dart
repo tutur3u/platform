@@ -1291,6 +1291,12 @@ abstract class AppLocalizations {
   /// **'Recent chats'**
   String get assistantHistoryTitle;
 
+  /// No description provided for @assistantHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats yet. Start a new conversation to create one.'**
+  String get assistantHistoryEmpty;
+
   /// No description provided for @assistantUntitledChat.
   ///
   /// In en, this message translates to:
@@ -1308,6 +1314,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assistant settings'**
   String get assistantSettingsTitle;
+
+  /// No description provided for @assistantSendAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get assistantSendAction;
 
   /// No description provided for @assistantActionsTitle.
   ///
@@ -1525,6 +1537,18 @@ abstract class AppLocalizations {
   /// **'Source'**
   String get assistantSourceLabel;
 
+  /// No description provided for @assistantSourcePersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get assistantSourcePersonal;
+
+  /// No description provided for @assistantSourceWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get assistantSourceWorkspace;
+
   /// No description provided for @assistantToolLabel.
   ///
   /// In en, this message translates to:
@@ -1561,6 +1585,24 @@ abstract class AppLocalizations {
   /// **'Chat export'**
   String get assistantExportShareText;
 
+  /// No description provided for @assistantAttachmentClearAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear attachments'**
+  String get assistantAttachmentClearAction;
+
+  /// No description provided for @assistantAttachmentSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get assistantAttachmentSheetTitle;
+
+  /// No description provided for @assistantAttachmentUploadPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for attachment uploads to finish before sending.'**
+  String get assistantAttachmentUploadPending;
+
   /// No description provided for @assistantContextUpdatedLabel.
   ///
   /// In en, this message translates to:
@@ -1573,6 +1615,66 @@ abstract class AppLocalizations {
   /// **'Assistant preferences updated'**
   String get assistantPreferencesUpdatedLabel;
 
+  /// No description provided for @assistantStarterBacklog.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlog cleanup'**
+  String get assistantStarterBacklog;
+
+  /// No description provided for @assistantStarterCaptionBacklog.
+  ///
+  /// In en, this message translates to:
+  /// **'Break open tasks into a clean next-step list.'**
+  String get assistantStarterCaptionBacklog;
+
+  /// No description provided for @assistantStarterCaptionDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape a concise update before you send it.'**
+  String get assistantStarterCaptionDraft;
+
+  /// No description provided for @assistantStarterCaptionFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Let Mira surface the best next move.'**
+  String get assistantStarterCaptionFocus;
+
+  /// No description provided for @assistantStarterCaptionPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance meetings, tasks, and real focus time.'**
+  String get assistantStarterCaptionPlan;
+
+  /// No description provided for @assistantStarterDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Team update'**
+  String get assistantStarterDraft;
+
+  /// No description provided for @assistantStarterFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s focus'**
+  String get assistantStarterFocus;
+
+  /// No description provided for @assistantStarterPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Day plan'**
+  String get assistantStarterPlan;
+
+  /// No description provided for @assistantStarterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a quick starter or type your own.'**
+  String get assistantStarterSubtitle;
+
+  /// No description provided for @assistantStarterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Need a place to start?'**
+  String get assistantStarterTitle;
+
   /// No description provided for @assistantShowBottomNavLabel.
   ///
   /// In en, this message translates to:
@@ -1584,6 +1686,240 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide bottom nav'**
   String get assistantHideBottomNavLabel;
+
+  /// No description provided for @assistantLiveAccessSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{workspace} • {source}'**
+  String assistantLiveAccessSummary(String workspace, String source);
+
+  /// No description provided for @assistantLiveAccessUsingPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Using personal {tier}'**
+  String assistantLiveAccessUsingPersonal(String tier);
+
+  /// No description provided for @assistantLiveAccessUsingWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Using workspace {tier}'**
+  String assistantLiveAccessUsingWorkspace(String tier);
+
+  /// No description provided for @assistantLiveCameraPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Live camera'**
+  String get assistantLiveCameraPreview;
+
+  /// No description provided for @assistantLiveConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Start live session'**
+  String get assistantLiveConnect;
+
+  /// No description provided for @assistantLiveDescriptionConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating a direct Gemini Live session for text, audio, and camera input.'**
+  String get assistantLiveDescriptionConnecting;
+
+  /// No description provided for @assistantLiveDescriptionError.
+  ///
+  /// In en, this message translates to:
+  /// **'The live session hit an error. Retry or start a fresh session.'**
+  String get assistantLiveDescriptionError;
+
+  /// No description provided for @assistantLiveDescriptionIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a live session to talk, type, or stream camera context into the same assistant chat.'**
+  String get assistantLiveDescriptionIdle;
+
+  /// No description provided for @assistantLiveDescriptionListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone streaming is active. Mira will keep listening for new audio input.'**
+  String get assistantLiveDescriptionListening;
+
+  /// No description provided for @assistantLiveDescriptionPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Minting an ephemeral token and restoring the last resumable live session.'**
+  String get assistantLiveDescriptionPreparing;
+
+  /// No description provided for @assistantLiveDescriptionReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Live text and audio are ready. Type a turn, talk, or share your camera feed.'**
+  String get assistantLiveDescriptionReady;
+
+  /// No description provided for @assistantLiveDescriptionReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'The session is reconnecting with the latest resumable handle and restored history.'**
+  String get assistantLiveDescriptionReconnecting;
+
+  /// No description provided for @assistantLiveDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'End live session'**
+  String get assistantLiveDisconnect;
+
+  /// No description provided for @assistantLiveDraftAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira is replying'**
+  String get assistantLiveDraftAssistant;
+
+  /// No description provided for @assistantLiveDraftUser.
+  ///
+  /// In en, this message translates to:
+  /// **'You are speaking'**
+  String get assistantLiveDraftUser;
+
+  /// No description provided for @assistantLiveHideCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide camera'**
+  String get assistantLiveHideCamera;
+
+  /// No description provided for @assistantLiveInsightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live insights'**
+  String get assistantLiveInsightsTitle;
+
+  /// No description provided for @assistantLiveListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open mic'**
+  String get assistantLiveListen;
+
+  /// No description provided for @assistantLiveMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute mic'**
+  String get assistantLiveMute;
+
+  /// No description provided for @assistantLiveNoMessagesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use voice, text, or attachments to start a chat. Everything from the live session will sync back into this thread.'**
+  String get assistantLiveNoMessagesBody;
+
+  /// No description provided for @assistantLiveNoMessagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your live assistant is ready'**
+  String get assistantLiveNoMessagesTitle;
+
+  /// No description provided for @assistantLivePermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera or microphone access is blocked. Enable permissions to use the full live mode.'**
+  String get assistantLivePermissionDenied;
+
+  /// No description provided for @assistantLiveReconnectBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Session rotation detected. Reconnecting with about {timeLeft} remaining.'**
+  String assistantLiveReconnectBanner(String timeLeft);
+
+  /// No description provided for @assistantLiveShowCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Show camera'**
+  String get assistantLiveShowCamera;
+
+  /// No description provided for @assistantLiveStatusAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get assistantLiveStatusAvailable;
+
+  /// No description provided for @assistantLiveStatusConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get assistantLiveStatusConnecting;
+
+  /// No description provided for @assistantLiveStatusDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get assistantLiveStatusDisconnected;
+
+  /// No description provided for @assistantLiveStatusError.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get assistantLiveStatusError;
+
+  /// No description provided for @assistantLiveStatusPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get assistantLiveStatusPreparing;
+
+  /// No description provided for @assistantLiveStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get assistantLiveStatusReady;
+
+  /// No description provided for @assistantLiveStatusReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting'**
+  String get assistantLiveStatusReconnecting;
+
+  /// No description provided for @assistantLiveStatusSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing'**
+  String get assistantLiveStatusSyncing;
+
+  /// No description provided for @assistantLiveStatusUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get assistantLiveStatusUnavailable;
+
+  /// No description provided for @assistantLiveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini 3.1 Flash Live with voice, camera, attachments, and unified chat history.'**
+  String get assistantLiveSubtitle;
+
+  /// No description provided for @assistantLiveTierRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Live voice is available on PLUS and above.'**
+  String get assistantLiveTierRequired;
+
+  /// No description provided for @assistantLiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live assistant'**
+  String get assistantLiveTitle;
+
+  /// No description provided for @assistantLiveInfoAccessHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Current access'**
+  String get assistantLiveInfoAccessHeading;
+
+  /// No description provided for @assistantLiveInfoDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get assistantLiveInfoDismiss;
+
+  /// No description provided for @assistantLiveWorkspaceTierLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace {tier}'**
+  String assistantLiveWorkspaceTierLabel(String tier);
 
   /// No description provided for @assistantCreditsSummary.
   ///
@@ -6402,6 +6738,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get settingsTitle;
+
+  /// No description provided for @settingsNavApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get settingsNavApp;
+
+  /// No description provided for @settingsNavWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get settingsNavWorkspace;
+
+  /// No description provided for @settingsNavYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get settingsNavYou;
 
   /// No description provided for @settingsAccountTab.
   ///

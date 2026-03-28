@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 
 import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
@@ -159,6 +160,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       state.copyWith(status: AssistantChatStatus.restoring, clearError: true),
     );
     final restored = await _repository.restoreChat(wsId: wsId, chatId: chat.id);
+    if (isClosed) {
+      return;
+    }
     if (restored == null) {
       emit(
         state.copyWith(
@@ -169,6 +173,10 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       return;
     }
 
+    final history = await _repository.fetchRecentChats();
+    if (isClosed) {
+      return;
+    }
     await _preferences.saveChatId(wsId, chat.id);
     emit(
       state.copyWith(
@@ -177,6 +185,43 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         storedChatId: chat.id,
         messages: restored.messages,
         attachmentsByMessageId: restored.attachmentsByMessageId,
+        history: history,
+      ),
+    );
+    await _onChatRestored(restored.chat?.model);
+  }
+
+  Future<void> openChatById(String wsId, String chatId) async {
+    emit(
+      state.copyWith(status: AssistantChatStatus.restoring, clearError: true),
+    );
+    final restored = await _repository.restoreChat(wsId: wsId, chatId: chatId);
+    if (isClosed) {
+      return;
+    }
+    if (restored == null) {
+      emit(
+        state.copyWith(
+          status: AssistantChatStatus.error,
+          error: 'Failed to load chat history.',
+        ),
+      );
+      return;
+    }
+
+    final history = await _repository.fetchRecentChats();
+    if (isClosed) {
+      return;
+    }
+    await _preferences.saveChatId(wsId, chatId);
+    emit(
+      state.copyWith(
+        status: AssistantChatStatus.idle,
+        chat: restored.chat,
+        storedChatId: chatId,
+        messages: restored.messages,
+        attachmentsByMessageId: restored.attachmentsByMessageId,
+        history: history,
       ),
     );
     await _onChatRestored(restored.chat?.model);
@@ -185,6 +230,24 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   Future<void> refreshHistory() async {
     final history = await _repository.fetchRecentChats();
     emit(state.copyWith(history: history));
+  }
+
+  List<AssistantAttachment> takeUploadedComposerAttachments() {
+    final uploaded = state.composerAttachments
+        .where((attachment) => attachment.isUploaded)
+        .toList(growable: false);
+    if (uploaded.isEmpty) {
+      return const [];
+    }
+
+    emit(
+      state.copyWith(
+        composerAttachments: state.composerAttachments
+            .where((attachment) => !attachment.isUploaded)
+            .toList(growable: false),
+      ),
+    );
+    return uploaded;
   }
 
   Future<void> addComposerAttachments({
@@ -301,13 +364,47 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       _queue.add(queued);
     }
 
-    emit(
-      state.copyWith(
-        queuedMessages: _queue
-            .map((item) => item.message)
-            .toList(growable: false),
-      ),
-    );
+    final shouldPrimeUi = _shouldPrimeConversationUi(uploadedAttachments);
+    final queuedMessages = _queue
+        .map((item) => item.message)
+        .toList(growable: false);
+
+    if (shouldPrimeUi) {
+      final optimisticMessage = AssistantMessage(
+        id: _repository.generateUuid(),
+        role: 'user',
+        parts: [AssistantMessagePart(type: 'text', text: queueMessage)],
+        createdAt: DateTime.now(),
+      );
+      final nextAttachments = Map<String, List<AssistantAttachment>>.from(
+        state.attachmentsByMessageId,
+      );
+      if (uploadedAttachments.isNotEmpty) {
+        nextAttachments[optimisticMessage.id] = uploadedAttachments;
+      }
+
+      emit(
+        state.copyWith(
+          queuedMessages: queuedMessages,
+          chat: AssistantChatRecord(
+            id: state.fallbackChatId,
+            model: modelId,
+            createdAt: DateTime.now(),
+          ),
+          messages: [...state.messages, optimisticMessage],
+          attachmentsByMessageId: nextAttachments,
+          composerAttachments: const [],
+          clearError: true,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          queuedMessages: queuedMessages,
+          clearError: true,
+        ),
+      );
+    }
 
     if (state.isBusy) {
       await stopStreaming();
@@ -425,103 +522,165 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }) async {
     if (_queue.isEmpty) return;
 
-    final unique = <String>[];
-    for (final item in _queue) {
-      if (!unique.contains(item.message)) {
-        unique.add(item.message);
+    try {
+      final unique = <String>[];
+      for (final item in _queue) {
+        if (!unique.contains(item.message)) {
+          unique.add(item.message);
+        }
       }
-    }
-    final attachments = _queue.expand((item) => item.attachments).toList();
-    _queue..clear();
+      final attachments = _queue.expand((item) => item.attachments).toList();
+      _queue..clear();
 
-    final combined = unique.join('\n\n');
-    var chat = state.chat;
-    var chatId = chat?.id ?? state.fallbackChatId;
+      final combined = unique.join('\n\n');
+      var chat = state.chat;
+      var chatId = chat?.id ?? state.fallbackChatId;
 
-    emit(
-      state.copyWith(
-        status: AssistantChatStatus.submitting,
-        queuedMessages: const [],
-        clearError: true,
-      ),
-    );
-
-    if (chat == null) {
-      final created = await _repository.createChat(
-        id: chatId,
-        modelId: modelId,
-        message: combined,
-        timezone: timezone,
+      emit(
+        state.copyWith(
+          status: AssistantChatStatus.submitting,
+          queuedMessages: const [],
+          clearError: true,
+        ),
       );
-      chat = created;
-      chatId = created.id;
-      await _preferences.saveChatId(wsId, chatId);
-      emit(state.copyWith(chat: created, storedChatId: chatId));
-      await refreshHistory();
-    }
 
-    final userMessage = AssistantMessage(
-      id: _repository.generateUuid(),
-      role: 'user',
-      parts: [AssistantMessagePart(type: 'text', text: combined)],
-      createdAt: DateTime.now(),
-    );
-
-    final attachmentsByMessageId = Map<String, List<AssistantAttachment>>.from(
-      state.attachmentsByMessageId,
-    );
-    if (attachments.isNotEmpty) {
-      attachmentsByMessageId[userMessage.id] = attachments;
-    }
-
-    final nextMessages = [...state.messages, userMessage];
-    emit(
-      state.copyWith(
-        messages: nextMessages,
-        attachmentsByMessageId: attachmentsByMessageId,
-        composerAttachments: const [],
-      ),
-    );
-
-    _activeAssistantMessageId = null;
-    _activeTextBlockId = null;
-    _activeReasoningBlockId = null;
-
-    _streamSubscription = _repository
-        .streamChat(
-          chatId: chatId,
-          wsId: wsId,
-          workspaceContextId: workspaceContextId,
+      if (chat == null || state.storedChatId == null) {
+        final created = await _repository.createChat(
+          id: chatId,
           modelId: modelId,
-          messages: nextMessages,
-          thinkingMode: thinkingMode,
-          creditSource: creditSource,
+          message: combined,
           timezone: timezone,
-          creditWsId: creditWsId,
-        )
-        .listen(
-          _handleStreamEvent,
-          onError: (Object error, StackTrace stackTrace) {
-            emit(
-              state.copyWith(
-                status: AssistantChatStatus.error,
-                error: error.toString(),
-              ),
-            );
-          },
-          onDone: () async {
-            _streamSubscription = null;
-            // Mark any tools still in streaming state as completed
-            _finalizeToolParts();
-            emit(state.copyWith(status: AssistantChatStatus.idle));
-          },
-          cancelOnError: false,
         );
+        chat = created;
+        chatId = created.id;
+        await _preferences.saveChatId(wsId, chatId);
+        emit(state.copyWith(chat: created, storedChatId: chatId));
+        await refreshHistory();
+      }
+
+      final shouldAppendUserMessage = !_matchesLatestQueuedMessage(
+        combined,
+        attachments,
+      );
+
+      var nextMessages = state.messages;
+      final attachmentsByMessageId =
+          Map<String, List<AssistantAttachment>>.from(
+            state.attachmentsByMessageId,
+          );
+
+      if (shouldAppendUserMessage) {
+        final userMessage = AssistantMessage(
+          id: _repository.generateUuid(),
+          role: 'user',
+          parts: [AssistantMessagePart(type: 'text', text: combined)],
+          createdAt: DateTime.now(),
+        );
+
+        if (attachments.isNotEmpty) {
+          attachmentsByMessageId[userMessage.id] = attachments;
+        }
+
+        nextMessages = [...state.messages, userMessage];
+        emit(
+          state.copyWith(
+            messages: nextMessages,
+            attachmentsByMessageId: attachmentsByMessageId,
+            composerAttachments: const [],
+          ),
+        );
+      }
+
+      _activeAssistantMessageId = null;
+      _activeTextBlockId = null;
+      _activeReasoningBlockId = null;
+
+      _streamSubscription = _repository
+          .streamChat(
+            chatId: chatId,
+            wsId: wsId,
+            workspaceContextId: workspaceContextId,
+            modelId: modelId,
+            messages: nextMessages,
+            thinkingMode: thinkingMode,
+            creditSource: creditSource,
+            timezone: timezone,
+            creditWsId: creditWsId,
+          )
+          .listen(
+            _handleStreamEvent,
+            onError: (Object error, StackTrace stackTrace) {
+              emit(
+                state.copyWith(
+                  status: AssistantChatStatus.error,
+                  error: error.toString(),
+                ),
+              );
+            },
+            onDone: () async {
+              _streamSubscription = null;
+              _finalizeToolParts();
+              emit(state.copyWith(status: AssistantChatStatus.idle));
+              _persistAssistantChatCache();
+            },
+            cancelOnError: false,
+          );
+    } on Exception catch (error) {
+      emit(
+        state.copyWith(
+          status: AssistantChatStatus.error,
+          error: error.toString(),
+        ),
+      );
+    }
+  }
+
+  bool _shouldPrimeConversationUi(List<AssistantAttachment> attachments) {
+    return state.chat == null &&
+        state.storedChatId == null &&
+        state.messages.isEmpty &&
+        !state.isBusy &&
+        (attachments.isNotEmpty || _queue.isNotEmpty);
+  }
+
+  bool _matchesLatestQueuedMessage(
+    String combined,
+    List<AssistantAttachment> attachments,
+  ) {
+    if (state.messages.isEmpty) {
+      return false;
+    }
+
+    final latest = state.messages.last;
+    if (latest.role != 'user') {
+      return false;
+    }
+
+    final latestText = latest.parts
+        .where((part) => part.type == 'text')
+        .map((part) => part.text ?? '')
+        .join('\n\n')
+        .trim();
+    if (latestText != combined.trim()) {
+      return false;
+    }
+
+    final existingAttachmentIds =
+        (state.attachmentsByMessageId[latest.id] ?? const [])
+            .map((attachment) => attachment.id)
+            .toList(growable: false)
+          ..sort();
+    final queuedAttachmentIds =
+        attachments.map((attachment) => attachment.id).toList(growable: false)
+          ..sort();
+
+    return listEquals(existingAttachmentIds, queuedAttachmentIds);
   }
 
   void _handleStreamEvent(AssistantStreamEvent event) {
     if (event is AssistantDoneStreamEvent) {
       emit(state.copyWith(status: AssistantChatStatus.idle));
+      _persistAssistantChatCache();
       return;
     }
     if (event is! AssistantJsonStreamEvent) return;
@@ -857,6 +1016,28 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
     emit(
       state.copyWith(messages: updated, status: AssistantChatStatus.streaming),
+    );
+  }
+
+  void _persistAssistantChatCache() {
+    final wsId = state.workspaceId;
+    final chatId = state.chat?.id ?? state.storedChatId;
+    if (wsId == null || chatId == null) {
+      return;
+    }
+    if (state.messages.isEmpty && state.chat == null) {
+      return;
+    }
+    unawaited(
+      _repository.writeAssistantChatCache(
+        wsId: wsId,
+        chatId: chatId,
+        restored: AssistantRestoredChat(
+          chat: state.chat,
+          messages: state.messages,
+          attachmentsByMessageId: state.attachmentsByMessageId,
+        ),
+      ),
     );
   }
 

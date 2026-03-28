@@ -60,7 +60,7 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
           builder: (context, state) {
             if (state.status == TaskPortfolioStatus.loading &&
                 state.projects.isEmpty) {
-              return const Center(child: shad.CircularProgressIndicator());
+              return const Center(child: NovaLoadingIndicator());
             }
 
             if (state.status == TaskPortfolioStatus.error &&

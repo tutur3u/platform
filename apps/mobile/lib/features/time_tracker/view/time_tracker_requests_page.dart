@@ -39,9 +39,14 @@ part 'time_tracker_requests_actions.dart';
 part 'time_tracker_requests_widgets.dart';
 
 class TimeTrackerRequestsPage extends StatelessWidget {
-  const TimeTrackerRequestsPage({super.key, this.repository});
+  const TimeTrackerRequestsPage({
+    super.key,
+    this.repository,
+    this.workspacePermissionsRepository,
+  });
 
   final ITimeTrackerRepository? repository;
+  final WorkspacePermissionsRepository? workspacePermissionsRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -62,14 +67,18 @@ class TimeTrackerRequestsPage extends StatelessWidget {
                 : null,
           );
         },
-        child: const _RequestsView(),
+        child: _RequestsView(
+          workspacePermissionsRepository: workspacePermissionsRepository,
+        ),
       ),
     );
   }
 }
 
 class _RequestsView extends StatefulWidget {
-  const _RequestsView();
+  const _RequestsView({this.workspacePermissionsRepository});
+
+  final WorkspacePermissionsRepository? workspacePermissionsRepository;
 
   @override
   State<_RequestsView> createState() => _RequestsViewState();
@@ -81,8 +90,8 @@ class _RequestsViewState extends State<_RequestsView> {
 
   TimeTrackerRequestStatusFilter _selectedFilter =
       TimeTrackerRequestStatusFilter.pending;
-  final WorkspacePermissionsRepository _workspacePermissionsRepository =
-      WorkspacePermissionsRepository();
+  late final WorkspacePermissionsRepository _workspacePermissionsRepository =
+      widget.workspacePermissionsRepository ?? WorkspacePermissionsRepository();
   String? _permissionsWorkspaceId;
   bool _canManageRequests = false;
   bool _canManageThresholdSettings = false;

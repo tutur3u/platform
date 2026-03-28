@@ -201,19 +201,17 @@ extension _RequestsViewActions on _RequestsViewState {
           canManageRequests &&
           canManageWorkspaceSettings;
 
-      if (canManageThresholdSettings) {
-        try {
-          final settings = await repository.getWorkspaceSettings(wsId);
-          if (!canApplyState()) {
-            return;
-          }
-          threshold = settings?.missedEntryDateThreshold;
-        } on Exception {
-          if (!canApplyState()) {
-            return;
-          }
-          threshold = null;
+      try {
+        final settings = await repository.getWorkspaceSettings(wsId);
+        if (!canApplyState()) {
+          return;
         }
+        threshold = settings?.missedEntryDateThreshold;
+      } on Exception {
+        if (!canApplyState()) {
+          return;
+        }
+        threshold = null;
       }
 
       if (canManageRequests) {

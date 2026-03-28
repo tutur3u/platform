@@ -85,7 +85,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
             ),
             const shad.Gap(16),
             if (_isLoadingOptions)
-              const Center(child: shad.CircularProgressIndicator())
+              const Center(child: NovaLoadingIndicator())
             else ...[
               if (_optionsError != null)
                 Padding(

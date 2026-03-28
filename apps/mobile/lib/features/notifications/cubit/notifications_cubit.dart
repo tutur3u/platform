@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
@@ -11,12 +15,36 @@ part 'notifications_state.dart';
 class NotificationsCubit extends Cubit<NotificationsState> {
   NotificationsCubit({
     required NotificationsRepository notificationsRepository,
+    NotificationsState? initialState,
   }) : _notificationsRepository = notificationsRepository,
-       super(const NotificationsState());
+       super(initialState ?? const NotificationsState());
 
   final NotificationsRepository _notificationsRepository;
+  static const CachePolicy _cachePolicy = CachePolicies.summary;
+  static const _cacheTag = 'notifications:feed';
 
   bool _scopeInitialized = false;
+
+  static CacheKey _cacheKey({String? wsId}) {
+    return CacheKey(
+      namespace: 'notifications.feed',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+    );
+  }
+
+  static NotificationsState? seedStateForWorkspace(String? wsId) {
+    final cached = CacheStore.instance.peek<NotificationsState>(
+      key: _cacheKey(wsId: wsId),
+      decode: _stateFromCacheJson,
+    );
+    final state = cached.data;
+    if (!cached.hasValue || state == null) {
+      return null;
+    }
+    return state;
+  }
 
   Future<void> setWorkspace(Workspace? workspace) async {
     final nextScopeWorkspaceId = _resolveScopeWorkspaceId(workspace);
@@ -25,12 +53,30 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
 
     _scopeInitialized = true;
+    final isSeededState =
+        state.scopeWorkspaceId == nextScopeWorkspaceId &&
+        (state.inbox.hasLoadedOnce ||
+            state.archive.hasLoadedOnce ||
+            state.unreadCount > 0);
+    if (isSeededState) {
+      emit(
+        state.copyWith(
+          pendingIds: const [],
+          isArchivingAll: false,
+          isUnreadCountLoading: false,
+        ),
+      );
+      await refreshUnreadCount();
+      return;
+    }
+
     emit(
       state.copyWith(
         scopeWorkspaceId: nextScopeWorkspaceId,
         unreadCount: 0,
         pendingIds: const [],
         isArchivingAll: false,
+        isUnreadCountLoading: false,
         inbox: const NotificationFeedState(),
         archive: const NotificationFeedState(),
       ),
@@ -51,6 +97,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           isUnreadCountLoading: false,
         ),
       );
+      await _persistCurrentState();
     } on Exception {
       emit(state.copyWith(isUnreadCountLoading: false));
     }
@@ -98,6 +145,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           targetTab: tab,
         ),
       );
+      await _persistCurrentState();
     } on Exception catch (error) {
       emit(
         state.copyWith(
@@ -154,6 +202,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           targetTab: tab,
         ),
       );
+      await _persistCurrentState();
     } on Exception catch (error) {
       emit(
         state.copyWith(
@@ -275,6 +324,71 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       await loadTab(preferredTab, refresh: true);
     }
   }
+
+  Future<void> _persistCurrentState() async {
+    await CacheStore.instance.write(
+      key: _cacheKey(wsId: state.scopeWorkspaceId),
+      policy: _cachePolicy,
+      payload: _stateToCacheJson(state),
+      tags: [
+        _cacheTag,
+        if (state.scopeWorkspaceId != null)
+          'workspace:${state.scopeWorkspaceId}',
+        'module:notifications',
+      ],
+    );
+  }
+
+  static NotificationsState _stateFromCacheJson(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid notifications cache payload.');
+    }
+
+    final payload = Map<String, dynamic>.from(json);
+    return NotificationsState(
+      scopeWorkspaceId: payload['scopeWorkspaceId'] as String?,
+      unreadCount: payload['unreadCount'] as int? ?? 0,
+      inbox: _feedFromCacheJson(payload['inbox']),
+      archive: _feedFromCacheJson(payload['archive']),
+    );
+  }
+
+  static Map<String, dynamic> _stateToCacheJson(NotificationsState state) => {
+    'scopeWorkspaceId': state.scopeWorkspaceId,
+    'unreadCount': state.unreadCount,
+    'inbox': _feedToCacheJson(state.inbox),
+    'archive': _feedToCacheJson(state.archive),
+  };
+
+  static NotificationFeedState _feedFromCacheJson(Object? json) {
+    if (json is! Map) {
+      return const NotificationFeedState();
+    }
+
+    final payload = Map<String, dynamic>.from(json);
+    final statusName = payload['status'] as String?;
+    final itemsRaw = payload['items'] as List<dynamic>? ?? const [];
+    return NotificationFeedState(
+      status: statusName == null
+          ? NotificationFeedStatus.initial
+          : NotificationFeedStatus.values.byName(statusName),
+      items: itemsRaw
+          .whereType<Map<Object?, Object?>>()
+          .map(
+            (item) => AppNotification.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(growable: false),
+      totalCount: payload['totalCount'] as int? ?? 0,
+      pageSize: payload['pageSize'] as int? ?? 20,
+    );
+  }
+
+  static Map<String, dynamic> _feedToCacheJson(NotificationFeedState state) => {
+    'status': state.status.name,
+    'items': state.items.map((item) => item.toJson()).toList(growable: false),
+    'totalCount': state.totalCount,
+    'pageSize': state.pageSize,
+  };
 
   String? _resolveScopeWorkspaceId(Workspace? workspace) {
     if (workspace == null || workspace.personal) {

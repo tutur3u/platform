@@ -871,7 +871,7 @@ class _AssignedTasksBlock extends StatelessWidget {
     if (state.status == TaskListStatus.loading && !state.hasLoadedOnce) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(child: NovaLoadingIndicator()),
       );
     }
 
@@ -941,7 +941,7 @@ class _UpcomingEventsBlock extends StatelessWidget {
     if (status == CalendarStatus.loading && !hasLoadedOnce) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(child: NovaLoadingIndicator()),
       );
     }
 

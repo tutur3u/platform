@@ -8,6 +8,10 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -25,6 +29,48 @@ class AssistantRepository {
   final ApiClient _apiClient;
   final http.Client _httpClient;
   static final Random _random = Random.secure();
+
+  static const _assistantChatCacheTag = 'assistant:chat';
+  static const CachePolicy _assistantChatCachePolicy = CachePolicies.detail;
+
+  static CacheKey _assistantChatCacheKey({
+    required String wsId,
+    required String chatId,
+  }) {
+    return CacheKey(
+      namespace: 'assistant.chat_restore',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+      params: {'chatId': chatId},
+    );
+  }
+
+  static AssistantRestoredChat _decodeRestoredCache(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid assistant chat cache payload.');
+    }
+    return AssistantRestoredChat.fromJson(
+      Map<String, dynamic>.from(json),
+    );
+  }
+
+  Future<void> writeAssistantChatCache({
+    required String wsId,
+    required String chatId,
+    required AssistantRestoredChat restored,
+  }) async {
+    await CacheStore.instance.write(
+      key: _assistantChatCacheKey(wsId: wsId, chatId: chatId),
+      policy: _assistantChatCachePolicy,
+      payload: restored.toJson(),
+      tags: [
+        _assistantChatCacheTag,
+        'workspace:$wsId',
+        'module:assistant',
+      ],
+    );
+  }
 
   Future<String?> resolvePersonalWorkspaceId() async {
     final response = await _apiClient.postJson(
@@ -106,14 +152,10 @@ class AssistantRepository {
   }
 
   Future<List<AssistantChatRecord>> fetchRecentChats({int limit = 20}) async {
-    final response = await supabase
-        .from('ai_chats')
-        .select('id, title, model, is_public, created_at')
-        .order('created_at', ascending: false)
-        .limit(limit);
-
-    return (response as List<dynamic>)
+    final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
+    return rows
         .whereType<Map<String, dynamic>>()
+        .take(limit)
         .map(AssistantChatRecord.fromJson)
         .toList();
   }
@@ -121,26 +163,51 @@ class AssistantRepository {
   Future<AssistantRestoredChat?> restoreChat({
     required String wsId,
     required String chatId,
+    bool forceRefresh = false,
   }) async {
-    final chatData = await supabase
-        .from('ai_chats')
-        .select('id, title, model, is_public, created_at')
-        .eq('id', chatId)
-        .maybeSingle();
+    final cacheKey = _assistantChatCacheKey(wsId: wsId, chatId: chatId);
 
-    if (chatData == null) return null;
+    if (!forceRefresh) {
+      final cached = await CacheStore.instance.read<AssistantRestoredChat>(
+        key: cacheKey,
+        decode: _decodeRestoredCache,
+      );
+      if (cached.hasValue && cached.data != null && cached.isFresh) {
+        return cached.data;
+      }
+    }
 
-    final messagesData = await supabase
-        .from('ai_chat_messages')
-        .select('id, role, content, metadata, created_at')
-        .eq('chat_id', chatId)
-        .order('created_at', ascending: true);
+    late final Map<String, dynamic> payload;
+    try {
+      payload = await _apiClient.postJson(
+        '/api/ai/chat/restore',
+        {'chatId': chatId},
+      );
+    } on ApiException {
+      if (!forceRefresh) {
+        final cached = await CacheStore.instance.read<AssistantRestoredChat>(
+          key: cacheKey,
+          decode: _decodeRestoredCache,
+        );
+        if (cached.hasValue && cached.data != null && !cached.isExpired) {
+          return cached.data;
+        }
+      }
+      return null;
+    }
 
-    final messages = _restoreMessages(
-      (messagesData as List<dynamic>)
-          .whereType<Map<String, dynamic>>()
-          .toList(),
-    );
+    final chatRaw = payload['chat'];
+    if (chatRaw is! Map<String, dynamic>) {
+      return null;
+    }
+
+    final messagesRaw = payload['messages'];
+    final messageRows =
+        (messagesRaw is List<dynamic> ? messagesRaw : const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .toList();
+
+    final messages = _restoreMessages(messageRows);
 
     final attachmentResponse = await _apiClient.postJson(
       '/api/ai/chat/file-urls',
@@ -166,9 +233,7 @@ class AssistantRepository {
       final file = files[index];
       String? targetMessageId;
 
-      for (final raw
-          in (messagesData as List<dynamic>)
-              .whereType<Map<String, dynamic>>()) {
+      for (final raw in messageRows) {
         final metadata = raw['metadata'];
         if (metadata is! Map<String, dynamic>) {
           continue;
@@ -206,11 +271,24 @@ class AssistantRepository {
       );
     }
 
-    return AssistantRestoredChat(
-      chat: AssistantChatRecord.fromJson(chatData),
+    final restored = AssistantRestoredChat(
+      chat: AssistantChatRecord.fromJson(chatRaw),
       messages: messages,
       attachmentsByMessageId: attachmentsByMessageId,
     );
+
+    await CacheStore.instance.write(
+      key: cacheKey,
+      policy: _assistantChatCachePolicy,
+      payload: restored.toJson(),
+      tags: [
+        _assistantChatCacheTag,
+        'workspace:$wsId',
+        'module:assistant',
+      ],
+    );
+
+    return restored;
   }
 
   Future<AssistantChatRecord> createChat({

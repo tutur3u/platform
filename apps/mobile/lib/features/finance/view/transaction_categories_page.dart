@@ -22,6 +22,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/platform_icon_picker.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -232,7 +233,7 @@ class _TransactionCategoriesViewState
     double listBottomPadding,
   ) {
     if (_categoriesLoading) {
-      return const Center(child: shad.CircularProgressIndicator());
+      return const Center(child: NovaLoadingIndicator());
     }
     if (_categoriesError != null) {
       return ListView(
@@ -317,7 +318,7 @@ class _TransactionCategoriesViewState
     double listBottomPadding,
   ) {
     if (_tagsLoading) {
-      return const Center(child: shad.CircularProgressIndicator());
+      return const Center(child: NovaLoadingIndicator());
     }
     if (_tagsError != null) {
       return ListView(

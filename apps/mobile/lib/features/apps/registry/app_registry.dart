@@ -5,6 +5,8 @@ import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/notifications/view/notifications_page.dart';
+import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -52,6 +54,15 @@ class AppRegistry {
       isPinned: true,
     ),
     AppModule(
+      id: 'notifications',
+      route: Routes.notifications,
+      icon: Icons.notifications_none_rounded,
+      labelBuilder: _labelNotifications,
+      pageBuilder: _pageNotifications,
+      miniAppNavItems: _notificationsMiniNav,
+      isVisible: _hideNotificationsFromAppsHub,
+    ),
+    AppModule(
       id: 'timer',
       route: Routes.timer,
       icon: Icons.timer_outlined,
@@ -59,6 +70,36 @@ class AppRegistry {
       pageBuilder: _pageTimer,
       miniAppNavItems: _timerMiniNav,
       isPinned: true,
+    ),
+    AppModule(
+      id: 'settings',
+      route: Routes.settings,
+      icon: Icons.tune_rounded,
+      labelBuilder: _labelSettingsHub,
+      pageBuilder: _pageSettings,
+      miniAppNavItems: _settingsMiniNav,
+      isVisible: _hideSettingsModuleFromAppsHub,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _settingsMiniNav = [
+    MiniAppNavItem(
+      id: 'settings_app',
+      route: Routes.settings,
+      icon: Icons.tune_rounded,
+      labelBuilder: _labelSettingsNavApp,
+    ),
+    MiniAppNavItem(
+      id: 'settings_workspace',
+      route: Routes.settingsWorkspace,
+      icon: Icons.apartment_rounded,
+      labelBuilder: _labelSettingsNavWorkspace,
+    ),
+    MiniAppNavItem(
+      id: 'settings_you',
+      route: Routes.profileRoot,
+      icon: Icons.person_outline_rounded,
+      labelBuilder: _labelSettingsNavYou,
     ),
   ];
 
@@ -168,12 +209,31 @@ class AppRegistry {
     ),
   ];
 
+  static const List<MiniAppNavItem> _notificationsMiniNav = [
+    MiniAppNavItem(
+      id: 'notifications_inbox',
+      route: Routes.notifications,
+      icon: Icons.inbox_outlined,
+      labelBuilder: _labelNotificationsInbox,
+    ),
+    MiniAppNavItem(
+      id: 'notifications_archive',
+      route: Routes.notificationsArchive,
+      icon: Icons.archive_outlined,
+      labelBuilder: _labelNotificationsArchive,
+    ),
+  ];
+
   static bool _showTimerRequestsMiniNav(BuildContext context) {
     final isPersonalWorkspace = context.select<WorkspaceCubit, bool>(
       (cubit) => cubit.state.currentWorkspace?.personal ?? false,
     );
     return !isPersonalWorkspace;
   }
+
+  static bool _hideNotificationsFromAppsHub(BuildContext context) => false;
+
+  static bool _hideSettingsModuleFromAppsHub(BuildContext context) => false;
 
   static List<AppModule> modules(BuildContext context) {
     return allModules
@@ -205,6 +265,9 @@ class AppRegistry {
     }
 
     final normalizedLocation = normalize(location);
+    if (Routes.isSettingsHubLocation(normalizedLocation)) {
+      return moduleById('settings');
+    }
     for (final module in allModules) {
       final normalizedRoute = normalize(module.route);
       if (normalizedLocation == normalizedRoute ||
@@ -236,6 +299,12 @@ class AppRegistry {
       l10n.financeManageLabel;
   static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
+  static String _labelNotifications(AppLocalizations l10n) =>
+      l10n.notificationsTitle;
+  static String _labelNotificationsInbox(AppLocalizations l10n) =>
+      l10n.notificationsInbox;
+  static String _labelNotificationsArchive(AppLocalizations l10n) =>
+      l10n.notificationsArchive;
   static String _labelTimerHistory(AppLocalizations l10n) => l10n.timerHistory;
   static String _labelTimerStats(AppLocalizations l10n) => l10n.timerStatsTitle;
   static String _timerRequestsTitle(AppLocalizations l10n) =>
@@ -245,5 +314,16 @@ class AppRegistry {
   static Widget _pageHabits(BuildContext context) => const HabitsPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageFinance(BuildContext context) => const FinancePage();
+  static Widget _pageNotifications(BuildContext context) =>
+      const NotificationsPage();
   static Widget _pageTimer(BuildContext context) => const TimeTrackerPage();
+  static Widget _pageSettings(BuildContext context) => const SettingsPage();
+
+  static String _labelSettingsHub(AppLocalizations l10n) => l10n.settingsTitle;
+  static String _labelSettingsNavApp(AppLocalizations l10n) =>
+      l10n.settingsNavApp;
+  static String _labelSettingsNavWorkspace(AppLocalizations l10n) =>
+      l10n.settingsNavWorkspace;
+  static String _labelSettingsNavYou(AppLocalizations l10n) =>
+      l10n.settingsNavYou;
 }

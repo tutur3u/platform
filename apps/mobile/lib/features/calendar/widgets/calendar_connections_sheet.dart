@@ -9,6 +9,7 @@ import 'package:mobile/data/models/calendar_connection.dart';
 import 'package:mobile/features/calendar/cubit/calendar_connections_cubit.dart';
 import 'package:mobile/features/calendar/cubit/calendar_connections_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 const _kGoogleColor = Color(0xFF4285F4);
@@ -259,7 +260,7 @@ class _ConnectionsSheetBody extends StatelessWidget {
                   >(
                     builder: (context, state) {
                       if (state.status == CalendarConnectionsStatus.loading) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Center(child: NovaLoadingIndicator());
                       }
                       if (state.status == CalendarConnectionsStatus.error) {
                         return _ErrorBody(

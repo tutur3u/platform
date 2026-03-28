@@ -21,6 +21,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class WalletsPage extends StatelessWidget {
@@ -151,7 +152,7 @@ class _WalletsViewState extends State<_WalletsView> {
     final l10n = context.l10n;
 
     if (_isLoading) {
-      return const Center(child: shad.CircularProgressIndicator());
+      return const Center(child: NovaLoadingIndicator());
     }
 
     if (_error != null) {

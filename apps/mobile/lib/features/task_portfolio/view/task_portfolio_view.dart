@@ -21,6 +21,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskPortfolioView extends StatefulWidget {
@@ -116,7 +117,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     if (_permissionsController.isCheckingPermissions &&
         !_permissionsController.hasResolvedPermissions &&
         !hasVisibleData) {
-      return const Center(child: shad.CircularProgressIndicator());
+      return const Center(child: NovaLoadingIndicator());
     }
     if (_permissionsController.hasResolvedPermissions &&
         !_permissionsController.canManageProjects &&
@@ -129,7 +130,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
         if (state.status == TaskPortfolioStatus.loading &&
             state.projects.isEmpty &&
             state.initiatives.isEmpty) {
-          return const Center(child: shad.CircularProgressIndicator());
+          return const Center(child: NovaLoadingIndicator());
         }
         if (state.status == TaskPortfolioStatus.error &&
             state.projects.isEmpty &&

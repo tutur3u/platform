@@ -193,6 +193,20 @@ void main() {
 
       await tester.pumpApp(
         _buildActionSlot(
+          matchedLocation: Routes.settingsWorkspace,
+          workspaceCubit: workspaceCubit,
+          notificationsRepository: notificationsRepository,
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('notifications-action-button')),
+        findsOneWidget,
+      );
+
+      await tester.pumpApp(
+        _buildActionSlot(
           matchedLocation: Routes.tasks,
           workspaceCubit: workspaceCubit,
           notificationsRepository: notificationsRepository,
@@ -221,11 +235,30 @@ void main() {
     });
 
     testWidgets('opens sheet and shows unread badge', (tester) async {
-      await tester.pumpApp(
-        _buildActionSlot(
-          matchedLocation: Routes.apps,
+      final router = GoRouter(
+        initialLocation: Routes.apps,
+        routes: [
+          GoRoute(
+            path: Routes.apps,
+            builder: (context, state) => _buildActionSlot(
+              matchedLocation: Routes.apps,
+              workspaceCubit: workspaceCubit,
+              notificationsRepository: notificationsRepository,
+            ),
+          ),
+          GoRoute(
+            path: Routes.notifications,
+            builder: (context, state) =>
+                const Scaffold(body: Center(child: Text('Notifications'))),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildRouterApp(
+          router: router,
           workspaceCubit: workspaceCubit,
-          notificationsRepository: notificationsRepository,
         ),
       );
       await tester.pump();
@@ -242,7 +275,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Notifications'), findsOneWidget);
-      expect(find.text('Task assigned'), findsOneWidget);
     });
   });
 

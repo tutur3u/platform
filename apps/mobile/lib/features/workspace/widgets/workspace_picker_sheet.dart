@@ -10,6 +10,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
 import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
+import 'package:mobile/features/workspace/widgets/workspace_tier_badge.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -425,23 +426,22 @@ class _WorkspaceTile extends StatelessWidget {
                             : FontWeight.w600,
                       ),
                     ),
-                    if (isCurrent || isDefault) ...[
-                      const shad.Gap(6),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          if (isCurrent)
-                            _WorkspaceMetaChip(
-                              label: context.l10n.workspaceCurrentBadge,
-                            ),
-                          if (isDefault)
-                            _WorkspaceMetaChip(
-                              label: context.l10n.workspaceDefaultBadge,
-                            ),
-                        ],
-                      ),
-                    ],
+                    const shad.Gap(6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        WorkspaceTierBadge(tier: workspace.tier),
+                        if (isCurrent)
+                          _WorkspaceMetaChip(
+                            label: context.l10n.workspaceCurrentBadge,
+                          ),
+                        if (isDefault)
+                          _WorkspaceMetaChip(
+                            label: context.l10n.workspaceDefaultBadge,
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),

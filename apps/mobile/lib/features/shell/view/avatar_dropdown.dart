@@ -43,13 +43,13 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
         if (matchedLocation == Routes.profileRoot) {
           return;
         }
-        await context.push(Routes.profileRoot);
+        context.go(Routes.profileRoot);
         return;
       case AvatarMenuAction.settings:
         if (matchedLocation == Routes.settings) {
           return;
         }
-        await context.push(Routes.settings);
+        context.go(Routes.settings);
         return;
       case AvatarMenuAction.logout:
         await context.read<AuthCubit>().signOut();

@@ -23,6 +23,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'task_boards_cards.dart';
@@ -142,7 +143,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
       return Stack(
         children: [
           shellActionRegistration,
-          const Center(child: shad.CircularProgressIndicator()),
+          const Center(child: NovaLoadingIndicator()),
         ],
       );
     }
@@ -175,7 +176,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
           return Stack(
             children: [
               shellActionRegistration,
-              const Center(child: shad.CircularProgressIndicator()),
+              const Center(child: NovaLoadingIndicator()),
             ],
           );
         }
@@ -237,7 +238,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                 if (state.isLoadingMore)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: shad.CircularProgressIndicator()),
+                    child: Center(child: NovaLoadingIndicator()),
                   ),
               ],
             ),

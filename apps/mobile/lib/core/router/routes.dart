@@ -13,6 +13,8 @@ abstract final class Routes {
   static const home = '/';
   static const apps = '/apps';
   static const assistant = '/assistant';
+  static const notifications = '/notifications';
+  static const notificationsArchive = '/notifications/archive';
   static const profileRoot = '/profile';
   static const tasks = '/tasks';
   static const habits = '/habits';
@@ -26,6 +28,7 @@ abstract final class Routes {
   static const finance = '/finance';
   static const timer = '/timer';
   static const settings = '/settings';
+  static const settingsWorkspace = '/settings/workspace';
   static const settingsMobileVersions = '/settings/mobile-versions';
 
   // Detail pages
@@ -76,8 +79,32 @@ abstract final class Routes {
     if (normalized == calendar || normalized.startsWith('$calendar/')) {
       return calendar;
     }
+    if (normalized == notifications ||
+        normalized.startsWith('$notifications/')) {
+      return notifications;
+    }
+
+    if (isSettingsHubLocation(normalized)) {
+      if (normalized == profileRoot || normalized.startsWith('$profileRoot/')) {
+        return profileRoot;
+      }
+      if (normalized == settingsWorkspace ||
+          normalized.startsWith('$settingsWorkspace/')) {
+        return settingsWorkspace;
+      }
+      return settings;
+    }
 
     return null;
+  }
+
+  /// Routes that share the settings hub bottom navigation (app / workspace / you).
+  static bool isSettingsHubLocation(String location) {
+    final normalized = normalizeLocation(location);
+    return normalized == settings ||
+        normalized.startsWith('$settings/') ||
+        normalized == profileRoot ||
+        normalized.startsWith('$profileRoot/');
   }
 
   static bool isMiniAppChildLocation(String location) {
