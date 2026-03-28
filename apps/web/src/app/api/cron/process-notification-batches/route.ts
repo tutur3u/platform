@@ -8,38 +8,258 @@ import NotificationDigestEmail, {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import {
+  chunkValues,
+  fetchAllChunkedPaginatedRows,
+  fetchAllPaginatedRows,
+  getNotificationSkipReason,
+} from '@/lib/notifications/cron-helpers';
 import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 
-// This API route should be called by a cron job (pg_cron, Trigger.dev, or external cron service)
-// It processes BATCHED notification batches and sends email digests
-// Immediate notifications are handled by /api/notifications/send-immediate
-
-// Feature flag: When true, only send emails for notifications belonging to the root workspace
-// Set to false to allow emails for all workspaces
+const PROCESSING_DEADLINE_MS = 165_000;
 const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+
+type NotificationBatchRow = {
+  channel: string;
+  email: string | null;
+  id: string;
+  user_id: string | null;
+  window_end: string;
+  window_start: string;
+  ws_id: string | null;
+};
+
+type BatchNotificationRow = {
+  created_at: string;
+  data: Record<string, unknown> | null;
+  description: string | null;
+  entity_id: string | null;
+  entity_type: string | null;
+  id: string;
+  scope?: string | null;
+  title: string;
+  type: string;
+  user_id?: string | null;
+  ws_id?: string | null;
+};
+
+type DeliveryLogRow = {
+  batch_id?: string | null;
+  id: string;
+  notification_id: string;
+  notifications: BatchNotificationRow | null;
+};
+
+type NotificationWorkspaceCheckRow = {
+  batch_id: string | null;
+  notifications: {
+    data: Record<string, unknown> | null;
+    entity_id: string | null;
+  } | null;
+};
+
+type PendingDeliveryLogRetryRow = {
+  id: string;
+  retry_count: number | null;
+};
+
+function sortDeliveryLogsByCreatedAtDesc<T extends DeliveryLogRow>(
+  logs: T[]
+): T[] {
+  return [...logs].sort((left, right) => {
+    const leftTime = left.notifications?.created_at
+      ? new Date(left.notifications.created_at).getTime()
+      : 0;
+    const rightTime = right.notifications?.created_at
+      ? new Date(right.notifications.created_at).getTime()
+      : 0;
+
+    return rightTime - leftTime;
+  });
+}
+
+async function fetchPendingBatchedNotificationBatches(
+  sbAdmin: any
+): Promise<NotificationBatchRow[]> {
+  return fetchAllPaginatedRows<NotificationBatchRow>((from, to) => {
+    let query = sbAdmin
+      .from('notification_batches')
+      .select('*')
+      .eq('status', 'pending')
+      .eq('delivery_mode', 'batched')
+      .lte('window_end', new Date().toISOString());
+
+    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
+      query = query.or(`ws_id.eq.${ROOT_WORKSPACE_ID},ws_id.is.null`);
+    }
+
+    return query
+      .order('window_end', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, to);
+  });
+}
+
+async function filterRootScopedBatches(
+  sbAdmin: any,
+  batches: NotificationBatchRow[]
+): Promise<NotificationBatchRow[]> {
+  if (!RESTRICT_TO_ROOT_WORKSPACE_ONLY || batches.length === 0) {
+    return batches;
+  }
+
+  const batchesWithWsId = batches.filter((batch) => batch.ws_id !== null);
+  const batchesWithNullWsId = batches.filter((batch) => batch.ws_id === null);
+
+  if (batchesWithNullWsId.length === 0) {
+    return batchesWithWsId;
+  }
+
+  const nullWsIdBatchIds = batchesWithNullWsId.map((batch) => batch.id);
+  const deliveryLogsForCheck = await fetchAllChunkedPaginatedRows<
+    NotificationWorkspaceCheckRow,
+    string
+  >(
+    nullWsIdBatchIds,
+    (batchIdChunk, from, to) =>
+      sbAdmin
+        .from('notification_delivery_log')
+        .select(
+          `
+          batch_id,
+          notifications (
+            entity_id,
+            data
+          )
+        `
+        )
+        .in('batch_id', batchIdChunk)
+        .order('batch_id', { ascending: true })
+        .range(from, to),
+    {
+      chunkSize: 500,
+    }
+  );
+
+  const validBatchIds = new Set<string>(
+    batchesWithWsId.map((batch) => batch.id)
+  );
+  for (const log of deliveryLogsForCheck) {
+    const notification = log.notifications;
+    if (!log.batch_id || !notification) {
+      continue;
+    }
+
+    const workspaceId =
+      notification.entity_id ||
+      (notification.data?.workspace_id as string | undefined);
+
+    if (workspaceId === ROOT_WORKSPACE_ID) {
+      validBatchIds.add(log.batch_id);
+    }
+  }
+
+  return batches.filter((batch) => validBatchIds.has(batch.id));
+}
+
+async function fetchPendingBatchDeliveryLogs(
+  sbAdmin: any,
+  batchId: string,
+  channel: string
+): Promise<DeliveryLogRow[]> {
+  const deliveryLogs = await fetchAllPaginatedRows<DeliveryLogRow>((from, to) =>
+    sbAdmin
+      .from('notification_delivery_log')
+      .select(
+        `
+        batch_id,
+        notification_id,
+        id,
+        notifications (
+          id,
+          type,
+          title,
+          description,
+          data,
+          created_at,
+          ws_id,
+          user_id,
+          scope,
+          entity_type,
+          entity_id
+        )
+      `
+      )
+      .eq('batch_id', batchId)
+      .eq('status', 'pending')
+      .eq('channel', channel)
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
+
+  return sortDeliveryLogsByCreatedAtDesc(deliveryLogs);
+}
+
+async function fetchPendingDeliveryLogRetries(
+  sbAdmin: any,
+  batchId: string
+): Promise<PendingDeliveryLogRetryRow[]> {
+  return fetchAllPaginatedRows<PendingDeliveryLogRetryRow>((from, to) =>
+    sbAdmin
+      .from('notification_delivery_log')
+      .select('id, retry_count')
+      .eq('batch_id', batchId)
+      .eq('status', 'pending')
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
+}
+
+async function fetchPushDevicesForUser(
+  sbAdmin: any,
+  userId: string
+): Promise<Array<{ token: string }>> {
+  return fetchAllPaginatedRows<Array<{ token: string }>[number]>((from, to) =>
+    sbAdmin
+      .from('notification_push_devices')
+      .select('token')
+      .eq('user_id', userId)
+      .order('token', { ascending: true })
+      .range(from, to)
+  );
+}
 
 async function markDeliveryLogsSentByIds(
   sbAdmin: any,
   logIds: string[],
   batchId?: string
 ) {
-  if (logIds.length === 0 && !batchId) {
-    return;
-  }
-
-  let query = sbAdmin.from('notification_delivery_log').update({
+  const patch = {
     status: 'sent',
     sent_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  });
+  };
 
   if (logIds.length > 0) {
-    query = query.in('id', logIds);
-  } else if (batchId) {
-    query = query.eq('batch_id', batchId);
+    for (const idChunk of chunkValues([...new Set(logIds)])) {
+      await sbAdmin
+        .from('notification_delivery_log')
+        .update(patch)
+        .in('id', idChunk)
+        .eq('status', 'pending');
+    }
+    return;
   }
 
-  await query.eq('status', 'pending');
+  if (!batchId) {
+    return;
+  }
+
+  await sbAdmin
+    .from('notification_delivery_log')
+    .update(patch)
+    .eq('batch_id', batchId)
+    .eq('status', 'pending');
 }
 
 async function markDeliveryLogsSkipped(
@@ -51,68 +271,20 @@ async function markDeliveryLogsSkipped(
     return;
   }
 
-  await sbAdmin
-    .from('notification_delivery_log')
-    .update({
-      error_message: reason,
-      sent_at: new Date().toISOString(),
-      status: 'sent',
-      updated_at: new Date().toISOString(),
-    })
-    .in('id', logIds)
-    .eq('status', 'pending');
-}
+  const patch = {
+    error_message: reason,
+    sent_at: new Date().toISOString(),
+    status: 'sent',
+    updated_at: new Date().toISOString(),
+  };
 
-const NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-
-function getAgeSkipReason(notification: { created_at: string }): string | null {
-  const createdAt = new Date(notification.created_at);
-  if (Number.isNaN(createdAt.getTime())) {
-    return null;
+  for (const idChunk of chunkValues([...new Set(logIds)])) {
+    await sbAdmin
+      .from('notification_delivery_log')
+      .update(patch)
+      .in('id', idChunk)
+      .eq('status', 'pending');
   }
-
-  return Date.now() - createdAt.getTime() > NOTIFICATION_MAX_AGE_MS
-    ? 'skipped: older_than_1_day'
-    : null;
-}
-
-async function getSkipReason(
-  sbAdmin: any,
-  notification: {
-    id: string;
-    scope?: string | null;
-    user_id?: string | null;
-    ws_id?: string | null;
-    created_at: string;
-  }
-) {
-  const ageReason = getAgeSkipReason(notification);
-  if (ageReason) {
-    return ageReason;
-  }
-
-  if (
-    notification.scope !== 'workspace' ||
-    !notification.user_id ||
-    !notification.ws_id
-  ) {
-    return null;
-  }
-
-  const { data: membership, error } = await sbAdmin
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', notification.ws_id)
-    .eq('user_id', notification.user_id)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(
-      `Failed to verify workspace membership for notification ${notification.id}: ${error.message}`
-    );
-  }
-
-  return membership ? null : 'skipped: stale_workspace_membership';
 }
 
 async function markBatchSent(
@@ -141,24 +313,18 @@ async function markBatchFailed(sbAdmin: any, batchId: string, message: string) {
     })
     .eq('id', batchId);
 
-  const { data: failedLogs } = await sbAdmin
-    .from('notification_delivery_log')
-    .select('id, retry_count')
-    .eq('batch_id', batchId)
-    .eq('status', 'pending');
+  const failedLogs = await fetchPendingDeliveryLogRetries(sbAdmin, batchId);
 
-  if (failedLogs) {
-    for (const log of failedLogs) {
-      await sbAdmin
-        .from('notification_delivery_log')
-        .update({
-          status: 'failed',
-          error_message: message,
-          retry_count: (log.retry_count || 0) + 1,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', log.id);
-    }
+  for (const log of failedLogs) {
+    await sbAdmin
+      .from('notification_delivery_log')
+      .update({
+        status: 'failed',
+        error_message: message,
+        retry_count: (log.retry_count || 0) + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', log.id);
   }
 }
 
@@ -167,19 +333,20 @@ async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
     return;
   }
 
-  const { error } = await sbAdmin
-    .from('notification_push_devices')
-    .delete()
-    .in('token', [...new Set(tokens)]);
+  for (const tokenChunk of chunkValues([...new Set(tokens)])) {
+    const { error } = await sbAdmin
+      .from('notification_push_devices')
+      .delete()
+      .in('token', tokenChunk);
 
-  if (error) {
-    console.error('Failed to delete invalid push tokens:', error);
+    if (error) {
+      console.error('Failed to delete invalid push tokens:', error);
+    }
   }
 }
 
 export async function GET(req: NextRequest) {
   try {
-    // Verify the request is authorized (check for cron secret)
     const authHeader = req.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
@@ -188,42 +355,12 @@ export async function GET(req: NextRequest) {
     }
 
     const sbAdmin = await createAdminClient();
+    const processingDeadline = Date.now() + PROCESSING_DEADLINE_MS;
+    const membershipCache = new Map<string, boolean>();
 
-    // Get all pending BATCHED notifications where window_end has passed
-    // Immediate notifications are handled separately by /api/notifications/send-immediate
-    // When restricted to root workspace, we filter at the query level to ensure we get
-    // the correct batches (otherwise limit(50) might return non-root batches first)
-    let batchesQuery = sbAdmin
-      .from('notification_batches')
-      .select('*')
-      .eq('status', 'pending')
-      .eq('delivery_mode', 'batched')
-      .lte('window_end', new Date().toISOString());
+    const batches = await fetchPendingBatchedNotificationBatches(sbAdmin);
 
-    // Filter by root workspace at query level to ensure we get correct batches
-    // This is important because limit(50) + post-fetch filtering could miss root
-    // workspace batches if non-root batches have earlier window_end times.
-    // We also include null ws_id batches since they might be user-scoped notifications
-    // (like workspace invites) where the workspace ID is in the notification data.
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      batchesQuery = batchesQuery.or(
-        `ws_id.eq.${ROOT_WORKSPACE_ID},ws_id.is.null`
-      );
-    }
-
-    const { data: batches, error: batchesError } = await batchesQuery
-      .order('window_end', { ascending: true })
-      .limit(50); // Process max 50 batches per run
-
-    if (batchesError) {
-      console.error('Error fetching batches:', batchesError);
-      return NextResponse.json(
-        { error: 'Error fetching batches', processed: 0, failed: 0 },
-        { status: 500 }
-      );
-    }
-
-    if (!batches || batches.length === 0) {
+    if (batches.length === 0) {
       return NextResponse.json({
         message: 'No pending batched notifications to process',
         processed: 0,
@@ -231,92 +368,39 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // If restricted to root workspace, we've already filtered at query level
-    // (ws_id = ROOT_WORKSPACE_ID or ws_id IS NULL). For null ws_id batches,
-    // we need additional filtering based on notification entity_id/data
-    let filteredBatches = batches;
+    const filteredBatches = await filterRootScopedBatches(sbAdmin, batches);
 
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      // Separate batches by whether ws_id is null
-      const batchesWithWsId = batches.filter((b) => b.ws_id !== null);
-      const batchesWithNullWsId = batches.filter((b) => b.ws_id === null);
-
-      // Batches with ws_id already match ROOT_WORKSPACE_ID (from query filter)
-      // For null ws_id batches, check notification's entity_id or data->workspace_id
-      const validBatchIdsFromNullWsId: string[] = [];
-
-      if (batchesWithNullWsId.length > 0) {
-        const batchIdsToCheck = batchesWithNullWsId.map((b) => b.id);
-
-        // Get notifications for these batches to check their entity_id/data
-        const { data: deliveryLogsForCheck } = await sbAdmin
-          .from('notification_delivery_log')
-          .select(
-            `
-            batch_id,
-            notifications (
-              entity_id,
-              data
-            )
-          `
-          )
-          .in('batch_id', batchIdsToCheck);
-
-        if (deliveryLogsForCheck) {
-          for (const log of deliveryLogsForCheck) {
-            const notification = log.notifications as {
-              entity_id: string | null;
-              data: Record<string, unknown> | null;
-            } | null;
-            if (notification && log.batch_id) {
-              // Check entity_id first, then data->workspace_id
-              const workspaceId =
-                notification.entity_id ||
-                (notification.data?.workspace_id as string | undefined);
-
-              if (workspaceId === ROOT_WORKSPACE_ID) {
-                validBatchIdsFromNullWsId.push(log.batch_id);
-              }
-            }
-          }
-        }
-      }
-
-      // Combine: all non-null ws_id batches (already filtered at query) + valid null ws_id batches
-      const validBatchIds = new Set([
-        ...batchesWithWsId.map((b) => b.id),
-        ...validBatchIdsFromNullWsId,
-      ]);
-
-      filteredBatches = batches.filter((b) => validBatchIds.has(b.id));
-
-      if (filteredBatches.length === 0) {
-        return NextResponse.json({
-          message:
-            'No pending batched notifications to process (filtered by root workspace)',
-          processed: 0,
-          failed: 0,
-        });
-      }
+    if (filteredBatches.length === 0) {
+      return NextResponse.json({
+        message:
+          'No pending batched notifications to process (filtered by root workspace)',
+        processed: 0,
+        failed: 0,
+      });
     }
 
     let processedCount = 0;
     let failedCount = 0;
     const results: Array<{
       batch_id: string;
-      status: string;
       channel?: string;
-      email?: string;
       delivered_count?: number;
+      email?: string;
+      error?: string;
       notification_count?: number;
       reason?: string;
-      error?: string;
+      status: string;
     }> = [];
 
-    // Process each batch
     for (const batch of filteredBatches) {
+      if (Date.now() > processingDeadline) {
+        console.warn(
+          '[NotificationBatchCron] Processing deadline reached before all batches were handled'
+        );
+        break;
+      }
+
       try {
-        // Mark batch as processing
         await sbAdmin
           .from('notification_batches')
           .update({
@@ -324,69 +408,45 @@ export async function GET(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', batch.id)
-          .eq('status', 'pending'); // Double-check status hasn't changed
+          .eq('status', 'pending');
 
-        // Get all pending notifications for this batch
-        const { data: deliveryLogs, error: logsError } = await sbAdmin
-          .from('notification_delivery_log')
-          .select(
-            `
-            notification_id,
-            id,
-            notifications (
-              id,
-              type,
-              title,
-              description,
-              data,
-              created_at,
-              ws_id,
-              user_id,
-              scope,
-              entity_type,
-              entity_id
-            )
-          `
-          )
-          .eq('batch_id', batch.id)
-          .eq('status', 'pending')
-          .eq('channel', batch.channel)
-          .order('notifications(created_at)', { ascending: false });
+        const deliveryLogs = await fetchPendingBatchDeliveryLogs(
+          sbAdmin,
+          batch.id,
+          batch.channel
+        );
 
-        if (logsError || !deliveryLogs || deliveryLogs.length === 0) {
+        if (deliveryLogs.length === 0) {
           await markBatchSent(sbAdmin, batch.id, 0);
 
           results.push({
             batch_id: batch.id,
-            status: 'skipped',
             channel: batch.channel,
             reason: 'no_notifications',
+            status: 'skipped',
           });
           processedCount++;
           continue;
         }
 
-        const deliverableLogs = [];
-        const skippedByReason = new Map<string, typeof deliveryLogs>();
+        const deliverableLogs: DeliveryLogRow[] = [];
+        const skippedByReason = new Map<string, DeliveryLogRow[]>();
 
         for (const log of deliveryLogs) {
-          const notification = log.notifications as {
-            created_at: string;
-            id: string;
-            scope?: string | null;
-            user_id?: string | null;
-            ws_id?: string | null;
-          } | null;
-
+          const notification = log.notifications;
           if (!notification) {
             continue;
           }
 
-          const skipReason = await getSkipReason(sbAdmin, notification);
+          const skipReason = await getNotificationSkipReason(sbAdmin, {
+            membershipCache,
+            notification,
+          });
+
           if (skipReason) {
-            const existing = skippedByReason.get(skipReason) || [];
-            existing.push(log);
-            skippedByReason.set(skipReason, existing);
+            const existingLogs = skippedByReason.get(skipReason) || [];
+            existingLogs.push(log);
+            skippedByReason.set(skipReason, existingLogs);
             continue;
           }
 
@@ -411,10 +471,10 @@ export async function GET(req: NextRequest) {
 
           results.push({
             batch_id: batch.id,
-            status: 'skipped',
             channel: batch.channel,
             notification_count: skippedCount,
             reason: 'all_notifications_skipped',
+            status: 'skipped',
           });
           processedCount++;
           continue;
@@ -422,23 +482,23 @@ export async function GET(req: NextRequest) {
 
         const notifications: NotificationItem[] = deliverableLogs
           .map((log) => log.notifications)
-          .filter(Boolean)
-          .map((n) => {
-            const data = n.data as Record<string, unknown>;
-            // Build action URL from notification data if available
+          .filter((notification): notification is BatchNotificationRow =>
+            Boolean(notification)
+          )
+          .map((notification) => {
+            const data = notification.data ?? {};
             const actionUrl =
-              (data?.action_url as string) ||
-              (data?.url as string) ||
-              (data?.link as string) ||
-              undefined;
+              (data.action_url as string | undefined) ||
+              (data.url as string | undefined) ||
+              (data.link as string | undefined);
 
             return {
-              id: n.id,
-              type: n.type,
-              title: n.title,
-              description: n.description || '',
+              id: notification.id,
+              type: notification.type,
+              title: notification.title,
+              description: notification.description || '',
               data,
-              createdAt: n.created_at,
+              createdAt: notification.created_at,
               actionUrl,
             };
           });
@@ -448,18 +508,9 @@ export async function GET(req: NextRequest) {
             throw new Error('Push batch missing user id');
           }
 
-          const { data: devices, error: devicesError } = await sbAdmin
-            .from('notification_push_devices')
-            .select('token')
-            .eq('user_id', batch.user_id);
+          const devices = await fetchPushDevicesForUser(sbAdmin, batch.user_id);
 
-          if (devicesError) {
-            throw new Error(
-              `Failed to load push devices: ${devicesError.message}`
-            );
-          }
-
-          if (!devices || devices.length === 0) {
+          if (devices.length === 0) {
             throw new Error('No registered push devices found for batch');
           }
 
@@ -502,12 +553,13 @@ export async function GET(req: NextRequest) {
 
           results.push({
             batch_id: batch.id,
-            status: 'sent',
             channel: 'push',
             delivered_count: pushResult.deliveredCount,
             notification_count: notifications.length,
+            status: 'sent',
           });
         } else {
+          const batchNotification = deliverableLogs[0]!.notifications!;
           let userEmail: string;
           let userName: string;
 
@@ -528,8 +580,34 @@ export async function GET(req: NextRequest) {
             userName = userEmail;
           }
 
-          if (!userEmail) {
-            throw new Error('No email address found for batch');
+          const preSendSkipReason = await getNotificationSkipReason(sbAdmin, {
+            membershipCache,
+            notification: batchNotification,
+            recipientEmail: userEmail || null,
+          });
+
+          if (preSendSkipReason) {
+            await markDeliveryLogsSkipped(
+              sbAdmin,
+              deliverableLogs.map((log) => log.id),
+              preSendSkipReason
+            );
+            await markBatchSent(
+              sbAdmin,
+              batch.id,
+              notifications.length + skippedCount
+            );
+
+            results.push({
+              batch_id: batch.id,
+              channel: 'email',
+              email: userEmail || undefined,
+              notification_count: notifications.length + skippedCount,
+              reason: preSendSkipReason,
+              status: 'skipped',
+            });
+            processedCount++;
+            continue;
           }
 
           let workspaceName = 'Tuturuuu';
@@ -547,10 +625,6 @@ export async function GET(req: NextRequest) {
               workspaceName = workspace.name || 'Unknown Workspace';
               workspaceUrl = `${workspaceUrl}/${batch.ws_id}`;
             }
-          }
-
-          if (!workspaceUrl) {
-            workspaceUrl = 'https://tuturuuu.com';
           }
 
           const emailSubject = generateSubjectLine(
@@ -588,14 +662,38 @@ export async function GET(req: NextRequest) {
           });
 
           if (!result.success) {
-            if (
-              result.blockedRecipients &&
-              result.blockedRecipients.length > 0
-            ) {
-              throw new Error(
-                `Email blocked: ${result.blockedRecipients[0]?.reason || 'unknown'}`
+            const sendSkipReason = await getNotificationSkipReason(sbAdmin, {
+              errorMessage: result.error,
+              membershipCache,
+              notification: batchNotification,
+              recipientEmail: userEmail,
+              sendResult: result,
+            });
+
+            if (sendSkipReason) {
+              await markDeliveryLogsSkipped(
+                sbAdmin,
+                deliverableLogs.map((log) => log.id),
+                sendSkipReason
               );
+              await markBatchSent(
+                sbAdmin,
+                batch.id,
+                notifications.length + skippedCount
+              );
+
+              results.push({
+                batch_id: batch.id,
+                channel: 'email',
+                email: userEmail,
+                notification_count: notifications.length + skippedCount,
+                reason: sendSkipReason,
+                status: 'skipped',
+              });
+              processedCount++;
+              continue;
             }
+
             throw new Error(result.error || 'Failed to send email');
           }
 
@@ -611,12 +709,13 @@ export async function GET(req: NextRequest) {
 
           results.push({
             batch_id: batch.id,
-            status: 'sent',
             channel: 'email',
             email: userEmail,
             notification_count: notifications.length,
+            status: 'sent',
           });
         }
+
         processedCount++;
       } catch (error) {
         console.error(`Error processing batch ${batch.id}:`, error);
@@ -627,9 +726,9 @@ export async function GET(req: NextRequest) {
 
         results.push({
           batch_id: batch.id,
-          status: 'failed',
           channel: batch.channel,
           error: errorMessage,
+          status: 'failed',
         });
         failedCount++;
       }

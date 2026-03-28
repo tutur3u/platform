@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { enqueueApprovedPostEmails, fetchAllPaginatedRows } from './queue-core';
+import {
+  enqueueApprovedPostEmails,
+  fetchAllPaginatedRows,
+  reconcileOrphanedApprovedPosts,
+} from './queue-core';
 import { POST_EMAIL_QUERY_CHUNK_SIZE } from './utils';
 
 const APPROVER_ID = 'approver-1';
@@ -252,5 +256,75 @@ describe('enqueueApprovedPostEmails', () => {
         user_id: userId,
       }),
     ]);
+  });
+
+  it('maps the reconciliation rpc result without falling back to row scans', async () => {
+    const rpc = async (name: string, args: Record<string, unknown>) => {
+      expect(name).toBe('reconcile_orphaned_approved_post_email_queue');
+      expect(args).toMatchObject({
+        p_cutoff: expect.any(String),
+        p_max_posts: 25,
+        p_ws_id: WS_ID,
+      });
+
+      return {
+        data: [
+          {
+            already_sent: 3,
+            checked: 10,
+            covered_by_existing_queue: 4,
+            covered_by_sent_email: 3,
+            eligible_recipients: 2,
+            enqueued: 2,
+            existing_processing: 0,
+            existing_queued: 0,
+            existing_skipped: 0,
+            missing_completion: 0,
+            missing_email: 1,
+            missing_sender_platform_user: 0,
+            missing_user_record: 0,
+            not_approved: 0,
+            orphaned: 3,
+            processed_posts: 2,
+            remaining_posts: 5,
+            upserted: 2,
+          },
+        ],
+        error: null,
+      };
+    };
+
+    const result = await reconcileOrphanedApprovedPosts(
+      {
+        from: () => createMockQueryBuilder('unexpected', {} as never, []),
+        rpc,
+      } as never,
+      {
+        maxPosts: 25,
+        wsId: WS_ID,
+      }
+    );
+
+    expect(result).toEqual({
+      checked: 10,
+      diagnostics: {
+        alreadySent: 3,
+        checked: 10,
+        coveredByExistingQueue: 4,
+        coveredBySentEmail: 3,
+        eligibleRecipients: 2,
+        existingProcessing: 0,
+        existingQueued: 0,
+        existingSkipped: 0,
+        missingCompletion: 0,
+        missingEmail: 1,
+        missingSenderPlatformUser: 0,
+        missingUserRecord: 0,
+        notApproved: 0,
+        orphaned: 3,
+        upserted: 2,
+      },
+      enqueued: 2,
+    });
   });
 });

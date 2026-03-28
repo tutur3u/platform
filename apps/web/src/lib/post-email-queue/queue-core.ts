@@ -31,6 +31,7 @@ import type {
   OldApprovedCheckRow,
   OrphanedApprovedCheckRow,
   PostEmailQueueRow,
+  PostEmailQueueStatusSummaryRpcRow,
   PostEmailQueueUpsertRow,
   PostScopeRow,
   QueueIdPostRow,
@@ -38,6 +39,7 @@ import type {
   QueueSenderRow,
   QueueSkipTarget,
   QueueSkipUpdate,
+  ReconcileOrphanedApprovedPostEmailsRpcRow,
   ReconcileOrphanedApprovedPostsDiagnostics,
   SentReceiverRow,
   WorkspaceUserGroupRow,
@@ -46,6 +48,22 @@ import type {
 import { chunkArray, isValidEmailAddress } from './utils';
 
 const POST_EMAIL_SELECT_PAGE_SIZE = 1000;
+const POST_EMAIL_QUEUE_DEBUG = process.env.POST_EMAIL_QUEUE_DEBUG === '1';
+
+type RpcCapableSupabaseClient = TypedSupabaseClient & {
+  rpc?: TypedSupabaseClient['rpc'];
+};
+
+type ReconcileOrphanedApprovedPostsRpcArgs = {
+  p_cutoff: string;
+  p_max_posts: number | null;
+  p_ws_id: string | null;
+};
+
+type ReconcileOrphanedApprovedPostsRpcResponse = {
+  data: ReconcileOrphanedApprovedPostEmailsRpcRow[] | null;
+  error: unknown | null;
+};
 
 type CheckEligibilityRow = Pick<
   GroupPostCheck,
@@ -80,6 +98,95 @@ export async function fetchAllPaginatedRows<T>(
   }
 
   return rows;
+}
+
+function debugLog(message: string, data?: Record<string, unknown>) {
+  if (!POST_EMAIL_QUEUE_DEBUG) return;
+  console.log(message, data ?? {});
+}
+
+function getRpcClient(
+  sbAdmin: TypedSupabaseClient
+): RpcCapableSupabaseClient | null {
+  const client = sbAdmin as RpcCapableSupabaseClient;
+  return typeof client.rpc === 'function' ? client : null;
+}
+
+function callReconcileOrphanedApprovedPostsRpc(
+  client: RpcCapableSupabaseClient,
+  args: ReconcileOrphanedApprovedPostsRpcArgs
+): Promise<ReconcileOrphanedApprovedPostsRpcResponse> {
+  return (
+    client.rpc as unknown as (
+      fn: string,
+      rpcArgs: ReconcileOrphanedApprovedPostsRpcArgs
+    ) => Promise<ReconcileOrphanedApprovedPostsRpcResponse>
+  )('reconcile_orphaned_approved_post_email_queue', args);
+}
+
+function getRpcErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : '';
+  }
+  return '';
+}
+
+function shouldFallbackToAppRpc(error: unknown, rpcName: string): boolean {
+  const message = getRpcErrorMessage(error);
+  return (
+    message.includes('Could not find the function') ||
+    message.includes(`function public.${rpcName}`) ||
+    message.includes('does not exist')
+  );
+}
+
+export function mapPostEmailQueueStatusSummaryRpcRow(
+  row: PostEmailQueueStatusSummaryRpcRow | null | undefined
+) {
+  return {
+    blocked: row?.blocked ?? 0,
+    cancelled: row?.cancelled ?? 0,
+    failed: row?.failed ?? 0,
+    processing: row?.processing ?? 0,
+    queued: row?.queued ?? 0,
+    sent: row?.sent ?? 0,
+    skipped: row?.skipped ?? 0,
+    total: row?.total ?? 0,
+  };
+}
+
+function mapReconcileRpcRowToResult(
+  row: ReconcileOrphanedApprovedPostEmailsRpcRow | null | undefined
+): {
+  checked: number;
+  diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
+  enqueued: number;
+} {
+  const checked = row?.checked ?? 0;
+
+  return {
+    checked,
+    diagnostics: {
+      alreadySent: row?.already_sent ?? 0,
+      checked,
+      coveredByExistingQueue: row?.covered_by_existing_queue ?? 0,
+      coveredBySentEmail: row?.covered_by_sent_email ?? 0,
+      eligibleRecipients: row?.eligible_recipients ?? 0,
+      existingProcessing: row?.existing_processing ?? 0,
+      existingQueued: row?.existing_queued ?? 0,
+      existingSkipped: row?.existing_skipped ?? 0,
+      missingCompletion: row?.missing_completion ?? 0,
+      missingEmail: row?.missing_email ?? 0,
+      missingSenderPlatformUser: row?.missing_sender_platform_user ?? 0,
+      missingUserRecord: row?.missing_user_record ?? 0,
+      notApproved: row?.not_approved ?? 0,
+      orphaned: row?.orphaned ?? 0,
+      upserted: row?.upserted ?? 0,
+    },
+    enqueued: row?.enqueued ?? 0,
+  };
 }
 
 function createEmptyEnqueueDiagnostics(): EnqueueApprovedPostEmailsDiagnostics {
@@ -447,7 +554,7 @@ async function getEligibleRecipients(
     hasSkippedUsers;
 
   if (hasDiagnostics || allCheckRows.length !== withValidEmail.length) {
-    console.log('[getEligibleRecipients] Processing results', {
+    debugLog('[getEligibleRecipients] Processing results', {
       postId,
       wsId,
       summary: {
@@ -520,7 +627,7 @@ export async function enqueueApprovedPostEmails(
     });
 
   if (recipients.length === 0) {
-    console.log('[enqueueApprovedPostEmails] No eligible recipients', {
+    debugLog('[enqueueApprovedPostEmails] No eligible recipients', {
       postId,
       wsId,
       userIds,
@@ -578,7 +685,7 @@ export async function enqueueApprovedPostEmails(
     return !sentRecipientIds.has(recipient.user_id);
   });
 
-  console.log('[enqueueApprovedPostEmails] After dedup filter', {
+  debugLog('[enqueueApprovedPostEmails] After dedup filter', {
     postId,
     recipientsCount: recipients.length,
     sentCount: sentRecipientIds.size,
@@ -642,7 +749,7 @@ export async function enqueueApprovedPostEmails(
 
     if (!resolvedSenderPlatformUserId) {
       missingSenderPlatformUser++;
-      console.log('[enqueueApprovedPostEmails] No sender resolved', {
+      debugLog('[enqueueApprovedPostEmails] No sender resolved', {
         postId,
         user_id: recipient.user_id,
         approved_by: recipient.approved_by,
@@ -670,7 +777,7 @@ export async function enqueueApprovedPostEmails(
     });
   }
 
-  console.log('[enqueueApprovedPostEmails] After sender resolve', {
+  debugLog('[enqueueApprovedPostEmails] After sender resolve', {
     postId,
     filteredCount: filteredRecipients.length,
     upsertRowsCount: upsertRows.length,
@@ -993,8 +1100,13 @@ export async function autoSkipRejectedPosts(
   return updatedRows;
 }
 
-export async function reconcileOrphanedApprovedPosts(
-  sbAdmin: TypedSupabaseClient
+async function reconcileOrphanedApprovedPostsInApp(
+  sbAdmin: TypedSupabaseClient,
+  {
+    maxPosts,
+  }: {
+    maxPosts?: number;
+  } = {}
 ): Promise<{
   checked: number;
   diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
@@ -1016,7 +1128,7 @@ export async function reconcileOrphanedApprovedPosts(
         .range(from, to)
   );
 
-  console.log('[reconcileOrphanedApprovedPosts] Found checks', {
+  debugLog('[reconcileOrphanedApprovedPosts] Found checks', {
     total: checks.length,
     sample: checks.slice(0, 3).map((check) => ({
       post_id: check.post_id,
@@ -1040,25 +1152,32 @@ export async function reconcileOrphanedApprovedPosts(
   > = [];
   const sentEmailData: SentPairRow[] = [];
   for (const postChunk of chunkArray(postIds)) {
-    const [
-      { data: queueData, error: queueError },
-      { data: sentData, error: sentError },
-    ] = await Promise.all([
-      getQueueTable(sbAdmin)
-        .select('post_id, user_id, status')
-        .in('post_id', postChunk)
-        .in('status', ['queued', 'processing', 'sent', 'skipped']),
-      sbAdmin
-        .from('sent_emails')
-        .select('post_id, receiver_id')
-        .in('post_id', postChunk),
+    const [queueData, sentData] = await Promise.all([
+      fetchAllPaginatedRows<
+        Pick<PostEmailQueueRow, 'post_id' | 'user_id' | 'status'>
+      >((from, to) =>
+        getQueueTable(sbAdmin)
+          .select('post_id, user_id, status')
+          .in('post_id', postChunk)
+          .order('post_id', { ascending: true })
+          .order('user_id', { ascending: true })
+          .range(from, to)
+      ),
+      fetchAllPaginatedRows<{ post_id: string | null; receiver_id: string }>(
+        (from, to) =>
+          sbAdmin
+            .from('sent_emails')
+            .select('post_id, receiver_id')
+            .in('post_id', postChunk)
+            .order('post_id', { ascending: true })
+            .order('receiver_id', { ascending: true })
+            .range(from, to)
+      ),
     ]);
 
-    if (queueError) throw queueError;
-    if (sentError) throw sentError;
-    existingQueueData.push(...(queueData ?? []));
+    existingQueueData.push(...queueData);
     sentEmailData.push(
-      ...((sentData ?? []).filter(
+      ...(sentData.filter(
         (row): row is SentPairRow =>
           Boolean(row.post_id) && Boolean(row.receiver_id)
       ) as SentPairRow[])
@@ -1086,7 +1205,7 @@ export async function reconcileOrphanedApprovedPosts(
   diagnostics.coveredBySentEmail = coverage.coveredBySentEmail.length;
   diagnostics.orphaned = orphaned.length;
 
-  console.log(
+  debugLog(
     '[reconcileOrphanedApprovedPosts] Coverage after queue and sent email checks',
     {
       totalChecks: checks.length,
@@ -1117,7 +1236,7 @@ export async function reconcileOrphanedApprovedPosts(
   );
 
   if (diagnostics.coveredBySentEmail > 0) {
-    console.log(
+    debugLog(
       '[reconcileOrphanedApprovedPosts] Already delivered via sent_emails without queue coverage',
       {
         coveredBySentEmailCount: diagnostics.coveredBySentEmail,
@@ -1175,21 +1294,29 @@ export async function reconcileOrphanedApprovedPosts(
 
   let totalEnqueued = 0;
   let postsWithZero = 0;
+  let processedPosts = 0;
 
   for (const [postId, info] of byPost) {
+    if (maxPosts && processedPosts >= maxPosts) {
+      break;
+    }
+
     const result = await enqueueApprovedPostEmails(sbAdmin, {
       wsId: info.ws_id,
       postId,
       groupId: info.group_id,
       userIds: info.userIds,
     });
+    processedPosts++;
     if (result.queued === 0) postsWithZero++;
     totalEnqueued += result.queued;
     mergeEnqueueDiagnostics(diagnostics, result.diagnostics);
   }
 
-  console.log('[reconcileOrphanedApprovedPosts] Enqueue loop complete', {
+  debugLog('[reconcileOrphanedApprovedPosts] Enqueue loop complete', {
     totalPosts: byPost.size,
+    processedPosts,
+    remainingPosts: Math.max(0, byPost.size - processedPosts),
     postsWithZeroEnqueued: postsWithZero,
     totalEnqueued,
     checked: checks.length,
@@ -1201,6 +1328,54 @@ export async function reconcileOrphanedApprovedPosts(
     diagnostics,
     enqueued: totalEnqueued,
   };
+}
+
+export async function reconcileOrphanedApprovedPosts(
+  sbAdmin: TypedSupabaseClient,
+  {
+    maxPosts,
+    wsId,
+  }: {
+    maxPosts?: number;
+    wsId?: string;
+  } = {}
+): Promise<{
+  checked: number;
+  diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
+  enqueued: number;
+}> {
+  const rpcClient = getRpcClient(sbAdmin);
+  const cutoff = getPostEmailMaxAgeCutoff();
+
+  if (rpcClient?.rpc) {
+    const { data, error } = await callReconcileOrphanedApprovedPostsRpc(
+      rpcClient,
+      {
+        p_cutoff: cutoff,
+        p_max_posts: maxPosts ?? null,
+        p_ws_id: wsId ?? null,
+      }
+    );
+
+    if (!error) {
+      const row = Array.isArray(data)
+        ? ((data[0] ??
+            null) as ReconcileOrphanedApprovedPostEmailsRpcRow | null)
+        : (data as ReconcileOrphanedApprovedPostEmailsRpcRow | null);
+      return mapReconcileRpcRowToResult(row);
+    }
+
+    if (
+      !shouldFallbackToAppRpc(
+        error,
+        'reconcile_orphaned_approved_post_email_queue'
+      )
+    ) {
+      throw error;
+    }
+  }
+
+  return reconcileOrphanedApprovedPostsInApp(sbAdmin, { maxPosts });
 }
 
 async function getEligibleReenqueuePairs(

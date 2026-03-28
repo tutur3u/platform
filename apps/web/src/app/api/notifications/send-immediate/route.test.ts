@@ -4,10 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
   const sendPushNotificationBatchMock = vi.fn();
+  const sendSystemEmailMock = vi.fn();
 
   return {
     fromMock,
     sendPushNotificationBatchMock,
+    sendSystemEmailMock,
   };
 });
 
@@ -24,11 +26,11 @@ vi.mock('@/lib/notifications/push-delivery', () => ({
 }));
 
 vi.mock('@react-email/render', () => ({
-  render: vi.fn(),
+  render: vi.fn(async () => '<html />'),
 }));
 
 vi.mock('@tuturuuu/email-service', () => ({
-  sendSystemEmail: vi.fn(),
+  sendSystemEmail: mocks.sendSystemEmailMock,
 }));
 
 function createResolvedChain<T>(result: T) {
@@ -38,6 +40,7 @@ function createResolvedChain<T>(result: T) {
     limit: ReturnType<typeof vi.fn>;
     maybeSingle: ReturnType<typeof vi.fn>;
     order: ReturnType<typeof vi.fn>;
+    range: ReturnType<typeof vi.fn>;
     select: ReturnType<typeof vi.fn>;
     single: ReturnType<typeof vi.fn>;
   };
@@ -47,6 +50,7 @@ function createResolvedChain<T>(result: T) {
   chain.limit = vi.fn(() => Promise.resolve(result));
   chain.maybeSingle = vi.fn(() => Promise.resolve(result));
   chain.order = vi.fn(() => chain);
+  chain.range = vi.fn(() => Promise.resolve(result));
   chain.select = vi.fn(() => chain);
   chain.single = vi.fn(() => Promise.resolve(result));
 
@@ -55,22 +59,40 @@ function createResolvedChain<T>(result: T) {
 
 import { POST } from './route';
 
-describe('send-immediate push processor', () => {
-  let notification: {
-    code: null;
-    created_at: string;
-    data: { board_id: string; workspace_id: string };
-    description: string;
-    entity_id: string;
-    entity_type: string;
+describe('send-immediate route', () => {
+  let batches: Array<{
+    channel: string;
+    email: string | null;
     id: string;
-    scope: string;
-    title: string;
-    type: string;
-    user_id: string;
-    ws_id: string;
-  };
+    user_id: string | null;
+    window_end: string;
+    ws_id: string | null;
+  }>;
+  let deliveryLogs: Array<{
+    batch_id: string;
+    id: string;
+    notification_id: string;
+    notifications: {
+      code: null;
+      created_at: string;
+      data: { board_id?: string; workspace_id: string };
+      description: string;
+      entity_id: string;
+      entity_type: string;
+      id: string;
+      scope: string;
+      title: string;
+      type: string;
+      user_id: string;
+      ws_id: string;
+    };
+  }>;
   let workspaceMembership: { user_id: string } | null;
+  let users: Array<{
+    display_name: string;
+    email: Array<{ email: string }>;
+    id: string;
+  }>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -79,36 +101,56 @@ describe('send-immediate push processor', () => {
       deliveredCount: 1,
       invalidTokens: [],
     });
+    mocks.sendSystemEmailMock.mockResolvedValue({
+      success: true,
+    });
 
-    const batch = {
-      channel: 'push',
-      email: null,
-      id: 'batch-1',
-      user_id: 'user-1',
-      ws_id: ROOT_WORKSPACE_ID,
-    };
-    notification = {
-      code: null,
-      created_at: '2026-03-28T00:00:00.000Z',
-      data: { board_id: 'board-1', workspace_id: ROOT_WORKSPACE_ID },
-      description: 'You were mentioned',
-      entity_id: 'task-1',
-      entity_type: 'task',
-      id: 'notification-1',
-      scope: 'workspace',
-      title: 'Task mention',
-      type: 'task_mention',
-      user_id: 'user-1',
-      ws_id: ROOT_WORKSPACE_ID,
-    };
+    batches = [
+      {
+        channel: 'push',
+        email: null,
+        id: 'batch-1',
+        user_id: 'user-1',
+        window_end: '2026-03-28T00:05:00.000Z',
+        ws_id: ROOT_WORKSPACE_ID,
+      },
+    ];
+    deliveryLogs = [
+      {
+        batch_id: 'batch-1',
+        id: 'log-1',
+        notification_id: 'notification-1',
+        notifications: {
+          code: null,
+          created_at: '2026-03-28T00:00:00.000Z',
+          data: { board_id: 'board-1', workspace_id: ROOT_WORKSPACE_ID },
+          description: 'You were mentioned',
+          entity_id: 'task-1',
+          entity_type: 'task',
+          id: 'notification-1',
+          scope: 'workspace',
+          title: 'Task mention',
+          type: 'task_mention',
+          user_id: 'user-1',
+          ws_id: ROOT_WORKSPACE_ID,
+        },
+      },
+    ];
     workspaceMembership = { user_id: 'user-1' };
+    users = [
+      {
+        display_name: 'User One',
+        email: [{ email: 'member@tuturuuu.com' }],
+        id: 'user-1',
+      },
+    ];
 
     mocks.fromMock.mockImplementation((table: string) => {
       switch (table) {
         case 'notification_batches':
           return {
             select: vi.fn(() =>
-              createResolvedChain({ data: [batch], error: null })
+              createResolvedChain({ data: batches, error: null })
             ),
             update: vi.fn(() =>
               createResolvedChain({ data: null, error: null })
@@ -118,14 +160,7 @@ describe('send-immediate push processor', () => {
           return {
             select: vi.fn(() =>
               createResolvedChain({
-                data: [
-                  {
-                    batch_id: batch.id,
-                    id: 'log-1',
-                    notification_id: notification.id,
-                    notifications: notification,
-                  },
-                ],
+                data: deliveryLogs,
                 error: null,
               })
             ),
@@ -137,13 +172,7 @@ describe('send-immediate push processor', () => {
           return {
             select: vi.fn(() =>
               createResolvedChain({
-                data: [
-                  {
-                    display_name: 'User One',
-                    email: [{ email: 'user@example.com' }],
-                    id: 'user-1',
-                  },
-                ],
+                data: users,
                 error: null,
               })
             ),
@@ -163,6 +192,9 @@ describe('send-immediate push processor', () => {
           };
         case 'notification_push_devices':
           return {
+            delete: vi.fn(() => ({
+              in: vi.fn().mockResolvedValue({ error: null }),
+            })),
             select: vi.fn(() =>
               createResolvedChain({
                 data: [{ token: 'token-1', user_id: 'user-1' }],
@@ -221,7 +253,7 @@ describe('send-immediate push processor', () => {
   });
 
   it('skips notifications older than one day', async () => {
-    notification.created_at = '2026-03-26T00:00:00.000Z';
+    deliveryLogs[0]!.notifications.created_at = '2026-03-26T00:00:00.000Z';
 
     const response = await POST(
       new Request('http://localhost/api/notifications/send-immediate', {
@@ -276,5 +308,123 @@ describe('send-immediate push processor', () => {
       ],
     });
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
+  });
+
+  it('skips external-recipient email batches before send', async () => {
+    batches[0] = {
+      ...batches[0]!,
+      channel: 'email',
+    };
+    users[0]!.email = [{ email: 'member@example.com' }];
+
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        body: JSON.stringify({ batch_id: 'batch-1' }),
+        headers: {
+          authorization: 'Bearer cron-secret',
+        },
+        method: 'POST',
+      }) as any
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'email',
+          status: 'skipped',
+        }),
+      ],
+    });
+    expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
+  });
+
+  it('marks blocked email batches as skipped instead of failed', async () => {
+    batches[0] = {
+      ...batches[0]!,
+      channel: 'email',
+    };
+    mocks.sendSystemEmailMock.mockResolvedValueOnce({
+      blockedRecipients: [
+        {
+          details: 'blacklist',
+          email: 'member@tuturuuu.com',
+          reason: 'blacklist',
+        },
+      ],
+      error: 'All recipients blocked or rate limited',
+      success: false,
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        body: JSON.stringify({ batch_id: 'batch-1' }),
+        headers: {
+          authorization: 'Bearer cron-secret',
+        },
+        method: 'POST',
+      }) as any
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'email',
+          status: 'skipped',
+        }),
+      ],
+    });
+  });
+
+  it('drains more than the old 20-batch cap in one run', async () => {
+    batches = Array.from({ length: 21 }, (_, index) => ({
+      channel: 'push',
+      email: null,
+      id: `batch-${index + 1}`,
+      user_id: 'user-1',
+      window_end: '2026-03-28T00:05:00.000Z',
+      ws_id: ROOT_WORKSPACE_ID,
+    }));
+    deliveryLogs = batches.map((batch, index) => ({
+      batch_id: batch.id,
+      id: `log-${index + 1}`,
+      notification_id: `notification-${index + 1}`,
+      notifications: {
+        code: null,
+        created_at: '2026-03-28T00:00:00.000Z',
+        data: { workspace_id: ROOT_WORKSPACE_ID },
+        description: `Notification ${index + 1}`,
+        entity_id: `task-${index + 1}`,
+        entity_type: 'task',
+        id: `notification-${index + 1}`,
+        scope: 'workspace',
+        title: `Notification ${index + 1}`,
+        type: 'task_mention',
+        user_id: 'user-1',
+        ws_id: ROOT_WORKSPACE_ID,
+      },
+    }));
+
+    const response = await POST(
+      new Request('http://localhost/api/notifications/send-immediate', {
+        headers: {
+          authorization: 'Bearer cron-secret',
+        },
+        method: 'POST',
+      }) as any
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 21,
+    });
   });
 });

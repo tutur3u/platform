@@ -17,15 +17,15 @@
     },
     {
       "path": "/api/cron/process-notification-batches",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/process-post-email-queue",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/calendar/provider-sync",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/calendar/smart-schedule",
@@ -33,7 +33,7 @@
     },
     {
       "path": "/api/cron/tasks/deadline-reminders",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/15 * * * *"
     }
   ]
 }

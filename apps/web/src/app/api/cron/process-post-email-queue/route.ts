@@ -15,6 +15,12 @@ import {
 
 const LOG_PREFIX = '[PostEmailQueueCron]';
 const POST_EMAIL_SELECT_PAGE_SIZE = 1000;
+const RECONCILIATION_MAX_POSTS = 250;
+const RECONCILIATION_MAX_POSTS_WHEN_QUEUE_ACTIVE = 50;
+
+type RpcCapableSupabaseClient = TypedSupabaseClient & {
+  rpc?: TypedSupabaseClient['rpc'];
+};
 
 type QueueStatusSummary = {
   blocked: number;
@@ -26,6 +32,29 @@ type QueueStatusSummary = {
   skipped: number;
   total: number;
 };
+
+type PostEmailQueueStatusSummaryRpcRow = QueueStatusSummary;
+
+type QueueStatusSummaryRpcArgs = {
+  p_ws_id: string | null;
+};
+
+type QueueStatusSummaryRpcResponse = {
+  data: PostEmailQueueStatusSummaryRpcRow[] | null;
+  error: unknown | null;
+};
+
+function callQueueStatusSummaryRpc(
+  client: RpcCapableSupabaseClient,
+  args: QueueStatusSummaryRpcArgs
+): Promise<QueueStatusSummaryRpcResponse> {
+  return (
+    client.rpc as unknown as (
+      fn: string,
+      rpcArgs: QueueStatusSummaryRpcArgs
+    ) => Promise<QueueStatusSummaryRpcResponse>
+  )('get_post_email_queue_status_summary', args);
+}
 
 function createEmptyQueueStatusSummary(): QueueStatusSummary {
   return {
@@ -43,6 +72,32 @@ function createEmptyQueueStatusSummary(): QueueStatusSummary {
 async function getQueueStatusSummary(
   sbAdmin: TypedSupabaseClient
 ): Promise<QueueStatusSummary> {
+  const rpcClient = sbAdmin as RpcCapableSupabaseClient;
+  if (typeof rpcClient.rpc === 'function') {
+    const { data, error } = await callQueueStatusSummaryRpc(rpcClient, {
+      p_ws_id: null,
+    });
+
+    if (!error) {
+      const row = Array.isArray(data)
+        ? ((data[0] ?? null) as PostEmailQueueStatusSummaryRpcRow | null)
+        : (data as PostEmailQueueStatusSummaryRpcRow | null);
+
+      if (row) {
+        return {
+          blocked: row.blocked ?? 0,
+          cancelled: row.cancelled ?? 0,
+          failed: row.failed ?? 0,
+          processing: row.processing ?? 0,
+          queued: row.queued ?? 0,
+          sent: row.sent ?? 0,
+          skipped: row.skipped ?? 0,
+          total: row.total ?? 0,
+        };
+      }
+    }
+  }
+
   const summary = createEmptyQueueStatusSummary();
   let from = 0;
 
@@ -198,11 +253,21 @@ export async function GET(req: NextRequest) {
     });
 
     log('info', `[${requestId}] Phase 3: reconcileOrphanedApprovedPosts`);
+    const hasActiveDeliveryBacklog =
+      queueBefore.queued + queueBefore.failed + reEnqueueResult.reEnqueued > 0;
+    const reconciliationOptions = hasActiveDeliveryBacklog
+      ? { maxPosts: RECONCILIATION_MAX_POSTS_WHEN_QUEUE_ACTIVE }
+      : { maxPosts: RECONCILIATION_MAX_POSTS };
     const reconciliationStart = Date.now();
-    const reconciliation = await reconcileOrphanedApprovedPosts(sbAdmin);
+    const reconciliation = await reconcileOrphanedApprovedPosts(
+      sbAdmin,
+      reconciliationOptions
+    );
     phaseTimingsMs.phase3Reconcile = Date.now() - reconciliationStart;
     log('info', `[${requestId}] Phase 3 complete`, {
       durationMs: phaseTimingsMs.phase3Reconcile,
+      hasActiveDeliveryBacklog,
+      reconciliationOptions,
       enqueued: reconciliation.enqueued,
       checked: reconciliation.checked,
       diagnostics: reconciliation.diagnostics,

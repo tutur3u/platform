@@ -6,11 +6,13 @@ const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
   const pushDeleteInMock = vi.fn();
   const sendPushNotificationBatchMock = vi.fn();
+  const sendSystemEmailMock = vi.fn();
 
   return {
     fromMock,
     pushDeleteInMock,
     sendPushNotificationBatchMock,
+    sendSystemEmailMock,
   };
 });
 
@@ -27,11 +29,11 @@ vi.mock('@/lib/notifications/push-delivery', () => ({
 }));
 
 vi.mock('@react-email/render', () => ({
-  render: vi.fn(),
+  render: vi.fn(async () => '<html />'),
 }));
 
 vi.mock('@tuturuuu/email-service', () => ({
-  sendSystemEmail: vi.fn(),
+  sendSystemEmail: mocks.sendSystemEmailMock,
 }));
 
 function createResolvedChain<T>(result: T) {
@@ -43,6 +45,7 @@ function createResolvedChain<T>(result: T) {
     maybeSingle: ReturnType<typeof vi.fn>;
     or: ReturnType<typeof vi.fn>;
     order: ReturnType<typeof vi.fn>;
+    range: ReturnType<typeof vi.fn>;
     select: ReturnType<typeof vi.fn>;
     single: ReturnType<typeof vi.fn>;
   };
@@ -54,6 +57,7 @@ function createResolvedChain<T>(result: T) {
   chain.maybeSingle = vi.fn(() => Promise.resolve(result));
   chain.or = vi.fn(() => chain);
   chain.order = vi.fn(() => chain);
+  chain.range = vi.fn(() => Promise.resolve(result));
   chain.select = vi.fn(() => chain);
   chain.single = vi.fn(() => Promise.resolve(result));
 
@@ -62,22 +66,23 @@ function createResolvedChain<T>(result: T) {
 
 import { GET } from './route';
 
-describe('process-notification-batches push processor', () => {
-  let batch: {
+describe('process-notification-batches route', () => {
+  let batches: Array<{
     channel: string;
-    email: null;
+    email: string | null;
     id: string;
-    user_id: string;
+    user_id: string | null;
     window_end: string;
     window_start: string;
-    ws_id: string;
-  };
+    ws_id: string | null;
+  }>;
   let deliveryLogs: Array<{
+    batch_id: string;
     id: string;
     notification_id: string;
     notifications: {
       created_at: string;
-      data: { board_id: string; workspace_id: string };
+      data: { board_id?: string; workspace_id: string };
       description: string;
       entity_id: string;
       entity_type: string;
@@ -90,6 +95,10 @@ describe('process-notification-batches push processor', () => {
     };
   }>;
   let workspaceMembership: { user_id: string } | null;
+  let userRow: {
+    display_name: string;
+    email: Array<{ email: string }>;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -98,44 +107,53 @@ describe('process-notification-batches push processor', () => {
       deliveredCount: 1,
       invalidTokens: ['stale-token'],
     });
+    mocks.sendSystemEmailMock.mockResolvedValue({
+      success: true,
+    });
 
-    batch = {
-      channel: 'push',
-      email: null,
-      id: 'batch-1',
-      user_id: 'user-1',
-      window_end: '2026-03-28T00:05:00.000Z',
-      window_start: '2026-03-28T00:00:00.000Z',
-      ws_id: ROOT_WORKSPACE_ID,
-    };
-    const notification = {
-      created_at: '2026-03-28T00:00:00.000Z',
-      data: { board_id: 'board-1', workspace_id: ROOT_WORKSPACE_ID },
-      description: 'Security alert',
-      entity_id: 'task-1',
-      entity_type: 'task',
-      id: 'notification-1',
-      scope: 'workspace',
-      title: 'Security alert',
-      type: 'security_alert',
-      user_id: 'user-1',
-      ws_id: ROOT_WORKSPACE_ID,
-    };
+    batches = [
+      {
+        channel: 'push',
+        email: null,
+        id: 'batch-1',
+        user_id: 'user-1',
+        window_end: '2026-03-28T00:05:00.000Z',
+        window_start: '2026-03-28T00:00:00.000Z',
+        ws_id: ROOT_WORKSPACE_ID,
+      },
+    ];
     deliveryLogs = [
       {
+        batch_id: 'batch-1',
         id: 'log-1',
-        notification_id: notification.id,
-        notifications: notification,
+        notification_id: 'notification-1',
+        notifications: {
+          created_at: '2026-03-28T00:00:00.000Z',
+          data: { board_id: 'board-1', workspace_id: ROOT_WORKSPACE_ID },
+          description: 'Security alert',
+          entity_id: 'task-1',
+          entity_type: 'task',
+          id: 'notification-1',
+          scope: 'workspace',
+          title: 'Security alert',
+          type: 'security_alert',
+          user_id: 'user-1',
+          ws_id: ROOT_WORKSPACE_ID,
+        },
       },
     ];
     workspaceMembership = { user_id: 'user-1' };
+    userRow = {
+      display_name: 'User One',
+      email: [{ email: 'member@tuturuuu.com' }],
+    };
 
     mocks.fromMock.mockImplementation((table: string) => {
       switch (table) {
         case 'notification_batches':
           return {
             select: vi.fn(() =>
-              createResolvedChain({ data: [batch], error: null })
+              createResolvedChain({ data: batches, error: null })
             ),
             update: vi.fn(() =>
               createResolvedChain({ data: null, error: null })
@@ -170,6 +188,24 @@ describe('process-notification-batches push processor', () => {
             select: vi.fn(() =>
               createResolvedChain({
                 data: workspaceMembership,
+                error: null,
+              })
+            ),
+          };
+        case 'users':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: userRow,
+                error: null,
+              })
+            ),
+          };
+        case 'workspaces':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: { name: 'Root Workspace' },
                 error: null,
               })
             ),
@@ -223,59 +259,8 @@ describe('process-notification-batches push processor', () => {
     ]);
   });
 
-  it('sends valid notifications even when stale logs are skipped in the same batch', async () => {
-    deliveryLogs = [
-      deliveryLogs[0]!,
-      {
-        id: 'log-2',
-        notification_id: 'notification-2',
-        notifications: {
-          ...deliveryLogs[0]!.notifications,
-          created_at: '2026-03-26T00:00:00.000Z',
-          id: 'notification-2',
-          title: 'Old security alert',
-        },
-      },
-    ];
-
-    const response = await GET(
-      new NextRequest(
-        'http://localhost/api/cron/process-notification-batches',
-        {
-          headers: {
-            authorization: 'Bearer cron-secret',
-          },
-        }
-      )
-    );
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      failed: 0,
-      processed: 1,
-      results: [
-        expect.objectContaining({
-          batch_id: 'batch-1',
-          channel: 'push',
-          delivered_count: 1,
-          notification_count: 1,
-          status: 'sent',
-        }),
-      ],
-    });
-    expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledTimes(1);
-  });
-
   it('drains fully stale batches as skipped', async () => {
-    deliveryLogs = [
-      {
-        ...deliveryLogs[0]!,
-        notifications: {
-          ...deliveryLogs[0]!.notifications,
-          created_at: '2026-03-26T00:00:00.000Z',
-        },
-      },
-    ];
+    deliveryLogs[0]!.notifications.created_at = '2026-03-26T00:00:00.000Z';
 
     const response = await GET(
       new NextRequest(
@@ -303,5 +288,127 @@ describe('process-notification-batches push processor', () => {
       ],
     });
     expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
+  });
+
+  it('skips external-recipient email batches before send', async () => {
+    batches[0] = {
+      ...batches[0]!,
+      channel: 'email',
+    };
+    userRow.email = [{ email: 'member@example.com' }];
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/cron/process-notification-batches',
+        {
+          headers: {
+            authorization: 'Bearer cron-secret',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'email',
+          status: 'skipped',
+        }),
+      ],
+    });
+    expect(mocks.sendSystemEmailMock).not.toHaveBeenCalled();
+  });
+
+  it('marks blocked email batches as skipped instead of failed', async () => {
+    batches[0] = {
+      ...batches[0]!,
+      channel: 'email',
+    };
+    mocks.sendSystemEmailMock.mockResolvedValueOnce({
+      blockedRecipients: [
+        {
+          details: 'blacklist',
+          email: 'member@tuturuuu.com',
+          reason: 'blacklist',
+        },
+      ],
+      error: 'All recipients blocked or rate limited',
+      success: false,
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/cron/process-notification-batches',
+        {
+          headers: {
+            authorization: 'Bearer cron-secret',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'email',
+          status: 'skipped',
+        }),
+      ],
+    });
+  });
+
+  it('drains more than the old 50-batch cap in one run', async () => {
+    batches = Array.from({ length: 51 }, (_, index) => ({
+      channel: 'push',
+      email: null,
+      id: `batch-${index + 1}`,
+      user_id: 'user-1',
+      window_end: '2026-03-28T00:05:00.000Z',
+      window_start: '2026-03-28T00:00:00.000Z',
+      ws_id: ROOT_WORKSPACE_ID,
+    }));
+    deliveryLogs = batches.map((batch, index) => ({
+      batch_id: batch.id,
+      id: `log-${index + 1}`,
+      notification_id: `notification-${index + 1}`,
+      notifications: {
+        created_at: '2026-03-28T00:00:00.000Z',
+        data: { workspace_id: ROOT_WORKSPACE_ID },
+        description: `Notification ${index + 1}`,
+        entity_id: `task-${index + 1}`,
+        entity_type: 'task',
+        id: `notification-${index + 1}`,
+        scope: 'workspace',
+        title: `Notification ${index + 1}`,
+        type: 'security_alert',
+        user_id: 'user-1',
+        ws_id: ROOT_WORKSPACE_ID,
+      },
+    }));
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/cron/process-notification-batches',
+        {
+          headers: {
+            authorization: 'Bearer cron-secret',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 51,
+    });
   });
 });

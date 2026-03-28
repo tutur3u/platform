@@ -24381,6 +24381,19 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_post_email_queue_status_summary: {
+        Args: { p_ws_id?: string };
+        Returns: {
+          blocked: number;
+          cancelled: number;
+          failed: number;
+          processing: number;
+          queued: number;
+          sent: number;
+          skipped: number;
+          total: number;
+        }[];
+      };
       get_post_review_stage: {
         Args: {
           p_approval_status: Database['public']['Enums']['approval_status'];
@@ -25942,6 +25955,29 @@ export type Database = {
       reattach_platform_entity_creation_limit_trigger: {
         Args: { p_target_table: string };
         Returns: undefined;
+      };
+      reconcile_orphaned_approved_post_email_queue: {
+        Args: { p_cutoff?: string; p_max_posts?: number; p_ws_id?: string };
+        Returns: {
+          already_sent: number;
+          checked: number;
+          covered_by_existing_queue: number;
+          covered_by_sent_email: number;
+          eligible_recipients: number;
+          enqueued: number;
+          existing_processing: number;
+          existing_queued: number;
+          existing_skipped: number;
+          missing_completion: number;
+          missing_email: number;
+          missing_sender_platform_user: number;
+          missing_user_record: number;
+          not_approved: number;
+          orphaned: number;
+          processed_posts: number;
+          remaining_posts: number;
+          upserted: number;
+        }[];
       };
       record_email_bounce: {
         Args: {
