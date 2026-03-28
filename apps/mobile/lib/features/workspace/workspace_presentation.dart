@@ -36,6 +36,15 @@ String displayWorkspaceNameOrFallback(
   return displayWorkspaceName(context, workspace);
 }
 
+String displayWorkspacePickerName(BuildContext context, Workspace workspace) {
+  final rawName = workspace.name?.trim();
+  if (rawName != null && rawName.isNotEmpty) {
+    return humanizeWorkspaceLabel(rawName);
+  }
+
+  return displayWorkspaceName(context, workspace);
+}
+
 String humanizeWorkspaceLabel(String value) {
   if (value.isEmpty || value.toUpperCase() != value) {
     return value;

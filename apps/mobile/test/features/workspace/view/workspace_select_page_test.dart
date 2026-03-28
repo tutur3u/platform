@@ -19,16 +19,20 @@ void main() {
 
     const personalWorkspace = Workspace(
       id: 'personal_ws',
-      name: 'Me',
+      name: 'Alex Nguyen',
       personal: true,
+      tier: workspaceTierPlus,
+      avatarUrl: 'https://example.com/alex.png',
     );
     const systemWorkspace = Workspace(
       id: rootWorkspaceId,
       name: 'Platform',
+      tier: workspaceTierEnterprise,
     );
     const teamWorkspace = Workspace(
       id: 'ws_1',
       name: 'Product',
+      tier: workspaceTierPro,
     );
 
     setUp(() {
@@ -61,8 +65,12 @@ void main() {
       expect(find.text('PERSONAL'), findsOneWidget);
       expect(find.text('INTERNAL'), findsOneWidget);
       expect(find.text('TEAM WORKSPACES'), findsOneWidget);
+      expect(find.text('Alex Nguyen'), findsOneWidget);
       expect(find.text('Platform'), findsOneWidget);
       expect(find.text('Product'), findsOneWidget);
+      expect(find.text(workspaceTierPlus), findsOneWidget);
+      expect(find.text(workspaceTierEnterprise), findsOneWidget);
+      expect(find.text(workspaceTierPro), findsOneWidget);
     });
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsPanel extends StatelessWidget {
@@ -227,33 +228,45 @@ class SettingsWorkspaceSection extends StatelessWidget {
       title: l10n.settingsWorkspaceSectionTitle,
       description: l10n.settingsWorkspaceSectionDescription,
       children: [
-        SettingsTile(
-          icon: Icons.apartment_rounded,
-          title: l10n.settingsCurrentWorkspace,
-          subtitle: l10n.settingsCurrentWorkspaceDescription,
-          value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
-          onTap: onSelectCurrentWorkspace,
+        StaggeredEntry(
+          index: 0,
+          playOnceKey: 'settings-workspace-current',
+          child: SettingsTile(
+            icon: Icons.apartment_rounded,
+            title: l10n.settingsCurrentWorkspace,
+            subtitle: l10n.settingsCurrentWorkspaceDescription,
+            value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
+            onTap: onSelectCurrentWorkspace,
+          ),
         ),
-        SettingsTile(
-          icon: Icons.home_work_outlined,
-          title: l10n.settingsDefaultWorkspace,
-          subtitle: l10n.settingsDefaultWorkspaceDescription,
-          value:
-              workspaceState.defaultWorkspace?.name ??
-              l10n.settingsNoWorkspaceSelected,
-          onTap: onSelectDefaultWorkspace,
+        StaggeredEntry(
+          index: 1,
+          playOnceKey: 'settings-workspace-default',
+          child: SettingsTile(
+            icon: Icons.home_work_outlined,
+            title: l10n.settingsDefaultWorkspace,
+            subtitle: l10n.settingsDefaultWorkspaceDescription,
+            value:
+                workspaceState.defaultWorkspace?.name ??
+                l10n.settingsNoWorkspaceSelected,
+            onTap: onSelectDefaultWorkspace,
+          ),
         ),
-        SettingsTile(
-          icon: Icons.drive_file_rename_outline_rounded,
-          title: l10n.settingsWorkspacePropertiesTitle,
-          subtitle: workspacePropertiesSubtitle,
-          value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
-          onTap:
-              currentWorkspace != null &&
-                  !isWorkspacePermissionLoading &&
-                  canEditWorkspaceProperties
-              ? () => onEditWorkspaceProperties(currentWorkspace)
-              : null,
+        StaggeredEntry(
+          index: 2,
+          playOnceKey: 'settings-workspace-properties',
+          child: SettingsTile(
+            icon: Icons.drive_file_rename_outline_rounded,
+            title: l10n.settingsWorkspacePropertiesTitle,
+            subtitle: workspacePropertiesSubtitle,
+            value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
+            onTap:
+                currentWorkspace != null &&
+                    !isWorkspacePermissionLoading &&
+                    canEditWorkspaceProperties
+                ? () => onEditWorkspaceProperties(currentWorkspace)
+                : null,
+          ),
         ),
       ],
     );

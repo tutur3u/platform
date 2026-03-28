@@ -17,10 +17,22 @@ void main() {
   group('WorkspacePickerSheet', () {
     late WorkspaceCubit workspaceCubit;
 
+    const personalWorkspace = Workspace(
+      id: 'personal_ws',
+      name: 'Alex Nguyen',
+      personal: true,
+      tier: workspaceTierPlus,
+      avatarUrl: 'https://example.com/alex.png',
+    );
     const proWorkspace = Workspace(
       id: 'ws_1',
       name: 'Product',
       tier: workspaceTierPro,
+    );
+    const enterpriseWorkspace = Workspace(
+      id: 'ws_3',
+      name: 'Ops',
+      tier: workspaceTierEnterprise,
     );
     const freeWorkspace = Workspace(
       id: 'ws_2',
@@ -34,7 +46,12 @@ void main() {
     testWidgets('shows tier badges for each workspace', (tester) async {
       const state = WorkspaceState(
         status: WorkspaceStatus.loaded,
-        workspaces: [proWorkspace, freeWorkspace],
+        workspaces: [
+          personalWorkspace,
+          proWorkspace,
+          enterpriseWorkspace,
+          freeWorkspace,
+        ],
         currentWorkspace: proWorkspace,
         defaultWorkspace: freeWorkspace,
       );
@@ -65,9 +82,13 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
 
+      expect(find.text('Alex Nguyen'), findsOneWidget);
       expect(find.text('Product'), findsOneWidget);
+      expect(find.text('Ops'), findsOneWidget);
       expect(find.text('Design'), findsOneWidget);
+      expect(find.text(workspaceTierPlus), findsOneWidget);
       expect(find.text(workspaceTierPro), findsOneWidget);
+      expect(find.text(workspaceTierEnterprise), findsOneWidget);
       expect(find.text(workspaceTierFree), findsOneWidget);
     });
   });

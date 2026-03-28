@@ -34,7 +34,9 @@ class Workspace extends Equatable {
     name: json['name'] as String?,
     avatarUrl: json['avatar_url'] as String?,
     personal: json['personal'] as bool? ?? false,
-    tier: normalizeWorkspaceTier(json['tier'] as String?),
+    tier: json['tier'] == null
+        ? workspaceTierFree
+        : normalizeWorkspaceTier(json['tier'] as String?),
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'] as String)
         : null,

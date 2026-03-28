@@ -9,6 +9,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
 import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
+import 'package:mobile/features/workspace/widgets/workspace_tier_badge.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -275,7 +276,7 @@ class _WorkspaceTile extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      displayWorkspaceName(context, workspace),
+                      displayWorkspacePickerName(context, workspace),
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.p.copyWith(
                         fontWeight: isSelected
@@ -284,6 +285,8 @@ class _WorkspaceTile extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const shad.Gap(8),
+                  WorkspaceTierBadge(tier: workspace.tier),
                   if (workspace.personal || isSystemWorkspace(workspace)) ...[
                     const shad.Gap(8),
                     shad.OutlineBadge(

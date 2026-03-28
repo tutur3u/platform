@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_limits.dart';
@@ -38,8 +39,19 @@ class WorkspaceRepository {
     if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
       return trimmed;
     }
-    final publicUrl = supabase.storage.from('avatars').getPublicUrl(trimmed);
-    return publicUrl;
+    final supabaseUrl = maybeSupabase?.storage
+        .from('avatars')
+        .getPublicUrl(trimmed);
+    if (supabaseUrl != null) {
+      return supabaseUrl;
+    }
+
+    var baseUrl = Env.supabaseUrl.replaceAll(RegExp(r'/$'), '');
+    if (Platform.isAndroid && baseUrl.contains('localhost')) {
+      baseUrl = baseUrl.replaceAll('localhost', '10.0.2.2');
+    }
+
+    return '$baseUrl/storage/v1/object/public/avatars/$trimmed';
   }
 
   Workspace _workspaceFromJson(Map<String, dynamic> json) {
@@ -47,7 +59,8 @@ class WorkspaceRepository {
     normalized['avatar_url'] = _resolveWorkspaceAvatarUrl(
       normalized['avatar_url'] as String?,
     );
-    normalized['tier'] = _resolveWorkspaceTier(normalized);
+    normalized['tier'] =
+        normalized['tier'] ?? _resolveWorkspaceTier(normalized);
     return Workspace.fromJson(normalized);
   }
 
@@ -96,30 +109,10 @@ class WorkspaceRepository {
 
   /// Fetches workspaces the current user belongs to.
   Future<List<Workspace>> getWorkspaces() async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) return [];
-
-    dynamic response;
-    try {
-      response = await supabase
-          .from('workspace_members')
-          .select('ws_id, workspaces($_workspaceWithTierSelect)')
-          .eq('user_id', userId);
-    } on Object {
-      response = await supabase
-          .from('workspace_members')
-          .select('ws_id, workspaces($_workspaceBaseSelect)')
-          .eq('user_id', userId);
-    }
-
-    final list = response as List<dynamic>;
+    final list = await _api.getJsonList('/api/v1/workspaces');
     return list
-        .map((row) {
-          final record = row as Map<String, dynamic>;
-          final ws = record['workspaces'] as Map<String, dynamic>?;
-          if (ws == null) return null;
-          return _workspaceFromJson(ws);
-        })
+        .whereType<Map<String, dynamic>>()
+        .map(_workspaceFromJson)
         .whereType<Workspace>()
         .toList();
   }

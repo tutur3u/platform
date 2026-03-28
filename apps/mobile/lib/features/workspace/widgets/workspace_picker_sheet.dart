@@ -417,7 +417,7 @@ class _WorkspaceTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      displayWorkspaceName(context, workspace),
+                      displayWorkspacePickerName(context, workspace),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.large.copyWith(
@@ -479,46 +479,12 @@ class _WorkspaceLeading extends StatelessWidget {
     required this.size,
   });
 
-  final Workspace? workspace;
+  final Workspace workspace;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    if (workspace?.personal ?? false) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(
-          Icons.person_outline_rounded,
-          size: size * 0.48,
-          color: colorScheme.primary,
-        ),
-      );
-    }
-
-    if (workspace == null) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(
-          Icons.workspaces_outlined,
-          size: size * 0.48,
-          color: colorScheme.primary,
-        ),
-      );
-    }
-
-    return WorkspaceAvatar(workspace: workspace!, radius: size / 2);
+    return WorkspaceAvatar(workspace: workspace, radius: size / 2);
   }
 }
 

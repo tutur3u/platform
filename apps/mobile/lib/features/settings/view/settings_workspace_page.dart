@@ -13,7 +13,6 @@ import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
-import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsWorkspacePage extends StatefulWidget {
@@ -70,22 +69,18 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
                 32,
               ),
               children: [
-                StaggeredEntry(
-                  index: 0,
-                  playOnceKey: 'settings-workspace',
-                  child: SettingsWorkspaceSection(
-                    onSelectCurrentWorkspace: () => showWorkspacePickerSheet(
-                      context,
-                    ),
-                    onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
-                      context,
-                      mode: WorkspacePickerMode.defaultWorkspace,
-                    ),
-                    canEditWorkspaceProperties: _canManageWorkspaceSettings,
-                    isWorkspacePermissionLoading: _isWorkspacePermissionLoading,
-                    onEditWorkspaceProperties: (workspace) => unawaited(
-                      _showWorkspacePropertiesDialog(workspace),
-                    ),
+                SettingsWorkspaceSection(
+                  onSelectCurrentWorkspace: () => showWorkspacePickerSheet(
+                    context,
+                  ),
+                  onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
+                    context,
+                    mode: WorkspacePickerMode.defaultWorkspace,
+                  ),
+                  canEditWorkspaceProperties: _canManageWorkspaceSettings,
+                  isWorkspacePermissionLoading: _isWorkspacePermissionLoading,
+                  onEditWorkspaceProperties: (workspace) => unawaited(
+                    _showWorkspacePropertiesDialog(workspace),
                   ),
                 ),
               ],
