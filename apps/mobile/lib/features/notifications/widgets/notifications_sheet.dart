@@ -9,6 +9,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -53,10 +54,21 @@ class NotificationsView extends StatefulWidget {
 
 class _NotificationsViewState extends State<NotificationsView> {
   late NotificationsTab _selectedTab = widget.initialTab;
+  StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
   @override
   void initState() {
     super.initState();
+    _pushEventsSubscription = PushNotificationService.instance.events.listen((
+      _,
+    ) {
+      if (!mounted) {
+        return;
+      }
+      final notificationsCubit = context.read<NotificationsCubit>();
+      unawaited(notificationsCubit.refreshUnreadCount());
+      unawaited(notificationsCubit.loadTab(_selectedTab, refresh: true));
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -76,6 +88,12 @@ class _NotificationsViewState extends State<NotificationsView> {
     }
     _selectedTab = widget.initialTab;
     unawaited(context.read<NotificationsCubit>().loadTab(_selectedTab));
+  }
+
+  @override
+  void dispose() {
+    unawaited(_pushEventsSubscription?.cancel());
+    super.dispose();
   }
 
   @override

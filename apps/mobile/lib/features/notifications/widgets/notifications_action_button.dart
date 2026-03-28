@@ -7,6 +7,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -80,6 +81,7 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   late final NotificationsCubit _notificationsCubit = NotificationsCubit(
     notificationsRepository: _notificationsRepository,
   );
+  StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
   String? _lastWorkspaceId;
   bool get _ownsRepository => widget.notificationsRepository == null;
@@ -88,6 +90,11 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _pushEventsSubscription = PushNotificationService.instance.events.listen((
+      _,
+    ) {
+      unawaited(_notificationsCubit.refreshUnreadCount());
+    });
   }
 
   @override
@@ -106,6 +113,7 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_pushEventsSubscription?.cancel());
     unawaited(_notificationsCubit.close());
     if (_ownsRepository) {
       _notificationsRepository.dispose();
@@ -124,6 +132,11 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   }
 
   Future<void> _openPage() async {
+    await PushNotificationService.instance.ensurePermissionPrompted();
+    if (!mounted) {
+      return;
+    }
+
     await context.push(Routes.notifications);
 
     if (!mounted) {

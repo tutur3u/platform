@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -28,7 +31,9 @@ class AppBlocObserver extends BlocObserver {
 }
 
 Future<void> bootstrap(
+  AppFlavor appFlavor,
   FutureOr<Widget> Function({
+    required AppFlavor appFlavor,
     required shad.ThemeMode initialThemeMode,
     String? initialRoute,
   })
@@ -70,6 +75,14 @@ Future<void> bootstrap(
 
   // Initialize Supabase with secure storage
   try {
+    await Firebase.initializeApp(
+      options: firebaseOptionsForFlavor(appFlavor),
+    );
+  } on Object catch (e, st) {
+    log('Failed to initialize Firebase: $e', stackTrace: st);
+  }
+
+  try {
     await initSupabase();
   } on Object catch (e, st) {
     log('Failed to initialize Supabase: $e', stackTrace: st);
@@ -93,6 +106,7 @@ Future<void> bootstrap(
 
   runApp(
     await builder(
+      appFlavor: appFlavor,
       initialRoute: initialRoute,
       initialThemeMode: initialThemeMode,
     ),

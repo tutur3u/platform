@@ -9,6 +9,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/notifications/widgets/notifications_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -37,6 +38,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     ownsApiClient: true,
   );
   late final NotificationsCubit _cubit;
+  StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
   String? _lastWorkspaceId;
 
@@ -50,6 +52,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _scopeWorkspaceIdFor(workspace),
       ),
     );
+    _pushEventsSubscription = PushNotificationService.instance.events.listen((
+      _,
+    ) {
+      unawaited(_cubit.refreshUnreadCount());
+    });
+    unawaited(PushNotificationService.instance.ensurePermissionPrompted());
   }
 
   @override
@@ -60,6 +68,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   void dispose() {
+    unawaited(_pushEventsSubscription?.cancel());
     unawaited(_cubit.close());
     _repository.dispose();
     super.dispose();

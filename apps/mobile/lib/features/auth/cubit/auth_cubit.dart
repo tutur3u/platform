@@ -11,13 +11,17 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 ///
 /// Ported from apps/native/lib/stores/auth-store.ts (Zustand → Cubit).
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit({required AuthRepository authRepository})
-    : _repo = authRepository,
-      super(_resolveInitialState(authRepository)) {
+  AuthCubit({
+    required AuthRepository authRepository,
+    Future<void> Function()? onBeforeSignOut,
+  }) : _repo = authRepository,
+       _onBeforeSignOut = onBeforeSignOut,
+       super(_resolveInitialState(authRepository)) {
     _setupAuthListener();
   }
 
   final AuthRepository _repo;
+  final Future<void> Function()? _onBeforeSignOut;
   StreamSubscription<supa.AuthState>? _authSub;
 
   /// Resolves auth state synchronously from the cached Supabase session.
@@ -210,6 +214,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> signOut() async {
     emit(state.copyWith(isLoading: true));
     await CacheStore.instance.clearScope(userId: state.user?.id);
+    await _onBeforeSignOut?.call();
     await _repo.signOut();
     emit(const AuthState.unauthenticated());
   }
