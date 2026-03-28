@@ -8,6 +8,7 @@ import NotificationDigestEmail, {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 
 // This API route should be called by a cron job (pg_cron, Trigger.dev, or external cron service)
 // It processes BATCHED notification batches and sends email digests
@@ -16,6 +17,80 @@ import { NextResponse } from 'next/server';
 // Feature flag: When true, only send emails for notifications belonging to the root workspace
 // Set to false to allow emails for all workspaces
 const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+
+async function markDeliveryLogsSent(sbAdmin: any, batchId: string) {
+  await sbAdmin
+    .from('notification_delivery_log')
+    .update({
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('batch_id', batchId)
+    .eq('status', 'pending');
+}
+
+async function markBatchSent(
+  sbAdmin: any,
+  batchId: string,
+  notificationCount: number
+) {
+  await sbAdmin
+    .from('notification_batches')
+    .update({
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      notification_count: notificationCount,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', batchId);
+}
+
+async function markBatchFailed(sbAdmin: any, batchId: string, message: string) {
+  await sbAdmin
+    .from('notification_batches')
+    .update({
+      status: 'failed',
+      error_message: message,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', batchId);
+
+  const { data: failedLogs } = await sbAdmin
+    .from('notification_delivery_log')
+    .select('id, retry_count')
+    .eq('batch_id', batchId)
+    .eq('status', 'pending');
+
+  if (failedLogs) {
+    for (const log of failedLogs) {
+      await sbAdmin
+        .from('notification_delivery_log')
+        .update({
+          status: 'failed',
+          error_message: message,
+          retry_count: (log.retry_count || 0) + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', log.id);
+    }
+  }
+}
+
+async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
+  if (tokens.length === 0) {
+    return;
+  }
+
+  const { error } = await sbAdmin
+    .from('notification_push_devices')
+    .delete()
+    .in('token', [...new Set(tokens)]);
+
+  if (error) {
+    console.error('Failed to delete invalid push tokens:', error);
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -100,8 +175,7 @@ export async function GET(req: NextRequest) {
             )
           `
           )
-          .in('batch_id', batchIdsToCheck)
-          .eq('channel', 'email');
+          .in('batch_id', batchIdsToCheck);
 
         if (deliveryLogsForCheck) {
           for (const log of deliveryLogsForCheck) {
@@ -146,7 +220,9 @@ export async function GET(req: NextRequest) {
     const results: Array<{
       batch_id: string;
       status: string;
+      channel?: string;
       email?: string;
+      delivered_count?: number;
       notification_count?: number;
       reason?: string;
       error?: string;
@@ -177,82 +253,31 @@ export async function GET(req: NextRequest) {
               title,
               description,
               data,
-              created_at
+              created_at,
+              ws_id,
+              entity_type,
+              entity_id
             )
           `
           )
           .eq('batch_id', batch.id)
           .eq('status', 'pending')
-          .eq('channel', 'email')
+          .eq('channel', batch.channel)
           .order('notifications(created_at)', { ascending: false });
 
         if (logsError || !deliveryLogs || deliveryLogs.length === 0) {
-          // No notifications to send, mark batch as sent
-          await sbAdmin
-            .from('notification_batches')
-            .update({
-              status: 'sent',
-              sent_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', batch.id);
+          await markBatchSent(sbAdmin, batch.id, 0);
 
           results.push({
             batch_id: batch.id,
             status: 'skipped',
+            channel: batch.channel,
             reason: 'no_notifications',
           });
           processedCount++;
           continue;
         }
 
-        // Get user details (either by user_id or email)
-        let userEmail: string;
-        let userName: string;
-
-        if (batch.user_id) {
-          const { data: user } = await sbAdmin
-            .from('users')
-            .select('email:user_private_details(email), display_name')
-            .eq('id', batch.user_id)
-            .single();
-
-          const emailData = user?.email as unknown as Array<{ email: string }>;
-          userEmail = emailData?.[0]?.email || batch.email || '';
-          userName = user?.display_name || userEmail;
-        } else {
-          // Email-only (pending user)
-          userEmail = batch.email || '';
-          userName = userEmail;
-        }
-
-        if (!userEmail) {
-          throw new Error('No email address found for batch');
-        }
-
-        // Get workspace details (if workspace-scoped)
-        let workspaceName = 'Tuturuuu';
-        let workspaceUrl =
-          process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
-
-        if (batch.ws_id) {
-          const { data: workspace } = await sbAdmin
-            .from('workspaces')
-            .select('name')
-            .eq('id', batch.ws_id)
-            .single();
-
-          if (workspace) {
-            workspaceName = workspace.name || 'Unknown Workspace';
-            workspaceUrl = `${workspaceUrl}/${batch.ws_id}`;
-          }
-        }
-
-        if (!workspaceUrl) {
-          workspaceUrl = 'https://tuturuuu.com';
-        }
-
-        // Format notifications for email template
         const notifications: NotificationItem[] = deliveryLogs
           .map((log) => log.notifications)
           .filter(Boolean)
@@ -276,124 +301,179 @@ export async function GET(req: NextRequest) {
             };
           });
 
-        // Generate smart subject line based on notification content
-        const emailSubject = generateSubjectLine(notifications, workspaceName);
+        if (batch.channel === 'push') {
+          if (!batch.user_id) {
+            throw new Error('Push batch missing user id');
+          }
 
-        // Capture send timestamp for delay detection
-        const sentAt = new Date().toISOString();
+          const { data: devices, error: devicesError } = await sbAdmin
+            .from('notification_push_devices')
+            .select('token')
+            .eq('user_id', batch.user_id);
 
-        // Render digest email template with time range info
-        const emailHtml = await render(
-          NotificationDigestEmail({
-            userName,
-            workspaceName,
-            notifications,
-            workspaceUrl,
-            windowStart: batch.window_start,
-            windowEnd: batch.window_end,
-            sentAt,
-          })
-        );
-
-        // Send email via centralized EmailService (bypasses rate limiting for system emails)
-        // EmailService handles dev mode internally
-        const result = await sendSystemEmail({
-          recipients: { to: [userEmail] },
-          content: {
-            subject: emailSubject,
-            html: emailHtml,
-          },
-          source: {
-            name: 'Tuturuuu',
-            email: 'notifications@tuturuuu.com',
-          },
-          metadata: {
-            templateType: 'notification-digest',
-            entityType: 'batch',
-            entityId: batch.id,
-          },
-        });
-
-        if (!result.success) {
-          // Check for blocked recipients
-          if (result.blockedRecipients && result.blockedRecipients.length > 0) {
+          if (devicesError) {
             throw new Error(
-              `Email blocked: ${result.blockedRecipients[0]?.reason || 'unknown'}`
+              `Failed to load push devices: ${devicesError.message}`
             );
           }
-          throw new Error(result.error || 'Failed to send email');
-        }
 
-        // Mark all delivery logs as sent
-        await sbAdmin
-          .from('notification_delivery_log')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('batch_id', batch.id)
-          .eq('status', 'pending');
+          if (!devices || devices.length === 0) {
+            throw new Error('No registered push devices found for batch');
+          }
 
-        // Mark batch as sent
-        await sbAdmin
-          .from('notification_batches')
-          .update({
+          const latestNotification = deliveryLogs[0]!.notifications!;
+          const latestNotificationData =
+            latestNotification.data &&
+            typeof latestNotification.data === 'object'
+              ? latestNotification.data
+              : {};
+          const pushNotification = {
+            ...latestNotification,
+            entity_type: null,
+            entity_id: null,
+            data: {
+              ...latestNotificationData,
+              board_id: null,
+            },
+          };
+
+          const pushResult = await sendPushNotificationBatch({
+            notification: pushNotification,
+            devices,
+          });
+
+          await cleanupInvalidPushTokens(sbAdmin, pushResult.invalidTokens);
+
+          if (pushResult.deliveredCount === 0) {
+            throw new Error('Failed to deliver batched push notification');
+          }
+
+          await markDeliveryLogsSent(sbAdmin, batch.id);
+          await markBatchSent(sbAdmin, batch.id, notifications.length);
+
+          results.push({
+            batch_id: batch.id,
             status: 'sent',
-            sent_at: new Date().toISOString(),
+            channel: 'push',
+            delivered_count: pushResult.deliveredCount,
             notification_count: notifications.length,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', batch.id);
+          });
+        } else {
+          let userEmail: string;
+          let userName: string;
 
-        results.push({
-          batch_id: batch.id,
-          status: 'sent',
-          email: userEmail,
-          notification_count: notifications.length,
-        });
+          if (batch.user_id) {
+            const { data: user } = await sbAdmin
+              .from('users')
+              .select('email:user_private_details(email), display_name')
+              .eq('id', batch.user_id)
+              .single();
+
+            const emailData = user?.email as unknown as Array<{
+              email: string;
+            }>;
+            userEmail = emailData?.[0]?.email || batch.email || '';
+            userName = user?.display_name || userEmail;
+          } else {
+            userEmail = batch.email || '';
+            userName = userEmail;
+          }
+
+          if (!userEmail) {
+            throw new Error('No email address found for batch');
+          }
+
+          let workspaceName = 'Tuturuuu';
+          let workspaceUrl =
+            process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
+
+          if (batch.ws_id) {
+            const { data: workspace } = await sbAdmin
+              .from('workspaces')
+              .select('name')
+              .eq('id', batch.ws_id)
+              .single();
+
+            if (workspace) {
+              workspaceName = workspace.name || 'Unknown Workspace';
+              workspaceUrl = `${workspaceUrl}/${batch.ws_id}`;
+            }
+          }
+
+          if (!workspaceUrl) {
+            workspaceUrl = 'https://tuturuuu.com';
+          }
+
+          const emailSubject = generateSubjectLine(
+            notifications,
+            workspaceName
+          );
+          const sentAt = new Date().toISOString();
+          const emailHtml = await render(
+            NotificationDigestEmail({
+              userName,
+              workspaceName,
+              notifications,
+              workspaceUrl,
+              windowStart: batch.window_start,
+              windowEnd: batch.window_end,
+              sentAt,
+            })
+          );
+
+          const result = await sendSystemEmail({
+            recipients: { to: [userEmail] },
+            content: {
+              subject: emailSubject,
+              html: emailHtml,
+            },
+            source: {
+              name: 'Tuturuuu',
+              email: 'notifications@tuturuuu.com',
+            },
+            metadata: {
+              templateType: 'notification-digest',
+              entityType: 'batch',
+              entityId: batch.id,
+            },
+          });
+
+          if (!result.success) {
+            if (
+              result.blockedRecipients &&
+              result.blockedRecipients.length > 0
+            ) {
+              throw new Error(
+                `Email blocked: ${result.blockedRecipients[0]?.reason || 'unknown'}`
+              );
+            }
+            throw new Error(result.error || 'Failed to send email');
+          }
+
+          await markDeliveryLogsSent(sbAdmin, batch.id);
+          await markBatchSent(sbAdmin, batch.id, notifications.length);
+
+          results.push({
+            batch_id: batch.id,
+            status: 'sent',
+            channel: 'email',
+            email: userEmail,
+            notification_count: notifications.length,
+          });
+        }
         processedCount++;
       } catch (error) {
         console.error(`Error processing batch ${batch.id}:`, error);
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
 
-        // Mark batch as failed
-        await sbAdmin
-          .from('notification_batches')
-          .update({
-            status: 'failed',
-            error_message:
-              error instanceof Error ? error.message : 'Unknown error',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', batch.id);
-
-        // Mark delivery logs as failed and increment retry_count
-        // Note: Supabase doesn't support .raw() - we'll increment in a separate query
-        const { data: failedLogs } = await sbAdmin
-          .from('notification_delivery_log')
-          .select('id, retry_count')
-          .eq('batch_id', batch.id)
-          .eq('status', 'pending');
-
-        if (failedLogs) {
-          for (const log of failedLogs) {
-            await sbAdmin
-              .from('notification_delivery_log')
-              .update({
-                status: 'failed',
-                error_message:
-                  error instanceof Error ? error.message : 'Unknown error',
-                retry_count: (log.retry_count || 0) + 1,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', log.id);
-          }
-        }
+        await markBatchFailed(sbAdmin, batch.id, errorMessage);
 
         results.push({
           batch_id: batch.id,
           status: 'failed',
-          error: error instanceof Error ? error.message : 'Unknown error',
+          channel: batch.channel,
+          error: errorMessage,
         });
         failedCount++;
       }

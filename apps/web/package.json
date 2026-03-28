@@ -115,6 +115,7 @@
     "dayjs": "^1.11.20",
     "dompurify": "^3.3.3",
     "eventemitter3": "^5.0.4",
+    "firebase-admin": "^13.7.0",
     "framer-motion": "^12.38.0",
     "html2canvas-pro": "^2.0.2",
     "isomorphic-dompurify": "^3.7.1",

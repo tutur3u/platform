@@ -386,6 +386,79 @@ async function processEmailWithContext(
   return { id: row.id, status: 'sent' };
 }
 
+export async function sendPostEmailImmediately(
+  sbAdmin: TypedSupabaseClient,
+  {
+    wsId,
+    groupId,
+    postId,
+    userId,
+    senderPlatformUserId,
+  }: {
+    wsId: string;
+    groupId: string;
+    postId: string;
+    userId: string;
+    senderPlatformUserId: string;
+  }
+): Promise<BatchProcessResult> {
+  const now = new Date().toISOString();
+
+  const { data: existingRow, error: existingRowError } = await getQueueTable(
+    sbAdmin
+  )
+    .select('*')
+    .eq('post_id', postId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existingRowError) throw existingRowError;
+
+  const nextAttemptCount =
+    (existingRow?.attempt_count && existingRow.attempt_count > 0
+      ? existingRow.attempt_count
+      : 0) + 1;
+
+  const { data: upsertedRows, error: upsertError } = await getQueueTable(
+    sbAdmin
+  )
+    .upsert(
+      [
+        {
+          ws_id: wsId,
+          group_id: groupId,
+          post_id: postId,
+          user_id: userId,
+          sender_platform_user_id: senderPlatformUserId,
+          status: 'processing',
+          batch_id: null,
+          attempt_count: nextAttemptCount,
+          last_error: null,
+          blocked_reason: null,
+          claimed_at: now,
+          last_attempt_at: now,
+          sent_at: null,
+          cancelled_at: null,
+          sent_email_id: null,
+        },
+      ],
+      {
+        onConflict: 'post_id,user_id',
+      }
+    )
+    .select('*');
+
+  if (upsertError) throw upsertError;
+
+  const queueRow = upsertedRows?.[0];
+  if (!queueRow) {
+    throw new Error('Failed to create immediate-send queue row');
+  }
+
+  const prefetch = await prefetchBatchData(sbAdmin, [queueRow]);
+  return processEmailWithContext(sbAdmin, queueRow, prefetch);
+}
+
 async function normalizeQueueError(
   sbAdmin: TypedSupabaseClient,
   row: PostEmailQueueRow,
