@@ -37,6 +37,13 @@ import {
 
 const PREFETCH_QUERY_CHUNK_SIZE = 200;
 
+export function buildPostEmailSubject(
+  createdAt: string,
+  username: string
+): string {
+  return `Easy Center | Báo cáo tiến độ ngày ${dayjs(createdAt).format('DD/MM/YYYY')} của ${username}`;
+}
+
 function getWorkspaceGroupName(
   workspaceGroup:
     | Pick<WorkspaceUserGroupRow, 'ws_id' | 'name'>
@@ -299,9 +306,10 @@ async function processEmailWithContext(
     return { id: row.id, status: 'failed' };
   }
 
-  const subject = `Easy Center | Bao cao tien do ngay ${dayjs(
-    context.post.created_at
-  ).format('DD/MM/YYYY')} cua ${context.recipient.username}`;
+  const subject = buildPostEmailSubject(
+    context.post.created_at,
+    context.recipient.username
+  );
 
   const htmlContent = await render(
     PostEmailTemplate({

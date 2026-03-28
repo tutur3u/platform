@@ -21,11 +21,11 @@
     },
     {
       "path": "/api/cron/process-post-email-queue",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/30 * * * *"
     },
     {
       "path": "/api/cron/calendar/provider-sync",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/45 * * * *"
     },
     {
       "path": "/api/cron/calendar/smart-schedule",
@@ -33,7 +33,7 @@
     },
     {
       "path": "/api/cron/tasks/deadline-reminders",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }

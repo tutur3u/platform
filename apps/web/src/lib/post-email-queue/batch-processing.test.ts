@@ -33,6 +33,7 @@ vi.mock(
 );
 
 import { sendPostEmailImmediately } from '@/lib/post-email-queue';
+import { buildPostEmailSubject } from './batch-processing';
 
 const WS_ID = 'ws-1';
 const GROUP_ID = 'group-1';
@@ -219,5 +220,11 @@ describe('sendPostEmailImmediately', () => {
         status: 'skipped',
       })
     );
+  });
+
+  it('builds the post email subject with accented Vietnamese', () => {
+    expect(
+      buildPostEmailSubject('2026-03-08T00:00:00.000Z', 'Võ Bảo Ngọc 2')
+    ).toBe('Easy Center | Báo cáo tiến độ ngày 08/03/2026 của Võ Bảo Ngọc 2');
   });
 });
