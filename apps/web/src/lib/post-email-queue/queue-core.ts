@@ -41,6 +41,7 @@ import type {
   QueueSkipUpdate,
   ReconcileOrphanedApprovedPostEmailsRpcRow,
   ReconcileOrphanedApprovedPostsDiagnostics,
+  ReconcileOrphanedApprovedPostsResult,
   SentReceiverRow,
   WorkspaceUserGroupRow,
   WorkspaceUserLinkedUserRow,
@@ -159,11 +160,7 @@ export function mapPostEmailQueueStatusSummaryRpcRow(
 
 function mapReconcileRpcRowToResult(
   row: ReconcileOrphanedApprovedPostEmailsRpcRow | null | undefined
-): {
-  checked: number;
-  diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
-  enqueued: number;
-} {
+): ReconcileOrphanedApprovedPostsResult {
   const checked = row?.checked ?? 0;
 
   return {
@@ -186,6 +183,8 @@ function mapReconcileRpcRowToResult(
       upserted: row?.upserted ?? 0,
     },
     enqueued: row?.enqueued ?? 0,
+    processedPosts: row?.processed_posts ?? 0,
+    remainingPosts: row?.remaining_posts ?? 0,
   };
 }
 
@@ -1107,11 +1106,7 @@ async function reconcileOrphanedApprovedPostsInApp(
   }: {
     maxPosts?: number;
   } = {}
-): Promise<{
-  checked: number;
-  diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
-  enqueued: number;
-}> {
+): Promise<ReconcileOrphanedApprovedPostsResult> {
   const cutoff = getPostEmailMaxAgeCutoff();
   const checks = await fetchAllPaginatedRows<OrphanedApprovedCheckRow>(
     (from, to) =>
@@ -1143,6 +1138,8 @@ async function reconcileOrphanedApprovedPostsInApp(
       checked: 0,
       diagnostics: createEmptyReconciliationDiagnostics(0),
       enqueued: 0,
+      processedPosts: 0,
+      remainingPosts: 0,
     };
   }
 
@@ -1261,6 +1258,8 @@ async function reconcileOrphanedApprovedPostsInApp(
       checked: checks.length,
       diagnostics,
       enqueued: 0,
+      processedPosts: 0,
+      remainingPosts: 0,
     };
   }
 
@@ -1327,6 +1326,8 @@ async function reconcileOrphanedApprovedPostsInApp(
     checked: checks.length,
     diagnostics,
     enqueued: totalEnqueued,
+    processedPosts,
+    remainingPosts: Math.max(0, byPost.size - processedPosts),
   };
 }
 
@@ -1339,11 +1340,7 @@ export async function reconcileOrphanedApprovedPosts(
     maxPosts?: number;
     wsId?: string;
   } = {}
-): Promise<{
-  checked: number;
-  diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
-  enqueued: number;
-}> {
+): Promise<ReconcileOrphanedApprovedPostsResult> {
   const rpcClient = getRpcClient(sbAdmin);
   const cutoff = getPostEmailMaxAgeCutoff();
 

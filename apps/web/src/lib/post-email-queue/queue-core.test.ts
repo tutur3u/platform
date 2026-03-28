@@ -325,6 +325,8 @@ describe('enqueueApprovedPostEmails', () => {
         upserted: 2,
       },
       enqueued: 2,
+      processedPosts: 2,
+      remainingPosts: 5,
     });
   });
 });

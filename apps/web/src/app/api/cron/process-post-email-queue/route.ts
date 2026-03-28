@@ -270,6 +270,8 @@ export async function GET(req: NextRequest) {
       reconciliationOptions,
       enqueued: reconciliation.enqueued,
       checked: reconciliation.checked,
+      processedPosts: reconciliation.processedPosts,
+      remainingPosts: reconciliation.remainingPosts,
       diagnostics: reconciliation.diagnostics,
     });
 

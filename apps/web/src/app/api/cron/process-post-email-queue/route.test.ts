@@ -160,6 +160,8 @@ describe('process-post-email-queue cron route', () => {
         upserted: 0,
       },
       enqueued: 0,
+      processedPosts: 2,
+      remainingPosts: 5,
     });
 
     const response = await GET(
@@ -204,6 +206,8 @@ describe('process-post-email-queue cron route', () => {
       reconciliation: {
         checked: 4,
         enqueued: 0,
+        processedPosts: 2,
+        remainingPosts: 5,
       },
     });
 
@@ -240,6 +244,8 @@ describe('process-post-email-queue cron route', () => {
         upserted: 101,
       },
       enqueued: 101,
+      processedPosts: 75,
+      remainingPosts: 0,
     });
     processPostEmailQueueBatchMock.mockResolvedValue({
       claimed: 50,
@@ -280,6 +286,8 @@ describe('process-post-email-queue cron route', () => {
       reconciliation: {
         checked: 1001,
         enqueued: 101,
+        processedPosts: 75,
+        remainingPosts: 0,
       },
     });
 

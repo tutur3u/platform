@@ -259,6 +259,14 @@ export type ReconcileOrphanedApprovedPostsDiagnostics = {
   upserted: number;
 };
 
+export type ReconcileOrphanedApprovedPostsResult = {
+  checked: number;
+  diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
+  enqueued: number;
+  processedPosts: number;
+  remainingPosts: number;
+};
+
 export type ReconcileOrphanedApprovedPostEmailsRpcRow = {
   already_sent: number | null;
   checked: number | null;
