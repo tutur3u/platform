@@ -6,11 +6,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 
-export class WorkspaceSummaryUnauthorizedError extends Error {
-  constructor() {
-    super('Unauthorized');
-  }
-}
+const WORKSPACE_SUMMARY_UNAUTHORIZED = 'WORKSPACE_SUMMARY_UNAUTHORIZED';
 
 function normalizeWorkspaceTier(
   tier: string | null | undefined
@@ -77,7 +73,7 @@ export async function fetchWorkspaceSummaries({
 
   if (!user) {
     if (requireAuth) {
-      throw new WorkspaceSummaryUnauthorizedError();
+      throw new Error(WORKSPACE_SUMMARY_UNAUTHORIZED);
     }
     return [];
   }
