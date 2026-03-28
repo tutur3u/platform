@@ -65,7 +65,10 @@ export type WorkspaceUser = Tables<'workspace_users'>;
 export type InternalApiWorkspaceSummary = Pick<
   Workspace,
   'id' | 'name' | 'personal' | 'avatar_url' | 'logo_url'
->;
+> & {
+  tier?: Database['public']['Enums']['workspace_product_tier'] | null;
+  created_by_me?: boolean;
+};
 export type InternalApiWorkspaceMember = Pick<
   WorkspaceUser,
   'id' | 'display_name' | 'email' | 'avatar_url'
