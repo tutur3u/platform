@@ -13,7 +13,7 @@
     },
     {
       "path": "/api/cron/payment/products",
-      "schedule": "0 * * * *"
+      "schedule": "0 */12 * * *"
     },
     {
       "path": "/api/cron/process-notification-batches",
@@ -25,15 +25,15 @@
     },
     {
       "path": "/api/cron/calendar/provider-sync",
-      "schedule": "*/45 * * * *"
+      "schedule": "0 */12 * * *"
     },
     {
       "path": "/api/cron/calendar/smart-schedule",
-      "schedule": "0 * * * *"
+      "schedule": "0 */6 * * *"
     },
     {
       "path": "/api/cron/tasks/deadline-reminders",
-      "schedule": "0 * * * *"
+      "schedule": "0 */4 * * *"
     }
   ]
 }
