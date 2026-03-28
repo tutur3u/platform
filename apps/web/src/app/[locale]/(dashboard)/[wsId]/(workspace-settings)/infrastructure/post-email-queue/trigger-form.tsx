@@ -21,7 +21,10 @@ type TriggerDiagnostics = {
     sent: number;
   };
   reconciliationDiagnostics?: {
+    alreadySent: number;
     checked: number;
+    existingSkipped: number;
+    missingEmail: number;
     missingSenderPlatformUser: number;
     orphaned: number;
     upserted: number;
@@ -172,9 +175,24 @@ export function TriggerForm() {
               </p>
               <p className="mt-3 font-medium">{t('reconciliation')}</p>
               <p>
+                {t('already_sent')}:&nbsp;
+                {result.data.diagnostics?.reconciliationDiagnostics
+                  ?.alreadySent ?? 0}
+              </p>
+              <p>
                 {t('checked')}:&nbsp;
                 {result.data.diagnostics?.reconciliationDiagnostics?.checked ??
                   0}
+              </p>
+              <p>
+                {t('existing_skipped')}:&nbsp;
+                {result.data.diagnostics?.reconciliationDiagnostics
+                  ?.existingSkipped ?? 0}
+              </p>
+              <p>
+                {t('missing_email')}:&nbsp;
+                {result.data.diagnostics?.reconciliationDiagnostics
+                  ?.missingEmail ?? 0}
               </p>
               <p>
                 {t('orphaned')}:&nbsp;

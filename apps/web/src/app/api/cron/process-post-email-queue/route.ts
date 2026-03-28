@@ -14,6 +14,7 @@ import {
 } from '@/lib/post-email-queue';
 
 const LOG_PREFIX = '[PostEmailQueueCron]';
+const POST_EMAIL_SELECT_PAGE_SIZE = 1000;
 
 type QueueStatusSummary = {
   blocked: number;
@@ -42,25 +43,39 @@ function createEmptyQueueStatusSummary(): QueueStatusSummary {
 async function getQueueStatusSummary(
   sbAdmin: TypedSupabaseClient
 ): Promise<QueueStatusSummary> {
-  const { data, error } = await sbAdmin
-    .from('post_email_queue')
-    .select('status');
-
-  if (error) {
-    throw error;
-  }
-
   const summary = createEmptyQueueStatusSummary();
+  let from = 0;
 
-  for (const row of (data ?? []) as Array<Pick<PostEmailQueueRow, 'status'>>) {
-    summary.total++;
-    if (row.status === 'queued') summary.queued++;
-    else if (row.status === 'processing') summary.processing++;
-    else if (row.status === 'sent') summary.sent++;
-    else if (row.status === 'failed') summary.failed++;
-    else if (row.status === 'blocked') summary.blocked++;
-    else if (row.status === 'cancelled') summary.cancelled++;
-    else if (row.status === 'skipped') summary.skipped++;
+  while (true) {
+    const to = from + POST_EMAIL_SELECT_PAGE_SIZE - 1;
+    const { data, error } = await sbAdmin
+      .from('post_email_queue')
+      .select('status')
+      .order('id', { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const rows = (data ?? []) as Array<Pick<PostEmailQueueRow, 'status'>>;
+
+    for (const row of rows) {
+      summary.total++;
+      if (row.status === 'queued') summary.queued++;
+      else if (row.status === 'processing') summary.processing++;
+      else if (row.status === 'sent') summary.sent++;
+      else if (row.status === 'failed') summary.failed++;
+      else if (row.status === 'blocked') summary.blocked++;
+      else if (row.status === 'cancelled') summary.cancelled++;
+      else if (row.status === 'skipped') summary.skipped++;
+    }
+
+    if (rows.length < POST_EMAIL_SELECT_PAGE_SIZE) {
+      break;
+    }
+
+    from += POST_EMAIL_SELECT_PAGE_SIZE;
   }
 
   return summary;

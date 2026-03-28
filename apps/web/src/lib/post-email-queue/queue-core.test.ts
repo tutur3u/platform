@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enqueueApprovedPostEmails } from './queue-core';
+import { enqueueApprovedPostEmails, fetchAllPaginatedRows } from './queue-core';
 import { POST_EMAIL_QUERY_CHUNK_SIZE } from './utils';
 
 const APPROVER_ID = 'approver-1';
@@ -10,7 +10,9 @@ const WS_ID = 'ws-1';
 
 type MockState = {
   allCheckChunks: number[];
+  existingQueueRows: Array<{ id: string; status: string; user_id: string }>;
   sentReceiverChunks: number[];
+  sentReceiverIds: string[];
   upsertRows: Array<Record<string, unknown>>;
   userCheckChunks: number[];
 };
@@ -57,10 +59,18 @@ function createMockQueryBuilder(
       }
 
       case 'sent_emails':
-        return { data: [], error: null };
+        return {
+          data: state.sentReceiverIds.map((receiverId) => ({
+            receiver_id: receiverId,
+          })),
+          error: null,
+        };
 
       case 'post_email_queue':
-        return { data: [], error: null };
+        return {
+          data: state.existingQueueRows,
+          error: null,
+        };
 
       case 'workspace_user_linked_users':
         return {
@@ -163,6 +173,8 @@ function createMockQueryBuilder(
 function createMockAdminClient(userIds: string[]) {
   const state: MockState = {
     allCheckChunks: [],
+    existingQueueRows: [],
+    sentReceiverIds: [],
     sentReceiverChunks: [],
     upsertRows: [],
     userCheckChunks: [],
@@ -177,6 +189,20 @@ function createMockAdminClient(userIds: string[]) {
 }
 
 describe('enqueueApprovedPostEmails', () => {
+  it('collects paginated select results beyond the first 1000 rows', async () => {
+    const rows = await fetchAllPaginatedRows<number>(async (from, to) => ({
+      data: Array.from(
+        { length: Math.max(0, Math.min(1001, to + 1) - from) },
+        (_, index) => from + index
+      ),
+      error: null,
+    }));
+
+    expect(rows).toHaveLength(1001);
+    expect(rows[0]).toBe(0);
+    expect(rows.at(-1)).toBe(1000);
+  });
+
   it('chunks large user cohorts before querying checks and sent email coverage', async () => {
     const userIds = Array.from(
       { length: POST_EMAIL_QUERY_CHUNK_SIZE + 7 },
@@ -196,5 +222,35 @@ describe('enqueueApprovedPostEmails', () => {
     expect(state.allCheckChunks).toEqual([POST_EMAIL_QUERY_CHUNK_SIZE, 7]);
     expect(state.sentReceiverChunks).toEqual([POST_EMAIL_QUERY_CHUNK_SIZE, 7]);
     expect(state.upsertRows).toHaveLength(userIds.length);
+  });
+
+  it('requeues eligible recipients when the existing queue row is skipped', async () => {
+    const userId = 'user-1';
+    const { sbAdmin, state } = createMockAdminClient([userId]);
+    state.existingQueueRows = [
+      {
+        id: 'queue-1',
+        status: 'skipped',
+        user_id: userId,
+      },
+    ];
+
+    const result = await enqueueApprovedPostEmails(sbAdmin as never, {
+      groupId: GROUP_ID,
+      postId: POST_ID,
+      userIds: [userId],
+      wsId: WS_ID,
+    });
+
+    expect(result.queued).toBe(1);
+    expect(result.diagnostics.upserted).toBe(1);
+    expect(result.diagnostics.existingSkipped).toBe(0);
+    expect(state.upsertRows).toEqual([
+      expect.objectContaining({
+        post_id: POST_ID,
+        status: 'queued',
+        user_id: userId,
+      }),
+    ]);
   });
 });
