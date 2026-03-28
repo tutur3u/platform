@@ -38,6 +38,8 @@ interface NotificationData {
   data: Record<string, any>;
   created_at: string;
   ws_id?: string | null;
+  user_id?: string | null;
+  scope?: string | null;
   entity_type?: string | null;
   entity_id?: string | null;
 }
@@ -68,12 +70,19 @@ interface EmailConfigData {
 }
 
 interface DeliveryLogWithNotification {
+  id: string;
   batch_id: string;
   notification_id: string;
   notifications: NotificationData | null;
 }
 
-async function markDeliveryLogsSent(sbAdmin: any, batchId: string) {
+const NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+async function markDeliveryLogsSent(sbAdmin: any, logIds: string[]) {
+  if (logIds.length === 0) {
+    return;
+  }
+
   await sbAdmin
     .from('notification_delivery_log')
     .update({
@@ -81,7 +90,29 @@ async function markDeliveryLogsSent(sbAdmin: any, batchId: string) {
       sent_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('batch_id', batchId)
+    .in('id', logIds)
+    .eq('status', 'pending');
+}
+
+async function markDeliveryLogsSkipped(
+  sbAdmin: any,
+  logs: DeliveryLogWithNotification[],
+  reason: string
+) {
+  const logIds = logs.map((log) => log.id).filter(Boolean);
+  if (logIds.length === 0) {
+    return;
+  }
+
+  await sbAdmin
+    .from('notification_delivery_log')
+    .update({
+      error_message: reason,
+      sent_at: new Date().toISOString(),
+      status: 'sent',
+      updated_at: new Date().toISOString(),
+    })
+    .in('id', logIds)
     .eq('status', 'pending');
 }
 
@@ -144,6 +175,50 @@ async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
   if (error) {
     console.error('Failed to delete invalid push tokens:', error);
   }
+}
+
+function getAgeSkipReason(notification: NotificationData): string | null {
+  const createdAt = new Date(notification.created_at);
+  if (Number.isNaN(createdAt.getTime())) {
+    return null;
+  }
+
+  return Date.now() - createdAt.getTime() > NOTIFICATION_MAX_AGE_MS
+    ? 'skipped: older_than_1_day'
+    : null;
+}
+
+async function getSkipReason(
+  sbAdmin: any,
+  notification: NotificationData
+): Promise<string | null> {
+  const ageReason = getAgeSkipReason(notification);
+  if (ageReason) {
+    return ageReason;
+  }
+
+  if (
+    notification.scope !== 'workspace' ||
+    !notification.user_id ||
+    !notification.ws_id
+  ) {
+    return null;
+  }
+
+  const { data: membership, error } = await sbAdmin
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', notification.ws_id)
+    .eq('user_id', notification.user_id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `Failed to verify workspace membership for notification ${notification.id}: ${error.message}`
+    );
+  }
+
+  return membership ? null : 'skipped: stale_workspace_membership';
 }
 
 // Render the appropriate email template based on type
@@ -386,6 +461,7 @@ export async function POST(req: NextRequest) {
       .from('notification_delivery_log')
       .select(
         `
+        id,
         batch_id,
         notification_id,
         notifications (
@@ -397,6 +473,8 @@ export async function POST(req: NextRequest) {
           data,
           created_at,
           ws_id,
+          user_id,
+          scope,
           entity_type,
           entity_id
         )
@@ -547,9 +625,53 @@ export async function POST(req: NextRequest) {
           processedCount++;
           continue;
         }
-        const notification = deliveryLogs[0]?.notifications as NotificationData;
-        if (!notification) {
+        if (!deliveryLogs[0]?.notifications) {
           throw new Error('No notification found in delivery log');
+        }
+
+        const deliverableLogs: DeliveryLogWithNotification[] = [];
+        const skippedByReason = new Map<
+          string,
+          DeliveryLogWithNotification[]
+        >();
+
+        for (const log of deliveryLogs) {
+          const logNotification = log.notifications as NotificationData | null;
+          if (!logNotification) {
+            continue;
+          }
+
+          const skipReason = await getSkipReason(sbAdmin, logNotification);
+          if (skipReason) {
+            const existing = skippedByReason.get(skipReason) || [];
+            existing.push(log);
+            skippedByReason.set(skipReason, existing);
+            continue;
+          }
+
+          deliverableLogs.push(log);
+        }
+
+        for (const [reason, logs] of skippedByReason.entries()) {
+          await markDeliveryLogsSkipped(sbAdmin, logs, reason);
+        }
+
+        const skippedCount = [...skippedByReason.values()].reduce(
+          (count, logs) => count + logs.length,
+          0
+        );
+
+        if (deliverableLogs.length === 0) {
+          await markBatchSent(sbAdmin, batch.id, skippedCount);
+
+          results.push({
+            batch_id: batch.id,
+            status: 'skipped',
+            channel: batch.channel,
+            delivered_count: 0,
+          });
+          processedCount++;
+          continue;
         }
 
         if (batch.channel === 'push') {
@@ -563,7 +685,7 @@ export async function POST(req: NextRequest) {
           }
 
           const pushResult = await sendPushNotificationBatch({
-            notification,
+            notification: deliverableLogs[0]!.notifications as NotificationData,
             devices,
           });
 
@@ -573,8 +695,15 @@ export async function POST(req: NextRequest) {
             throw new Error('Failed to deliver push notification');
           }
 
-          await markDeliveryLogsSent(sbAdmin, batch.id);
-          await markBatchSent(sbAdmin, batch.id, deliveryLogs.length);
+          await markDeliveryLogsSent(
+            sbAdmin,
+            deliverableLogs.map((log) => log.id)
+          );
+          await markBatchSent(
+            sbAdmin,
+            batch.id,
+            deliverableLogs.length + skippedCount
+          );
 
           results.push({
             batch_id: batch.id,
@@ -607,7 +736,10 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          const notifType = notification.type || notification.code || '';
+          const deliverableNotification = deliverableLogs[0]!
+            .notifications as NotificationData;
+          const notifType =
+            deliverableNotification.type || deliverableNotification.code || '';
           const config = emailConfigsMap.get(notifType);
 
           let emailHtml: string;
@@ -616,7 +748,7 @@ export async function POST(req: NextRequest) {
           if (config?.email_template) {
             const templateResult = await renderEmailTemplate({
               templateType: config.email_template as EmailTemplateType,
-              notification,
+              notification: deliverableNotification,
               userName,
               workspaceName,
             });
@@ -629,12 +761,12 @@ export async function POST(req: NextRequest) {
                 workspaceName,
                 notifications: [
                   {
-                    id: notification.id,
-                    type: notification.type,
-                    title: notification.title,
-                    description: notification.description ?? '',
-                    data: notification.data,
-                    createdAt: notification.created_at,
+                    id: deliverableNotification.id,
+                    type: deliverableNotification.type,
+                    title: deliverableNotification.title,
+                    description: deliverableNotification.description ?? '',
+                    data: deliverableNotification.data,
+                    createdAt: deliverableNotification.created_at,
                   },
                 ],
                 workspaceUrl:
@@ -658,7 +790,7 @@ export async function POST(req: NextRequest) {
             metadata: {
               templateType,
               entityType: 'notification',
-              entityId: notification.id,
+              entityId: deliverableNotification.id,
             },
           });
 
@@ -674,8 +806,15 @@ export async function POST(req: NextRequest) {
             throw new Error(result.error || 'Failed to send email');
           }
 
-          await markDeliveryLogsSent(sbAdmin, batch.id);
-          await markBatchSent(sbAdmin, batch.id, deliveryLogs.length);
+          await markDeliveryLogsSent(
+            sbAdmin,
+            deliverableLogs.map((log) => log.id)
+          );
+          await markBatchSent(
+            sbAdmin,
+            batch.id,
+            deliverableLogs.length + skippedCount
+          );
 
           results.push({
             batch_id: batch.id,

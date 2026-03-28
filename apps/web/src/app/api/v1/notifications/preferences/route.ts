@@ -36,6 +36,11 @@ const updateSchema = z.object({
         'task_project_unlinked',
         'task_assignee_removed',
         'deadline_reminder',
+        'time_tracking_request_submitted',
+        'time_tracking_request_resubmitted',
+        'time_tracking_request_approved',
+        'time_tracking_request_rejected',
+        'time_tracking_request_needs_info',
         // Workspace
         'workspace_invite',
       ]),

@@ -11,6 +11,12 @@ export type NotificationType =
   | 'task_assigned'
   | 'task_updated'
   | 'task_mention'
+  | 'deadline_reminder'
+  | 'time_tracking_request_submitted'
+  | 'time_tracking_request_resubmitted'
+  | 'time_tracking_request_approved'
+  | 'time_tracking_request_rejected'
+  | 'time_tracking_request_needs_info'
   | 'workspace_invite';
 
 export type NotificationChannel = 'web' | 'email' | 'sms' | 'push';

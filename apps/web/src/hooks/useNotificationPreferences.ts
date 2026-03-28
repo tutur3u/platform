@@ -25,6 +25,12 @@ export type NotificationEventType =
   | 'task_assignee_removed'
   // Deadline reminders
   | 'deadline_reminder'
+  // Time tracking requests
+  | 'time_tracking_request_submitted'
+  | 'time_tracking_request_resubmitted'
+  | 'time_tracking_request_approved'
+  | 'time_tracking_request_rejected'
+  | 'time_tracking_request_needs_info'
   // Workspace
   | 'workspace_invite';
 

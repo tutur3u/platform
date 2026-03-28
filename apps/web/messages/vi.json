@@ -6723,6 +6723,11 @@
         "task_start_date_changed": "Thay đổi ngày bắt đầu",
         "task_title_changed": "Thay đổi tiêu đề",
         "task_updated": "Cập nhật nhiệm vụ",
+        "time_tracking_request_approved": "Phê duyệt yêu cầu theo dõi thời gian",
+        "time_tracking_request_needs_info": "Yêu cầu theo dõi thời gian cần thêm thông tin",
+        "time_tracking_request_rejected": "Từ chối yêu cầu theo dõi thời gian",
+        "time_tracking_request_resubmitted": "Gửi lại yêu cầu theo dõi thời gian",
+        "time_tracking_request_submitted": "Yêu cầu theo dõi thời gian chờ phê duyệt",
         "workspace_activity": "Hoạt động không gian làm việc",
         "workspace_invite": "Lời mời không gian làm việc"
       },
@@ -6743,6 +6748,8 @@
         "task-relationships-description": "Thông báo về nhãn nhiệm vụ, dự án và thay đổi người được giao",
         "task-status-changes": "Thay đổi trạng thái nhiệm vụ",
         "task-status-changes-description": "Thông báo khi nhiệm vụ hoàn thành, mở lại hoặc di chuyển",
+        "time-tracking-requests": "Yêu cầu theo dõi thời gian",
+        "time-tracking-requests-description": "Thông báo khi mục theo dõi thời gian được gửi, gửi lại, phê duyệt, từ chối hoặc yêu cầu thêm thông tin",
         "workspace-events": "Sự kiện không gian làm việc",
         "workspace-events-description": "Thông báo về lời mời tham gia và cập nhật không gian làm việc"
       },
@@ -6800,6 +6807,11 @@
       "task_start_date_changed": "Thay đổi ngày bắt đầu",
       "task_title_changed": "Thay đổi tiêu đề",
       "task_updated": "Nhiệm vụ cập nhật",
+      "time_tracking_request_approved": "Yêu cầu theo dõi thời gian được phê duyệt",
+      "time_tracking_request_needs_info": "Yêu cầu theo dõi thời gian cần thêm thông tin",
+      "time_tracking_request_rejected": "Yêu cầu theo dõi thời gian bị từ chối",
+      "time_tracking_request_resubmitted": "Yêu cầu theo dõi thời gian được gửi lại",
+      "time_tracking_request_submitted": "Yêu cầu theo dõi thời gian được gửi",
       "workspace_invite": "Lời mời không gian làm việc"
     },
     "unified_view": "Gộp",

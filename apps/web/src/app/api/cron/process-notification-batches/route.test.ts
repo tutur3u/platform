@@ -40,18 +40,22 @@ function createResolvedChain<T>(result: T) {
     in: ReturnType<typeof vi.fn>;
     limit: ReturnType<typeof vi.fn>;
     lte: ReturnType<typeof vi.fn>;
+    maybeSingle: ReturnType<typeof vi.fn>;
     or: ReturnType<typeof vi.fn>;
     order: ReturnType<typeof vi.fn>;
     select: ReturnType<typeof vi.fn>;
+    single: ReturnType<typeof vi.fn>;
   };
 
   chain.eq = vi.fn(() => chain);
   chain.in = vi.fn(() => chain);
   chain.limit = vi.fn(() => Promise.resolve(result));
   chain.lte = vi.fn(() => chain);
+  chain.maybeSingle = vi.fn(() => Promise.resolve(result));
   chain.or = vi.fn(() => chain);
   chain.order = vi.fn(() => chain);
   chain.select = vi.fn(() => chain);
+  chain.single = vi.fn(() => Promise.resolve(result));
 
   return chain;
 }
@@ -59,6 +63,34 @@ function createResolvedChain<T>(result: T) {
 import { GET } from './route';
 
 describe('process-notification-batches push processor', () => {
+  let batch: {
+    channel: string;
+    email: null;
+    id: string;
+    user_id: string;
+    window_end: string;
+    window_start: string;
+    ws_id: string;
+  };
+  let deliveryLogs: Array<{
+    id: string;
+    notification_id: string;
+    notifications: {
+      created_at: string;
+      data: { board_id: string; workspace_id: string };
+      description: string;
+      entity_id: string;
+      entity_type: string;
+      id: string;
+      scope: string;
+      title: string;
+      type: string;
+      user_id: string;
+      ws_id: string;
+    };
+  }>;
+  let workspaceMembership: { user_id: string } | null;
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('CRON_SECRET', 'cron-secret');
@@ -67,7 +99,7 @@ describe('process-notification-batches push processor', () => {
       invalidTokens: ['stale-token'],
     });
 
-    const batch = {
+    batch = {
       channel: 'push',
       email: null,
       id: 'batch-1',
@@ -83,10 +115,20 @@ describe('process-notification-batches push processor', () => {
       entity_id: 'task-1',
       entity_type: 'task',
       id: 'notification-1',
+      scope: 'workspace',
       title: 'Security alert',
       type: 'security_alert',
+      user_id: 'user-1',
       ws_id: ROOT_WORKSPACE_ID,
     };
+    deliveryLogs = [
+      {
+        id: 'log-1',
+        notification_id: notification.id,
+        notifications: notification,
+      },
+    ];
+    workspaceMembership = { user_id: 'user-1' };
 
     mocks.fromMock.mockImplementation((table: string) => {
       switch (table) {
@@ -103,12 +145,7 @@ describe('process-notification-batches push processor', () => {
           return {
             select: vi.fn(() =>
               createResolvedChain({
-                data: [
-                  {
-                    notification_id: notification.id,
-                    notifications: notification,
-                  },
-                ],
+                data: deliveryLogs,
                 error: null,
               })
             ),
@@ -124,6 +161,15 @@ describe('process-notification-batches push processor', () => {
             select: vi.fn(() =>
               createResolvedChain({
                 data: [{ token: 'token-1' }, { token: 'stale-token' }],
+                error: null,
+              })
+            ),
+          };
+        case 'workspace_members':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: workspaceMembership,
                 error: null,
               })
             ),
@@ -175,5 +221,87 @@ describe('process-notification-batches push processor', () => {
     expect(mocks.pushDeleteInMock).toHaveBeenCalledWith('token', [
       'stale-token',
     ]);
+  });
+
+  it('sends valid notifications even when stale logs are skipped in the same batch', async () => {
+    deliveryLogs = [
+      deliveryLogs[0]!,
+      {
+        id: 'log-2',
+        notification_id: 'notification-2',
+        notifications: {
+          ...deliveryLogs[0]!.notifications,
+          created_at: '2026-03-26T00:00:00.000Z',
+          id: 'notification-2',
+          title: 'Old security alert',
+        },
+      },
+    ];
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/cron/process-notification-batches',
+        {
+          headers: {
+            authorization: 'Bearer cron-secret',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'push',
+          delivered_count: 1,
+          notification_count: 1,
+          status: 'sent',
+        }),
+      ],
+    });
+    expect(mocks.sendPushNotificationBatchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('drains fully stale batches as skipped', async () => {
+    deliveryLogs = [
+      {
+        ...deliveryLogs[0]!,
+        notifications: {
+          ...deliveryLogs[0]!.notifications,
+          created_at: '2026-03-26T00:00:00.000Z',
+        },
+      },
+    ];
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/cron/process-notification-batches',
+        {
+          headers: {
+            authorization: 'Bearer cron-secret',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      results: [
+        expect.objectContaining({
+          batch_id: 'batch-1',
+          channel: 'push',
+          notification_count: 1,
+          reason: 'all_notifications_skipped',
+          status: 'skipped',
+        }),
+      ],
+    });
+    expect(mocks.sendPushNotificationBatchMock).not.toHaveBeenCalled();
   });
 });

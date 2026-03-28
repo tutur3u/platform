@@ -6723,6 +6723,11 @@
         "task_start_date_changed": "Start date changes",
         "task_title_changed": "Title changes",
         "task_updated": "Task updates",
+        "time_tracking_request_approved": "Time tracking request approvals",
+        "time_tracking_request_needs_info": "Time tracking requests needing more info",
+        "time_tracking_request_rejected": "Time tracking request rejections",
+        "time_tracking_request_resubmitted": "Time tracking request resubmissions",
+        "time_tracking_request_submitted": "Time tracking requests awaiting approval",
         "workspace_activity": "Workspace activity",
         "workspace_invite": "Workspace invitations"
       },
@@ -6743,6 +6748,8 @@
         "task-relationships-description": "Notifications for task labels, projects, and assignee changes",
         "task-status-changes": "Task Status Changes",
         "task-status-changes-description": "Notifications when tasks are completed, reopened, or moved",
+        "time-tracking-requests": "Time Tracking Requests",
+        "time-tracking-requests-description": "Notifications for submitted, resubmitted, approved, rejected, or info-requested time tracking entries",
         "workspace-events": "Workspace Events",
         "workspace-events-description": "Notifications for workspace invitations and updates"
       },
@@ -6800,6 +6807,11 @@
       "task_start_date_changed": "Start Date Changed",
       "task_title_changed": "Title Changed",
       "task_updated": "Task Updated",
+      "time_tracking_request_approved": "Time Tracking Request Approved",
+      "time_tracking_request_needs_info": "Time Tracking Request Needs More Information",
+      "time_tracking_request_rejected": "Time Tracking Request Rejected",
+      "time_tracking_request_resubmitted": "Time Tracking Request Resubmitted",
+      "time_tracking_request_submitted": "Time Tracking Request Submitted",
       "workspace_invite": "Workspace Invite"
     },
     "unified_view": "Unified",

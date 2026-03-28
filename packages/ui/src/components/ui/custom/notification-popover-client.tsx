@@ -503,7 +503,11 @@ function NotificationCard({
     notification.entity_id &&
     notificationWsId
       ? `/${notificationWsId}/tasks/${notification.entity_id}`
-      : null;
+      : notification.entity_type === 'time_tracking_request' &&
+          notification.entity_id &&
+          notificationWsId
+        ? `/${notificationWsId}/time-tracker/requests`
+        : null;
 
   return (
     <div

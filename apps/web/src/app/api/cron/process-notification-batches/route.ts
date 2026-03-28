@@ -18,16 +18,101 @@ import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 // Set to false to allow emails for all workspaces
 const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
 
-async function markDeliveryLogsSent(sbAdmin: any, batchId: string) {
+async function markDeliveryLogsSentByIds(
+  sbAdmin: any,
+  logIds: string[],
+  batchId?: string
+) {
+  if (logIds.length === 0 && !batchId) {
+    return;
+  }
+
+  let query = sbAdmin.from('notification_delivery_log').update({
+    status: 'sent',
+    sent_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+
+  if (logIds.length > 0) {
+    query = query.in('id', logIds);
+  } else if (batchId) {
+    query = query.eq('batch_id', batchId);
+  }
+
+  await query.eq('status', 'pending');
+}
+
+async function markDeliveryLogsSkipped(
+  sbAdmin: any,
+  logIds: string[],
+  reason: string
+) {
+  if (logIds.length === 0) {
+    return;
+  }
+
   await sbAdmin
     .from('notification_delivery_log')
     .update({
-      status: 'sent',
+      error_message: reason,
       sent_at: new Date().toISOString(),
+      status: 'sent',
       updated_at: new Date().toISOString(),
     })
-    .eq('batch_id', batchId)
+    .in('id', logIds)
     .eq('status', 'pending');
+}
+
+const NOTIFICATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function getAgeSkipReason(notification: { created_at: string }): string | null {
+  const createdAt = new Date(notification.created_at);
+  if (Number.isNaN(createdAt.getTime())) {
+    return null;
+  }
+
+  return Date.now() - createdAt.getTime() > NOTIFICATION_MAX_AGE_MS
+    ? 'skipped: older_than_1_day'
+    : null;
+}
+
+async function getSkipReason(
+  sbAdmin: any,
+  notification: {
+    id: string;
+    scope?: string | null;
+    user_id?: string | null;
+    ws_id?: string | null;
+    created_at: string;
+  }
+) {
+  const ageReason = getAgeSkipReason(notification);
+  if (ageReason) {
+    return ageReason;
+  }
+
+  if (
+    notification.scope !== 'workspace' ||
+    !notification.user_id ||
+    !notification.ws_id
+  ) {
+    return null;
+  }
+
+  const { data: membership, error } = await sbAdmin
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', notification.ws_id)
+    .eq('user_id', notification.user_id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `Failed to verify workspace membership for notification ${notification.id}: ${error.message}`
+    );
+  }
+
+  return membership ? null : 'skipped: stale_workspace_membership';
 }
 
 async function markBatchSent(
@@ -247,6 +332,7 @@ export async function GET(req: NextRequest) {
           .select(
             `
             notification_id,
+            id,
             notifications (
               id,
               type,
@@ -255,6 +341,8 @@ export async function GET(req: NextRequest) {
               data,
               created_at,
               ws_id,
+              user_id,
+              scope,
               entity_type,
               entity_id
             )
@@ -278,7 +366,61 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
-        const notifications: NotificationItem[] = deliveryLogs
+        const deliverableLogs = [];
+        const skippedByReason = new Map<string, typeof deliveryLogs>();
+
+        for (const log of deliveryLogs) {
+          const notification = log.notifications as {
+            created_at: string;
+            id: string;
+            scope?: string | null;
+            user_id?: string | null;
+            ws_id?: string | null;
+          } | null;
+
+          if (!notification) {
+            continue;
+          }
+
+          const skipReason = await getSkipReason(sbAdmin, notification);
+          if (skipReason) {
+            const existing = skippedByReason.get(skipReason) || [];
+            existing.push(log);
+            skippedByReason.set(skipReason, existing);
+            continue;
+          }
+
+          deliverableLogs.push(log);
+        }
+
+        for (const [reason, logs] of skippedByReason.entries()) {
+          await markDeliveryLogsSkipped(
+            sbAdmin,
+            logs.map((log) => log.id),
+            reason
+          );
+        }
+
+        const skippedCount = [...skippedByReason.values()].reduce(
+          (count, logs) => count + logs.length,
+          0
+        );
+
+        if (deliverableLogs.length === 0) {
+          await markBatchSent(sbAdmin, batch.id, skippedCount);
+
+          results.push({
+            batch_id: batch.id,
+            status: 'skipped',
+            channel: batch.channel,
+            notification_count: skippedCount,
+            reason: 'all_notifications_skipped',
+          });
+          processedCount++;
+          continue;
+        }
+
+        const notifications: NotificationItem[] = deliverableLogs
           .map((log) => log.notifications)
           .filter(Boolean)
           .map((n) => {
@@ -321,7 +463,7 @@ export async function GET(req: NextRequest) {
             throw new Error('No registered push devices found for batch');
           }
 
-          const latestNotification = deliveryLogs[0]!.notifications!;
+          const latestNotification = deliverableLogs[0]!.notifications!;
           const latestNotificationData =
             latestNotification.data &&
             typeof latestNotification.data === 'object'
@@ -348,8 +490,15 @@ export async function GET(req: NextRequest) {
             throw new Error('Failed to deliver batched push notification');
           }
 
-          await markDeliveryLogsSent(sbAdmin, batch.id);
-          await markBatchSent(sbAdmin, batch.id, notifications.length);
+          await markDeliveryLogsSentByIds(
+            sbAdmin,
+            deliverableLogs.map((log) => log.id)
+          );
+          await markBatchSent(
+            sbAdmin,
+            batch.id,
+            notifications.length + skippedCount
+          );
 
           results.push({
             batch_id: batch.id,
@@ -450,8 +599,15 @@ export async function GET(req: NextRequest) {
             throw new Error(result.error || 'Failed to send email');
           }
 
-          await markDeliveryLogsSent(sbAdmin, batch.id);
-          await markBatchSent(sbAdmin, batch.id, notifications.length);
+          await markDeliveryLogsSentByIds(
+            sbAdmin,
+            deliverableLogs.map((log) => log.id)
+          );
+          await markBatchSent(
+            sbAdmin,
+            batch.id,
+            notifications.length + skippedCount
+          );
 
           results.push({
             batch_id: batch.id,

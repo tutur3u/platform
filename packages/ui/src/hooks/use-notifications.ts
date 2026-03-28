@@ -25,6 +25,7 @@ export type NotificationType =
   | 'task_project_linked'
   | 'task_project_unlinked'
   | 'task_assignee_removed'
+  | 'deadline_reminder'
   | 'workspace_invite'
   | 'system_announcement'
   | 'account_update'
@@ -32,7 +33,12 @@ export type NotificationType =
   | 'report_approved'
   | 'report_rejected'
   | 'post_approved'
-  | 'post_rejected';
+  | 'post_rejected'
+  | 'time_tracking_request_submitted'
+  | 'time_tracking_request_resubmitted'
+  | 'time_tracking_request_approved'
+  | 'time_tracking_request_rejected'
+  | 'time_tracking_request_needs_info';
 
 export interface NotificationActor {
   id: string;

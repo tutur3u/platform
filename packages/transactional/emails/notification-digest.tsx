@@ -19,10 +19,18 @@ export type NotificationType =
   | 'task_assigned'
   | 'task_updated'
   | 'task_completed'
+  | 'task_reopened'
+  | 'task_moved'
   | 'task_mention'
   | 'workspace_invite'
   | 'comment_added'
   | 'deadline_reminder'
+  | 'system_announcement'
+  | 'time_tracking_request_submitted'
+  | 'time_tracking_request_resubmitted'
+  | 'time_tracking_request_approved'
+  | 'time_tracking_request_rejected'
+  | 'time_tracking_request_needs_info'
   | 'general';
 
 // Category-based grouping for email display
@@ -31,6 +39,7 @@ export type NotificationCategory =
   | 'task_status' // completed, reopened, moved
   | 'task_updates' // field changes: title, description, priority, dates
   | 'task_relationships' // labels, projects, assignee removed
+  | 'time_tracking' // request submitted / reviewed
   | 'workspace' // invites
   | 'comments' // comment activity
   | 'deadlines' // deadline reminders
@@ -63,6 +72,11 @@ export const TYPE_TO_CATEGORY: Record<string, NotificationCategory> = {
   task_project_linked: 'task_relationships',
   task_project_unlinked: 'task_relationships',
   task_assignee_removed: 'task_relationships',
+  time_tracking_request_submitted: 'time_tracking',
+  time_tracking_request_resubmitted: 'time_tracking',
+  time_tracking_request_approved: 'time_tracking',
+  time_tracking_request_rejected: 'time_tracking',
+  time_tracking_request_needs_info: 'time_tracking',
 
   // Other
   workspace_invite: 'workspace',
@@ -153,6 +167,22 @@ export const NOTIFICATION_CONFIG: Record<
     priority: 4,
     actionVerb: 'View',
   },
+  task_reopened: {
+    label: 'Reopened',
+    emoji: '🔄',
+    color: '#059669',
+    bgColor: '#ecfdf5',
+    priority: 6,
+    actionVerb: 'View',
+  },
+  task_moved: {
+    label: 'Moved',
+    emoji: '↔️',
+    color: '#059669',
+    bgColor: '#ecfdf5',
+    priority: 6,
+    actionVerb: 'View',
+  },
   comment_added: {
     label: 'Comment',
     emoji: '💬',
@@ -160,6 +190,46 @@ export const NOTIFICATION_CONFIG: Record<
     bgColor: '#eef2ff',
     priority: 5,
     actionVerb: 'Reply',
+  },
+  time_tracking_request_submitted: {
+    label: 'Request Submitted',
+    emoji: '🕒',
+    color: '#2563eb',
+    bgColor: '#eff6ff',
+    priority: 5,
+    actionVerb: 'Review',
+  },
+  time_tracking_request_resubmitted: {
+    label: 'Request Resubmitted',
+    emoji: '🔄',
+    color: '#2563eb',
+    bgColor: '#eff6ff',
+    priority: 5,
+    actionVerb: 'Review',
+  },
+  time_tracking_request_approved: {
+    label: 'Request Approved',
+    emoji: '✅',
+    color: '#059669',
+    bgColor: '#ecfdf5',
+    priority: 5,
+    actionVerb: 'View',
+  },
+  time_tracking_request_rejected: {
+    label: 'Request Rejected',
+    emoji: '⛔',
+    color: '#dc2626',
+    bgColor: '#fef2f2',
+    priority: 5,
+    actionVerb: 'View',
+  },
+  time_tracking_request_needs_info: {
+    label: 'More Info Needed',
+    emoji: '❓',
+    color: '#d97706',
+    bgColor: '#fffbeb',
+    priority: 5,
+    actionVerb: 'View',
   },
   task_completed: {
     label: 'Completed',
@@ -176,6 +246,14 @@ export const NOTIFICATION_CONFIG: Record<
     bgColor: '#f5f3ff',
     priority: 7,
     actionVerb: 'View',
+  },
+  system_announcement: {
+    label: 'Announcement',
+    emoji: '📢',
+    color: '#7c3aed',
+    bgColor: '#f5f3ff',
+    priority: 8,
+    actionVerb: 'Read',
   },
   general: {
     label: 'Update',
@@ -215,12 +293,20 @@ export const CATEGORY_CONFIG: Record<
     priority: 2,
     actionVerb: 'View',
   },
+  time_tracking: {
+    label: 'Time Tracking Requests',
+    emoji: '🕒',
+    color: '#2563eb',
+    bgColor: '#eff6ff',
+    priority: 3,
+    actionVerb: 'View',
+  },
   task_assignments: {
     label: 'Assignments',
     emoji: '📋',
     color: '#2563eb',
     bgColor: '#eff6ff',
-    priority: 3,
+    priority: 4,
     actionVerb: 'View',
   },
   comments: {
@@ -228,7 +314,7 @@ export const CATEGORY_CONFIG: Record<
     emoji: '💬',
     color: '#4f46e5',
     bgColor: '#eef2ff',
-    priority: 4,
+    priority: 5,
     actionVerb: 'Reply',
   },
   task_status: {
@@ -236,7 +322,7 @@ export const CATEGORY_CONFIG: Record<
     emoji: '✅',
     color: '#059669',
     bgColor: '#ecfdf5',
-    priority: 5,
+    priority: 6,
     actionVerb: 'View',
   },
   task_updates: {
@@ -244,7 +330,7 @@ export const CATEGORY_CONFIG: Record<
     emoji: '📝',
     color: '#7c3aed',
     bgColor: '#f5f3ff',
-    priority: 6,
+    priority: 7,
     actionVerb: 'View',
   },
   task_relationships: {
@@ -252,7 +338,7 @@ export const CATEGORY_CONFIG: Record<
     emoji: '🏷️',
     color: '#0891b2',
     bgColor: '#ecfeff',
-    priority: 7,
+    priority: 8,
     actionVerb: 'View',
   },
   system: {
@@ -260,7 +346,7 @@ export const CATEGORY_CONFIG: Record<
     emoji: '📢',
     color: '#7c3aed',
     bgColor: '#f5f3ff',
-    priority: 8,
+    priority: 9,
     actionVerb: 'Read',
   },
   general: {
@@ -268,7 +354,7 @@ export const CATEGORY_CONFIG: Record<
     emoji: '🔔',
     color: '#6b7280',
     bgColor: '#f9fafb',
-    priority: 9,
+    priority: 10,
     actionVerb: 'View',
   },
 };
@@ -322,6 +408,21 @@ export const generateSubjectLine = (
         return `${(primary.data?.mentioned_by as string) || 'Someone'} mentioned you${remainingText}`;
       }
       return `New assignment: ${truncate(primary.title, 40)}${remainingText}`;
+
+    case 'time_tracking':
+      if (primary.type === 'time_tracking_request_submitted') {
+        return `Time tracking request submitted: ${truncate(primary.title, 40)}${remainingText}`;
+      }
+      if (primary.type === 'time_tracking_request_resubmitted') {
+        return `Time tracking request resubmitted: ${truncate(primary.title, 40)}${remainingText}`;
+      }
+      if (primary.type === 'time_tracking_request_approved') {
+        return `Time tracking request approved: ${truncate(primary.title, 40)}${remainingText}`;
+      }
+      if (primary.type === 'time_tracking_request_rejected') {
+        return `Time tracking request rejected: ${truncate(primary.title, 40)}${remainingText}`;
+      }
+      return `Time tracking request needs info: ${truncate(primary.title, 40)}${remainingText}`;
 
     case 'comments':
       return `New comment on "${truncate(primary.title, 30)}"${remainingText}`;
