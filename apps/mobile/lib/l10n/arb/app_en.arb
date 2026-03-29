@@ -379,6 +379,21 @@
             }
         }
     },
+    "assistantMermaidDiagramLabel": "Diagram",
+    "assistantMermaidRenderError": "Couldn't render this Mermaid diagram.",
+    "assistantMermaidZoomHint": "Pinch or use the zoom controls to inspect the diagram in fullscreen.",
+    "assistantMermaidZoomIn": "Zoom in",
+    "assistantMermaidZoomOut": "Zoom out",
+    "assistantMermaidZoomReset": "Reset zoom",
+    "assistantCopyMessageAction": "Copy message",
+    "assistantCopiedMessageAction": "Copied",
+    "assistantScrollToBottomAction": "Scroll to bottom",
+    "assistantToolCompleted": "Completed",
+    "assistantToolGeneratedImage": "Generated image",
+    "assistantToolImageUnavailable": "The generated image is unavailable right now.",
+    "assistantToolNoActionNeeded": "No tools were needed for this reply.",
+    "assistantToolSelectedTools": "Selected tools",
+    "assistantToolsLabel": "Tools",
     "assistantCreditsSummary": "{remaining} remaining • {tier}",
     "@assistantCreditsSummary": {
         "placeholders": {

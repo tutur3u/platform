@@ -1,6 +1,6 @@
 name: mobile
 description: Tuturuuu Mobile
-version: 0.2.5+21
+version: 0.2.6+22
 publish_to: none
 
 environment:
@@ -25,6 +25,7 @@ dependencies:
     sdk: flutter
   flutter_bloc: ^9.1.1
   flutter_colorpicker: ^1.1.0
+  flutter_inappwebview: ^6.2.0-beta.3
   flutter_local_notifications: ^21.0.0
   flutter_localizations:
     sdk: flutter
@@ -85,6 +86,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logos/light.png
+    - assets/mermaid/mermaid.min.js
     - assets/logos/nova-transparent.png
     - assets/logos/transparent.png
     - assets/logos/apple.svg

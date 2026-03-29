@@ -942,6 +942,51 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantMermaidDiagramLabel => 'Sơ đồ';
+
+  @override
+  String get assistantMermaidRenderError => 'Không thể hiển thị sơ đồ Mermaid này.';
+
+  @override
+  String get assistantMermaidZoomHint => 'Chụm hoặc dùng các nút thu phóng để xem kỹ sơ đồ ở chế độ toàn màn hình.';
+
+  @override
+  String get assistantMermaidZoomIn => 'Phóng to';
+
+  @override
+  String get assistantMermaidZoomOut => 'Thu nhỏ';
+
+  @override
+  String get assistantMermaidZoomReset => 'Đặt lại thu phóng';
+
+  @override
+  String get assistantCopyMessageAction => 'Sao chép tin nhắn';
+
+  @override
+  String get assistantCopiedMessageAction => 'Đã sao chép';
+
+  @override
+  String get assistantScrollToBottomAction => 'Cuộn xuống cuối';
+
+  @override
+  String get assistantToolCompleted => 'Hoàn tất';
+
+  @override
+  String get assistantToolGeneratedImage => 'Ảnh đã tạo';
+
+  @override
+  String get assistantToolImageUnavailable => 'Ảnh đã tạo hiện không khả dụng.';
+
+  @override
+  String get assistantToolNoActionNeeded => 'Không cần dùng công cụ nào cho phản hồi này.';
+
+  @override
+  String get assistantToolSelectedTools => 'Công cụ đã chọn';
+
+  @override
+  String get assistantToolsLabel => 'Công cụ';
+
+  @override
   String assistantCreditsSummary(int remaining, String tier) {
     return 'Còn $remaining • $tier';
   }

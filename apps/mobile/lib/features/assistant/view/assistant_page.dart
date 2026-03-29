@@ -27,10 +27,10 @@ import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
+import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
-import 'package:mobile/features/assistant/widgets/assistant_settings_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -65,6 +65,11 @@ class _AssistantPageState extends State<AssistantPage> {
   static const _assistantScrollPhysics = AlwaysScrollableScrollPhysics(
     parent: BouncingScrollPhysics(),
   );
+  static const _hiddenComposerReservedSpace = 88.0;
+  static const _assistantFabBottomOffset = 16.0;
+  static const _assistantFabSideOffset = 16.0;
+  static const _composerFabThreshold = 56.0;
+  static const _scrollToBottomFabThreshold = 160.0;
 
   late final AssistantShellCubit _shellCubit = AssistantShellCubit(
     repository: _repository,
@@ -105,9 +110,22 @@ class _AssistantPageState extends State<AssistantPage> {
   String? _loadedWorkspaceId;
   String? _lastEmptyStateResetKey;
   bool _wasAssistantEmptyLayout = false;
+  bool _isComposerVisible = false;
+  bool _showScrollToBottomFab = false;
+  bool _ignoreScrollVisibilityUpdates = false;
+  double? _composerVisibilityAnchorOffset;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_handleScroll);
+    _inputFocusNode.addListener(_handleInputFocusChange);
+  }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScroll);
+    _inputFocusNode.removeListener(_handleInputFocusChange);
     _inputController.dispose();
     _inputFocusNode.dispose();
     _scrollController.dispose();
@@ -127,7 +145,9 @@ class _AssistantPageState extends State<AssistantPage> {
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, workspaceState) {
-          final currentWorkspace = workspaceState.personalWorkspaceOrCurrent;
+          final currentWorkspace =
+              workspaceState.currentWorkspace ??
+              workspaceState.personalWorkspaceOrCurrent;
           if (currentWorkspace == null) {
             if (workspaceState.status == WorkspaceStatus.initial ||
                 workspaceState.status == WorkspaceStatus.loading) {
@@ -154,6 +174,14 @@ class _AssistantPageState extends State<AssistantPage> {
                     return;
                   }
                   _scheduleScrollToBottom();
+                },
+              ),
+              BlocListener<AssistantChatCubit, AssistantChatState>(
+                listenWhen: (previous, current) =>
+                    _activeConversationKey(previous) !=
+                    _activeConversationKey(current),
+                listener: (context, state) {
+                  _collapseComposerToFab();
                 },
               ),
               BlocListener<AssistantLiveCubit, AssistantLiveState>(
@@ -210,7 +238,25 @@ class _AssistantPageState extends State<AssistantPage> {
                           chatState,
                           liveState,
                         );
+                        final keyboardVisible =
+                            MediaQuery.viewInsetsOf(context).bottom > 0;
                         final hasLiveAccess = _hasLiveAccess(shellState);
+                        final isPersonalWorkspace = currentWorkspace.personal;
+                        final scrollToBottomLabel =
+                            context.l10n.assistantScrollToBottomAction;
+                        final scrollToBottomFab = _AssistantScrollToBottomFab(
+                          label: scrollToBottomLabel,
+                          onPressed: _handleScrollToBottomPressed,
+                        );
+                        Future<void> removeComposerAttachment(
+                          String attachmentId,
+                        ) {
+                          return _chatCubit.removeComposerAttachment(
+                            wsId: currentWorkspace.id,
+                            attachmentId: attachmentId,
+                          );
+                        }
+
                         final liveUiState = deriveAssistantLiveUiState(
                           shellState: shellState,
                           liveState: liveState,
@@ -224,6 +270,9 @@ class _AssistantPageState extends State<AssistantPage> {
                           chatId: chatState.chat?.id ?? chatState.storedChatId,
                           hasTranscript: hasTranscript,
                           showLiveStrip: showLiveStrip,
+                        );
+                        _syncComposerVisibilityForBuild(
+                          keyboardVisible: keyboardVisible,
                         );
 
                         return shad.Scaffold(
@@ -260,6 +309,8 @@ class _AssistantPageState extends State<AssistantPage> {
                                                   hasAttachments: chatState
                                                       .composerAttachments
                                                       .isNotEmpty,
+                                                  isComposerVisible:
+                                                      _isComposerVisible,
                                                 ),
                                               ),
                                               sliver: SliverList.list(
@@ -312,76 +363,162 @@ class _AssistantPageState extends State<AssistantPage> {
                                       left: 0,
                                       right: 0,
                                       bottom: 0,
-                                      child: StaggeredEntrance(
-                                        replayKey:
-                                            'assistant-composer-'
-                                            '${currentWorkspace.id}-'
-                                            '${widget.replayToken}',
-                                        delay: const Duration(
-                                          milliseconds: 220,
-                                        ),
-                                        offset: const Offset(0, 0.12),
-                                        child: AnimatedPadding(
+                                      child: IgnorePointer(
+                                        ignoring: !_isComposerVisible,
+                                        child: AnimatedSlide(
                                           duration: const Duration(
                                             milliseconds: 180,
                                           ),
                                           curve: Curves.easeOutCubic,
-                                          padding: EdgeInsets.only(
-                                            bottom: isFullscreen
-                                                ? MediaQuery.paddingOf(
-                                                    context,
-                                                  ).bottom
-                                                : 0,
-                                          ),
-                                          child: AssistantComposerDock(
-                                            chatState: chatState,
-                                            liveState: liveState,
-                                            liveUiState: liveUiState,
-                                            creditSource:
-                                                shellState.creditSource,
-                                            isPersonalWorkspace:
-                                                currentWorkspace.personal,
-                                            workspaceCreditLocked: shellState
-                                                .workspaceCreditLocked,
-                                            thinkingMode:
-                                                shellState.thinkingMode,
-                                            onCreditSourceChanged:
-                                                _shellCubit.setCreditSource,
-                                            onThinkingModeChanged:
-                                                _shellCubit.setThinkingMode,
-                                            controller: _inputController,
-                                            focusNode: _inputFocusNode,
-                                            onOpenAttachments: () =>
-                                                _showAttachmentSheet(
-                                                  context,
-                                                  currentWorkspace.id,
-                                                ),
-                                            onOpenSettings: () =>
-                                                _showSettingsSheet(context),
-                                            onMicrophoneTap: () =>
-                                                _handleMicrophoneTap(
+                                          offset: _isComposerVisible
+                                              ? Offset.zero
+                                              : const Offset(0, 1),
+                                          child: AnimatedOpacity(
+                                            duration: const Duration(
+                                              milliseconds: 160,
+                                            ),
+                                            curve: Curves.easeOutCubic,
+                                            opacity: _isComposerVisible ? 1 : 0,
+                                            child: StaggeredEntrance(
+                                              replayKey:
+                                                  'assistant-composer-'
+                                                  '${currentWorkspace.id}-'
+                                                  '${widget.replayToken}',
+                                              delay: const Duration(
+                                                milliseconds: 220,
+                                              ),
+                                              offset: const Offset(0, 0.12),
+                                              child: AssistantComposerDock(
+                                                chatState: chatState,
+                                                liveState: liveState,
+                                                liveUiState: liveUiState,
+                                                creditSource:
+                                                    shellState.creditSource,
+                                                isFullscreen: isFullscreen,
+                                                bottomInset: isFullscreen
+                                                    ? MediaQuery.paddingOf(
+                                                        context,
+                                                      ).bottom
+                                                    : 0,
+                                                isPersonalWorkspace:
+                                                    isPersonalWorkspace,
+                                                thinkingMode:
+                                                    shellState.thinkingMode,
+                                                onOpenCreditSourceSheet: () =>
+                                                    _showCreditSourceSheet(
+                                                      context,
+                                                      shellState: shellState,
+                                                      isPersonalWorkspace:
+                                                          isPersonalWorkspace,
+                                                    ),
+                                                onThinkingModeChanged:
+                                                    _shellCubit.setThinkingMode,
+                                                controller: _inputController,
+                                                focusNode: _inputFocusNode,
+                                                onOpenAttachments: () =>
+                                                    _showAttachmentSheet(
+                                                      context,
+                                                      currentWorkspace.id,
+                                                    ),
+                                                onToggleFullscreen: () =>
+                                                    _toggleFullscreen(
+                                                      !isFullscreen,
+                                                    ),
+                                                onMicrophoneTap: () =>
+                                                    _handleMicrophoneTap(
+                                                      currentWorkspace.id,
+                                                      shellState,
+                                                      chatState,
+                                                      liveState,
+                                                    ),
+                                                onSend: () => _handleSend(
                                                   currentWorkspace.id,
                                                   shellState,
                                                   chatState,
                                                   liveState,
                                                 ),
-                                            onSend: () => _handleSend(
-                                              currentWorkspace.id,
-                                              shellState,
-                                              chatState,
-                                              liveState,
+                                                onRemoveAttachment:
+                                                    removeComposerAttachment,
+                                              ),
                                             ),
-                                            onRemoveAttachment:
-                                                (attachmentId) => _chatCubit
-                                                    .removeComposerAttachment(
-                                                      wsId: currentWorkspace.id,
-                                                      attachmentId:
-                                                          attachmentId,
-                                                    ),
                                           ),
                                         ),
                                       ),
                                     ),
+                                    Positioned(
+                                      right:
+                                          _assistantFabSideOffset +
+                                          MediaQuery.paddingOf(context).right,
+                                      bottom:
+                                          _assistantFabBottomOffset +
+                                          (isFullscreen
+                                              ? MediaQuery.paddingOf(
+                                                  context,
+                                                ).bottom
+                                              : 0),
+                                      child: IgnorePointer(
+                                        ignoring: _isComposerVisible,
+                                        child: AnimatedSlide(
+                                          duration: const Duration(
+                                            milliseconds: 180,
+                                          ),
+                                          curve: Curves.easeOutCubic,
+                                          offset: _isComposerVisible
+                                              ? const Offset(0, 1)
+                                              : Offset.zero,
+                                          child: AnimatedOpacity(
+                                            duration: const Duration(
+                                              milliseconds: 160,
+                                            ),
+                                            curve: Curves.easeOutCubic,
+                                            opacity: _isComposerVisible ? 0 : 1,
+                                            child: _AssistantComposerFab(
+                                              label: context
+                                                  .l10n
+                                                  .assistantAskPlaceholder,
+                                              onPressed:
+                                                  _restoreComposerAndFocus,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (hasTranscript)
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom:
+                                            (_isComposerVisible ? 112 : 16) +
+                                            (isFullscreen
+                                                ? MediaQuery.paddingOf(
+                                                    context,
+                                                  ).bottom
+                                                : 0),
+                                        child: IgnorePointer(
+                                          ignoring: !_showScrollToBottomFab,
+                                          child: Center(
+                                            child: AnimatedSlide(
+                                              duration: const Duration(
+                                                milliseconds: 180,
+                                              ),
+                                              curve: Curves.easeOutCubic,
+                                              offset: _showScrollToBottomFab
+                                                  ? Offset.zero
+                                                  : const Offset(0, 1),
+                                              child: AnimatedOpacity(
+                                                duration: const Duration(
+                                                  milliseconds: 160,
+                                                ),
+                                                curve: Curves.easeOutCubic,
+                                                opacity: _showScrollToBottomFab
+                                                    ? 1
+                                                    : 0,
+                                                child: scrollToBottomFab,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ShellChromeActions(
                                       ownerId: 'assistant-root',
                                       locations: const {Routes.assistant},
@@ -433,6 +570,9 @@ class _AssistantPageState extends State<AssistantPage> {
     _loadedWorkspaceId = workspace.id;
     _lastEmptyStateResetKey = null;
     _wasAssistantEmptyLayout = false;
+    _isComposerVisible = false;
+    _showScrollToBottomFab = false;
+    _composerVisibilityAnchorOffset = null;
     unawaited(_liveCubit.disconnect());
     unawaited(_shellCubit.loadWorkspace(workspace));
     _shellCubit.setImmersiveMode(false);
@@ -450,14 +590,29 @@ class _AssistantPageState extends State<AssistantPage> {
       }
 
       final position = _scrollController.position.maxScrollExtent;
+      _ignoreScrollVisibilityUpdates = true;
       unawaited(
-        _scrollController.animateTo(
-          position,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-        ),
+        _scrollController
+            .animateTo(
+              position,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+            )
+            .catchError((_) {})
+            .whenComplete(() {
+              if (!mounted) {
+                return;
+              }
+              _ignoreScrollVisibilityUpdates = false;
+              _resetComposerVisibilityAnchor();
+              _setScrollToBottomFabVisible(false);
+            }),
       );
     });
+  }
+
+  void _handleScrollToBottomPressed() {
+    _scheduleScrollToBottom();
   }
 
   void _scheduleScrollToTop() {
@@ -468,12 +623,118 @@ class _AssistantPageState extends State<AssistantPage> {
       if (_scrollController.offset <= 1) {
         return;
       }
+      _ignoreScrollVisibilityUpdates = true;
       _scrollController.jumpTo(0);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _ignoreScrollVisibilityUpdates = false;
+        _resetComposerVisibilityAnchor();
+        _setScrollToBottomFabVisible(false);
+      });
     });
   }
 
   void _dismissKeyboard() {
     FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _handleInputFocusChange() {
+    if (_inputFocusNode.hasFocus) {
+      _setComposerVisible(true);
+      _resetComposerVisibilityAnchor();
+    }
+  }
+
+  void _handleScroll() {
+    if (!mounted ||
+        _ignoreScrollVisibilityUpdates ||
+        !_scrollController.hasClients) {
+      return;
+    }
+
+    final position = _scrollController.position;
+    if (!position.hasContentDimensions) {
+      return;
+    }
+
+    if (MediaQuery.viewInsetsOf(context).bottom > 0 ||
+        _inputFocusNode.hasFocus) {
+      _setComposerVisible(true);
+      _resetComposerVisibilityAnchor();
+      _setScrollToBottomFabVisible(false);
+      return;
+    }
+
+    if (position.outOfRange) {
+      return;
+    }
+
+    final anchorOffset = _composerVisibilityAnchorOffset ?? position.pixels;
+    _composerVisibilityAnchorOffset = anchorOffset;
+    final distanceFromAnchor = (position.pixels - anchorOffset).abs();
+    if (_isComposerVisible && distanceFromAnchor >= _composerFabThreshold) {
+      _setComposerVisible(false);
+      _composerVisibilityAnchorOffset = position.pixels;
+    }
+    _setScrollToBottomFabVisible(
+      (position.maxScrollExtent - position.pixels) >=
+          _scrollToBottomFabThreshold,
+    );
+  }
+
+  void _syncComposerVisibilityForBuild({
+    required bool keyboardVisible,
+  }) {
+    if (!keyboardVisible || _isComposerVisible) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _setComposerVisible(true);
+      _resetComposerVisibilityAnchor();
+    });
+  }
+
+  void _setComposerVisible(bool value) {
+    if (_isComposerVisible == value || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isComposerVisible = value;
+    });
+  }
+
+  void _setScrollToBottomFabVisible(bool value) {
+    if (_showScrollToBottomFab == value || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _showScrollToBottomFab = value;
+    });
+  }
+
+  void _collapseComposerToFab() {
+    _dismissKeyboard();
+    _setComposerVisible(false);
+    _composerVisibilityAnchorOffset = null;
+  }
+
+  void _restoreComposerAndFocus() {
+    _setComposerVisible(true);
+    _resetComposerVisibilityAnchor();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _inputFocusNode.requestFocus();
+    });
   }
 
   Future<void> _startNewConversation(
@@ -610,23 +871,6 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
-  Future<void> _showSettingsSheet(
-    BuildContext context,
-  ) async {
-    await showAdaptiveSheet<void>(
-      context: context,
-      builder: (sheetContext) =>
-          BlocBuilder<AssistantShellCubit, AssistantShellState>(
-            bloc: _shellCubit,
-            builder: (context, shellState) => AssistantSettingsSheetBody(
-              shellState: shellState,
-              onImmersiveChanged: ({required value}) =>
-                  _toggleFullscreen(value),
-            ),
-          ),
-    );
-  }
-
   Future<void> _showAttachmentSheet(BuildContext context, String wsId) async {
     await showAdaptiveSheet<void>(
       context: context,
@@ -652,6 +896,31 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
+  Future<void> _showCreditSourceSheet(
+    BuildContext context, {
+    required AssistantShellState shellState,
+    required bool isPersonalWorkspace,
+  }) async {
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (sheetContext) => AssistantCreditSourceSheetBody(
+        shellState: shellState,
+        isPersonalWorkspace: isPersonalWorkspace,
+        onClose: () => Navigator.of(sheetContext).maybePop(),
+        onSelect: (source) async {
+          if (!shellState.workspaceCreditLocked ||
+              source == AssistantCreditSource.personal) {
+            await _shellCubit.setCreditSource(source);
+          }
+          if (!sheetContext.mounted) {
+            return;
+          }
+          await Navigator.of(sheetContext).maybePop();
+        },
+      ),
+    );
+  }
+
   double _horizontalPadding(BuildContext context) {
     return context.isCompact ? 16 : 24;
   }
@@ -660,7 +929,13 @@ class _AssistantPageState extends State<AssistantPage> {
     BuildContext context, {
     required bool isFullscreen,
     required bool hasAttachments,
+    required bool isComposerVisible,
   }) {
+    if (!isComposerVisible) {
+      return _hiddenComposerReservedSpace +
+          (isFullscreen ? MediaQuery.paddingOf(context).bottom : 16);
+    }
+
     final baseHeight = hasAttachments ? 236.0 : 196.0;
     return baseHeight +
         (isFullscreen ? MediaQuery.paddingOf(context).bottom : 16);
@@ -691,10 +966,24 @@ class _AssistantPageState extends State<AssistantPage> {
   }
 
   void _applyStarterPrompt(String prompt) {
+    _setComposerVisible(true);
+    _resetComposerVisibilityAnchor();
     _inputController
       ..text = prompt
       ..selection = TextSelection.collapsed(offset: prompt.length);
     _inputFocusNode.requestFocus();
+  }
+
+  void _resetComposerVisibilityAnchor() {
+    if (!_scrollController.hasClients) {
+      _composerVisibilityAnchorOffset = null;
+      return;
+    }
+    _composerVisibilityAnchorOffset = _scrollController.position.pixels;
+  }
+
+  String _activeConversationKey(AssistantChatState state) {
+    return state.chat?.id ?? state.storedChatId ?? 'new';
   }
 
   Widget _buildTranscriptSection(
@@ -850,6 +1139,62 @@ class _AssistantPageState extends State<AssistantPage> {
     return shellState.creditSource == AssistantCreditSource.personal
         ? shellState.personalWorkspaceId
         : wsId;
+  }
+}
+
+class _AssistantComposerFab extends StatelessWidget {
+  const _AssistantComposerFab({
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: label,
+      button: true,
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: shad.PrimaryButton(
+          onPressed: onPressed,
+          shape: shad.ButtonShape.circle,
+          density: shad.ButtonDensity.icon,
+          child: const Icon(Icons.chat_bubble_outline_rounded, size: 24),
+        ),
+      ),
+    );
+  }
+}
+
+class _AssistantScrollToBottomFab extends StatelessWidget {
+  const _AssistantScrollToBottomFab({
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: label,
+      button: true,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: shad.PrimaryButton(
+          onPressed: onPressed,
+          shape: shad.ButtonShape.circle,
+          density: shad.ButtonDensity.icon,
+          child: const Icon(Icons.arrow_downward_rounded, size: 22),
+        ),
+      ),
+    );
   }
 }
 

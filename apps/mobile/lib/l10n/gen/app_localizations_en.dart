@@ -942,6 +942,51 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get assistantMermaidDiagramLabel => 'Diagram';
+
+  @override
+  String get assistantMermaidRenderError => 'Couldn\'t render this Mermaid diagram.';
+
+  @override
+  String get assistantMermaidZoomHint => 'Pinch or use the zoom controls to inspect the diagram in fullscreen.';
+
+  @override
+  String get assistantMermaidZoomIn => 'Zoom in';
+
+  @override
+  String get assistantMermaidZoomOut => 'Zoom out';
+
+  @override
+  String get assistantMermaidZoomReset => 'Reset zoom';
+
+  @override
+  String get assistantCopyMessageAction => 'Copy message';
+
+  @override
+  String get assistantCopiedMessageAction => 'Copied';
+
+  @override
+  String get assistantScrollToBottomAction => 'Scroll to bottom';
+
+  @override
+  String get assistantToolCompleted => 'Completed';
+
+  @override
+  String get assistantToolGeneratedImage => 'Generated image';
+
+  @override
+  String get assistantToolImageUnavailable => 'The generated image is unavailable right now.';
+
+  @override
+  String get assistantToolNoActionNeeded => 'No tools were needed for this reply.';
+
+  @override
+  String get assistantToolSelectedTools => 'Selected tools';
+
+  @override
+  String get assistantToolsLabel => 'Tools';
+
+  @override
   String assistantCreditsSummary(int remaining, String tier) {
     return '$remaining remaining • $tier';
   }

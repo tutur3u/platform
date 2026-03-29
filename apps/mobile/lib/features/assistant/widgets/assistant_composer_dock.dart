@@ -12,15 +12,16 @@ class AssistantComposerDock extends StatelessWidget {
     required this.liveState,
     required this.liveUiState,
     required this.creditSource,
+    required this.isFullscreen,
+    required this.bottomInset,
     required this.isPersonalWorkspace,
-    required this.workspaceCreditLocked,
     required this.thinkingMode,
-    required this.onCreditSourceChanged,
+    required this.onOpenCreditSourceSheet,
     required this.onThinkingModeChanged,
     required this.controller,
     required this.focusNode,
     required this.onOpenAttachments,
-    required this.onOpenSettings,
+    required this.onToggleFullscreen,
     required this.onMicrophoneTap,
     required this.onSend,
     required this.onRemoveAttachment,
@@ -31,16 +32,16 @@ class AssistantComposerDock extends StatelessWidget {
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
   final AssistantCreditSource creditSource;
+  final bool isFullscreen;
+  final double bottomInset;
   final bool isPersonalWorkspace;
-  final bool workspaceCreditLocked;
   final AssistantThinkingMode thinkingMode;
-  final Future<void> Function(AssistantCreditSource source)
-  onCreditSourceChanged;
+  final Future<void> Function() onOpenCreditSourceSheet;
   final Future<void> Function(AssistantThinkingMode mode) onThinkingModeChanged;
   final TextEditingController controller;
   final FocusNode focusNode;
   final Future<void> Function() onOpenAttachments;
-  final Future<void> Function() onOpenSettings;
+  final Future<void> Function() onToggleFullscreen;
   final Future<void> Function() onMicrophoneTap;
   final Future<void> Function() onSend;
   final Future<void> Function(String attachmentId) onRemoveAttachment;
@@ -54,7 +55,7 @@ class AssistantComposerDock extends StatelessWidget {
     );
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: EdgeInsets.fromLTRB(12, 8, 12, 4 + bottomInset),
       decoration: BoxDecoration(
         color: navSurface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -103,9 +104,14 @@ class AssistantComposerDock extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               _GhostActionButton(
-                tooltip: context.l10n.assistantSettingsTitle,
-                onPressed: onOpenSettings,
-                icon: Icons.tune_rounded,
+                tooltip: isFullscreen
+                    ? context.l10n.assistantShowBottomNavLabel
+                    : context.l10n.assistantEnterFullscreenAction,
+                onPressed: onToggleFullscreen,
+                icon: isFullscreen
+                    ? Icons.fullscreen_exit_rounded
+                    : Icons.fullscreen_rounded,
+                isActive: isFullscreen,
               ),
               const SizedBox(width: 8),
               _ThinkingModeDropdown(
@@ -115,9 +121,7 @@ class AssistantComposerDock extends StatelessWidget {
               const SizedBox(width: 6),
               _CreditSourceDropdown(
                 creditSource: creditSource,
-                isPersonalWorkspace: isPersonalWorkspace,
-                workspaceCreditLocked: workspaceCreditLocked,
-                onChanged: onCreditSourceChanged,
+                onPressed: onOpenCreditSourceSheet,
               ),
               const Spacer(),
               ValueListenableBuilder<TextEditingValue>(
@@ -271,7 +275,7 @@ class _ThinkingModeDropdown extends StatelessWidget {
           ),
         ),
       ],
-      child: _DropdownGhostButton(
+      child: _LabeledDropdownGhostButton(
         icon: thinkingMode == AssistantThinkingMode.thinking
             ? Icons.psychology_alt_rounded
             : Icons.flash_on_rounded,
@@ -284,62 +288,31 @@ class _ThinkingModeDropdown extends StatelessWidget {
 class _CreditSourceDropdown extends StatelessWidget {
   const _CreditSourceDropdown({
     required this.creditSource,
-    required this.isPersonalWorkspace,
-    required this.workspaceCreditLocked,
-    required this.onChanged,
+    required this.onPressed,
   });
 
   final AssistantCreditSource creditSource;
-  final bool isPersonalWorkspace;
-  final bool workspaceCreditLocked;
-  final Future<void> Function(AssistantCreditSource source) onChanged;
+  final Future<void> Function() onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final label = creditSource == AssistantCreditSource.personal
-        ? context.l10n.assistantSourcePersonal
-        : context.l10n.assistantSourceWorkspace;
+    const sourceIcon = Icons.toll_rounded;
+    final selectedTargetIcon = creditSource == AssistantCreditSource.personal
+        ? Icons.person_rounded
+        : Icons.apartment_rounded;
 
-    if (isPersonalWorkspace) {
-      return _DropdownGhostButton(
-        icon: Icons.toll_rounded,
-        label: context.l10n.assistantSourcePersonal,
-        enabled: false,
-      );
-    }
-
-    return PopupMenuButton<AssistantCreditSource>(
-      tooltip: context.l10n.assistantSourceLabel,
-      padding: EdgeInsets.zero,
-      onSelected: onChanged,
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: AssistantCreditSource.workspace,
-          enabled: !workspaceCreditLocked,
-          child: Row(
-            children: [
-              const Icon(Icons.groups_rounded, size: 18),
-              const SizedBox(width: 8),
-              Text(context.l10n.assistantSourceWorkspace),
-            ],
+    return Tooltip(
+      message: context.l10n.assistantSourceLabel,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onPressed,
+          child: _DropdownGhostButton(
+            leadingIcon: sourceIcon,
+            trailingIcon: selectedTargetIcon,
           ),
         ),
-        PopupMenuItem(
-          value: AssistantCreditSource.personal,
-          child: Row(
-            children: [
-              const Icon(Icons.person_rounded, size: 18),
-              const SizedBox(width: 8),
-              Text(context.l10n.assistantSourcePersonal),
-            ],
-          ),
-        ),
-      ],
-      child: _DropdownGhostButton(
-        icon: creditSource == AssistantCreditSource.personal
-            ? Icons.person_rounded
-            : Icons.groups_rounded,
-        label: label,
       ),
     );
   }
@@ -347,14 +320,59 @@ class _CreditSourceDropdown extends StatelessWidget {
 
 class _DropdownGhostButton extends StatelessWidget {
   const _DropdownGhostButton({
+    required this.leadingIcon,
+    required this.trailingIcon,
+  });
+
+  final IconData leadingIcon;
+  final IconData trailingIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final iconColor = theme.colorScheme.onSurfaceVariant;
+
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            leadingIcon,
+            size: 16,
+            color: iconColor,
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 16,
+            color: iconColor,
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            trailingIcon,
+            size: 16,
+            color: iconColor,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LabeledDropdownGhostButton extends StatelessWidget {
+  const _LabeledDropdownGhostButton({
     required this.icon,
     required this.label,
-    this.enabled = true,
   });
 
   final IconData icon;
   final String label;
-  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -373,28 +391,22 @@ class _DropdownGhostButton extends StatelessWidget {
           Icon(
             icon,
             size: 16,
-            color: enabled
-                ? theme.colorScheme.onSurfaceVariant
-                : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.56),
+            color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 6),
           Text(
             label,
             style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: enabled
-                  ? theme.colorScheme.onSurfaceVariant
-                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.56),
-            ),
-          ),
-          if (enabled) ...[
-            const SizedBox(width: 4),
-            Icon(
-              Icons.expand_more_rounded,
-              size: 16,
               color: theme.colorScheme.onSurfaceVariant,
             ),
-          ],
+          ),
+          const SizedBox(width: 4),
+          Icon(
+            Icons.expand_more_rounded,
+            size: 16,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ],
       ),
     );

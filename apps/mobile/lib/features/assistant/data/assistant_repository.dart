@@ -151,13 +151,16 @@ class AssistantRepository {
     }
   }
 
-  Future<List<AssistantChatRecord>> fetchRecentChats({int limit = 20}) async {
+  Future<List<AssistantChatRecord>> fetchRecentChats({int? limit}) async {
     final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
-    return rows
+    final mapped = rows
         .whereType<Map<String, dynamic>>()
-        .take(limit)
         .map(AssistantChatRecord.fromJson)
-        .toList();
+        .toList(growable: false);
+    if (limit == null) {
+      return mapped;
+    }
+    return mapped.take(limit).toList(growable: false);
   }
 
   Future<AssistantRestoredChat?> restoreChat({
@@ -417,18 +420,7 @@ class AssistantRepository {
 
     String? signedReadUrl;
     try {
-      final readResponse = await _apiClient.postJson(
-        '/api/ai/chat/signed-read-url',
-        {
-          'paths': [path],
-        },
-      );
-      final urls = (readResponse['urls'] as List<dynamic>? ?? const [])
-          .whereType<Map<String, dynamic>>();
-      final matchingUrls = urls.where((url) => url['path'] == path);
-      if (matchingUrls.isNotEmpty) {
-        signedReadUrl = matchingUrls.first['signedUrl'] as String?;
-      }
+      signedReadUrl = (await fetchSignedReadUrls([path]))[path];
     } on Object {
       signedReadUrl = null;
     }
@@ -453,6 +445,39 @@ class AssistantRepository {
       'wsId': wsId,
       'path': path,
     });
+  }
+
+  Future<Map<String, String>> fetchSignedReadUrls(List<String> paths) async {
+    final normalizedPaths = paths
+        .map((path) => path.trim())
+        .where((path) => path.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (normalizedPaths.isEmpty) {
+      return const {};
+    }
+
+    final readResponse = await _apiClient.postJson(
+      '/api/ai/chat/signed-read-url',
+      {
+        'paths': normalizedPaths,
+      },
+    );
+    final urls = (readResponse['urls'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>();
+    final signedUrlByPath = <String, String>{};
+    for (final entry in urls) {
+      final path = entry['path'] as String?;
+      final signedUrl = entry['signedUrl'] as String?;
+      if (path == null ||
+          path.isEmpty ||
+          signedUrl == null ||
+          signedUrl.isEmpty) {
+        continue;
+      }
+      signedUrlByPath[path] = signedUrl;
+    }
+    return signedUrlByPath;
   }
 
   List<AssistantMessage> _restoreMessages(

@@ -379,6 +379,21 @@
             }
         }
     },
+    "assistantMermaidDiagramLabel": "Sơ đồ",
+    "assistantMermaidRenderError": "Không thể hiển thị sơ đồ Mermaid này.",
+    "assistantMermaidZoomHint": "Chụm hoặc dùng các nút thu phóng để xem kỹ sơ đồ ở chế độ toàn màn hình.",
+    "assistantMermaidZoomIn": "Phóng to",
+    "assistantMermaidZoomOut": "Thu nhỏ",
+    "assistantMermaidZoomReset": "Đặt lại thu phóng",
+    "assistantCopyMessageAction": "Sao chép tin nhắn",
+    "assistantCopiedMessageAction": "Đã sao chép",
+    "assistantScrollToBottomAction": "Cuộn xuống cuối",
+    "assistantToolCompleted": "Hoàn tất",
+    "assistantToolGeneratedImage": "Ảnh đã tạo",
+    "assistantToolImageUnavailable": "Ảnh đã tạo hiện không khả dụng.",
+    "assistantToolNoActionNeeded": "Không cần dùng công cụ nào cho phản hồi này.",
+    "assistantToolSelectedTools": "Công cụ đã chọn",
+    "assistantToolsLabel": "Công cụ",
     "assistantCreditsSummary": "Còn {remaining} • {tier}",
     "@assistantCreditsSummary": {
         "placeholders": {

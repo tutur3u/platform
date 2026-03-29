@@ -1921,6 +1921,96 @@ abstract class AppLocalizations {
   /// **'Workspace {tier}'**
   String assistantLiveWorkspaceTierLabel(String tier);
 
+  /// No description provided for @assistantMermaidDiagramLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagram'**
+  String get assistantMermaidDiagramLabel;
+
+  /// No description provided for @assistantMermaidRenderError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t render this Mermaid diagram.'**
+  String get assistantMermaidRenderError;
+
+  /// No description provided for @assistantMermaidZoomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinch or use the zoom controls to inspect the diagram in fullscreen.'**
+  String get assistantMermaidZoomHint;
+
+  /// No description provided for @assistantMermaidZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get assistantMermaidZoomIn;
+
+  /// No description provided for @assistantMermaidZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get assistantMermaidZoomOut;
+
+  /// No description provided for @assistantMermaidZoomReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset zoom'**
+  String get assistantMermaidZoomReset;
+
+  /// No description provided for @assistantCopyMessageAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy message'**
+  String get assistantCopyMessageAction;
+
+  /// No description provided for @assistantCopiedMessageAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get assistantCopiedMessageAction;
+
+  /// No description provided for @assistantScrollToBottomAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to bottom'**
+  String get assistantScrollToBottomAction;
+
+  /// No description provided for @assistantToolCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get assistantToolCompleted;
+
+  /// No description provided for @assistantToolGeneratedImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated image'**
+  String get assistantToolGeneratedImage;
+
+  /// No description provided for @assistantToolImageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The generated image is unavailable right now.'**
+  String get assistantToolImageUnavailable;
+
+  /// No description provided for @assistantToolNoActionNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'No tools were needed for this reply.'**
+  String get assistantToolNoActionNeeded;
+
+  /// No description provided for @assistantToolSelectedTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected tools'**
+  String get assistantToolSelectedTools;
+
+  /// No description provided for @assistantToolsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get assistantToolsLabel;
+
   /// No description provided for @assistantCreditsSummary.
   ///
   /// In en, this message translates to:
