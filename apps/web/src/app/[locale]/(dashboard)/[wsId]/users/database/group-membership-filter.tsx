@@ -43,7 +43,7 @@ export function GroupMembershipFilterControl({
   const t = useTranslations('ws-users');
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-3 shadow-sm sm:px-4">
+    <div className="flex h-fit w-full min-w-0 flex-col gap-3 rounded-2xl border border-border/60 bg-background/70 px-3 py-3 shadow-sm sm:px-4">
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
         <Users className="h-3.5 w-3.5" />
         <span>{t('group_membership_filter')}</span>

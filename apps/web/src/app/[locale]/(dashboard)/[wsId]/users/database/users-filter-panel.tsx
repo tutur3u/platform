@@ -58,130 +58,120 @@ export function UsersFilterPanel({
   const userStatusLabels = useUserStatusLabels(wsId);
 
   return (
-    <section className="w-full rounded-[28px] border border-border/60 bg-gradient-to-r from-background via-background to-muted/20 p-3 shadow-sm sm:p-4 xl:p-5">
-      <div className="grid gap-3 xl:grid-cols-12 xl:gap-4">
-        <div className="xl:col-span-7">
-          <GroupMembershipFilterControl
-            value={groupMembership}
-            onChange={onGroupMembershipChange}
+    <section className="flex w-full flex-col gap-4 rounded-[28px] border border-border/60 bg-linear-to-r from-background via-background to-muted/20 p-3 shadow-sm sm:p-4 xl:p-5">
+      <GroupMembershipFilterControl
+        value={groupMembership}
+        onChange={onGroupMembershipChange}
+      />
+
+      <FilterSelectCard label={t('status_filter')}>
+        <Select value={status} onValueChange={onStatusChange}>
+          <SelectTrigger className="h-10 w-full border-border/60 bg-background/80">
+            <SelectValue placeholder={t('status_filter')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                <span>{t('status_active')}</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="archived">
+              <div className="flex items-center gap-2">
+                <Archive className="h-4 w-4" />
+                <span>{userStatusLabels.archived}</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="archived_until">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>{userStatusLabels.archived_until}</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="all">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                <span>{t('status_all')}</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterSelectCard>
+
+      <FilterSelectCard label={t('link_status_filter')}>
+        <Select value={linkStatus} onValueChange={onLinkStatusChange}>
+          <SelectTrigger className="h-10 w-full border-border/60 bg-background/80">
+            <SelectValue placeholder={t('link_status_filter')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span>{t('link_status_all')}</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="linked">
+              <div className="flex items-center gap-2">
+                <Link className="h-4 w-4" />
+                <span>{t('link_status_linked')}</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="virtual">
+              <div className="flex items-center gap-2">
+                <Link2Off className="h-4 w-4" />
+                <span>{t('link_status_virtual')}</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterSelectCard>
+
+      <FilterSelectCard label={t('attention_filter')}>
+        <Select
+          value={requireAttention}
+          onValueChange={onRequireAttentionChange}
+        >
+          <SelectTrigger className="h-10 w-full border-border/60 bg-background/80">
+            <SelectValue placeholder={t('attention_filter')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span>{t('attention_all')}</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="true">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4" />
+                <span>{t('attention_only')}</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="false">
+              <div className="flex items-center gap-2">
+                <Link2Off className="h-4 w-4" />
+                <span>{t('attention_none')}</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterSelectCard>
+
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="min-w-0 flex-1">
+          <QuickGroupFilters
+            wsId={wsId}
+            initialFeaturedGroupIds={initialFeaturedGroupIds}
+            effectiveExcludedGroups={effectiveExcludedGroups}
+            groupMembership={groupMembership}
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:col-span-5 xl:grid-cols-1 2xl:grid-cols-3">
-          <FilterSelectCard label={t('status_filter')}>
-            <Select value={status} onValueChange={onStatusChange}>
-              <SelectTrigger className="h-10 w-full border-border/60 bg-background/80">
-                <SelectValue placeholder={t('status_filter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-4 w-4" />
-                    <span>{t('status_active')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="archived">
-                  <div className="flex items-center gap-2">
-                    <Archive className="h-4 w-4" />
-                    <span>{userStatusLabels.archived}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="archived_until">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>{userStatusLabels.archived_until}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Layers className="h-4 w-4" />
-                    <span>{t('status_all')}</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FilterSelectCard>
-
-          <FilterSelectCard label={t('link_status_filter')}>
-            <Select value={linkStatus} onValueChange={onLinkStatusChange}>
-              <SelectTrigger className="h-10 w-full border-border/60 bg-background/80">
-                <SelectValue placeholder={t('link_status_filter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>{t('link_status_all')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="linked">
-                  <div className="flex items-center gap-2">
-                    <Link className="h-4 w-4" />
-                    <span>{t('link_status_linked')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="virtual">
-                  <div className="flex items-center gap-2">
-                    <Link2Off className="h-4 w-4" />
-                    <span>{t('link_status_virtual')}</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FilterSelectCard>
-
-          <FilterSelectCard label={t('attention_filter')}>
-            <Select
-              value={requireAttention}
-              onValueChange={onRequireAttentionChange}
-            >
-              <SelectTrigger className="h-10 w-full border-border/60 bg-background/80">
-                <SelectValue placeholder={t('attention_filter')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>{t('attention_all')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="true">
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4" />
-                    <span>{t('attention_only')}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="false">
-                  <div className="flex items-center gap-2">
-                    <Link2Off className="h-4 w-4" />
-                    <span>{t('attention_none')}</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FilterSelectCard>
-        </div>
-
-        <div className="xl:col-span-12">
-          <div className="rounded-2xl border border-border/50 bg-background/55 px-3 py-3 shadow-sm sm:px-4">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div className="min-w-0 flex-1">
-                <QuickGroupFilters
-                  wsId={wsId}
-                  initialFeaturedGroupIds={initialFeaturedGroupIds}
-                  effectiveExcludedGroups={effectiveExcludedGroups}
-                  groupMembership={groupMembership}
-                />
-              </div>
-
-              <Filters
-                wsId={wsId}
-                effectiveExcludedGroups={effectiveExcludedGroups}
-                className="justify-start xl:justify-end"
-              />
-            </div>
-          </div>
-        </div>
+        <Filters
+          wsId={wsId}
+          effectiveExcludedGroups={effectiveExcludedGroups}
+          className="justify-start xl:justify-end"
+        />
       </div>
     </section>
   );
@@ -195,7 +185,7 @@ function FilterSelectCard({
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-full min-w-0 flex-col gap-2 rounded-2xl border border-border/60 bg-background/70 px-3 py-3 shadow-sm">
+    <div className="flex h-full w-full min-w-0 flex-col gap-2 rounded-2xl border border-border/60 bg-background/70 px-3 py-3 shadow-sm">
       <div className="text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
         {label}
       </div>
