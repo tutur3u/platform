@@ -20,6 +20,7 @@ import {
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useUserStatusLabels } from '@/hooks/use-user-status-labels';
+import type { DatabaseLinkStatus } from '@/lib/users-database-filters';
 import Filters from './filters';
 import type { GroupMembershipFilter } from './group-membership';
 import { GroupMembershipFilterControl } from './group-membership-filter';
@@ -28,7 +29,7 @@ import { QuickGroupFilters } from './quick-group-filters';
 interface UsersFilterPanelProps {
   wsId: string;
   status: 'active' | 'archived' | 'archived_until' | 'all';
-  linkStatus: 'all' | 'linked' | 'virtual';
+  linkStatus: DatabaseLinkStatus;
   requireAttention: 'all' | 'true' | 'false';
   groupMembership: GroupMembershipFilter;
   effectiveExcludedGroups: string[];
@@ -164,6 +165,7 @@ export function UsersFilterPanel({
             initialFeaturedGroupIds={initialFeaturedGroupIds}
             effectiveExcludedGroups={effectiveExcludedGroups}
             groupMembership={groupMembership}
+            linkStatus={linkStatus}
           />
         </div>
 

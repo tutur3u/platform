@@ -12,8 +12,16 @@ import {
 } from 'nuqs';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
+import { useUserConfig } from '@/hooks/use-user-config';
+import {
+  DATABASE_DEFAULT_GROUP_MEMBERSHIP_CONFIG_ID,
+  DATABASE_DEFAULT_LINK_STATUS_CONFIG_ID,
+  DEFAULT_DATABASE_GROUP_MEMBERSHIP,
+  DEFAULT_DATABASE_LINK_STATUS,
+  parseDatabaseGroupMembership,
+  parseDatabaseLinkStatus,
+} from '@/lib/users-database-filters';
 import { getUserColumns } from './columns';
-import type { GroupMembershipFilter } from './group-membership';
 import {
   useDefaultExcludedGroups,
   useWorkspaceUserFields,
@@ -51,6 +59,16 @@ export function WorkspaceUsersTable({
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const { data: savedLinkStatus, isLoading: isLoadingLinkStatus } =
+    useUserConfig(
+      DATABASE_DEFAULT_LINK_STATUS_CONFIG_ID,
+      DEFAULT_DATABASE_LINK_STATUS
+    );
+  const { data: savedGroupMembership, isLoading: isLoadingGroupMembership } =
+    useUserConfig(
+      DATABASE_DEFAULT_GROUP_MEMBERSHIP_CONFIG_ID,
+      DEFAULT_DATABASE_GROUP_MEMBERSHIP
+    );
 
   // Use nuqs for URL state management (shallow: true for client-side only)
   const [q, setQ] = useQueryState(
@@ -84,7 +102,7 @@ export function WorkspaceUsersTable({
 
   const [linkStatus, setLinkStatus] = useQueryState(
     'linkStatus',
-    parseAsString.withDefault('all').withOptions({
+    parseAsString.withOptions({
       shallow: true,
     })
   );
@@ -98,9 +116,26 @@ export function WorkspaceUsersTable({
 
   const [groupMembership, setGroupMembership] = useQueryState(
     'groupMembership',
-    parseAsString.withDefault('all').withOptions({
+    parseAsString.withOptions({
       shallow: true,
     })
+  );
+
+  const defaultLinkStatus = parseDatabaseLinkStatus(
+    savedLinkStatus,
+    DEFAULT_DATABASE_LINK_STATUS
+  );
+  const defaultGroupMembership = parseDatabaseGroupMembership(
+    savedGroupMembership,
+    DEFAULT_DATABASE_GROUP_MEMBERSHIP
+  );
+  const effectiveLinkStatus = parseDatabaseLinkStatus(
+    linkStatus,
+    defaultLinkStatus
+  );
+  const effectiveGroupMembership = parseDatabaseGroupMembership(
+    groupMembership,
+    defaultGroupMembership
   );
 
   const [includedGroups, setIncludedGroups] = useQueryState(
@@ -138,7 +173,8 @@ export function WorkspaceUsersTable({
     excludedGroups ??
     (hasAppliedDefaults.current ? [] : (defaultExcludedGroups ?? []));
 
-  const isInitialized = !isLoadingDefaults;
+  const isUserDefaultsReady = !isLoadingLinkStatus && !isLoadingGroupMembership;
+  const isInitialized = !isLoadingDefaults && isUserDefaultsReady;
 
   // Apply default excluded groups to URL state on mount if no exclusions set
   useEffect(() => {
@@ -149,6 +185,30 @@ export function WorkspaceUsersTable({
     defaultExcludedGroups,
     setExcludedGroups,
     shouldApplyDefaultExcludedGroups,
+  ]);
+
+  useEffect(() => {
+    if (!isUserDefaultsReady || linkStatus !== null) return;
+    if (defaultLinkStatus === DEFAULT_DATABASE_LINK_STATUS) return;
+    void setLinkStatus(effectiveLinkStatus);
+  }, [
+    defaultLinkStatus,
+    effectiveLinkStatus,
+    isUserDefaultsReady,
+    linkStatus,
+    setLinkStatus,
+  ]);
+
+  useEffect(() => {
+    if (!isUserDefaultsReady || groupMembership !== null) return;
+    if (defaultGroupMembership === DEFAULT_DATABASE_GROUP_MEMBERSHIP) return;
+    void setGroupMembership(effectiveGroupMembership);
+  }, [
+    defaultGroupMembership,
+    effectiveGroupMembership,
+    groupMembership,
+    isUserDefaultsReady,
+    setGroupMembership,
   ]);
 
   // Compute pageIndex from 1-based page
@@ -164,9 +224,9 @@ export function WorkspaceUsersTable({
       includedGroups,
       excludedGroups: effectiveExcludedGroups,
       status: status as 'active' | 'archived' | 'archived_until' | 'all',
-      linkStatus: linkStatus as 'all' | 'linked' | 'virtual',
+      linkStatus: effectiveLinkStatus,
       requireAttention: requireAttention as 'all' | 'true' | 'false',
-      groupMembership: groupMembership as GroupMembershipFilter,
+      groupMembership: effectiveGroupMembership,
     },
     {
       enabled: isInitialized,
@@ -284,9 +344,9 @@ export function WorkspaceUsersTable({
           <UsersFilterPanel
             wsId={wsId}
             status={status as 'active' | 'archived' | 'archived_until' | 'all'}
-            linkStatus={linkStatus as 'all' | 'linked' | 'virtual'}
+            linkStatus={effectiveLinkStatus}
             requireAttention={requireAttention as 'all' | 'true' | 'false'}
-            groupMembership={groupMembership as GroupMembershipFilter}
+            groupMembership={effectiveGroupMembership}
             effectiveExcludedGroups={effectiveExcludedGroups}
             initialFeaturedGroupIds={initialFeaturedGroupIds}
             onStatusChange={(val) => {
@@ -294,7 +354,7 @@ export function WorkspaceUsersTable({
               setPage(1);
             }}
             onLinkStatusChange={(val) => {
-              setLinkStatus(val);
+              setLinkStatus(val === defaultLinkStatus ? null : val);
               setPage(1);
             }}
             onRequireAttentionChange={(val) => {
@@ -302,7 +362,7 @@ export function WorkspaceUsersTable({
               setPage(1);
             }}
             onGroupMembershipChange={(val) => {
-              setGroupMembership(val === 'all' ? null : val);
+              setGroupMembership(val === defaultGroupMembership ? null : val);
               setPage(1);
             }}
           />
@@ -316,9 +376,9 @@ export function WorkspaceUsersTable({
         isFiltered={
           !!q ||
           status !== 'active' ||
-          linkStatus !== 'all' ||
+          effectiveLinkStatus !== defaultLinkStatus ||
           requireAttention !== 'all' ||
-          groupMembership !== 'all' ||
+          effectiveGroupMembership !== defaultGroupMembership ||
           includedGroups.length > 0 ||
           effectiveExcludedGroups.length > 0
         }

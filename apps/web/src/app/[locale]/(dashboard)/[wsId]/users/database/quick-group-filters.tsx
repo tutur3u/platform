@@ -11,6 +11,7 @@ import {
   useQueryState,
 } from 'nuqs';
 import { useMemo } from 'react';
+import type { DatabaseLinkStatus } from '@/lib/users-database-filters';
 import type { GroupMembershipFilter } from './group-membership';
 import {
   useFeaturedGroupCounts,
@@ -23,6 +24,7 @@ interface Props {
   initialFeaturedGroupIds?: string[];
   effectiveExcludedGroups?: string[];
   groupMembership?: GroupMembershipFilter;
+  linkStatus?: DatabaseLinkStatus;
 }
 
 export function QuickGroupFilters({
@@ -30,6 +32,7 @@ export function QuickGroupFilters({
   initialFeaturedGroupIds,
   effectiveExcludedGroups = [],
   groupMembership = 'all',
+  linkStatus = 'all',
 }: Props) {
   const t = useTranslations('user-data-table');
 
@@ -64,11 +67,6 @@ export function QuickGroupFilters({
   const [status] = useQueryState(
     'status',
     parseAsString.withDefault('active').withOptions({ shallow: true })
-  );
-
-  const [linkStatus] = useQueryState(
-    'linkStatus',
-    parseAsString.withDefault('all').withOptions({ shallow: true })
   );
 
   const [, setPage] = useQueryState(
