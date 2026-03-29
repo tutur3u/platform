@@ -9,6 +9,17 @@ import {
   NOTIFICATION_STALE_WORKSPACE_MEMBERSHIP_SKIP_REASON,
 } from './cron-helpers';
 
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+function getRecentCreatedAt(): string {
+  return new Date(Date.now() - HOUR_MS).toISOString();
+}
+
+function getStaleCreatedAt(): string {
+  return new Date(Date.now() - (DAY_MS + HOUR_MS)).toISOString();
+}
+
 describe('fetchAllPaginatedRows', () => {
   it('collects rows across more than one 1000-row page', async () => {
     const rows = await fetchAllPaginatedRows<number>(async (from, to) => ({
@@ -50,18 +61,17 @@ describe('chunkValues', () => {
 });
 
 describe('getNotificationSkipReason', () => {
-  const notification = {
-    created_at: '2026-03-28T00:00:00.000Z',
-    id: 'notification-1',
-    scope: 'workspace',
-    user_id: 'user-1',
-    ws_id: 'ws-1',
-  };
+  function createNotification() {
+    return {
+      created_at: getRecentCreatedAt(),
+      id: 'notification-1',
+      scope: 'workspace',
+      user_id: 'user-1',
+      ws_id: 'ws-1',
+    };
+  }
 
   it('prefers age-based skip before any other checks', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-03-30T12:00:00.000Z'));
-
     const reason = await getNotificationSkipReason(
       {
         from: vi.fn(() => ({
@@ -75,13 +85,15 @@ describe('getNotificationSkipReason', () => {
         })),
       },
       {
-        notification,
+        notification: {
+          ...createNotification(),
+          created_at: getStaleCreatedAt(),
+        },
         recipientEmail: 'member@tuturuuu.com',
       }
     );
 
     expect(reason).toBe(NOTIFICATION_OLDER_THAN_ONE_DAY_SKIP_REASON);
-    vi.useRealTimers();
   });
 
   it('returns stale membership before evaluating recipient domain', async () => {
@@ -99,7 +111,7 @@ describe('getNotificationSkipReason', () => {
         })),
       },
       {
-        notification,
+        notification: createNotification(),
         recipientEmail: 'member@example.com',
       }
     );
@@ -124,7 +136,7 @@ describe('getNotificationSkipReason', () => {
         })),
       },
       {
-        notification,
+        notification: createNotification(),
         recipientEmail: 'member@example.com',
       }
     );
@@ -151,7 +163,7 @@ describe('getNotificationSkipReason', () => {
         })),
       },
       {
-        notification,
+        notification: createNotification(),
         recipientEmail: 'member@tuturuuu.com',
         sendResult: {
           blockedRecipients: [
@@ -196,7 +208,7 @@ describe('getNotificationSkipReason', () => {
         })),
       },
       {
-        notification,
+        notification: createNotification(),
         recipientEmail: 'member@tuturuuu.com',
       }
     );
@@ -224,7 +236,7 @@ describe('getNotificationSkipReason', () => {
       },
       {
         errorMessage: 'Sender domain not verified in SES',
-        notification,
+        notification: createNotification(),
         recipientEmail: 'member@tuturuuu.com',
       }
     );

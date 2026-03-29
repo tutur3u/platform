@@ -2,6 +2,26 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+
+function createRecentNotificationWindow() {
+  const createdAt = new Date(Date.now() - HOUR_MS);
+  const windowStart = new Date(createdAt.getTime());
+  const windowEnd = new Date(createdAt.getTime() + 5 * MINUTE_MS);
+
+  return {
+    created_at: createdAt.toISOString(),
+    window_end: windowEnd.toISOString(),
+    window_start: windowStart.toISOString(),
+  };
+}
+
+function getStaleCreatedAt(): string {
+  return new Date(Date.now() - (DAY_MS + HOUR_MS)).toISOString();
+}
+
 const mocks = vi.hoisted(() => {
   const fromMock = vi.fn();
   const pushDeleteInMock = vi.fn();
@@ -108,6 +128,7 @@ describe('process-notification-batches route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('CRON_SECRET', 'cron-secret');
+    const recentWindow = createRecentNotificationWindow();
     mocks.sendPushNotificationBatchMock.mockResolvedValue({
       deliveredCount: 1,
       invalidTokens: ['stale-token'],
@@ -133,8 +154,8 @@ describe('process-notification-batches route', () => {
         email: null,
         id: 'batch-1',
         user_id: 'user-1',
-        window_end: '2026-03-28T00:05:00.000Z',
-        window_start: '2026-03-28T00:00:00.000Z',
+        window_end: recentWindow.window_end,
+        window_start: recentWindow.window_start,
         ws_id: ROOT_WORKSPACE_ID,
       },
     ];
@@ -144,7 +165,7 @@ describe('process-notification-batches route', () => {
         id: 'log-1',
         notification_id: 'notification-1',
         notifications: {
-          created_at: '2026-03-28T00:00:00.000Z',
+          created_at: recentWindow.created_at,
           data: { board_id: 'board-1', workspace_id: ROOT_WORKSPACE_ID },
           description: 'Security alert',
           entity_id: 'task-1',
@@ -279,7 +300,7 @@ describe('process-notification-batches route', () => {
   });
 
   it('drains fully stale batches as skipped', async () => {
-    deliveryLogs[0]!.notifications.created_at = '2026-03-26T00:00:00.000Z';
+    deliveryLogs[0]!.notifications.created_at = getStaleCreatedAt();
 
     const response = await GET(
       new NextRequest(
@@ -514,13 +535,14 @@ describe('process-notification-batches route', () => {
   });
 
   it('drains more than the old 50-batch cap in one run', async () => {
+    const recentWindow = createRecentNotificationWindow();
     batches = Array.from({ length: 51 }, (_, index) => ({
       channel: 'push',
       email: null,
       id: `batch-${index + 1}`,
       user_id: 'user-1',
-      window_end: '2026-03-28T00:05:00.000Z',
-      window_start: '2026-03-28T00:00:00.000Z',
+      window_end: recentWindow.window_end,
+      window_start: recentWindow.window_start,
       ws_id: ROOT_WORKSPACE_ID,
     }));
     deliveryLogs = batches.map((batch, index) => ({
@@ -528,7 +550,7 @@ describe('process-notification-batches route', () => {
       id: `log-${index + 1}`,
       notification_id: `notification-${index + 1}`,
       notifications: {
-        created_at: '2026-03-28T00:00:00.000Z',
+        created_at: recentWindow.created_at,
         data: { workspace_id: ROOT_WORKSPACE_ID },
         description: `Notification ${index + 1}`,
         entity_id: `task-${index + 1}`,
