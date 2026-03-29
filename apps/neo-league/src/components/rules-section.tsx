@@ -56,7 +56,7 @@ export default function RulesSection() {
                     <h4 className="font-bold text-foreground">Who</h4>
                     <p className="mt-1 text-muted-foreground text-sm">
                       Undergraduates <strong>over 18 years old</strong> from any
-                      university in Ho Chi Minh City.
+                      university across Vietnam.
                     </p>
                   </div>
                 </li>
