@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
+import { formatMonthLabel } from '../utils';
 
 export type AvailableMonthOption = {
   value: string;
@@ -82,9 +83,10 @@ export function SubscriptionAttendanceSummary({
 
   // Ensure Select always receives a value present in availableMonths to avoid Radix update loops
   const isValidMonth = availableMonths.some((m) => m.value === selectedMonth);
-  const displayMonth = isValidMonth
+  const resolvedSelectedMonth = isValidMonth
     ? selectedMonth
     : (availableMonths[0]?.value ?? selectedMonth);
+  const monthLabel = formatMonthLabel(resolvedSelectedMonth, locale);
 
   return (
     <Card>
@@ -101,29 +103,12 @@ export function SubscriptionAttendanceSummary({
           <CardDescription className="flex flex-col gap-1">
             {selectedGroupIds.length === 1
               ? t('ws-invoices.attendance_for_month', {
-                  month: new Date(`${selectedMonth}-01`).toLocaleDateString(
-                    locale,
-                    {
-                      year: 'numeric',
-                      month: 'long',
-                    }
-                  ),
+                  month: monthLabel,
                 })
               : t('ws-invoices.combined_attendance_for_month', {
                   count: selectedGroupIds.length,
-                  month: new Date(`${selectedMonth}-01`).toLocaleDateString(
-                    locale,
-                    {
-                      year: 'numeric',
-                      month: 'long',
-                    }
-                  ),
-                  default: `Combined attendance from ${selectedGroupIds.length} groups for ${new Date(
-                    `${selectedMonth}-01`
-                  ).toLocaleDateString(locale, {
-                    year: 'numeric',
-                    month: 'long',
-                  })}`,
+                  month: monthLabel,
+                  default: `Combined attendance from ${selectedGroupIds.length} groups for ${monthLabel}`,
                 })}
             <span className="text-muted-foreground text-xs">
               {isSelectedMonthPaid
@@ -143,7 +128,7 @@ export function SubscriptionAttendanceSummary({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Select value={displayMonth} onValueChange={onMonthChange}>
+          <Select value={resolvedSelectedMonth} onValueChange={onMonthChange}>
             <SelectTrigger>
               <SelectValue placeholder={t('ws-invoices.select_month')} />
             </SelectTrigger>
@@ -260,7 +245,7 @@ export function SubscriptionAttendanceSummary({
                 <Label>{t('ws-invoices.attendance_calendar')}</Label>
                 <AttendanceCalendar
                   userAttendance={userAttendance}
-                  selectedMonth={selectedMonth}
+                  selectedMonth={resolvedSelectedMonth}
                   selectedGroups={userGroups
                     .filter(
                       (

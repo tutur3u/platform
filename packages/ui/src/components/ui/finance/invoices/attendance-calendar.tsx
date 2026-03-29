@@ -1,6 +1,7 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import { getMonthStartDate, parseLocalCalendarDate } from './utils';
 
 export interface AttendanceGroup {
   workspace_user_groups: {
@@ -30,7 +31,7 @@ export function AttendanceCalendar({
   const t = useTranslations();
 
   const currentDate = useMemo(
-    () => new Date(`${selectedMonth}-01`),
+    () => getMonthStartDate(selectedMonth),
     [selectedMonth]
   );
 
@@ -51,7 +52,7 @@ export function AttendanceCalendar({
   const attendanceMap = useMemo(() => {
     const map = new Map<string, Map<string, string>>();
     userAttendance.forEach((attendance) => {
-      const date = new Date(attendance.date);
+      const date = parseLocalCalendarDate(attendance.date);
       const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
       if (!map.has(dateKey)) {
@@ -98,13 +99,13 @@ export function AttendanceCalendar({
     if (!sessions || !Array.isArray(sessions)) return false;
 
     try {
-      const startOfMonth = new Date(`${selectedMonth}-01`);
+      const startOfMonth = getMonthStartDate(selectedMonth);
       const nextMonth = new Date(startOfMonth);
       nextMonth.setMonth(nextMonth.getMonth() + 1);
 
       return sessions.some((session) => {
         if (!session.date) return false;
-        const sessionDate = new Date(session.date);
+        const sessionDate = parseLocalCalendarDate(session.date);
         // Check if date is valid
         if (Number.isNaN(sessionDate.getTime())) return false;
         return (
@@ -181,7 +182,7 @@ export function AttendanceCalendar({
           {daysInMonth.map((day, idx) => {
             const isCurrentMonthDay = isCurrentMonth(day);
             const dateSessions = groupSessions.filter((session) => {
-              const sessionDate = new Date(session.date);
+              const sessionDate = parseLocalCalendarDate(session.date);
               return (
                 sessionDate.getDate() === day.getDate() &&
                 sessionDate.getMonth() === day.getMonth() &&
