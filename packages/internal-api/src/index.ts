@@ -108,6 +108,17 @@ export {
   updateWorkspaceReferralSettings,
   type WorkspaceReferralSettingsPayload,
 } from './promotions';
+export {
+  type CreateReportUploadUrlPayload,
+  type CreateReportUploadUrlResponse,
+  type CreateReportUploadUrlsPayload,
+  type CreateReportUploadUrlsResponse,
+  createReportUploadUrl,
+  createReportUploadUrls,
+  type SubmitReportPayload,
+  type SubmitReportResponse,
+  submitReport,
+} from './reports';
 export { listRoleMembers, listWorkspaceRoles } from './roles';
 export {
   checkWorkspacePermission,

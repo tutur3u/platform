@@ -8,6 +8,10 @@ import {
   Upload,
   X,
 } from '@tuturuuu/icons';
+import {
+  createReportUploadUrls,
+  submitReport,
+} from '@tuturuuu/internal-api/reports';
 import type { Product, SupportType } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -45,7 +49,7 @@ interface ReportProblemFormData {
 }
 
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_FILES = 10;
+const MAX_FILES = 5;
 
 // Allowed media types
 const ALLOWED_IMAGE_TYPES = [
@@ -55,6 +59,53 @@ const ALLOWED_IMAGE_TYPES = [
   'image/gif',
 ];
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+
+async function uploadReportMedia(files: File[]): Promise<string[]> {
+  if (files.length === 0) {
+    return [];
+  }
+
+  const { uploads } = await createReportUploadUrls({
+    files: files.map((file) => ({
+      filename: file.name,
+      contentType: file.type,
+      size: file.size,
+    })),
+  });
+
+  if (uploads.length !== files.length) {
+    throw new Error('Failed to prepare media uploads');
+  }
+
+  return Promise.all(
+    uploads.map(async (upload, index) => {
+      const file = files[index];
+
+      if (!file) {
+        throw new Error('Missing media file during upload');
+      }
+
+      const uploadResponse = await fetch(upload.signedUrl, {
+        method: 'PUT',
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${upload.token}`,
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        const text = await uploadResponse.text().catch(() => '');
+        throw new Error(
+          `Failed to upload media (${uploadResponse.status})${text ? `: ${text}` : ''}`
+        );
+      }
+
+      return upload.path;
+    })
+  );
+}
 
 // Zod schema for form validation
 const reportProblemSchema = z.object({
@@ -520,33 +571,24 @@ export function ReportProblemDialog({
     setIsSubmitting(true);
 
     try {
-      // Default API submission logic
-      const apiFormData = new FormData();
-      apiFormData.append('product', formData.product);
-      apiFormData.append('type', formData.type);
-      apiFormData.append('suggestion', formData.suggestion);
+      const validatedForm = reportProblemSchema.parse(formData);
+      const imagePaths = await uploadReportMedia(validatedForm.media);
 
       // Generate a subject based on the type and product
-      const subject = `${formData.type === 'bug' ? 'Bug Report' : 'Feature Request'} - ${
-        DEFAULT_PRODUCTS.find((p) => p.value === formData.product)?.label ||
-        formData.product
+      const subject = `${validatedForm.type === 'bug' ? 'Bug Report' : 'Feature Request'} - ${
+        DEFAULT_PRODUCTS.find((p) => p.value === validatedForm.product)
+          ?.label || validatedForm.product
       }`;
-      apiFormData.append('subject', subject);
 
-      // Append media files
-      formData.media.forEach((file, index) => {
-        apiFormData.append(`media_${index}`, file);
+      const result = await submitReport({
+        product: validatedForm.product,
+        type: validatedForm.type,
+        suggestion: validatedForm.suggestion,
+        subject,
+        imagePaths,
       });
 
-      // Submit to API
-      const response = await fetch('/api/reports', {
-        method: 'POST',
-        body: apiFormData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (result.success) {
         toast.success(t('report-submitted-success'));
       } else {
         throw new Error(result.message || 'Failed to submit report');
