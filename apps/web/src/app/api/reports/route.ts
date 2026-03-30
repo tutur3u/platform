@@ -43,7 +43,16 @@ const createReportSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const parsed = createReportSchema.safeParse(await request.json());
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, message: 'Invalid JSON body.' },
+        { status: 400 }
+      );
+    }
+    const parsed = createReportSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
