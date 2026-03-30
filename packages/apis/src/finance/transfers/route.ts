@@ -492,7 +492,7 @@ export async function POST(req: Request, { params }: Params) {
     : data.amount;
 
   // Create "from" transaction (negative amount = outflow)
-  const { data: fromTx, error: fromErr } = await supabase
+  const { data: fromTx, error: fromErr } = await sbAdmin
     .from('wallet_transactions')
     .insert({
       amount: -Math.abs(data.amount),
@@ -515,7 +515,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Create "to" transaction (positive amount = inflow)
-  const { data: toTx, error: toErr } = await supabase
+  const { data: toTx, error: toErr } = await sbAdmin
     .from('wallet_transactions')
     .insert({
       amount: Math.abs(destinationAmount),
@@ -532,7 +532,7 @@ export async function POST(req: Request, { params }: Params) {
   if (toErr || !toTx) {
     console.error('Error creating to-transaction:', toErr);
     // Clean up the from-transaction
-    await supabase.from('wallet_transactions').delete().eq('id', fromTx.id);
+    await sbAdmin.from('wallet_transactions').delete().eq('id', fromTx.id);
     return NextResponse.json(
       { message: 'Error creating transfer' },
       { status: 500 }
@@ -552,7 +552,7 @@ export async function POST(req: Request, { params }: Params) {
     console.error('Error linking transfer transactions:', linkErr);
     // Validate user still has access to both transactions before admin cleanup
     const { data: rollbackValidationRows, error: rollbackValidationError } =
-      await supabase
+      await sbAdmin
         .from('wallet_transactions')
         .select('id')
         .in('id', [fromTx.id, toTx.id]);
@@ -611,7 +611,7 @@ export async function POST(req: Request, { params }: Params) {
       { transaction_id: toTx.id, tag_id: tagId },
     ]);
 
-    const { error: tagError } = await supabase
+    const { error: tagError } = await sbAdmin
       .from('wallet_transaction_tags')
       .insert(tagInserts);
 
