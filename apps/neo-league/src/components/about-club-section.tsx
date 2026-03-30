@@ -59,7 +59,7 @@ export default function AboutClubSection() {
             <div className="relative">
               <div className="group relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
                 <Image
-                  src="/about-us/sem-a-2026.jpg"
+                  src="/about-us/club-day.jpeg"
                   alt="NCT Club Activities"
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
