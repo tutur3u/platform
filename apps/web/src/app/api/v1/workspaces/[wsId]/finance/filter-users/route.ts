@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -13,13 +16,16 @@ export async function GET(request: Request, { params }: Params) {
   const type = url.searchParams.get('type') ?? 'all';
 
   const permissions = await getPermissions({ wsId, request });
+
   if (!permissions || permissions.withoutPermission('view_transactions')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   if (type === 'transaction_creators') {
-    const { data, error } = await supabase
-      .from('distinct_transaction_creators' as never)
+    const { data, error } = await sbAdmin
+      .from('distinct_transaction_creators')
       .select('id, display_name');
 
     if (error) {
@@ -34,8 +40,8 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   if (type === 'invoice_creators') {
-    const { data, error } = await supabase
-      .from('distinct_invoice_creators' as never)
+    const { data, error } = await sbAdmin
+      .from('distinct_invoice_creators')
       .select('id, display_name');
 
     if (error) {
