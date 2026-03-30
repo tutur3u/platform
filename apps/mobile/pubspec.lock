@@ -1024,10 +1024,10 @@ packages:
     dependency: "direct main"
     description:
       name: image_cropper
-      sha256: "2cd06f097b5bd18ff77d3f80fadef83e270ea23c82906bbf17febc3db8d68ec6"
+      sha256: d2555be1ec4b7b12fc502ede481c846ad44578fbb0748debd4c648b25ca07cad
       url: "https://pub.dev"
     source: hosted
-    version: "12.1.0"
+    version: "12.1.1"
   image_cropper_for_web:
     dependency: transitive
     description:
@@ -2139,4 +2139,4 @@ packages:
     version: "2.1.0"
 sdks:
   dart: ">=3.11.0 <4.0.0"
-  flutter: ">=3.41.0 <4.0.0"
+  flutter: ">=3.41.0"
