@@ -126,6 +126,7 @@ class TaskPortfolioActions {
 
     await shad.showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (_) => TaskInitiativeDialog(
         onSubmit: (result) => _runActionWithResult(
           () => context.read<TaskPortfolioCubit>().createInitiative(
@@ -146,6 +147,7 @@ class TaskPortfolioActions {
 
     await shad.showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (_) => TaskInitiativeDialog(
         initiative: initiative,
         onSubmit: (result) => _runActionWithResult(
