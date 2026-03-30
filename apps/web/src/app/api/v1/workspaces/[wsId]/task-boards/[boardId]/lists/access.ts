@@ -85,7 +85,7 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
   }
 
   if (!listId) {
-    return { supabase, wsId: board.ws_id, boardId, user, board };
+    return { supabase, sbAdmin, wsId: board.ws_id, boardId, user, board };
   }
 
   const { data: list, error: listError } = await sbAdmin
@@ -113,5 +113,14 @@ export async function requireBoardAccess(request: Request, rawParams: unknown) {
     };
   }
 
-  return { supabase, wsId: board.ws_id, boardId, listId, user, board, list };
+  return {
+    supabase,
+    sbAdmin,
+    wsId: board.ws_id,
+    boardId,
+    listId,
+    user,
+    board,
+    list,
+  };
 }
