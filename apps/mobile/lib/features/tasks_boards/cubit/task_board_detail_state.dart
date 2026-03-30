@@ -76,6 +76,7 @@ class TaskBoardDetailState extends Equatable {
     this.listHasMoreById = const <String, bool>{},
     this.listOffsetsById = const <String, int>{},
     this.listPageSizeById = const <String, int>{},
+    this.listLoadErrorById = const <String, String>{},
     this.selectedTaskId,
     this.isMutating = false,
     this.mutationError,
@@ -96,6 +97,7 @@ class TaskBoardDetailState extends Equatable {
   final Map<String, bool> listHasMoreById;
   final Map<String, int> listOffsetsById;
   final Map<String, int> listPageSizeById;
+  final Map<String, String> listLoadErrorById;
   final String? selectedTaskId;
   final bool isMutating;
   final String? mutationError;
@@ -223,6 +225,7 @@ class TaskBoardDetailState extends Equatable {
     Map<String, bool>? listHasMoreById,
     Map<String, int>? listOffsetsById,
     Map<String, int>? listPageSizeById,
+    Map<String, String>? listLoadErrorById,
     Object? selectedTaskId = _taskBoardDetailSentinel,
     bool? isMutating,
     Object? mutationError = _taskBoardDetailSentinel,
@@ -252,6 +255,7 @@ class TaskBoardDetailState extends Equatable {
       listHasMoreById: listHasMoreById ?? this.listHasMoreById,
       listOffsetsById: listOffsetsById ?? this.listOffsetsById,
       listPageSizeById: listPageSizeById ?? this.listPageSizeById,
+      listLoadErrorById: listLoadErrorById ?? this.listLoadErrorById,
       selectedTaskId: selectedTaskId == _taskBoardDetailSentinel
           ? this.selectedTaskId
           : selectedTaskId as String?,
@@ -285,6 +289,7 @@ class TaskBoardDetailState extends Equatable {
     listHasMoreById,
     listOffsetsById,
     listPageSizeById,
+    listLoadErrorById,
     selectedTaskId,
     isMutating,
     mutationError,

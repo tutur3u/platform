@@ -12,6 +12,7 @@ class _BoardListSection extends StatelessWidget {
     required this.onTaskMove,
     required this.onCreateTask,
     required this.isLoadingTasks,
+    required this.hasLoadError,
     required this.hasMoreTasks,
     this.onLoadMoreTasks,
     this.onEditList,
@@ -31,6 +32,7 @@ class _BoardListSection extends StatelessWidget {
   final void Function(TaskBoardTask task) onTaskMove;
   final VoidCallback onCreateTask;
   final bool isLoadingTasks;
+  final bool hasLoadError;
   final bool hasMoreTasks;
   final VoidCallback? onLoadMoreTasks;
   final VoidCallback? onEditList;
@@ -169,118 +171,45 @@ class _BoardListSection extends StatelessWidget {
                     children: [
                       const shad.Gap(10),
                       if (tasks.isEmpty && isLoadingTasks)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Container(
-                            width: double.infinity,
-                            constraints: const BoxConstraints(minHeight: 140),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.background.withValues(
-                                alpha: 0.65,
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: style.surfaceBorder.withValues(
-                                  alpha: 0.7,
-                                ),
-                              ),
-                            ),
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: shad.CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  const shad.Gap(10),
-                                  Text(
-                                    context.l10n.notificationsLoadingMore,
-                                    textAlign: TextAlign.center,
-                                    style: theme.typography.textMuted,
-                                  ),
-                                ],
-                              ),
-                            ),
+                        _PaginatedPlaceholder(
+                          minHeight: 140,
+                          horizontalPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
                           ),
+                          style: style,
+                          state: _PaginatedPlaceholderState.loading,
+                          onCreateTask: onCreateTask,
+                        )
+                      else if (tasks.isEmpty && hasLoadError)
+                        _PaginatedPlaceholder(
+                          minHeight: 140,
+                          horizontalPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          style: style,
+                          state: _PaginatedPlaceholderState.error,
+                          onCreateTask: onCreateTask,
+                          onRetry: onLoadMoreTasks,
                         )
                       else if (tasks.isEmpty && !isTasksLoaded)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Container(
-                            width: double.infinity,
-                            constraints: const BoxConstraints(minHeight: 140),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.background.withValues(
-                                alpha: 0.65,
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: style.surfaceBorder.withValues(
-                                  alpha: 0.7,
-                                ),
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                context.l10n.taskBoardDetailNoTasksInList,
-                                textAlign: TextAlign.center,
-                                style: theme.typography.textMuted,
-                              ),
-                            ),
+                        _PaginatedPlaceholder(
+                          minHeight: 140,
+                          horizontalPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
                           ),
+                          style: style,
+                          state: _PaginatedPlaceholderState.notLoaded,
+                          onCreateTask: onCreateTask,
                         )
                       else if (tasks.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Container(
-                            width: double.infinity,
-                            constraints: const BoxConstraints(minHeight: 140),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.background.withValues(
-                                alpha: 0.65,
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: style.surfaceBorder.withValues(
-                                  alpha: 0.7,
-                                ),
-                              ),
-                            ),
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.inbox_outlined,
-                                    size: 28,
-                                    color: style.accent,
-                                  ),
-                                  const shad.Gap(10),
-                                  Text(
-                                    context.l10n.taskBoardDetailNoTasksInList,
-                                    textAlign: TextAlign.center,
-                                    style: theme.typography.textMuted,
-                                  ),
-                                  const shad.Gap(12),
-                                  shad.PrimaryButton(
-                                    leading: const Icon(Icons.add),
-                                    size: shad.ButtonSize.small,
-                                    onPressed: onCreateTask,
-                                    child: Text(
-                                      context.l10n.taskBoardDetailCreateTask,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        _PaginatedPlaceholder(
+                          minHeight: 140,
+                          horizontalPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
                           ),
+                          style: style,
+                          state: _PaginatedPlaceholderState.empty,
+                          onCreateTask: onCreateTask,
                         )
                       else
                         ...tasks.map(
@@ -596,6 +525,7 @@ class _KanbanColumn extends StatelessWidget {
     required this.isTasksLoaded,
     required this.height,
     required this.isLoadingTasks,
+    required this.hasLoadError,
     required this.hasMoreTasks,
     required this.onTaskTap,
     required this.onTaskMove,
@@ -610,6 +540,7 @@ class _KanbanColumn extends StatelessWidget {
   final bool isTasksLoaded;
   final double height;
   final bool isLoadingTasks;
+  final bool hasLoadError;
   final bool hasMoreTasks;
   final VoidCallback? onLoadMoreTasks;
   final void Function(TaskBoardTask task) onTaskTap;
@@ -720,105 +651,37 @@ class _KanbanColumn extends StatelessWidget {
                       ),
                       Expanded(
                         child: tasks.isEmpty && isLoadingTasks
-                            ? Padding(
-                                padding: const EdgeInsets.all(10),
-                                child: Container(
-                                  width: double.infinity,
-                                  constraints: const BoxConstraints(
-                                    minHeight: 170,
-                                  ),
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.background
-                                        .withValues(alpha: 0.65),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: style.surfaceBorder.withValues(
-                                        alpha: 0.7,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: shad.CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                        const shad.Gap(10),
-                                        Text(
-                                          context.l10n.notificationsLoadingMore,
-                                          textAlign: TextAlign.center,
-                                          style: theme.typography.textMuted,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                            ? _PaginatedPlaceholder(
+                                minHeight: 170,
+                                horizontalPadding: const EdgeInsets.all(10),
+                                style: style,
+                                state: _PaginatedPlaceholderState.loading,
+                                onCreateTask: onCreateTask,
+                              )
+                            : tasks.isEmpty && hasLoadError
+                            ? _PaginatedPlaceholder(
+                                minHeight: 170,
+                                horizontalPadding: const EdgeInsets.all(10),
+                                style: style,
+                                state: _PaginatedPlaceholderState.error,
+                                onCreateTask: onCreateTask,
+                                onRetry: onLoadMoreTasks,
                               )
                             : tasks.isEmpty && !isTasksLoaded
-                            ? Padding(
-                                padding: const EdgeInsets.all(10),
-                                child: Container(
-                                  width: double.infinity,
-                                  constraints: const BoxConstraints(
-                                    minHeight: 170,
-                                  ),
-                                  padding: const EdgeInsets.all(16),
-                                  child: Center(
-                                    child: Text(
-                                      context.l10n.taskBoardDetailNoTasksInList,
-                                      textAlign: TextAlign.center,
-                                      style: theme.typography.textMuted,
-                                    ),
-                                  ),
-                                ),
+                            ? _PaginatedPlaceholder(
+                                minHeight: 170,
+                                horizontalPadding: const EdgeInsets.all(10),
+                                style: style,
+                                state: _PaginatedPlaceholderState.notLoaded,
+                                onCreateTask: onCreateTask,
                               )
                             : tasks.isEmpty
-                            ? Padding(
-                                padding: const EdgeInsets.all(10),
-                                child: Container(
-                                  width: double.infinity,
-                                  constraints: const BoxConstraints(
-                                    minHeight: 170,
-                                  ),
-                                  padding: const EdgeInsets.all(16),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.inbox_outlined,
-                                          size: 28,
-                                          color: style.accent,
-                                        ),
-                                        const shad.Gap(10),
-                                        Text(
-                                          context
-                                              .l10n
-                                              .taskBoardDetailNoTasksInList,
-                                          textAlign: TextAlign.center,
-                                          style: theme.typography.textMuted,
-                                        ),
-                                        const shad.Gap(12),
-                                        shad.PrimaryButton(
-                                          leading: const Icon(Icons.add),
-                                          size: shad.ButtonSize.small,
-                                          onPressed: onCreateTask,
-                                          child: Text(
-                                            context
-                                                .l10n
-                                                .taskBoardDetailCreateTask,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                            ? _PaginatedPlaceholder(
+                                minHeight: 170,
+                                horizontalPadding: const EdgeInsets.all(10),
+                                style: style,
+                                state: _PaginatedPlaceholderState.empty,
+                                onCreateTask: onCreateTask,
                               )
                             : ListView.separated(
                                 primary: false,
@@ -907,6 +770,95 @@ class _KanbanColumn extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _PaginatedPlaceholderState { loading, notLoaded, empty, error }
+
+class _PaginatedPlaceholder extends StatelessWidget {
+  const _PaginatedPlaceholder({
+    required this.minHeight,
+    required this.horizontalPadding,
+    required this.style,
+    required this.state,
+    required this.onCreateTask,
+    this.onRetry,
+  });
+
+  final double minHeight;
+  final EdgeInsets horizontalPadding;
+  final _TaskBoardListVisualStyle style;
+  final _PaginatedPlaceholderState state;
+  final VoidCallback onCreateTask;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final isLoading = state == _PaginatedPlaceholderState.loading;
+    final isEmpty = state == _PaginatedPlaceholderState.empty;
+    final isError = state == _PaginatedPlaceholderState.error;
+
+    return Padding(
+      padding: horizontalPadding,
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(minHeight: minHeight),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.background.withValues(alpha: 0.65),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: style.surfaceBorder.withValues(alpha: 0.7)),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: shad.CircularProgressIndicator(strokeWidth: 2),
+                )
+              else if (isEmpty)
+                Icon(Icons.inbox_outlined, size: 28, color: style.accent)
+              else if (isError)
+                Icon(
+                  Icons.error_outline,
+                  size: 24,
+                  color: theme.colorScheme.destructive,
+                ),
+              if (isLoading || isEmpty || isError) const shad.Gap(10),
+              Text(
+                isLoading
+                    ? context.l10n.notificationsLoadingMore
+                    : isError
+                    ? context.l10n.commonSomethingWentWrong
+                    : context.l10n.taskBoardDetailNoTasksInList,
+                textAlign: TextAlign.center,
+                style: theme.typography.textMuted,
+              ),
+              if (isEmpty) ...[
+                const shad.Gap(12),
+                shad.PrimaryButton(
+                  leading: const Icon(Icons.add),
+                  size: shad.ButtonSize.small,
+                  onPressed: onCreateTask,
+                  child: Text(context.l10n.taskBoardDetailCreateTask),
+                ),
+              ],
+              if (isError && onRetry != null) ...[
+                const shad.Gap(12),
+                shad.OutlineButton(
+                  onPressed: onRetry,
+                  child: Text(context.l10n.commonRetry),
+                ),
+              ],
+            ],
           ),
         ),
       ),

@@ -54,6 +54,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         listPageSizeById: targetChanged
             ? const <String, int>{}
             : state.listPageSizeById,
+        listLoadErrorById: targetChanged
+            ? const <String, String>{}
+            : state.listLoadErrorById,
         selectedTaskId: targetChanged ? null : state.selectedTaskId,
         clearError: true,
       ),
@@ -78,6 +81,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           listHasMoreById: const <String, bool>{},
           listOffsetsById: const <String, int>{},
           listPageSizeById: const <String, int>{},
+          listLoadErrorById: const <String, String>{},
           clearError: true,
         ),
       );
@@ -124,7 +128,11 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       return;
     }
 
-    if (!loadMore && !forceRefresh && state.loadedListIds.contains(listId)) {
+    final isListFullyLoaded =
+        state.loadedListIds.contains(listId) &&
+        !(state.listHasMoreById[listId] ?? true);
+
+    if (!loadMore && !forceRefresh && isListFullyLoaded) {
       return;
     }
 
@@ -136,7 +144,14 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         state.listPageSizeById[listId] ?? _normalizePageSize(pageSizeHint);
     final offset = loadMore ? (state.listOffsetsById[listId] ?? 0) : 0;
     final nextLoading = {...state.loadingListIds, listId};
-    emit(state.copyWith(loadingListIds: nextLoading));
+    final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
+      ..remove(listId);
+    emit(
+      state.copyWith(
+        loadingListIds: nextLoading,
+        listLoadErrorById: nextLoadErrors,
+      ),
+    );
 
     try {
       final page = await _taskRepository.getBoardTasksForList(
@@ -152,8 +167,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       if (requestToken != _loadRequestToken ||
           state.workspaceId != wsId ||
           state.board?.id != board.id) {
-        final nextLoadingDone = {...state.loadingListIds}..remove(listId);
-        emit(state.copyWith(loadingListIds: nextLoadingDone));
         return;
       }
 
@@ -161,17 +174,29 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           ? (state.listTasksByListId[listId] ?? const <TaskBoardTask>[])
           : const <TaskBoardTask>[];
       final merged = _mergeTaskPages(existing, page);
-      final nextTasksByList = Map<String, List<TaskBoardTask>>.from(
+      final baseTasksByList = Map<String, List<TaskBoardTask>>.from(
         state.listTasksByListId,
       )..[listId] = List.unmodifiable(merged);
-      final nextLoaded = {...state.loadedListIds, listId};
+      final nextTasksByList = _mergeCurrentBoardTaskSnapshots(
+        board: state.board ?? board,
+        tasksByList: baseTasksByList,
+      );
       final nextLoadingDone = {...state.loadingListIds}..remove(listId);
+      final listHasMore = page.length >= pageSize;
       final nextHasMore = Map<String, bool>.from(state.listHasMoreById)
-        ..[listId] = page.length >= pageSize;
+        ..[listId] = listHasMore;
       final nextOffsets = Map<String, int>.from(state.listOffsetsById)
         ..[listId] = merged.length;
       final nextPageSizes = Map<String, int>.from(state.listPageSizeById)
         ..[listId] = pageSize;
+      final nextLoaded = Set<String>.from(state.loadedListIds);
+      if (listHasMore) {
+        nextLoaded.remove(listId);
+      } else {
+        nextLoaded.add(listId);
+      }
+      final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
+        ..remove(listId);
       final nextBoard = board.copyWith(
         tasks: _flattenTasks(board.lists, nextTasksByList),
       );
@@ -188,6 +213,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           listHasMoreById: nextHasMore,
           listOffsetsById: nextOffsets,
           listPageSizeById: nextPageSizes,
+          listLoadErrorById: nextLoadErrors,
         ),
       );
     } on Exception {
@@ -198,7 +224,14 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         return;
       }
       final nextLoadingDone = {...state.loadingListIds}..remove(listId);
-      emit(state.copyWith(loadingListIds: nextLoadingDone));
+      final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
+        ..[listId] = 'list_load_failed';
+      emit(
+        state.copyWith(
+          loadingListIds: nextLoadingDone,
+          listLoadErrorById: nextLoadErrors,
+        ),
+      );
     }
   }
 
@@ -206,10 +239,17 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     final board = state.board;
     if (board == null) return;
 
-    final futures = board.lists
-        .map((list) => loadListTasks(listId: list.id))
-        .toList(growable: false);
-    await Future.wait<void>(futures);
+    for (final list in board.lists) {
+      while (state.workspaceId == board.wsId &&
+          state.board?.id == board.id &&
+          !state.loadingListIds.contains(list.id) &&
+          !state.loadedListIds.contains(list.id)) {
+        await loadListTasks(listId: list.id, loadMore: true);
+        if (state.listLoadErrorById.containsKey(list.id)) {
+          break;
+        }
+      }
+    }
   }
 
   Future<void> createTask({
@@ -359,7 +399,25 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       return;
     }
 
-    emit(state.copyWith(board: board.copyWith(tasks: nextTasks)));
+    final nextBoard = board.copyWith(tasks: nextTasks);
+    final nextTasksByList = _mergeCurrentBoardTaskSnapshots(
+      board: nextBoard,
+      tasksByList: state.listTasksByListId,
+    );
+
+    final finalBoard = nextBoard.copyWith(
+      tasks: _flattenTasks(nextBoard.lists, nextTasksByList),
+    );
+
+    emit(
+      state.copyWith(
+        board: finalBoard,
+        taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
+          finalBoard.tasks,
+        ),
+        listTasksByListId: nextTasksByList,
+      ),
+    );
   }
 
   Map<String, String> _buildTaskDescriptionSearchIndex(
@@ -616,8 +674,44 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       if (requestToken != _loadRequestToken) {
         return;
       }
-      await loadListTasks(listId: listId);
+      while (requestToken == _loadRequestToken &&
+          state.workspaceId == detail.wsId &&
+          state.board?.id == detail.id &&
+          !state.loadingListIds.contains(listId) &&
+          !state.loadedListIds.contains(listId)) {
+        final hasSnapshot = state.listTasksByListId.containsKey(listId);
+        await loadListTasks(
+          listId: listId,
+          loadMore: hasSnapshot,
+        );
+        if (state.listLoadErrorById.containsKey(listId)) {
+          break;
+        }
+      }
     }
+  }
+
+  static Map<String, List<TaskBoardTask>> _mergeCurrentBoardTaskSnapshots({
+    required TaskBoardDetail board,
+    required Map<String, List<TaskBoardTask>> tasksByList,
+  }) {
+    if (tasksByList.isEmpty || board.tasks.isEmpty) {
+      return tasksByList;
+    }
+
+    final taskById = <String, TaskBoardTask>{
+      for (final task in board.tasks) task.id: task,
+    };
+
+    final next = <String, List<TaskBoardTask>>{};
+    for (final entry in tasksByList.entries) {
+      final mergedForList = entry.value
+          .map((task) => taskById[task.id] ?? task)
+          .toList(growable: false);
+      next[entry.key] = List.unmodifiable(mergedForList);
+    }
+
+    return Map.unmodifiable(next);
   }
 
   static int _normalizePageSize(int? pageSizeHint) {
