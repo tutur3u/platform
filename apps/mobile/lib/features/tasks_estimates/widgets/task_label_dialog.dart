@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -230,8 +231,9 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
     var selected =
         parseTaskLabelColor(_colorController.text) ?? const Color(0xFF3B82F6);
 
-    final result = await shad.showDialog<Color>(
+    final result = await showAdaptiveSheet<Color>(
       context: context,
+      barrierColor: Colors.transparent,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
@@ -291,21 +293,24 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
     }
 
     setState(() => _isSubmitting = true);
-    final shouldClose = await widget.onSubmit(
-      TaskLabelFormValue(
-        name: name,
-        color: normalizedColor,
-      ),
-    );
-    if (!mounted) {
-      return;
-    }
+    try {
+      final shouldClose = await widget.onSubmit(
+        TaskLabelFormValue(
+          name: name,
+          color: normalizedColor,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
 
-    if (shouldClose) {
-      Navigator.of(context).pop(true);
-      return;
+      if (shouldClose) {
+        Navigator.of(context).pop(true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
-
-    setState(() => _isSubmitting = false);
   }
 }

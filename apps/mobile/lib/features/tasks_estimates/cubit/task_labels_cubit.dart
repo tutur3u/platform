@@ -90,6 +90,9 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
       key: cacheKey,
       decode: _decodeCacheJson,
     );
+    if (isClosed) {
+      return;
+    }
     if (cached.hasValue && !forceRefresh) {
       final json = cached.data!;
       emit(
@@ -120,6 +123,9 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
 
     try {
       final labels = await _taskRepository.getTaskLabels(wsId);
+      if (isClosed) {
+        return;
+      }
       if (_lastLoadWsId != wsId ||
           state.wsId != wsId ||
           state.requestToken != token) {
@@ -146,6 +152,9 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         tags: [_cacheTag, 'workspace:$wsId', 'module:tasks'],
       );
     } on Exception catch (error) {
+      if (isClosed) {
+        return;
+      }
       if (_lastLoadWsId != wsId ||
           state.wsId != wsId ||
           state.requestToken != token) {
@@ -174,11 +183,14 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         name: name,
         color: color,
       );
-      if (_lastLoadWsId != wsId || state.wsId != wsId) {
+      if (_lastLoadWsId != wsId) {
         return;
       }
       await loadLabels(wsId, forceRefresh: true);
     } on Exception catch (error) {
+      if (isClosed || _lastLoadWsId != wsId) {
+        return;
+      }
       emit(
         state.copyWith(
           status: TaskLabelsStatus.error,
@@ -203,11 +215,14 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         name: name,
         color: color,
       );
-      if (_lastLoadWsId != wsId || state.wsId != wsId) {
+      if (_lastLoadWsId != wsId) {
         return;
       }
       await loadLabels(wsId, forceRefresh: true);
     } on Exception catch (error) {
+      if (isClosed || _lastLoadWsId != wsId) {
+        return;
+      }
       emit(
         state.copyWith(
           status: TaskLabelsStatus.error,
@@ -225,11 +240,14 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
     emit(state.copyWith(status: TaskLabelsStatus.saving, error: null));
     try {
       await _taskRepository.deleteTaskLabel(wsId: wsId, labelId: labelId);
-      if (_lastLoadWsId != wsId || state.wsId != wsId) {
+      if (_lastLoadWsId != wsId) {
         return;
       }
       await loadLabels(wsId, forceRefresh: true);
     } on Exception catch (error) {
+      if (isClosed || _lastLoadWsId != wsId) {
+        return;
+      }
       emit(
         state.copyWith(
           status: TaskLabelsStatus.error,
