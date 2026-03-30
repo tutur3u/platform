@@ -75,6 +75,7 @@ export async function GET(req: Request, { params }: Params) {
   const { transactionId, wsId } = paramsValidation.data;
 
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
   const permissions = await getPermissions({
     wsId,
@@ -98,7 +99,7 @@ export async function GET(req: Request, { params }: Params) {
   const transaction = await verifyTransactionWorkspace(
     transactionId,
     wsId,
-    supabase
+    sbAdmin
   );
 
   if (!transaction) {
@@ -181,14 +182,13 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
 
   // Verify transaction belongs to workspace
   const transaction = await verifyTransactionWorkspace(
     transactionId,
     wsId,
-    supabase
+    sbAdmin
   );
 
   if (!transaction) {
@@ -227,7 +227,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   // Fetch existing transaction to check if it's already confidential
-  const { data: existingTx } = await supabase
+  const { data: existingTx } = await sbAdmin
     .from('wallet_transactions')
     .select(
       'is_amount_confidential, is_description_confidential, is_category_confidential'
@@ -304,7 +304,7 @@ export async function PUT(req: Request, { params }: Params) {
     updatePayload.is_category_confidential = newData.is_category_confidential;
   }
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('wallet_transactions')
     .update(updatePayload)
     .eq('id', transactionId);
@@ -324,7 +324,7 @@ export async function PUT(req: Request, { params }: Params) {
   // Handle tags if provided
   if (tagIds !== undefined) {
     // First, delete existing tags
-    await supabase
+    await sbAdmin
       .from('wallet_transaction_tags')
       .delete()
       .eq('transaction_id', transactionId);
@@ -336,7 +336,7 @@ export async function PUT(req: Request, { params }: Params) {
         tag_id: tagId,
       }));
 
-      const { error: tagError } = await supabase
+      const { error: tagError } = await sbAdmin
         .from('wallet_transaction_tags')
         .insert(tagInserts);
 
@@ -361,7 +361,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
   const { transactionId, wsId } = paramsValidation.data;
 
-  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
   const permissions = await getPermissions({
     wsId,
@@ -385,7 +385,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const transaction = await verifyTransactionWorkspace(
     transactionId,
     wsId,
-    supabase
+    sbAdmin
   );
 
   if (!transaction) {
@@ -396,7 +396,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   // Check if transaction is confidential
-  const { data: txData } = await supabase
+  const { data: txData } = await sbAdmin
     .from('wallet_transactions')
     .select(
       'is_amount_confidential, is_description_confidential, is_category_confidential'
@@ -419,7 +419,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('wallet_transactions')
     .delete()
     .eq('id', transactionId);
