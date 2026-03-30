@@ -674,16 +674,18 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       if (requestToken != _loadRequestToken) {
         return;
       }
-      while (requestToken == _loadRequestToken &&
+      if (requestToken == _loadRequestToken &&
           state.workspaceId == detail.wsId &&
           state.board?.id == detail.id &&
           !state.loadingListIds.contains(listId) &&
           !state.loadedListIds.contains(listId)) {
-        final hasSnapshot = state.listTasksByListId.containsKey(listId);
         await loadListTasks(
           listId: listId,
-          loadMore: hasSnapshot,
+          loadMore: state.listTasksByListId.containsKey(listId),
         );
+        if (requestToken != _loadRequestToken) {
+          return;
+        }
         if (state.listLoadErrorById.containsKey(listId)) {
           break;
         }

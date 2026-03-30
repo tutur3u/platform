@@ -97,7 +97,26 @@ class _TaskBoardListView extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
         children: [
-          shad.Card(child: Text(context.l10n.taskBoardDetailNoMatchingTasks)),
+          if (state.listLoadErrorById.isNotEmpty)
+            shad.Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(context.l10n.commonSomethingWentWrong),
+                  const shad.Gap(10),
+                  shad.OutlineButton(
+                    onPressed: () => unawaited(
+                      context
+                          .read<TaskBoardDetailCubit>()
+                          .ensureAllListsLoaded(),
+                    ),
+                    child: Text(context.l10n.commonRetry),
+                  ),
+                ],
+              ),
+            )
+          else
+            shad.Card(child: Text(context.l10n.taskBoardDetailNoMatchingTasks)),
         ],
       );
     }
@@ -114,15 +133,16 @@ class _TaskBoardListView extends StatelessWidget {
         final list = lists[index];
         onRequestInitialLoad(list.id, pageSizeHint, state);
         final listTasks = tasksByList[list.id] ?? const <TaskBoardTask>[];
+        final hasLoadError = state.listLoadErrorById.containsKey(list.id);
         return _BoardListSection(
           board: board,
           list: list,
           tasks: listTasks,
           isTasksLoaded: state.loadedListIds.contains(list.id),
           isLoadingTasks: state.loadingListIds.contains(list.id),
-          hasLoadError: state.listLoadErrorById.containsKey(list.id),
+          hasLoadError: hasLoadError,
           hasMoreTasks: state.listHasMoreById[list.id] ?? true,
-          onLoadMoreTasks: state.listLoadErrorById.containsKey(list.id)
+          onLoadMoreTasks: hasLoadError && listTasks.isEmpty
               ? () => unawaited(onRetryLoad(list.id, pageSizeHint))
               : () => unawaited(onLoadMore(list.id, pageSizeHint)),
           isExpanded: !collapsedListIds.contains(list.id),
@@ -219,7 +239,26 @@ class _TaskBoardKanbanView extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
         children: [
-          shad.Card(child: Text(context.l10n.taskBoardDetailNoMatchingTasks)),
+          if (state.listLoadErrorById.isNotEmpty)
+            shad.Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(context.l10n.commonSomethingWentWrong),
+                  const shad.Gap(10),
+                  shad.OutlineButton(
+                    onPressed: () => unawaited(
+                      context
+                          .read<TaskBoardDetailCubit>()
+                          .ensureAllListsLoaded(),
+                    ),
+                    child: Text(context.l10n.commonRetry),
+                  ),
+                ],
+              ),
+            )
+          else
+            shad.Card(child: Text(context.l10n.taskBoardDetailNoMatchingTasks)),
         ],
       );
     }
@@ -249,16 +288,17 @@ class _TaskBoardKanbanView extends StatelessWidget {
               final list = lists[index];
               onRequestInitialLoad(list.id, pageSizeHint, state);
               final hasLoadError = state.listLoadErrorById.containsKey(list.id);
+              final listTasks = tasksByList[list.id] ?? const <TaskBoardTask>[];
               return _KanbanColumn(
                 board: board,
                 list: list,
-                tasks: tasksByList[list.id] ?? const <TaskBoardTask>[],
+                tasks: listTasks,
                 isTasksLoaded: state.loadedListIds.contains(list.id),
                 height: columnHeight,
                 isLoadingTasks: state.loadingListIds.contains(list.id),
                 hasLoadError: hasLoadError,
                 hasMoreTasks: state.listHasMoreById[list.id] ?? true,
-                onLoadMoreTasks: hasLoadError
+                onLoadMoreTasks: hasLoadError && listTasks.isEmpty
                     ? () => unawaited(onRetryLoad(list.id, pageSizeHint))
                     : () => unawaited(onLoadMore(list.id, pageSizeHint)),
                 onTaskTap: (task) => unawaited(onTaskTap(task)),
@@ -803,6 +843,17 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     int pageSizeHint,
     TaskBoardDetailState state,
   ) {
+    final paginationStateReset =
+        state.listTasksByListId.isEmpty &&
+        state.loadedListIds.isEmpty &&
+        state.loadingListIds.isEmpty &&
+        state.listHasMoreById.isEmpty &&
+        state.listOffsetsById.isEmpty;
+    if (paginationStateReset && _initialListLoadRequested.isNotEmpty) {
+      _initialListLoadRequested.clear();
+      _initialListLoadBoardKey = null;
+    }
+
     if (state.loadingListIds.contains(listId) ||
         state.listTasksByListId.containsKey(listId) ||
         state.loadedListIds.contains(listId) ||
