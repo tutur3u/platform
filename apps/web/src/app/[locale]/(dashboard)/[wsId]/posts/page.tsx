@@ -7,6 +7,7 @@ import PostsClient from './client';
 import { getPostsPageData } from './data';
 import {
   buildCanonicalPostsSearchParams,
+  buildDefaultPostsDateRange,
   postsSearchParamsCache,
 } from './search-params.server';
 import type { RawPostsSearchParams } from './types';
@@ -31,14 +32,16 @@ export default async function PostsPage({
 
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
+      {async ({ workspace, wsId }) => {
+        const defaultDateRange = buildDefaultPostsDateRange(workspace.timezone);
         const canonicalSearchParams = buildCanonicalPostsSearchParams(
           searchParamsData,
-          parsedSearchParams
+          parsedSearchParams,
+          defaultDateRange
         );
 
         if (canonicalSearchParams) {
-          redirect(`/${wsId}/posts?${canonicalSearchParams}`);
+          redirect(`/${locale}/${wsId}/posts?${canonicalSearchParams}`);
         }
 
         const [permissions, rootPermissions] = await Promise.all([
@@ -64,6 +67,7 @@ export default async function PostsPage({
             locale={locale}
             canApprovePosts={canApprovePosts}
             canForceSendPosts={canForceSendPosts}
+            defaultDateRange={defaultDateRange}
             searchParams={parsedSearchParams}
             postsData={postsData}
             postsStatus={postsStatus}

@@ -102,6 +102,7 @@ class _MfaVerifyPageState extends State<MfaVerifyPage> {
                     child: AuthOtpField(
                       controller: _codeController,
                       focusNode: _otpFocusNode,
+                      autofocus: true,
                       enabled: !state.isLoading,
                       onChanged: (_) {},
                       onCompleted: (_) => unawaited(_handleVerify()),

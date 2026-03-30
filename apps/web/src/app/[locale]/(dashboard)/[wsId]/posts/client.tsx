@@ -24,6 +24,10 @@ interface PostsClientProps {
   locale: string;
   canApprovePosts: boolean;
   canForceSendPosts: boolean;
+  defaultDateRange: {
+    start: string;
+    end: string;
+  };
   searchParams: PostsSearchParams;
   postsData: { data: PostEmail[]; count: number };
   postsStatus: PostEmailStatusSummary;
@@ -34,6 +38,7 @@ export default function PostsClient({
   locale,
   canApprovePosts,
   canForceSendPosts,
+  defaultDateRange,
   searchParams,
   postsData,
   postsStatus,
@@ -103,7 +108,13 @@ export default function PostsClient({
         activeStage={activeStage}
         filteredCount={postsData?.count || 0}
         summary={postsStatus}
-        toolbar={<PostsFilters wsId={wsId} statusSummary={postsStatus} />}
+        toolbar={
+          <PostsFilters
+            wsId={wsId}
+            statusSummary={postsStatus}
+            defaultDateRange={defaultDateRange}
+          />
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.95fr)] xl:items-start">

@@ -15,6 +15,7 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Filter } from '@tuturuuu/ui/custom/user-filters';
+import { DateRangeFilterWrapper } from '@tuturuuu/ui/finance/shared/date-range-filter-wrapper';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -41,11 +42,16 @@ import { DEFAULT_POST_REVIEW_STAGE } from './types';
 export default function PostsFilters({
   wsId,
   statusSummary,
+  defaultDateRange,
   noInclude = false,
   noExclude = false,
 }: {
   wsId: string;
   statusSummary: PostEmailStatusSummary;
+  defaultDateRange: {
+    start: string;
+    end: string;
+  };
   noInclude?: boolean;
   noExclude?: boolean;
 }) {
@@ -68,6 +74,9 @@ export default function PostsFilters({
   const excludedUserGroups =
     (data?.excludedUserGroups as UserGroup[] | undefined) ?? [];
   const users = (data?.users as WorkspaceUser[] | undefined) ?? [];
+  const hasNonDefaultDateRange =
+    (queryState.start ?? defaultDateRange.start) !== defaultDateRange.start ||
+    (queryState.end ?? defaultDateRange.end) !== defaultDateRange.end;
 
   const hasAnyFilters = useMemo(
     () =>
@@ -76,11 +85,12 @@ export default function PostsFilters({
           queryState.showAll ||
           queryState.approvalStatus ||
           queryState.queueStatus ||
+          hasNonDefaultDateRange ||
           queryState.userId ||
           (queryState.includedGroups?.length ?? 0) > 0 ||
           (queryState.excludedGroups?.length ?? 0) > 0
       ),
-    [queryState]
+    [hasNonDefaultDateRange, queryState]
   );
 
   const setPageOne = (values: Partial<PostsSearchParams>) =>
@@ -222,6 +232,7 @@ export default function PostsFilters({
           value: user.id,
         }))}
       />
+      <DateRangeFilterWrapper shallow refreshOnUpdate />
       <Button
         variant="outline"
         size="sm"
@@ -242,6 +253,8 @@ export default function PostsFilters({
               includedGroups: null,
               page: 1,
               queueStatus: null,
+              start: null,
+              end: null,
               showAll: null,
               stage: DEFAULT_POST_REVIEW_STAGE,
               userId: null,
