@@ -23,7 +23,12 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useState } from 'react';
-import { type GroupPaymentStatus, getGroupPaymentStatus } from '../utils';
+import {
+  type GroupPaymentStatus,
+  getGroupPaymentStatus,
+  getMonthStartDate,
+  parseLocalCalendarDate,
+} from '../utils';
 
 type LatestInvoice = {
   group_id?: string;
@@ -49,9 +54,8 @@ function isMonthPaidForGroup(
 ): boolean {
   const inv = latestInvoices.find((i) => i.group_id === groupId);
   if (!inv?.valid_until) return false;
-  const monthStart = new Date(`${selectedMonth}-01`);
-  const validUntilStart = new Date(inv.valid_until);
-  validUntilStart.setDate(1);
+  const monthStart = getMonthStartDate(selectedMonth);
+  const validUntilStart = getMonthStartDate(inv.valid_until);
   return monthStart < validUntilStart;
 }
 
@@ -163,7 +167,9 @@ function GroupRow({
             {latestInvoice?.valid_until && (
               <span>
                 {t('ws-invoices.valid_until')}{' '}
-                {new Date(latestInvoice.valid_until).toLocaleDateString(locale)}
+                {parseLocalCalendarDate(
+                  latestInvoice.valid_until
+                ).toLocaleDateString(locale)}
               </span>
             )}
           </p>

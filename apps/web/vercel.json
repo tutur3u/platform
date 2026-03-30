@@ -13,27 +13,27 @@
     },
     {
       "path": "/api/cron/payment/products",
-      "schedule": "0 * * * *"
+      "schedule": "0 */12 * * *"
     },
     {
       "path": "/api/cron/process-notification-batches",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/process-post-email-queue",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/30 * * * *"
     },
     {
       "path": "/api/cron/calendar/provider-sync",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 */12 * * *"
     },
     {
       "path": "/api/cron/calendar/smart-schedule",
-      "schedule": "0 * * * *"
+      "schedule": "0 */6 * * *"
     },
     {
       "path": "/api/cron/tasks/deadline-reminders",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 */4 * * *"
     }
   ]
 }

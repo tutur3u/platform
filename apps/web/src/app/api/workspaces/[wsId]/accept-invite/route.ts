@@ -16,8 +16,8 @@ interface Params {
   }>;
 }
 
-export async function POST(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function POST(request: Request, { params }: Params) {
+  const supabase = await createClient(request);
   const sbAdmin = await createAdminClient();
   const { wsId } = await params;
 
@@ -45,19 +45,69 @@ export async function POST(_: Request, { params }: Params) {
     );
   }
 
-  // Validate that user has a pending invite
+  // Get email from auth first so we can validate direct + email invites.
+  let userEmail = user.email?.toLowerCase();
+
+  if (!userEmail) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('email:user_private_details(email)')
+      .eq('id', user.id)
+      .single();
+
+    userEmail = (
+      userData?.email as { email?: string }[] | null
+    )?.[0]?.email?.toLowerCase();
+  }
+
+  // Validate that user has a pending direct or email invite.
   const { data: pendingInvite } = await supabase
     .from('workspace_invites')
-    .select('id')
+    .select('ws_id')
     .eq('ws_id', wsId)
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (!pendingInvite) {
+  const { data: pendingEmailInvite } = userEmail
+    ? await supabase
+        .from('workspace_email_invites')
+        .select('ws_id')
+        .eq('ws_id', wsId)
+        .eq('email', userEmail)
+        .maybeSingle()
+    : { data: null };
+
+  if (!pendingInvite && !pendingEmailInvite) {
     return NextResponse.json(
       { error: 'No pending invite found' },
       { status: 404 }
     );
+  }
+
+  // Make acceptance idempotent for stale invites or partially completed flows.
+  const { data: existingMember } = await sbAdmin
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (existingMember) {
+    await sbAdmin
+      .from('workspace_invites')
+      .delete()
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id);
+
+    if (userEmail) {
+      await sbAdmin
+        .from('workspace_email_invites')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('email', userEmail);
+    }
+
+    return NextResponse.json({ message: 'success' });
   }
 
   // Check seat limit BEFORE adding member (existing gap - was missing)
@@ -92,44 +142,48 @@ export async function POST(_: Request, { params }: Params) {
   }
 
   // Insert user as workspace member
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('workspace_members')
     .insert({ ws_id: wsId, user_id: user.id });
 
   if (error) {
+    if (error.code === '23505') {
+      await sbAdmin
+        .from('workspace_invites')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('user_id', user.id);
+
+      if (userEmail) {
+        await sbAdmin
+          .from('workspace_email_invites')
+          .delete()
+          .eq('ws_id', wsId)
+          .eq('email', userEmail);
+      }
+
+      return NextResponse.json({ message: 'success' });
+    }
+
     // Rollback: revoke the Polar seat if it was assigned
     if (seatAssignment.required && seatAssignment.success) {
       await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
     }
 
     console.error('Error accepting invite:', error);
-    return NextResponse.json({ error: error.message }, { status: 401 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   // Delete the invite after accepting
-  await supabase
+  await sbAdmin
     .from('workspace_invites')
     .delete()
     .eq('ws_id', wsId)
     .eq('user_id', user.id);
 
   // Also delete email invite if exists
-  // Get email from auth (more reliable)
-  let userEmail = user.email;
-
-  // Fallback: try from user_private_details
-  if (!userEmail) {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('email:user_private_details(email)')
-      .eq('id', user.id)
-      .single();
-
-    userEmail = (userData?.email as any)?.[0]?.email;
-  }
-
   if (userEmail) {
-    await supabase
+    await sbAdmin
       .from('workspace_email_invites')
       .delete()
       .eq('ws_id', wsId)

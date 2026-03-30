@@ -31,6 +31,7 @@ import type {
   OldApprovedCheckRow,
   OrphanedApprovedCheckRow,
   PostEmailQueueRow,
+  PostEmailQueueStatusSummaryRpcRow,
   PostEmailQueueUpsertRow,
   PostScopeRow,
   QueueIdPostRow,
@@ -38,12 +39,33 @@ import type {
   QueueSenderRow,
   QueueSkipTarget,
   QueueSkipUpdate,
+  ReconcileOrphanedApprovedPostEmailsRpcRow,
   ReconcileOrphanedApprovedPostsDiagnostics,
+  ReconcileOrphanedApprovedPostsResult,
   SentReceiverRow,
   WorkspaceUserGroupRow,
   WorkspaceUserLinkedUserRow,
 } from './types';
 import { chunkArray, isValidEmailAddress } from './utils';
+
+const POST_EMAIL_SELECT_PAGE_SIZE = 1000;
+const POST_EMAIL_QUEUE_DEBUG = process.env.POST_EMAIL_QUEUE_DEBUG === '1';
+
+type RpcCapableSupabaseClient = TypedSupabaseClient & {
+  rpc?: TypedSupabaseClient['rpc'];
+};
+
+type ReconcileOrphanedApprovedPostsRpcArgs = {
+  p_cutoff: string;
+  p_max_posts: number | null;
+  p_skip_posts: number;
+  p_ws_id: string | null;
+};
+
+type ReconcileOrphanedApprovedPostsRpcResponse = {
+  data: ReconcileOrphanedApprovedPostEmailsRpcRow[] | null;
+  error: unknown | null;
+};
 
 type CheckEligibilityRow = Pick<
   GroupPostCheck,
@@ -51,6 +73,121 @@ type CheckEligibilityRow = Pick<
 > & {
   user: Pick<WorkspaceUser, 'id' | 'email' | 'ws_id'> | null;
 };
+
+export async function fetchAllPaginatedRows<T>(
+  fetchPage: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: unknown | null }>
+): Promise<T[]> {
+  const rows: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const to = from + POST_EMAIL_SELECT_PAGE_SIZE - 1;
+    const { data, error } = await fetchPage(from, to);
+
+    if (error) throw error;
+
+    const pageRows = data ?? [];
+    rows.push(...pageRows);
+
+    if (pageRows.length < POST_EMAIL_SELECT_PAGE_SIZE) {
+      break;
+    }
+
+    from += POST_EMAIL_SELECT_PAGE_SIZE;
+  }
+
+  return rows;
+}
+
+function debugLog(message: string, data?: Record<string, unknown>) {
+  if (!POST_EMAIL_QUEUE_DEBUG) return;
+  console.log(message, data ?? {});
+}
+
+function getRpcClient(
+  sbAdmin: TypedSupabaseClient
+): RpcCapableSupabaseClient | null {
+  const client = sbAdmin as RpcCapableSupabaseClient;
+  return typeof client.rpc === 'function' ? client : null;
+}
+
+function callReconcileOrphanedApprovedPostsRpc(
+  client: RpcCapableSupabaseClient,
+  args: ReconcileOrphanedApprovedPostsRpcArgs
+): Promise<ReconcileOrphanedApprovedPostsRpcResponse> {
+  return (
+    client.rpc as unknown as (
+      fn: string,
+      rpcArgs: ReconcileOrphanedApprovedPostsRpcArgs
+    ) => Promise<ReconcileOrphanedApprovedPostsRpcResponse>
+  )('reconcile_orphaned_approved_post_email_queue', args);
+}
+
+function getRpcErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : '';
+  }
+  return '';
+}
+
+function shouldFallbackToAppRpc(error: unknown, rpcName: string): boolean {
+  const message = getRpcErrorMessage(error);
+  return (
+    message.includes('Could not find the function') ||
+    message.includes(`function public.${rpcName}`) ||
+    message.includes('does not exist')
+  );
+}
+
+export function mapPostEmailQueueStatusSummaryRpcRow(
+  row: PostEmailQueueStatusSummaryRpcRow | null | undefined
+) {
+  return {
+    blocked: row?.blocked ?? 0,
+    cancelled: row?.cancelled ?? 0,
+    failed: row?.failed ?? 0,
+    processing: row?.processing ?? 0,
+    queued: row?.queued ?? 0,
+    sent: row?.sent ?? 0,
+    skipped: row?.skipped ?? 0,
+    total: row?.total ?? 0,
+  };
+}
+
+function mapReconcileRpcRowToResult(
+  row: ReconcileOrphanedApprovedPostEmailsRpcRow | null | undefined
+): ReconcileOrphanedApprovedPostsResult {
+  const checked = row?.checked ?? 0;
+
+  return {
+    checked,
+    diagnostics: {
+      alreadySent: row?.already_sent ?? 0,
+      checked,
+      coveredByExistingQueue: row?.covered_by_existing_queue ?? 0,
+      coveredBySentEmail: row?.covered_by_sent_email ?? 0,
+      eligibleRecipients: row?.eligible_recipients ?? 0,
+      existingProcessing: row?.existing_processing ?? 0,
+      existingQueued: row?.existing_queued ?? 0,
+      existingSkipped: row?.existing_skipped ?? 0,
+      missingCompletion: row?.missing_completion ?? 0,
+      missingEmail: row?.missing_email ?? 0,
+      missingSenderPlatformUser: row?.missing_sender_platform_user ?? 0,
+      missingUserRecord: row?.missing_user_record ?? 0,
+      notApproved: row?.not_approved ?? 0,
+      orphaned: row?.orphaned ?? 0,
+      upserted: row?.upserted ?? 0,
+    },
+    enqueued: row?.enqueued ?? 0,
+    processedPosts: row?.processed_posts ?? 0,
+    remainingPosts: row?.remaining_posts ?? 0,
+  };
+}
 
 function createEmptyEnqueueDiagnostics(): EnqueueApprovedPostEmailsDiagnostics {
   return {
@@ -87,6 +224,50 @@ function createEmptyReconciliationDiagnostics(
     notApproved: 0,
     orphaned: 0,
     upserted: 0,
+  };
+}
+
+function mergeReconciliationResults(
+  base: ReconcileOrphanedApprovedPostsResult,
+  next: ReconcileOrphanedApprovedPostsResult
+): ReconcileOrphanedApprovedPostsResult {
+  return {
+    checked: base.checked || next.checked,
+    diagnostics: {
+      alreadySent: base.diagnostics.alreadySent || next.diagnostics.alreadySent,
+      checked: base.diagnostics.checked || next.diagnostics.checked,
+      coveredByExistingQueue:
+        base.diagnostics.coveredByExistingQueue ||
+        next.diagnostics.coveredByExistingQueue,
+      coveredBySentEmail:
+        base.diagnostics.coveredBySentEmail ||
+        next.diagnostics.coveredBySentEmail,
+      eligibleRecipients:
+        base.diagnostics.eligibleRecipients +
+        next.diagnostics.eligibleRecipients,
+      existingProcessing:
+        base.diagnostics.existingProcessing +
+        next.diagnostics.existingProcessing,
+      existingQueued:
+        base.diagnostics.existingQueued + next.diagnostics.existingQueued,
+      existingSkipped:
+        base.diagnostics.existingSkipped + next.diagnostics.existingSkipped,
+      missingCompletion:
+        base.diagnostics.missingCompletion + next.diagnostics.missingCompletion,
+      missingEmail:
+        base.diagnostics.missingEmail + next.diagnostics.missingEmail,
+      missingSenderPlatformUser:
+        base.diagnostics.missingSenderPlatformUser +
+        next.diagnostics.missingSenderPlatformUser,
+      missingUserRecord:
+        base.diagnostics.missingUserRecord + next.diagnostics.missingUserRecord,
+      notApproved: base.diagnostics.notApproved + next.diagnostics.notApproved,
+      orphaned: base.diagnostics.orphaned || next.diagnostics.orphaned,
+      upserted: base.diagnostics.upserted + next.diagnostics.upserted,
+    },
+    enqueued: base.enqueued + next.enqueued,
+    processedPosts: base.processedPosts + next.processedPosts,
+    remainingPosts: next.remainingPosts,
   };
 }
 
@@ -208,13 +389,14 @@ export async function getPostEmailQueueRows(
 ): Promise<PostEmailQueueRow[]> {
   if (postIds.length === 0) return [];
 
-  const { data, error } = await getQueueTable(sbAdmin)
-    .select('*')
-    .in('post_id', postIds);
-
-  if (error) throw error;
-
-  return data ?? [];
+  return fetchAllPaginatedRows<PostEmailQueueRow>((from, to) =>
+    getQueueTable(sbAdmin)
+      .select('*')
+      .in('post_id', postIds)
+      .order('post_id', { ascending: true })
+      .order('user_id', { ascending: true })
+      .range(from, to)
+  );
 }
 
 export async function hasPostEmailBeenSent(
@@ -292,38 +474,56 @@ async function getEligibleRecipients(
   diagnostics: EligibleRecipientsDiagnostics;
   recipients: EligibleRecipient[];
 }> {
-  // Query 1: Get check records with user data (with ws_id filter)
-  let query = sbAdmin
-    .from('user_group_post_checks')
-    .select(
-      'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id(id, email, ws_id)'
-    )
-    .eq('post_id', postId)
-    .eq('user.ws_id', wsId);
+  const dedupedUserIds =
+    userIds && userIds.length > 0 ? [...new Set(userIds)] : null;
+  const userIdChunks = dedupedUserIds ? chunkArray(dedupedUserIds) : [null];
+  const rows: EligibleRecipientCheckRow[] = [];
+  const allCheckRows: Array<
+    Pick<
+      GroupPostCheck,
+      'user_id' | 'is_completed' | 'approval_status' | 'approved_by'
+    >
+  > = [];
 
-  if (userIds && userIds.length > 0) {
-    query = query.in('user_id', userIds);
+  for (const userIdChunk of userIdChunks) {
+    let query = sbAdmin
+      .from('user_group_post_checks')
+      .select(
+        'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id(id, email, ws_id)'
+      )
+      .eq('post_id', postId)
+      .eq('user.ws_id', wsId);
+
+    if (userIdChunk && userIdChunk.length > 0) {
+      query = query.in('user_id', userIdChunk);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    rows.push(...((data ?? []) as EligibleRecipientCheckRow[]));
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
+  for (const userIdChunk of userIdChunks) {
+    let allChecksQuery = sbAdmin
+      .from('user_group_post_checks')
+      .select('user_id, is_completed, approval_status, approved_by')
+      .eq('post_id', postId);
 
-  const rows = (data ?? []) as EligibleRecipientCheckRow[];
+    if (userIdChunk && userIdChunk.length > 0) {
+      allChecksQuery = allChecksQuery.in('user_id', userIdChunk);
+    }
 
-  // Query 2: Get all check records for this post (without user filter) to diagnose missing users
-  let allChecksQuery = sbAdmin
-    .from('user_group_post_checks')
-    .select('user_id, is_completed, approval_status, approved_by')
-    .eq('post_id', postId);
-
-  if (userIds && userIds.length > 0) {
-    allChecksQuery = allChecksQuery.in('user_id', userIds);
+    const { data: allChecksData, error: allChecksError } = await allChecksQuery;
+    if (allChecksError) throw allChecksError;
+    allCheckRows.push(
+      ...((allChecksData ?? []) as Array<
+        Pick<
+          GroupPostCheck,
+          'user_id' | 'is_completed' | 'approval_status' | 'approved_by'
+        >
+      >)
+    );
   }
-
-  const { data: allChecksData, error: allChecksError } = await allChecksQuery;
-  if (allChecksError) throw allChecksError;
-
-  const allCheckRows = allChecksData ?? [];
   const foundUserIds = new Set(rows.map((r) => r.user_id));
   const missingFromUserTable = allCheckRows
     .filter((r) => !foundUserIds.has(r.user_id))
@@ -398,7 +598,7 @@ async function getEligibleRecipients(
     hasSkippedUsers;
 
   if (hasDiagnostics || allCheckRows.length !== withValidEmail.length) {
-    console.log('[getEligibleRecipients] Processing results', {
+    debugLog('[getEligibleRecipients] Processing results', {
       postId,
       wsId,
       summary: {
@@ -471,7 +671,7 @@ export async function enqueueApprovedPostEmails(
     });
 
   if (recipients.length === 0) {
-    console.log('[enqueueApprovedPostEmails] No eligible recipients', {
+    debugLog('[enqueueApprovedPostEmails] No eligible recipients', {
       postId,
       wsId,
       userIds,
@@ -491,23 +691,25 @@ export async function enqueueApprovedPostEmails(
   }
 
   const recipientIds = recipients.map((recipient) => recipient.user_id);
-  const [sentEmailResult, existingQueueResult] = await Promise.all([
-    sbAdmin
+  const sentEmailRows: SentReceiverRow[] = [];
+  for (const recipientIdChunk of chunkArray(recipientIds)) {
+    const { data, error } = await sbAdmin
       .from('sent_emails')
       .select('receiver_id')
       .eq('post_id', postId)
-      .in('receiver_id', recipientIds),
-    getQueueTable(sbAdmin).select('id, user_id, status').eq('post_id', postId),
-  ]);
+      .in('receiver_id', recipientIdChunk);
 
-  if (sentEmailResult.error) throw sentEmailResult.error;
+    if (error) throw error;
+    sentEmailRows.push(...((data ?? []) as SentReceiverRow[]));
+  }
+
+  const existingQueueResult = await getQueueTable(sbAdmin)
+    .select('id, user_id, status')
+    .eq('post_id', postId);
+
   if (existingQueueResult.error) throw existingQueueResult.error;
 
-  const sentRecipientIds = new Set(
-    ((sentEmailResult.data ?? []) as SentReceiverRow[]).map(
-      (row) => row.receiver_id
-    )
-  );
+  const sentRecipientIds = new Set(sentEmailRows.map((row) => row.receiver_id));
   const existingByUserId = new Map<string, ExistingQueueState>(
     (existingQueueResult.data ?? []).map((row) => [
       row.user_id,
@@ -521,13 +723,13 @@ export async function enqueueApprovedPostEmails(
       return (
         existing.status !== 'sent' &&
         existing.status !== 'processing' &&
-        existing.status !== 'skipped'
+        existing.status !== 'queued'
       );
     }
     return !sentRecipientIds.has(recipient.user_id);
   });
 
-  console.log('[enqueueApprovedPostEmails] After dedup filter', {
+  debugLog('[enqueueApprovedPostEmails] After dedup filter', {
     postId,
     recipientsCount: recipients.length,
     sentCount: sentRecipientIds.size,
@@ -535,6 +737,15 @@ export async function enqueueApprovedPostEmails(
     filteredCount: filteredRecipients.length,
     existingStatuses: [...existingByUserId.entries()].slice(0, 5),
   });
+
+  const rescuedSkippedUserIds = new Set(
+    filteredRecipients
+      .filter(
+        (recipient) =>
+          existingByUserId.get(recipient.user_id)?.status === 'skipped'
+      )
+      .map((recipient) => recipient.user_id)
+  );
 
   if (filteredRecipients.length === 0) {
     return {
@@ -582,7 +793,7 @@ export async function enqueueApprovedPostEmails(
 
     if (!resolvedSenderPlatformUserId) {
       missingSenderPlatformUser++;
-      console.log('[enqueueApprovedPostEmails] No sender resolved', {
+      debugLog('[enqueueApprovedPostEmails] No sender resolved', {
         postId,
         user_id: recipient.user_id,
         approved_by: recipient.approved_by,
@@ -610,7 +821,7 @@ export async function enqueueApprovedPostEmails(
     });
   }
 
-  console.log('[enqueueApprovedPostEmails] After sender resolve', {
+  debugLog('[enqueueApprovedPostEmails] After sender resolve', {
     postId,
     filteredCount: filteredRecipients.length,
     upsertRowsCount: upsertRows.length,
@@ -630,7 +841,9 @@ export async function enqueueApprovedPostEmails(
         ): row is {
           status: string;
           user_id: string;
-        } => row !== null
+        } =>
+          row !== null &&
+          !(row.status === 'skipped' && rescuedSkippedUserIds.has(row.user_id))
       ),
     missingSenderPlatformUser,
     recipientDiagnostics,
@@ -728,27 +941,30 @@ export async function autoSkipOldApprovedPostChecks(
   { wsId }: { wsId?: string } = {}
 ): Promise<number> {
   const cutoff = getPostEmailMaxAgeCutoff();
+  const oldChecks = await fetchAllPaginatedRows<OldApprovedCheckRow>(
+    (from, to) => {
+      let checksQuery = sbAdmin
+        .from('user_group_post_checks')
+        .select(
+          'post_id, user_id, user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(id, ws_id))'
+        )
+        .eq('approval_status', 'APPROVED')
+        .not('is_completed', 'is', null)
+        .lt('user_group_posts.created_at', cutoff);
 
-  let checksQuery = sbAdmin
-    .from('user_group_post_checks')
-    .select(
-      'post_id, user_id, user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(id, ws_id))'
-    )
-    .eq('approval_status', 'APPROVED')
-    .not('is_completed', 'is', null)
-    .lt('user_group_posts.created_at', cutoff);
+      if (wsId) {
+        checksQuery = checksQuery.eq(
+          'user_group_posts.workspace_user_groups.ws_id',
+          wsId
+        );
+      }
 
-  if (wsId) {
-    checksQuery = checksQuery.eq(
-      'user_group_posts.workspace_user_groups.ws_id',
-      wsId
-    );
-  }
-
-  const { data: oldChecksData, error: checksError } = await checksQuery;
-  if (checksError) throw checksError;
-
-  const oldChecks = (oldChecksData ?? []) as OldApprovedCheckRow[];
+      return checksQuery
+        .order('post_id', { ascending: true })
+        .order('user_id', { ascending: true })
+        .range(from, to);
+    }
+  );
   if (oldChecks.length === 0) return 0;
 
   const queueUpdates: Array<QueueSkipUpdate & QueueSkipTarget> = [];
@@ -883,16 +1099,17 @@ export async function cleanupStaleProcessingRows(
 export async function autoSkipRejectedPosts(
   sbAdmin: TypedSupabaseClient
 ): Promise<number> {
-  const { data: rejectedChecksData, error } = await sbAdmin
-    .from('user_group_post_checks')
-    .select('post_id, user_id')
-    .eq('approval_status', 'REJECTED');
-
-  if (error) throw error;
-
-  const rejectedChecks = (rejectedChecksData ?? []) as Array<
+  const rejectedChecks = await fetchAllPaginatedRows<
     Pick<GroupPostCheck, 'post_id' | 'user_id'>
-  >;
+  >((from, to) =>
+    sbAdmin
+      .from('user_group_post_checks')
+      .select('post_id, user_id')
+      .eq('approval_status', 'REJECTED')
+      .order('post_id', { ascending: true })
+      .order('user_id', { ascending: true })
+      .range(from, to)
+  );
   if (rejectedChecks.length === 0) return 0;
 
   const now = new Date().toISOString();
@@ -927,29 +1144,33 @@ export async function autoSkipRejectedPosts(
   return updatedRows;
 }
 
-export async function reconcileOrphanedApprovedPosts(
-  sbAdmin: TypedSupabaseClient
-): Promise<{
-  checked: number;
-  diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
-  enqueued: number;
-}> {
+async function reconcileOrphanedApprovedPostsInApp(
+  sbAdmin: TypedSupabaseClient,
+  {
+    maxPosts,
+    skipPosts = 0,
+  }: {
+    maxPosts?: number;
+    skipPosts?: number;
+  } = {}
+): Promise<ReconcileOrphanedApprovedPostsResult> {
   const cutoff = getPostEmailMaxAgeCutoff();
+  const checks = await fetchAllPaginatedRows<OrphanedApprovedCheckRow>(
+    (from, to) =>
+      sbAdmin
+        .from('user_group_post_checks')
+        .select(
+          'post_id, user_id, approved_by, is_completed, user:workspace_users!user_id(id, email), user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
+        )
+        .eq('approval_status', 'APPROVED')
+        .not('is_completed', 'is', null)
+        .gte('user_group_posts.created_at', cutoff)
+        .order('post_id', { ascending: true })
+        .order('user_id', { ascending: true })
+        .range(from, to)
+  );
 
-  const { data: approvedChecksData, error: checksError } = await sbAdmin
-    .from('user_group_post_checks')
-    .select(
-      'post_id, user_id, approved_by, is_completed, user:workspace_users!user_id(id, email), user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
-    )
-    .eq('approval_status', 'APPROVED')
-    .not('is_completed', 'is', null)
-    .gte('user_group_posts.created_at', cutoff);
-
-  if (checksError) throw checksError;
-
-  const checks = (approvedChecksData ?? []) as OrphanedApprovedCheckRow[];
-
-  console.log('[reconcileOrphanedApprovedPosts] Found checks', {
+  debugLog('[reconcileOrphanedApprovedPosts] Found checks', {
     total: checks.length,
     sample: checks.slice(0, 3).map((check) => ({
       post_id: check.post_id,
@@ -964,6 +1185,8 @@ export async function reconcileOrphanedApprovedPosts(
       checked: 0,
       diagnostics: createEmptyReconciliationDiagnostics(0),
       enqueued: 0,
+      processedPosts: 0,
+      remainingPosts: 0,
     };
   }
 
@@ -973,25 +1196,32 @@ export async function reconcileOrphanedApprovedPosts(
   > = [];
   const sentEmailData: SentPairRow[] = [];
   for (const postChunk of chunkArray(postIds)) {
-    const [
-      { data: queueData, error: queueError },
-      { data: sentData, error: sentError },
-    ] = await Promise.all([
-      getQueueTable(sbAdmin)
-        .select('post_id, user_id, status')
-        .in('post_id', postChunk)
-        .in('status', ['queued', 'processing', 'sent', 'skipped']),
-      sbAdmin
-        .from('sent_emails')
-        .select('post_id, receiver_id')
-        .in('post_id', postChunk),
+    const [queueData, sentData] = await Promise.all([
+      fetchAllPaginatedRows<
+        Pick<PostEmailQueueRow, 'post_id' | 'user_id' | 'status'>
+      >((from, to) =>
+        getQueueTable(sbAdmin)
+          .select('post_id, user_id, status')
+          .in('post_id', postChunk)
+          .order('post_id', { ascending: true })
+          .order('user_id', { ascending: true })
+          .range(from, to)
+      ),
+      fetchAllPaginatedRows<{ post_id: string | null; receiver_id: string }>(
+        (from, to) =>
+          sbAdmin
+            .from('sent_emails')
+            .select('post_id, receiver_id')
+            .in('post_id', postChunk)
+            .order('post_id', { ascending: true })
+            .order('receiver_id', { ascending: true })
+            .range(from, to)
+      ),
     ]);
 
-    if (queueError) throw queueError;
-    if (sentError) throw sentError;
-    existingQueueData.push(...(queueData ?? []));
+    existingQueueData.push(...queueData);
     sentEmailData.push(
-      ...((sentData ?? []).filter(
+      ...(sentData.filter(
         (row): row is SentPairRow =>
           Boolean(row.post_id) && Boolean(row.receiver_id)
       ) as SentPairRow[])
@@ -1019,7 +1249,7 @@ export async function reconcileOrphanedApprovedPosts(
   diagnostics.coveredBySentEmail = coverage.coveredBySentEmail.length;
   diagnostics.orphaned = orphaned.length;
 
-  console.log(
+  debugLog(
     '[reconcileOrphanedApprovedPosts] Coverage after queue and sent email checks',
     {
       totalChecks: checks.length,
@@ -1050,7 +1280,7 @@ export async function reconcileOrphanedApprovedPosts(
   );
 
   if (diagnostics.coveredBySentEmail > 0) {
-    console.log(
+    debugLog(
       '[reconcileOrphanedApprovedPosts] Already delivered via sent_emails without queue coverage',
       {
         coveredBySentEmailCount: diagnostics.coveredBySentEmail,
@@ -1075,6 +1305,8 @@ export async function reconcileOrphanedApprovedPosts(
       checked: checks.length,
       diagnostics,
       enqueued: 0,
+      processedPosts: 0,
+      remainingPosts: 0,
     };
   }
 
@@ -1108,21 +1340,35 @@ export async function reconcileOrphanedApprovedPosts(
 
   let totalEnqueued = 0;
   let postsWithZero = 0;
+  let processedPosts = 0;
+  let skippedPosts = 0;
 
   for (const [postId, info] of byPost) {
+    if (skippedPosts < skipPosts) {
+      skippedPosts++;
+      continue;
+    }
+
+    if (maxPosts && processedPosts >= maxPosts) {
+      break;
+    }
+
     const result = await enqueueApprovedPostEmails(sbAdmin, {
       wsId: info.ws_id,
       postId,
       groupId: info.group_id,
       userIds: info.userIds,
     });
+    processedPosts++;
     if (result.queued === 0) postsWithZero++;
     totalEnqueued += result.queued;
     mergeEnqueueDiagnostics(diagnostics, result.diagnostics);
   }
 
-  console.log('[reconcileOrphanedApprovedPosts] Enqueue loop complete', {
+  debugLog('[reconcileOrphanedApprovedPosts] Enqueue loop complete', {
     totalPosts: byPost.size,
+    processedPosts,
+    remainingPosts: Math.max(0, byPost.size - processedPosts),
     postsWithZeroEnqueued: postsWithZero,
     totalEnqueued,
     checked: checks.length,
@@ -1133,8 +1379,59 @@ export async function reconcileOrphanedApprovedPosts(
     checked: checks.length,
     diagnostics,
     enqueued: totalEnqueued,
+    processedPosts,
+    remainingPosts: Math.max(0, byPost.size - skippedPosts - processedPosts),
   };
 }
+
+export async function reconcileOrphanedApprovedPosts(
+  sbAdmin: TypedSupabaseClient,
+  {
+    maxPosts,
+    skipPosts = 0,
+    wsId,
+  }: {
+    maxPosts?: number;
+    skipPosts?: number;
+    wsId?: string;
+  } = {}
+): Promise<ReconcileOrphanedApprovedPostsResult> {
+  const rpcClient = getRpcClient(sbAdmin);
+  const cutoff = getPostEmailMaxAgeCutoff();
+
+  if (rpcClient?.rpc) {
+    const { data, error } = await callReconcileOrphanedApprovedPostsRpc(
+      rpcClient,
+      {
+        p_cutoff: cutoff,
+        p_max_posts: maxPosts ?? null,
+        p_skip_posts: Math.max(skipPosts, 0),
+        p_ws_id: wsId ?? null,
+      }
+    );
+
+    if (!error) {
+      const row = Array.isArray(data)
+        ? ((data[0] ??
+            null) as ReconcileOrphanedApprovedPostEmailsRpcRow | null)
+        : (data as ReconcileOrphanedApprovedPostEmailsRpcRow | null);
+      return mapReconcileRpcRowToResult(row);
+    }
+
+    if (
+      !shouldFallbackToAppRpc(
+        error,
+        'reconcile_orphaned_approved_post_email_queue'
+      )
+    ) {
+      throw error;
+    }
+  }
+
+  return reconcileOrphanedApprovedPostsInApp(sbAdmin, { maxPosts, skipPosts });
+}
+
+export { mergeReconciliationResults };
 
 async function getEligibleReenqueuePairs(
   sbAdmin: TypedSupabaseClient,
@@ -1212,23 +1509,22 @@ export async function reEnqueueSkippedPostEmails(
   { wsId }: { wsId?: string } = {}
 ): Promise<{ reEnqueued: number; totalChecked: number }> {
   const cutoff = getPostEmailMaxAgeCutoff();
+  const skippedRowsData = await fetchAllPaginatedRows<
+    QueueIdPostUserRow & { last_error: string | null }
+  >((from, to) => {
+    let query = getQueueTable(sbAdmin)
+      .select('id, post_id, user_id, last_error')
+      .eq('status', 'skipped')
+      .not('last_error', 'is', null);
 
-  let query = getQueueTable(sbAdmin)
-    .select('id, post_id, user_id, last_error')
-    .eq('status', 'skipped')
-    .not('last_error', 'is', null);
+    if (wsId) {
+      query = query.eq('ws_id', wsId);
+    }
 
-  if (wsId) {
-    query = query.eq('ws_id', wsId);
-  }
-
-  const { data: skippedRowsData, error: selectError } = await query;
-  if (selectError) throw selectError;
-
+    return query.order('id', { ascending: true }).range(from, to);
+  });
   const skippedRows = filterAgeSkippedRows(
-    (skippedRowsData ?? []) as Array<
-      QueueIdPostUserRow & { last_error: string | null }
-    >,
+    skippedRowsData,
     isPostEmailAgeSkipReason
   ) as QueueIdPostUserRow[];
 

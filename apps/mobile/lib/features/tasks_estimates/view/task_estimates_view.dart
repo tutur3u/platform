@@ -21,6 +21,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskEstimatesView extends StatefulWidget {
@@ -133,7 +134,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
             if (_isCheckingPermissions &&
                 !_hasResolvedPermissions &&
                 !hasVisibleData) {
-              return const Center(child: shad.CircularProgressIndicator());
+              return const Center(child: NovaLoadingIndicator());
             }
 
             if (_hasResolvedPermissions &&
@@ -143,10 +144,10 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
             }
 
             if (_activeTab == _tabEstimates && isEstimatesLoading) {
-              return const Center(child: shad.CircularProgressIndicator());
+              return const Center(child: NovaLoadingIndicator());
             }
             if (_activeTab == _tabLabels && isLabelsLoading) {
-              return const Center(child: shad.CircularProgressIndicator());
+              return const Center(child: NovaLoadingIndicator());
             }
 
             if (_activeTab == _tabEstimates &&

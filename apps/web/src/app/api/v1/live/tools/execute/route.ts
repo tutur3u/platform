@@ -7,7 +7,6 @@ import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
@@ -95,14 +94,6 @@ export async function POST(req: Request) {
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // 2. Validate Tuturuuu email
-    if (!isValidTuturuuuEmail(user.email)) {
-      return Response.json(
-        { error: 'Only Tuturuuu emails are allowed' },
-        { status: 403 }
-      );
     }
 
     const body = (await req.json()) as ToolCallRequest;

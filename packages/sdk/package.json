@@ -1,6 +1,6 @@
 {
   "name": "tuturuuu",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "description": "Official TypeScript/JavaScript SDK for the Tuturuuu platform",
   "license": "MIT",
   "author": "Tuturuuu",
@@ -15,30 +15,46 @@
   },
   "keywords": ["tuturuuu", "sdk", "api"],
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
+      "bun": "./src/index.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./storage": {
-      "types": "./dist/storage.d.ts",
+      "types": "./src/storage.ts",
+      "bun": "./src/storage.ts",
       "import": "./dist/storage.js",
-      "require": "./dist/storage.js"
+      "require": "./dist/storage.js",
+      "default": "./dist/storage.js"
     },
     "./types": {
-      "types": "./dist/types.d.ts",
+      "types": "./src/types.ts",
+      "bun": "./src/types.ts",
       "import": "./dist/types.js",
-      "require": "./dist/types.js"
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
     },
     "./errors": {
-      "types": "./dist/errors.d.ts",
+      "types": "./src/errors.ts",
+      "bun": "./src/errors.ts",
       "import": "./dist/errors.js",
-      "require": "./dist/errors.js"
+      "require": "./dist/errors.js",
+      "default": "./dist/errors.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "src/index.ts",
+    "src/storage.ts",
+    "src/types.ts",
+    "src/errors.ts",
+    "README.md",
+    "LICENSE"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -46,8 +62,9 @@
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch --incremental",
     "type-check": "tsgo --project tsconfig.build.json",
-    "clean": "rm -rf dist .turbo",
-    "prepublishOnly": "bun run clean && bun run build",
+    "clean": "rm -rf dist .turbo tsconfig.build.tsbuildinfo",
+    "prepack": "bun run clean && bun run build",
+    "prepublishOnly": "bun run test",
     "test": "vitest run",
     "test:watch": "vitest"
   },

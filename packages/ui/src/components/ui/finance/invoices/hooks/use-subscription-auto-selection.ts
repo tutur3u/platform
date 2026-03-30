@@ -18,9 +18,11 @@ import type { UserGroup } from '../utils';
 import {
   getEffectiveAttendanceDays,
   getEffectiveDays,
+  getMonthStartDate,
   getSessionsForMonth,
   getSessionsUntilMonth,
   getTotalSessionsForGroups,
+  parseLocalCalendarDate,
 } from '../utils';
 
 interface UseSubscriptionAutoSelectionProps {
@@ -176,14 +178,13 @@ const computeGroupAttendanceDaysMap = (
       (inv) => inv.group_id === groupId
     );
     const validUntil = latestInvoice?.valid_until
-      ? new Date(latestInvoice.valid_until)
+      ? parseLocalCalendarDate(latestInvoice.valid_until)
       : null;
 
     const isGroupPaid = (() => {
       if (!validUntil) return false;
-      const selectedMonthStart = new Date(`${selectedMonth}-01`);
-      const validUntilMonthStart = new Date(validUntil);
-      validUntilMonthStart.setDate(1);
+      const selectedMonthStart = getMonthStartDate(selectedMonth);
+      const validUntilMonthStart = getMonthStartDate(validUntil);
       return selectedMonthStart < validUntilMonthStart;
     })();
 
@@ -200,7 +201,7 @@ const computeGroupAttendanceDaysMap = (
         : userAttendance.filter((a) => {
             if (a.group_id !== groupId) return false;
             if (!validUntil) return true;
-            const attendanceDate = new Date(a.date);
+            const attendanceDate = parseLocalCalendarDate(a.date);
             return attendanceDate >= validUntil;
           });
       groupAttendanceDaysMap[groupId] =

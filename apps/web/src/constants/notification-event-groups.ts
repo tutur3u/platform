@@ -74,6 +74,19 @@ export const WORKSPACE_EVENT_GROUPS: EventGroup<NotificationEventType>[] = [
     events: ['deadline_reminder'],
   },
   {
+    id: 'time_tracking_requests',
+    labelKey: 'time-tracking-requests',
+    descriptionKey: 'time-tracking-requests-description',
+    icon: Clock,
+    events: [
+      'time_tracking_request_submitted',
+      'time_tracking_request_resubmitted',
+      'time_tracking_request_approved',
+      'time_tracking_request_rejected',
+      'time_tracking_request_needs_info',
+    ],
+  },
+  {
     id: 'workspace_events',
     labelKey: 'workspace-events',
     descriptionKey: 'workspace-events-description',

@@ -311,7 +311,11 @@ class _AvatarMenuContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _AccountHeader(data: data, compact: compact),
+        _AccountHeader(
+          data: data,
+          compact: compact,
+          onTap: () => onSelected(AvatarMenuAction.profile),
+        ),
         const shad.Gap(14),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -344,13 +348,6 @@ class _AvatarMenuContent extends StatelessWidget {
         const shad.Gap(10),
         _ActionGroup(
           children: [
-            _ActionTile(
-              icon: Icons.person_outline_rounded,
-              title: context.l10n.settingsProfile,
-              subtitle: context.l10n.settingsProfileDescription,
-              onTap: () => onSelected(AvatarMenuAction.profile),
-            ),
-            const _ActionDivider(),
             _ActionTile(
               icon: Icons.settings_outlined,
               title: context.l10n.settingsTitle,
@@ -388,10 +385,12 @@ class _AccountHeader extends StatelessWidget {
   const _AccountHeader({
     required this.data,
     required this.compact,
+    required this.onTap,
   });
 
   final AvatarDropdownMenuData data;
   final bool compact;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -400,43 +399,53 @@ class _AccountHeader extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(compact ? 2 : 4, 0, compact ? 2 : 4, 0),
-      child: Row(
-        children: [
-          _UserAvatar(
-            name: data.name,
-            avatarUrl: data.avatarUrl,
-            avatarCacheKey: data.avatarIdentityKey,
-            size: compact ? 54 : 52,
-            rounded: 18,
-          ),
-          const shad.Gap(14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (data.email?.trim().isNotEmpty ?? false) ...[
-                  const shad.Gap(2),
+      child: _InteractiveCard(
+        onTap: onTap,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            _UserAvatar(
+              name: data.name,
+              avatarUrl: data.avatarUrl,
+              avatarCacheKey: data.avatarIdentityKey,
+              size: compact ? 54 : 52,
+              rounded: 18,
+            ),
+            const shad.Gap(14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    data.email!,
+                    data.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.typography.small.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                    style: theme.typography.large.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  if (data.email?.trim().isNotEmpty ?? false) ...[
+                    const shad.Gap(2),
+                    Text(
+                      data.email!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.small.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+            const shad.Gap(8),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 22,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -575,23 +584,6 @@ class _ActionGroup extends StatelessWidget {
         ),
       ),
       child: Column(children: children),
-    );
-  }
-}
-
-class _ActionDivider extends StatelessWidget {
-  const _ActionDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Divider(
-        height: 1,
-        color: colorScheme.outlineVariant.withValues(alpha: 0.18),
-      ),
     );
   }
 }

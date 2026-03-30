@@ -13,6 +13,8 @@ class SettingsRepository {
   static const _hasSeenOnboardingKey = 'has_seen_onboarding';
   static const _dismissedRecommendedVersionPrefix =
       'dismissed-recommended-version';
+  static const _pushPermissionPromptedPrefix =
+      'push-notification-permission-prompted';
 
   Future<String> getThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
@@ -111,5 +113,15 @@ class SettingsRepository {
       '$_dismissedRecommendedVersionPrefix-$platform',
       version,
     );
+  }
+
+  Future<bool> hasPromptedPushPermission(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('$_pushPermissionPromptedPrefix-$userId') ?? false;
+  }
+
+  Future<void> setHasPromptedPushPermission(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('$_pushPermissionPromptedPrefix-$userId', true);
   }
 }

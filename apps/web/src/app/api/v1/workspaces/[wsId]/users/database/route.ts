@@ -7,6 +7,7 @@ import {
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { GROUP_MEMBERSHIP_FILTER_VALUES } from '@/app/[locale]/(dashboard)/[wsId]/users/database/group-membership';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import {
   fetchRequireAttentionUserIds,
@@ -66,6 +67,7 @@ const SearchParamsSchema = z.object({
     .default('active'),
   linkStatus: z.enum(['all', 'linked', 'virtual']).default('all'),
   requireAttention: z.enum(['all', 'true', 'false']).default('all'),
+  groupMembership: z.enum(GROUP_MEMBERSHIP_FILTER_VALUES).default('all'),
   withPromotions: z
     .enum(['true', 'false'])
     .catch('false')
@@ -151,6 +153,7 @@ export async function GET(request: Request, { params }: Params) {
           search_query: sp.q,
           include_archived: sp.status !== 'active',
           link_status: sp.linkStatus,
+          group_membership: sp.groupMembership,
         },
         {
           count: 'exact',

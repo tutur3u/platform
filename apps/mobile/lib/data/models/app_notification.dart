@@ -21,6 +21,12 @@ class NotificationActor extends Equatable {
   final String? displayName;
   final String? avatarUrl;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'display_name': displayName,
+    'avatar_url': avatarUrl,
+  };
+
   @override
   List<Object?> get props => [id, displayName, avatarUrl];
 }
@@ -121,6 +127,22 @@ class AppNotification extends Equatable {
       actor: actor,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'ws_id': wsId,
+    'user_id': userId,
+    'type': type,
+    'title': title,
+    'description': description,
+    'data': data,
+    'entity_type': entityType,
+    'entity_id': entityId,
+    'read_at': readAt?.toUtc().toIso8601String(),
+    'created_at': createdAt.toUtc().toIso8601String(),
+    'created_by': createdBy,
+    'actor': actor?.toJson(),
+  };
 
   @override
   List<Object?> get props => [

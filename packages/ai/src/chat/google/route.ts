@@ -107,9 +107,11 @@ export function createPOST(
       let normalizedWsId: string | null = null;
       let requestedCreditWsId: string | undefined;
       try {
-        normalizedWsId = wsId ? await normalizeWorkspaceId(wsId) : null;
+        normalizedWsId = wsId
+          ? await normalizeWorkspaceId(wsId, supabase, req)
+          : null;
         requestedCreditWsId = rawCreditWsId
-          ? await normalizeWorkspaceId(rawCreditWsId)
+          ? await normalizeWorkspaceId(rawCreditWsId, supabase, req)
           : undefined;
       } catch (normError) {
         console.error(

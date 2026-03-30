@@ -75,7 +75,13 @@ extension _ShellPageLayout on _ShellPageState {
           index: _ShellPageState._calculateSelectedIndex(
             widget.matchedLocation,
           ),
-          children: const [DashboardPage(), AssistantPage(), AppsHubPage()],
+          children: [
+            DashboardPage(replayToken: _rootTabReplayTokens[Routes.home] ?? 0),
+            AssistantPage(
+              replayToken: _rootTabReplayTokens[Routes.assistant] ?? 0,
+            ),
+            AppsHubPage(replayToken: _rootTabReplayTokens[Routes.apps] ?? 0),
+          ],
         ),
       );
     }
@@ -506,6 +512,7 @@ extension _ShellPageLayout on _ShellPageState {
       padding: mobileSectionAppBarPadding,
       trailingGap: 6,
       trailing: [
+        ShellInjectedActionsHost(matchedLocation: widget.matchedLocation),
         KeyedSubtree(
           key: _ShellPageState._shellNotificationsKey,
           child: RepaintBoundary(

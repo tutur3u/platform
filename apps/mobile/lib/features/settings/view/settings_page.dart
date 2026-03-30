@@ -7,8 +7,6 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/data/models/user_profile.dart';
-import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -19,13 +17,12 @@ import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
-import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -61,9 +58,6 @@ class _SettingsViewState extends State<_SettingsView> {
   late final Future<PackageInfo> _packageInfoFuture;
   late final WorkspacePermissionsRepository _workspacePermissionsRepository;
   String? _loadedWorkspaceId;
-  int _workspacePermissionLoadToken = 0;
-  bool _canManageWorkspaceSettings = false;
-  bool _isWorkspacePermissionLoading = false;
   bool _canManageMobileVersions = false;
   String? _mobileVersionsAccessWorkspaceId;
   int _mobileVersionsAccessLoadToken = 0;
@@ -78,11 +72,9 @@ class _SettingsViewState extends State<_SettingsView> {
         .state
         .currentWorkspace
         ?.id;
-    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     if (workspaceId != null) {
       unawaited(_loadWorkspaceCalendarPreference(workspaceId));
     }
-    unawaited(_loadWorkspaceSettingsPermission(workspace));
     unawaited(_loadMobileVersionsAccess(workspaceId, forceReload: true));
   }
 
@@ -101,7 +93,6 @@ class _SettingsViewState extends State<_SettingsView> {
             if (workspaceId != null) {
               unawaited(_loadWorkspaceCalendarPreference(workspaceId));
             }
-            unawaited(_loadWorkspaceSettingsPermission(state.currentWorkspace));
             unawaited(_loadMobileVersionsAccess(workspaceId));
           },
         ),
@@ -147,122 +138,91 @@ class _SettingsViewState extends State<_SettingsView> {
                     32,
                   ),
                   children: [
-                    BlocBuilder<ProfileCubit, ProfileState>(
-                      builder: (context, profileState) {
-                        return _SettingsHeroCard(
-                          profile: profileState.profile,
-                          isRefreshing: profileState.isRefreshing,
-                          currentWorkspace: context
-                              .watch<WorkspaceCubit>()
-                              .state
-                              .currentWorkspace,
-                          defaultWorkspace: context
-                              .watch<WorkspaceCubit>()
-                              .state
-                              .defaultWorkspace,
-                        );
-                      },
+                    StaggeredEntry(
+                      index: 0,
+                      playOnceKey: 'settings-hero',
+                      child: BlocBuilder<ProfileCubit, ProfileState>(
+                        builder: (context, profileState) {
+                          return _SettingsHeroCard(
+                            isRefreshing: profileState.isRefreshing,
+                          );
+                        },
+                      ),
                     ),
                     const shad.Gap(32),
-                    SettingsSection(
-                      title: context.l10n.settingsAccountSectionTitle,
-                      description:
-                          context.l10n.settingsAccountSectionDescription,
-                      children: [
-                        BlocBuilder<ProfileCubit, ProfileState>(
-                          builder: (context, profileState) {
-                            final profile = profileState.profile;
-                            final value =
-                                profile?.displayName?.trim().isNotEmpty ?? false
-                                ? profile!.displayName!.trim()
-                                : profile?.fullName?.trim().isNotEmpty ?? false
-                                ? profile!.fullName!.trim()
-                                : profile?.email ??
-                                      context.l10n.settingsNoEmail;
-
-                            return SettingsTile(
-                              icon: Icons.person_outline_rounded,
-                              title: context.l10n.settingsProfile,
-                              value: value,
-                              subtitle: context.l10n.settingsProfileDescription,
-                              onTap: () => context.push(Routes.profileRoot),
-                            );
-                          },
+                    StaggeredEntry(
+                      index: 1,
+                      playOnceKey: 'settings-preferences',
+                      child: _PreferencesSection(
+                        themeLabel: _themeDisplayName(
+                          context.watch<ThemeCubit>().state.themeMode,
+                          context.l10n,
                         ),
-                      ],
-                    ),
-                    const shad.Gap(32),
-                    _WorkspaceSection(
-                      onSelectCurrentWorkspace: () => showWorkspacePickerSheet(
-                        context,
-                      ),
-                      onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
-                        context,
-                        mode: WorkspacePickerMode.defaultWorkspace,
-                      ),
-                      canEditWorkspaceProperties: _canManageWorkspaceSettings,
-                      isWorkspacePermissionLoading:
-                          _isWorkspacePermissionLoading,
-                      onEditWorkspaceProperties: (workspace) =>
-                          unawaited(_showWorkspacePropertiesDialog(workspace)),
-                    ),
-                    const shad.Gap(32),
-                    _PreferencesSection(
-                      themeLabel: _themeDisplayName(
-                        context.watch<ThemeCubit>().state.themeMode,
-                        context.l10n,
-                      ),
-                      languageLabel: _localeDisplayName(
-                        Localizations.localeOf(context),
-                        context.read<LocaleCubit>().state.locale,
-                        context.l10n,
-                      ),
-                      calendarLabel: _calendarDisplayName(
-                        context.watch<CalendarSettingsCubit>().state,
-                        context.l10n,
-                      ),
-                      onChangeLanguage: () => unawaited(_showLanguageDialog()),
-                      onChangeTheme: () => unawaited(_showThemeDialog()),
-                      onChangeFirstDayOfWeek: () => unawaited(
-                        _showCalendarDialog(),
+                        languageLabel: _localeDisplayName(
+                          Localizations.localeOf(context),
+                          context.read<LocaleCubit>().state.locale,
+                          context.l10n,
+                        ),
+                        calendarLabel: _calendarDisplayName(
+                          context.watch<CalendarSettingsCubit>().state,
+                          context.l10n,
+                        ),
+                        onChangeLanguage: () =>
+                            unawaited(_showLanguageDialog()),
+                        onChangeTheme: () => unawaited(_showThemeDialog()),
+                        onChangeFirstDayOfWeek: () =>
+                            unawaited(_showCalendarDialog()),
                       ),
                     ),
                     if (_canManageMobileVersions) ...[
                       const shad.Gap(32),
-                      SettingsSection(
-                        title: context.l10n.settingsInfrastructureSectionTitle,
-                        description: context
-                            .l10n
-                            .settingsInfrastructureSectionDescription,
-                        children: [
-                          SettingsTile(
-                            icon: Icons.system_update_alt_rounded,
-                            title: context.l10n.settingsMobileVersions,
-                            subtitle: context
-                                .l10n
-                                .settingsMobileVersionsTileDescription,
-                            onTap: () =>
-                                context.push(Routes.settingsMobileVersions),
-                          ),
-                        ],
+                      StaggeredEntry(
+                        index: 2,
+                        playOnceKey: 'settings-infrastructure',
+                        child: SettingsSection(
+                          title:
+                              context.l10n.settingsInfrastructureSectionTitle,
+                          description: context
+                              .l10n
+                              .settingsInfrastructureSectionDescription,
+                          children: [
+                            SettingsTile(
+                              icon: Icons.system_update_alt_rounded,
+                              title: context.l10n.settingsMobileVersions,
+                              subtitle: context
+                                  .l10n
+                                  .settingsMobileVersionsTileDescription,
+                              onTap: () =>
+                                  context.push(Routes.settingsMobileVersions),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                     const shad.Gap(32),
-                    _AboutSection(packageInfo: packageInfo),
+                    StaggeredEntry(
+                      index: _canManageMobileVersions ? 3 : 2,
+                      playOnceKey: 'settings-about',
+                      child: _AboutSection(packageInfo: packageInfo),
+                    ),
                     const shad.Gap(32),
-                    SettingsSection(
-                      title: context.l10n.settingsDangerSectionTitle,
-                      description:
-                          context.l10n.settingsDangerSectionDescription,
-                      children: [
-                        SettingsTile(
-                          icon: Icons.logout_rounded,
-                          title: context.l10n.settingsSignOut,
-                          subtitle: context.l10n.settingsSignOutDescription,
-                          isDestructive: true,
-                          onTap: () => unawaited(_showSignOutDialog()),
-                        ),
-                      ],
+                    StaggeredEntry(
+                      index: _canManageMobileVersions ? 4 : 3,
+                      playOnceKey: 'settings-danger',
+                      child: SettingsSection(
+                        title: context.l10n.settingsDangerSectionTitle,
+                        description:
+                            context.l10n.settingsDangerSectionDescription,
+                        children: [
+                          SettingsTile(
+                            icon: Icons.logout_rounded,
+                            title: context.l10n.settingsSignOut,
+                            subtitle: context.l10n.settingsSignOutDescription,
+                            isDestructive: true,
+                            onTap: () => unawaited(_showSignOutDialog()),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -330,53 +290,6 @@ class _SettingsViewState extends State<_SettingsView> {
     );
   }
 
-  Future<void> _loadWorkspaceSettingsPermission(Workspace? workspace) async {
-    final workspaceId = workspace?.id;
-    final isPersonalWorkspace = workspace?.personal ?? false;
-    final token = ++_workspacePermissionLoadToken;
-
-    if (workspaceId == null || workspaceId.isEmpty) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _canManageWorkspaceSettings = false;
-        _isWorkspacePermissionLoading = false;
-      });
-      return;
-    }
-
-    if (isPersonalWorkspace) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _canManageWorkspaceSettings = true;
-        _isWorkspacePermissionLoading = false;
-      });
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _isWorkspacePermissionLoading = true;
-      });
-    }
-
-    final permissions = await _workspacePermissionsRepository.getPermissions(
-      wsId: workspaceId,
-    );
-    if (!mounted || token != _workspacePermissionLoadToken) {
-      return;
-    }
-    setState(() {
-      _canManageWorkspaceSettings = permissions.containsPermission(
-        manageWorkspaceSettingsPermission,
-      );
-      _isWorkspacePermissionLoading = false;
-    });
-  }
-
   Future<void> _loadMobileVersionsAccess(
     String? workspaceId, {
     bool forceReload = false,
@@ -425,21 +338,6 @@ class _SettingsViewState extends State<_SettingsView> {
       if (currentWorkspaceId != null)
         calendarCubit.loadWorkspacePreference(currentWorkspaceId),
     ]);
-
-    if (!mounted) {
-      return;
-    }
-    await _loadWorkspaceSettingsPermission(
-      workspaceCubit.state.currentWorkspace,
-    );
-  }
-
-  Future<void> _showWorkspacePropertiesDialog(Workspace workspace) async {
-    if (_isWorkspacePermissionLoading || !_canManageWorkspaceSettings) {
-      return;
-    }
-
-    await showWorkspacePropertiesDialog(context, workspace: workspace);
   }
 
   Future<void> _showCalendarDialog() async {
@@ -662,29 +560,15 @@ class _PreferencesSection extends StatelessWidget {
 
 class _SettingsHeroCard extends StatelessWidget {
   const _SettingsHeroCard({
-    required this.profile,
     required this.isRefreshing,
-    required this.currentWorkspace,
-    required this.defaultWorkspace,
   });
 
-  final UserProfile? profile;
   final bool isRefreshing;
-  final Workspace? currentWorkspace;
-  final Workspace? defaultWorkspace;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final l10n = context.l10n;
-    final authEmail = context.select<AuthCubit, String?>(
-      (cubit) => cubit.state.user?.email,
-    );
-    final displayName = profile?.displayName?.trim().isNotEmpty ?? false
-        ? profile!.displayName!.trim()
-        : profile?.fullName?.trim().isNotEmpty ?? false
-        ? profile!.fullName!.trim()
-        : authEmail ?? l10n.settingsTitle;
 
     return Container(
       decoration: BoxDecoration(
@@ -709,7 +593,23 @@ class _SettingsHeroCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ProfileAvatar(profile: profile, fallbackEmail: authEmail),
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.background.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: theme.colorScheme.border.withValues(alpha: 0.72),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.tune_rounded,
+                  size: 26,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
               const shad.Gap(14),
               Expanded(
                 child: Column(
@@ -723,20 +623,10 @@ class _SettingsHeroCard extends StatelessWidget {
                     ),
                     const shad.Gap(6),
                     Text(
-                      displayName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const shad.Gap(2),
-                    Text(
-                      profile?.email ?? authEmail ?? l10n.settingsNoEmail,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      l10n.settingsHeroDescription,
                       style: theme.typography.textSmall.copyWith(
                         color: theme.colorScheme.mutedForeground,
+                        height: 1.45,
                       ),
                     ),
                   ],
@@ -749,123 +639,8 @@ class _SettingsHeroCard extends StatelessWidget {
                 ),
             ],
           ),
-          const shad.Gap(16),
-          Text(
-            l10n.settingsHeroDescription,
-            style: theme.typography.textSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
         ],
       ),
-    );
-  }
-}
-
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({
-    required this.profile,
-    required this.fallbackEmail,
-  });
-
-  final UserProfile? profile;
-  final String? fallbackEmail;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final source =
-        profile?.displayName ?? profile?.fullName ?? fallbackEmail ?? '?';
-    final initials = source.trim().isEmpty
-        ? '?'
-        : source.trim()[0].toUpperCase();
-
-    return Container(
-      width: 66,
-      height: 66,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      alignment: Alignment.center,
-      child: profile?.avatarUrl?.trim().isNotEmpty ?? false
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.network(
-                profile!.avatarUrl!,
-                width: 66,
-                height: 66,
-                fit: BoxFit.cover,
-              ),
-            )
-          : Text(
-              initials,
-              style: theme.typography.h3.copyWith(fontWeight: FontWeight.w800),
-            ),
-    );
-  }
-}
-
-class _WorkspaceSection extends StatelessWidget {
-  const _WorkspaceSection({
-    required this.onSelectCurrentWorkspace,
-    required this.onSelectDefaultWorkspace,
-    required this.canEditWorkspaceProperties,
-    required this.isWorkspacePermissionLoading,
-    required this.onEditWorkspaceProperties,
-  });
-
-  final VoidCallback onSelectCurrentWorkspace;
-  final VoidCallback onSelectDefaultWorkspace;
-  final bool canEditWorkspaceProperties;
-  final bool isWorkspacePermissionLoading;
-  final ValueChanged<Workspace> onEditWorkspaceProperties;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final workspaceState = context.watch<WorkspaceCubit>().state;
-    final currentWorkspace = workspaceState.currentWorkspace;
-
-    final workspacePropertiesSubtitle = isWorkspacePermissionLoading
-        ? l10n.settingsWorkspacePropertiesPermissionLoading
-        : canEditWorkspaceProperties
-        ? l10n.settingsWorkspacePropertiesDescription
-        : l10n.settingsWorkspacePropertiesNoAccess;
-
-    return SettingsSection(
-      title: l10n.settingsWorkspaceSectionTitle,
-      description: l10n.settingsWorkspaceSectionDescription,
-      children: [
-        SettingsTile(
-          icon: Icons.apartment_rounded,
-          title: l10n.settingsCurrentWorkspace,
-          subtitle: l10n.settingsCurrentWorkspaceDescription,
-          value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
-          onTap: onSelectCurrentWorkspace,
-        ),
-        SettingsTile(
-          icon: Icons.home_work_outlined,
-          title: l10n.settingsDefaultWorkspace,
-          subtitle: l10n.settingsDefaultWorkspaceDescription,
-          value:
-              workspaceState.defaultWorkspace?.name ??
-              l10n.settingsNoWorkspaceSelected,
-          onTap: onSelectDefaultWorkspace,
-        ),
-        SettingsTile(
-          icon: Icons.drive_file_rename_outline_rounded,
-          title: l10n.settingsWorkspacePropertiesTitle,
-          subtitle: workspacePropertiesSubtitle,
-          value: currentWorkspace?.name ?? l10n.settingsNoWorkspaceSelected,
-          onTap:
-              currentWorkspace != null &&
-                  !isWorkspacePermissionLoading &&
-                  canEditWorkspaceProperties
-              ? () => onEditWorkspaceProperties(currentWorkspace)
-              : null,
-        ),
-      ],
     );
   }
 }

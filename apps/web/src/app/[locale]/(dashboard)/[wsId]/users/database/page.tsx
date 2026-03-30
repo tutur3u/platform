@@ -48,6 +48,8 @@ interface Props {
     excludedGroups?: string | string[];
     status?: string;
     linkStatus?: string;
+    groupMembership?: string;
+    requireAttention?: string;
     logPeriod?: string;
     logMonth?: string;
     logYear?: string;

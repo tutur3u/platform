@@ -1210,6 +1210,11 @@ export async function WorkspaceNavigationLinks({
               icon: <Mails className="h-5 w-5" />,
             },
             {
+              title: t('infrastructure-tabs.push_notifications'),
+              href: `/${personalOrWsId}/infrastructure/push-notifications`,
+              icon: <Bell className="h-5 w-5" />,
+            },
+            {
               title: t('infrastructure-tabs.blocked_ips'),
               href: `/${personalOrWsId}/infrastructure/blocked-ips`,
               icon: <ShieldBan className="h-5 w-5" />,

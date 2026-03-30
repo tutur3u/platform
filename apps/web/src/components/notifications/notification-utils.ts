@@ -86,6 +86,7 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'task_project_linked',
   'task_project_unlinked',
   'task_assignee_removed',
+  'deadline_reminder',
   'workspace_invite',
   'system_announcement',
   'account_update',
@@ -94,6 +95,11 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'report_rejected',
   'post_approved',
   'post_rejected',
+  'time_tracking_request_submitted',
+  'time_tracking_request_resubmitted',
+  'time_tracking_request_approved',
+  'time_tracking_request_rejected',
+  'time_tracking_request_needs_info',
 ];
 
 export const MENTION_TYPES: NotificationType[] = ['task_mention'];
@@ -141,6 +147,7 @@ const ICON_MAP: Record<string, typeof Bell> = {
   task_project_linked: Link2,
   task_project_unlinked: Link2,
   task_assignee_removed: UserMinus,
+  deadline_reminder: Clock,
   workspace_invite: Mail,
   system_announcement: Bell,
   account_update: UserPlus,
@@ -149,6 +156,11 @@ const ICON_MAP: Record<string, typeof Bell> = {
   report_rejected: AlertCircle,
   post_approved: CheckCircle2,
   post_rejected: AlertCircle,
+  time_tracking_request_submitted: ClipboardList,
+  time_tracking_request_resubmitted: RotateCcw,
+  time_tracking_request_approved: CheckCircle2,
+  time_tracking_request_rejected: AlertCircle,
+  time_tracking_request_needs_info: AlertCircle,
 };
 
 export function getNotificationIcon(
@@ -196,6 +208,10 @@ export function getEntityLink(
     return groupId
       ? `/${targetWsId}/users/groups/${groupId}/posts/${entity_id}`
       : null;
+  }
+
+  if (entity_type === 'time_tracking_request' && entity_id) {
+    return `/${targetWsId}/time-tracker/requests`;
   }
 
   return null;

@@ -585,12 +585,58 @@ class AssistantRestoredChat extends Equatable {
     required this.attachmentsByMessageId,
   });
 
+  factory AssistantRestoredChat.fromJson(Map<String, dynamic> json) {
+    final chatRaw = json['chat'];
+    return AssistantRestoredChat(
+      chat: chatRaw is Map<String, dynamic>
+          ? AssistantChatRecord.fromJson(chatRaw)
+          : null,
+      messages: (json['messages'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(AssistantMessage.fromJson)
+          .toList(),
+      attachmentsByMessageId: _assistantAttachmentsByMessageIdFromJson(
+        json['attachmentsByMessageId'],
+      ),
+    );
+  }
+
   final AssistantChatRecord? chat;
   final List<AssistantMessage> messages;
   final Map<String, List<AssistantAttachment>> attachmentsByMessageId;
 
+  Map<String, dynamic> toJson() => {
+    'chat': chat?.toJson(),
+    'messages': messages.map((m) => m.toJson()).toList(),
+    'attachmentsByMessageId': {
+      for (final e in attachmentsByMessageId.entries)
+        e.key: e.value.map((a) => a.toJson()).toList(),
+    },
+  };
+
   @override
   List<Object?> get props => [chat, messages, attachmentsByMessageId];
+}
+
+Map<String, List<AssistantAttachment>> _assistantAttachmentsByMessageIdFromJson(
+  Object? raw,
+) {
+  if (raw is! Map) {
+    return const {};
+  }
+  final decoded = Map<String, dynamic>.from(raw);
+  final out = <String, List<AssistantAttachment>>{};
+  for (final entry in decoded.entries) {
+    final list = entry.value;
+    if (list is! List) {
+      continue;
+    }
+    out[entry.key] = list
+        .whereType<Map<String, dynamic>>()
+        .map(AssistantAttachment.fromJson)
+        .toList();
+  }
+  return out;
 }
 
 class AssistantMessage extends Equatable {
@@ -600,6 +646,17 @@ class AssistantMessage extends Equatable {
     this.parts = const [],
     this.createdAt,
   });
+
+  factory AssistantMessage.fromJson(Map<String, dynamic> json) =>
+      AssistantMessage(
+        id: json['id'] as String,
+        role: json['role'] as String? ?? 'assistant',
+        parts: (json['parts'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(AssistantMessagePart.fromJson)
+            .toList(),
+        createdAt: _parseDateTime(json['created_at']),
+      );
 
   final String id;
   final String role;

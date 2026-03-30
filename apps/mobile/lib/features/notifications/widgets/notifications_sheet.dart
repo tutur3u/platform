@@ -9,8 +9,11 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<void> showNotificationsSheet({
@@ -22,28 +25,50 @@ Future<void> showNotificationsSheet({
     maxDialogWidth: 460,
     builder: (sheetContext) => BlocProvider.value(
       value: notificationsCubit,
-      child: _NotificationsSheet(parentContext: context),
+      child: NotificationsView(
+        parentContext: context,
+        pageMode: false,
+        onBack: () => dismissAdaptiveDrawerOverlay(sheetContext),
+      ),
     ),
   );
 }
 
-class _NotificationsSheet extends StatefulWidget {
-  const _NotificationsSheet({
+class NotificationsView extends StatefulWidget {
+  const NotificationsView({
     required this.parentContext,
+    required this.pageMode,
+    this.initialTab = NotificationsTab.inbox,
+    this.onBack,
+    super.key,
   });
 
   final BuildContext parentContext;
+  final bool pageMode;
+  final NotificationsTab initialTab;
+  final VoidCallback? onBack;
 
   @override
-  State<_NotificationsSheet> createState() => _NotificationsSheetState();
+  State<NotificationsView> createState() => _NotificationsViewState();
 }
 
-class _NotificationsSheetState extends State<_NotificationsSheet> {
-  NotificationsTab _selectedTab = NotificationsTab.inbox;
+class _NotificationsViewState extends State<NotificationsView> {
+  late NotificationsTab _selectedTab = widget.initialTab;
+  StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
   @override
   void initState() {
     super.initState();
+    _pushEventsSubscription = PushNotificationService.instance.events.listen((
+      _,
+    ) {
+      if (!mounted) {
+        return;
+      }
+      final notificationsCubit = context.read<NotificationsCubit>();
+      unawaited(notificationsCubit.refreshUnreadCount());
+      unawaited(notificationsCubit.loadTab(_selectedTab, refresh: true));
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -52,6 +77,23 @@ class _NotificationsSheetState extends State<_NotificationsSheet> {
       unawaited(notificationsCubit.refreshUnreadCount());
       unawaited(notificationsCubit.loadTab(_selectedTab, refresh: true));
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant NotificationsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab == widget.initialTab ||
+        _selectedTab == widget.initialTab) {
+      return;
+    }
+    _selectedTab = widget.initialTab;
+    unawaited(context.read<NotificationsCubit>().loadTab(_selectedTab));
+  }
+
+  @override
+  void dispose() {
+    unawaited(_pushEventsSubscription?.cancel());
+    super.dispose();
   }
 
   @override
@@ -64,6 +106,154 @@ class _NotificationsSheetState extends State<_NotificationsSheet> {
     return BlocBuilder<NotificationsCubit, NotificationsState>(
       builder: (context, state) {
         final feed = state.feedFor(_selectedTab);
+        final list = _NotificationsList(
+          key: ValueKey('${_selectedTab.name}-${widget.pageMode}'),
+          tab: _selectedTab,
+          feed: feed,
+          pageMode: widget.pageMode,
+          onRefresh: () => context.read<NotificationsCubit>().loadTab(
+            _selectedTab,
+            refresh: true,
+          ),
+          onLoadMore: () =>
+              context.read<NotificationsCubit>().loadMore(_selectedTab),
+          itemBuilder: (notification) => _NotificationTile(
+            notification: notification,
+            isPending: state.isPending(notification.id),
+            onToggleRead: () => unawaited(
+              context.read<NotificationsCubit>().toggleRead(
+                notification,
+              ),
+            ),
+            onAcceptInvite:
+                notification.type == 'workspace_invite' &&
+                    notification.actionTaken == null
+                ? () => unawaited(_acceptInvite(context, notification))
+                : null,
+            onDeclineInvite:
+                notification.type == 'workspace_invite' &&
+                    notification.actionTaken == null
+                ? () => unawaited(_declineInvite(context, notification))
+                : null,
+            onOpen: _canOpenNotification(notification)
+                ? () => unawaited(
+                    _openNotification(context, notification),
+                  )
+                : null,
+          ),
+        );
+
+        if (widget.pageMode) {
+          return SafeArea(
+            top: false,
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+              child: list,
+            ),
+          );
+        }
+
+        final content = Padding(
+          padding: EdgeInsets.fromLTRB(
+            18,
+            context.isCompact ? 10 : 18,
+            18,
+            context.isCompact ? 18 : 16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              StaggeredEntrance(
+                replayKey: 'notifications-drawer-header-${state.unreadCount}',
+                child: _NotificationsHeaderCard(
+                  unreadCount: state.unreadCount,
+                  onBack: widget.onBack,
+                  pageMode: false,
+                ),
+              ),
+              const shad.Gap(16),
+              StaggeredEntrance(
+                replayKey: 'notifications-drawer-tabs-${_selectedTab.name}',
+                delay: const Duration(milliseconds: 40),
+                child: Builder(
+                  builder: (context) {
+                    final inboxLabel = state.unreadCount > 0
+                        ? '${context.l10n.notificationsInbox} '
+                              '(${state.unreadCount})'
+                        : context.l10n.notificationsInbox;
+                    return SegmentedButton<NotificationsTab>(
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(
+                          value: NotificationsTab.inbox,
+                          label: Text(inboxLabel),
+                        ),
+                        ButtonSegment(
+                          value: NotificationsTab.archive,
+                          label: Text(context.l10n.notificationsArchive),
+                        ),
+                      ],
+                      selected: {_selectedTab},
+                      onSelectionChanged: (selection) {
+                        final tab = selection.firstOrNull;
+                        if (tab == null) {
+                          return;
+                        }
+                        setState(() {
+                          _selectedTab = tab;
+                        });
+                        unawaited(
+                          context.read<NotificationsCubit>().loadTab(tab),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const shad.Gap(16),
+              StaggeredEntrance(
+                replayKey:
+                    'notifications-drawer-section-${_selectedTab.name}'
+                    '-${state.unreadCount}',
+                delay: const Duration(milliseconds: 80),
+                child: _NotificationsSectionHeader(
+                  title: _selectedTab == NotificationsTab.inbox
+                      ? context.l10n.notificationsInbox
+                      : context.l10n.notificationsArchive,
+                  action:
+                      _selectedTab == NotificationsTab.inbox &&
+                          state.unreadCount > 0
+                      ? state.isArchivingAll
+                            ? SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colorScheme.primary,
+                                ),
+                              )
+                            : Text(
+                                context.l10n.notificationsArchiveAll,
+                                style: theme.typography.small.copyWith(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                      : null,
+                  onAction:
+                      _selectedTab == NotificationsTab.inbox &&
+                          state.unreadCount > 0 &&
+                          !state.isArchivingAll
+                      ? () => unawaited(_archiveAll(context))
+                      : null,
+                ),
+              ),
+              const shad.Gap(10),
+              Expanded(child: list),
+            ],
+          ),
+        );
 
         return Material(
           color: Colors.transparent,
@@ -89,169 +279,7 @@ class _NotificationsSheetState extends State<_NotificationsSheet> {
             ),
             child: SafeArea(
               top: !context.isCompact,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  18,
-                  context.isCompact ? 10 : 18,
-                  18,
-                  context.isCompact ? 18 : 16,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            Icons.notifications_none_rounded,
-                            size: 20,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                        const shad.Gap(12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                context.l10n.notificationsTitle,
-                                style: theme.typography.large.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const shad.Gap(2),
-                              Text(
-                                context.l10n.notificationsSubtitle(
-                                  state.unreadCount,
-                                ),
-                                style: theme.typography.small.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const shad.Gap(16),
-                    Builder(
-                      builder: (context) {
-                        final inboxLabel = state.unreadCount > 0
-                            ? '${context.l10n.notificationsInbox} '
-                                  '(${state.unreadCount})'
-                            : context.l10n.notificationsInbox;
-                        return SegmentedButton<NotificationsTab>(
-                          showSelectedIcon: false,
-                          segments: [
-                            ButtonSegment(
-                              value: NotificationsTab.inbox,
-                              label: Text(inboxLabel),
-                            ),
-                            ButtonSegment(
-                              value: NotificationsTab.archive,
-                              label: Text(context.l10n.notificationsArchive),
-                            ),
-                          ],
-                          selected: {_selectedTab},
-                          onSelectionChanged: (selection) {
-                            final tab = selection.firstOrNull;
-                            if (tab == null) {
-                              return;
-                            }
-                            setState(() {
-                              _selectedTab = tab;
-                            });
-                            unawaited(
-                              context.read<NotificationsCubit>().loadTab(tab),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    const shad.Gap(16),
-                    _NotificationsSectionHeader(
-                      title: _selectedTab == NotificationsTab.inbox
-                          ? context.l10n.notificationsInbox
-                          : context.l10n.notificationsArchive,
-                      action:
-                          _selectedTab == NotificationsTab.inbox &&
-                              state.unreadCount > 0
-                          ? state.isArchivingAll
-                                ? SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: colorScheme.primary,
-                                    ),
-                                  )
-                                : Text(
-                                    context.l10n.notificationsArchiveAll,
-                                    style: theme.typography.small.copyWith(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  )
-                          : null,
-                      onAction:
-                          _selectedTab == NotificationsTab.inbox &&
-                              state.unreadCount > 0 &&
-                              !state.isArchivingAll
-                          ? () => unawaited(_archiveAll(context))
-                          : null,
-                    ),
-                    const shad.Gap(10),
-                    Expanded(
-                      child: _NotificationsList(
-                        key: ValueKey(_selectedTab),
-                        tab: _selectedTab,
-                        feed: feed,
-                        onRefresh: () => context
-                            .read<NotificationsCubit>()
-                            .loadTab(_selectedTab, refresh: true),
-                        onLoadMore: () =>
-                            context.read<NotificationsCubit>().loadMore(
-                              _selectedTab,
-                            ),
-                        itemBuilder: (notification) => _NotificationTile(
-                          notification: notification,
-                          isPending: state.isPending(notification.id),
-                          onToggleRead: () => unawaited(
-                            context.read<NotificationsCubit>().toggleRead(
-                              notification,
-                            ),
-                          ),
-                          onAcceptInvite:
-                              notification.type == 'workspace_invite' &&
-                                  notification.actionTaken == null
-                              ? () => unawaited(
-                                  _acceptInvite(context, notification),
-                                )
-                              : null,
-                          onDeclineInvite:
-                              notification.type == 'workspace_invite' &&
-                                  notification.actionTaken == null
-                              ? () => unawaited(
-                                  _declineInvite(context, notification),
-                                )
-                              : null,
-                          onOpen: _canOpenNotification(notification)
-                              ? () => unawaited(
-                                  _openNotification(context, notification),
-                                )
-                              : null,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: content,
             ),
           ),
         );
@@ -353,7 +381,9 @@ class _NotificationsSheetState extends State<_NotificationsSheet> {
     if (!context.mounted) {
       return;
     }
-    await dismissAdaptiveDrawerOverlay(context);
+    if (!widget.pageMode) {
+      await dismissAdaptiveDrawerOverlay(context);
+    }
     if (!widget.parentContext.mounted) {
       return;
     }
@@ -382,10 +412,115 @@ class _NotificationsSheetState extends State<_NotificationsSheet> {
   }
 }
 
+class _NotificationsHeaderCard extends StatelessWidget {
+  const _NotificationsHeaderCard({
+    required this.unreadCount,
+    required this.pageMode,
+    this.onBack,
+  });
+
+  final int unreadCount;
+  final bool pageMode;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = shad.Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? const [
+                  Color(0xFF162334),
+                  Color(0xFF1E1D3B),
+                  Color(0xFF16303A),
+                ]
+              : const [
+                  Color(0xFFEAF3FF),
+                  Color(0xFFF1EBFF),
+                  Color(0xFFE8F9F7),
+                ],
+          stops: const [0, 0.58, 1],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : colorScheme.primary.withValues(alpha: 0.18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withValues(alpha: isDark ? 0.16 : 0.1),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (pageMode && onBack != null) ...[
+            shad.IconButton.ghost(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back_rounded, size: 18),
+            ),
+            const shad.Gap(8),
+          ],
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: isDark ? 0.22 : 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              Icons.notifications_none_rounded,
+              size: 20,
+              color: colorScheme.primary,
+            ),
+          ),
+          const shad.Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.notificationsTitle,
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const shad.Gap(2),
+                Text(
+                  context.l10n.notificationsSubtitle(unreadCount),
+                  style: theme.typography.small.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!pageMode && onBack != null)
+            shad.IconButton.ghost(
+              onPressed: onBack,
+              icon: const Icon(Icons.close_rounded, size: 18),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NotificationsList extends StatefulWidget {
   const _NotificationsList({
     required this.tab,
     required this.feed,
+    required this.pageMode,
     required this.onRefresh,
     required this.onLoadMore,
     required this.itemBuilder,
@@ -394,6 +529,7 @@ class _NotificationsList extends StatefulWidget {
 
   final NotificationsTab tab;
   final NotificationFeedState feed;
+  final bool pageMode;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onLoadMore;
   final Widget Function(AppNotification notification) itemBuilder;
@@ -440,7 +576,7 @@ class _NotificationsListState extends State<_NotificationsList> {
         children: const [
           SizedBox(
             height: 320,
-            child: Center(child: shad.CircularProgressIndicator()),
+            child: Center(child: NovaLoadingIndicator(size: 42)),
           ),
         ],
       );
@@ -451,11 +587,15 @@ class _NotificationsListState extends State<_NotificationsList> {
         children: [
           SizedBox(
             height: 320,
-            child: _NotificationsEmptyState(
-              title: context.l10n.notificationsLoadErrorTitle,
-              message: context.l10n.notificationsLoadErrorMessage,
-              actionLabel: context.l10n.commonRetry,
-              onAction: widget.onRefresh,
+            child: StaggeredEntrance(
+              replayKey: '${widget.tab.name}-notifications-error',
+              delay: const Duration(milliseconds: 40),
+              child: _NotificationsEmptyState(
+                title: context.l10n.notificationsLoadErrorTitle,
+                message: context.l10n.notificationsLoadErrorMessage,
+                actionLabel: context.l10n.commonRetry,
+                onAction: widget.onRefresh,
+              ),
             ),
           ),
         ],
@@ -466,13 +606,17 @@ class _NotificationsListState extends State<_NotificationsList> {
         children: [
           SizedBox(
             height: 320,
-            child: _NotificationsEmptyState(
-              title: widget.tab == NotificationsTab.inbox
-                  ? context.l10n.notificationsInboxEmptyTitle
-                  : context.l10n.notificationsArchiveEmptyTitle,
-              message: widget.tab == NotificationsTab.inbox
-                  ? context.l10n.notificationsInboxEmptyMessage
-                  : context.l10n.notificationsArchiveEmptyMessage,
+            child: StaggeredEntrance(
+              replayKey: '${widget.tab.name}-notifications-empty',
+              delay: const Duration(milliseconds: 40),
+              child: _NotificationsEmptyState(
+                title: widget.tab == NotificationsTab.inbox
+                    ? context.l10n.notificationsInboxEmptyTitle
+                    : context.l10n.notificationsArchiveEmptyTitle,
+                message: widget.tab == NotificationsTab.inbox
+                    ? context.l10n.notificationsInboxEmptyMessage
+                    : context.l10n.notificationsArchiveEmptyMessage,
+              ),
             ),
           ),
         ],
@@ -480,7 +624,9 @@ class _NotificationsListState extends State<_NotificationsList> {
     } else {
       child = ListView.separated(
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 14),
+        padding: widget.pageMode
+            ? const EdgeInsets.fromLTRB(0, 0, 0, 14)
+            : const EdgeInsets.fromLTRB(0, 8, 0, 14),
         physics: const AlwaysScrollableScrollPhysics(),
         itemBuilder: (context, index) {
           if (index >= feed.items.length) {
@@ -497,10 +643,15 @@ class _NotificationsListState extends State<_NotificationsList> {
             );
           }
 
-          return widget.itemBuilder(feed.items[index]);
+          final notification = feed.items[index];
+          return StaggeredEntrance(
+            replayKey: '${widget.tab.name}-${notification.id}',
+            delay: Duration(milliseconds: index.clamp(0, 6) * 40),
+            child: widget.itemBuilder(notification),
+          );
         },
-        separatorBuilder: (context, index) => _NotificationDivider(
-          tinted: feed.items[index].isUnread,
+        separatorBuilder: (context, index) => SizedBox(
+          height: widget.pageMode ? 12 : 10,
         ),
         itemCount: feed.items.length + (feed.isLoadingMore ? 1 : 0),
       );
@@ -508,9 +659,11 @@ class _NotificationsListState extends State<_NotificationsList> {
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
-      child: _NotificationsSurface(
-        child: child,
-      ),
+      child: widget.pageMode
+          ? child
+          : _NotificationsSurface(
+              child: child,
+            ),
     );
   }
 }
@@ -544,7 +697,8 @@ class _NotificationTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: isPending || hasPrimaryAction ? null : onOpen,
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: notification.isUnread
                 ? colorScheme.primary.withValues(alpha: 0.06)
@@ -569,7 +723,7 @@ class _NotificationTile extends StatelessWidget {
                   color: _accentColor(context, notification.type),
                 ),
               ),
-              const shad.Gap(12),
+              const shad.Gap(10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,7 +749,7 @@ class _NotificationTile extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const shad.Gap(4),
+                    const shad.Gap(3),
                     Text(
                       notification.title,
                       style: theme.typography.small.copyWith(
@@ -748,27 +902,6 @@ class _NotificationsSurface extends StatelessWidget {
         ),
       ),
       child: child,
-    );
-  }
-}
-
-class _NotificationDivider extends StatelessWidget {
-  const _NotificationDivider({
-    required this.tinted,
-  });
-
-  final bool tinted;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(14, tinted ? 2 : 0, 14, tinted ? 2 : 0),
-      child: Divider(
-        height: 1,
-        color: colorScheme.outlineVariant.withValues(alpha: 0.14),
-      ),
     );
   }
 }

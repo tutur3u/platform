@@ -3,6 +3,41 @@ part of 'task_board_detail_page.dart';
 enum _BoardAction { renameBoard, refresh }
 
 extension on _TaskBoardDetailPageViewState {
+  Future<void> _showBoardActionsSheet(BuildContext context) async {
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined),
+                  title: Text(context.l10n.taskBoardDetailRenameBoard),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _handleBoardAction(context, _BoardAction.renameBoard);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.refresh_rounded),
+                  title: Text(context.l10n.taskBoardDetailRefresh),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _handleBoardAction(context, _BoardAction.refresh);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _handleBoardAction(BuildContext context, _BoardAction action) {
     switch (action) {
       case _BoardAction.renameBoard:

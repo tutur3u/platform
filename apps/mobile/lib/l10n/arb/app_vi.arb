@@ -236,9 +236,11 @@
     "assistantSelectWorkspace": "Chọn một không gian làm việc",
     "assistantWorkspaceAwareDescription": "Mira theo ngữ cảnh không gian làm việc cho việc lên kế hoạch, hỏi đáp và thao tác nhanh.",
     "assistantHistoryTitle": "Đoạn chat gần đây",
+    "assistantHistoryEmpty": "Chưa có đoạn chat nào. Hãy bắt đầu cuộc trò chuyện mới.",
     "assistantUntitledChat": "Đoạn chat chưa có tiêu đề",
     "assistantPersonalWorkspace": "Cá nhân",
     "assistantSettingsTitle": "Cài đặt Mira",
+    "assistantSendAction": "Gửi tin nhắn",
     "assistantActionsTitle": "Thao tác",
     "assistantRenameTitle": "Đổi tên Mira",
     "assistantRenameAction": "Đổi tên",
@@ -275,16 +277,123 @@
     "assistantViewOnlyLabel": "Chỉ xem",
     "assistantEditableLabel": "Có thể chỉnh sửa",
     "assistantSourceLabel": "Nguồn",
+    "assistantSourcePersonal": "Cá nhân",
+    "assistantSourceWorkspace": "Không gian làm việc",
     "assistantToolLabel": "Công cụ",
     "assistantInputLabel": "Đầu vào",
     "assistantOutputLabel": "Đầu ra",
     "assistantSeeMoreLabel": "Xem thêm",
     "assistantSeeLessLabel": "Thu gọn",
     "assistantExportShareText": "Xuất đoạn chat Mira",
+    "assistantAttachmentClearAction": "Xoá đính kèm",
+    "assistantAttachmentSheetTitle": "Đính kèm",
+    "assistantAttachmentUploadPending": "Hãy đợi tải tệp lên xong rồi gửi.",
     "assistantContextUpdatedLabel": "Đã cập nhật ngữ cảnh không gian làm việc",
     "assistantPreferencesUpdatedLabel": "Đã cập nhật tuỳ chọn trợ lý",
+    "assistantStarterBacklog": "Dọn backlog",
+    "assistantStarterCaptionBacklog": "Tách các việc đang mở thành danh sách bước tiếp theo rõ ràng.",
+    "assistantStarterCaptionDraft": "Soạn sẵn một cập nhật ngắn gọn trước khi gửi.",
+    "assistantStarterCaptionFocus": "Để Mira gợi ý việc đáng làm nhất tiếp theo.",
+    "assistantStarterCaptionPlan": "Cân bằng lịch họp, đầu việc và thời gian tập trung.",
+    "assistantStarterDraft": "Cập nhật cho nhóm",
+    "assistantStarterFocus": "Trọng tâm hôm nay",
+    "assistantStarterPlan": "Kế hoạch hôm nay",
+    "assistantStarterSubtitle": "Chọn một gợi ý nhanh hoặc tự gõ điều bạn cần.",
+    "assistantStarterTitle": "Chưa biết bắt đầu từ đâu?",
     "assistantShowBottomNavLabel": "Hiện thanh điều hướng dưới",
     "assistantHideBottomNavLabel": "Ẩn thanh điều hướng dưới",
+    "assistantLiveAccessSummary": "{workspace} • {source}",
+    "@assistantLiveAccessSummary": {
+        "placeholders": {
+            "workspace": {
+                "type": "String"
+            },
+            "source": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantLiveAccessUsingPersonal": "Đang dùng gói cá nhân {tier}",
+    "@assistantLiveAccessUsingPersonal": {
+        "placeholders": {
+            "tier": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantLiveAccessUsingWorkspace": "Đang dùng gói không gian làm việc {tier}",
+    "@assistantLiveAccessUsingWorkspace": {
+        "placeholders": {
+            "tier": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantLiveCameraPreview": "Camera trực tiếp",
+    "assistantLiveConnect": "Bắt đầu phiên trực tiếp",
+    "assistantLiveDescriptionConnecting": "Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.",
+    "assistantLiveDescriptionError": "Phiên trực tiếp gặp lỗi. Hãy thử lại hoặc bắt đầu phiên mới.",
+    "assistantLiveDescriptionIdle": "Bắt đầu phiên trực tiếp để nói, gõ hoặc truyền camera vào cùng một cuộc trò chuyện.",
+    "assistantLiveDescriptionListening": "Micro đang hoạt động. Mira sẽ tiếp tục lắng nghe âm thanh mới.",
+    "assistantLiveDescriptionPreparing": "Đang tạo ephemeral token và khôi phục phiên trực tiếp có thể tiếp tục gần nhất.",
+    "assistantLiveDescriptionReady": "Văn bản và âm thanh trực tiếp đã sẵn sàng. Hãy gõ, nói hoặc chia sẻ camera.",
+    "assistantLiveDescriptionReconnecting": "Phiên đang kết nối lại bằng handle mới nhất và lịch sử đã khôi phục.",
+    "assistantLiveDisconnect": "Kết thúc phiên trực tiếp",
+    "assistantLiveDraftAssistant": "Mira đang trả lời",
+    "assistantLiveDraftUser": "Bạn đang nói",
+    "assistantLiveHideCamera": "Ẩn camera",
+    "assistantLiveInsightsTitle": "Thông tin nhanh trực tiếp",
+    "assistantLiveListen": "Bật micro",
+    "assistantLiveMute": "Tắt micro",
+    "assistantLiveNoMessagesBody": "Dùng giọng nói, văn bản hoặc tệp đính kèm để bắt đầu. Mọi thứ từ phiên trực tiếp sẽ được đồng bộ lại vào luồng chat này.",
+    "assistantLiveNoMessagesTitle": "Trợ lý trực tiếp đã sẵn sàng",
+    "assistantLivePermissionDenied": "Camera hoặc micro đang bị chặn. Hãy cấp quyền để dùng đầy đủ chế độ trực tiếp.",
+    "assistantLiveReconnectBanner": "Phát hiện phiên đang xoay vòng. Đang kết nối lại với khoảng {timeLeft} còn lại.",
+    "@assistantLiveReconnectBanner": {
+        "placeholders": {
+            "timeLeft": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantLiveShowCamera": "Hiện camera",
+    "assistantLiveStatusAvailable": "Sẵn sàng",
+    "assistantLiveStatusConnecting": "Đang kết nối",
+    "assistantLiveStatusDisconnected": "Ngoại tuyến",
+    "assistantLiveStatusError": "Cần xử lý",
+    "assistantLiveStatusPreparing": "Đang chuẩn bị",
+    "assistantLiveStatusReady": "Trực tiếp",
+    "assistantLiveStatusReconnecting": "Đang kết nối lại",
+    "assistantLiveStatusSyncing": "Đang đồng bộ",
+    "assistantLiveStatusUnavailable": "Chưa khả dụng",
+    "assistantLiveSubtitle": "Gemini 3.1 Flash Live với giọng nói, camera, tệp đính kèm và lịch sử chat thống nhất.",
+    "assistantLiveTierRequired": "Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.",
+    "assistantLiveTitle": "Trợ lý trực tiếp",
+    "assistantLiveInfoAccessHeading": "Quyền truy cập hiện tại",
+    "assistantLiveInfoDismiss": "Đã hiểu",
+    "assistantLiveWorkspaceTierLabel": "Gói không gian làm việc {tier}",
+    "@assistantLiveWorkspaceTierLabel": {
+        "placeholders": {
+            "tier": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantMermaidDiagramLabel": "Sơ đồ",
+    "assistantMermaidRenderError": "Không thể hiển thị sơ đồ Mermaid này.",
+    "assistantMermaidZoomHint": "Chụm hoặc dùng các nút thu phóng để xem kỹ sơ đồ ở chế độ toàn màn hình.",
+    "assistantMermaidZoomIn": "Phóng to",
+    "assistantMermaidZoomOut": "Thu nhỏ",
+    "assistantMermaidZoomReset": "Đặt lại thu phóng",
+    "assistantCopyMessageAction": "Sao chép tin nhắn",
+    "assistantCopiedMessageAction": "Đã sao chép",
+    "assistantScrollToBottomAction": "Cuộn xuống cuối",
+    "assistantToolCompleted": "Hoàn tất",
+    "assistantToolGeneratedImage": "Ảnh đã tạo",
+    "assistantToolImageUnavailable": "Ảnh đã tạo hiện không khả dụng.",
+    "assistantToolNoActionNeeded": "Không cần dùng công cụ nào cho phản hồi này.",
+    "assistantToolSelectedTools": "Công cụ đã chọn",
+    "assistantToolsLabel": "Công cụ",
     "assistantCreditsSummary": "Còn {remaining} • {tier}",
     "@assistantCreditsSummary": {
         "placeholders": {
@@ -300,6 +409,7 @@
     "dashboardGreeting": "Chào mừng trở lại!",
     "dashboardQuickActions": "Thao tác nhanh",
     "dashboardTodayTitle": "Tổng quan hôm nay",
+    "dashboardActiveTasksLabel": "Công việc đang hoạt động",
     "dashboardQuickLaunch": "Mở nhanh",
     "dashboardAssignedToMe": "Được giao cho tôi",
     "dashboardUpcomingEvents": "Sự kiện sắp tới",
@@ -1321,6 +1431,7 @@
     "timerAutoStartBreaks": "Tự động bắt đầu nghỉ",
     "timerAutoStartFocus": "Tự động bắt đầu tập trung",
     "commonCancel": "Hủy",
+    "commonClearSearch": "Xóa tìm kiếm",
     "timerTotalSessions": "Tổng số phiên",
     "timerActiveUsers": "Người dùng hoạt động",
     "timerGoalsTitle": "Mục tiêu",
@@ -1373,6 +1484,9 @@
     "timerMinuteUnitShort": "p",
 
     "settingsTitle": "Cài đặt",
+    "settingsNavApp": "Ứng dụng",
+    "settingsNavWorkspace": "Không gian làm việc",
+    "settingsNavYou": "Bạn",
     "settingsAccountTab": "Tài khoản",
     "settingsPreferencesTab": "Tùy chọn",
     "settingsAboutTab": "Giới thiệu",

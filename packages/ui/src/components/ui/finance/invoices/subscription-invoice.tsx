@@ -51,10 +51,12 @@ import { useSubscriptionInvoiceContent } from './hooks/use-subscription-invoice-
 import { ProductSelection } from './product-selection';
 import type { SelectedProductItem } from './types';
 import {
+  formatMonthValue,
   getAttendanceStats,
   getAvailableMonths,
   getEffectiveAttendanceDays,
   getGroupsDateRange,
+  getMonthStartDate,
   getTotalSessionsForGroups,
 } from './utils';
 
@@ -97,7 +99,7 @@ export function SubscriptionInvoice({
     })
   );
   const [selectedMonth, setSelectedMonth] = useQueryState('month', {
-    defaultValue: new Date().toISOString().slice(0, 7),
+    defaultValue: formatMonthValue(new Date()),
     shallow: true,
   });
 
@@ -199,6 +201,50 @@ export function SubscriptionInvoice({
 
   const { data: useAttendanceBased = true } = useInvoiceAttendanceConfig(wsId);
 
+  const availableMonthOptions = useMemo(
+    () =>
+      getAvailableMonths(
+        userGroups,
+        selectedGroupIds,
+        [],
+        locale,
+        selectedMonth
+      ),
+    [locale, selectedGroupIds, selectedMonth, userGroups]
+  );
+
+  const effectiveSelectedMonth = useMemo(() => {
+    if (availableMonthOptions.length > 0) {
+      return availableMonthOptions.some(
+        (month) => month.value === selectedMonth
+      )
+        ? selectedMonth
+        : availableMonthOptions[0]!.value;
+    }
+
+    const { earliestStart, latestEnd } = getGroupsDateRange(
+      userGroups,
+      selectedGroupIds
+    );
+
+    if (!selectedGroupIds.length || !earliestStart) {
+      return selectedMonth;
+    }
+
+    const now = new Date();
+    let defaultMonth: Date;
+
+    if (!latestEnd || (now >= earliestStart && now <= latestEnd)) {
+      defaultMonth = now;
+    } else if (now > latestEnd) {
+      defaultMonth = latestEnd;
+    } else {
+      defaultMonth = earliestStart;
+    }
+
+    return formatMonthValue(defaultMonth);
+  }, [availableMonthOptions, selectedGroupIds, selectedMonth, userGroups]);
+
   const {
     data: subscriptionInvoiceContext,
     isLoading: subscriptionInvoiceContextLoading,
@@ -207,7 +253,7 @@ export function SubscriptionInvoice({
     wsId,
     selectedUserId,
     selectedGroupIds,
-    selectedMonth
+    effectiveSelectedMonth
   );
 
   const userAttendance = subscriptionInvoiceContext?.attendance ?? [];
@@ -219,9 +265,9 @@ export function SubscriptionInvoice({
       : null;
 
   const isSelectedMonthPaid = useMemo(() => {
-    if (selectedGroupIds.length === 0 || !selectedMonth) return false;
+    if (selectedGroupIds.length === 0 || !effectiveSelectedMonth) return false;
 
-    const selectedMonthStart = new Date(`${selectedMonth}-01`);
+    const selectedMonthStart = getMonthStartDate(effectiveSelectedMonth);
 
     // A month is considered paid ONLY if ALL selected groups have paid for it.
     // If ANY selected group has not paid, we allow creating an invoice.
@@ -231,11 +277,10 @@ export function SubscriptionInvoice({
       );
       if (!latestInvoice?.valid_until) return false;
 
-      const validUntilMonthStart = new Date(latestInvoice.valid_until);
-      validUntilMonthStart.setDate(1);
+      const validUntilMonthStart = getMonthStartDate(latestInvoice.valid_until);
       return selectedMonthStart < validUntilMonthStart;
     });
-  }, [latestSubscriptionInvoices, selectedMonth, selectedGroupIds]);
+  }, [effectiveSelectedMonth, latestSubscriptionInvoices, selectedGroupIds]);
 
   const selectedPromotion =
     selectedPromotionId === 'none'
@@ -271,7 +316,7 @@ export function SubscriptionInvoice({
   useSubscriptionAutoSelection({
     enabled: true,
     selectedGroupIds,
-    selectedMonth,
+    selectedMonth: effectiveSelectedMonth,
     prefillAmount,
     groupProducts,
     products,
@@ -285,7 +330,7 @@ export function SubscriptionInvoice({
   useSubscriptionInvoiceContent({
     enabled: true,
     selectedGroupIds,
-    selectedMonth,
+    selectedMonth: effectiveSelectedMonth,
     userGroups,
     groupProducts,
     subscriptionSelectedProducts,
@@ -392,14 +437,14 @@ export function SubscriptionInvoice({
         selectedGroupIds,
         latestSubscriptionInvoices,
         locale,
-        selectedMonth
+        effectiveSelectedMonth
       ),
     [
+      effectiveSelectedMonth,
       userGroups,
       selectedGroupIds,
       latestSubscriptionInvoices,
       locale,
-      selectedMonth,
     ]
   );
 
@@ -436,13 +481,11 @@ export function SubscriptionInvoice({
 
     if (!earliestStart || !latestEnd) return;
 
-    const currentMonth = new Date(`${selectedMonth}-01`);
+    const currentMonth = getMonthStartDate(selectedMonth);
     if (Number.isNaN(currentMonth.getTime())) return;
 
-    const earliestMonthStart = new Date(earliestStart);
-    earliestMonthStart.setDate(1);
-    const latestMonthStart = new Date(latestEnd);
-    latestMonthStart.setDate(1);
+    const earliestMonthStart = getMonthStartDate(earliestStart);
+    const latestMonthStart = getMonthStartDate(latestEnd);
 
     if (currentMonth < earliestMonthStart || currentMonth > latestMonthStart) {
       // Only correct once per groups-selection to avoid update loops
@@ -456,7 +499,7 @@ export function SubscriptionInvoice({
       else if (now > latestEnd) defaultMonth = latestEnd;
       else defaultMonth = earliestStart;
 
-      const nextMonth = defaultMonth.toISOString().slice(0, 7);
+      const nextMonth = formatMonthValue(defaultMonth);
       if (nextMonth !== selectedMonth) {
         startTransition(() => updateSearchParam('month', nextMonth));
       }
@@ -474,37 +517,29 @@ export function SubscriptionInvoice({
   ]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    if (selectedGroupIds.length === 0) return;
-    const { earliestStart, latestEnd } = getGroupsDateRange(
-      userGroups,
-      selectedGroupIds
+    const currentIndex = availableMonths.findIndex(
+      (month) => month.value === effectiveSelectedMonth
     );
+    if (currentIndex === -1) return;
 
-    if (!earliestStart || !latestEnd) return;
-    const currentMonth = new Date(`${selectedMonth}-01`);
-    const newMonth = new Date(currentMonth);
-    if (direction === 'prev') newMonth.setMonth(newMonth.getMonth() - 1);
-    else newMonth.setMonth(newMonth.getMonth() + 1);
-
-    if (newMonth >= earliestStart && newMonth <= latestEnd) {
-      updateSearchParam('month', newMonth.toISOString().slice(0, 7));
+    const targetIndex =
+      direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
+    const targetMonth = availableMonths[targetIndex]?.value;
+    if (targetMonth && targetMonth !== selectedMonth) {
+      updateSearchParam('month', targetMonth);
     }
   };
 
   const canNavigateMonth = (direction: 'prev' | 'next') => {
-    if (selectedGroupIds.length === 0) return false;
-    const { earliestStart, latestEnd } = getGroupsDateRange(
-      userGroups,
-      selectedGroupIds
+    const currentIndex = availableMonths.findIndex(
+      (month) => month.value === effectiveSelectedMonth
     );
 
-    if (!earliestStart || !latestEnd) return false;
-    const currentMonth = new Date(`${selectedMonth}-01`);
-    const targetMonth = new Date(currentMonth);
-    if (direction === 'prev') targetMonth.setMonth(targetMonth.getMonth() - 1);
-    else targetMonth.setMonth(targetMonth.getMonth() + 1);
+    if (currentIndex === -1) return false;
 
-    return targetMonth >= earliestStart && targetMonth <= latestEnd;
+    return direction === 'prev'
+      ? currentIndex > 0
+      : currentIndex < availableMonths.length - 1;
   };
 
   const handleCreateSubscriptionInvoice = async () => {
@@ -540,7 +575,7 @@ export function SubscriptionInvoice({
       const requestPayload = {
         customer_id: selectedUserId,
         group_ids: selectedGroupIdsForCreate,
-        selected_month: selectedMonth,
+        selected_month: effectiveSelectedMonth,
         content: invoiceContent,
         notes: invoiceNotes,
         wallet_id: selectedWalletId,
@@ -680,7 +715,7 @@ export function SubscriptionInvoice({
             onDeselectAll={() => setSelectedGroupIds([])}
             isLoadingSubscriptionData={isLoadingSubscriptionData}
             locale={locale}
-            selectedMonth={selectedMonth}
+            selectedMonth={effectiveSelectedMonth}
             latestSubscriptionInvoices={latestSubscriptionInvoices}
           />
         )}
@@ -718,10 +753,10 @@ export function SubscriptionInvoice({
           <InvoiceBlockedState type="subscription" />
         ) : (
           <>
-            {selectedGroupIds.length > 0 && selectedMonth && (
+            {selectedGroupIds.length > 0 && effectiveSelectedMonth && (
               <SubscriptionAttendanceSummary
                 selectedGroupIds={selectedGroupIds}
-                selectedMonth={selectedMonth}
+                selectedMonth={effectiveSelectedMonth}
                 isSelectedMonthPaid={isSelectedMonthPaid}
                 locale={locale}
                 navigateMonth={navigateMonth}
@@ -737,7 +772,7 @@ export function SubscriptionInvoice({
                 totalSessions={getTotalSessionsForGroups(
                   userGroups,
                   selectedGroupIds,
-                  selectedMonth,
+                  effectiveSelectedMonth,
                   latestSubscriptionInvoices
                 )}
                 attendanceRate={(() => {
@@ -746,7 +781,7 @@ export function SubscriptionInvoice({
                   const totalSessions = getTotalSessionsForGroups(
                     userGroups,
                     selectedGroupIds,
-                    selectedMonth,
+                    effectiveSelectedMonth,
                     latestSubscriptionInvoices
                   );
                   return totalSessions > 0

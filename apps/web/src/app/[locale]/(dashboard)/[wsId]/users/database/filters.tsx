@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
 import { GroupFilter } from './group-filter';
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
   noInclude?: boolean;
   noExclude?: boolean;
   effectiveExcludedGroups?: string[];
+  className?: string;
 }
 
 export default function Filters({
@@ -14,9 +16,10 @@ export default function Filters({
   noInclude = false,
   noExclude = false,
   effectiveExcludedGroups = [],
+  className,
 }: Props) {
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn('flex flex-wrap items-center gap-2', className)}>
       {!noInclude && <GroupFilterWrapper wsId={wsId} filterType="included" />}
       {!noExclude && (
         <GroupFilterWrapper

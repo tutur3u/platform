@@ -7,6 +7,7 @@ import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HabitTrackerDetailSheet extends StatelessWidget {
@@ -62,7 +63,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: detailStatus == HabitsStatus.loading && detail == null
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: NovaLoadingIndicator())
                 : detailStatus == HabitsStatus.error && detail == null
                 ? _DetailErrorView(error: detailError, onRetry: onRetry)
                 : detail == null

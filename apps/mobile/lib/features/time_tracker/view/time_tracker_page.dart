@@ -7,20 +7,24 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/missed_entry_flow.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
 import 'package:mobile/features/time_tracker/widgets/pomodoro_settings_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
+import 'package:mobile/features/time_tracker/widgets/time_tracker_add_entry_fab.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/fab/extended_fab.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerSection { timer, history, stats }
@@ -181,6 +185,23 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
 
   @override
   Widget build(BuildContext context) {
+    final shellActionRegistration = ShellChromeActions(
+      ownerId: 'time-tracker-settings',
+      locations: const {
+        Routes.timer,
+        Routes.timerHistory,
+        Routes.timerStats,
+      },
+      actions: [
+        ShellActionSpec(
+          id: 'time-tracker-settings',
+          icon: Icons.settings_outlined,
+          tooltip: context.l10n.timerPomodoroSettings,
+          onPressed: () => _showPomodoroSettings(context),
+        ),
+      ],
+    );
+
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (prev, curr) =>
           prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -210,13 +231,11 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       },
       child: shad.Scaffold(
         child: BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
-          buildWhen: (prev, curr) =>
-              prev.status != curr.status ||
-              prev.isRefreshing != curr.isRefreshing,
+          buildWhen: (prev, curr) => prev.status != curr.status,
           builder: (context, state) {
             if (state.status == TimeTrackerStatus.loading &&
                 !state.hasVisibleContent) {
-              return const Center(child: shad.CircularProgressIndicator());
+              return const Center(child: NovaLoadingIndicator());
             }
 
             if (state.status == TimeTrackerStatus.error &&
@@ -226,24 +245,13 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
 
             return Stack(
               children: [
+                shellActionRegistration,
                 ResponsiveWrapper(
                   maxWidth: ResponsivePadding.maxContentWidth(
                     context.deviceClass,
                   ),
                   child: Column(
                     children: [
-                      if (state.isRefreshing)
-                        const LinearProgressIndicator(minHeight: 2),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: shad.IconButton.ghost(
-                            onPressed: () => _showPomodoroSettings(context),
-                            icon: const Icon(Icons.settings_outlined),
-                          ),
-                        ),
-                      ),
                       Expanded(
                         child: IndexedStack(
                           index: _index,
@@ -257,10 +265,9 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                     ],
                   ),
                 ),
-                ExtendedFab(
-                  icon: shad.LucideIcons.plus,
-                  label: context.l10n.timerAddMissedEntry,
-                  onPressed: () => unawaited(_openMissedEntryDialog(context)),
+                TimeTrackerAddEntryFab(
+                  enabled: _canOpenAddEntryFab(context),
+                  onPressed: () => _openMissedEntryDialog(context),
                 ),
               ],
             );
@@ -285,6 +292,12 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
       wsId: wsId,
       userId: userId,
     );
+  }
+
+  bool _canOpenAddEntryFab(BuildContext context) {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final userId = supabase.auth.currentUser?.id;
+    return (wsId?.isNotEmpty ?? false) && (userId?.isNotEmpty ?? false);
   }
 
   void _showPomodoroSettings(BuildContext context) {

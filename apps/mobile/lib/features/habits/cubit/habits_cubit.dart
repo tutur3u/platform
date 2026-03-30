@@ -1,8 +1,17 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+
 import 'package:bloc/bloc.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habits_cache.dart';
+
+part 'habits_cache_json.dart';
 
 class HabitsCubit extends Cubit<HabitsState> {
   HabitsCubit({
@@ -12,11 +21,21 @@ class HabitsCubit extends Cubit<HabitsState> {
        super(initialState ?? const HabitsState());
 
   final IHabitTrackerRepository _repository;
+  static const CachePolicy _cachePolicy = CachePolicies.moduleData;
+  static const _cacheTag = 'habits:workspace';
   static final Map<String, _HabitsCacheEntry> _cache = {};
   static final Map<String, String> _latestCacheKeyByWorkspace = {};
   int _listRequestToken = 0;
   int _detailRequestToken = 0;
   int _activityRequestToken = 0;
+
+  static Map<String, dynamic> _decodeCacheJson(Object? json) {
+    if (json is! Map) {
+      throw const FormatException('Invalid habits cache payload.');
+    }
+
+    return Map<String, dynamic>.from(json);
+  }
 
   static HabitsState? cachedStateForWorkspace(String wsId) {
     final key = _latestCacheKeyByWorkspace[wsId];
@@ -24,6 +43,45 @@ class HabitsCubit extends Cubit<HabitsState> {
       return null;
     }
     return _cache[key]?.state;
+  }
+
+  static CacheKey _storeKey(
+    String wsId,
+    HabitTrackerScope scope,
+    String? userId,
+  ) {
+    return CacheKey(
+      namespace: 'habits.workspace',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+      params: {
+        'scope': scope.apiValue,
+        if (userId != null && userId.isNotEmpty) 'scopeUserId': userId,
+      },
+    );
+  }
+
+  static HabitsState? seedStateForWorkspace(
+    String wsId, {
+    HabitTrackerScope initialScope = HabitTrackerScope.self,
+    String? userId,
+  }) {
+    final cached = CacheStore.instance.peek<HabitsState>(
+      key: _storeKey(wsId, initialScope, userId),
+      decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+    );
+    if (!cached.hasValue || cached.data == null) {
+      return cachedStateForWorkspace(wsId);
+    }
+
+    final cacheKey = _cacheKeyFor(wsId, initialScope, userId);
+    _cache[cacheKey] = _HabitsCacheEntry(
+      state: cached.data!,
+      fetchedAt: cached.fetchedAt ?? DateTime.now(),
+    );
+    _latestCacheKeyByWorkspace[wsId] = cacheKey;
+    return cached.data;
   }
 
   static void clearCache() {
@@ -43,11 +101,33 @@ class HabitsCubit extends Cubit<HabitsState> {
         : null;
     final cacheKey = _cacheKeyFor(wsId, effectiveScope, requestedMemberId);
     final cached = _cache[cacheKey];
+    final diskCached = cached == null
+        ? await CacheStore.instance.read<HabitsState>(
+            key: _storeKey(wsId, effectiveScope, requestedMemberId),
+            decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
+          )
+        : null;
     var hasVisibleData =
         isSameWorkspace &&
         state.listResponse != null &&
         effectiveScope == state.selectedScope &&
         requestedMemberId == _scopeUserIdFor(effectiveScope, state);
+
+    if (diskCached?.hasValue == true &&
+        diskCached?.data != null &&
+        !hasVisibleData) {
+      final cachedState = diskCached!.data!;
+      emit(cachedState);
+      _cache[cacheKey] = _HabitsCacheEntry(
+        state: cachedState,
+        fetchedAt: diskCached.fetchedAt ?? DateTime.now(),
+      );
+      _latestCacheKeyByWorkspace[wsId] = cacheKey;
+      hasVisibleData = true;
+      if (!refresh && diskCached.isFresh) {
+        return;
+      }
+    }
 
     if (cached != null && !hasVisibleData) {
       emit(cached.state);
@@ -620,6 +700,25 @@ class HabitsCubit extends Cubit<HabitsState> {
       fetchedAt: DateTime.now(),
     );
     _latestCacheKeyByWorkspace[wsId] = cacheKey;
+    unawaited(
+      CacheStore.instance
+          .write(
+            key: _storeKey(
+              wsId,
+              nextState.selectedScope,
+              _scopeUserIdFor(nextState.selectedScope, nextState),
+            ),
+            policy: _cachePolicy,
+            payload: _stateToCacheJson(nextState),
+            tags: [_cacheTag, 'workspace:$wsId', 'module:habits'],
+          )
+          .catchError((Object error, StackTrace stackTrace) {
+            developer.log(
+              'Failed to cache habits state for workspace $wsId: $error',
+              stackTrace: stackTrace,
+            );
+          }),
+    );
   }
 
   String? _resolveSelectedMemberId({

@@ -7,6 +7,7 @@ import {
   autoSkipOldPostEmails,
   autoSkipRejectedPosts,
   cleanupStaleProcessingRows,
+  mergeReconciliationResults,
   type PostEmailQueueRow,
   processPostEmailQueueBatch,
   reconcileOrphanedApprovedPosts,
@@ -14,6 +15,15 @@ import {
 } from '@/lib/post-email-queue';
 
 const LOG_PREFIX = '[PostEmailQueueCron]';
+const POST_EMAIL_SELECT_PAGE_SIZE = 1000;
+const RECONCILIATION_MAX_POSTS = 250;
+const RECONCILIATION_MAX_POSTS_WHEN_QUEUE_ACTIVE = 50;
+const RECONCILIATION_EMPTY_PAGE_SCAN_BUDGET_MS = 10_000;
+const RECONCILIATION_MAX_EMPTY_PAGES = 20;
+
+type RpcCapableSupabaseClient = TypedSupabaseClient & {
+  rpc?: TypedSupabaseClient['rpc'];
+};
 
 type QueueStatusSummary = {
   blocked: number;
@@ -25,6 +35,29 @@ type QueueStatusSummary = {
   skipped: number;
   total: number;
 };
+
+type PostEmailQueueStatusSummaryRpcRow = QueueStatusSummary;
+
+type QueueStatusSummaryRpcArgs = {
+  p_ws_id: string | null;
+};
+
+type QueueStatusSummaryRpcResponse = {
+  data: PostEmailQueueStatusSummaryRpcRow[] | null;
+  error: unknown | null;
+};
+
+function callQueueStatusSummaryRpc(
+  client: RpcCapableSupabaseClient,
+  args: QueueStatusSummaryRpcArgs
+): Promise<QueueStatusSummaryRpcResponse> {
+  return (
+    client.rpc as unknown as (
+      fn: string,
+      rpcArgs: QueueStatusSummaryRpcArgs
+    ) => Promise<QueueStatusSummaryRpcResponse>
+  )('get_post_email_queue_status_summary', args);
+}
 
 function createEmptyQueueStatusSummary(): QueueStatusSummary {
   return {
@@ -42,25 +75,65 @@ function createEmptyQueueStatusSummary(): QueueStatusSummary {
 async function getQueueStatusSummary(
   sbAdmin: TypedSupabaseClient
 ): Promise<QueueStatusSummary> {
-  const { data, error } = await sbAdmin
-    .from('post_email_queue')
-    .select('status');
+  const rpcClient = sbAdmin as RpcCapableSupabaseClient;
+  if (typeof rpcClient.rpc === 'function') {
+    const { data, error } = await callQueueStatusSummaryRpc(rpcClient, {
+      p_ws_id: null,
+    });
 
-  if (error) {
-    throw error;
+    if (!error) {
+      const row = Array.isArray(data)
+        ? ((data[0] ?? null) as PostEmailQueueStatusSummaryRpcRow | null)
+        : (data as PostEmailQueueStatusSummaryRpcRow | null);
+
+      if (row) {
+        return {
+          blocked: row.blocked ?? 0,
+          cancelled: row.cancelled ?? 0,
+          failed: row.failed ?? 0,
+          processing: row.processing ?? 0,
+          queued: row.queued ?? 0,
+          sent: row.sent ?? 0,
+          skipped: row.skipped ?? 0,
+          total: row.total ?? 0,
+        };
+      }
+    }
   }
 
   const summary = createEmptyQueueStatusSummary();
+  let from = 0;
 
-  for (const row of (data ?? []) as Array<Pick<PostEmailQueueRow, 'status'>>) {
-    summary.total++;
-    if (row.status === 'queued') summary.queued++;
-    else if (row.status === 'processing') summary.processing++;
-    else if (row.status === 'sent') summary.sent++;
-    else if (row.status === 'failed') summary.failed++;
-    else if (row.status === 'blocked') summary.blocked++;
-    else if (row.status === 'cancelled') summary.cancelled++;
-    else if (row.status === 'skipped') summary.skipped++;
+  while (true) {
+    const to = from + POST_EMAIL_SELECT_PAGE_SIZE - 1;
+    const { data, error } = await sbAdmin
+      .from('post_email_queue')
+      .select('status')
+      .order('id', { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const rows = (data ?? []) as Array<Pick<PostEmailQueueRow, 'status'>>;
+
+    for (const row of rows) {
+      summary.total++;
+      if (row.status === 'queued') summary.queued++;
+      else if (row.status === 'processing') summary.processing++;
+      else if (row.status === 'sent') summary.sent++;
+      else if (row.status === 'failed') summary.failed++;
+      else if (row.status === 'blocked') summary.blocked++;
+      else if (row.status === 'cancelled') summary.cancelled++;
+      else if (row.status === 'skipped') summary.skipped++;
+    }
+
+    if (rows.length < POST_EMAIL_SELECT_PAGE_SIZE) {
+      break;
+    }
+
+    from += POST_EMAIL_SELECT_PAGE_SIZE;
   }
 
   return summary;
@@ -183,13 +256,54 @@ export async function GET(req: NextRequest) {
     });
 
     log('info', `[${requestId}] Phase 3: reconcileOrphanedApprovedPosts`);
+    const hasActiveDeliveryBacklog =
+      queueBefore.queued + queueBefore.failed + reEnqueueResult.reEnqueued > 0;
+    const reconciliationOptions = hasActiveDeliveryBacklog
+      ? { maxPosts: RECONCILIATION_MAX_POSTS_WHEN_QUEUE_ACTIVE }
+      : { maxPosts: RECONCILIATION_MAX_POSTS };
     const reconciliationStart = Date.now();
-    const reconciliation = await reconcileOrphanedApprovedPosts(sbAdmin);
+    let reconciliation = await reconcileOrphanedApprovedPosts(
+      sbAdmin,
+      reconciliationOptions
+    );
+
+    if (!hasActiveDeliveryBacklog) {
+      let scannedPages = 1;
+      let skipPosts = reconciliation.processedPosts;
+
+      while (
+        reconciliation.enqueued === 0 &&
+        reconciliation.remainingPosts > 0 &&
+        reconciliation.processedPosts > 0 &&
+        scannedPages < RECONCILIATION_MAX_EMPTY_PAGES &&
+        Date.now() - reconciliationStart <
+          RECONCILIATION_EMPTY_PAGE_SCAN_BUDGET_MS
+      ) {
+        const nextPage = await reconcileOrphanedApprovedPosts(sbAdmin, {
+          ...reconciliationOptions,
+          skipPosts,
+        });
+
+        reconciliation = mergeReconciliationResults(reconciliation, nextPage);
+        scannedPages++;
+
+        if (nextPage.processedPosts <= 0) {
+          break;
+        }
+
+        skipPosts += nextPage.processedPosts;
+      }
+    }
+
     phaseTimingsMs.phase3Reconcile = Date.now() - reconciliationStart;
     log('info', `[${requestId}] Phase 3 complete`, {
       durationMs: phaseTimingsMs.phase3Reconcile,
+      hasActiveDeliveryBacklog,
+      reconciliationOptions,
       enqueued: reconciliation.enqueued,
       checked: reconciliation.checked,
+      processedPosts: reconciliation.processedPosts,
+      remainingPosts: reconciliation.remainingPosts,
       diagnostics: reconciliation.diagnostics,
     });
 

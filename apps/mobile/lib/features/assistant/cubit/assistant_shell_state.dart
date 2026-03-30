@@ -13,6 +13,7 @@ class AssistantShellState extends Equatable {
     this.tasksInsight = const AssistantTasksInsight(),
     this.calendarInsight = const AssistantCalendarInsight(),
     this.workspaceCredits = const AssistantCredits(),
+    this.personalCredits = const AssistantCredits(),
     this.activeCredits = const AssistantCredits(),
     this.availableModels = const [],
     this.selectedModel = _defaultAssistantModel,
@@ -33,6 +34,7 @@ class AssistantShellState extends Equatable {
   final AssistantTasksInsight tasksInsight;
   final AssistantCalendarInsight calendarInsight;
   final AssistantCredits workspaceCredits;
+  final AssistantCredits personalCredits;
   final AssistantCredits activeCredits;
   final List<AssistantGatewayModel> availableModels;
   final AssistantGatewayModel selectedModel;
@@ -55,6 +57,7 @@ class AssistantShellState extends Equatable {
     AssistantTasksInsight? tasksInsight,
     AssistantCalendarInsight? calendarInsight,
     AssistantCredits? workspaceCredits,
+    AssistantCredits? personalCredits,
     AssistantCredits? activeCredits,
     List<AssistantGatewayModel>? availableModels,
     AssistantGatewayModel? selectedModel,
@@ -80,6 +83,7 @@ class AssistantShellState extends Equatable {
       tasksInsight: tasksInsight ?? this.tasksInsight,
       calendarInsight: calendarInsight ?? this.calendarInsight,
       workspaceCredits: workspaceCredits ?? this.workspaceCredits,
+      personalCredits: personalCredits ?? this.personalCredits,
       activeCredits: activeCredits ?? this.activeCredits,
       availableModels: availableModels ?? this.availableModels,
       selectedModel: selectedModel ?? this.selectedModel,
@@ -109,6 +113,7 @@ class AssistantShellState extends Equatable {
     tasksInsight,
     calendarInsight,
     workspaceCredits,
+    personalCredits,
     activeCredits,
     availableModels,
     selectedModel,

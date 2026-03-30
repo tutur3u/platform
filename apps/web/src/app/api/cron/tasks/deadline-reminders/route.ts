@@ -47,8 +47,11 @@ interface TaskWithDetails {
   id: string;
   name: string;
   end_date: string;
+  closed_at: string | null;
+  completed_at: string | null;
   task_lists: {
     board_id: string;
+    status: string | null;
     workspace_boards: {
       id: string;
       name: string;
@@ -62,6 +65,27 @@ interface ReminderSettings {
   ws_id: string;
   reminder_intervals: string[];
   enabled: boolean;
+}
+
+interface DeadlineReminderTaskState {
+  closed_at: string | null;
+  completed_at: string | null;
+  task_lists?: {
+    status: string | null;
+  } | null;
+}
+
+export function shouldSkipDeadlineReminderTask(
+  task: DeadlineReminderTaskState
+) {
+  const listStatus = task.task_lists?.status;
+
+  return (
+    Boolean(task.completed_at) ||
+    Boolean(task.closed_at) ||
+    listStatus === 'done' ||
+    listStatus === 'closed'
+  );
 }
 
 export async function GET(req: NextRequest) {
@@ -135,8 +159,11 @@ export async function GET(req: NextRequest) {
         id,
         name,
         end_date,
+        closed_at,
+        completed_at,
         task_lists!inner (
           board_id,
+          status,
           workspace_boards!inner (
             id,
             name,
@@ -150,6 +177,7 @@ export async function GET(req: NextRequest) {
       )
       .not('end_date', 'is', null)
       .is('completed_at', null)
+      .is('closed_at', null)
       .is('deleted_at', null)
       .gte('end_date', now.toISOString())
       .lte('end_date', windowEnd.toISOString());
@@ -197,6 +225,7 @@ export async function GET(req: NextRequest) {
       const boardInfo = task.task_lists?.workspace_boards;
 
       if (!boardInfo || watchers.length === 0) continue;
+      if (shouldSkipDeadlineReminderTask(task)) continue;
 
       const wsId = boardInfo.ws_id;
 

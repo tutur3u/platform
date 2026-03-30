@@ -22,6 +22,32 @@ void main() {
       final module = AppRegistry.moduleFromLocation('${Routes.timer}/');
       expect(module?.id, 'timer');
     });
+
+    test('settings hub includes profile and workspace routes', () {
+      expect(
+        AppRegistry.moduleFromLocation(Routes.profileRoot)?.id,
+        'settings',
+      );
+      expect(
+        AppRegistry.moduleFromLocation(Routes.settingsWorkspace)?.id,
+        'settings',
+      );
+    });
+  });
+
+  testWidgets('settings hub module is omitted from apps hub listing', (
+    tester,
+  ) async {
+    late List<String> moduleIds;
+    await tester.pumpApp(
+      Builder(
+        builder: (context) {
+          moduleIds = AppRegistry.modules(context).map((m) => m.id).toList();
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+    expect(moduleIds, isNot(contains('settings')));
   });
 
   group('mini app navigation config', () {

@@ -28,6 +28,11 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons';
+import {
+  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_FEATURED_GROUPS_CONFIG_ID,
+  parseWorkspaceConfigIdList,
+} from '@tuturuuu/internal-api/workspace-configs';
 import type {
   CalendarConnection,
   Workspace,
@@ -36,6 +41,7 @@ import type {
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -77,6 +83,7 @@ import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-
 import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
 import { TimeTrackerRequestsSettings } from './time-tracker/time-tracker-requests-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
+import { DatabaseDefaultFiltersSettings } from './users/database-default-filters-settings';
 import FeaturedGroupsSettings from './users/featured-groups-settings';
 import { RequireAttentionColorSettings } from './users/require-attention-color-settings';
 import UsersManagementSettings from './users/users-management-settings';
@@ -102,6 +109,18 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const {
+    data: workspaceCustomConfigs = {},
+    isLoading: isLoadingWorkspaceCustomConfigs,
+  } = useWorkspaceConfigs(
+    wsId ?? '',
+    wsId
+      ? [
+          DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+          DATABASE_FEATURED_GROUPS_CONFIG_ID,
+        ]
+      : []
+  );
 
   // User preference for expanding all settings accordions
   const { value: expandAllAccordions } = useUserBooleanConfig(
@@ -147,6 +166,12 @@ export function SettingsDialog({
     workspacePermissions?.manage_subscription ?? false;
   const canManageWorkspaceSettings =
     workspacePermissions?.manage_workspace_settings ?? false;
+  const defaultExcludedGroupIds = parseWorkspaceConfigIdList(
+    workspaceCustomConfigs[DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID]
+  );
+  const featuredGroupIds = parseWorkspaceConfigIdList(
+    workspaceCustomConfigs[DATABASE_FEATURED_GROUPS_CONFIG_ID]
+  );
 
   useEffect(() => {
     setActiveTab(defaultTab);
@@ -812,14 +837,23 @@ export function SettingsDialog({
         )}
 
         {activeTab === 'database_filters' && wsId && (
-          <div className="h-full">
-            <UsersManagementSettings wsId={wsId} />
+          <div className="space-y-8">
+            <DatabaseDefaultFiltersSettings />
+            <UsersManagementSettings
+              wsId={wsId}
+              initialSelectedGroupIds={defaultExcludedGroupIds}
+              isConfigLoading={isLoadingWorkspaceCustomConfigs}
+            />
           </div>
         )}
 
         {activeTab === 'featured_groups' && wsId && (
           <div className="h-full">
-            <FeaturedGroupsSettings wsId={wsId} />
+            <FeaturedGroupsSettings
+              wsId={wsId}
+              initialSelectedGroupIds={featuredGroupIds}
+              isConfigLoading={isLoadingWorkspaceCustomConfigs}
+            />
           </div>
         )}
 

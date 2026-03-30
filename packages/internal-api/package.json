@@ -17,6 +17,7 @@
     "./calendar": "./src/calendar.ts",
     "./education": "./src/education.ts",
     "./finance": "./src/finance.ts",
+    "./infrastructure": "./src/infrastructure.ts",
     "./mail": "./src/mail.ts",
     "./promotions": "./src/promotions.ts",
     "./roles": "./src/roles.ts",

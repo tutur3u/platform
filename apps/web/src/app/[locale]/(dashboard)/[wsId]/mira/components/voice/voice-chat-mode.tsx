@@ -381,7 +381,8 @@ export function VoiceChatMode({
   onMessage,
 }: VoiceChatModeProps) {
   const t = useTranslations('mira.voice');
-  const { token, isLoading, error, refreshToken } = useMiraToken(wsId);
+  const { token, scopeKey, isLoading, error, refreshToken } =
+    useMiraToken(wsId);
 
   if (!isOpen) return null;
 
@@ -389,7 +390,7 @@ export function VoiceChatMode({
     return <VoiceModeLoading />;
   }
 
-  if (error || !token) {
+  if (error || !token || !scopeKey) {
     return (
       <VoiceModeError
         error={error?.message || t('unavailable')}
@@ -400,7 +401,12 @@ export function VoiceChatMode({
   }
 
   return (
-    <LiveAPIProvider key={token} apiKey={token} wsId={wsId}>
+    <LiveAPIProvider
+      key={`${scopeKey}:${token}`}
+      apiKey={token}
+      wsId={wsId}
+      scopeKey={scopeKey}
+    >
       <VoiceModeActionBar
         onClose={onClose}
         onAnimationChange={onAnimationChange}

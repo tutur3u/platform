@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/data/models/finance/category.dart';
@@ -18,6 +22,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/platform_icon_picker.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -46,6 +51,9 @@ class _TransactionCategoriesViewState
   static const double _fabContentBottomPadding = 96;
   static const _tabCategories = 0;
   static const _tabTags = 1;
+  static const CachePolicy _cachePolicy = CachePolicies.moduleData;
+  static const _categoriesCacheTag = 'finance:categories';
+  static const _tagsCacheTag = 'finance:tags';
   static final Map<String, _CategoryCacheEntry> _categoriesCache = {};
   static final Map<String, _TagCacheEntry> _tagsCache = {};
 
@@ -64,7 +72,72 @@ class _TransactionCategoriesViewState
   @override
   void initState() {
     super.initState();
+    _seedFromCache();
     unawaited(_loadCurrentTab());
+  }
+
+  CacheKey _categoriesStoreKey(String wsId) {
+    return CacheKey(
+      namespace: 'finance.categories',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+    );
+  }
+
+  CacheKey _tagsStoreKey(String wsId) {
+    return CacheKey(
+      namespace: 'finance.tags',
+      userId: currentCacheUserId(),
+      workspaceId: wsId,
+      locale: currentCacheLocaleTag(),
+    );
+  }
+
+  void _seedFromCache() {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) {
+      return;
+    }
+
+    final cachedCategories = CacheStore.instance
+        .peek<List<TransactionCategory>>(
+          key: _categoriesStoreKey(wsId),
+          decode: _decodeCategories,
+        );
+    if (cachedCategories.hasValue && cachedCategories.data != null) {
+      _categories = cachedCategories.data!;
+      _categoriesWorkspaceId = wsId;
+    }
+
+    final cachedTags = CacheStore.instance.peek<List<FinanceTag>>(
+      key: _tagsStoreKey(wsId),
+      decode: _decodeTags,
+    );
+    if (cachedTags.hasValue && cachedTags.data != null) {
+      _tags = cachedTags.data!;
+      _tagsWorkspaceId = wsId;
+    }
+  }
+
+  List<TransactionCategory> _decodeCategories(Object? json) {
+    if (json is! List) {
+      throw const FormatException('Invalid categories cache payload.');
+    }
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(TransactionCategory.fromJson)
+        .toList(growable: false);
+  }
+
+  List<FinanceTag> _decodeTags(Object? json) {
+    if (json is! List) {
+      throw const FormatException('Invalid finance tags cache payload.');
+    }
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(FinanceTag.fromJson)
+        .toList(growable: false);
   }
 
   @override
@@ -160,7 +233,7 @@ class _TransactionCategoriesViewState
     double listBottomPadding,
   ) {
     if (_categoriesLoading) {
-      return const Center(child: shad.CircularProgressIndicator());
+      return const Center(child: NovaLoadingIndicator());
     }
     if (_categoriesError != null) {
       return ListView(
@@ -245,7 +318,7 @@ class _TransactionCategoriesViewState
     double listBottomPadding,
   ) {
     if (_tagsLoading) {
-      return const Center(child: shad.CircularProgressIndicator());
+      return const Center(child: NovaLoadingIndicator());
     }
     if (_tagsError != null) {
       return ListView(
@@ -471,18 +544,25 @@ class _TransactionCategoriesViewState
     }
 
     final cached = _categoriesCache[wsId];
+    final diskCached = await CacheStore.instance
+        .read<List<TransactionCategory>>(
+          key: _categoriesStoreKey(wsId),
+          decode: _decodeCategories,
+        );
+    final resolvedCategories = cached?.categories ?? diskCached.data;
     final hasVisibleData = _categoriesWorkspaceId == wsId;
 
     if (!mounted || requestId != _categoriesRequestId) return;
 
-    if (!forceRefresh && cached != null) {
+    if (!forceRefresh && resolvedCategories != null) {
       setState(() {
-        _categories = cached.categories;
+        _categories = resolvedCategories;
         _categoriesWorkspaceId = wsId;
         _categoriesLoading = false;
         _categoriesError = null;
       });
-      if (isFinanceCacheFresh(cached.fetchedAt)) {
+      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
+          diskCached.isFresh) {
         return;
       }
     } else if (!hasVisibleData) {
@@ -509,6 +589,14 @@ class _TransactionCategoriesViewState
         categories: categories,
         fetchedAt: DateTime.now(),
       );
+      await CacheStore.instance.write(
+        key: _categoriesStoreKey(wsId),
+        policy: _cachePolicy,
+        payload: categories
+            .map((category) => category.toJson())
+            .toList(growable: false),
+        tags: [_categoriesCacheTag, 'workspace:$wsId', 'module:finance'],
+      );
       setState(() {
         _categories = categories;
         _categoriesWorkspaceId = wsId;
@@ -520,7 +608,7 @@ class _TransactionCategoriesViewState
           !_isWorkspaceRequestCurrent(wsId)) {
         return;
       }
-      if (cached != null || hasVisibleData) {
+      if (resolvedCategories != null || hasVisibleData) {
         setState(() => _categoriesError = null);
       } else {
         setState(
@@ -550,18 +638,24 @@ class _TransactionCategoriesViewState
     }
 
     final cached = _tagsCache[wsId];
+    final diskCached = await CacheStore.instance.read<List<FinanceTag>>(
+      key: _tagsStoreKey(wsId),
+      decode: _decodeTags,
+    );
+    final resolvedTags = cached?.tags ?? diskCached.data;
     final hasVisibleData = _tagsWorkspaceId == wsId;
 
     if (!mounted || requestId != _tagsRequestId) return;
 
-    if (!forceRefresh && cached != null) {
+    if (!forceRefresh && resolvedTags != null) {
       setState(() {
-        _tags = cached.tags;
+        _tags = resolvedTags;
         _tagsWorkspaceId = wsId;
         _tagsLoading = false;
         _tagsError = null;
       });
-      if (isFinanceCacheFresh(cached.fetchedAt)) {
+      if ((cached != null && isFinanceCacheFresh(cached.fetchedAt)) ||
+          diskCached.isFresh) {
         return;
       }
     } else if (!hasVisibleData) {
@@ -586,6 +680,12 @@ class _TransactionCategoriesViewState
         tags: tags,
         fetchedAt: DateTime.now(),
       );
+      await CacheStore.instance.write(
+        key: _tagsStoreKey(wsId),
+        policy: _cachePolicy,
+        payload: tags.map(_tagToJson).toList(growable: false),
+        tags: [_tagsCacheTag, 'workspace:$wsId', 'module:finance'],
+      );
       setState(() {
         _tags = tags;
         _tagsWorkspaceId = wsId;
@@ -597,7 +697,7 @@ class _TransactionCategoriesViewState
           !_isWorkspaceRequestCurrent(wsId)) {
         return;
       }
-      if (cached != null || hasVisibleData) {
+      if (resolvedTags != null || hasVisibleData) {
         setState(() => _tagsError = null);
       } else {
         setState(() => _tagsError = context.l10n.commonSomethingWentWrong);
@@ -655,6 +755,16 @@ class _TagCacheEntry {
 
   final List<FinanceTag> tags;
   final DateTime fetchedAt;
+}
+
+Map<String, dynamic> _tagToJson(FinanceTag tag) {
+  return {
+    'id': tag.id,
+    'name': tag.name,
+    'color': tag.color,
+    'description': tag.description,
+    'ws_id': tag.wsId,
+  };
 }
 
 class _CategoryDialog extends StatefulWidget {

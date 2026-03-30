@@ -129,28 +129,82 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   current.taskDescriptionSearchIndex,
           builder: (context, state) {
             final detail = state.board;
+            final shellActionRegistration = ShellChromeActions(
+              ownerId: 'task-board-detail-${widget.boardId}',
+              locations: {Routes.taskBoardDetailPath(widget.boardId)},
+              actions: [
+                ShellActionSpec(
+                  id: 'task-board-detail-filter',
+                  icon: state.filters.hasAdvancedFilters
+                      ? Icons.filter_alt
+                      : Icons.filter_alt_outlined,
+                  tooltip: state.filters.hasAdvancedFilters
+                      ? context.l10n.taskBoardDetailFiltersActive
+                      : context.l10n.taskBoardDetailFilters,
+                  highlighted: state.filters.hasAdvancedFilters,
+                  enabled: detail != null,
+                  onPressed: () => unawaited(
+                    _openAdvancedFilterSheet(
+                      context,
+                      context.read<TaskBoardDetailCubit>().state,
+                    ),
+                  ),
+                ),
+                ShellActionSpec(
+                  id: 'task-board-detail-actions',
+                  icon: Icons.more_vert,
+                  tooltip: context.l10n.taskBoardDetailBoardActions,
+                  enabled: detail != null,
+                  onPressed: () => unawaited(_showBoardActionsSheet(context)),
+                ),
+              ],
+            );
+
             if (state.status == TaskBoardDetailStatus.loading &&
                 detail == null) {
-              return const Center(child: shad.CircularProgressIndicator());
+              return Stack(
+                children: [
+                  shellActionRegistration,
+                  const Center(child: NovaLoadingIndicator()),
+                ],
+              );
             }
 
             if (state.status == TaskBoardDetailStatus.error && detail == null) {
-              return _TaskBoardDetailErrorState(
-                message: context.l10n.taskBoardDetailLoadError,
-                onRetry: () => context.read<TaskBoardDetailCubit>().reload(),
+              return Stack(
+                children: [
+                  shellActionRegistration,
+                  _TaskBoardDetailErrorState(
+                    message: context.l10n.taskBoardDetailLoadError,
+                    onRetry: () =>
+                        context.read<TaskBoardDetailCubit>().reload(),
+                  ),
+                ],
               );
             }
 
             if (detail == null) {
-              return _TaskBoardDetailErrorState(
-                message: context.l10n.taskBoardDetailLoadError,
-                onRetry: () => context.read<TaskBoardDetailCubit>().reload(),
+              return Stack(
+                children: [
+                  shellActionRegistration,
+                  _TaskBoardDetailErrorState(
+                    message: context.l10n.taskBoardDetailLoadError,
+                    onRetry: () =>
+                        context.read<TaskBoardDetailCubit>().reload(),
+                  ),
+                ],
               );
             }
 
             if (detail.lists.isEmpty) {
-              return _NoListsState(
-                onCreateList: () => unawaited(_openCreateListDialog(context)),
+              return Stack(
+                children: [
+                  shellActionRegistration,
+                  _NoListsState(
+                    onCreateList: () =>
+                        unawaited(_openCreateListDialog(context)),
+                  ),
+                ],
               );
             }
 
@@ -173,6 +227,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
 
             return Stack(
               children: [
+                shellActionRegistration,
                 ResponsiveWrapper(
                   maxWidth: ResponsivePadding.maxContentWidth(
                     context.deviceClass,
@@ -184,29 +239,37 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _TaskBoardDetailToolbarCard(
-                              title: detail.name?.trim().isNotEmpty == true
+                            Text(
+                              detail.name?.trim().isNotEmpty == true
                                   ? detail.name!.trim()
                                   : context.l10n.taskBoardDetailUntitledBoard,
-                              hasActiveFilters:
-                                  state.filters.hasAdvancedFilters,
-                              onBack: () {
-                                final router = GoRouter.of(context);
-                                if (router.canPop()) {
-                                  router.pop();
-                                  return;
-                                }
-                                context.go(Routes.taskBoards);
-                              },
-                              onOpenFilters: () => unawaited(
-                                _openAdvancedFilterSheet(
-                                  context,
-                                  context.read<TaskBoardDetailCubit>().state,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  shad.Theme.of(
+                                    context,
+                                  ).typography.large.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            if (state.filters.hasAdvancedFilters) ...[
+                              const shad.Gap(8),
+                              shad.OutlineBadge(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.filter_alt_outlined,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      context.l10n.taskBoardDetailFiltersActive,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              onSelectedAction: (action) =>
-                                  _handleBoardAction(context, action),
-                            ),
+                            ],
                             const shad.Gap(12),
                             Row(
                               children: [
@@ -779,84 +842,5 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             shad.Alert.destructive(content: Text(fallbackErrorMessage)),
       );
     }
-  }
-}
-
-class _TaskBoardDetailToolbarCard extends StatelessWidget {
-  const _TaskBoardDetailToolbarCard({
-    required this.title,
-    required this.hasActiveFilters,
-    required this.onBack,
-    required this.onOpenFilters,
-    required this.onSelectedAction,
-  });
-
-  final String title;
-  final bool hasActiveFilters;
-  final VoidCallback onBack;
-  final VoidCallback onOpenFilters;
-  final ValueChanged<_BoardAction> onSelectedAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return shad.Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: onBack,
-              child: const Icon(Icons.arrow_back),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.large.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Tooltip(
-              message: hasActiveFilters
-                  ? context.l10n.taskBoardDetailFiltersActive
-                  : context.l10n.taskBoardDetailFilters,
-              child: shad.IconButton.ghost(
-                icon: Icon(
-                  hasActiveFilters
-                      ? Icons.filter_alt
-                      : Icons.filter_alt_outlined,
-                ),
-                onPressed: onOpenFilters,
-              ),
-            ),
-            PopupMenuButton<_BoardAction>(
-              tooltip: context.l10n.taskBoardDetailBoardActions,
-              onSelected: onSelectedAction,
-              itemBuilder: (context) => [
-                PopupMenuItem<_BoardAction>(
-                  value: _BoardAction.renameBoard,
-                  child: Text(context.l10n.taskBoardDetailRenameBoard),
-                ),
-                PopupMenuItem<_BoardAction>(
-                  value: _BoardAction.refresh,
-                  child: Text(context.l10n.taskBoardDetailRefresh),
-                ),
-              ],
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
-                child: Icon(Icons.more_vert),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

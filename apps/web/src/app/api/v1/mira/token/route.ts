@@ -3,12 +3,7 @@
  * POST /api/v1/mira/token - Get ephemeral token for Mira voice chat
  */
 
-import {
-  FunctionCallingConfigMode,
-  GoogleGenAI,
-  Modality,
-  Type,
-} from '@google/genai';
+import { Modality, ThinkingLevel } from '@google/genai';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import {
@@ -16,8 +11,9 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
+import { MIRA_LIVE_SCOPE_KEY } from '@/lib/live/session-scope';
+import { createConstrainedLiveToken } from '@/lib/live/token-builder';
 
-// Mira's personality and system instruction
 const MIRA_SYSTEM_INSTRUCTION = `
 MIRA - YOUR PERSONAL AI COMPANION
 
@@ -58,30 +54,29 @@ THINGS TO AVOID:
 EXAMPLE RESPONSES:
 - "Hey! How's your day going? *swims happily*"
 - "Aww that sounds rough. Want to talk about it or just hang out?"
-- "Ooh nice! You've got this - I believe in you! 🐟"
+- "Ooh nice! You've got this - I believe in you!"
 - "Woo! You did it! *does a celebratory flip* How are you feeling?"
 - "*happy bubbles* That's awesome news!"
 `;
 
-// Mira-specific tool declarations
 const MIRA_TOOL_DECLARATIONS = [
   {
     name: 'start_focus_session',
     description:
       'Start a new focus session for the user. Use when they want to begin focused work time.',
     parameters: {
-      type: Type.OBJECT,
+      type: 'OBJECT',
       properties: {
         duration: {
-          type: Type.NUMBER,
+          type: 'NUMBER',
           description:
             'Duration in minutes. Common values: 25 (Pomodoro), 45, or 60 (deep work)',
         },
         goal: {
-          type: Type.STRING,
+          type: 'STRING',
           description: 'What the user wants to accomplish during this session',
         },
-      } as Record<string, { type: Type; description: string }>,
+      },
       required: ['duration'],
     },
   },
@@ -90,8 +85,8 @@ const MIRA_TOOL_DECLARATIONS = [
     description:
       "Check the current focus session status. Use to see how much time is left or if there's an active session.",
     parameters: {
-      type: Type.OBJECT,
-      properties: {} as Record<string, never>,
+      type: 'OBJECT',
+      properties: {},
       required: [],
     },
   },
@@ -100,13 +95,13 @@ const MIRA_TOOL_DECLARATIONS = [
     description:
       'Complete the current focus session. Use when the user is done with their focus time.',
     parameters: {
-      type: Type.OBJECT,
+      type: 'OBJECT',
       properties: {
         notes: {
-          type: Type.STRING,
+          type: 'STRING',
           description: 'Optional reflection notes about the session',
         },
-      } as Record<string, { type: Type; description: string }>,
+      },
       required: [],
     },
   },
@@ -115,14 +110,14 @@ const MIRA_TOOL_DECLARATIONS = [
     description:
       'Express an emotion through animation. Use to show how Mira is feeling.',
     parameters: {
-      type: Type.OBJECT,
+      type: 'OBJECT',
       properties: {
         emotion: {
-          type: Type.STRING,
+          type: 'STRING',
           description:
             'Emotion to express: "happy", "excited", "encouraging", "celebrating", "thinking", "listening"',
         },
-      } as Record<string, { type: Type; description: string }>,
+      },
       required: ['emotion'],
     },
   },
@@ -131,8 +126,8 @@ const MIRA_TOOL_DECLARATIONS = [
     description:
       "Get the user's Mira stats like level, XP, streak, and recent focus sessions.",
     parameters: {
-      type: Type.OBJECT,
-      properties: {} as Record<string, never>,
+      type: 'OBJECT',
+      properties: {},
       required: [],
     },
   },
@@ -150,8 +145,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Authenticate user
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -160,7 +154,6 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify workspace membership
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     const { error: membershipError } = await supabase
@@ -177,9 +170,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check tier requirement (Mira requires PRO tier)
-    // But Tuturuuu employees bypass this restriction
-    const [tierResult, emailResult] = await Promise.all([
+    const [currentTier, emailResult] = await Promise.all([
       getWorkspaceTier(normalizedWsId, { useAdmin: true }),
       supabase
         .from('user_private_details')
@@ -188,7 +179,6 @@ export async function POST(request: Request) {
         .single(),
     ]);
 
-    const currentTier = tierResult;
     const userEmail = emailResult.data?.email;
     const isTuturuuuEmployee = isValidTuturuuuEmail(userEmail);
 
@@ -199,54 +189,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate ephemeral token with Mira's personality
-    const client = new GoogleGenAI({
-      apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-      httpOptions: { apiVersion: 'v1alpha' },
-    });
-
-    const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
-    const tokenConfig = {
-      config: {
-        uses: 100,
-        expireTime,
-        newSessionExpireTime: expireTime,
-        liveConnectConstraints: {
-          model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-          config: {
-            responseModalities: [Modality.AUDIO],
-            proactivity: { proactiveAudio: true },
-            contextWindowCompression: { slidingWindow: {} },
-            sessionResumption: {},
-            thinkingConfig: {
-              thinkingBudget: 0,
-            },
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  // Use a friendly, warm voice for Mira
-                  voiceName: 'Aoede',
-                },
-              },
-            },
-            systemInstruction: {
-              parts: [{ text: MIRA_SYSTEM_INSTRUCTION }],
-            },
-            tools: [{ functionDeclarations: MIRA_TOOL_DECLARATIONS }],
-            toolConfig: {
-              functionCallingConfig: {
-                mode: FunctionCallingConfigMode.AUTO,
-              },
-            },
-          },
+    const token = await createConstrainedLiveToken({
+      model: 'gemini-3.1-flash-live-preview',
+      systemInstruction: MIRA_SYSTEM_INSTRUCTION,
+      tools: [{ functionDeclarations: MIRA_TOOL_DECLARATIONS }],
+      toolConfig: {
+        functionCallingConfig: {
+          mode: 'AUTO',
         },
       },
-    };
+      responseModalities: [Modality.TEXT, Modality.AUDIO],
+      thinkingLevel: ThinkingLevel.MINIMAL,
+    });
 
-    const token = await client.authTokens.create(tokenConfig);
-
-    return Response.json({ token: token.name });
+    return Response.json({
+      token,
+      scopeKey: MIRA_LIVE_SCOPE_KEY,
+      model: 'gemini-3.1-flash-live-preview',
+    });
   } catch (error) {
     console.error('Error generating Mira token:', error);
     return Response.json(

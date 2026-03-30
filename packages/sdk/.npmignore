@@ -1,5 +1,4 @@
-# Source files (we publish compiled dist/ only)
-src/
+# Tests and examples
 *.test.ts
 *.spec.ts
 examples/

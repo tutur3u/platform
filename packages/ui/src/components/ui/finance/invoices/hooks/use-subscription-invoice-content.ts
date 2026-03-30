@@ -2,7 +2,12 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import type { SelectedProductItem, UserGroupProducts } from '../types';
 import type { UserGroup } from '../utils';
-import { getAttendanceStats, getTotalSessionsForGroups } from '../utils';
+import {
+  formatMonthLabel,
+  getAttendanceStats,
+  getTotalSessionsForGroups,
+  parseLocalCalendarDate,
+} from '../utils';
 
 interface UseSubscriptionInvoiceContentProps {
   enabled: boolean;
@@ -55,10 +60,7 @@ export function useSubscriptionInvoiceContent({
     }
 
     const formatMonth = (monthStr: string) =>
-      new Date(`${monthStr}-01`).toLocaleDateString(locale, {
-        year: 'numeric',
-        month: 'long',
-      });
+      formatMonthLabel(monthStr, locale);
 
     // Group by month ranges
     const rangeToGroups = new Map<string, string[]>();
@@ -128,8 +130,8 @@ export function useSubscriptionInvoiceContent({
           (inv) => inv.group_id === a.group_id
         );
         if (!latestInvoice?.valid_until) return true;
-        const validUntil = new Date(latestInvoice.valid_until);
-        const attendanceDate = new Date(a.date);
+        const validUntil = parseLocalCalendarDate(latestInvoice.valid_until);
+        const attendanceDate = parseLocalCalendarDate(a.date);
         return attendanceDate >= validUntil;
       });
 

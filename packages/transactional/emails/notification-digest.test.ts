@@ -27,6 +27,12 @@ describe('notification-digest utilities', () => {
       expect(deadline.emoji).toBe('⏰');
       expect(deadline.priority).toBe(2);
 
+      const requestSubmitted = getNotificationConfig(
+        'time_tracking_request_submitted'
+      );
+      expect(requestSubmitted.label).toBe('Request Submitted');
+      expect(requestSubmitted.priority).toBe(5);
+
       const invite = getNotificationConfig('workspace_invite');
       expect(invite.label).toBe('Invitation');
       expect(invite.priority).toBe(1); // Highest priority
@@ -96,6 +102,9 @@ describe('notification-digest utilities', () => {
       expect(getCategoryForType('workspace_invite')).toBe('workspace');
       expect(getCategoryForType('comment_added')).toBe('comments');
       expect(getCategoryForType('deadline_reminder')).toBe('deadlines');
+      expect(getCategoryForType('time_tracking_request_approved')).toBe(
+        'time_tracking'
+      );
       expect(getCategoryForType('system_announcement')).toBe('system');
     });
 
@@ -132,6 +141,7 @@ describe('notification-digest utilities', () => {
         'task_status',
         'task_updates',
         'task_relationships',
+        'time_tracking',
         'workspace',
         'comments',
         'deadlines',
@@ -217,6 +227,19 @@ describe('notification-digest utilities', () => {
       ];
       const subject = generateSubjectLine(notifications, 'Workspace');
       expect(subject).toBe('New assignment: Review PR #123');
+    });
+
+    it('should generate subject for time tracking requests', () => {
+      const notifications = [
+        createNotification(
+          'time_tracking_request_approved',
+          'Time tracking request approved'
+        ),
+      ];
+      const subject = generateSubjectLine(notifications, 'Workspace');
+      expect(subject).toBe(
+        'Time tracking request approved: Time tracking request approved'
+      );
     });
 
     it('should generate subject for task mention', () => {

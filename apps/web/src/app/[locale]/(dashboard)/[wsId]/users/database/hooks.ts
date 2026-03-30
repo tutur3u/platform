@@ -9,6 +9,7 @@ import {
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import type { GroupMembershipFilter } from './group-membership';
 
 const GROUPS_PAGE_SIZE = 200;
 
@@ -89,6 +90,7 @@ export interface WorkspaceUsersParams {
   status?: 'active' | 'archived' | 'archived_until' | 'all';
   linkStatus?: 'all' | 'linked' | 'virtual';
   requireAttention?: 'all' | 'true' | 'false';
+  groupMembership?: GroupMembershipFilter;
 }
 
 export interface WorkspaceUsersResponse {
@@ -121,6 +123,7 @@ export function useWorkspaceUsers(
     status = 'active',
     linkStatus = 'all',
     requireAttention = 'all',
+    groupMembership = 'all',
   } = params;
 
   return useQuery({
@@ -136,6 +139,7 @@ export function useWorkspaceUsers(
         status,
         linkStatus,
         requireAttention,
+        groupMembership,
       },
     ],
     queryFn: async (): Promise<WorkspaceUsersResponse> => {
@@ -147,6 +151,7 @@ export function useWorkspaceUsers(
       searchParams.set('status', status);
       searchParams.set('linkStatus', linkStatus);
       searchParams.set('requireAttention', requireAttention);
+      searchParams.set('groupMembership', groupMembership);
 
       includedGroups.forEach((group) => {
         searchParams.append('includedGroups', group);

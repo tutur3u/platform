@@ -58,6 +58,12 @@ export type LiveConfig = {
    * Optional generation config. Note: response modalities are handled at top-level for Live.
    */
   generationConfig?: Partial<LiveGenerationConfig>;
+  sessionResumption?: {
+    handle?: string;
+  };
+  historyConfig?: {
+    initialHistoryInClientContent?: boolean;
+  };
   tools?: LiveTool[];
   toolConfig?: ToolConfig;
 };

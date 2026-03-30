@@ -4,6 +4,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
@@ -35,6 +36,13 @@ import {
 } from './utils';
 
 const PREFETCH_QUERY_CHUNK_SIZE = 200;
+
+export function buildPostEmailSubject(
+  createdAt: string,
+  username: string
+): string {
+  return `Easy Center | Báo cáo tiến độ ngày ${dayjs(createdAt).format('DD/MM/YYYY')} của ${username}`;
+}
 
 function getWorkspaceGroupName(
   workspaceGroup:
@@ -143,6 +151,16 @@ async function prefetchBatchData(
     });
   }
 
+  const blockedEmailCache = await preloadBlockedEmailCache(
+    sbAdmin,
+    checkRows.map((check) => check.user?.email ?? null)
+  );
+  const blockedRecipientEmails = new Set(
+    [...blockedEmailCache.entries()]
+      .filter(([, isBlocked]) => isBlocked)
+      .map(([email]) => email)
+  );
+
   const emailServices = new Map<string, EmailService>();
   const sourceInfos = new Map<string, BatchSourceInfo>();
 
@@ -170,6 +188,7 @@ async function prefetchBatchData(
   });
 
   const batchPrefetch: BatchPrefetchContext = {
+    blockedRecipientEmails,
     posts,
     checks,
     existingSentEmails,
@@ -253,6 +272,18 @@ async function processEmailWithContext(
     return { id: row.id, status: 'sent' };
   }
 
+  if (
+    prefetch.blockedRecipientEmails.has(context.recipient.email.toLowerCase())
+  ) {
+    await markQueueRow(sbAdmin, row.id, {
+      status: 'skipped',
+      batch_id: null,
+      blocked_reason: 'blacklist',
+      last_error: 'Blocked: blacklist',
+    });
+    return { id: row.id, status: 'skipped' };
+  }
+
   const emailService = prefetch.emailServices.get(row.ws_id);
   if (!emailService) {
     await markQueueRow(sbAdmin, row.id, {
@@ -275,9 +306,10 @@ async function processEmailWithContext(
     return { id: row.id, status: 'failed' };
   }
 
-  const subject = `Easy Center | Bao cao tien do ngay ${dayjs(
-    context.post.created_at
-  ).format('DD/MM/YYYY')} cua ${context.recipient.username}`;
+  const subject = buildPostEmailSubject(
+    context.post.created_at,
+    context.recipient.username
+  );
 
   const htmlContent = await render(
     PostEmailTemplate({
@@ -384,6 +416,79 @@ async function processEmailWithContext(
   });
 
   return { id: row.id, status: 'sent' };
+}
+
+export async function sendPostEmailImmediately(
+  sbAdmin: TypedSupabaseClient,
+  {
+    wsId,
+    groupId,
+    postId,
+    userId,
+    senderPlatformUserId,
+  }: {
+    wsId: string;
+    groupId: string;
+    postId: string;
+    userId: string;
+    senderPlatformUserId: string;
+  }
+): Promise<BatchProcessResult> {
+  const now = new Date().toISOString();
+
+  const { data: existingRow, error: existingRowError } = await getQueueTable(
+    sbAdmin
+  )
+    .select('*')
+    .eq('post_id', postId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existingRowError) throw existingRowError;
+
+  const nextAttemptCount =
+    (existingRow?.attempt_count && existingRow.attempt_count > 0
+      ? existingRow.attempt_count
+      : 0) + 1;
+
+  const { data: upsertedRows, error: upsertError } = await getQueueTable(
+    sbAdmin
+  )
+    .upsert(
+      [
+        {
+          ws_id: wsId,
+          group_id: groupId,
+          post_id: postId,
+          user_id: userId,
+          sender_platform_user_id: senderPlatformUserId,
+          status: 'processing',
+          batch_id: null,
+          attempt_count: nextAttemptCount,
+          last_error: null,
+          blocked_reason: null,
+          claimed_at: now,
+          last_attempt_at: now,
+          sent_at: null,
+          cancelled_at: null,
+          sent_email_id: null,
+        },
+      ],
+      {
+        onConflict: 'post_id,user_id',
+      }
+    )
+    .select('*');
+
+  if (upsertError) throw upsertError;
+
+  const queueRow = upsertedRows?.[0];
+  if (!queueRow) {
+    throw new Error('Failed to create immediate-send queue row');
+  }
+
+  const prefetch = await prefetchBatchData(sbAdmin, [queueRow]);
+  return processEmailWithContext(sbAdmin, queueRow, prefetch);
 }
 
 async function normalizeQueueError(

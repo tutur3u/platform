@@ -916,6 +916,32 @@ describe('StorageClient', () => {
       );
     });
 
+    it('should append image transform query params when provided', async () => {
+      const mockBlob = new Blob(['content']);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        blob: async () => mockBlob,
+        headers: new Headers({ 'content-type': 'image/png' }),
+      });
+
+      await client.storage.download('images/photo.png', {
+        transform: {
+          width: 320,
+          height: 180,
+          resize: 'cover',
+          quality: 80,
+          format: 'origin',
+        },
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(
+          '/storage/download/images/photo.png?width=320&height=180&resize=cover&quality=80&format=origin'
+        ),
+        expect.any(Object)
+      );
+    });
+
     it('should throw ValidationError for empty path', async () => {
       await expect(client.storage.download('')).rejects.toThrow(
         ValidationError
@@ -1037,6 +1063,40 @@ describe('StorageClient', () => {
       await client.storage.share('file.txt', { expiresIn: 7200 });
 
       expect(mockFetch).toHaveBeenCalled();
+    });
+
+    it('should forward image transform options when sharing', async () => {
+      const mockResponse: ShareResponse = {
+        message: 'Shared',
+        data: {
+          signedUrl: 'https://example.com/signed',
+          expiresAt: '2024-01-01',
+          expiresIn: 3600,
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce(createMockResponse(mockResponse));
+
+      await client.storage.share('images/photo.png', {
+        expiresIn: 3600,
+        transform: {
+          width: 320,
+          height: 180,
+          resize: 'contain',
+          quality: 85,
+          format: 'origin',
+        },
+      });
+
+      const callArgs = mockFetch.mock.calls[0];
+      const requestBody = JSON.parse(callArgs?.[1]?.body as string);
+      expect(requestBody.transform).toEqual({
+        width: 320,
+        height: 180,
+        resize: 'contain',
+        quality: 85,
+        format: 'origin',
+      });
     });
 
     it('should throw ValidationError for empty path', async () => {

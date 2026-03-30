@@ -4,6 +4,7 @@ import {
   MAX_COLOR_LENGTH,
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
+  MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { sanitizeSearchQuery } from '@tuturuuu/utils/search-helper';
 import {
@@ -14,15 +15,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
-const timezoneEnumValues = (() => {
-  if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
-    const timezones = Intl.supportedValuesOf('timeZone');
-    if (timezones.includes('UTC')) return timezones;
-    return ['UTC', ...timezones];
-  }
-  return ['UTC'];
-})();
-
 const isoDateSchema = z.iso
   .datetime({ offset: true })
   .transform((value) => new Date(value));
@@ -31,9 +23,7 @@ const querySchema = z
   .object({
     dateFrom: isoDateSchema,
     dateTo: isoDateSchema,
-    timezone: z
-      .enum(timezoneEnumValues as [string, ...string[]])
-      .default('UTC'),
+    timezone: z.string().max(MAX_SHORT_TEXT_LENGTH).default('UTC'),
     targetUserId: DEV_MODE
       ? z.string().max(MAX_SEARCH_LENGTH).optional()
       : z.guid().optional(),

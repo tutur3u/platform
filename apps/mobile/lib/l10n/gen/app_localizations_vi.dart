@@ -617,6 +617,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantHistoryTitle => 'Đoạn chat gần đây';
 
   @override
+  String get assistantHistoryEmpty => 'Chưa có đoạn chat nào. Hãy bắt đầu cuộc trò chuyện mới.';
+
+  @override
   String get assistantUntitledChat => 'Đoạn chat chưa có tiêu đề';
 
   @override
@@ -624,6 +627,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantSettingsTitle => 'Cài đặt Mira';
+
+  @override
+  String get assistantSendAction => 'Gửi tin nhắn';
 
   @override
   String get assistantActionsTitle => 'Thao tác';
@@ -734,6 +740,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantSourceLabel => 'Nguồn';
 
   @override
+  String get assistantSourcePersonal => 'Cá nhân';
+
+  @override
+  String get assistantSourceWorkspace => 'Không gian làm việc';
+
+  @override
   String get assistantToolLabel => 'Công cụ';
 
   @override
@@ -752,16 +764,227 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantExportShareText => 'Xuất đoạn chat Mira';
 
   @override
+  String get assistantAttachmentClearAction => 'Xoá đính kèm';
+
+  @override
+  String get assistantAttachmentSheetTitle => 'Đính kèm';
+
+  @override
+  String get assistantAttachmentUploadPending => 'Hãy đợi tải tệp lên xong rồi gửi.';
+
+  @override
   String get assistantContextUpdatedLabel => 'Đã cập nhật ngữ cảnh không gian làm việc';
 
   @override
   String get assistantPreferencesUpdatedLabel => 'Đã cập nhật tuỳ chọn trợ lý';
 
   @override
+  String get assistantStarterBacklog => 'Dọn backlog';
+
+  @override
+  String get assistantStarterCaptionBacklog => 'Tách các việc đang mở thành danh sách bước tiếp theo rõ ràng.';
+
+  @override
+  String get assistantStarterCaptionDraft => 'Soạn sẵn một cập nhật ngắn gọn trước khi gửi.';
+
+  @override
+  String get assistantStarterCaptionFocus => 'Để Mira gợi ý việc đáng làm nhất tiếp theo.';
+
+  @override
+  String get assistantStarterCaptionPlan => 'Cân bằng lịch họp, đầu việc và thời gian tập trung.';
+
+  @override
+  String get assistantStarterDraft => 'Cập nhật cho nhóm';
+
+  @override
+  String get assistantStarterFocus => 'Trọng tâm hôm nay';
+
+  @override
+  String get assistantStarterPlan => 'Kế hoạch hôm nay';
+
+  @override
+  String get assistantStarterSubtitle => 'Chọn một gợi ý nhanh hoặc tự gõ điều bạn cần.';
+
+  @override
+  String get assistantStarterTitle => 'Chưa biết bắt đầu từ đâu?';
+
+  @override
   String get assistantShowBottomNavLabel => 'Hiện thanh điều hướng dưới';
 
   @override
   String get assistantHideBottomNavLabel => 'Ẩn thanh điều hướng dưới';
+
+  @override
+  String assistantLiveAccessSummary(String workspace, String source) {
+    return '$workspace • $source';
+  }
+
+  @override
+  String assistantLiveAccessUsingPersonal(String tier) {
+    return 'Đang dùng gói cá nhân $tier';
+  }
+
+  @override
+  String assistantLiveAccessUsingWorkspace(String tier) {
+    return 'Đang dùng gói không gian làm việc $tier';
+  }
+
+  @override
+  String get assistantLiveCameraPreview => 'Camera trực tiếp';
+
+  @override
+  String get assistantLiveConnect => 'Bắt đầu phiên trực tiếp';
+
+  @override
+  String get assistantLiveDescriptionConnecting => 'Đang tạo phiên Gemini Live trực tiếp cho văn bản, âm thanh và camera.';
+
+  @override
+  String get assistantLiveDescriptionError => 'Phiên trực tiếp gặp lỗi. Hãy thử lại hoặc bắt đầu phiên mới.';
+
+  @override
+  String get assistantLiveDescriptionIdle => 'Bắt đầu phiên trực tiếp để nói, gõ hoặc truyền camera vào cùng một cuộc trò chuyện.';
+
+  @override
+  String get assistantLiveDescriptionListening => 'Micro đang hoạt động. Mira sẽ tiếp tục lắng nghe âm thanh mới.';
+
+  @override
+  String get assistantLiveDescriptionPreparing => 'Đang tạo ephemeral token và khôi phục phiên trực tiếp có thể tiếp tục gần nhất.';
+
+  @override
+  String get assistantLiveDescriptionReady => 'Văn bản và âm thanh trực tiếp đã sẵn sàng. Hãy gõ, nói hoặc chia sẻ camera.';
+
+  @override
+  String get assistantLiveDescriptionReconnecting => 'Phiên đang kết nối lại bằng handle mới nhất và lịch sử đã khôi phục.';
+
+  @override
+  String get assistantLiveDisconnect => 'Kết thúc phiên trực tiếp';
+
+  @override
+  String get assistantLiveDraftAssistant => 'Mira đang trả lời';
+
+  @override
+  String get assistantLiveDraftUser => 'Bạn đang nói';
+
+  @override
+  String get assistantLiveHideCamera => 'Ẩn camera';
+
+  @override
+  String get assistantLiveInsightsTitle => 'Thông tin nhanh trực tiếp';
+
+  @override
+  String get assistantLiveListen => 'Bật micro';
+
+  @override
+  String get assistantLiveMute => 'Tắt micro';
+
+  @override
+  String get assistantLiveNoMessagesBody => 'Dùng giọng nói, văn bản hoặc tệp đính kèm để bắt đầu. Mọi thứ từ phiên trực tiếp sẽ được đồng bộ lại vào luồng chat này.';
+
+  @override
+  String get assistantLiveNoMessagesTitle => 'Trợ lý trực tiếp đã sẵn sàng';
+
+  @override
+  String get assistantLivePermissionDenied => 'Camera hoặc micro đang bị chặn. Hãy cấp quyền để dùng đầy đủ chế độ trực tiếp.';
+
+  @override
+  String assistantLiveReconnectBanner(String timeLeft) {
+    return 'Phát hiện phiên đang xoay vòng. Đang kết nối lại với khoảng $timeLeft còn lại.';
+  }
+
+  @override
+  String get assistantLiveShowCamera => 'Hiện camera';
+
+  @override
+  String get assistantLiveStatusAvailable => 'Sẵn sàng';
+
+  @override
+  String get assistantLiveStatusConnecting => 'Đang kết nối';
+
+  @override
+  String get assistantLiveStatusDisconnected => 'Ngoại tuyến';
+
+  @override
+  String get assistantLiveStatusError => 'Cần xử lý';
+
+  @override
+  String get assistantLiveStatusPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get assistantLiveStatusReady => 'Trực tiếp';
+
+  @override
+  String get assistantLiveStatusReconnecting => 'Đang kết nối lại';
+
+  @override
+  String get assistantLiveStatusSyncing => 'Đang đồng bộ';
+
+  @override
+  String get assistantLiveStatusUnavailable => 'Chưa khả dụng';
+
+  @override
+  String get assistantLiveSubtitle => 'Gemini 3.1 Flash Live với giọng nói, camera, tệp đính kèm và lịch sử chat thống nhất.';
+
+  @override
+  String get assistantLiveTierRequired => 'Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.';
+
+  @override
+  String get assistantLiveTitle => 'Trợ lý trực tiếp';
+
+  @override
+  String get assistantLiveInfoAccessHeading => 'Quyền truy cập hiện tại';
+
+  @override
+  String get assistantLiveInfoDismiss => 'Đã hiểu';
+
+  @override
+  String assistantLiveWorkspaceTierLabel(String tier) {
+    return 'Gói không gian làm việc $tier';
+  }
+
+  @override
+  String get assistantMermaidDiagramLabel => 'Sơ đồ';
+
+  @override
+  String get assistantMermaidRenderError => 'Không thể hiển thị sơ đồ Mermaid này.';
+
+  @override
+  String get assistantMermaidZoomHint => 'Chụm hoặc dùng các nút thu phóng để xem kỹ sơ đồ ở chế độ toàn màn hình.';
+
+  @override
+  String get assistantMermaidZoomIn => 'Phóng to';
+
+  @override
+  String get assistantMermaidZoomOut => 'Thu nhỏ';
+
+  @override
+  String get assistantMermaidZoomReset => 'Đặt lại thu phóng';
+
+  @override
+  String get assistantCopyMessageAction => 'Sao chép tin nhắn';
+
+  @override
+  String get assistantCopiedMessageAction => 'Đã sao chép';
+
+  @override
+  String get assistantScrollToBottomAction => 'Cuộn xuống cuối';
+
+  @override
+  String get assistantToolCompleted => 'Hoàn tất';
+
+  @override
+  String get assistantToolGeneratedImage => 'Ảnh đã tạo';
+
+  @override
+  String get assistantToolImageUnavailable => 'Ảnh đã tạo hiện không khả dụng.';
+
+  @override
+  String get assistantToolNoActionNeeded => 'Không cần dùng công cụ nào cho phản hồi này.';
+
+  @override
+  String get assistantToolSelectedTools => 'Công cụ đã chọn';
+
+  @override
+  String get assistantToolsLabel => 'Công cụ';
 
   @override
   String assistantCreditsSummary(int remaining, String tier) {
@@ -776,6 +999,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get dashboardTodayTitle => 'Tổng quan hôm nay';
+
+  @override
+  String get dashboardActiveTasksLabel => 'Công việc đang hoạt động';
 
   @override
   String get dashboardQuickLaunch => 'Mở nhanh';
@@ -3218,6 +3444,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonCancel => 'Hủy';
 
   @override
+  String get commonClearSearch => 'Xóa tìm kiếm';
+
+  @override
   String get timerTotalSessions => 'Tổng số phiên';
 
   @override
@@ -3343,6 +3572,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsTitle => 'Cài đặt';
+
+  @override
+  String get settingsNavApp => 'Ứng dụng';
+
+  @override
+  String get settingsNavWorkspace => 'Không gian làm việc';
+
+  @override
+  String get settingsNavYou => 'Bạn';
 
   @override
   String get settingsAccountTab => 'Tài khoản';

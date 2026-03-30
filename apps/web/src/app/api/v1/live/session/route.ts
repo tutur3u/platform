@@ -6,17 +6,18 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
  */
 
 /**
- * GET /api/v1/live/session?wsId=...
+ * GET /api/v1/live/session?wsId=...&scopeKey=...
  * Retrieve stored session handle for resumption
  */
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const wsId = searchParams.get('wsId');
+    const scopeKey = searchParams.get('scopeKey');
 
-    if (!wsId) {
+    if (!wsId || !scopeKey) {
       return Response.json(
-        { error: 'Missing wsId parameter' },
+        { error: 'Missing wsId or scopeKey parameter' },
         { status: 400 }
       );
     }
@@ -46,6 +47,7 @@ export async function GET(req: Request) {
       .select('session_handle, expires_at')
       .eq('user_id', user.id)
       .eq('ws_id', normalizedWsId)
+      .eq('scope_key', scopeKey)
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
@@ -71,14 +73,15 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { sessionHandle, wsId } = body as {
+    const { sessionHandle, wsId, scopeKey } = body as {
       sessionHandle: string;
       wsId: string;
+      scopeKey: string;
     };
 
-    if (!sessionHandle || !wsId) {
+    if (!sessionHandle || !wsId || !scopeKey) {
       return Response.json(
-        { error: 'Missing required fields: sessionHandle, wsId' },
+        { error: 'Missing required fields: sessionHandle, wsId, scopeKey' },
         { status: 400 }
       );
     }
@@ -112,11 +115,12 @@ export async function POST(req: Request) {
         {
           user_id: user.id,
           ws_id: normalizedWsId,
+          scope_key: scopeKey,
           session_handle: sessionHandle,
           expires_at: expiresAt,
           updated_at: new Date().toISOString(),
         } as never,
-        { onConflict: 'user_id,ws_id' }
+        { onConflict: 'user_id,ws_id,scope_key' }
       );
 
     if (error) {
@@ -138,17 +142,18 @@ export async function POST(req: Request) {
 }
 
 /**
- * DELETE /api/v1/live/session?wsId=...
+ * DELETE /api/v1/live/session?wsId=...&scopeKey=...
  * Clear session handle (e.g., on explicit disconnect)
  */
 export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const wsId = searchParams.get('wsId');
+    const scopeKey = searchParams.get('scopeKey');
 
-    if (!wsId) {
+    if (!wsId || !scopeKey) {
       return Response.json(
-        { error: 'Missing wsId parameter' },
+        { error: 'Missing wsId or scopeKey parameter' },
         { status: 400 }
       );
     }
@@ -177,7 +182,8 @@ export async function DELETE(req: Request) {
       .from('live_api_sessions' as never)
       .delete()
       .eq('user_id', user.id)
-      .eq('ws_id', normalizedWsId);
+      .eq('ws_id', normalizedWsId)
+      .eq('scope_key', scopeKey);
 
     if (error) {
       console.error('[Session API] Error deleting session:', error);

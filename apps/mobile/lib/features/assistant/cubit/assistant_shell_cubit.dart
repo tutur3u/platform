@@ -72,10 +72,16 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       final modelsFuture = _repository.fetchGatewayModels();
 
       final personalWorkspaceId = await personalWorkspaceFuture;
+      final personalCreditsFuture = personalWorkspaceId == null
+          ? Future.value(const AssistantCredits())
+          : personalWorkspaceId == workspace.id
+          ? workspaceCreditsFuture
+          : _repository.fetchCredits(personalWorkspaceId);
       final soul = await soulFuture;
       final tasks = await tasksFuture;
       final calendar = await calendarFuture;
       final workspaceCredits = await workspaceCreditsFuture;
+      final personalCredits = await personalCreditsFuture;
       final models = await modelsFuture;
 
       if (isClosed || requestVersion != _requestVersion) return;
@@ -87,13 +93,9 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       final activeCreditSource = workspaceCreditLocked
           ? AssistantCreditSource.personal
           : storedCreditSource;
-      final creditWorkspaceId =
-          activeCreditSource == AssistantCreditSource.personal
-          ? personalWorkspaceId
-          : workspace.id;
-      final activeCredits = creditWorkspaceId == null
-          ? workspaceCredits
-          : await _repository.fetchCredits(creditWorkspaceId);
+      final activeCredits = activeCreditSource == AssistantCreditSource.personal
+          ? (personalWorkspaceId == null ? workspaceCredits : personalCredits)
+          : workspaceCredits;
 
       if (isClosed || requestVersion != _requestVersion) return;
 
@@ -115,6 +117,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           tasksInsight: tasks,
           calendarInsight: calendar,
           workspaceCredits: workspaceCredits,
+          personalCredits: personalCredits,
           activeCredits: activeCredits,
           availableModels: models,
           selectedModel: selectedModel,
@@ -190,6 +193,14 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     if (creditWorkspaceId == null) return;
 
     final activeCredits = await _repository.fetchCredits(creditWorkspaceId);
+    final nextPersonalCredits =
+        effectiveSource == AssistantCreditSource.personal
+        ? activeCredits
+        : state.personalCredits;
+    final nextWorkspaceCredits =
+        effectiveSource == AssistantCreditSource.workspace
+        ? activeCredits
+        : state.workspaceCredits;
     final selectedModel = _resolveSelectedModel(
       state.availableModels,
       state.selectedModel,
@@ -200,6 +211,8 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     emit(
       state.copyWith(
         creditSource: effectiveSource,
+        workspaceCredits: nextWorkspaceCredits,
+        personalCredits: nextPersonalCredits,
         activeCredits: activeCredits,
         selectedModel: selectedModel,
       ),

@@ -24,6 +24,61 @@ type Invoice = {
   valid_until?: string | null;
 };
 
+const MONTH_VALUE_PATTERN = /^(\d{4})-(\d{2})$/;
+const DATE_VALUE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+export const parseLocalCalendarDate = (
+  value: string | Date | null | undefined
+): Date => {
+  if (!value) {
+    return new Date(Number.NaN);
+  }
+
+  if (value instanceof Date) {
+    return new Date(value.getTime());
+  }
+
+  const monthMatch = MONTH_VALUE_PATTERN.exec(value);
+  if (monthMatch) {
+    const [, year, month] = monthMatch;
+    return new Date(Number(year), Number(month) - 1, 1);
+  }
+
+  const dateMatch = DATE_VALUE_PATTERN.exec(value);
+  if (dateMatch) {
+    const [, year, month, day] = dateMatch;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  }
+
+  return new Date(value);
+};
+
+export const getMonthStartDate = (
+  value: string | Date | null | undefined
+): Date => {
+  const date = parseLocalCalendarDate(value);
+  if (Number.isNaN(date.getTime())) {
+    return date;
+  }
+
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+};
+
+export const formatMonthValue = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+export const formatMonthLabel = (month: string, locale: string): string => {
+  const date = getMonthStartDate(month);
+  if (Number.isNaN(date.getTime())) {
+    return month;
+  }
+
+  return date.toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'long',
+  });
+};
+
 export const getAttendanceStats = (
   attendance: AttendanceRecord[]
 ): AttendanceStats => {
@@ -70,13 +125,13 @@ export const getSessionsForMonth = (
   if (!Array.isArray(sessionsArray) || !month) return 0;
 
   try {
-    const startOfMonth = new Date(`${month}-01`);
+    const startOfMonth = getMonthStartDate(month);
     const nextMonth = new Date(startOfMonth);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
 
     const filteredSessions = sessionsArray.filter((sessionDate) => {
       if (!sessionDate) return false;
-      const sessionDateObj = new Date(sessionDate);
+      const sessionDateObj = parseLocalCalendarDate(sessionDate);
       if (Number.isNaN(sessionDateObj.getTime())) return false;
       return sessionDateObj >= startOfMonth && sessionDateObj < nextMonth;
     });
@@ -107,12 +162,12 @@ export const getSessionsUntilMonth = (
   if (!Array.isArray(sessionsArray) || !month) return 0;
 
   try {
-    const endOfMonth = new Date(`${month}-01`);
+    const endOfMonth = getMonthStartDate(month);
     endOfMonth.setMonth(endOfMonth.getMonth() + 1);
 
     const filteredSessions = sessionsArray.filter((sessionDate) => {
       if (!sessionDate) return false;
-      const sessionDateObj = new Date(sessionDate);
+      const sessionDateObj = parseLocalCalendarDate(sessionDate);
       if (Number.isNaN(sessionDateObj.getTime())) return false;
 
       const isBeforeEnd = sessionDateObj < endOfMonth;
@@ -155,9 +210,11 @@ export const getGroupsDateRange = (
     if (!group) continue;
 
     const startDate = group.starting_date
-      ? new Date(group.starting_date)
+      ? parseLocalCalendarDate(group.starting_date)
       : null;
-    const endDate = group.ending_date ? new Date(group.ending_date) : null;
+    const endDate = group.ending_date
+      ? parseLocalCalendarDate(group.ending_date)
+      : null;
 
     if (startDate && (!earliestStart || startDate < earliestStart))
       earliestStart = startDate;
@@ -187,7 +244,7 @@ export const getAvailableMonths = (
   const resolvedLatestEnd = latestEnd
     ? latestEnd
     : selectedMonthFallback
-      ? new Date(`${selectedMonthFallback}-01`)
+      ? getMonthStartDate(selectedMonthFallback)
       : (() => {
           const d = new Date();
           d.setDate(1);
@@ -201,11 +258,8 @@ export const getAvailableMonths = (
   normalizedLatestEnd.setDate(1);
 
   while (currentDate <= normalizedLatestEnd) {
-    const value = currentDate.toISOString().slice(0, 7);
-    const label = currentDate.toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'long',
-    });
+    const value = formatMonthValue(currentDate);
+    const label = formatMonthLabel(value, locale);
     const itemMonthStart = new Date(currentDate);
     itemMonthStart.setDate(1);
 
@@ -214,8 +268,7 @@ export const getAvailableMonths = (
         (inv) => inv.group_id === groupId
       );
       if (!latestInvoice?.valid_until) return false;
-      const validUntilMonthStart = new Date(latestInvoice.valid_until);
-      validUntilMonthStart.setDate(1);
+      const validUntilMonthStart = getMonthStartDate(latestInvoice.valid_until);
       return itemMonthStart < validUntilMonthStart;
     });
 
@@ -243,7 +296,7 @@ export const getTotalSessionsForGroups = (
         (inv) => inv.group_id === groupId
       );
       const validUntil = latestInvoice?.valid_until
-        ? new Date(latestInvoice.valid_until)
+        ? parseLocalCalendarDate(latestInvoice.valid_until)
         : null;
 
       // If we have a valid_until date, we should count sessions from that date onwards.
@@ -278,14 +331,16 @@ export function getGroupPaymentStatus(
 
   if (!group) return 'active';
 
-  const endDate = group.ending_date ? new Date(group.ending_date) : null;
+  const endDate = group.ending_date
+    ? parseLocalCalendarDate(group.ending_date)
+    : null;
   if (endDate) {
     endDate.setHours(0, 0, 0, 0);
     if (today > endDate) return 'expired';
   }
 
   const validUntil = latestInvoice?.valid_until
-    ? new Date(latestInvoice.valid_until)
+    ? parseLocalCalendarDate(latestInvoice.valid_until)
     : null;
   if (validUntil) {
     validUntil.setHours(0, 0, 0, 0);

@@ -11,6 +11,8 @@ import {
   useQueryState,
 } from 'nuqs';
 import { useMemo } from 'react';
+import type { DatabaseLinkStatus } from '@/lib/users-database-filters';
+import type { GroupMembershipFilter } from './group-membership';
 import {
   useFeaturedGroupCounts,
   useFeaturedGroups,
@@ -21,12 +23,16 @@ interface Props {
   wsId: string;
   initialFeaturedGroupIds?: string[];
   effectiveExcludedGroups?: string[];
+  groupMembership?: GroupMembershipFilter;
+  linkStatus?: DatabaseLinkStatus;
 }
 
 export function QuickGroupFilters({
   wsId,
   initialFeaturedGroupIds,
   effectiveExcludedGroups = [],
+  groupMembership = 'all',
+  linkStatus = 'all',
 }: Props) {
   const t = useTranslations('user-data-table');
 
@@ -63,11 +69,6 @@ export function QuickGroupFilters({
     parseAsString.withDefault('active').withOptions({ shallow: true })
   );
 
-  const [linkStatus] = useQueryState(
-    'linkStatus',
-    parseAsString.withDefault('all').withOptions({ shallow: true })
-  );
-
   const [, setPage] = useQueryState(
     'page',
     parseAsInteger.withDefault(1).withOptions({ shallow: true })
@@ -93,6 +94,7 @@ export function QuickGroupFilters({
       linkStatus,
     }
   );
+  const showCounts = groupMembership === 'all';
 
   if (isLoadingFeatured || isLoadingGroups) return null;
   if (!featuredGroups.length) return null;
@@ -108,8 +110,8 @@ export function QuickGroupFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-muted-foreground text-xs">
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
         {t('quick_filters')}:
       </span>
       {featuredGroups.map((group) => {
@@ -120,14 +122,18 @@ export function QuickGroupFilters({
             key={group.id}
             variant={isActive ? 'secondary' : 'outline'}
             size="sm"
-            className={isActive ? 'h-7 text-xs' : 'h-7 border-dashed text-xs'}
+            className={
+              isActive
+                ? 'h-8 rounded-xl px-3 text-xs'
+                : 'h-8 rounded-xl border-dashed px-3 text-xs'
+            }
             onClick={() => toggleGroup(group.id)}
           >
             {group.name}
-            {count != null && (
+            {showCounts && count != null && (
               <Badge
                 variant="secondary"
-                className="ml-1 h-4 min-w-4 justify-center px-1 text-[10px] leading-none"
+                className="ml-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px] leading-none"
               >
                 {count}
               </Badge>

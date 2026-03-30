@@ -13,6 +13,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'mobile_version_settings_page_logic.dart';
@@ -132,7 +133,7 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
                 if (_isLoading)
                   const Padding(
                     padding: EdgeInsets.only(top: 36),
-                    child: Center(child: shad.CircularProgressIndicator()),
+                    child: Center(child: NovaLoadingIndicator()),
                   )
                 else if (_error != null)
                   _MessagePanel(

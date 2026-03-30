@@ -373,7 +373,8 @@ function VoiceControl({
 // Wrapper component that handles token loading
 export function MiraVoiceChat({ wsId, ...props }: MiraVoiceChatProps) {
   const t = useTranslations('mira.voice');
-  const { token, isLoading, error, refreshToken } = useMiraToken(wsId);
+  const { token, scopeKey, isLoading, error, refreshToken } =
+    useMiraToken(wsId);
 
   if (isLoading) {
     return (
@@ -388,7 +389,7 @@ export function MiraVoiceChat({ wsId, ...props }: MiraVoiceChatProps) {
     );
   }
 
-  if (error || !token) {
+  if (error || !token || !scopeKey) {
     return (
       <div className="flex flex-col items-center gap-2">
         <p className="text-muted-foreground text-xs">
@@ -402,7 +403,12 @@ export function MiraVoiceChat({ wsId, ...props }: MiraVoiceChatProps) {
   }
 
   return (
-    <LiveAPIProvider key={token} apiKey={token} wsId={wsId}>
+    <LiveAPIProvider
+      key={`${scopeKey}:${token}`}
+      apiKey={token}
+      wsId={wsId}
+      scopeKey={scopeKey}
+    >
       <VoiceControl {...props} />
     </LiveAPIProvider>
   );

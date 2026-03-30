@@ -8,6 +8,7 @@ import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<void> showTaskLinkPickerSheet({
@@ -364,7 +365,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
     final theme = shad.Theme.of(context);
 
     if (_isLoadingInitial && _tasks.isEmpty) {
-      return const Center(child: shad.CircularProgressIndicator());
+      return const Center(child: NovaLoadingIndicator());
     }
 
     if (_errorMessage != null && _tasks.isEmpty) {

@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2025-10-21'
+updatedAt: '2026-03-27'
 ---
 
 # Tuturuuu SDK
@@ -68,6 +68,9 @@ const doc = await client.documents.create({
   </Card>
   <Card title="Signed URLs" icon="link">
     Generate temporary shareable links for files
+  </Card>
+  <Card title="Image Resizing" icon="image">
+    Apply Supabase image transformations during share and download
   </Card>
   <Card title="Analytics" icon="chart-bar">
     Track storage usage, file counts, and limits
@@ -147,6 +150,19 @@ a.download = 'report.pdf';
 a.click();
 ```
 
+Apply an image transform during download:
+
+```typescript
+const blob = await client.storage.download('images/photo.png', {
+  transform: {
+    width: 320,
+    height: 180,
+    resize: 'cover',
+    quality: 80
+  }
+});
+```
+
 ### Delete Files
 
 Deletes one or more files or folders.
@@ -186,6 +202,20 @@ const result = await client.storage.share('documents/report.pdf', {
 console.log(result.data.signedUrl);  // Temporary URL
 console.log(result.data.expiresAt);  // ISO timestamp
 console.log(result.data.expiresIn);  // Seconds until expiration
+```
+
+Apply an image transform before generating the signed URL:
+
+```typescript
+const result = await client.storage.share('images/photo.png', {
+  expiresIn: 3600,
+  transform: {
+    width: 320,
+    height: 180,
+    resize: 'contain',
+    quality: 85
+  }
+});
 ```
 
 ### Get Analytics

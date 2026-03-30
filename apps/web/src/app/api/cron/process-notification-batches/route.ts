@@ -8,18 +8,394 @@ import NotificationDigestEmail, {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
+import {
+  chunkValues,
+  fetchAllChunkedPaginatedRows,
+  fetchAllPaginatedRows,
+  getNotificationSkipReason,
+  NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON,
+} from '@/lib/notifications/cron-helpers';
+import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 
-// This API route should be called by a cron job (pg_cron, Trigger.dev, or external cron service)
-// It processes BATCHED notification batches and sends email digests
-// Immediate notifications are handled by /api/notifications/send-immediate
-
-// Feature flag: When true, only send emails for notifications belonging to the root workspace
-// Set to false to allow emails for all workspaces
+const PROCESSING_DEADLINE_MS = 165_000;
 const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+
+type NotificationBatchRow = {
+  channel: string;
+  email: string | null;
+  id: string;
+  user_id: string | null;
+  window_end: string;
+  window_start: string;
+  ws_id: string | null;
+};
+
+type BatchNotificationRow = {
+  created_at: string;
+  data: Record<string, unknown> | null;
+  description: string | null;
+  entity_id: string | null;
+  entity_type: string | null;
+  id: string;
+  scope?: string | null;
+  title: string;
+  type: string;
+  user_id?: string | null;
+  ws_id?: string | null;
+};
+
+type DeliveryLogRow = {
+  batch_id?: string | null;
+  id: string;
+  notification_id: string;
+  notifications: BatchNotificationRow | null;
+};
+
+type NotificationWorkspaceCheckRow = {
+  batch_id: string | null;
+  notifications: {
+    data: Record<string, unknown> | null;
+    entity_id: string | null;
+  } | null;
+};
+
+type UserLookupRow = {
+  display_name: string | null;
+  email: Array<{ email: string }> | null;
+  id: string;
+};
+
+type UserData = {
+  display_name: string | null;
+  email: string | null;
+  id: string;
+};
+
+type PendingDeliveryLogRetryRow = {
+  id: string;
+  retry_count: number | null;
+};
+
+function sortDeliveryLogsByCreatedAtDesc<T extends DeliveryLogRow>(
+  logs: T[]
+): T[] {
+  return [...logs].sort((left, right) => {
+    const leftTime = left.notifications?.created_at
+      ? new Date(left.notifications.created_at).getTime()
+      : 0;
+    const rightTime = right.notifications?.created_at
+      ? new Date(right.notifications.created_at).getTime()
+      : 0;
+
+    return rightTime - leftTime;
+  });
+}
+
+async function fetchPendingBatchedNotificationBatches(
+  sbAdmin: any
+): Promise<NotificationBatchRow[]> {
+  return fetchAllPaginatedRows<NotificationBatchRow>((from, to) => {
+    let query = sbAdmin
+      .from('notification_batches')
+      .select('*')
+      .eq('status', 'pending')
+      .eq('delivery_mode', 'batched')
+      .lte('window_end', new Date().toISOString());
+
+    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
+      query = query.or(`ws_id.eq.${ROOT_WORKSPACE_ID},ws_id.is.null`);
+    }
+
+    return query
+      .order('window_end', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, to);
+  });
+}
+
+async function filterRootScopedBatches(
+  sbAdmin: any,
+  batches: NotificationBatchRow[]
+): Promise<NotificationBatchRow[]> {
+  if (!RESTRICT_TO_ROOT_WORKSPACE_ONLY || batches.length === 0) {
+    return batches;
+  }
+
+  const batchesWithWsId = batches.filter((batch) => batch.ws_id !== null);
+  const batchesWithNullWsId = batches.filter((batch) => batch.ws_id === null);
+
+  if (batchesWithNullWsId.length === 0) {
+    return batchesWithWsId;
+  }
+
+  const nullWsIdBatchIds = batchesWithNullWsId.map((batch) => batch.id);
+  const deliveryLogsForCheck = await fetchAllChunkedPaginatedRows<
+    NotificationWorkspaceCheckRow,
+    string
+  >(
+    nullWsIdBatchIds,
+    (batchIdChunk, from, to) =>
+      sbAdmin
+        .from('notification_delivery_log')
+        .select(
+          `
+          batch_id,
+          notifications (
+            entity_id,
+            data
+          )
+        `
+        )
+        .in('batch_id', batchIdChunk)
+        .order('batch_id', { ascending: true })
+        .range(from, to),
+    {
+      chunkSize: 500,
+    }
+  );
+
+  const validBatchIds = new Set<string>(
+    batchesWithWsId.map((batch) => batch.id)
+  );
+  for (const log of deliveryLogsForCheck) {
+    const notification = log.notifications;
+    if (!log.batch_id || !notification) {
+      continue;
+    }
+
+    const workspaceId =
+      notification.entity_id ||
+      (notification.data?.workspace_id as string | undefined);
+
+    if (workspaceId === ROOT_WORKSPACE_ID) {
+      validBatchIds.add(log.batch_id);
+    }
+  }
+
+  return batches.filter((batch) => validBatchIds.has(batch.id));
+}
+
+async function fetchPendingBatchDeliveryLogs(
+  sbAdmin: any,
+  batchId: string,
+  channel: string
+): Promise<DeliveryLogRow[]> {
+  const deliveryLogs = await fetchAllPaginatedRows<DeliveryLogRow>((from, to) =>
+    sbAdmin
+      .from('notification_delivery_log')
+      .select(
+        `
+        batch_id,
+        notification_id,
+        id,
+        notifications (
+          id,
+          type,
+          title,
+          description,
+          data,
+          created_at,
+          ws_id,
+          user_id,
+          scope,
+          entity_type,
+          entity_id
+        )
+      `
+      )
+      .eq('batch_id', batchId)
+      .eq('status', 'pending')
+      .eq('channel', channel)
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
+
+  return sortDeliveryLogsByCreatedAtDesc(deliveryLogs);
+}
+
+async function fetchPendingDeliveryLogRetries(
+  sbAdmin: any,
+  batchId: string
+): Promise<PendingDeliveryLogRetryRow[]> {
+  return fetchAllPaginatedRows<PendingDeliveryLogRetryRow>((from, to) =>
+    sbAdmin
+      .from('notification_delivery_log')
+      .select('id, retry_count')
+      .eq('batch_id', batchId)
+      .eq('status', 'pending')
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
+}
+
+async function fetchPushDevicesForUser(
+  sbAdmin: any,
+  userId: string
+): Promise<Array<{ token: string }>> {
+  return fetchAllPaginatedRows<Array<{ token: string }>[number]>((from, to) =>
+    sbAdmin
+      .from('notification_push_devices')
+      .select('token')
+      .eq('user_id', userId)
+      .order('token', { ascending: true })
+      .range(from, to)
+  );
+}
+
+async function fetchUsersByIds(
+  sbAdmin: any,
+  userIds: string[]
+): Promise<Map<string, UserData>> {
+  const usersMap = new Map<string, UserData>();
+
+  if (userIds.length === 0) {
+    return usersMap;
+  }
+
+  const rows = await fetchAllChunkedPaginatedRows<UserLookupRow, string>(
+    userIds,
+    (userIdChunk, from, to) =>
+      sbAdmin
+        .from('users')
+        .select('id, display_name, email:user_private_details(email)')
+        .in('id', userIdChunk)
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      chunkSize: 500,
+    }
+  );
+
+  for (const user of rows) {
+    usersMap.set(user.id, {
+      id: user.id,
+      display_name: user.display_name,
+      email: user.email?.[0]?.email || null,
+    });
+  }
+
+  return usersMap;
+}
+
+async function markDeliveryLogsSentByIds(
+  sbAdmin: any,
+  logIds: string[],
+  batchId?: string
+) {
+  const patch = {
+    status: 'sent',
+    sent_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  if (logIds.length > 0) {
+    for (const idChunk of chunkValues([...new Set(logIds)])) {
+      await sbAdmin
+        .from('notification_delivery_log')
+        .update(patch)
+        .in('id', idChunk)
+        .eq('status', 'pending');
+    }
+    return;
+  }
+
+  if (!batchId) {
+    return;
+  }
+
+  await sbAdmin
+    .from('notification_delivery_log')
+    .update(patch)
+    .eq('batch_id', batchId)
+    .eq('status', 'pending');
+}
+
+async function markDeliveryLogsSkipped(
+  sbAdmin: any,
+  logIds: string[],
+  reason: string
+) {
+  if (logIds.length === 0) {
+    return;
+  }
+
+  const patch = {
+    error_message: reason,
+    sent_at: new Date().toISOString(),
+    status: 'sent',
+    updated_at: new Date().toISOString(),
+  };
+
+  for (const idChunk of chunkValues([...new Set(logIds)])) {
+    await sbAdmin
+      .from('notification_delivery_log')
+      .update(patch)
+      .in('id', idChunk)
+      .eq('status', 'pending');
+  }
+}
+
+async function markBatchSent(
+  sbAdmin: any,
+  batchId: string,
+  notificationCount: number
+) {
+  await sbAdmin
+    .from('notification_batches')
+    .update({
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      notification_count: notificationCount,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', batchId);
+}
+
+async function markBatchFailed(sbAdmin: any, batchId: string, message: string) {
+  await sbAdmin
+    .from('notification_batches')
+    .update({
+      status: 'failed',
+      error_message: message,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', batchId);
+
+  const failedLogs = await fetchPendingDeliveryLogRetries(sbAdmin, batchId);
+
+  for (const log of failedLogs) {
+    await sbAdmin
+      .from('notification_delivery_log')
+      .update({
+        status: 'failed',
+        error_message: message,
+        retry_count: (log.retry_count || 0) + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', log.id);
+  }
+}
+
+async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
+  if (tokens.length === 0) {
+    return;
+  }
+
+  for (const tokenChunk of chunkValues([...new Set(tokens)])) {
+    const { error } = await sbAdmin
+      .from('notification_push_devices')
+      .delete()
+      .in('token', tokenChunk);
+
+    if (error) {
+      console.error('Failed to delete invalid push tokens:', error);
+    }
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
-    // Verify the request is authorized (check for cron secret)
     const authHeader = req.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
@@ -28,42 +404,13 @@ export async function GET(req: NextRequest) {
     }
 
     const sbAdmin = await createAdminClient();
+    const processingDeadline = Date.now() + PROCESSING_DEADLINE_MS;
+    const blockedEmailCache = new Map<string, boolean>();
+    const membershipCache = new Map<string, boolean>();
 
-    // Get all pending BATCHED notifications where window_end has passed
-    // Immediate notifications are handled separately by /api/notifications/send-immediate
-    // When restricted to root workspace, we filter at the query level to ensure we get
-    // the correct batches (otherwise limit(50) might return non-root batches first)
-    let batchesQuery = sbAdmin
-      .from('notification_batches')
-      .select('*')
-      .eq('status', 'pending')
-      .eq('delivery_mode', 'batched')
-      .lte('window_end', new Date().toISOString());
+    const batches = await fetchPendingBatchedNotificationBatches(sbAdmin);
 
-    // Filter by root workspace at query level to ensure we get correct batches
-    // This is important because limit(50) + post-fetch filtering could miss root
-    // workspace batches if non-root batches have earlier window_end times.
-    // We also include null ws_id batches since they might be user-scoped notifications
-    // (like workspace invites) where the workspace ID is in the notification data.
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      batchesQuery = batchesQuery.or(
-        `ws_id.eq.${ROOT_WORKSPACE_ID},ws_id.is.null`
-      );
-    }
-
-    const { data: batches, error: batchesError } = await batchesQuery
-      .order('window_end', { ascending: true })
-      .limit(50); // Process max 50 batches per run
-
-    if (batchesError) {
-      console.error('Error fetching batches:', batchesError);
-      return NextResponse.json(
-        { error: 'Error fetching batches', processed: 0, failed: 0 },
-        { status: 500 }
-      );
-    }
-
-    if (!batches || batches.length === 0) {
+    if (batches.length === 0) {
       return NextResponse.json({
         message: 'No pending batched notifications to process',
         processed: 0,
@@ -71,91 +418,60 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // If restricted to root workspace, we've already filtered at query level
-    // (ws_id = ROOT_WORKSPACE_ID or ws_id IS NULL). For null ws_id batches,
-    // we need additional filtering based on notification entity_id/data
-    let filteredBatches = batches;
+    const filteredBatches = await filterRootScopedBatches(sbAdmin, batches);
 
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      // Separate batches by whether ws_id is null
-      const batchesWithWsId = batches.filter((b) => b.ws_id !== null);
-      const batchesWithNullWsId = batches.filter((b) => b.ws_id === null);
-
-      // Batches with ws_id already match ROOT_WORKSPACE_ID (from query filter)
-      // For null ws_id batches, check notification's entity_id or data->workspace_id
-      const validBatchIdsFromNullWsId: string[] = [];
-
-      if (batchesWithNullWsId.length > 0) {
-        const batchIdsToCheck = batchesWithNullWsId.map((b) => b.id);
-
-        // Get notifications for these batches to check their entity_id/data
-        const { data: deliveryLogsForCheck } = await sbAdmin
-          .from('notification_delivery_log')
-          .select(
-            `
-            batch_id,
-            notifications (
-              entity_id,
-              data
-            )
-          `
-          )
-          .in('batch_id', batchIdsToCheck)
-          .eq('channel', 'email');
-
-        if (deliveryLogsForCheck) {
-          for (const log of deliveryLogsForCheck) {
-            const notification = log.notifications as {
-              entity_id: string | null;
-              data: Record<string, unknown> | null;
-            } | null;
-            if (notification && log.batch_id) {
-              // Check entity_id first, then data->workspace_id
-              const workspaceId =
-                notification.entity_id ||
-                (notification.data?.workspace_id as string | undefined);
-
-              if (workspaceId === ROOT_WORKSPACE_ID) {
-                validBatchIdsFromNullWsId.push(log.batch_id);
-              }
-            }
-          }
-        }
-      }
-
-      // Combine: all non-null ws_id batches (already filtered at query) + valid null ws_id batches
-      const validBatchIds = new Set([
-        ...batchesWithWsId.map((b) => b.id),
-        ...validBatchIdsFromNullWsId,
-      ]);
-
-      filteredBatches = batches.filter((b) => validBatchIds.has(b.id));
-
-      if (filteredBatches.length === 0) {
-        return NextResponse.json({
-          message:
-            'No pending batched notifications to process (filtered by root workspace)',
-          processed: 0,
-          failed: 0,
-        });
-      }
+    if (filteredBatches.length === 0) {
+      return NextResponse.json({
+        message:
+          'No pending batched notifications to process (filtered by root workspace)',
+        processed: 0,
+        failed: 0,
+      });
     }
+
+    const usersMap = await fetchUsersByIds(sbAdmin, [
+      ...new Set(
+        filteredBatches
+          .filter((batch) => batch.channel === 'email')
+          .map((batch) => batch.user_id)
+          .filter(Boolean)
+      ),
+    ] as string[]);
+
+    await preloadBlockedEmailCache(
+      sbAdmin,
+      filteredBatches
+        .filter((batch) => batch.channel === 'email')
+        .map((batch) =>
+          batch.user_id
+            ? (usersMap.get(batch.user_id)?.email ?? null)
+            : batch.email
+        ),
+      blockedEmailCache
+    );
 
     let processedCount = 0;
     let failedCount = 0;
     const results: Array<{
       batch_id: string;
-      status: string;
+      channel?: string;
+      delivered_count?: number;
       email?: string;
+      error?: string;
       notification_count?: number;
       reason?: string;
-      error?: string;
+      status: string;
     }> = [];
 
-    // Process each batch
     for (const batch of filteredBatches) {
+      if (Date.now() > processingDeadline) {
+        console.warn(
+          '[NotificationBatchCron] Processing deadline reached before all batches were handled'
+        );
+        break;
+      }
+
       try {
-        // Mark batch as processing
         await sbAdmin
           .from('notification_batches')
           .update({
@@ -163,237 +479,341 @@ export async function GET(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', batch.id)
-          .eq('status', 'pending'); // Double-check status hasn't changed
+          .eq('status', 'pending');
 
-        // Get all pending notifications for this batch
-        const { data: deliveryLogs, error: logsError } = await sbAdmin
-          .from('notification_delivery_log')
-          .select(
-            `
-            notification_id,
-            notifications (
-              id,
-              type,
-              title,
-              description,
-              data,
-              created_at
-            )
-          `
-          )
-          .eq('batch_id', batch.id)
-          .eq('status', 'pending')
-          .eq('channel', 'email')
-          .order('notifications(created_at)', { ascending: false });
+        const deliveryLogs = await fetchPendingBatchDeliveryLogs(
+          sbAdmin,
+          batch.id,
+          batch.channel
+        );
 
-        if (logsError || !deliveryLogs || deliveryLogs.length === 0) {
-          // No notifications to send, mark batch as sent
-          await sbAdmin
-            .from('notification_batches')
-            .update({
-              status: 'sent',
-              sent_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', batch.id);
+        if (deliveryLogs.length === 0) {
+          await markBatchSent(sbAdmin, batch.id, 0);
 
           results.push({
             batch_id: batch.id,
-            status: 'skipped',
+            channel: batch.channel,
             reason: 'no_notifications',
+            status: 'skipped',
           });
           processedCount++;
           continue;
         }
 
-        // Get user details (either by user_id or email)
-        let userEmail: string;
-        let userName: string;
+        const deliverableLogs: DeliveryLogRow[] = [];
+        const skippedByReason = new Map<string, DeliveryLogRow[]>();
 
-        if (batch.user_id) {
-          const { data: user } = await sbAdmin
-            .from('users')
-            .select('email:user_private_details(email), display_name')
-            .eq('id', batch.user_id)
-            .single();
-
-          const emailData = user?.email as unknown as Array<{ email: string }>;
-          userEmail = emailData?.[0]?.email || batch.email || '';
-          userName = user?.display_name || userEmail;
-        } else {
-          // Email-only (pending user)
-          userEmail = batch.email || '';
-          userName = userEmail;
-        }
-
-        if (!userEmail) {
-          throw new Error('No email address found for batch');
-        }
-
-        // Get workspace details (if workspace-scoped)
-        let workspaceName = 'Tuturuuu';
-        let workspaceUrl =
-          process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
-
-        if (batch.ws_id) {
-          const { data: workspace } = await sbAdmin
-            .from('workspaces')
-            .select('name')
-            .eq('id', batch.ws_id)
-            .single();
-
-          if (workspace) {
-            workspaceName = workspace.name || 'Unknown Workspace';
-            workspaceUrl = `${workspaceUrl}/${batch.ws_id}`;
+        for (const log of deliveryLogs) {
+          const notification = log.notifications;
+          if (!notification) {
+            continue;
           }
+
+          const skipReason = await getNotificationSkipReason(sbAdmin, {
+            blockedEmailCache,
+            membershipCache,
+            notification,
+          });
+
+          if (skipReason) {
+            const existingLogs = skippedByReason.get(skipReason) || [];
+            existingLogs.push(log);
+            skippedByReason.set(skipReason, existingLogs);
+            continue;
+          }
+
+          deliverableLogs.push(log);
         }
 
-        if (!workspaceUrl) {
-          workspaceUrl = 'https://tuturuuu.com';
+        for (const [reason, logs] of skippedByReason.entries()) {
+          await markDeliveryLogsSkipped(
+            sbAdmin,
+            logs.map((log) => log.id),
+            reason
+          );
         }
 
-        // Format notifications for email template
-        const notifications: NotificationItem[] = deliveryLogs
+        const skippedCount = [...skippedByReason.values()].reduce(
+          (count, logs) => count + logs.length,
+          0
+        );
+
+        if (deliverableLogs.length === 0) {
+          await markBatchSent(sbAdmin, batch.id, skippedCount);
+
+          results.push({
+            batch_id: batch.id,
+            channel: batch.channel,
+            notification_count: skippedCount,
+            reason: 'all_notifications_skipped',
+            status: 'skipped',
+          });
+          processedCount++;
+          continue;
+        }
+
+        const notifications: NotificationItem[] = deliverableLogs
           .map((log) => log.notifications)
-          .filter(Boolean)
-          .map((n) => {
-            const data = n.data as Record<string, unknown>;
-            // Build action URL from notification data if available
+          .filter((notification): notification is BatchNotificationRow =>
+            Boolean(notification)
+          )
+          .map((notification) => {
+            const data = notification.data ?? {};
             const actionUrl =
-              (data?.action_url as string) ||
-              (data?.url as string) ||
-              (data?.link as string) ||
-              undefined;
+              (data.action_url as string | undefined) ||
+              (data.url as string | undefined) ||
+              (data.link as string | undefined);
 
             return {
-              id: n.id,
-              type: n.type,
-              title: n.title,
-              description: n.description || '',
+              id: notification.id,
+              type: notification.type,
+              title: notification.title,
+              description: notification.description || '',
               data,
-              createdAt: n.created_at,
+              createdAt: notification.created_at,
               actionUrl,
             };
           });
 
-        // Generate smart subject line based on notification content
-        const emailSubject = generateSubjectLine(notifications, workspaceName);
-
-        // Capture send timestamp for delay detection
-        const sentAt = new Date().toISOString();
-
-        // Render digest email template with time range info
-        const emailHtml = await render(
-          NotificationDigestEmail({
-            userName,
-            workspaceName,
-            notifications,
-            workspaceUrl,
-            windowStart: batch.window_start,
-            windowEnd: batch.window_end,
-            sentAt,
-          })
-        );
-
-        // Send email via centralized EmailService (bypasses rate limiting for system emails)
-        // EmailService handles dev mode internally
-        const result = await sendSystemEmail({
-          recipients: { to: [userEmail] },
-          content: {
-            subject: emailSubject,
-            html: emailHtml,
-          },
-          source: {
-            name: 'Tuturuuu',
-            email: 'notifications@tuturuuu.com',
-          },
-          metadata: {
-            templateType: 'notification-digest',
-            entityType: 'batch',
-            entityId: batch.id,
-          },
-        });
-
-        if (!result.success) {
-          // Check for blocked recipients
-          if (result.blockedRecipients && result.blockedRecipients.length > 0) {
-            throw new Error(
-              `Email blocked: ${result.blockedRecipients[0]?.reason || 'unknown'}`
-            );
+        if (batch.channel === 'push') {
+          if (!batch.user_id) {
+            throw new Error('Push batch missing user id');
           }
-          throw new Error(result.error || 'Failed to send email');
+
+          const devices = await fetchPushDevicesForUser(sbAdmin, batch.user_id);
+
+          if (devices.length === 0) {
+            await markDeliveryLogsSkipped(
+              sbAdmin,
+              deliverableLogs.map((log) => log.id),
+              NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON
+            );
+            await markBatchSent(
+              sbAdmin,
+              batch.id,
+              notifications.length + skippedCount
+            );
+
+            results.push({
+              batch_id: batch.id,
+              channel: 'push',
+              notification_count: notifications.length + skippedCount,
+              reason: NOTIFICATION_NO_REGISTERED_PUSH_DEVICES_SKIP_REASON,
+              status: 'skipped',
+            });
+            processedCount++;
+            continue;
+          }
+
+          const latestNotification = deliverableLogs[0]!.notifications!;
+          const latestNotificationData =
+            latestNotification.data &&
+            typeof latestNotification.data === 'object'
+              ? latestNotification.data
+              : {};
+          const pushNotification = {
+            ...latestNotification,
+            entity_type: null,
+            entity_id: null,
+            data: {
+              ...latestNotificationData,
+              board_id: null,
+            },
+          };
+
+          const pushResult = await sendPushNotificationBatch({
+            notification: pushNotification,
+            devices,
+          });
+
+          await cleanupInvalidPushTokens(sbAdmin, pushResult.invalidTokens);
+
+          if (pushResult.deliveredCount === 0) {
+            throw new Error('Failed to deliver batched push notification');
+          }
+
+          await markDeliveryLogsSentByIds(
+            sbAdmin,
+            deliverableLogs.map((log) => log.id)
+          );
+          await markBatchSent(
+            sbAdmin,
+            batch.id,
+            notifications.length + skippedCount
+          );
+
+          results.push({
+            batch_id: batch.id,
+            channel: 'push',
+            delivered_count: pushResult.deliveredCount,
+            notification_count: notifications.length,
+            status: 'sent',
+          });
+        } else {
+          const batchNotification = deliverableLogs[0]!.notifications!;
+          let userEmail: string;
+          let userName: string;
+
+          if (batch.user_id) {
+            const user = usersMap.get(batch.user_id);
+            userEmail = user?.email || batch.email || '';
+            userName = user?.display_name || userEmail;
+          } else {
+            userEmail = batch.email || '';
+            userName = userEmail;
+          }
+
+          const preSendSkipReason = await getNotificationSkipReason(sbAdmin, {
+            blockedEmailCache,
+            membershipCache,
+            notification: batchNotification,
+            recipientEmail: userEmail || null,
+          });
+
+          if (preSendSkipReason) {
+            await markDeliveryLogsSkipped(
+              sbAdmin,
+              deliverableLogs.map((log) => log.id),
+              preSendSkipReason
+            );
+            await markBatchSent(
+              sbAdmin,
+              batch.id,
+              notifications.length + skippedCount
+            );
+
+            results.push({
+              batch_id: batch.id,
+              channel: 'email',
+              email: userEmail || undefined,
+              notification_count: notifications.length + skippedCount,
+              reason: preSendSkipReason,
+              status: 'skipped',
+            });
+            processedCount++;
+            continue;
+          }
+
+          let workspaceName = 'Tuturuuu';
+          let workspaceUrl =
+            process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
+
+          if (batch.ws_id) {
+            const { data: workspace } = await sbAdmin
+              .from('workspaces')
+              .select('name')
+              .eq('id', batch.ws_id)
+              .single();
+
+            if (workspace) {
+              workspaceName = workspace.name || 'Unknown Workspace';
+              workspaceUrl = `${workspaceUrl}/${batch.ws_id}`;
+            }
+          }
+
+          const emailSubject = generateSubjectLine(
+            notifications,
+            workspaceName
+          );
+          const sentAt = new Date().toISOString();
+          const emailHtml = await render(
+            NotificationDigestEmail({
+              userName,
+              workspaceName,
+              notifications,
+              workspaceUrl,
+              windowStart: batch.window_start,
+              windowEnd: batch.window_end,
+              sentAt,
+            })
+          );
+
+          const result = await sendSystemEmail({
+            recipients: { to: [userEmail] },
+            content: {
+              subject: emailSubject,
+              html: emailHtml,
+            },
+            source: {
+              name: 'Tuturuuu',
+              email: 'notifications@tuturuuu.com',
+            },
+            metadata: {
+              templateType: 'notification-digest',
+              entityType: 'batch',
+              entityId: batch.id,
+            },
+          });
+
+          if (!result.success) {
+            const sendSkipReason = await getNotificationSkipReason(sbAdmin, {
+              blockedEmailCache,
+              errorMessage: result.error,
+              membershipCache,
+              notification: batchNotification,
+              recipientEmail: userEmail,
+              sendResult: result,
+            });
+
+            if (sendSkipReason) {
+              await markDeliveryLogsSkipped(
+                sbAdmin,
+                deliverableLogs.map((log) => log.id),
+                sendSkipReason
+              );
+              await markBatchSent(
+                sbAdmin,
+                batch.id,
+                notifications.length + skippedCount
+              );
+
+              results.push({
+                batch_id: batch.id,
+                channel: 'email',
+                email: userEmail,
+                notification_count: notifications.length + skippedCount,
+                reason: sendSkipReason,
+                status: 'skipped',
+              });
+              processedCount++;
+              continue;
+            }
+
+            throw new Error(result.error || 'Failed to send email');
+          }
+
+          await markDeliveryLogsSentByIds(
+            sbAdmin,
+            deliverableLogs.map((log) => log.id)
+          );
+          await markBatchSent(
+            sbAdmin,
+            batch.id,
+            notifications.length + skippedCount
+          );
+
+          results.push({
+            batch_id: batch.id,
+            channel: 'email',
+            email: userEmail,
+            notification_count: notifications.length,
+            status: 'sent',
+          });
         }
 
-        // Mark all delivery logs as sent
-        await sbAdmin
-          .from('notification_delivery_log')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('batch_id', batch.id)
-          .eq('status', 'pending');
-
-        // Mark batch as sent
-        await sbAdmin
-          .from('notification_batches')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            notification_count: notifications.length,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', batch.id);
-
-        results.push({
-          batch_id: batch.id,
-          status: 'sent',
-          email: userEmail,
-          notification_count: notifications.length,
-        });
         processedCount++;
       } catch (error) {
         console.error(`Error processing batch ${batch.id}:`, error);
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
 
-        // Mark batch as failed
-        await sbAdmin
-          .from('notification_batches')
-          .update({
-            status: 'failed',
-            error_message:
-              error instanceof Error ? error.message : 'Unknown error',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', batch.id);
-
-        // Mark delivery logs as failed and increment retry_count
-        // Note: Supabase doesn't support .raw() - we'll increment in a separate query
-        const { data: failedLogs } = await sbAdmin
-          .from('notification_delivery_log')
-          .select('id, retry_count')
-          .eq('batch_id', batch.id)
-          .eq('status', 'pending');
-
-        if (failedLogs) {
-          for (const log of failedLogs) {
-            await sbAdmin
-              .from('notification_delivery_log')
-              .update({
-                status: 'failed',
-                error_message:
-                  error instanceof Error ? error.message : 'Unknown error',
-                retry_count: (log.retry_count || 0) + 1,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', log.id);
-          }
-        }
+        await markBatchFailed(sbAdmin, batch.id, errorMessage);
 
         results.push({
           batch_id: batch.id,
+          channel: batch.channel,
+          error: errorMessage,
           status: 'failed',
-          error: error instanceof Error ? error.message : 'Unknown error',
         });
         failedCount++;
       }

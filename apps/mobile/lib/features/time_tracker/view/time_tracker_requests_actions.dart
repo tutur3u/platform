@@ -16,9 +16,6 @@ extension _RequestsViewActions on _RequestsViewState {
     final requestVersion =
         (_missedEntryDialogRequestVersionByWorkspace[snapshotWsId] ?? 0) + 1;
     _missedEntryDialogRequestVersionByWorkspace[snapshotWsId] = requestVersion;
-    _applyState(() {
-      _isMissedEntryDialogLoadingByWorkspace[snapshotWsId] = true;
-    });
 
     bool isCurrentRequest() {
       if (!mounted) {
@@ -41,9 +38,6 @@ extension _RequestsViewActions on _RequestsViewState {
       if (!isCurrentRequest()) {
         return;
       }
-      _applyState(() {
-        _hasLoadedMissedEntryCategoriesByWorkspace[snapshotWsId] = true;
-      });
     } on ApiException catch (e) {
       if (!isCurrentRequest()) {
         return;
@@ -77,16 +71,6 @@ extension _RequestsViewActions on _RequestsViewState {
         ),
       );
       return;
-    } finally {
-      if (mounted) {
-        final latestRequestVersion =
-            _missedEntryDialogRequestVersionByWorkspace[snapshotWsId];
-        if (latestRequestVersion == requestVersion) {
-          _applyState(() {
-            _isMissedEntryDialogLoadingByWorkspace[snapshotWsId] = false;
-          });
-        }
-      }
     }
     if (!isCurrentRequest()) {
       return;
@@ -171,6 +155,7 @@ extension _RequestsViewActions on _RequestsViewState {
         return;
       }
       _applyState(() {
+        _hasResolvedPermissions = true;
         _canManageRequests = false;
         _canManageThresholdSettings = false;
         _selectedUserId = null;
@@ -184,7 +169,10 @@ extension _RequestsViewActions on _RequestsViewState {
     }
 
     if (canApplyState()) {
-      _applyState(() => _isThresholdLoading = true);
+      _applyState(() {
+        _hasResolvedPermissions = false;
+        _isThresholdLoading = true;
+      });
     }
 
     final repository = context.read<ITimeTrackerRepository>();
@@ -213,19 +201,17 @@ extension _RequestsViewActions on _RequestsViewState {
           canManageRequests &&
           canManageWorkspaceSettings;
 
-      if (canManageThresholdSettings) {
-        try {
-          final settings = await repository.getWorkspaceSettings(wsId);
-          if (!canApplyState()) {
-            return;
-          }
-          threshold = settings?.missedEntryDateThreshold;
-        } on Exception {
-          if (!canApplyState()) {
-            return;
-          }
-          threshold = null;
+      try {
+        final settings = await repository.getWorkspaceSettings(wsId);
+        if (!canApplyState()) {
+          return;
         }
+        threshold = settings?.missedEntryDateThreshold;
+      } on Exception {
+        if (!canApplyState()) {
+          return;
+        }
+        threshold = null;
       }
 
       if (canManageRequests) {
@@ -273,6 +259,7 @@ extension _RequestsViewActions on _RequestsViewState {
         return;
       }
       _applyState(() {
+        _hasResolvedPermissions = true;
         _canManageRequests = false;
         _canManageThresholdSettings = false;
         _selectedUserId = null;
@@ -289,6 +276,7 @@ extension _RequestsViewActions on _RequestsViewState {
       return;
     }
     _applyState(() {
+      _hasResolvedPermissions = true;
       _canManageRequests = canManageRequests;
       _canManageThresholdSettings = canManageThresholdSettings;
       if (!canManageRequests) {

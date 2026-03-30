@@ -5,6 +5,7 @@ import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/features/habits/view/habits_page_chrome.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class HabitsActivitySection extends StatelessWidget {
   const HabitsActivitySection({
@@ -22,7 +23,7 @@ class HabitsActivitySection extends StatelessWidget {
         state.activityEntries.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 32),
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(child: NovaLoadingIndicator()),
       );
     }
 

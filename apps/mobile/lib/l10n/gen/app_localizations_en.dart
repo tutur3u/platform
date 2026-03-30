@@ -617,6 +617,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantHistoryTitle => 'Recent chats';
 
   @override
+  String get assistantHistoryEmpty => 'No chats yet. Start a new conversation to create one.';
+
+  @override
   String get assistantUntitledChat => 'Untitled chat';
 
   @override
@@ -624,6 +627,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantSettingsTitle => 'Assistant settings';
+
+  @override
+  String get assistantSendAction => 'Send message';
 
   @override
   String get assistantActionsTitle => 'Action';
@@ -734,6 +740,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantSourceLabel => 'Source';
 
   @override
+  String get assistantSourcePersonal => 'Personal';
+
+  @override
+  String get assistantSourceWorkspace => 'Workspace';
+
+  @override
   String get assistantToolLabel => 'Tool';
 
   @override
@@ -752,16 +764,227 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantExportShareText => 'Chat export';
 
   @override
+  String get assistantAttachmentClearAction => 'Clear attachments';
+
+  @override
+  String get assistantAttachmentSheetTitle => 'Attachments';
+
+  @override
+  String get assistantAttachmentUploadPending => 'Wait for attachment uploads to finish before sending.';
+
+  @override
   String get assistantContextUpdatedLabel => 'Workspace context updated';
 
   @override
   String get assistantPreferencesUpdatedLabel => 'Assistant preferences updated';
 
   @override
+  String get assistantStarterBacklog => 'Backlog cleanup';
+
+  @override
+  String get assistantStarterCaptionBacklog => 'Break open tasks into a clean next-step list.';
+
+  @override
+  String get assistantStarterCaptionDraft => 'Shape a concise update before you send it.';
+
+  @override
+  String get assistantStarterCaptionFocus => 'Let Mira surface the best next move.';
+
+  @override
+  String get assistantStarterCaptionPlan => 'Balance meetings, tasks, and real focus time.';
+
+  @override
+  String get assistantStarterDraft => 'Team update';
+
+  @override
+  String get assistantStarterFocus => 'Today\'s focus';
+
+  @override
+  String get assistantStarterPlan => 'Day plan';
+
+  @override
+  String get assistantStarterSubtitle => 'Pick a quick starter or type your own.';
+
+  @override
+  String get assistantStarterTitle => 'Need a place to start?';
+
+  @override
   String get assistantShowBottomNavLabel => 'Show bottom nav';
 
   @override
   String get assistantHideBottomNavLabel => 'Hide bottom nav';
+
+  @override
+  String assistantLiveAccessSummary(String workspace, String source) {
+    return '$workspace • $source';
+  }
+
+  @override
+  String assistantLiveAccessUsingPersonal(String tier) {
+    return 'Using personal $tier';
+  }
+
+  @override
+  String assistantLiveAccessUsingWorkspace(String tier) {
+    return 'Using workspace $tier';
+  }
+
+  @override
+  String get assistantLiveCameraPreview => 'Live camera';
+
+  @override
+  String get assistantLiveConnect => 'Start live session';
+
+  @override
+  String get assistantLiveDescriptionConnecting => 'Creating a direct Gemini Live session for text, audio, and camera input.';
+
+  @override
+  String get assistantLiveDescriptionError => 'The live session hit an error. Retry or start a fresh session.';
+
+  @override
+  String get assistantLiveDescriptionIdle => 'Start a live session to talk, type, or stream camera context into the same assistant chat.';
+
+  @override
+  String get assistantLiveDescriptionListening => 'Microphone streaming is active. Mira will keep listening for new audio input.';
+
+  @override
+  String get assistantLiveDescriptionPreparing => 'Minting an ephemeral token and restoring the last resumable live session.';
+
+  @override
+  String get assistantLiveDescriptionReady => 'Live text and audio are ready. Type a turn, talk, or share your camera feed.';
+
+  @override
+  String get assistantLiveDescriptionReconnecting => 'The session is reconnecting with the latest resumable handle and restored history.';
+
+  @override
+  String get assistantLiveDisconnect => 'End live session';
+
+  @override
+  String get assistantLiveDraftAssistant => 'Mira is replying';
+
+  @override
+  String get assistantLiveDraftUser => 'You are speaking';
+
+  @override
+  String get assistantLiveHideCamera => 'Hide camera';
+
+  @override
+  String get assistantLiveInsightsTitle => 'Live insights';
+
+  @override
+  String get assistantLiveListen => 'Open mic';
+
+  @override
+  String get assistantLiveMute => 'Mute mic';
+
+  @override
+  String get assistantLiveNoMessagesBody => 'Use voice, text, or attachments to start a chat. Everything from the live session will sync back into this thread.';
+
+  @override
+  String get assistantLiveNoMessagesTitle => 'Your live assistant is ready';
+
+  @override
+  String get assistantLivePermissionDenied => 'Camera or microphone access is blocked. Enable permissions to use the full live mode.';
+
+  @override
+  String assistantLiveReconnectBanner(String timeLeft) {
+    return 'Session rotation detected. Reconnecting with about $timeLeft remaining.';
+  }
+
+  @override
+  String get assistantLiveShowCamera => 'Show camera';
+
+  @override
+  String get assistantLiveStatusAvailable => 'Available';
+
+  @override
+  String get assistantLiveStatusConnecting => 'Connecting';
+
+  @override
+  String get assistantLiveStatusDisconnected => 'Offline';
+
+  @override
+  String get assistantLiveStatusError => 'Needs attention';
+
+  @override
+  String get assistantLiveStatusPreparing => 'Preparing';
+
+  @override
+  String get assistantLiveStatusReady => 'Live';
+
+  @override
+  String get assistantLiveStatusReconnecting => 'Reconnecting';
+
+  @override
+  String get assistantLiveStatusSyncing => 'Syncing';
+
+  @override
+  String get assistantLiveStatusUnavailable => 'Unavailable';
+
+  @override
+  String get assistantLiveSubtitle => 'Gemini 3.1 Flash Live with voice, camera, attachments, and unified chat history.';
+
+  @override
+  String get assistantLiveTierRequired => 'Live voice is available on PLUS and above.';
+
+  @override
+  String get assistantLiveTitle => 'Live assistant';
+
+  @override
+  String get assistantLiveInfoAccessHeading => 'Current access';
+
+  @override
+  String get assistantLiveInfoDismiss => 'Got it';
+
+  @override
+  String assistantLiveWorkspaceTierLabel(String tier) {
+    return 'Workspace $tier';
+  }
+
+  @override
+  String get assistantMermaidDiagramLabel => 'Diagram';
+
+  @override
+  String get assistantMermaidRenderError => 'Couldn\'t render this Mermaid diagram.';
+
+  @override
+  String get assistantMermaidZoomHint => 'Pinch or use the zoom controls to inspect the diagram in fullscreen.';
+
+  @override
+  String get assistantMermaidZoomIn => 'Zoom in';
+
+  @override
+  String get assistantMermaidZoomOut => 'Zoom out';
+
+  @override
+  String get assistantMermaidZoomReset => 'Reset zoom';
+
+  @override
+  String get assistantCopyMessageAction => 'Copy message';
+
+  @override
+  String get assistantCopiedMessageAction => 'Copied';
+
+  @override
+  String get assistantScrollToBottomAction => 'Scroll to bottom';
+
+  @override
+  String get assistantToolCompleted => 'Completed';
+
+  @override
+  String get assistantToolGeneratedImage => 'Generated image';
+
+  @override
+  String get assistantToolImageUnavailable => 'The generated image is unavailable right now.';
+
+  @override
+  String get assistantToolNoActionNeeded => 'No tools were needed for this reply.';
+
+  @override
+  String get assistantToolSelectedTools => 'Selected tools';
+
+  @override
+  String get assistantToolsLabel => 'Tools';
 
   @override
   String assistantCreditsSummary(int remaining, String tier) {
@@ -776,6 +999,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardTodayTitle => 'Today at a glance';
+
+  @override
+  String get dashboardActiveTasksLabel => 'Active tasks';
 
   @override
   String get dashboardQuickLaunch => 'Quick launch';
@@ -3224,6 +3450,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
+  String get commonClearSearch => 'Clear search';
+
+  @override
   String get timerTotalSessions => 'Total sessions';
 
   @override
@@ -3349,6 +3578,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsNavApp => 'App';
+
+  @override
+  String get settingsNavWorkspace => 'Workspace';
+
+  @override
+  String get settingsNavYou => 'You';
 
   @override
   String get settingsAccountTab => 'Account';

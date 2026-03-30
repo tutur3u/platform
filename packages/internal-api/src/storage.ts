@@ -1,3 +1,4 @@
+import type { ImageTransformOptions } from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -152,6 +153,7 @@ export async function createWorkspaceStorageSignedUrl(
   workspaceId: string,
   path: string,
   expiresIn = 60 * 60 * 24,
+  transform?: ImageTransformOptions,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
@@ -162,7 +164,7 @@ export async function createWorkspaceStorageSignedUrl(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ path, expiresIn }),
+      body: JSON.stringify({ path, expiresIn, transform }),
       cache: 'no-store',
     }
   );

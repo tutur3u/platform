@@ -5833,6 +5833,7 @@ export type Database = {
           created_at: string | null;
           expires_at: string;
           id: string;
+          scope_key: string;
           session_handle: string;
           updated_at: string | null;
           user_id: string;
@@ -5842,6 +5843,7 @@ export type Database = {
           created_at?: string | null;
           expires_at: string;
           id?: string;
+          scope_key: string;
           session_handle: string;
           updated_at?: string | null;
           user_id: string;
@@ -5851,6 +5853,7 @@ export type Database = {
           created_at?: string | null;
           expires_at?: string;
           id?: string;
+          scope_key?: string;
           session_handle?: string;
           updated_at?: string | null;
           user_id?: string;
@@ -7039,6 +7042,71 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_push_devices: {
+        Row: {
+          app_flavor: string;
+          created_at: string;
+          device_id: string;
+          id: string;
+          last_seen_at: string;
+          platform: string;
+          token: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          app_flavor: string;
+          created_at?: string;
+          device_id: string;
+          id?: string;
+          last_seen_at?: string;
+          platform: string;
+          token: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          app_flavor?: string;
+          created_at?: string;
+          device_id?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          token?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_push_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'notification_push_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'notification_push_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_push_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -24313,13 +24381,26 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_post_email_queue_status_summary: {
+        Args: { p_ws_id?: string };
+        Returns: {
+          blocked: number;
+          cancelled: number;
+          failed: number;
+          processing: number;
+          queued: number;
+          sent: number;
+          skipped: number;
+          total: number;
+        }[];
+      };
       get_post_review_stage: {
         Args: {
           p_approval_status: Database['public']['Enums']['approval_status'];
+          p_delivery_issue_reason: string;
           p_email_id: string;
           p_has_check: boolean;
           p_queue_status: string;
-          p_recipient_email: string;
         };
         Returns: string;
       };
@@ -24715,6 +24796,7 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
+          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -24769,6 +24851,7 @@ export type Database = {
           skipped_stage_count: number;
           total_count: number;
           unchecked_count: number;
+          undeliverable_count: number;
         }[];
       };
       get_user_growth_comparison: {
@@ -25189,6 +25272,7 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
+          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -25247,6 +25331,7 @@ export type Database = {
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
           check_created_at: string;
+          delivery_issue_reason: string;
           email: string;
           email_id: string;
           group_id: string;
@@ -25307,6 +25392,7 @@ export type Database = {
           skipped_approval_count: number;
           skipped_stage_count: number;
           total_count: number;
+          undeliverable_count: number;
         }[];
       };
       get_workspace_products_count: {
@@ -25408,6 +25494,7 @@ export type Database = {
         Args: {
           _ws_id: string;
           excluded_groups: string[];
+          group_membership?: string;
           include_archived?: boolean;
           included_groups: string[];
           link_status?: string;
@@ -25868,6 +25955,29 @@ export type Database = {
       reattach_platform_entity_creation_limit_trigger: {
         Args: { p_target_table: string };
         Returns: undefined;
+      };
+      reconcile_orphaned_approved_post_email_queue: {
+        Args: { p_cutoff?: string; p_max_posts?: number; p_ws_id?: string };
+        Returns: {
+          already_sent: number;
+          checked: number;
+          covered_by_existing_queue: number;
+          covered_by_sent_email: number;
+          eligible_recipients: number;
+          enqueued: number;
+          existing_processing: number;
+          existing_queued: number;
+          existing_skipped: number;
+          missing_completion: number;
+          missing_email: number;
+          missing_sender_platform_user: number;
+          missing_user_record: number;
+          not_approved: number;
+          orphaned: number;
+          processed_posts: number;
+          remaining_posts: number;
+          upserted: number;
+        }[];
       };
       record_email_bounce: {
         Args: {

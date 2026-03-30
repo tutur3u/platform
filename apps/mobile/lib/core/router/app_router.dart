@@ -22,8 +22,9 @@ import 'package:mobile/features/finance/view/wallet_detail_page.dart';
 import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
+import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
-import 'package:mobile/features/settings/view/settings_page.dart';
+import 'package:mobile/features/settings/view/settings_workspace_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
@@ -206,6 +207,14 @@ GoRouter createAppRouter(
             path: Routes.assistant,
             builder: (context, state) => const AssistantPage(),
           ),
+          GoRoute(
+            path: Routes.notifications,
+            builder: (context, state) => const NotificationsPage(),
+          ),
+          GoRoute(
+            path: Routes.notificationsArchive,
+            builder: (context, state) => const NotificationsPage.archive(),
+          ),
           for (final module in AppRegistry.allModules)
             GoRoute(
               path: module.route,
@@ -278,8 +287,8 @@ GoRouter createAppRouter(
             },
           ),
           GoRoute(
-            path: Routes.settings,
-            builder: (context, state) => const SettingsPage(),
+            path: Routes.settingsWorkspace,
+            builder: (context, state) => const SettingsWorkspacePage(),
           ),
           GoRoute(
             path: Routes.settingsMobileVersions,

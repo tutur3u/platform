@@ -1,0 +1,24 @@
+name: flutter_pcm_sound
+description: Send real-time PCM audio (16-bit integer) to your device speakers
+version: 3.3.3
+homepage: https://github.com/chipweinberger/flutter_pcm_sound
+
+environment:
+  sdk: ">=2.15.1 <4.0.0"
+  flutter: ">=2.5.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.lib.flutter_pcm_sound
+        pluginClass: FlutterPcmSoundPlugin
+      ios:
+        pluginClass: FlutterPcmSoundPlugin
+      macos:
+        pluginClass: FlutterPcmSoundPlugin
+

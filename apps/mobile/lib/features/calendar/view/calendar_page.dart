@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
@@ -16,9 +17,12 @@ import 'package:mobile/features/calendar/widgets/month_view.dart';
 import 'package:mobile/features/calendar/widgets/three_day_view.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class CalendarPage extends StatelessWidget {
@@ -58,6 +62,60 @@ class _CalendarView extends StatelessWidget {
     return shad.Scaffold(
       child: Stack(
         children: [
+          BlocBuilder<CalendarCubit, CalendarState>(
+            buildWhen: (prev, curr) =>
+                prev.viewMode != curr.viewMode ||
+                prev.status != curr.status ||
+                prev.events.length != curr.events.length,
+            builder: (context, state) {
+              final wsId = context
+                  .read<WorkspaceCubit>()
+                  .state
+                  .currentWorkspace
+                  ?.id;
+              return ShellChromeActions(
+                ownerId: 'calendar-root',
+                locations: const {Routes.calendar},
+                actions: [
+                  if (Env.isCalendarIntegrationsEnabled)
+                    ShellActionSpec(
+                      id: 'calendar-connections',
+                      icon: Icons.sync_alt,
+                      tooltip: l10n.calendarConnectionsTitle,
+                      enabled: wsId != null && wsId.isNotEmpty,
+                      onPressed: () {
+                        if (wsId == null || wsId.isEmpty) {
+                          return;
+                        }
+                        unawaited(
+                          showCalendarConnectionsSheet(context, wsId: wsId),
+                        );
+                      },
+                    ),
+                  ShellActionSpec(
+                    id: 'calendar-today',
+                    icon: Icons.today,
+                    tooltip: l10n.calendarToday,
+                    enabled: wsId != null && wsId.isNotEmpty,
+                    onPressed: () {
+                      final cubit = context.read<CalendarCubit>()..goToToday();
+                      if (wsId != null && wsId.isNotEmpty) {
+                        unawaited(
+                          cubit.ensureRangeLoaded(wsId, DateTime.now()),
+                        );
+                      }
+                    },
+                  ),
+                  ShellActionSpec(
+                    id: 'calendar-view-mode',
+                    icon: _viewModeIcon(state.viewMode),
+                    tooltip: _viewModeLabel(l10n, state.viewMode),
+                    onPressed: () => _showViewModeMenu(context, state.viewMode),
+                  ),
+                ],
+              );
+            },
+          ),
           BlocListener<WorkspaceCubit, WorkspaceState>(
             listenWhen: (prev, curr) =>
                 prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -71,7 +129,7 @@ class _CalendarView extends StatelessWidget {
               builder: (context, state) {
                 if (state.status == CalendarStatus.loading &&
                     state.events.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: NovaLoadingIndicator());
                 }
 
                 if (state.status == CalendarStatus.error &&
@@ -83,75 +141,6 @@ class _CalendarView extends StatelessWidget {
                   onRefresh: () async => _reload(context),
                   child: Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Wrap(
-                            spacing: 6,
-                            children: [
-                              if (Env.isCalendarIntegrationsEnabled)
-                                Tooltip(
-                                  message: l10n.calendarConnectionsTitle,
-                                  child: shad.IconButton.ghost(
-                                    icon: const Icon(Icons.sync_alt),
-                                    onPressed: () {
-                                      final wsId = context
-                                          .read<WorkspaceCubit>()
-                                          .state
-                                          .currentWorkspace
-                                          ?.id;
-                                      if (wsId != null) {
-                                        unawaited(
-                                          showCalendarConnectionsSheet(
-                                            context,
-                                            wsId: wsId,
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                              Tooltip(
-                                message: l10n.calendarToday,
-                                child: shad.IconButton.ghost(
-                                  icon: const Icon(Icons.today),
-                                  onPressed: () {
-                                    final cubit = context.read<CalendarCubit>()
-                                      ..goToToday();
-                                    final wsId = context
-                                        .read<WorkspaceCubit>()
-                                        .state
-                                        .currentWorkspace
-                                        ?.id;
-                                    if (wsId != null) {
-                                      unawaited(
-                                        cubit.ensureRangeLoaded(
-                                          wsId,
-                                          DateTime.now(),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ),
-                              BlocBuilder<CalendarCubit, CalendarState>(
-                                buildWhen: (prev, curr) =>
-                                    prev.viewMode != curr.viewMode,
-                                builder: (context, state) {
-                                  return shad.IconButton.ghost(
-                                    icon: Icon(_viewModeIcon(state.viewMode)),
-                                    onPressed: () => _showViewModeMenu(
-                                      context,
-                                      state.viewMode,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                       // Month strip (day, 3-day, and agenda views).
                       if (state.viewMode == CalendarViewMode.day ||
                           state.viewMode == CalendarViewMode.threeDays ||

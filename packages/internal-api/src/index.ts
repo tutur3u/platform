@@ -92,9 +92,18 @@ export {
   updateWorkspaceHabitTracker,
   updateWorkspaceHabitTrackerEntry,
 } from './habit-trackers';
+export {
+  type InfrastructurePushAppFlavor,
+  type InfrastructurePushDeliveryKind,
+  type InfrastructurePushPlatform,
+  type SendInfrastructurePushTestPayload,
+  type SendInfrastructurePushTestResponse,
+  sendInfrastructurePushTest,
+} from './infrastructure';
 export { listInquiryMediaUrls } from './inquiries';
 export { listWorkspaceEmails } from './mail';
 export { getCurrentUserNovaTeam } from './nova';
+export { forceSendWorkspacePostEmail } from './posts';
 export {
   updateWorkspaceReferralSettings,
   type WorkspaceReferralSettingsPayload,

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_limits.dart';
@@ -19,6 +20,14 @@ class WorkspaceRepository {
     : _api = apiClient ?? ApiClient(),
       _httpClient = httpClient ?? http.Client();
 
+  static const _workspaceBaseSelect =
+      'id, name, personal, avatar_url, created_at';
+  static const _workspaceSubscriptionTierSelect =
+      'workspace_subscriptions!left(created_at, status, '
+      'workspace_subscription_products(tier))';
+  static const _workspaceWithTierSelect =
+      '$_workspaceBaseSelect, $_workspaceSubscriptionTierSelect';
+
   final ApiClient _api;
   final http.Client _httpClient;
   static const _selectedKey = 'selected-workspace';
@@ -30,8 +39,19 @@ class WorkspaceRepository {
     if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
       return trimmed;
     }
-    final publicUrl = supabase.storage.from('avatars').getPublicUrl(trimmed);
-    return publicUrl;
+    final supabaseUrl = maybeSupabase?.storage
+        .from('avatars')
+        .getPublicUrl(trimmed);
+    if (supabaseUrl != null) {
+      return supabaseUrl;
+    }
+
+    var baseUrl = Env.supabaseUrl.replaceAll(RegExp(r'/$'), '');
+    if (Platform.isAndroid && baseUrl.contains('localhost')) {
+      baseUrl = baseUrl.replaceAll('localhost', '10.0.2.2');
+    }
+
+    return '$baseUrl/storage/v1/object/public/avatars/$trimmed';
   }
 
   Workspace _workspaceFromJson(Map<String, dynamic> json) {
@@ -39,29 +59,60 @@ class WorkspaceRepository {
     normalized['avatar_url'] = _resolveWorkspaceAvatarUrl(
       normalized['avatar_url'] as String?,
     );
+    normalized['tier'] =
+        normalized['tier'] ?? _resolveWorkspaceTier(normalized);
     return Workspace.fromJson(normalized);
+  }
+
+  String _resolveWorkspaceTier(Map<String, dynamic> json) {
+    final rawSubscriptions = json['workspace_subscriptions'];
+    if (rawSubscriptions is! List) {
+      return workspaceTierFree;
+    }
+
+    final activeSubscriptions =
+        rawSubscriptions
+            .whereType<Map<String, dynamic>>()
+            .map(Map<String, dynamic>.from)
+            .where((subscription) => subscription['status'] == 'active')
+            .toList()
+          ..sort((a, b) {
+            final aCreatedAt = DateTime.tryParse(
+              a['created_at'] as String? ?? '',
+            )?.millisecondsSinceEpoch;
+            final bCreatedAt = DateTime.tryParse(
+              b['created_at'] as String? ?? '',
+            )?.millisecondsSinceEpoch;
+            return (bCreatedAt ?? 0).compareTo(aCreatedAt ?? 0);
+          });
+
+    for (final subscription in activeSubscriptions) {
+      final product = subscription['workspace_subscription_products'];
+      if (product is Map<String, dynamic> && product['tier'] is String) {
+        return normalizeWorkspaceTier(product['tier'] as String);
+      }
+
+      if (product is List) {
+        for (final entry in product.whereType<Map<String, dynamic>>()) {
+          final tier = entry['tier'];
+          if (tier is String) {
+            return normalizeWorkspaceTier(tier);
+          }
+        }
+      }
+    }
+
+    return workspaceTierFree;
   }
 
   static const _defaultWorkspaceIdKey = 'default-workspace-id';
 
   /// Fetches workspaces the current user belongs to.
   Future<List<Workspace>> getWorkspaces() async {
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) return [];
-
-    final response = await supabase
-        .from('workspace_members')
-        .select('ws_id, workspaces(*)')
-        .eq('user_id', userId);
-
-    final list = response as List<dynamic>;
+    final list = await _api.getJsonList('/api/v1/workspaces');
     return list
-        .map((row) {
-          final record = row as Map<String, dynamic>;
-          final ws = record['workspaces'] as Map<String, dynamic>?;
-          if (ws == null) return null;
-          return _workspaceFromJson(ws);
-        })
+        .whereType<Map<String, dynamic>>()
+        .map(_workspaceFromJson)
         .whereType<Workspace>()
         .toList();
   }
@@ -89,28 +140,27 @@ class WorkspaceRepository {
         // Validate user still has access to this workspace
         final member = await supabase
             .from('workspace_members')
-            .select('ws_id, workspaces(*)')
+            .select('ws_id')
             .eq('user_id', userId)
             .eq('ws_id', defaultId)
             .maybeSingle();
 
         if (member != null) {
-          final ws = member['workspaces'] as Map<String, dynamic>?;
-          if (ws != null) return _workspaceFromJson(ws);
+          return getWorkspaceById(defaultId);
         }
       }
 
       // Fallback: find personal workspace
       final personalRow = await supabase
           .from('workspace_members')
-          .select('ws_id, workspaces(*)')
+          .select('ws_id, workspaces!inner(id)')
           .eq('user_id', userId)
           .eq('workspaces.personal', true)
           .maybeSingle();
 
-      if (personalRow != null) {
-        final ws = personalRow['workspaces'] as Map<String, dynamic>?;
-        if (ws != null) return _workspaceFromJson(ws);
+      final personalId = personalRow?['ws_id'] as String?;
+      if (personalId != null) {
+        return getWorkspaceById(personalId);
       }
     } on Object catch (_) {
       // Non-critical — caller falls back to SharedPreferences
@@ -140,11 +190,20 @@ class WorkspaceRepository {
 
   /// Fetches a single workspace by ID.
   Future<Workspace?> getWorkspaceById(String wsId) async {
-    final response = await supabase
-        .from('workspaces')
-        .select()
-        .eq('id', wsId)
-        .maybeSingle();
+    Map<String, dynamic>? response;
+    try {
+      response = await supabase
+          .from('workspaces')
+          .select(_workspaceWithTierSelect)
+          .eq('id', wsId)
+          .maybeSingle();
+    } on Object {
+      response = await supabase
+          .from('workspaces')
+          .select(_workspaceBaseSelect)
+          .eq('id', wsId)
+          .maybeSingle();
+    }
 
     if (response == null) return null;
     return _workspaceFromJson(response);

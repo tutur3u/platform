@@ -15,6 +15,7 @@ import 'package:mobile/features/time_tracker/widgets/session_detail_sheet.dart';
 import 'package:mobile/features/time_tracker/widgets/session_tile.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HistoryTab extends StatefulWidget {
@@ -152,7 +153,7 @@ class _HistoryTabState extends State<HistoryTab> {
                 const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
-                    child: Center(child: shad.CircularProgressIndicator()),
+                    child: Center(child: NovaLoadingIndicator()),
                   ),
                 )
               else ...[
@@ -215,7 +216,7 @@ class _HistoryTabState extends State<HistoryTab> {
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: shad.CircularProgressIndicator()),
+                      child: Center(child: NovaLoadingIndicator()),
                     ),
                   ),
                 if (state.historyHasMore && !state.isHistoryLoadingMore)

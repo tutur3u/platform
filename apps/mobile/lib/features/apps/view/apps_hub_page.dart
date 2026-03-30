@@ -13,10 +13,16 @@ import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppsHubPage extends StatefulWidget {
-  const AppsHubPage({super.key});
+  const AppsHubPage({
+    this.replayToken = 0,
+    super.key,
+  });
+
+  final int replayToken;
 
   @override
   State<AppsHubPage> createState() => _AppsHubPageState();
@@ -99,7 +105,10 @@ class _AppsHubPageState extends State<AppsHubPage> {
                       24 + MediaQuery.paddingOf(context).bottom,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: _CompactAppsGrid(modules: modules),
+                      child: _CompactAppsGrid(
+                        modules: modules,
+                        replayToken: widget.replayToken,
+                      ),
                     ),
                   )
                 else
@@ -115,6 +124,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
                         return _SubproductCard(
                           module: modules[index],
                           index: index,
+                          replayToken: widget.replayToken,
                         );
                       }, childCount: modules.length),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -139,9 +149,13 @@ class _AppsHubPageState extends State<AppsHubPage> {
 }
 
 class _CompactAppsGrid extends StatelessWidget {
-  const _CompactAppsGrid({required this.modules});
+  const _CompactAppsGrid({
+    required this.modules,
+    required this.replayToken,
+  });
 
   final List<AppModule> modules;
+  final int replayToken;
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +179,7 @@ class _CompactAppsGrid extends StatelessWidget {
             module: featuredModule,
             index: featuredTaskIndex,
             featured: true,
+            replayToken: replayToken,
           ),
         ),
       );
@@ -180,7 +195,11 @@ class _CompactAppsGrid extends StatelessWidget {
         rows.add(
           SizedBox(
             height: 196,
-            child: _SubproductCard(module: first.$2, index: first.$1),
+            child: _SubproductCard(
+              module: first.$2,
+              index: first.$1,
+              replayToken: replayToken,
+            ),
           ),
         );
         continue;
@@ -192,11 +211,19 @@ class _CompactAppsGrid extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: _SubproductCard(module: first.$2, index: first.$1),
+                child: _SubproductCard(
+                  module: first.$2,
+                  index: first.$1,
+                  replayToken: replayToken,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _SubproductCard(module: second.$2, index: second.$1),
+                child: _SubproductCard(
+                  module: second.$2,
+                  index: second.$1,
+                  replayToken: replayToken,
+                ),
               ),
             ],
           ),
@@ -228,11 +255,13 @@ class _SubproductCard extends StatelessWidget {
   const _SubproductCard({
     required this.module,
     required this.index,
+    required this.replayToken,
     this.featured = false,
   });
 
   final AppModule module;
   final int index;
+  final int replayToken;
   final bool featured;
 
   @override
@@ -246,91 +275,95 @@ class _SubproductCard extends StatelessWidget {
       palette.shadow.withValues(alpha: 0.22),
       palette.background,
     );
-    return InkWell(
-      borderRadius: BorderRadius.circular(26),
-      onTap: () {
-        unawaited(context.read<AppTabCubit>().select(module));
-        context.go(module.route);
-      },
-      child: Material(
-        color: shellBackground,
+    return StaggeredEntrance(
+      replayKey: '$replayToken-$index',
+      delay: Duration(milliseconds: 50 + (index * 45)),
+      child: InkWell(
         borderRadius: BorderRadius.circular(26),
-        clipBehavior: Clip.antiAlias,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.alphaBlend(
-                  palette.iconBackground.withValues(alpha: 0.2),
-                  palette.background,
-                ),
-                shellBackground,
-              ],
-            ),
-            border: Border.all(color: palette.border.withValues(alpha: 0.95)),
-            boxShadow: [
-              BoxShadow(
-                color: palette.shadow,
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: palette.iconBackground,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Icon(
-                      module.icon,
-                      color: palette.iconColor,
-                      size: 22,
-                    ),
+        onTap: () {
+          unawaited(context.read<AppTabCubit>().select(module));
+          context.go(module.route);
+        },
+        child: Material(
+          color: shellBackground,
+          borderRadius: BorderRadius.circular(26),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.alphaBlend(
+                    palette.iconBackground.withValues(alpha: 0.2),
+                    palette.background,
                   ),
+                  shellBackground,
                 ],
               ),
-              SizedBox(height: featured ? 14 : 8),
-              Text(
-                module.label(context.l10n),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    (featured
-                            ? Theme.of(context).textTheme.headlineSmall
-                            : Theme.of(context).textTheme.titleMedium)
-                        ?.copyWith(
-                          color: palette.textColor,
-                          fontWeight: FontWeight.w800,
-                        ),
-              ),
-              SizedBox(height: featured ? 10 : 8),
-              Expanded(
-                child: Text(
-                  _description(context, module.id),
-                  maxLines: featured
-                      ? 3
-                      : context.deviceClass == DeviceClass.compact
-                      ? 5
-                      : 4,
-                  overflow: TextOverflow.fade,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: palette.textColor.withValues(alpha: 0.78),
-                    height: 1.32,
+              border: Border.all(color: palette.border.withValues(alpha: 0.95)),
+              boxShadow: [
+                BoxShadow(
+                  color: palette.shadow,
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: palette.iconBackground,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(
+                        module.icon,
+                        color: palette.iconColor,
+                        size: 22,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: featured ? 14 : 8),
+                Text(
+                  module.label(context.l10n),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      (featured
+                              ? Theme.of(context).textTheme.headlineSmall
+                              : Theme.of(context).textTheme.titleMedium)
+                          ?.copyWith(
+                            color: palette.textColor,
+                            fontWeight: FontWeight.w800,
+                          ),
+                ),
+                SizedBox(height: featured ? 10 : 8),
+                Expanded(
+                  child: Text(
+                    _description(context, module.id),
+                    maxLines: featured
+                        ? 3
+                        : context.deviceClass == DeviceClass.compact
+                        ? 5
+                        : 4,
+                    overflow: TextOverflow.fade,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: palette.textColor.withValues(alpha: 0.78),
+                      height: 1.32,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

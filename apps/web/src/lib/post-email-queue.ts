@@ -1,4 +1,7 @@
-export { processPostEmailQueueBatch } from './post-email-queue/batch-processing';
+export {
+  processPostEmailQueueBatch,
+  sendPostEmailImmediately,
+} from './post-email-queue/batch-processing';
 export {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
@@ -16,6 +19,7 @@ export {
   enqueueApprovedPostEmails,
   getPostEmailQueueRows,
   hasPostEmailBeenSent,
+  mergeReconciliationResults,
   reconcileOrphanedApprovedPosts,
   reEnqueueSkippedPostEmails,
 } from './post-email-queue/queue-core';

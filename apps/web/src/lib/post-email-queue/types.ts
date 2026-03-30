@@ -157,6 +157,7 @@ export type BatchSourceInfo = Pick<
 >;
 
 export type BatchPrefetchContext = BatchPrefetch & {
+  blockedRecipientEmails: Set<string>;
   emailServices: Map<string, EmailService>;
   sourceInfos: Map<string, BatchSourceInfo>;
 };
@@ -256,4 +257,44 @@ export type ReconcileOrphanedApprovedPostsDiagnostics = {
   notApproved: number;
   orphaned: number;
   upserted: number;
+};
+
+export type ReconcileOrphanedApprovedPostsResult = {
+  checked: number;
+  diagnostics: ReconcileOrphanedApprovedPostsDiagnostics;
+  enqueued: number;
+  processedPosts: number;
+  remainingPosts: number;
+};
+
+export type ReconcileOrphanedApprovedPostEmailsRpcRow = {
+  already_sent: number | null;
+  checked: number | null;
+  covered_by_existing_queue: number | null;
+  covered_by_sent_email: number | null;
+  eligible_recipients: number | null;
+  enqueued: number | null;
+  existing_processing: number | null;
+  existing_queued: number | null;
+  existing_skipped: number | null;
+  missing_completion: number | null;
+  missing_email: number | null;
+  missing_sender_platform_user: number | null;
+  missing_user_record: number | null;
+  not_approved: number | null;
+  orphaned: number | null;
+  processed_posts: number | null;
+  remaining_posts: number | null;
+  upserted: number | null;
+};
+
+export type PostEmailQueueStatusSummaryRpcRow = {
+  blocked: number | null;
+  cancelled: number | null;
+  failed: number | null;
+  processing: number | null;
+  queued: number | null;
+  sent: number | null;
+  skipped: number | null;
+  total: number | null;
 };

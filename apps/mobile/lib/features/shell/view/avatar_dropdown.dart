@@ -28,15 +28,28 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
   );
 
   Future<void> _handleAction(AvatarMenuAction action) async {
+    String? matchedLocation;
+    try {
+      matchedLocation = GoRouterState.of(context).matchedLocation;
+    } on Exception catch (_) {
+      matchedLocation = null;
+    }
+
     switch (action) {
       case AvatarMenuAction.workspace:
         showWorkspacePickerSheet(context);
         return;
       case AvatarMenuAction.profile:
-        await context.push(Routes.profileRoot);
+        if (matchedLocation == Routes.profileRoot) {
+          return;
+        }
+        context.go(Routes.profileRoot);
         return;
       case AvatarMenuAction.settings:
-        await context.push(Routes.settings);
+        if (matchedLocation == Routes.settings) {
+          return;
+        }
+        context.go(Routes.settings);
         return;
       case AvatarMenuAction.logout:
         await context.read<AuthCubit>().signOut();

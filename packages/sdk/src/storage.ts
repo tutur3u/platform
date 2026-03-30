@@ -25,7 +25,6 @@
  * ```
  */
 
-import type { ZodSchema } from 'zod';
 import packageJson from '../package.json';
 import {
   createErrorFromResponse,
@@ -43,7 +42,9 @@ import type {
   DeleteDocumentResponse,
   DeleteResponse,
   DocumentResponse,
+  DownloadOptions,
   GetDocumentResponse,
+  ImageTransformOptions,
   ListDocumentsOptions,
   ListDocumentsResponse,
   ListStorageOptions,
@@ -59,6 +60,7 @@ import type {
 import {
   createDocumentDataSchema,
   createSignedUploadUrlOptionsSchema,
+  downloadOptionsSchema,
   listDocumentsOptionsSchema,
   listStorageOptionsSchema,
   shareOptionsSchema,
@@ -83,7 +85,12 @@ function transformStorageObject(apiObject: any): StorageObject {
 /**
  * Helper function to validate data with Zod schema and convert errors to ValidationError
  */
-function validateWithSchema<T>(schema: ZodSchema<T>, data: unknown): T {
+function validateWithSchema<T>(
+  schema: {
+    parse: (data: unknown) => T;
+  },
+  data: unknown
+): T {
   try {
     return schema.parse(data);
   } catch (error) {
@@ -105,6 +112,47 @@ function validateWithSchema<T>(schema: ZodSchema<T>, data: unknown): T {
       throw new ValidationError(message);
     }
     throw error;
+  }
+}
+
+function getEnvValue(key: 'TUTURUUU_API_KEY' | 'TUTURUUU_BASE_URL'): string {
+  const env = (
+    globalThis as typeof globalThis & {
+      process?: {
+        env?: Record<string, string | undefined>;
+      };
+    }
+  ).process?.env;
+
+  return env?.[key] ?? '';
+}
+
+function appendImageTransformParams(
+  params: URLSearchParams,
+  transform?: ImageTransformOptions
+): void {
+  if (!transform) {
+    return;
+  }
+
+  if (transform.width !== undefined) {
+    params.set('width', transform.width.toString());
+  }
+
+  if (transform.height !== undefined) {
+    params.set('height', transform.height.toString());
+  }
+
+  if (transform.resize) {
+    params.set('resize', transform.resize);
+  }
+
+  if (transform.quality !== undefined) {
+    params.set('quality', transform.quality.toString());
+  }
+
+  if (transform.format) {
+    params.set('format', transform.format);
   }
 }
 
@@ -341,10 +389,12 @@ export class StorageClient {
    * const blob = await client.storage.download('documents/report.pdf');
    * ```
    */
-  async download(path: string): Promise<Blob> {
+  async download(path: string, options: DownloadOptions = {}): Promise<Blob> {
     if (!path) {
       throw new ValidationError('Path is required');
     }
+
+    const validatedOptions = validateWithSchema(downloadOptionsSchema, options);
 
     // Properly encode path to handle spaces and special characters
     // Normalize backslashes to forward slashes
@@ -353,21 +403,23 @@ export class StorageClient {
     // Split path into segments, encode each segment, and rejoin
     const segments = normalizedPath.split('/').filter((s) => s.length > 0);
     const encodedPath = segments.map((s) => encodeURIComponent(s)).join('/');
+    const queryParams = new URLSearchParams();
+    appendImageTransformParams(queryParams, validatedOptions.transform);
 
     // Ensure baseUrl doesn't end with slash to avoid double slashes
     const baseUrl = this.client.baseUrl.replace(/\/$/, '');
+    const downloadUrl = `${baseUrl}/storage/download/${encodedPath}${
+      queryParams.size > 0 ? `?${queryParams.toString()}` : ''
+    }`;
 
-    const response = await this.client.fetch(
-      `${baseUrl}/storage/download/${encodedPath}`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${this.client.apiKey}`,
-          'X-SDK-Client': `tuturuuu/${packageJson.version || '0.0.1'}`,
-          Accept: 'application/octet-stream, */*',
-        },
-      }
-    );
+    const response = await this.client.fetch(downloadUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${this.client.apiKey}`,
+        'X-SDK-Client': `tuturuuu/${packageJson.version || '0.0.1'}`,
+        Accept: 'application/octet-stream, */*',
+      },
+    });
 
     if (!response.ok) {
       // Check if response is JSON before attempting to parse
@@ -491,6 +543,7 @@ export class StorageClient {
       body: JSON.stringify({
         path,
         expiresIn: validatedOptions.expiresIn,
+        transform: validatedOptions.transform,
       }),
     });
   }
@@ -770,19 +823,19 @@ export class TuturuuuClient {
       this.fetch = globalThis.fetch;
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG };
     } else if (config) {
-      this.apiKey = config.apiKey || process.env.TUTURUUU_API_KEY || '';
+      this.apiKey = config.apiKey || getEnvValue('TUTURUUU_API_KEY');
       this.baseUrl =
         config.baseUrl ||
-        process.env.TUTURUUU_BASE_URL ||
+        getEnvValue('TUTURUUU_BASE_URL') ||
         'https://tuturuuu.com/api/v1';
       this.timeout = config.timeout || 30000;
       this.fetch = config.fetch || globalThis.fetch;
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry };
     } else {
       // Auto-load from environment variables
-      this.apiKey = process.env.TUTURUUU_API_KEY || '';
+      this.apiKey = getEnvValue('TUTURUUU_API_KEY');
       this.baseUrl =
-        process.env.TUTURUUU_BASE_URL || 'https://tuturuuu.com/api/v1';
+        getEnvValue('TUTURUUU_BASE_URL') || 'https://tuturuuu.com/api/v1';
       this.timeout = 30000;
       this.fetch = globalThis.fetch;
       this.retryConfig = { ...DEFAULT_RETRY_CONFIG };

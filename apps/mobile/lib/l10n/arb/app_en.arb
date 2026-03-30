@@ -236,9 +236,11 @@
     "assistantSelectWorkspace": "Select a workspace",
     "assistantWorkspaceAwareDescription": "Your AI assistant for planning, questions, and quick actions.",
     "assistantHistoryTitle": "Recent chats",
+    "assistantHistoryEmpty": "No chats yet. Start a new conversation to create one.",
     "assistantUntitledChat": "Untitled chat",
     "assistantPersonalWorkspace": "Personal",
     "assistantSettingsTitle": "Assistant settings",
+    "assistantSendAction": "Send message",
     "assistantActionsTitle": "Action",
     "assistantRenameTitle": "Rename Assistant",
     "assistantRenameAction": "Rename",
@@ -275,16 +277,123 @@
     "assistantViewOnlyLabel": "View only",
     "assistantEditableLabel": "Editable",
     "assistantSourceLabel": "Source",
+    "assistantSourcePersonal": "Personal",
+    "assistantSourceWorkspace": "Workspace",
     "assistantToolLabel": "Tool",
     "assistantInputLabel": "Input",
     "assistantOutputLabel": "Output",
     "assistantSeeMoreLabel": "See more",
     "assistantSeeLessLabel": "See less",
     "assistantExportShareText": "Chat export",
+    "assistantAttachmentClearAction": "Clear attachments",
+    "assistantAttachmentSheetTitle": "Attachments",
+    "assistantAttachmentUploadPending": "Wait for attachment uploads to finish before sending.",
     "assistantContextUpdatedLabel": "Workspace context updated",
     "assistantPreferencesUpdatedLabel": "Assistant preferences updated",
+    "assistantStarterBacklog": "Backlog cleanup",
+    "assistantStarterCaptionBacklog": "Break open tasks into a clean next-step list.",
+    "assistantStarterCaptionDraft": "Shape a concise update before you send it.",
+    "assistantStarterCaptionFocus": "Let Mira surface the best next move.",
+    "assistantStarterCaptionPlan": "Balance meetings, tasks, and real focus time.",
+    "assistantStarterDraft": "Team update",
+    "assistantStarterFocus": "Today's focus",
+    "assistantStarterPlan": "Day plan",
+    "assistantStarterSubtitle": "Pick a quick starter or type your own.",
+    "assistantStarterTitle": "Need a place to start?",
     "assistantShowBottomNavLabel": "Show bottom nav",
     "assistantHideBottomNavLabel": "Hide bottom nav",
+    "assistantLiveAccessSummary": "{workspace} • {source}",
+    "@assistantLiveAccessSummary": {
+        "placeholders": {
+            "workspace": {
+                "type": "String"
+            },
+            "source": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantLiveAccessUsingPersonal": "Using personal {tier}",
+    "@assistantLiveAccessUsingPersonal": {
+        "placeholders": {
+            "tier": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantLiveAccessUsingWorkspace": "Using workspace {tier}",
+    "@assistantLiveAccessUsingWorkspace": {
+        "placeholders": {
+            "tier": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantLiveCameraPreview": "Live camera",
+    "assistantLiveConnect": "Start live session",
+    "assistantLiveDescriptionConnecting": "Creating a direct Gemini Live session for text, audio, and camera input.",
+    "assistantLiveDescriptionError": "The live session hit an error. Retry or start a fresh session.",
+    "assistantLiveDescriptionIdle": "Start a live session to talk, type, or stream camera context into the same assistant chat.",
+    "assistantLiveDescriptionListening": "Microphone streaming is active. Mira will keep listening for new audio input.",
+    "assistantLiveDescriptionPreparing": "Minting an ephemeral token and restoring the last resumable live session.",
+    "assistantLiveDescriptionReady": "Live text and audio are ready. Type a turn, talk, or share your camera feed.",
+    "assistantLiveDescriptionReconnecting": "The session is reconnecting with the latest resumable handle and restored history.",
+    "assistantLiveDisconnect": "End live session",
+    "assistantLiveDraftAssistant": "Mira is replying",
+    "assistantLiveDraftUser": "You are speaking",
+    "assistantLiveHideCamera": "Hide camera",
+    "assistantLiveInsightsTitle": "Live insights",
+    "assistantLiveListen": "Open mic",
+    "assistantLiveMute": "Mute mic",
+    "assistantLiveNoMessagesBody": "Use voice, text, or attachments to start a chat. Everything from the live session will sync back into this thread.",
+    "assistantLiveNoMessagesTitle": "Your live assistant is ready",
+    "assistantLivePermissionDenied": "Camera or microphone access is blocked. Enable permissions to use the full live mode.",
+    "assistantLiveReconnectBanner": "Session rotation detected. Reconnecting with about {timeLeft} remaining.",
+    "@assistantLiveReconnectBanner": {
+        "placeholders": {
+            "timeLeft": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantLiveShowCamera": "Show camera",
+    "assistantLiveStatusAvailable": "Available",
+    "assistantLiveStatusConnecting": "Connecting",
+    "assistantLiveStatusDisconnected": "Offline",
+    "assistantLiveStatusError": "Needs attention",
+    "assistantLiveStatusPreparing": "Preparing",
+    "assistantLiveStatusReady": "Live",
+    "assistantLiveStatusReconnecting": "Reconnecting",
+    "assistantLiveStatusSyncing": "Syncing",
+    "assistantLiveStatusUnavailable": "Unavailable",
+    "assistantLiveSubtitle": "Gemini 3.1 Flash Live with voice, camera, attachments, and unified chat history.",
+    "assistantLiveTierRequired": "Live voice is available on PLUS and above.",
+    "assistantLiveTitle": "Live assistant",
+    "assistantLiveInfoAccessHeading": "Current access",
+    "assistantLiveInfoDismiss": "Got it",
+    "assistantLiveWorkspaceTierLabel": "Workspace {tier}",
+    "@assistantLiveWorkspaceTierLabel": {
+        "placeholders": {
+            "tier": {
+                "type": "String"
+            }
+        }
+    },
+    "assistantMermaidDiagramLabel": "Diagram",
+    "assistantMermaidRenderError": "Couldn't render this Mermaid diagram.",
+    "assistantMermaidZoomHint": "Pinch or use the zoom controls to inspect the diagram in fullscreen.",
+    "assistantMermaidZoomIn": "Zoom in",
+    "assistantMermaidZoomOut": "Zoom out",
+    "assistantMermaidZoomReset": "Reset zoom",
+    "assistantCopyMessageAction": "Copy message",
+    "assistantCopiedMessageAction": "Copied",
+    "assistantScrollToBottomAction": "Scroll to bottom",
+    "assistantToolCompleted": "Completed",
+    "assistantToolGeneratedImage": "Generated image",
+    "assistantToolImageUnavailable": "The generated image is unavailable right now.",
+    "assistantToolNoActionNeeded": "No tools were needed for this reply.",
+    "assistantToolSelectedTools": "Selected tools",
+    "assistantToolsLabel": "Tools",
     "assistantCreditsSummary": "{remaining} remaining • {tier}",
     "@assistantCreditsSummary": {
         "placeholders": {
@@ -300,6 +409,7 @@
     "dashboardGreeting": "Welcome back!",
     "dashboardQuickActions": "Quick actions",
     "dashboardTodayTitle": "Today at a glance",
+    "dashboardActiveTasksLabel": "Active tasks",
     "dashboardQuickLaunch": "Quick launch",
     "dashboardAssignedToMe": "Assigned to me",
     "dashboardUpcomingEvents": "Upcoming events",
@@ -1317,6 +1427,7 @@
     "timerAutoStartBreaks": "Auto-start breaks",
     "timerAutoStartFocus": "Auto-start focus",
     "commonCancel": "Cancel",
+    "commonClearSearch": "Clear search",
     "timerTotalSessions": "Total sessions",
     "timerActiveUsers": "Active users",
     "timerGoalsTitle": "Goals",
@@ -1369,6 +1480,9 @@
     },
 
     "settingsTitle": "Settings",
+    "settingsNavApp": "App",
+    "settingsNavWorkspace": "Workspace",
+    "settingsNavYou": "You",
     "settingsAccountTab": "Account",
     "settingsPreferencesTab": "Preferences",
     "settingsAboutTab": "About",

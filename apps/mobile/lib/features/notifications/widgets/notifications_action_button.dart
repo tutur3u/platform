@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
-import 'package:mobile/features/notifications/widgets/notifications_sheet.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -16,6 +17,7 @@ bool shouldShowNotificationsActionForLocation(String matchedLocation) {
   return matchedLocation == Routes.home ||
       matchedLocation == Routes.assistant ||
       matchedLocation == Routes.apps ||
+      matchedLocation == Routes.profileRoot ||
       matchedLocation == Routes.tasks ||
       matchedLocation == Routes.taskBoards ||
       matchedLocation == Routes.taskEstimates ||
@@ -30,7 +32,10 @@ bool shouldShowNotificationsActionForLocation(String matchedLocation) {
       matchedLocation == Routes.timer ||
       matchedLocation == Routes.timerHistory ||
       matchedLocation == Routes.timerStats ||
-      matchedLocation == Routes.timerRequests;
+      matchedLocation == Routes.timerRequests ||
+      matchedLocation == Routes.settings ||
+      matchedLocation == Routes.settingsWorkspace ||
+      matchedLocation == Routes.settingsMobileVersions;
 }
 
 class ShellNotificationsActionSlot extends StatelessWidget {
@@ -76,6 +81,7 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   late final NotificationsCubit _notificationsCubit = NotificationsCubit(
     notificationsRepository: _notificationsRepository,
   );
+  StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
   String? _lastWorkspaceId;
   bool get _ownsRepository => widget.notificationsRepository == null;
@@ -84,6 +90,11 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _pushEventsSubscription = PushNotificationService.instance.events.listen((
+      _,
+    ) {
+      unawaited(_notificationsCubit.refreshUnreadCount());
+    });
   }
 
   @override
@@ -102,6 +113,7 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_pushEventsSubscription?.cancel());
     unawaited(_notificationsCubit.close());
     if (_ownsRepository) {
       _notificationsRepository.dispose();
@@ -119,11 +131,13 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
     unawaited(_notificationsCubit.setWorkspace(workspace));
   }
 
-  Future<void> _openSheet() async {
-    await showNotificationsSheet(
-      context: context,
-      notificationsCubit: _notificationsCubit,
-    );
+  Future<void> _openPage() async {
+    await PushNotificationService.instance.ensurePermissionPrompted();
+    if (!mounted) {
+      return;
+    }
+
+    await context.push(Routes.notifications);
 
     if (!mounted) {
       return;
@@ -162,7 +176,7 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
                               : Icons.notifications_none_rounded,
                           size: 21,
                         ),
-                        onPressed: _openSheet,
+                        onPressed: _openPage,
                       ),
                     ),
                     if (unreadCount > 0)

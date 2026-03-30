@@ -4,16 +4,81 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 
-export async function fetchWorkspaces() {
-  const supabase = await createClient();
+const WORKSPACE_SUMMARY_UNAUTHORIZED = 'WORKSPACE_SUMMARY_UNAUTHORIZED';
+
+function normalizeWorkspaceTier(
+  tier: string | null | undefined
+): InternalApiWorkspaceSummary['tier'] {
+  switch (tier) {
+    case 'FREE':
+    case 'PLUS':
+    case 'PRO':
+    case 'ENTERPRISE':
+      return tier;
+    default:
+      return null;
+  }
+}
+
+function resolveWorkspaceTier(workspace: {
+  workspace_subscriptions?: Array<{
+    created_at?: string | null;
+    status?: string | null;
+    workspace_subscription_products?:
+      | { tier?: string | null }
+      | Array<{ tier?: string | null }>
+      | null;
+  }> | null;
+}) {
+  const activeSubscriptions =
+    workspace.workspace_subscriptions
+      ?.filter((subscription) => subscription?.status === 'active')
+      .sort(
+        (a, b) =>
+          new Date(b.created_at ?? 0).getTime() -
+          new Date(a.created_at ?? 0).getTime()
+      ) ?? [];
+
+  for (const subscription of activeSubscriptions) {
+    const product = subscription.workspace_subscription_products;
+
+    if (product && !Array.isArray(product) && product.tier) {
+      return normalizeWorkspaceTier(product.tier);
+    }
+
+    if (Array.isArray(product)) {
+      const tier = product.find((entry) => entry?.tier)?.tier;
+      if (tier) {
+        return normalizeWorkspaceTier(tier);
+      }
+    }
+  }
+
+  return null;
+}
+
+export async function fetchWorkspaceSummaries({
+  requireAuth = false,
+  request,
+}: {
+  requireAuth?: boolean;
+  request?: Pick<Request, 'headers'>;
+} = {}): Promise<InternalApiWorkspaceSummary[]> {
+  const supabase = await (request ? createClient(request) : createClient());
   const sbAdmin = await createAdminClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return [];
+  if (!user) {
+    if (requireAuth) {
+      throw new Error(WORKSPACE_SUMMARY_UNAUTHORIZED);
+    }
+    return [];
+  }
 
   const { data: workspaces, error } = await sbAdmin
     .from('workspaces')
@@ -61,29 +126,18 @@ export async function fetchWorkspaces() {
 
   // For personal workspaces, override the name and avatar with the user's data
   return workspaces.map((ws) => {
-    // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
-    const activeSubscriptions = ws.workspace_subscriptions
-      .filter((sub: any) => sub?.status === 'active')
-      .sort(
-        (a: any, b: any) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-    const tier =
-      activeSubscriptions?.[0]?.workspace_subscription_products?.tier || null;
-
-    const base = ws?.personal
-      ? {
-          ...ws,
-          name: displayLabel || ws.name || 'Personal',
-          avatar_url: userAvatarUrl || ws.avatar_url,
-        }
-      : ws;
     return {
-      ...base,
-      // Mark if current user is the creator for downstream UI
-      created_by_me: base?.creator_id === user.id,
-      // Include tier information
-      tier,
+      id: ws.id,
+      name: ws.personal ? displayLabel || ws.name || 'Personal' : ws.name,
+      personal: ws.personal,
+      avatar_url: ws.personal ? userAvatarUrl || ws.avatar_url : ws.avatar_url,
+      logo_url: ws.logo_url,
+      created_by_me: ws.creator_id === user.id,
+      tier: resolveWorkspaceTier(ws),
     };
   });
+}
+
+export async function fetchWorkspaces() {
+  return fetchWorkspaceSummaries();
 }

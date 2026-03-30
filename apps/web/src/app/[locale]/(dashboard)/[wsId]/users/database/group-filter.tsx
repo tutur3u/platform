@@ -314,7 +314,7 @@ export function GroupFilter({
           <Button
             variant={hasActiveFilters ? 'secondary' : 'outline'}
             size="sm"
-            className="h-8 gap-1.5"
+            className="h-9 gap-2 rounded-xl px-3"
           >
             {filterType === 'excluded' ? (
               <MinusCircle className="h-3 w-3" />
@@ -323,13 +323,13 @@ export function GroupFilter({
             )}
             <span className="text-xs">{filterLabel}</span>
             {hasActiveFilters && (
-              <span className="ml-1 rounded-full bg-background/60 px-1.5 font-semibold text-[10px] text-foreground">
+              <span className="ml-1 rounded-full bg-background/70 px-1.5 font-semibold text-[10px] text-foreground">
                 {resolvedSelectedGroupIds.length}
               </span>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-70 p-0" align="start">
+        <PopoverContent className="w-[18rem] p-0 sm:w-80" align="start">
           <Command>
             <CommandInput
               placeholder={t('search_groups')}

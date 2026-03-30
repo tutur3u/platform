@@ -1,35 +1,54 @@
-// Assistant page - completely redesigned for modern UX
-// ignore_for_file: directives_ordering, lines_longer_than_80_chars, discarded_futures, avoid_types_on_closure_parameters, avoid_redundant_argument_values
+import 'dart:async';
 
-import 'dart:io';
-
+import 'package:camera/camera.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart' hide Badge, Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
-
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
+import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
+import 'package:mobile/features/assistant/data/assistant_live_recorder.dart';
+import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/models/assistant_live_models.dart';
+import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-
+import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
+import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
+import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
+import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/staggered_entrance.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AssistantPage extends StatefulWidget {
-  const AssistantPage({super.key});
+  const AssistantPage({
+    this.replayToken = 0,
+    super.key,
+  });
+
+  final int replayToken;
 
   @override
   State<AssistantPage> createState() => _AssistantPageState();
@@ -38,10 +57,19 @@ class AssistantPage extends StatefulWidget {
 class _AssistantPageState extends State<AssistantPage> {
   final _repository = AssistantRepository();
   final _preferences = AssistantPreferences();
+  final _liveRepository = AssistantLiveRepository();
   final _inputController = TextEditingController();
   final _inputFocusNode = FocusNode();
-  final _renameController = TextEditingController();
   final _scrollController = ScrollController();
+
+  static const _assistantScrollPhysics = AlwaysScrollableScrollPhysics(
+    parent: BouncingScrollPhysics(),
+  );
+  static const _hiddenComposerReservedSpace = 88.0;
+  static const _assistantFabBottomOffset = 16.0;
+  static const _assistantFabSideOffset = 16.0;
+  static const _composerFabThreshold = 56.0;
+  static const _scrollToBottomFabThreshold = 160.0;
 
   late final AssistantShellCubit _shellCubit = AssistantShellCubit(
     repository: _repository,
@@ -55,7 +83,9 @@ class _AssistantPageState extends State<AssistantPage> {
     onSoulRefreshRequested: _shellCubit.refreshSoul,
     onImmersiveModeChanged: _shellCubit.setImmersiveMode,
     onChatRestored: (modelId) async {
-      if (modelId == null) return;
+      if (modelId == null) {
+        return;
+      }
       final current = _shellCubit.state.availableModels.where(
         (model) => model.value == modelId || model.value.endsWith('/$modelId'),
       );
@@ -64,2247 +94,1112 @@ class _AssistantPageState extends State<AssistantPage> {
       }
     },
   );
+  late final AssistantLiveCubit _liveCubit = AssistantLiveCubit(
+    repository: _liveRepository,
+    socket: AssistantLiveSocketClient(),
+    audioPlayer: AssistantLiveAudioPlayer(),
+    recorder: AssistantLiveRecorder(),
+    cameraService: AssistantLiveCameraService(),
+    onChatBound: (wsId, chatId) => _chatCubit.openChatById(wsId, chatId),
+    onHistoryUpdated: (wsId, chatId) async {
+      await _chatCubit.openChatById(wsId, chatId);
+      await _chatCubit.refreshHistory();
+    },
+  );
 
   String? _loadedWorkspaceId;
-  bool _isNearBottom = true;
-  bool _pendingAutoScroll = false;
-  bool _isAnimatingToBottom = false;
+  String? _lastEmptyStateResetKey;
+  bool _wasAssistantEmptyLayout = false;
+  bool _isComposerVisible = false;
+  bool _showScrollToBottomFab = false;
+  bool _ignoreScrollVisibilityUpdates = false;
+  double? _composerVisibilityAnchorOffset;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_handleScrollChanged);
+    _scrollController.addListener(_handleScroll);
+    _inputFocusNode.addListener(_handleInputFocusChange);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScroll);
+    _inputFocusNode.removeListener(_handleInputFocusChange);
     _inputController.dispose();
     _inputFocusNode.dispose();
-    _renameController.dispose();
-    _scrollController
-      ..removeListener(_handleScrollChanged)
-      ..dispose();
-    _shellCubit.close();
-    _chatCubit.close();
+    _scrollController.dispose();
+    unawaited(_liveCubit.close());
+    unawaited(_shellCubit.close());
+    unawaited(_chatCubit.close());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final workspace = context.select(
-      (WorkspaceCubit cubit) => cubit.state.personalWorkspaceOrCurrent,
-    );
-
-    if (workspace != null && workspace.id != _loadedWorkspaceId) {
-      _loadedWorkspaceId = workspace.id;
-      _shellCubit
-        ..loadWorkspace(workspace)
-        ..setImmersiveMode(false);
-      _chatCubit.loadWorkspace(workspace.id);
-    }
-
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _shellCubit),
         BlocProvider.value(value: _chatCubit),
+        BlocProvider.value(value: _liveCubit),
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, workspaceState) {
-          final currentWorkspace = workspaceState.personalWorkspaceOrCurrent;
+          final currentWorkspace =
+              workspaceState.currentWorkspace ??
+              workspaceState.personalWorkspaceOrCurrent;
           if (currentWorkspace == null) {
-            return Center(child: Text(context.l10n.assistantSelectWorkspace));
+            if (workspaceState.status == WorkspaceStatus.initial ||
+                workspaceState.status == WorkspaceStatus.loading) {
+              return const shad.Scaffold(
+                child: Center(child: NovaLoadingIndicator()),
+              );
+            }
+            return shad.Scaffold(
+              child: Center(child: Text(context.l10n.assistantSelectWorkspace)),
+            );
           }
 
-          return BlocBuilder<AssistantShellCubit, AssistantShellState>(
-            builder: (context, shellState) {
-              return MultiBlocListener(
-                listeners: [
-                  BlocListener<AssistantChatCubit, AssistantChatState>(
-                    listenWhen: (prev, curr) {
-                      final countChanged =
-                          prev.messages.length != curr.messages.length;
-                      final streamUpdate =
-                          curr.status == AssistantChatStatus.streaming &&
-                          prev.messages != curr.messages;
-                      final queueChanged =
-                          prev.queuedMessages != curr.queuedMessages;
-                      final statusChanged = prev.status != curr.status;
-                      return countChanged ||
-                          streamUpdate ||
-                          queueChanged ||
-                          statusChanged;
-                    },
-                    listener: (context, state) {
-                      if (state.messages.isNotEmpty ||
-                          state.queuedMessages.isNotEmpty) {
-                        _scheduleScrollToBottom(
-                          animated:
-                              state.status != AssistantChatStatus.streaming,
-                        );
-                      }
-                    },
-                  ),
-                  BlocListener<AssistantChromeCubit, AssistantChromeState>(
-                    listenWhen: (previous, current) =>
-                        previous.isFullscreen != current.isFullscreen,
-                    listener: (context, chromeState) {
-                      if (_shellCubit.state.isImmersive !=
-                          chromeState.isFullscreen) {
-                        _shellCubit.setImmersiveMode(chromeState.isFullscreen);
-                      }
-                      if (chromeState.isFullscreen) {
-                        _scheduleScrollToBottom(force: true);
-                      }
-                    },
-                  ),
-                  BlocListener<AssistantShellCubit, AssistantShellState>(
-                    listenWhen: (previous, current) =>
-                        previous.isImmersive != current.isImmersive,
-                    listener: (context, nextShellState) {
-                      final chromeCubit = context.read<AssistantChromeCubit>();
-                      if (chromeCubit.state.isFullscreen !=
-                          nextShellState.isImmersive) {
-                        chromeCubit.setFullscreen(
-                          value: nextShellState.isImmersive,
-                        );
-                      }
-                    },
-                  ),
-                ],
-                child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
-                  builder: (context, chatState) {
-                    final isFullscreen = context.select(
-                      (AssistantChromeCubit cubit) => cubit.state.isFullscreen,
-                    );
-                    final theme = Theme.of(context);
-                    final hasConversation =
-                        chatState.messages.isNotEmpty ||
-                        chatState.queuedMessages.isNotEmpty ||
-                        chatState.status == AssistantChatStatus.submitting;
-                    final composerInset = shellState.isViewOnly
-                        ? 0.0
-                        : hasConversation
-                        ? _composerDockHeight(chatState)
-                        : 0.0;
+          _syncWorkspace(currentWorkspace);
 
-                    return DecoratedBox(
-                      decoration: _buildPageDecoration(theme),
-                      child: SafeArea(
-                        top: false,
-                        bottom: isFullscreen,
-                        child: ResponsiveWrapper(
-                          maxWidth: ResponsivePadding.maxContentWidth(
-                            context.deviceClass,
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              _assistantHorizontalPadding(context),
-                              10,
-                              _assistantHorizontalPadding(context),
-                              isFullscreen ? 4 : 0,
-                            ),
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: hasConversation
-                                          ? composerInset
-                                          : 0,
+          return MultiBlocListener(
+            listeners: [
+              BlocListener<AssistantChatCubit, AssistantChatState>(
+                listenWhen: (previous, current) =>
+                    previous.messages.length != current.messages.length ||
+                    previous.history.length != current.history.length,
+                listener: (context, state) {
+                  if (!_hasTranscript(state, _liveCubit.state)) {
+                    _scheduleScrollToTop();
+                    return;
+                  }
+                  _scheduleScrollToBottom();
+                },
+              ),
+              BlocListener<AssistantChatCubit, AssistantChatState>(
+                listenWhen: (previous, current) =>
+                    _activeConversationKey(previous) !=
+                    _activeConversationKey(current),
+                listener: (context, state) {
+                  _collapseComposerToFab();
+                },
+              ),
+              BlocListener<AssistantLiveCubit, AssistantLiveState>(
+                listenWhen: (previous, current) =>
+                    previous.hasDraft != current.hasDraft ||
+                    previous.status != current.status,
+                listener: (context, state) {
+                  if (!_hasTranscript(_chatCubit.state, state)) {
+                    _scheduleScrollToTop();
+                    return;
+                  }
+                  _scheduleScrollToBottom();
+                },
+              ),
+              BlocListener<AssistantChromeCubit, AssistantChromeState>(
+                listenWhen: (previous, current) =>
+                    previous.isFullscreen != current.isFullscreen,
+                listener: (context, chromeState) {
+                  if (_shellCubit.state.isImmersive !=
+                      chromeState.isFullscreen) {
+                    _shellCubit.setImmersiveMode(chromeState.isFullscreen);
+                  }
+                },
+              ),
+              BlocListener<AssistantShellCubit, AssistantShellState>(
+                listenWhen: (previous, current) =>
+                    previous.isImmersive != current.isImmersive,
+                listener: (context, shellState) {
+                  final chromeCubit = context.read<AssistantChromeCubit>();
+                  if (chromeCubit.state.isFullscreen !=
+                      shellState.isImmersive) {
+                    chromeCubit.setFullscreen(value: shellState.isImmersive);
+                  }
+                },
+              ),
+            ],
+            child: BlocBuilder<AssistantShellCubit, AssistantShellState>(
+              builder: (context, shellState) {
+                return BlocBuilder<AssistantChatCubit, AssistantChatState>(
+                  builder: (context, chatState) {
+                    return BlocBuilder<AssistantLiveCubit, AssistantLiveState>(
+                      builder: (context, liveState) {
+                        final isFullscreen = context
+                            .select<AssistantChromeCubit, bool>(
+                              (cubit) => cubit.state.isFullscreen,
+                            );
+                        final liveCameraController =
+                            _liveCubit.cameraController;
+                        final isVisibleLiveSession = _isVisibleLiveSession(
+                          chatState,
+                          liveState,
+                        );
+                        final hasTranscript = _hasTranscript(
+                          chatState,
+                          liveState,
+                        );
+                        final keyboardVisible =
+                            MediaQuery.viewInsetsOf(context).bottom > 0;
+                        final hasLiveAccess = _hasLiveAccess(shellState);
+                        final isPersonalWorkspace = currentWorkspace.personal;
+                        final scrollToBottomLabel =
+                            context.l10n.assistantScrollToBottomAction;
+                        final scrollToBottomFab = _AssistantScrollToBottomFab(
+                          label: scrollToBottomLabel,
+                          onPressed: _handleScrollToBottomPressed,
+                        );
+                        Future<void> removeComposerAttachment(
+                          String attachmentId,
+                        ) {
+                          return _chatCubit.removeComposerAttachment(
+                            wsId: currentWorkspace.id,
+                            attachmentId: attachmentId,
+                          );
+                        }
+
+                        final liveUiState = deriveAssistantLiveUiState(
+                          shellState: shellState,
+                          liveState: liveState,
+                          isEligible: hasLiveAccess,
+                          isVisibleLiveSession: isVisibleLiveSession,
+                          showBlockedReason: false,
+                        );
+                        final showLiveStrip = liveUiState.showExpandedStageCard;
+                        _maybeResetEmptyStateScroll(
+                          workspaceId: currentWorkspace.id,
+                          chatId: chatState.chat?.id ?? chatState.storedChatId,
+                          hasTranscript: hasTranscript,
+                          showLiveStrip: showLiveStrip,
+                        );
+                        _syncComposerVisibilityForBuild(
+                          keyboardVisible: keyboardVisible,
+                        );
+
+                        return shad.Scaffold(
+                          resizeToAvoidBottomInset: false,
+                          child: SafeArea(
+                            top: false,
+                            bottom: false,
+                            child: ResponsiveWrapper(
+                              maxWidth: ResponsivePadding.maxContentWidth(
+                                context.deviceClass,
+                              ),
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onTap: _dismissKeyboard,
+                                child: Stack(
+                                  children: [
+                                    Stack(
+                                      children: [
+                                        CustomScrollView(
+                                          controller: _scrollController,
+                                          keyboardDismissBehavior:
+                                              ScrollViewKeyboardDismissBehavior
+                                                  .onDrag,
+                                          physics: _assistantScrollPhysics,
+                                          slivers: [
+                                            SliverPadding(
+                                              padding: EdgeInsets.fromLTRB(
+                                                _horizontalPadding(context),
+                                                12,
+                                                _horizontalPadding(context),
+                                                _composerReservedSpace(
+                                                  context,
+                                                  isFullscreen: isFullscreen,
+                                                  hasAttachments: chatState
+                                                      .composerAttachments
+                                                      .isNotEmpty,
+                                                  isComposerVisible:
+                                                      _isComposerVisible,
+                                                ),
+                                              ),
+                                              sliver: SliverList.list(
+                                                children: [
+                                                  if (showLiveStrip) ...[
+                                                    _buildLiveStageCard(
+                                                      currentWorkspace.id,
+                                                      chatState,
+                                                      liveState,
+                                                      liveCameraController,
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                  ],
+                                                  if (hasTranscript)
+                                                    _buildTranscriptSection(
+                                                      chatState,
+                                                      liveState,
+                                                      shellState,
+                                                    )
+                                                  else
+                                                    AssistantStarterPrompts(
+                                                      onPromptSelected:
+                                                          _applyStarterPrompt,
+                                                      replayToken:
+                                                          widget.replayToken,
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (chatState.status ==
+                                            AssistantChatStatus.restoring)
+                                          Positioned.fill(
+                                            child: AbsorbPointer(
+                                              child: ColoredBox(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .surface
+                                                    .withValues(alpha: 0.72),
+                                                child: const Center(
+                                                  child: NovaLoadingIndicator(),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                    child: _buildConversation(
-                                      context,
-                                      currentWorkspace,
-                                      shellState,
-                                      chatState,
+                                    Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      child: IgnorePointer(
+                                        ignoring: !_isComposerVisible,
+                                        child: AnimatedSlide(
+                                          duration: const Duration(
+                                            milliseconds: 180,
+                                          ),
+                                          curve: Curves.easeOutCubic,
+                                          offset: _isComposerVisible
+                                              ? Offset.zero
+                                              : const Offset(0, 1),
+                                          child: AnimatedOpacity(
+                                            duration: const Duration(
+                                              milliseconds: 160,
+                                            ),
+                                            curve: Curves.easeOutCubic,
+                                            opacity: _isComposerVisible ? 1 : 0,
+                                            child: StaggeredEntrance(
+                                              replayKey:
+                                                  'assistant-composer-'
+                                                  '${currentWorkspace.id}-'
+                                                  '${widget.replayToken}',
+                                              delay: const Duration(
+                                                milliseconds: 220,
+                                              ),
+                                              offset: const Offset(0, 0.12),
+                                              child: AssistantComposerDock(
+                                                chatState: chatState,
+                                                liveState: liveState,
+                                                liveUiState: liveUiState,
+                                                creditSource:
+                                                    shellState.creditSource,
+                                                isFullscreen: isFullscreen,
+                                                bottomInset: isFullscreen
+                                                    ? MediaQuery.paddingOf(
+                                                        context,
+                                                      ).bottom
+                                                    : 0,
+                                                isPersonalWorkspace:
+                                                    isPersonalWorkspace,
+                                                thinkingMode:
+                                                    shellState.thinkingMode,
+                                                onOpenCreditSourceSheet: () =>
+                                                    _showCreditSourceSheet(
+                                                      context,
+                                                      shellState: shellState,
+                                                      isPersonalWorkspace:
+                                                          isPersonalWorkspace,
+                                                    ),
+                                                onThinkingModeChanged:
+                                                    _shellCubit.setThinkingMode,
+                                                controller: _inputController,
+                                                focusNode: _inputFocusNode,
+                                                onOpenAttachments: () =>
+                                                    _showAttachmentSheet(
+                                                      context,
+                                                      currentWorkspace.id,
+                                                    ),
+                                                onToggleFullscreen: () =>
+                                                    _toggleFullscreen(
+                                                      !isFullscreen,
+                                                    ),
+                                                onMicrophoneTap: () =>
+                                                    _handleMicrophoneTap(
+                                                      currentWorkspace.id,
+                                                      shellState,
+                                                      chatState,
+                                                      liveState,
+                                                    ),
+                                                onSend: () => _handleSend(
+                                                  currentWorkspace.id,
+                                                  shellState,
+                                                  chatState,
+                                                  liveState,
+                                                ),
+                                                onRemoveAttachment:
+                                                    removeComposerAttachment,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    Positioned(
+                                      right:
+                                          _assistantFabSideOffset +
+                                          MediaQuery.paddingOf(context).right,
+                                      bottom:
+                                          _assistantFabBottomOffset +
+                                          (isFullscreen
+                                              ? MediaQuery.paddingOf(
+                                                  context,
+                                                ).bottom
+                                              : 0),
+                                      child: IgnorePointer(
+                                        ignoring: _isComposerVisible,
+                                        child: AnimatedSlide(
+                                          duration: const Duration(
+                                            milliseconds: 180,
+                                          ),
+                                          curve: Curves.easeOutCubic,
+                                          offset: _isComposerVisible
+                                              ? const Offset(0, 1)
+                                              : Offset.zero,
+                                          child: AnimatedOpacity(
+                                            duration: const Duration(
+                                              milliseconds: 160,
+                                            ),
+                                            curve: Curves.easeOutCubic,
+                                            opacity: _isComposerVisible ? 0 : 1,
+                                            child: _AssistantComposerFab(
+                                              label: context
+                                                  .l10n
+                                                  .assistantAskPlaceholder,
+                                              onPressed:
+                                                  _restoreComposerAndFocus,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (hasTranscript)
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        bottom:
+                                            (_isComposerVisible ? 112 : 16) +
+                                            (isFullscreen
+                                                ? MediaQuery.paddingOf(
+                                                    context,
+                                                  ).bottom
+                                                : 0),
+                                        child: IgnorePointer(
+                                          ignoring: !_showScrollToBottomFab,
+                                          child: Center(
+                                            child: AnimatedSlide(
+                                              duration: const Duration(
+                                                milliseconds: 180,
+                                              ),
+                                              curve: Curves.easeOutCubic,
+                                              offset: _showScrollToBottomFab
+                                                  ? Offset.zero
+                                                  : const Offset(0, 1),
+                                              child: AnimatedOpacity(
+                                                duration: const Duration(
+                                                  milliseconds: 160,
+                                                ),
+                                                curve: Curves.easeOutCubic,
+                                                opacity: _showScrollToBottomFab
+                                                    ? 1
+                                                    : 0,
+                                                child: scrollToBottomFab,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ShellChromeActions(
+                                      ownerId: 'assistant-root',
+                                      locations: const {Routes.assistant},
+                                      actions: [
+                                        ShellActionSpec(
+                                          id: 'assistant-history',
+                                          icon: Icons.history_rounded,
+                                          callbackToken:
+                                              '${identityHashCode(this)}:'
+                                              '${currentWorkspace.id}:'
+                                              '${widget.replayToken}',
+                                          tooltip: context
+                                              .l10n
+                                              .assistantHistoryTitle,
+                                          onPressed: () {
+                                            unawaited(
+                                              _showHistorySheet(
+                                                context,
+                                                currentWorkspace.id,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                if (!shellState.isViewOnly)
-                                  Positioned(
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 8,
-                                    child: _buildComposer(
-                                      context,
-                                      currentWorkspace.id,
-                                      shellState,
-                                      chatState,
-                                    ),
-                                  ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),
     );
   }
 
-  double _assistantHorizontalPadding(BuildContext context) {
-    return responsiveValue(
-      context,
-      compact: 12,
-      medium: 16,
-      expanded: ResponsivePadding.horizontal(context.deviceClass),
-    );
-  }
-
-  Widget _buildConversation(
-    BuildContext context,
-    Workspace workspace,
-    AssistantShellState shellState,
-    AssistantChatState chatState,
-  ) {
-    // Show empty state only when truly empty and not submitting
-    if (chatState.messages.isEmpty &&
-        chatState.queuedMessages.isEmpty &&
-        chatState.status != AssistantChatStatus.submitting) {
-      return _buildEmptyState(
-        context,
-        workspace,
-        shellState,
-        bottomInset: shellState.isViewOnly ? 0 : _composerDockHeight(chatState),
-      );
+  void _syncWorkspace(Workspace workspace) {
+    if (workspace.id == _loadedWorkspaceId) {
+      return;
     }
 
-    // Filter out empty messages
-    final validMessages = chatState.messages.where((msg) {
-      final hasContent = msg.parts.any((part) {
-        if (part.type == 'text' || part.type == 'reasoning') {
-          return part.text?.trim().isNotEmpty ?? false;
-        }
-        return true; // non-text parts always count
-      });
-      return hasContent ||
-          msg.role == 'user'; // Keep user messages even if empty
-    }).toList();
-
-    final showQueue = chatState.queuedMessages.isNotEmpty;
-    final showTyping = chatState.isBusy;
-    final extraItems = (showQueue ? 1 : 0) + (showTyping ? 1 : 0);
-
-    return ListView.builder(
-      controller: _scrollController,
-      physics: const ClampingScrollPhysics(),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 20),
-      cacheExtent: 480,
-      itemCount: validMessages.length + extraItems,
-      itemBuilder: (context, index) {
-        if (index < validMessages.length) {
-          final message = validMessages[index];
-          final attachments =
-              chatState.attachmentsByMessageId[message.id] ?? const [];
-
-          return KeyedSubtree(
-            key: ValueKey('message_${message.id}'),
-            child: _buildMessageBubble(
-              context,
-              workspace.id,
-              shellState,
-              message,
-              attachments,
-            ),
-          );
-        }
-
-        final footerIndex = index - validMessages.length;
-        if (showQueue && footerIndex == 0) {
-          return _buildQueuedMessages(context, chatState.queuedMessages);
-        }
-
-        return _buildTypingIndicator(context, chatState: chatState);
-      },
-    );
+    _loadedWorkspaceId = workspace.id;
+    _lastEmptyStateResetKey = null;
+    _wasAssistantEmptyLayout = false;
+    _isComposerVisible = false;
+    _showScrollToBottomFab = false;
+    _composerVisibilityAnchorOffset = null;
+    unawaited(_liveCubit.disconnect());
+    unawaited(_shellCubit.loadWorkspace(workspace));
+    _shellCubit.setImmersiveMode(false);
+    unawaited(_chatCubit.loadWorkspace(workspace.id));
   }
 
-  Widget _buildMessageBubble(
-    BuildContext context,
-    String wsId,
-    AssistantShellState shellState,
-    AssistantMessage message,
-    List<AssistantAttachment> attachments,
-  ) {
-    final isUser = message.role == 'user';
-    final theme = Theme.of(context);
-    final bubbleAccent = isUser
-        ? theme.colorScheme.primary
-        : theme.colorScheme.tertiary;
-
-    final bubbleDecoration = BoxDecoration(
-      color: isUser
-          ? theme.colorScheme.primaryContainer
-          : theme.colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.only(
-        topLeft: const Radius.circular(18),
-        topRight: const Radius.circular(18),
-        bottomLeft: Radius.circular(isUser ? 18 : 8),
-        bottomRight: Radius.circular(isUser ? 8 : 18),
-      ),
-      border: Border.all(
-        color: bubbleAccent.withValues(alpha: isUser ? 0.2 : 0.14),
-      ),
-    );
-
-    final timeLabel = DateFormat.Hm().format(
-      message.createdAt ?? DateTime.now(),
-    );
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: isUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        children: [
-          if (!isUser)
-            _MessageAvatar(
-              icon: Icons.auto_awesome_rounded,
-              color: bubbleAccent,
-            ),
-          if (!isUser) const SizedBox(width: 8),
-          Flexible(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 860),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                decoration: bubbleDecoration,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        timeLabel,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant.withValues(
-                            alpha: isUser ? 0.86 : 0.74,
-                          ),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    if (attachments.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: attachments
-                            .map(
-                              (attachment) => _AttachmentChip(
-                                attachment: attachment,
-                                onTap: () =>
-                                    _openAttachment(attachment.signedUrl),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    ..._buildMessageContent(
-                      context,
-                      wsId,
-                      shellState,
-                      message,
-                      isUser: isUser,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildMessageContent(
-    BuildContext context,
-    String wsId,
-    AssistantShellState shellState,
-    AssistantMessage message, {
-    required bool isUser,
-  }) {
-    final widgets = <Widget>[];
-
-    for (final part in message.parts) {
-      switch (part.type) {
-        case 'text':
-          // Skip empty text parts
-          final text = part.text?.trim() ?? '';
-          if (text.isEmpty) continue;
-
-          if (isUser) {
-            widgets.add(
-              SelectableText(
-                part.text ?? '',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  height: 1.5,
-                ),
-              ),
-            );
-          } else {
-            widgets.add(
-              MarkdownBody(
-                data: part.text ?? '',
-                styleSheet: _markdownStyleSheet(context),
-                selectable: true,
-              ),
-            );
-          }
-        case 'reasoning':
-          final text = part.text?.trim() ?? '';
-          if (text.isEmpty) continue;
-
-          widgets.add(
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: _ReasoningBubble(text: part.text ?? ''),
-            ),
-          );
-        case 'source-url':
-          widgets.add(
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: _SourceLink(
-                title: part.title,
-                url: part.url,
-                onTap: () => _openAttachment(part.url),
-              ),
-            ),
-          );
-        case 'dynamic-tool':
-          // Tools are collected and rendered as a single consolidated element at the end
-          break;
-      }
+  void _scheduleScrollToBottom() {
+    if (!_scrollController.hasClients) {
+      return;
     }
 
-    // Consolidate all tool parts into a single collapsible element at the end
-    final toolParts = message.parts
-        .where((p) => p.type == 'dynamic-tool')
-        .toList();
-    if (toolParts.isNotEmpty) {
-      widgets.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: _ConsolidatedTools(
-            toolParts: toolParts,
-          ),
-        ),
-      );
-    }
-
-    return widgets;
-  }
-
-  Widget _buildTypingIndicator(
-    BuildContext context, {
-    required AssistantChatState chatState,
-  }) {
-    final theme = Theme.of(context);
-    final queuedCount = chatState.queuedMessages.length;
-
-    return Container(
-      margin: const EdgeInsets.only(left: 34, right: 24, bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _MessageAvatar(
-            icon: Icons.auto_awesome_rounded,
-            color: theme.colorScheme.tertiary,
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: _ThinkingStatusBubble(queuedCount: queuedCount)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQueuedMessages(
-    BuildContext context,
-    List<String> queuedMessages,
-  ) {
-    final theme = Theme.of(context);
-    const queueColor = Color(0xFFF59E0B);
-    final visible = queuedMessages.take(3).toList(growable: false);
-    final remaining = queuedMessages.length - visible.length;
-
-    return Container(
-      margin: const EdgeInsets.only(right: 24, left: 34, bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: queueColor.withValues(alpha: 0.34)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.schedule_send_rounded,
-                size: 16,
-                color: queueColor,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                context.l10n.assistantQueuedPrefix,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: queueColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          for (final queued in visible) ...[
-            _QueuedMessageLine(message: queued),
-            if (queued != visible.last) const SizedBox(height: 6),
-          ],
-          if (remaining > 0) ...[
-            const SizedBox(height: 6),
-            Text(
-              '+$remaining',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(
-    BuildContext context,
-    Workspace workspace,
-    AssistantShellState shellState, {
-    required double bottomInset,
-  }) {
-    final l10n = context.l10n;
-    final prompts = [
-      _PromptDescriptor(
-        label: l10n.assistantQuickPromptCalendar,
-        badge: l10n.assistantCalendarLabel,
-        icon: Icons.calendar_month_rounded,
-        color: const Color(0xFF0EA5E9),
-      ),
-      _PromptDescriptor(
-        label: l10n.assistantQuickPromptTasks,
-        badge: l10n.assistantTasksLabel,
-        icon: Icons.task_alt_rounded,
-        color: const Color(0xFFA78BFA),
-      ),
-      _PromptDescriptor(
-        label: l10n.assistantQuickPromptFocus,
-        badge: l10n.assistantActionsTitle,
-        icon: Icons.center_focus_strong_rounded,
-        color: const Color(0xFFF97316),
-      ),
-      _PromptDescriptor(
-        label: l10n.assistantQuickPromptExpense,
-        badge: l10n.assistantActionsTitle,
-        icon: Icons.receipt_long_rounded,
-        color: const Color(0xFF10B981),
-      ),
-    ];
-
-    return Align(
-      alignment: Alignment.topCenter,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(0, 0, 0, 28 + bottomInset),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.assistantWorkspaceAwareDescription,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.45,
-              ),
-            ),
-            const SizedBox(height: 24),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: prompts.length,
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 260,
-                mainAxisExtent: 156,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-              ),
-              itemBuilder: (context, index) {
-                final prompt = prompts[index];
-                return _PromptChip(
-                  prompt: prompt,
-                  onTap: () => _submitText(
-                    workspace.id,
-                    shellState,
-                    prompt.label,
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildComposer(
-    BuildContext context,
-    String wsId,
-    AssistantShellState shellState,
-    AssistantChatState chatState,
-  ) {
-    final theme = Theme.of(context);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (chatState.composerAttachments.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: chatState.composerAttachments
-                      .map(
-                        (attachment) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: _AttachmentInputChip(
-                            attachment: attachment,
-                            onDelete: () => _chatCubit.removeComposerAttachment(
-                              wsId: wsId,
-                              attachmentId: attachment.id,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(
-                    alpha: 0.34,
-                  ),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-                    child: _ComposerActionButton(
-                      icon: Icons.add_rounded,
-                      onPressed: () => _showComposerMenu(
-                        context,
-                        wsId,
-                        shellState,
-                        chatState,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _inputController,
-                      focusNode: _inputFocusNode,
-                      minLines: 1,
-                      maxLines: 6,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.assistantAskPlaceholder,
-                        hintStyle: TextStyle(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 14,
-                        ),
-                      ),
-                      onSubmitted: (_) => _submitCurrentInput(wsId, shellState),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 8, 8, 8),
-                    child: chatState.isBusy
-                        ? _ComposerActionButton(
-                            icon: Icons.stop_rounded,
-                            isDestructive: true,
-                            onPressed: _chatCubit.stopStreaming,
-                          )
-                        : _SendButton(
-                            onPressed: () =>
-                                _submitCurrentInput(wsId, shellState),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  BoxDecoration _buildPageDecoration(ThemeData theme) {
-    return const BoxDecoration(
-      color: Colors.transparent,
-    );
-  }
-
-  double _composerDockHeight(AssistantChatState chatState) {
-    return chatState.composerAttachments.isNotEmpty ? 168 : 118;
-  }
-
-  Future<void> _submitCurrentInput(
-    String wsId,
-    AssistantShellState shellState,
-  ) async {
-    final text = _inputController.text.trim();
-    if (text.isEmpty) return;
-
-    _inputController.clear();
-    _scheduleScrollToBottom(force: true, animated: false);
-    await _submitText(wsId, shellState, text);
-  }
-
-  Future<void> _submitText(
-    String wsId,
-    AssistantShellState shellState,
-    String text,
-  ) async {
-    final timezone = await getCurrentTimezoneIdentifier();
-    return _chatCubit.submit(
-      wsId: wsId,
-      message: text,
-      modelId: shellState.selectedModel.value,
-      thinkingMode: shellState.thinkingMode,
-      creditSource: shellState.creditSource,
-      workspaceContextId: shellState.workspaceContextId,
-      timezone: timezone,
-      creditWsId: shellState.creditSource == AssistantCreditSource.personal
-          ? shellState.personalWorkspaceId
-          : shellState.workspace?.id,
-    );
-  }
-
-  void _handleScrollChanged() {
-    if (!_scrollController.hasClients || _isAnimatingToBottom) return;
-
-    final position = _scrollController.position;
-    final remaining = position.maxScrollExtent - position.pixels;
-    _isNearBottom = remaining <= 84;
-  }
-
-  void _scheduleScrollToBottom({bool force = false, bool animated = true}) {
-    if (!force && !_isNearBottom) return;
-    if (_pendingAutoScroll) return;
-
-    _pendingAutoScroll = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _pendingAutoScroll = false;
-      if (!_scrollController.hasClients) return;
-
-      final position = _scrollController.position;
-      final target = position.maxScrollExtent;
-      final delta = (target - position.pixels).abs();
-      if (delta <= 2) {
-        _isNearBottom = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
         return;
       }
 
-      if (animated && delta <= 560) {
-        _isAnimatingToBottom = true;
-        try {
-          await _scrollController.animateTo(
-            target,
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-          );
-        } on Exception catch (_) {
-          // Ignore race conditions when list metrics change mid-animation.
-        } finally {
-          _isAnimatingToBottom = false;
-        }
-      } else {
-        _scrollController.jumpTo(target);
-      }
-
-      _isNearBottom = true;
+      final position = _scrollController.position.maxScrollExtent;
+      _ignoreScrollVisibilityUpdates = true;
+      unawaited(
+        _scrollController
+            .animateTo(
+              position,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+            )
+            .catchError((_) {})
+            .whenComplete(() {
+              if (!mounted) {
+                return;
+              }
+              _ignoreScrollVisibilityUpdates = false;
+              _resetComposerVisibilityAnchor();
+              _setScrollToBottomFabVisible(false);
+            }),
+      );
     });
   }
 
-  // ... rest of helper methods
-  MarkdownStyleSheet _markdownStyleSheet(BuildContext context) {
-    final theme = Theme.of(context);
-    return MarkdownStyleSheet(
-      p: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
-      code: theme.textTheme.bodyMedium?.copyWith(
-        fontFamily: 'monospace',
-        backgroundColor: theme.colorScheme.surfaceContainerHighest,
-      ),
-      codeblockDecoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
+  void _handleScrollToBottomPressed() {
+    _scheduleScrollToBottom();
+  }
+
+  void _scheduleScrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      if (_scrollController.offset <= 1) {
+        return;
+      }
+      _ignoreScrollVisibilityUpdates = true;
+      _scrollController.jumpTo(0);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _ignoreScrollVisibilityUpdates = false;
+        _resetComposerVisibilityAnchor();
+        _setScrollToBottomFabVisible(false);
+      });
+    });
+  }
+
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _handleInputFocusChange() {
+    if (_inputFocusNode.hasFocus) {
+      _setComposerVisible(true);
+      _resetComposerVisibilityAnchor();
+    }
+  }
+
+  void _handleScroll() {
+    if (!mounted ||
+        _ignoreScrollVisibilityUpdates ||
+        !_scrollController.hasClients) {
+      return;
+    }
+
+    final position = _scrollController.position;
+    if (!position.hasContentDimensions) {
+      return;
+    }
+
+    if (MediaQuery.viewInsetsOf(context).bottom > 0 ||
+        _inputFocusNode.hasFocus) {
+      _setComposerVisible(true);
+      _resetComposerVisibilityAnchor();
+      _setScrollToBottomFabVisible(false);
+      return;
+    }
+
+    if (position.outOfRange) {
+      return;
+    }
+
+    final anchorOffset = _composerVisibilityAnchorOffset ?? position.pixels;
+    _composerVisibilityAnchorOffset = anchorOffset;
+    final distanceFromAnchor = (position.pixels - anchorOffset).abs();
+    if (_isComposerVisible && distanceFromAnchor >= _composerFabThreshold) {
+      _setComposerVisible(false);
+      _composerVisibilityAnchorOffset = position.pixels;
+    }
+    _setScrollToBottomFabVisible(
+      (position.maxScrollExtent - position.pixels) >=
+          _scrollToBottomFabThreshold,
     );
   }
 
-  Future<void> _openAttachment(String? url) async {
-    if (url == null || url.isEmpty) return;
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  void _syncComposerVisibilityForBuild({
+    required bool keyboardVisible,
+  }) {
+    if (!keyboardVisible || _isComposerVisible) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _setComposerVisible(true);
+      _resetComposerVisibilityAnchor();
+    });
   }
 
-  void _showComposerMenu(
-    BuildContext context,
+  void _setComposerVisible(bool value) {
+    if (_isComposerVisible == value || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isComposerVisible = value;
+    });
+  }
+
+  void _setScrollToBottomFabVisible(bool value) {
+    if (_showScrollToBottomFab == value || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _showScrollToBottomFab = value;
+    });
+  }
+
+  void _collapseComposerToFab() {
+    _dismissKeyboard();
+    _setComposerVisible(false);
+    _composerVisibilityAnchorOffset = null;
+  }
+
+  void _restoreComposerAndFocus() {
+    _setComposerVisible(true);
+    _resetComposerVisibilityAnchor();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _inputFocusNode.requestFocus();
+    });
+  }
+
+  Future<void> _startNewConversation(
+    String wsId,
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+  ) async {
+    _dismissKeyboard();
+    _inputController.clear();
+
+    if (_isVisibleLiveSession(chatState, liveState)) {
+      await _liveCubit.disconnect(clearSession: true);
+    }
+
+    await _chatCubit.resetConversation(wsId);
+    if (!mounted) {
+      return;
+    }
+    _scheduleScrollToTop();
+  }
+
+  Future<void> _handleSend(
     String wsId,
     AssistantShellState shellState,
     AssistantChatState chatState,
-  ) {
-    // Capture values before opening bottom sheet
-    final isFullscreen = context
-        .read<AssistantChromeCubit>()
-        .state
-        .isFullscreen;
-    final l10n = context.l10n;
+    AssistantLiveState liveState,
+  ) async {
+    if (chatState.composerAttachments.any(
+      (attachment) =>
+          attachment.uploadState == AssistantAttachmentUploadState.uploading,
+    )) {
+      _showInlineNotice(context.l10n.assistantAttachmentUploadPending);
+      return;
+    }
 
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(sheetContext).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Theme.of(
-                sheetContext,
-              ).colorScheme.outlineVariant.withValues(alpha: 0.42),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const _SheetHandle(),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Text(
-                        l10n.assistantActionsTitle,
-                        style: Theme.of(sheetContext).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _SheetActionTile(
-                    icon: Icons.add_comment_rounded,
-                    label: l10n.assistantNewConversation,
-                    color: const Color(0xFF8B5CF6),
-                    onTap: () async {
-                      Navigator.of(sheetContext).pop();
-                      await _chatCubit.resetConversation(wsId);
-                    },
-                  ),
-                  _SheetActionTile(
-                    icon: Icons.attach_file_rounded,
-                    label: l10n.assistantAttachFilesAction,
-                    color: const Color(0xFF0EA5E9),
-                    onTap: () async {
-                      Navigator.of(sheetContext).pop();
-                      await _pickFiles(wsId);
-                    },
-                  ),
-                  _SheetActionTile(
-                    icon: Icons.fullscreen_rounded,
-                    label: isFullscreen
-                        ? l10n.assistantExitFullscreenAction
-                        : l10n.assistantEnterFullscreenAction,
-                    color: const Color(0xFF10B981),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _setFullscreen(
-                        !isFullscreen,
-                        focusInput: true,
-                      );
-                    },
-                  ),
-                  _SheetActionTile(
-                    icon: Icons.history_rounded,
-                    label: l10n.assistantHistoryTitle,
-                    color: const Color(0xFFF59E0B),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _showHistorySheet(context, wsId);
-                    },
-                  ),
-                  _SheetActionTile(
-                    icon: Icons.tune_rounded,
-                    label: l10n.assistantSettingsTitle,
-                    color: const Color(0xFF3B82F6),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      _showSettingsSheet(context);
-                    },
-                  ),
-                  if (chatState.messages.isNotEmpty)
-                    _SheetActionTile(
-                      icon: Icons.ios_share_rounded,
-                      label: l10n.assistantExportChat,
-                      color: const Color(0xFFEC4899),
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _exportChat(context, wsId, shellState, chatState);
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    final text = _inputController.text;
+    final attachments = chatState.composerAttachments
+        .where((attachment) => attachment.isUploaded)
+        .toList(growable: false);
+    if (text.trim().isEmpty && attachments.isEmpty) {
+      return;
+    }
+
+    if (_shouldSendThroughLive(chatState, liveState)) {
+      await _liveCubit.sendTypedMessage(
+        wsId: wsId,
+        text: text,
+        attachments: attachments,
+      );
+      if (!mounted ||
+          _liveCubit.state.status == AssistantLiveConnectionStatus.error) {
+        return;
+      }
+      _chatCubit.takeUploadedComposerAttachments();
+    } else {
+      final timezone = await getCurrentTimezoneIdentifier();
+      if (!mounted) {
+        return;
+      }
+      await _chatCubit.submit(
+        wsId: wsId,
+        message: text,
+        modelId: shellState.selectedModel.value,
+        thinkingMode: shellState.thinkingMode,
+        creditSource: shellState.creditSource,
+        workspaceContextId: shellState.workspaceContextId,
+        timezone: timezone,
+        creditWsId: _resolveCreditWorkspaceId(shellState, wsId),
+      );
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    _inputController.clear();
+    _scheduleScrollToBottom();
   }
 
   Future<void> _pickFiles(String wsId) async {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
-      type: FileType.any,
     );
-    if (result == null || result.files.isEmpty) return;
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
 
-    await _chatCubit.addComposerAttachments(
-      wsId: wsId,
-      files: result.files,
-    );
+    await _chatCubit.addComposerAttachments(wsId: wsId, files: result.files);
   }
 
-  void _setFullscreen(bool value, {bool focusInput = false}) {
-    final chromeCubit = context.read<AssistantChromeCubit>();
-    if (chromeCubit.state.isFullscreen != value) {
-      chromeCubit.setFullscreen(value: value);
-    }
-    if (_shellCubit.state.isImmersive != value) {
-      _shellCubit.setImmersiveMode(value);
-    }
-    if (!value) {
-      FocusManager.instance.primaryFocus?.unfocus();
-    }
-    if (value && focusInput) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _inputFocusNode.requestFocus();
-      });
-    }
+  Future<void> _toggleFullscreen(bool value) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    context.read<AssistantChromeCubit>().setFullscreen(value: value);
+    _shellCubit.setImmersiveMode(value);
+  }
+
+  void _showInlineNotice(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _showHistorySheet(BuildContext context, String wsId) async {
-    await showModalBottomSheet<void>(
+    await _chatCubit.refreshHistory();
+    if (!mounted || !context.mounted) {
+      return;
+    }
+    await showAdaptiveDrawer(
       context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return BlocProvider.value(
-          value: _chatCubit,
-          child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
-            builder: (context, state) {
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outlineVariant.withValues(alpha: 0.42),
-                    ),
-                  ),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-                    children: [
-                      const _SheetHandle(),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.l10n.assistantHistoryTitle,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 12),
-                      if (state.history.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .outlineVariant
-                                  .withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Text(
-                            context.l10n.assistantUntitledChat,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ),
-                      for (final chat in state.history)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _HistoryChatTile(
-                            title:
-                                chat.title ??
-                                context.l10n.assistantUntitledChat,
-                            subtitle: chat.model ?? '',
-                            isActive: chat.id == state.chat?.id,
-                            createdAt: chat.createdAt,
-                            onTap: () async {
-                              Navigator.of(sheetContext).pop();
-                              await _chatCubit.openChat(wsId, chat);
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showSettingsSheet(BuildContext context) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => BlocProvider.value(
-        value: _shellCubit,
-        child: BlocBuilder<AssistantShellCubit, AssistantShellState>(
-          builder: (context, state) {
-            final l10n = context.l10n;
-            final modeOptions = [
-              (
-                value: AssistantThinkingMode.fast,
-                label: l10n.assistantModeFast,
-              ),
-              (
-                value: AssistantThinkingMode.thinking,
-                label: l10n.assistantModeThinking,
-              ),
-            ];
-            final sourceOptions = [
-              (
-                value: AssistantCreditSource.personal,
-                label: l10n.assistantPersonalCredits,
-              ),
-              (
-                value: AssistantCreditSource.workspace,
-                label: l10n.assistantWorkspaceCredits,
-              ),
-            ];
-
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outlineVariant.withValues(alpha: 0.42),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _SheetHandle(),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.assistantSettingsTitle,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.outlineVariant.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.model_training_outlined, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${l10n.assistantModelLabel}: ${state.selectedModel.label}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: modeOptions
-                            .map(
-                              (option) => _SettingsChoiceChip(
-                                label: option.label,
-                                selected: state.thinkingMode == option.value,
-                                onTap: () => _shellCubit.setThinkingMode(
-                                  option.value,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: sourceOptions
-                            .map(
-                              (option) => _SettingsChoiceChip(
-                                label: option.label,
-                                selected: state.creditSource == option.value,
-                                enabled:
-                                    !state.workspaceCreditLocked ||
-                                    option.value ==
-                                        AssistantCreditSource.personal,
-                                onTap: () => _shellCubit.setCreditSource(
-                                  option.value,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchListTile.adaptive(
-                        value: state.isViewOnly,
-                        onChanged: _shellCubit.setViewOnly,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                        ),
-                        title: Text(l10n.assistantViewOnlyLabel),
-                        subtitle: Text(
-                          state.isViewOnly
-                              ? l10n.assistantViewOnlyLabel
-                              : l10n.assistantEditableLabel,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+      builder: (drawerContext) => AssistantHistorySheetBody(
+        chatCubit: _chatCubit,
+        activeChatId: _chatCubit.state.chat?.id,
+        onClose: () => dismissAdaptiveDrawerOverlay(drawerContext),
+        onNewConversation: () async {
+          await dismissAdaptiveDrawerOverlay(drawerContext);
+          if (!mounted) {
+            return;
+          }
+          await _startNewConversation(
+            wsId,
+            _chatCubit.state,
+            _liveCubit.state,
+          );
+        },
+        onSelectChat: (chat) async {
+          await dismissAdaptiveDrawerOverlay(drawerContext);
+          if (_liveCubit.state.chatId != null &&
+              _liveCubit.state.chatId != chat.id) {
+            await _liveCubit.disconnect();
+          }
+          await _chatCubit.openChat(wsId, chat);
+        },
       ),
     );
   }
 
-  Future<void> _exportChat(
-    BuildContext context,
+  Future<void> _showAttachmentSheet(BuildContext context, String wsId) async {
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (sheetContext) => AssistantAttachmentSheetBody(
+        hasAttachments: _chatCubit.state.composerAttachments.isNotEmpty,
+        onPickFiles: () async {
+          await Navigator.of(sheetContext).maybePop();
+          await _pickFiles(wsId);
+        },
+        onClearAttachments: () async {
+          final attachments = _chatCubit.state.composerAttachments
+              .map((attachment) => attachment.id)
+              .toList(growable: false);
+          await Navigator.of(sheetContext).maybePop();
+          for (final attachmentId in attachments) {
+            await _chatCubit.removeComposerAttachment(
+              wsId: wsId,
+              attachmentId: attachmentId,
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _showCreditSourceSheet(
+    BuildContext context, {
+    required AssistantShellState shellState,
+    required bool isPersonalWorkspace,
+  }) async {
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (sheetContext) => AssistantCreditSourceSheetBody(
+        shellState: shellState,
+        isPersonalWorkspace: isPersonalWorkspace,
+        onClose: () => Navigator.of(sheetContext).maybePop(),
+        onSelect: (source) async {
+          if (!shellState.workspaceCreditLocked ||
+              source == AssistantCreditSource.personal) {
+            await _shellCubit.setCreditSource(source);
+          }
+          if (!sheetContext.mounted) {
+            return;
+          }
+          await Navigator.of(sheetContext).maybePop();
+        },
+      ),
+    );
+  }
+
+  double _horizontalPadding(BuildContext context) {
+    return context.isCompact ? 16 : 24;
+  }
+
+  double _composerReservedSpace(
+    BuildContext context, {
+    required bool isFullscreen,
+    required bool hasAttachments,
+    required bool isComposerVisible,
+  }) {
+    if (!isComposerVisible) {
+      return _hiddenComposerReservedSpace +
+          (isFullscreen ? MediaQuery.paddingOf(context).bottom : 16);
+    }
+
+    final baseHeight = hasAttachments ? 236.0 : 196.0;
+    return baseHeight +
+        (isFullscreen ? MediaQuery.paddingOf(context).bottom : 16);
+  }
+
+  void _maybeResetEmptyStateScroll({
+    required String workspaceId,
+    required String? chatId,
+    required bool hasTranscript,
+    required bool showLiveStrip,
+  }) {
+    final isEmptyLayout = !hasTranscript && !showLiveStrip;
+    if (!isEmptyLayout) {
+      _wasAssistantEmptyLayout = false;
+      _lastEmptyStateResetKey = null;
+      return;
+    }
+
+    final resetKey = '$workspaceId:${chatId ?? 'new'}:${widget.replayToken}';
+    final layoutBecameEmpty = !_wasAssistantEmptyLayout;
+    final emptyContextChanged = _lastEmptyStateResetKey != resetKey;
+    _wasAssistantEmptyLayout = true;
+
+    if (layoutBecameEmpty || emptyContextChanged) {
+      _lastEmptyStateResetKey = resetKey;
+      _scheduleScrollToTop();
+    }
+  }
+
+  void _applyStarterPrompt(String prompt) {
+    _setComposerVisible(true);
+    _resetComposerVisibilityAnchor();
+    _inputController
+      ..text = prompt
+      ..selection = TextSelection.collapsed(offset: prompt.length);
+    _inputFocusNode.requestFocus();
+  }
+
+  void _resetComposerVisibilityAnchor() {
+    if (!_scrollController.hasClients) {
+      _composerVisibilityAnchorOffset = null;
+      return;
+    }
+    _composerVisibilityAnchorOffset = _scrollController.position.pixels;
+  }
+
+  String _activeConversationKey(AssistantChatState state) {
+    return state.chat?.id ?? state.storedChatId ?? 'new';
+  }
+
+  Widget _buildTranscriptSection(
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+    AssistantShellState shellState,
+  ) {
+    return AssistantTranscriptSection(
+      chatState: chatState,
+      liveState: liveState,
+      assistantName: shellState.soul.name,
+    );
+  }
+
+  Widget _buildLiveStageCard(
+    String wsId,
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+    CameraController? liveCameraController,
+  ) {
+    return AssistantLiveStageCard(
+      liveState: liveState,
+      cameraController: liveCameraController,
+      onRetry: () => _handleLiveRetry(wsId, chatState),
+      onDisconnect: () => _liveCubit.disconnect(clearSession: true),
+      onCameraToggle: _liveCubit.toggleCamera,
+    );
+  }
+
+  Future<void> _handleMicrophoneTap(
     String wsId,
     AssistantShellState shellState,
     AssistantChatState chatState,
+    AssistantLiveState liveState,
   ) async {
-    final buffer = StringBuffer()
-      ..writeln('# ${context.l10n.assistantExportShareText}')
-      ..writeln('');
-    for (final message in chatState.messages) {
-      buffer.writeln('## ${message.role.toUpperCase()}');
-      for (final part in message.parts) {
-        if (part.text?.isNotEmpty == true) {
-          buffer.writeln(part.text);
-        }
-      }
-      buffer.writeln('');
+    if (!_hasLiveAccess(shellState)) {
+      final blockedState = deriveAssistantLiveUiState(
+        shellState: shellState,
+        liveState: liveState,
+        isEligible: false,
+        isVisibleLiveSession: _isVisibleLiveSession(chatState, liveState),
+        showBlockedReason: true,
+      );
+      await _showLiveInfoSheet(
+        context,
+        liveUiState: blockedState,
+        liveState: liveState,
+      );
+      return;
     }
 
-    final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/chat_export.md');
-    await file.writeAsString(buffer.toString());
+    final activeChatId = chatState.chat?.id ?? chatState.storedChatId;
+    final isVisibleLiveSession = _isVisibleLiveSession(chatState, liveState);
 
-    if (!context.mounted) return;
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path)],
-        subject: context.l10n.assistantExportShareText,
+    if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
+      await _liveCubit.prepareSession(wsId: wsId, chatId: activeChatId);
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    await _liveCubit.toggleMicrophone();
+  }
+
+  Future<void> _showLiveInfoSheet(
+    BuildContext context, {
+    required AssistantLiveUiState liveUiState,
+    required AssistantLiveState liveState,
+  }) async {
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (sheetContext) => AssistantLiveInfoSheetBody(
+        liveUiState: liveUiState,
+        liveState: liveState,
+        onClose: () => Navigator.of(sheetContext).maybePop(),
       ),
     );
   }
+
+  Future<void> _handleLiveRetry(
+    String wsId,
+    AssistantChatState chatState,
+  ) async {
+    await _liveCubit.prepareSession(
+      wsId: wsId,
+      chatId: chatState.chat?.id ?? chatState.storedChatId,
+      reconnect: _liveCubit.state.chatId != null,
+    );
+  }
+
+  bool _hasLiveAccess(AssistantShellState shellState) {
+    const premiumTiers = {'PLUS', 'PRO', 'ENTERPRISE'};
+    const liveFeatures = {
+      'voice_assistant',
+      'voice-assistant',
+      'live_assistant',
+      'live-assistant',
+    };
+    final tier = shellState.activeCredits.tier.toUpperCase();
+    return premiumTiers.contains(tier) ||
+        shellState.activeCredits.allowedFeatures.any(liveFeatures.contains);
+  }
+
+  bool _isCurrentChatLive(
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+  ) {
+    final activeChatId = chatState.chat?.id ?? chatState.storedChatId;
+    return activeChatId != null && activeChatId == liveState.chatId;
+  }
+
+  bool _isVisibleLiveSession(
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+  ) {
+    final activeChatId = chatState.chat?.id ?? chatState.storedChatId;
+    if (liveState.workspaceId != null &&
+        chatState.workspaceId != null &&
+        liveState.workspaceId != chatState.workspaceId) {
+      return false;
+    }
+    if (liveState.chatId == null) {
+      return false;
+    }
+    if (activeChatId == null) {
+      return true;
+    }
+    return activeChatId == liveState.chatId ||
+        liveState.status != AssistantLiveConnectionStatus.disconnected;
+  }
+
+  bool _shouldSendThroughLive(
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+  ) {
+    return _isCurrentChatLive(chatState, liveState) &&
+        liveState.chatId != null &&
+        liveState.status != AssistantLiveConnectionStatus.disconnected;
+  }
+
+  bool _hasTranscript(
+    AssistantChatState chatState,
+    AssistantLiveState liveState,
+  ) {
+    return chatState.messages.isNotEmpty || liveState.hasDraft;
+  }
+
+  String? _resolveCreditWorkspaceId(
+    AssistantShellState shellState,
+    String wsId,
+  ) {
+    return shellState.creditSource == AssistantCreditSource.personal
+        ? shellState.personalWorkspaceId
+        : wsId;
+  }
 }
 
-// New widget classes for the redesigned UI
-
-class _PromptDescriptor {
-  const _PromptDescriptor({
+class _AssistantComposerFab extends StatelessWidget {
+  const _AssistantComposerFab({
     required this.label,
-    required this.badge,
-    required this.icon,
-    required this.color,
-  });
-
-  final String label;
-  final String badge;
-  final IconData icon;
-  final Color color;
-}
-
-class _ReasoningBubble extends StatelessWidget {
-  const _ReasoningBubble({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.psychology_outlined,
-                size: 15,
-                color: theme.colorScheme.tertiary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                context.l10n.assistantReasoningLabel,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.tertiary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          MarkdownBody(
-            data: text,
-            styleSheet: MarkdownStyleSheet(
-              p: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.45,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              code: theme.textTheme.bodySmall?.copyWith(
-                fontFamily: 'monospace',
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              ),
-              codeblockDecoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            selectable: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ThinkingStatusBubble extends StatelessWidget {
-  const _ThinkingStatusBubble({required this.queuedCount});
-
-  final int queuedCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainer,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(18),
-          topRight: Radius.circular(18),
-          bottomLeft: Radius.circular(8),
-          bottomRight: Radius.circular(18),
-        ),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.l10n.assistantThinkingStatus,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              if (queuedCount > 0)
-                Text(
-                  '${context.l10n.assistantQueuedPrefix} $queuedCount',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const _AssistantLoadingSkeleton(lineFractions: [0.58, 0.42, 0.34]),
-        ],
-      ),
-    );
-  }
-}
-
-class _AssistantLoadingSkeleton extends StatefulWidget {
-  const _AssistantLoadingSkeleton({
-    required this.lineFractions,
-  });
-
-  final List<double> lineFractions;
-
-  @override
-  State<_AssistantLoadingSkeleton> createState() =>
-      _AssistantLoadingSkeletonState();
-}
-
-class _AssistantLoadingSkeletonState extends State<_AssistantLoadingSkeleton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1450),
-      vsync: this,
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final base = theme.colorScheme.surfaceContainerHighest;
-    final highlight = Color.alphaBlend(
-      theme.colorScheme.primary.withValues(alpha: 0.32),
-      base,
-    );
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final progress = _controller.value;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < widget.lineFractions.length; i++) ...[
-              Builder(
-                builder: (_) {
-                  final wave = (progress + (i * 0.22)) % 1;
-                  final opacity = 0.5 + (0.4 * (1 - (wave - 0.5).abs() * 2));
-                  return FractionallySizedBox(
-                    widthFactor: widget.lineFractions[i],
-                    child: Container(
-                      height: i == 0 ? 10 : 8,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            base.withValues(alpha: opacity * 0.86),
-                            highlight.withValues(alpha: opacity),
-                            base.withValues(alpha: opacity * 0.86),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              if (i != widget.lineFractions.length - 1)
-                const SizedBox(height: 8),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _PromptChip extends StatelessWidget {
-  const _PromptChip({required this.prompt, required this.onTap});
-  final _PromptDescriptor prompt;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.alphaBlend(
-                  prompt.color.withValues(alpha: 0.12),
-                  theme.colorScheme.surfaceContainerHigh,
-                ),
-                Color.alphaBlend(
-                  prompt.color.withValues(alpha: 0.04),
-                  theme.colorScheme.surfaceContainerLow,
-                ),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: prompt.color.withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: prompt.color.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(prompt.icon, size: 18, color: prompt.color),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      prompt.badge,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                prompt.label,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w800,
-                  height: 1.15,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 44,
-        height: 4,
-        decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.outlineVariant.withValues(alpha: 0.65),
-          borderRadius: BorderRadius.circular(999),
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetActionTile extends StatelessWidget {
-  const _SheetActionTile({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Ink(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.alphaBlend(
-                    color.withValues(alpha: isDark ? 0.3 : 0.16),
-                    theme.colorScheme.surfaceContainerHigh,
-                  ),
-                  theme.colorScheme.surfaceContainerHighest,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: color.withValues(alpha: isDark ? 0.52 : 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color.withValues(alpha: isDark ? 0.35 : 0.2),
-                  ),
-                  child: Icon(icon, size: 16, color: color),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 13,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HistoryChatTile extends StatelessWidget {
-  const _HistoryChatTile({
-    required this.title,
-    required this.subtitle,
-    required this.isActive,
-    required this.onTap,
-    this.createdAt,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool isActive;
-  final DateTime? createdAt;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = isActive ? const Color(0xFF8B5CF6) : const Color(0xFF0EA5E9);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.alphaBlend(
-                  accent.withValues(alpha: isDark ? 0.28 : 0.12),
-                  theme.colorScheme.surfaceContainerLow,
-                ),
-                theme.colorScheme.surfaceContainerHighest,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: accent.withValues(alpha: isActive ? 0.5 : 0.24),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: accent.withValues(alpha: isDark ? 0.32 : 0.2),
-                ),
-                child: Icon(
-                  isActive ? Icons.chat_rounded : Icons.history_rounded,
-                  size: 16,
-                  color: accent,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      createdAt == null
-                          ? subtitle
-                          : [
-                              if (subtitle.isNotEmpty) subtitle,
-                              DateFormat('MMM d • HH:mm').format(createdAt!),
-                            ].join(' • '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsChoiceChip extends StatelessWidget {
-  const _SettingsChoiceChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.enabled = true,
-  });
-
-  final String label;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = selected ? const Color(0xFF8B5CF6) : const Color(0xFF3B82F6);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            color: selected
-                ? accent.withValues(alpha: 0.18)
-                : theme.colorScheme.surfaceContainerHighest,
-            border: Border.all(
-              color: selected
-                  ? accent.withValues(alpha: 0.48)
-                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-            ),
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: enabled
-                  ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ConsolidatedTools extends StatefulWidget {
-  const _ConsolidatedTools({required this.toolParts});
-  final List<AssistantMessagePart> toolParts;
-
-  @override
-  State<_ConsolidatedTools> createState() => _ConsolidatedToolsState();
-}
-
-class _ConsolidatedToolsState extends State<_ConsolidatedTools> {
-  bool _expanded = false;
-
-  String _getToolStatus(AssistantMessagePart part) {
-    if (part.state == 'error') return 'Error';
-    if (part.state == 'completed' ||
-        part.state == 'output-available' ||
-        part.state == 'input-available') {
-      return 'Done';
-    }
-    if (part.state == 'input-streaming' ||
-        part.state == 'input-start' ||
-        part.state == 'output-streaming' ||
-        part.state == 'output-start') {
-      return 'Running...';
-    }
-    // Default to done for unknown states
-    return 'Done';
-  }
-
-  IconData _getToolIcon(String? toolName) {
-    switch (toolName) {
-      case 'render_ui':
-        return Icons.dashboard_customize_outlined;
-      case 'select_tools':
-        return Icons.tune_outlined;
-      case 'set_workspace_context':
-        return Icons.workspaces_outlined;
-      case 'update_my_settings':
-        return Icons.settings_suggest_outlined;
-      case 'set_immersive_mode':
-        return Icons.fullscreen_outlined;
-      default:
-        return Icons.memory_outlined;
-    }
-  }
-
-  String _humanizeToolName(String? toolName) {
-    if (toolName == null || toolName.isEmpty) return 'Tool';
-    return toolName
-        .split('_')
-        .map(
-          (word) => word.isEmpty
-              ? ''
-              : '${word[0].toUpperCase()}${word.substring(1)}',
-        )
-        .join(' ');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Group tools by name
-    final groupedTools = <String, List<AssistantMessagePart>>{};
-    for (final part in widget.toolParts) {
-      final name = part.toolName ?? 'Unknown';
-      groupedTools.putIfAbsent(name, () => []).add(part);
-    }
-
-    // Check if all tools are complete
-    final allDone = widget.toolParts.every(
-      (p) =>
-          p.state == 'completed' ||
-          p.state == 'error' ||
-          p.state == 'output-available' ||
-          p.state == 'input-available',
-    );
-    final anyRunning = widget.toolParts.any(
-      (p) =>
-          p.state == 'input-streaming' ||
-          p.state == 'input-start' ||
-          p.state == 'output-streaming' ||
-          p.state == 'output-start',
-    );
-    final anyError = widget.toolParts.any((p) => p.state == 'error');
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(
-            context,
-          ).colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row - always visible
-          InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.memory,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${widget.toolParts.length} tool${widget.toolParts.length > 1 ? 's' : ''}',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (anyRunning)
-                  SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  )
-                else if (anyError)
-                  Icon(
-                    Icons.error_outline,
-                    size: 14,
-                    color: Theme.of(context).colorScheme.error,
-                  )
-                else if (allDone)
-                  Icon(
-                    Icons.check_circle_outline,
-                    size: 14,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                const Spacer(),
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-          // Expanded content
-          if (_expanded) ...[
-            const SizedBox(height: 12),
-            ...groupedTools.entries.map((entry) {
-              final toolName = entry.key;
-              final parts = entry.value;
-              final latestPart = parts.last;
-              final status = _getToolStatus(latestPart);
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          _getToolIcon(toolName),
-                          size: 14,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _humanizeToolName(toolName),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                          ),
-                        ),
-                        if (parts.length > 1)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${parts.length}',
-                              style: Theme.of(context).textTheme.labelSmall,
-                            ),
-                          ),
-                        const SizedBox(width: 8),
-                        Text(
-                          status,
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: status == 'Error'
-                                    ? Theme.of(context).colorScheme.error
-                                    : status == 'Done'
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _AttachmentChip extends StatelessWidget {
-  const _AttachmentChip({required this.attachment, required this.onTap});
-  final AssistantAttachment attachment;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: const Icon(Icons.attach_file_rounded, size: 16),
-      label: Text(attachment.name),
-      onPressed: onTap,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-    );
-  }
-}
-
-class _AttachmentInputChip extends StatelessWidget {
-  const _AttachmentInputChip({
-    required this.attachment,
-    required this.onDelete,
-  });
-  final AssistantAttachment attachment;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      avatar: const Icon(Icons.attach_file_rounded, size: 16),
-      label: Text(attachment.name),
-      deleteIcon: const Icon(Icons.close_rounded, size: 16),
-      onDeleted: onDelete,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-    );
-  }
-}
-
-class _SourceLink extends StatelessWidget {
-  const _SourceLink({required this.onTap, this.title, this.url});
-  final String? title;
-  final String? url;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.primaryContainer.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.link_rounded,
-              size: 14,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                title ?? url ?? 'Source',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  decoration: TextDecoration.underline,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageAvatar extends StatelessWidget {
-  const _MessageAvatar({
-    required this.icon,
-    required this.color,
-  });
-
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withValues(alpha: isDark ? 0.3 : 0.18),
-        border: Border.all(
-          color: color.withValues(alpha: isDark ? 0.52 : 0.3),
-        ),
-      ),
-      child: Icon(
-        icon,
-        size: 13,
-        color: color.withValues(alpha: isDark ? 0.92 : 0.78),
-      ),
-    );
-  }
-}
-
-class _QueuedMessageLine extends StatelessWidget {
-  const _QueuedMessageLine({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          Icons.circle,
-          size: 8,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            message,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              height: 1.35,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ComposerActionButton extends StatelessWidget {
-  const _ComposerActionButton({
-    required this.icon,
     required this.onPressed,
-    this.isDestructive = false,
   });
-  final IconData icon;
+
+  final String label;
   final VoidCallback onPressed;
-  final bool isDestructive;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDestructive
-                  ? [
-                      theme.colorScheme.errorContainer,
-                      theme.colorScheme.error.withValues(alpha: 0.16),
-                    ]
-                  : [
-                      theme.colorScheme.surfaceContainerHighest,
-                      theme.colorScheme.surfaceContainerLow,
-                    ],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDestructive
-                  ? theme.colorScheme.error.withValues(alpha: 0.24)
-                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.36),
-            ),
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: isDestructive
-                ? theme.colorScheme.error
-                : theme.colorScheme.onSurfaceVariant,
-          ),
+    return Semantics(
+      label: label,
+      button: true,
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: shad.PrimaryButton(
+          onPressed: onPressed,
+          shape: shad.ButtonShape.circle,
+          density: shad.ButtonDensity.icon,
+          child: const Icon(Icons.chat_bubble_outline_rounded, size: 24),
         ),
       ),
     );
   }
 }
 
-class _SendButton extends StatelessWidget {
-  const _SendButton({required this.onPressed});
+class _AssistantScrollToBottomFab extends StatelessWidget {
+  const _AssistantScrollToBottomFab({
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(999),
-        child: Ink(
-          width: 42,
-          height: 42,
-          decoration: const BoxDecoration(
-            color: Color(0xFF8B5CF6),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.arrow_upward_rounded,
-            size: 20,
-            color: Colors.white,
-          ),
+    return Semantics(
+      label: label,
+      button: true,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: shad.PrimaryButton(
+          onPressed: onPressed,
+          shape: shad.ButtonShape.circle,
+          density: shad.ButtonDensity.icon,
+          child: const Icon(Icons.arrow_downward_rounded, size: 22),
         ),
       ),
     );
   }
+}
+
+extension on AssistantLiveConnectionStatus {
+  bool get isDisconnectedOrErrored =>
+      this == AssistantLiveConnectionStatus.disconnected ||
+      this == AssistantLiveConnectionStatus.error;
 }

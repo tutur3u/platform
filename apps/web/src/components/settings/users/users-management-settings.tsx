@@ -1,218 +1,140 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import {
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
-  getWorkspaceConfigIdList,
   updateWorkspaceConfig,
 } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
-import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-} from '@tuturuuu/ui/form';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { useInfiniteWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 import DefaultGroupSettings from './default-group-settings';
+import { useHydratedWorkspaceGroupSelection } from './use-hydrated-workspace-group-selection';
 
 interface Props {
   wsId: string;
+  initialSelectedGroupIds?: string[];
+  isConfigLoading?: boolean;
 }
 
-const formSchema = z.object({
-  default_excluded_groups: z.array(z.string()).optional(),
-});
-
-export default function UsersManagementSettings({ wsId }: Props) {
+export default function UsersManagementSettings({
+  wsId,
+  initialSelectedGroupIds = [],
+  isConfigLoading = false,
+}: Props) {
   const t = useTranslations('settings.user_management');
-  const commonT = useTranslations('common');
   const queryClient = useQueryClient();
-
-  const { data: defaultExcludedGroupIds = [], isLoading: isLoadingConfig } =
-    useQuery({
-      queryKey: ['workspace-default-excluded-groups', wsId],
-      queryFn: () =>
-        getWorkspaceConfigIdList(
-          wsId,
-          DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID
-        ),
-      staleTime: 10 * 60 * 1000,
-    });
-  const [searchQuery, setSearchQuery] = useState('');
-
-  type FormValues = z.infer<typeof formSchema>;
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      default_excluded_groups: [],
-    },
-    values: useMemo(() => {
-      if (isLoadingConfig) return undefined;
-
-      return {
-        default_excluded_groups: defaultExcludedGroupIds,
-      };
-    }, [defaultExcludedGroupIds, isLoadingConfig]),
-    resetOptions: {
-      keepDirtyValues: true,
-    },
-  });
-
-  const selectedGroupIds = form.watch('default_excluded_groups') || [];
-
   const {
-    data: groupsData,
-    isLoading: isLoadingGroups,
+    selection,
+    setSelection,
+    isDirty,
+    isInitializing,
+    options,
+    hasUnresolvedSelectedGroups,
+    isLoadingOptions,
+    setSearchQuery,
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useInfiniteWorkspaceUserGroups(wsId, {
-    query: searchQuery,
-    ensureGroupIds: [
-      ...new Set([...defaultExcludedGroupIds, ...selectedGroupIds]),
-    ],
+  } = useHydratedWorkspaceGroupSelection({
+    wsId,
+    savedGroupIds: initialSelectedGroupIds,
+    isConfigLoading,
   });
 
-  const isLoading = isLoadingConfig || isLoadingGroups;
-
-  useEffect(() => {
-    if (isLoading || !groupsData) return;
-
-    const availableIds = new Set(groupsData.map((group) => group.id));
-    const currentSelection = form.getValues('default_excluded_groups') || [];
-    const filteredSelection = currentSelection.filter((id) =>
-      availableIds.has(id)
-    );
-
-    if (filteredSelection.length !== currentSelection.length) {
-      form.setValue('default_excluded_groups', filteredSelection, {
-        shouldDirty: false,
-      });
-    }
-  }, [form, groupsData, isLoading]);
-
-  const groupOptions: ComboboxOption[] = useMemo(() => {
-    const selectedSet = new Set(selectedGroupIds);
-    return (groupsData || [])
-      .map((group) => ({
-        value: group.id,
-        label: group.name + (group.archived ? ' (Archived)' : ''),
-      }))
-      .sort((a, b) => {
-        const aSelected = selectedSet.has(a.value);
-        const bSelected = selectedSet.has(b.value);
-        if (aSelected === bSelected) return 0;
-        return aSelected ? -1 : 1;
-      });
-  }, [groupsData, selectedGroupIds]);
-
   const updateMutation = useMutation({
-    mutationFn: async (values: FormValues) => {
-      const serializeIds = (ids: string[] | undefined) =>
-        ids
-          ? ids
-              .map((v) => v.trim())
-              .filter(Boolean)
-              .join(',')
-          : '';
-
-      return updateWorkspaceConfig(
+    mutationFn: async (selection: string[]) =>
+      updateWorkspaceConfig(
         wsId,
         DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
-        serializeIds(values.default_excluded_groups)
+        selection
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .join(',')
+      ),
+    onSuccess: (_data, selection) => {
+      queryClient.setQueriesData(
+        { queryKey: ['workspace-configs', wsId] },
+        (existing: Record<string, string | null> | undefined) => ({
+          ...(existing ?? {}),
+          [DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID]: selection.join(','),
+        })
       );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['workspace-default-excluded-groups', wsId],
-      });
+      queryClient.invalidateQueries({ queryKey: ['workspace-configs', wsId] });
       toast.success(t('update_success'));
-      form.reset(form.getValues());
     },
     onError: () => {
       toast.error(t('update_error'));
     },
   });
 
+  if (isInitializing) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit((v) => updateMutation.mutate(v))}
-          className="space-y-4"
-        >
-          <FormField
-            control={form.control}
-            name="default_excluded_groups"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    {t('default_excluded_groups_label')}
-                  </FormLabel>
-                  <FormDescription>
-                    {t('default_excluded_groups_help')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Combobox
-                      mode="multiple"
-                      options={groupOptions}
-                      selected={field.value ?? []}
-                      onChange={field.onChange}
-                      placeholder={t('select_groups_placeholder')}
-                      searchPlaceholder={t('search_groups')}
-                      emptyText={t('no_groups_found')}
-                      onSearchChange={setSearchQuery}
-                      hasMore={Boolean(hasNextPage)}
-                      onLoadMore={() => {
-                        if (!isFetchingNextPage) {
-                          void fetchNextPage();
-                        }
-                      }}
-                      loadingMore={isFetchingNextPage}
-                      loadMoreText={commonT('load_more')}
-                      loadingMoreText={commonT('loading')}
-                      label={
-                        field.value && field.value.length > 2
-                          ? t('selected_groups_count', {
-                              count: field.value.length,
-                            })
-                          : undefined
-                      }
-                      className="w-64"
-                    />
-                  )}
-                </FormControl>
-              </FormItem>
-            )}
-          />
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          updateMutation.mutate(selection);
+        }}
+        className="space-y-4"
+      >
+        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+          <div className="space-y-0.5">
+            <div className="font-medium text-base">
+              {t('default_excluded_groups_label')}
+            </div>
+            <div className="text-muted-foreground text-sm">
+              {t('default_excluded_groups_help')}
+            </div>
+          </div>
+          {isLoadingOptions ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : (
+            <Combobox
+              mode="multiple"
+              options={options}
+              selected={selection}
+              onChange={(value) =>
+                setSelection(
+                  Array.isArray(value) ? value : value ? [value] : []
+                )
+              }
+              placeholder={t('select_groups_placeholder')}
+              searchPlaceholder={t('search_groups')}
+              emptyText={t('no_groups_found')}
+              onSearchChange={setSearchQuery}
+              hasMore={Boolean(hasNextPage)}
+              onLoadMore={() => {
+                if (!isFetchingNextPage) {
+                  void fetchNextPage();
+                }
+              }}
+              loadingMore={isFetchingNextPage}
+              label={
+                selection.length > 2 || hasUnresolvedSelectedGroups
+                  ? t('selected_groups_count', {
+                      count: selection.length,
+                    })
+                  : undefined
+              }
+              className="w-64"
+            />
+          )}
+        </div>
 
-          <Button
-            type="submit"
-            disabled={
-              isLoading || updateMutation.isPending || !form.formState.isDirty
-            }
-          >
-            {updateMutation.isPending ? t('saving') : t('save')}
-          </Button>
-        </form>
-      </Form>
+        <Button type="submit" disabled={updateMutation.isPending || !isDirty}>
+          {updateMutation.isPending ? t('saving') : t('save')}
+        </Button>
+      </form>
 
       <DefaultGroupSettings wsId={wsId} />
     </div>

@@ -20,6 +20,7 @@ class ShellChromeConfig {
       Routes.home => l10n.navHome,
       Routes.apps => l10n.navApps,
       Routes.assistant => l10n.navAssistant,
+      Routes.notifications => l10n.notificationsTitle,
       Routes.calendar => l10n.calendarTitle,
       Routes.finance => l10n.financeTitle,
       Routes.transactions => l10n.financeActivityLabel,
@@ -36,6 +37,7 @@ class ShellChromeConfig {
       Routes.taskPortfolio => l10n.taskPortfolioTitle,
       Routes.profileRoot => l10n.profileTitle,
       Routes.settings => l10n.settingsTitle,
+      Routes.settingsWorkspace => l10n.settingsWorkspaceSectionTitle,
       _ => null,
     };
 

@@ -18,9 +18,14 @@ export class TuturuuuError extends Error {
     this.statusCode = statusCode;
 
     // Maintains proper stack trace for where our error was thrown
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
+    (
+      Error as typeof Error & {
+        captureStackTrace?: (
+          targetObject: object,
+          constructorOpt?: abstract new (...args: never[]) => unknown
+        ) => void;
+      }
+    ).captureStackTrace?.(this, this.constructor);
   }
 }
 

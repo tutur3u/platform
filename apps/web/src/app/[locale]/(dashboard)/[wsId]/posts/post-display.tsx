@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { PostApprovalActions } from '@/components/post-approval-actions';
+import { ForceSendPostButton } from './force-send-button';
 import {
   getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
@@ -31,10 +32,12 @@ export function PostDisplay({
   wsId,
   postEmail,
   canApprovePosts = false,
+  canForceSendPosts = false,
 }: {
   wsId: string;
   postEmail: PostEmail | null;
   canApprovePosts?: boolean;
+  canForceSendPosts?: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations('post-email-data-table');
@@ -71,6 +74,14 @@ export function PostDisplay({
   const hasFollowUp = Boolean(
     postEmail.approval_rejection_reason || postEmail.queue_last_error
   );
+  const canShowForceSend =
+    canForceSendPosts &&
+    Boolean(postEmail.post_id && postEmail.user_id && postEmail.has_check) &&
+    Boolean(postEmail.email) &&
+    postEmail.delivery_issue_reason !== 'missing_email' &&
+    postEmail.stage !== 'processing' &&
+    postEmail.stage !== 'queued' &&
+    postEmail.stage !== 'sent';
 
   return (
     <div className="flex min-h-[36rem] flex-col rounded-lg border border-border/60 shadow-sm">
@@ -106,18 +117,30 @@ export function PostDisplay({
             )}
           </div>
         </div>
-        {canApprovePosts &&
+        {(canApprovePosts || canShowForceSend) &&
           postEmail.post_id &&
           postEmail.user_id &&
           postEmail.has_check && (
-            <PostApprovalActions
-              wsId={wsId}
-              itemId={`${postEmail.post_id}:${postEmail.user_id}`}
-              approvalStatus={postEmail.approval_status ?? 'PENDING'}
-              queueStatus={postEmail.queue_status}
-              canRemoveApproval={postEmail.can_remove_approval}
-              compact
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              {canApprovePosts && (
+                <PostApprovalActions
+                  wsId={wsId}
+                  itemId={`${postEmail.post_id}:${postEmail.user_id}`}
+                  approvalStatus={postEmail.approval_status ?? 'PENDING'}
+                  queueStatus={postEmail.queue_status}
+                  canRemoveApproval={postEmail.can_remove_approval}
+                  compact
+                />
+              )}
+              {canShowForceSend && (
+                <ForceSendPostButton
+                  wsId={wsId}
+                  postId={postEmail.post_id}
+                  userId={postEmail.user_id}
+                  compact
+                />
+              )}
+            </div>
           )}
       </div>
 

@@ -47,14 +47,16 @@ export type LiveAPIProviderProps = {
   url?: string; // Deprecated - no longer needed with new SDK
   apiKey: string;
   wsId: string;
+  scopeKey: string;
 };
 
 export const LiveAPIProvider: FC<LiveAPIProviderProps> = ({
   apiKey,
   wsId,
+  scopeKey,
   children,
 }) => {
-  const liveAPI = useLiveAPI({ apiKey, wsId });
+  const liveAPI = useLiveAPI({ apiKey, wsId, scopeKey });
 
   return (
     <LiveAPIContext.Provider value={liveAPI}>
@@ -74,9 +76,11 @@ export const useLiveAPIContext = () => {
 export function useLiveAPI({
   apiKey,
   wsId,
+  scopeKey,
 }: {
   apiKey: string;
   wsId: string;
+  scopeKey: string;
 }): UseLiveAPIResults {
   const client = useMemo(() => new MultimodalLiveClient({ apiKey }), [apiKey]);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
@@ -85,9 +89,7 @@ export function useLiveAPI({
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>('disconnected');
   const [config, setConfig] = useState<LiveConfig>({
-    // Use gemini-2.0-flash-live for multimodal support (audio + video)
-    // Note: gemini-2.5-flash-native-audio-preview is audio-only
-    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+    model: 'gemini-3.1-flash-live-preview',
     // NOTE: When using ephemeral tokens, systemInstruction, tools, and toolConfig
     // are embedded in the token itself. Passing them here can cause conflicts.
     // Leave config minimal to avoid overriding token settings.
@@ -99,6 +101,12 @@ export function useLiveAPI({
   useEffect(() => {
     wsIdRef.current = wsId;
   }, [wsId]);
+
+  const scopeKeyRef = useRef<string>(scopeKey);
+  useEffect(() => {
+    scopeKeyRef.current = scopeKey;
+    latestSessionHandleRef.current = null;
+  }, [scopeKey]);
 
   // register audio for streaming server -> speakers
   useEffect(() => {
@@ -158,7 +166,12 @@ export function useLiveAPI({
         );
 
         try {
-          await client.connect(config);
+          await client.connect({
+            ...config,
+            ...(sessionHandle == null
+              ? {}
+              : { sessionResumption: { handle: sessionHandle } }),
+          });
           console.log('[Live API] Reconnected successfully');
           setConnected(true);
           setConnectionStatus('connected');
@@ -206,6 +219,7 @@ export function useLiveAPI({
               body: JSON.stringify({
                 sessionHandle: data.newHandle,
                 wsId: wsIdRef.current,
+                scopeKey: scopeKeyRef.current,
               }),
             });
           } catch (error) {
@@ -247,7 +261,11 @@ export function useLiveAPI({
     // If no in-memory handle, try to fetch from server storage
     if (!storedHandle && wsIdRef.current) {
       try {
-        const res = await fetch(`/api/v1/live/session?wsId=${wsIdRef.current}`);
+        const sessionQuery = new URLSearchParams({
+          wsId: wsIdRef.current,
+          scopeKey: scopeKeyRef.current,
+        });
+        const res = await fetch(`/api/v1/live/session?${sessionQuery}`);
         const data = await res.json();
         storedHandle = data.sessionHandle || null;
         if (storedHandle) {
@@ -282,7 +300,12 @@ export function useLiveAPI({
     }
 
     try {
-      await client.connect(config);
+      await client.connect({
+        ...config,
+        ...(storedHandle == null
+          ? {}
+          : { sessionResumption: { handle: storedHandle } }),
+      });
       console.log('[Live API] Connected successfully');
       setConnected(true);
       setConnectionStatus('connected');
@@ -307,7 +330,11 @@ export function useLiveAPI({
     // Clear server-side session handle as well
     if (wsIdRef.current) {
       try {
-        await fetch(`/api/v1/live/session?wsId=${wsIdRef.current}`, {
+        const sessionQuery = new URLSearchParams({
+          wsId: wsIdRef.current,
+          scopeKey: scopeKeyRef.current,
+        });
+        await fetch(`/api/v1/live/session?${sessionQuery}`, {
           method: 'DELETE',
         });
       } catch (error) {

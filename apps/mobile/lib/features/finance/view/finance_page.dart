@@ -22,6 +22,7 @@ import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<void> _reload(BuildContext context) async {
@@ -81,7 +82,7 @@ class _FinanceView extends StatelessWidget {
         child: BlocBuilder<FinanceCubit, FinanceState>(
           builder: (context, state) {
             if (state.status == FinanceStatus.loading) {
-              return const Center(child: shad.CircularProgressIndicator());
+              return const Center(child: NovaLoadingIndicator());
             }
 
             if (state.status == FinanceStatus.error) {

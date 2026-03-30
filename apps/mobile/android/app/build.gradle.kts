@@ -19,12 +19,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.tuturuuu.app.mobile"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_pcm_sound pulls AndroidX artifacts that require compileSdk 34+.
+    compileSdk = maxOf(flutter.compileSdkVersion, 34)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -111,6 +113,7 @@ flutter {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")

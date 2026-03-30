@@ -36,6 +36,7 @@ abstract final class ProfileEndpoints {
 /// Notification endpoint paths.
 abstract final class NotificationEndpoints {
   static const base = '/api/v1/notifications';
+  static const pushDevices = '$base/push-devices';
 
   static String notifications(Map<String, String> params) {
     if (params.isEmpty) {
