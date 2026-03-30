@@ -21,6 +21,14 @@ export interface CreateReportUploadUrlsResponse {
   uploads: CreateReportUploadUrlResponse[];
 }
 
+export interface DeleteReportUploadPathsPayload {
+  paths: string[];
+}
+
+export interface DeleteReportUploadPathsResponse {
+  ok: boolean;
+}
+
 export interface SubmitReportPayload {
   product: Product;
   type: SupportType;
@@ -59,6 +67,24 @@ export async function createReportUploadUrls(
     '/api/reports/upload-url',
     {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteReportUploadPaths(
+  payload: DeleteReportUploadPathsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<DeleteReportUploadPathsResponse>(
+    '/api/reports/upload-url',
+    {
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
       },

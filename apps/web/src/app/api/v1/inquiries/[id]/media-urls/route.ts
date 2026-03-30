@@ -9,6 +9,19 @@ const mediaUrlSchema = z.object({
 
 const inquiryIdSchema = z.guid();
 
+function toCanonicalInquiryMediaPath(path: string, inquiryId: string) {
+  const withoutLeadingSlashes = path.replace(/^\/+/, '');
+  const inquiryPrefix = `${inquiryId}/`;
+
+  if (withoutLeadingSlashes.startsWith(inquiryPrefix)) {
+    return withoutLeadingSlashes
+      .slice(inquiryPrefix.length)
+      .replace(/^\/+/, '');
+  }
+
+  return withoutLeadingSlashes;
+}
+
 export const POST = withSessionAuth(async (request, { user }) => {
   try {
     const pathnameParts = request.nextUrl.pathname.split('/');
@@ -51,14 +64,19 @@ export const POST = withSessionAuth(async (request, { user }) => {
     }
 
     const allowedPaths = new Set(
-      (inquiry.images ?? []).map((path: string) => path.replace(/^\/+/, ''))
+      (inquiry.images ?? []).map((path: string) =>
+        toCanonicalInquiryMediaPath(path, inquiryId)
+      )
     );
 
     const entries = await Promise.all(
       parsed.data.mediaPaths.map(async (mediaPath) => {
-        const normalizedPath = mediaPath.replace(/^\/+/, '');
+        const normalizedPath = toCanonicalInquiryMediaPath(
+          mediaPath,
+          inquiryId
+        );
 
-        if (!allowedPaths.has(normalizedPath)) {
+        if (!normalizedPath || !allowedPaths.has(normalizedPath)) {
           return [mediaPath, null] as const;
         }
 

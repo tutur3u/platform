@@ -41,6 +41,16 @@ const createReportSchema = z.object({
     .optional(),
 });
 
+function normalizeReportImagePath(path: string) {
+  const trimmedPath = path.trim().replace(/^\/+/, '');
+
+  if (!trimmedPath || trimmedPath.includes('..')) {
+    return null;
+  }
+
+  return trimmedPath;
+}
+
 export async function POST(request: NextRequest) {
   try {
     let body: unknown;
@@ -69,8 +79,23 @@ export async function POST(request: NextRequest) {
     const { product, suggestion, type, subject } = parsed.data;
     const imagePaths = parsed.data.imagePaths ?? [];
 
+    const normalizedImagePaths = imagePaths.map(normalizeReportImagePath);
+    if (normalizedImagePaths.some((path) => path === null)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Invalid image path provided',
+        },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedImagePaths = normalizedImagePaths.filter(
+      (path): path is string => path !== null
+    );
+
     // Create Supabase client for database operations
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get current user if authenticated
@@ -81,6 +106,31 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       console.error('Auth error:', authError);
+    }
+
+    if (!user && sanitizedImagePaths.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Media uploads require an authenticated user',
+        },
+        { status: 403 }
+      );
+    }
+
+    const verifiedImagePaths =
+      user && sanitizedImagePaths.length > 0
+        ? sanitizedImagePaths.filter((path) => path.startsWith(`${user.id}/`))
+        : sanitizedImagePaths;
+
+    if (verifiedImagePaths.length !== sanitizedImagePaths.length) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'One or more media paths were not issued for this user',
+        },
+        { status: 403 }
+      );
     }
 
     // Create support inquiry first and get the generated ID
@@ -94,7 +144,7 @@ export async function POST(request: NextRequest) {
         type,
         product,
         creator_id: user?.id || undefined,
-        images: imagePaths,
+        images: verifiedImagePaths,
       })
       .select('id')
       .single();
@@ -113,9 +163,7 @@ export async function POST(request: NextRequest) {
     console.log('Report submitted successfully:', {
       inquiryId: insertData.id,
       product,
-      suggestion,
-      mediaCount: imagePaths.length,
-      uploadedMedia: imagePaths,
+      mediaCount: verifiedImagePaths.length,
       userId: user?.id || 'anonymous',
     });
 
@@ -123,7 +171,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Report submitted successfully',
       reportId: insertData.id,
-      uploadedMedia: imagePaths,
+      uploadedMedia: verifiedImagePaths,
     });
   } catch (error) {
     console.error('Error processing report submission:', error);

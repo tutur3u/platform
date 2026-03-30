@@ -1,8 +1,18 @@
+import type { SupportInquiry } from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
+
+export interface UpdateInquiryPayload {
+  is_read?: boolean;
+  is_resolved?: boolean;
+}
+
+export interface UpdateInquiryResponse {
+  data: SupportInquiry;
+}
 
 export async function listInquiryMediaUrls(
   inquiryId: string,
@@ -27,11 +37,11 @@ export async function listInquiryMediaUrls(
 
 export async function updateInquiry(
   inquiryId: string,
-  updates: { is_read?: boolean; is_resolved?: boolean },
+  updates: UpdateInquiryPayload,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ data: unknown }>(
+  return client.json<UpdateInquiryResponse>(
     `/api/v1/inquiries/${encodePathSegment(inquiryId)}`,
     {
       method: 'PATCH',

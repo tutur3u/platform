@@ -9,7 +9,7 @@ import {
   XIcon,
   ZoomInIcon,
 } from '@tuturuuu/icons';
-import type { updateInquiry as updateInquiryApi } from '@tuturuuu/internal-api';
+import { updateInquiry as updateInquiryApi } from '@tuturuuu/internal-api';
 import type { Product, SupportType } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -24,7 +24,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInquiryMediaUrlsQuery, useUpdateInquiryMutation } from './hooks';
 import type { ExtendedSupportInquiry } from './page';
 
@@ -83,68 +83,58 @@ export function InquiryDetailModal({
     url: string;
     isVideo: boolean;
   } | null>(null);
-  const [isResolvingUpdating, setIsResolvingUpdating] = useState(false);
-  const hasMarkedAsRead = useRef(false);
 
   const inquiryId = inquiry.id;
   const { data: mediaUrls = {}, isLoading } = useInquiryMediaUrlsQuery(
     inquiryId,
     inquiry.images
   );
-  const updateInquiryMutation = useUpdateInquiryMutation(inquiryId);
-
-  const updateInquiry = useCallback(
-    async (
-      updates: Parameters<typeof updateInquiryApi>[1],
-      showToast = true
-    ) => {
-      const isResolvingUpdate = updates.is_resolved !== undefined;
-      if (isResolvingUpdate) {
-        setIsResolvingUpdating(true);
-      }
-
-      try {
-        await updateInquiryMutation.mutateAsync(updates);
-
-        if (showToast) {
+  const updateInquiryMutation = useUpdateInquiryMutation(
+    inquiryId,
+    updateInquiryApi,
+    {
+      onSuccess: (input) => {
+        if (input.showToast !== false) {
           toast.success('Inquiry updated successfully');
         }
         onUpdate?.();
         router.refresh();
-      } catch (error) {
+
+        if (input.closeOnSuccess) {
+          onClose();
+        }
+      },
+      onError: (error, input) => {
         console.error('Error updating inquiry:', error);
-        if (showToast) {
+        if (input.showToast !== false) {
           toast.error('Failed to update inquiry');
         }
-      } finally {
-        if (isResolvingUpdate) {
-          setIsResolvingUpdating(false);
-        }
-      }
-    },
-    [onUpdate, router, updateInquiryMutation]
+      },
+    }
   );
+  const { isPending: isUpdatingInquiry, mutate: mutateInquiry } =
+    updateInquiryMutation;
 
-  // Mark as read when modal opens (only once)
   useEffect(() => {
-    if (isOpen && !inquiry.is_read && !hasMarkedAsRead.current) {
-      hasMarkedAsRead.current = true;
-      updateInquiry({ is_read: true }, false); // Don't show toast for auto-read
+    if (isOpen && !inquiry.is_read) {
+      mutateInquiry({
+        updates: { is_read: true },
+        showToast: false,
+      });
     }
+  }, [inquiry.is_read, isOpen, mutateInquiry]);
 
-    // Reset the ref when modal closes
-    if (!isOpen) {
-      hasMarkedAsRead.current = false;
-    }
-  }, [isOpen, inquiry.is_read, updateInquiry]);
-
-  const handleResolve = async () => {
-    await updateInquiry({ is_resolved: true });
-    onClose();
+  const handleResolve = () => {
+    mutateInquiry({
+      updates: { is_resolved: true },
+      closeOnSuccess: true,
+    });
   };
 
   const handleReopen = () => {
-    updateInquiry({ is_resolved: false });
+    mutateInquiry({
+      updates: { is_resolved: false },
+    });
   };
 
   const handleMediaClick = (mediaPath: string) => {
@@ -181,10 +171,10 @@ export function InquiryDetailModal({
                     variant="outline"
                     size="sm"
                     onClick={handleReopen}
-                    disabled={isResolvingUpdating}
+                    disabled={isUpdatingInquiry}
                     className="transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5"
                   >
-                    {isResolvingUpdating ? (
+                    {isUpdatingInquiry ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <ClockIcon className="mr-2 h-4 w-4" />
@@ -196,9 +186,9 @@ export function InquiryDetailModal({
                     variant="default"
                     size="sm"
                     onClick={handleResolve}
-                    disabled={isResolvingUpdating}
+                    disabled={isUpdatingInquiry}
                   >
-                    {isResolvingUpdating ? (
+                    {isUpdatingInquiry ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <CheckCircleIcon className="mr-2 h-4 w-4" />

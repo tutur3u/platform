@@ -38,6 +38,10 @@ const uploadUrlSchema = z.union([
   }),
 ]);
 
+const deleteUploadsSchema = z.object({
+  paths: z.array(z.string().trim().min(1).max(1024)).min(1).max(5),
+});
+
 type UploadFileInput = z.infer<typeof uploadFileSchema>;
 
 async function createUploadTarget(
@@ -140,6 +144,64 @@ export async function POST(request: Request) {
     }
 
     console.error('Support report upload-url error:', error);
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createClient(request);
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const parsed = deleteUploadsSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const normalizedPaths = parsed.data.paths.map((path) =>
+      path.trim().replace(/^\/+/, '')
+    );
+
+    const hasInvalidPath = normalizedPaths.some(
+      (path) => !path || path.includes('..') || !path.startsWith(`${user.id}/`)
+    );
+
+    if (hasInvalidPath) {
+      return NextResponse.json(
+        { message: 'One or more media paths are invalid for this user' },
+        { status: 403 }
+      );
+    }
+
+    const sbStorageAdmin = await createDynamicAdminClient();
+    const { error } = await sbStorageAdmin.storage
+      .from('support_inquiries')
+      .remove(normalizedPaths);
+
+    if (error) {
+      console.error('Error deleting support report media:', error);
+      return NextResponse.json(
+        { message: 'Failed to delete uploaded media' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Support report upload cleanup error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

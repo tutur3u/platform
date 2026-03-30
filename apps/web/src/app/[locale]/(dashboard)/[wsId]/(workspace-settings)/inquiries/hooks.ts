@@ -1,7 +1,23 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { listInquiryMediaUrls, updateInquiry } from '@tuturuuu/internal-api';
+import {
+  listInquiryMediaUrls,
+  type UpdateInquiryPayload,
+  type UpdateInquiryResponse,
+  updateInquiry,
+} from '@tuturuuu/internal-api';
+
+export interface InquiryUpdateMutationInput {
+  updates: UpdateInquiryPayload;
+  showToast?: boolean;
+  closeOnSuccess?: boolean;
+}
+
+interface UseUpdateInquiryMutationOptions {
+  onSuccess?: (input: InquiryUpdateMutationInput) => void;
+  onError?: (error: unknown, input: InquiryUpdateMutationInput) => void;
+}
 
 export function useInquiryMediaUrlsQuery(
   inquiryId: string,
@@ -20,9 +36,22 @@ export function useInquiryMediaUrlsQuery(
   });
 }
 
-export function useUpdateInquiryMutation(inquiryId: string) {
+export function useUpdateInquiryMutation(
+  inquiryId: string,
+  updateInquiryFn: (
+    inquiryId: string,
+    updates: UpdateInquiryPayload
+  ) => Promise<UpdateInquiryResponse> = updateInquiry,
+  options?: UseUpdateInquiryMutationOptions
+) {
   return useMutation({
-    mutationFn: async (updates: { is_read?: boolean; is_resolved?: boolean }) =>
-      updateInquiry(inquiryId, updates),
+    mutationFn: async (input: InquiryUpdateMutationInput) =>
+      updateInquiryFn(inquiryId, input.updates),
+    onSuccess: (_, input) => {
+      options?.onSuccess?.(input);
+    },
+    onError: (error, input) => {
+      options?.onError?.(error, input);
+    },
   });
 }

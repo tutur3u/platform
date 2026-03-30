@@ -100,7 +100,12 @@ export {
   type SendInfrastructurePushTestResponse,
   sendInfrastructurePushTest,
 } from './infrastructure';
-export { listInquiryMediaUrls, updateInquiry } from './inquiries';
+export {
+  listInquiryMediaUrls,
+  type UpdateInquiryPayload,
+  type UpdateInquiryResponse,
+  updateInquiry,
+} from './inquiries';
 export { listWorkspaceEmails } from './mail';
 export { getCurrentUserNovaTeam } from './nova';
 export { forceSendWorkspacePostEmail } from './posts';
@@ -115,6 +120,9 @@ export {
   type CreateReportUploadUrlsResponse,
   createReportUploadUrl,
   createReportUploadUrls,
+  type DeleteReportUploadPathsPayload,
+  type DeleteReportUploadPathsResponse,
+  deleteReportUploadPaths,
   type SubmitReportPayload,
   type SubmitReportResponse,
   submitReport,
