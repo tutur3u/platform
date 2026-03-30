@@ -14,12 +14,14 @@ describe('posts search params helpers', () => {
         {
           approvalStatus: null,
           cursor: null,
+          end: null,
           excludedGroups: [],
           includedGroups: [],
           page: 2,
           pageSize: 10,
           queueStatus: null,
           showAll: null,
+          start: null,
           stage: null,
           userId: null,
         }
@@ -47,12 +49,14 @@ describe('posts search params helpers', () => {
         {
           approvalStatus: 'APPROVED',
           cursor: null,
+          end: null,
           excludedGroups: [],
           includedGroups: [],
           page: 1,
           pageSize: 10,
           queueStatus: null,
           showAll: null,
+          start: null,
           stage: null,
           userId: null,
         }
@@ -66,12 +70,14 @@ describe('posts search params helpers', () => {
         {
           approvalStatus: null,
           cursor: null,
+          end: null,
           excludedGroups: [],
           includedGroups: [],
           page: 1,
           pageSize: 10,
           queueStatus: 'queued',
           showAll: null,
+          start: null,
           stage: null,
           userId: null,
         }
@@ -109,12 +115,14 @@ describe('posts search params helpers', () => {
         {
           approvalStatus: null,
           cursor: null,
+          end: null,
           excludedGroups: ['group-b'],
           includedGroups: ['group-a'],
           page: 3,
           pageSize: 10,
           queueStatus: null,
           showAll: null,
+          start: null,
           stage: null,
           userId: 'user-1',
         }
@@ -127,5 +135,31 @@ describe('posts search params helpers', () => {
   it('drops unknown stage values during normalization', () => {
     expect(normalizeRawPostReviewStage(['unknown', 'queued'])).toBe('queued');
     expect(normalizeRawPostReviewStage(['unknown'])).toBeNull();
+  });
+
+  it('does not redirect when date params are already canonical but URL-encoded', () => {
+    expect(
+      buildCanonicalPostsSearchParams(
+        {
+          end: '2026-03-30T16:59:59.999Z',
+          stage: 'missing_check',
+          start: '2026-02-28T17:00:00.000Z',
+        },
+        {
+          approvalStatus: null,
+          cursor: null,
+          end: '2026-03-30T16:59:59.999Z',
+          excludedGroups: [],
+          includedGroups: [],
+          page: 1,
+          pageSize: 10,
+          queueStatus: null,
+          showAll: null,
+          stage: 'missing_check',
+          start: '2026-02-28T17:00:00.000Z',
+          userId: null,
+        }
+      )
+    ).toBeNull();
   });
 });

@@ -15,6 +15,7 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Filter } from '@tuturuuu/ui/custom/user-filters';
+import { DateRangeFilterWrapper } from '@tuturuuu/ui/finance/shared/date-range-filter-wrapper';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -76,6 +77,8 @@ export default function PostsFilters({
           queryState.showAll ||
           queryState.approvalStatus ||
           queryState.queueStatus ||
+          queryState.start ||
+          queryState.end ||
           queryState.userId ||
           (queryState.includedGroups?.length ?? 0) > 0 ||
           (queryState.excludedGroups?.length ?? 0) > 0
@@ -222,6 +225,7 @@ export default function PostsFilters({
           value: user.id,
         }))}
       />
+      <DateRangeFilterWrapper shallow refreshOnUpdate />
       <Button
         variant="outline"
         size="sm"
@@ -242,6 +246,8 @@ export default function PostsFilters({
               includedGroups: null,
               page: 1,
               queueStatus: null,
+              start: null,
+              end: null,
               showAll: null,
               stage: DEFAULT_POST_REVIEW_STAGE,
               userId: null,

@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(14);
+select plan(16);
 
 insert into public.users (id)
 values ('00000000-0000-0000-0000-00000000010A')
@@ -384,6 +384,31 @@ select is(
   ),
   2::bigint,
   'workspace post review summary reports undeliverable approved recipients separately'
+);
+
+select is(
+  (
+    select coalesce(max(total_count), 0)
+    from public.get_workspace_post_review_rows(
+      p_ws_id => '00000000-0000-0000-0000-00000000010B',
+      p_start_date => now() + interval '1 day',
+      p_limit => 20
+    )
+  ),
+  0::bigint,
+  'workspace post review rows respect post start_date filters'
+);
+
+select is(
+  (
+    select total_count
+    from public.get_workspace_post_review_summary(
+      p_ws_id => '00000000-0000-0000-0000-00000000010B',
+      p_end_date => now() - interval '1 day'
+    )
+  ),
+  0::bigint,
+  'workspace post review summary respects post end_date filters'
 );
 
 select ok(

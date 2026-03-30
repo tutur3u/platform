@@ -49,6 +49,8 @@ export function isPostReviewStage(value?: string): value is PostReviewStage {
 export interface RawPostsSearchParams {
   page?: string | string[];
   pageSize?: string | string[];
+  start?: string | string[];
+  end?: string | string[];
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
   userId?: string | string[];
@@ -62,6 +64,8 @@ export interface RawPostsSearchParams {
 export interface PostsSearchParams {
   page?: number | null;
   pageSize?: number | null;
+  start?: string | null;
+  end?: string | null;
   includedGroups?: string[] | null;
   excludedGroups?: string[] | null;
   userId?: string | null;

@@ -2,16 +2,26 @@
 
 import { ComparedDateRangePicker } from '@tuturuuu/ui/custom/compared-date-range-picker';
 import { vi } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useCallback } from 'react';
 
-export function DateRangeFilterWrapper() {
+interface DateRangeFilterWrapperProps {
+  shallow?: boolean;
+  refreshOnUpdate?: boolean;
+}
+
+export function DateRangeFilterWrapper({
+  shallow = true,
+  refreshOnUpdate = false,
+}: DateRangeFilterWrapperProps = {}) {
   const t = useTranslations();
   const locale = useLocale();
-  const [start, setStart] = useQueryState('start', { shallow: true });
-  const [end, setEnd] = useQueryState('end', { shallow: true });
-  const [, setPage] = useQueryState('page', { shallow: true });
+  const router = useRouter();
+  const [start, setStart] = useQueryState('start', { shallow });
+  const [end, setEnd] = useQueryState('end', { shallow });
+  const [, setPage] = useQueryState('page', { shallow });
 
   const handleDateRangeChange = useCallback(
     async (values: {
@@ -35,8 +45,12 @@ export function DateRangeFilterWrapper() {
 
       // Reset to first page when filtering
       await setPage('1');
+
+      if (refreshOnUpdate) {
+        router.refresh();
+      }
     },
-    [setStart, setEnd, setPage]
+    [refreshOnUpdate, router, setStart, setEnd, setPage]
   );
 
   return (

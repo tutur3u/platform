@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.1';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -21021,36 +21026,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -25317,12 +25293,14 @@ export type Database = {
         Args: {
           p_approval_status?: Database['public']['Enums']['approval_status'];
           p_cutoff?: string;
+          p_end_date?: string;
           p_excluded_group_ids?: string[];
           p_included_group_ids?: string[];
           p_limit?: number;
           p_offset?: number;
           p_queue_status?: string;
           p_stage?: string[];
+          p_start_date?: string;
           p_user_id?: string;
           p_ws_id: string;
         };
@@ -25364,9 +25342,11 @@ export type Database = {
         Args: {
           p_approval_status?: Database['public']['Enums']['approval_status'];
           p_cutoff?: string;
+          p_end_date?: string;
           p_excluded_group_ids?: string[];
           p_included_group_ids?: string[];
           p_queue_status?: string;
+          p_start_date?: string;
           p_user_id?: string;
           p_ws_id: string;
         };
@@ -25957,7 +25937,12 @@ export type Database = {
         Returns: undefined;
       };
       reconcile_orphaned_approved_post_email_queue: {
-        Args: { p_cutoff?: string; p_max_posts?: number; p_ws_id?: string };
+        Args: {
+          p_cutoff?: string;
+          p_max_posts?: number;
+          p_skip_posts?: number;
+          p_ws_id?: string;
+        };
         Returns: {
           already_sent: number;
           checked: number;

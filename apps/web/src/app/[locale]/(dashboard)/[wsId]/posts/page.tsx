@@ -23,24 +23,23 @@ export default async function PostsPage({
   params: Promise<{ wsId: string; locale: string }>;
   searchParams: Promise<RawPostsSearchParams>;
 }) {
-  const { locale } = await params;
+  const { locale, wsId } = await params;
   const searchParamsData = await searchParams;
   const parsedSearchParams = await postsSearchParamsCache.parse(
     searchParamsData as Record<string, string | string[] | undefined>
   );
+  const canonicalSearchParams = buildCanonicalPostsSearchParams(
+    searchParamsData,
+    parsedSearchParams
+  );
+
+  if (canonicalSearchParams) {
+    redirect(`/${wsId}/posts?${canonicalSearchParams}`);
+  }
 
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const canonicalSearchParams = buildCanonicalPostsSearchParams(
-          searchParamsData,
-          parsedSearchParams
-        );
-
-        if (canonicalSearchParams) {
-          redirect(`/${wsId}/posts?${canonicalSearchParams}`);
-        }
-
         const [permissions, rootPermissions] = await Promise.all([
           getPermissions({ wsId }),
           getPermissions({ wsId: ROOT_WORKSPACE_ID }),

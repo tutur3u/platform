@@ -82,6 +82,8 @@ interface PostEmailSummaryRpcRow {
 interface PostEmailRowsRpcArgs {
   p_ws_id: string;
   p_cutoff: string;
+  p_start_date?: string;
+  p_end_date?: string;
   p_limit: number;
   p_offset: number;
   p_included_group_ids?: string[];
@@ -95,6 +97,8 @@ interface PostEmailRowsRpcArgs {
 interface PostEmailSummaryRpcArgs {
   p_ws_id: string;
   p_cutoff: string;
+  p_start_date?: string;
+  p_end_date?: string;
   p_included_group_ids?: string[];
   p_excluded_group_ids?: string[];
   p_user_id?: string;
@@ -198,6 +202,8 @@ export async function getPostsPageData(
     pageSize = 10,
     includedGroups,
     excludedGroups,
+    start,
+    end,
     userId,
     stage,
     approvalStatus,
@@ -230,6 +236,8 @@ export async function getPostsPageData(
       ? { p_excluded_group_ids: excludedGroupIds }
       : {}),
     ...(activeStage ? { p_stage: [activeStage] } : {}),
+    ...(start ? { p_start_date: start } : {}),
+    ...(end ? { p_end_date: end } : {}),
     ...(activeApprovalStatus
       ? { p_approval_status: activeApprovalStatus }
       : {}),
@@ -245,6 +253,8 @@ export async function getPostsPageData(
     ...(excludedGroupIds.length > 0
       ? { p_excluded_group_ids: excludedGroupIds }
       : {}),
+    ...(start ? { p_start_date: start } : {}),
+    ...(end ? { p_end_date: end } : {}),
     ...(userId ? { p_user_id: userId } : {}),
     ...(activeApprovalStatus
       ? { p_approval_status: activeApprovalStatus }
