@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
@@ -15,6 +14,7 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_boards_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_form_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -195,7 +195,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
 
         final bottomPadding =
             _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
-
         return ResponsiveWrapper(
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
           child: RefreshIndicator(
@@ -206,13 +205,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
               padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
               children: [
                 shellActionRegistration,
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _BoardsMetaRow(
-                    filterLabel: _filterLabel(context, state.filter),
-                    boardCount: state.filteredBoards.length,
-                  ),
-                ),
                 if (state.filteredBoards.isEmpty)
                   _EmptyView(filter: state.filter)
                 else

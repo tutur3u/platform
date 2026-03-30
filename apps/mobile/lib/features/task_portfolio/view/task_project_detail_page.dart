@@ -13,6 +13,7 @@ import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_actions.dart';
 import 'package:mobile/features/task_portfolio/widgets/task_project_updates_section.dart';
+import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';

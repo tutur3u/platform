@@ -20,9 +20,9 @@ class TaskListState extends Equatable {
     this.hasMoreCompleted = false,
     this.completedPage = 0,
     this.isLoadingMoreCompleted = false,
-    this.isOverdueCollapsed = false,
-    this.isTodayCollapsed = false,
-    this.isUpcomingCollapsed = false,
+    this.isOverdueCollapsed = true,
+    this.isTodayCollapsed = true,
+    this.isUpcomingCollapsed = true,
     this.isCompletedCollapsed = true,
     this.error,
   });

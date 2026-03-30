@@ -200,7 +200,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
               child: RefreshIndicator(
                 onRefresh: () => _reload(context),
                 child: ListView(
-                  padding: EdgeInsets.fromLTRB(0, 12, 0, listBottomPadding),
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
                   children: [
                     if (_activeTab == _tabEstimates)
                       TaskEstimateBoardsSection(

@@ -28,73 +28,104 @@ class _TaskBoardCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final createdLabel = board.createdAt == null
-        ? '-'
-        : DateFormat.yMMMd().format(board.createdAt!);
-    final boardCounts =
-        '${context.l10n.taskBoardsListsCount(board.listCount)} • '
-        '${context.l10n.taskBoardsTasksCount(board.taskCount)}';
+    final accentColor = board.isRecentlyDeleted
+        ? theme.colorScheme.destructive
+        : board.isArchived
+        ? const Color(0xFFF59E0B)
+        : theme.colorScheme.primary;
 
-    return shad.Card(
+    return TaskSurfacePane(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(resolvePlatformIcon(board.icon), size: 20),
-                  const shad.Gap(8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          board.name ?? context.l10n.taskEstimatesUnnamedBoard,
-                          style: theme.typography.large.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+        borderRadius: BorderRadius.circular(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    resolvePlatformIcon(board.icon),
+                    size: 22,
+                    color: accentColor,
+                  ),
+                ),
+                const shad.Gap(12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        board.name ?? context.l10n.taskEstimatesUnnamedBoard,
+                        style: theme.typography.large.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
+                      ),
+                      if (board.ticketPrefix?.trim().isNotEmpty == true) ...[
                         const shad.Gap(4),
                         Text(
-                          boardCounts,
-                          style: theme.typography.textSmall.copyWith(
-                            color: theme.colorScheme.mutedForeground,
+                          board.ticketPrefix!.trim(),
+                          style: theme.typography.xSmall.copyWith(
+                            letterSpacing: 0.8,
+                            fontWeight: FontWeight.w700,
+                            color: accentColor,
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  if (canManage)
-                    shad.IconButton.ghost(
-                      icon: const Icon(Icons.more_horiz),
-                      onPressed: () => _showActionMenu(context),
-                    ),
-                ],
-              ),
-              const shad.Gap(10),
-              Text(
-                '${context.l10n.taskBoardsCreatedAt}: $createdLabel',
-                style: theme.typography.textSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
                 ),
-              ),
-              if (board.isArchived) ...[
-                const shad.Gap(8),
-                shad.OutlineBadge(child: Text(context.l10n.taskBoardsArchived)),
+                if (canManage)
+                  shad.IconButton.ghost(
+                    icon: const Icon(Icons.more_horiz),
+                    onPressed: () => _showActionMenu(context),
+                  ),
               ],
-              if (board.isRecentlyDeleted) ...[
-                const shad.Gap(8),
+            ),
+            const shad.Gap(14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
                 shad.OutlineBadge(
-                  child: Text(context.l10n.taskBoardsRecentlyDeleted),
+                  child: Text(
+                    context.l10n.taskBoardsListsCount(board.listCount),
+                  ),
+                ),
+                shad.OutlineBadge(
+                  child: Text(
+                    context.l10n.taskBoardsTasksCount(board.taskCount),
+                  ),
+                ),
+                if (board.isArchived)
+                  shad.OutlineBadge(
+                    child: Text(context.l10n.taskBoardsArchived),
+                  ),
+                if (board.isRecentlyDeleted)
+                  shad.OutlineBadge(
+                    child: Text(context.l10n.taskBoardsRecentlyDeleted),
+                  ),
+              ],
+            ),
+            const shad.Gap(14),
+            Row(
+              children: [
+                const Spacer(),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 18,
+                  color: accentColor,
                 ),
               ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

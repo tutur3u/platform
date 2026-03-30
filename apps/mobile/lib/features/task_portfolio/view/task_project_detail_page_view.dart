@@ -90,6 +90,27 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
+                  TaskSurfaceHero(
+                    icon: Icons.folder_open_outlined,
+                    title: project.name,
+                    subtitle: _projectStatusLabel(context, project.status),
+                    accentColor: const Color(0xFF7C3AED),
+                    stats: [
+                      TaskSurfaceStatData(
+                        label: context.l10n.taskPortfolioLinkedTasks,
+                        value: '${project.linkedTasks.length}',
+                      ),
+                      TaskSurfaceStatData(
+                        label: context.l10n.taskPortfolioProjectTasksProgress(
+                          project.completedTasksCount,
+                          project.tasksCount,
+                        ),
+                        value:
+                            '${project.completedTasksCount}/${project.tasksCount}',
+                      ),
+                    ],
+                  ),
+                  const shad.Gap(12),
                   _ProjectDetailsCard(
                     project: project,
                     isMutating: state.isMutating,

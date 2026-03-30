@@ -176,94 +176,88 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
           child: RefreshIndicator(
             onRefresh: _reload,
-            child: _activeTab == _tabProjects
-                ? _buildProjectsList(context, state, listBottomPadding)
-                : _buildInitiativesList(
-                    context,
-                    state,
-                    listBottomPadding,
-                  ),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+              children: [
+                ...(_activeTab == _tabProjects
+                    ? _buildProjectsItems(context, state)
+                    : _buildInitiativesItems(context, state)),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildProjectsList(
+  List<Widget> _buildProjectsItems(
     BuildContext context,
     TaskPortfolioState state,
-    double bottomPadding,
   ) {
     if (state.projects.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPadding),
-        children: [
-          TaskPortfolioEmptyState(
-            icon: Icons.folder_open_outlined,
-            title: context.l10n.taskPortfolioProjectsEmptyTitle,
-            description: context.l10n.taskPortfolioProjectsEmptyDescription,
-          ),
-        ],
-      );
+      return [
+        TaskPortfolioEmptyState(
+          icon: Icons.folder_open_outlined,
+          title: context.l10n.taskPortfolioProjectsEmptyTitle,
+          description: context.l10n.taskPortfolioProjectsEmptyDescription,
+        ),
+      ];
     }
 
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPadding),
-      itemCount: state.projects.length,
-      separatorBuilder: (_, _) => const shad.Gap(12),
-      itemBuilder: (context, index) {
-        final project = state.projects[index];
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => context.push(
-            Routes.taskPortfolioProjectPath(project.id),
-          ),
-          child: TaskProjectCard(
-            project: project,
-            onEdit: () => _openEditProject(project),
-            onDelete: () => _deleteProject(project),
-          ),
-        );
-      },
-    );
+    return state.projects.indexed
+        .map((entry) {
+          final project = entry.$2;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: entry.$1 == state.projects.length - 1 ? 0 : 12,
+            ),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => context.push(
+                Routes.taskPortfolioProjectPath(project.id),
+              ),
+              child: TaskProjectCard(
+                project: project,
+                onEdit: () => _openEditProject(project),
+                onDelete: () => _deleteProject(project),
+              ),
+            ),
+          );
+        })
+        .toList(growable: false);
   }
 
-  Widget _buildInitiativesList(
+  List<Widget> _buildInitiativesItems(
     BuildContext context,
     TaskPortfolioState state,
-    double bottomPadding,
   ) {
     if (state.initiatives.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPadding),
-        children: [
-          TaskPortfolioEmptyState(
-            icon: Icons.account_tree_outlined,
-            title: context.l10n.taskPortfolioInitiativesEmptyTitle,
-            description: context.l10n.taskPortfolioInitiativesEmptyDescription,
-          ),
-        ],
-      );
+      return [
+        TaskPortfolioEmptyState(
+          icon: Icons.account_tree_outlined,
+          title: context.l10n.taskPortfolioInitiativesEmptyTitle,
+          description: context.l10n.taskPortfolioInitiativesEmptyDescription,
+        ),
+      ];
     }
 
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPadding),
-      itemCount: state.initiatives.length,
-      separatorBuilder: (_, _) => const shad.Gap(12),
-      itemBuilder: (context, index) {
-        final initiative = state.initiatives[index];
-        return TaskInitiativeCard(
-          initiative: initiative,
-          onEdit: () => _openEditInitiative(initiative),
-          onDelete: () => _deleteInitiative(initiative),
-          onManageProjects: () => _manageInitiativeProjects(initiative),
-        );
-      },
-    );
+    return state.initiatives.indexed
+        .map((entry) {
+          final initiative = entry.$2;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: entry.$1 == state.initiatives.length - 1 ? 0 : 12,
+            ),
+            child: TaskInitiativeCard(
+              initiative: initiative,
+              onEdit: () => _openEditInitiative(initiative),
+              onDelete: () => _deleteInitiative(initiative),
+              onManageProjects: () => _manageInitiativeProjects(initiative),
+            ),
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<void> _loadPermissions() async {
