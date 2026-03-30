@@ -1,5 +1,9 @@
 import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -65,8 +69,10 @@ function enhanceSearchQuery(query: string): string {
 
 export async function POST(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
-    const { wsId } = await params;
+    const supabase = await createClient(req);
+    const { wsId: id } = await params;
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Check authentication
     const {
@@ -76,6 +82,8 @@ export async function POST(req: Request, { params }: Params) {
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const sbAdmin = await createAdminClient();
 
     // Get search query from request body
     const body = await req.json();
@@ -105,7 +113,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     // Call the hybrid match_tasks function with both embedding and text
-    const { data, error } = await supabase.rpc('match_tasks', {
+    const { data, error } = await sbAdmin.rpc('match_tasks', {
       query_embedding: JSON.stringify(embedding),
       query_text: query.trim(), // Pass original query for full-text search
       match_threshold: matchThreshold,
