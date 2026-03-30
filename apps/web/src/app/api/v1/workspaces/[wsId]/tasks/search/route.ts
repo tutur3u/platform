@@ -72,15 +72,37 @@ export async function POST(req: Request, { params }: Params) {
     const supabase = await createClient(req);
     const { wsId: id } = await params;
 
-    const wsId = await normalizeWorkspaceId(id, supabase);
-
-    // Check authentication
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error(
+        'Error verifying workspace membership for task search:',
+        membershipError
+      );
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const sbAdmin = await createAdminClient();
