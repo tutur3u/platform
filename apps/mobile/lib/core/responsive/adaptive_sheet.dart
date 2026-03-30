@@ -20,12 +20,13 @@ Future<T?> showAdaptiveSheet<T>({
   bool isDismissible = true,
   bool enableDrag = true,
   bool barrierDismissible = true,
+  Color barrierColor = const Color(0x7A000000),
 }) {
   if (context.isCompact) {
     return showModalBottomSheet<T>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.48),
+      barrierColor: barrierColor,
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
       isDismissible: isDismissible,
@@ -48,7 +49,7 @@ Future<T?> showAdaptiveSheet<T>({
 
   return showDialog<T>(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.48),
+    barrierColor: barrierColor,
     barrierDismissible: barrierDismissible,
     builder: (dialogContext) => BackButtonListener(
       onBackButtonPressed: () async {
