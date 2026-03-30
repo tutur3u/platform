@@ -23,6 +23,7 @@ export const postsSearchParamParsers = {
     postsNavigationOptions
   ),
   cursor: parseAsString.withOptions(postsNavigationOptions),
+  end: parseAsString.withOptions(postsNavigationOptions),
   excludedGroups: parseAsNativeArrayOf(parseAsString)
     .withDefault([])
     .withOptions(postsNavigationOptions),
@@ -35,6 +36,7 @@ export const postsSearchParamParsers = {
     postsNavigationOptions
   ),
   showAll: parseAsBoolean.withOptions(postsNavigationOptions),
+  start: parseAsString.withOptions(postsNavigationOptions),
   stage: parseAsStringLiteral(POST_REVIEW_STAGES).withOptions(
     postsNavigationOptions
   ),
