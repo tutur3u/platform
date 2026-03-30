@@ -121,45 +121,44 @@ class TaskPortfolioActions {
   }
 
   Future<void> openCreateInitiative() async {
-    final result = await shad.showDialog<TaskInitiativeFormValue>(
-      context: context,
-      builder: (_) => const TaskInitiativeDialog(),
-    );
-    if (result == null || !context.mounted) return;
-
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().createInitiative(
-        wsId: wsId,
-        name: result.name,
-        description: result.description,
-        status: result.status,
+    await shad.showDialog<void>(
+      context: context,
+      builder: (_) => TaskInitiativeDialog(
+        onSubmit: (result) => _runActionWithResult(
+          () => context.read<TaskPortfolioCubit>().createInitiative(
+            wsId: wsId,
+            name: result.name,
+            description: result.description,
+            status: result.status,
+          ),
+          successMessage: context.l10n.taskPortfolioInitiativeCreated,
+        ),
       ),
-      successMessage: context.l10n.taskPortfolioInitiativeCreated,
     );
   }
 
   Future<void> openEditInitiative(TaskInitiativeSummary initiative) async {
-    final result = await shad.showDialog<TaskInitiativeFormValue>(
-      context: context,
-      builder: (_) => TaskInitiativeDialog(initiative: initiative),
-    );
-    if (result == null || !context.mounted) return;
-
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().updateInitiative(
-        wsId: wsId,
-        initiativeId: initiative.id,
-        name: result.name,
-        description: result.description,
-        status: result.status,
+    await shad.showDialog<void>(
+      context: context,
+      builder: (_) => TaskInitiativeDialog(
+        initiative: initiative,
+        onSubmit: (result) => _runActionWithResult(
+          () => context.read<TaskPortfolioCubit>().updateInitiative(
+            wsId: wsId,
+            initiativeId: initiative.id,
+            name: result.name,
+            description: result.description,
+            status: result.status,
+          ),
+          successMessage: context.l10n.taskPortfolioInitiativeUpdated,
+        ),
       ),
-      successMessage: context.l10n.taskPortfolioInitiativeUpdated,
     );
   }
 
@@ -251,11 +250,19 @@ class TaskPortfolioActions {
     Future<void> Function() action, {
     required String successMessage,
   }) async {
+    await _runActionWithResult(action, successMessage: successMessage);
+  }
+
+  Future<bool> _runActionWithResult(
+    Future<void> Function() action, {
+    required String successMessage,
+  }) async {
     try {
       await action();
       if (context.mounted) {
         _showSuccessToast(successMessage);
       }
+      return true;
     } on ApiException catch (error) {
       if (context.mounted) {
         _showErrorToast(
@@ -264,10 +271,12 @@ class TaskPortfolioActions {
               : error.message,
         );
       }
+      return false;
     } on Exception {
       if (context.mounted) {
         _showErrorToast(context.l10n.commonSomethingWentWrong);
       }
+      return false;
     }
   }
 

@@ -13,19 +13,25 @@ class TaskInitiativeFormValue {
 }
 
 class TaskInitiativeDialog extends StatefulWidget {
-  const TaskInitiativeDialog({super.key, this.initiative});
+  const TaskInitiativeDialog({
+    super.key,
+    this.initiative,
+    this.onSubmit,
+  });
 
   final TaskInitiativeSummary? initiative;
+  final Future<bool> Function(TaskInitiativeFormValue value)? onSubmit;
 
   @override
   State<TaskInitiativeDialog> createState() => _TaskInitiativeDialogState();
 }
 
 class _TaskInitiativeDialogState extends State<TaskInitiativeDialog> {
-  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
   late String _status;
+  String? _nameError;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -49,6 +55,7 @@ class _TaskInitiativeDialogState extends State<TaskInitiativeDialog> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.initiative != null;
+    final theme = shad.Theme.of(context);
 
     return shad.AlertDialog(
       title: Text(
@@ -56,60 +63,57 @@ class _TaskInitiativeDialogState extends State<TaskInitiativeDialog> {
             ? context.l10n.taskPortfolioEditInitiative
             : context.l10n.taskPortfolioCreateInitiative,
       ),
-      content: Form(
-        key: _formKey,
-        child: SizedBox(
-          width: double.maxFinite,
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(context.l10n.taskPortfolioInitiativeName),
+              _FieldLabel(context.l10n.taskPortfolioInitiativeName),
               const shad.Gap(4),
-              TextFormField(
+              shad.TextField(
                 controller: _nameController,
                 autofocus: true,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return context.l10n.taskPortfolioInitiativeNameRequired;
-                  }
-                  return null;
-                },
+                placeholder: Text(context.l10n.taskPortfolioInitiativeName),
               ),
+              if (_nameError != null) ...[
+                const shad.Gap(4),
+                Text(
+                  _nameError!,
+                  style: theme.typography.small.copyWith(
+                    color: theme.colorScheme.destructive,
+                  ),
+                ),
+              ],
               const shad.Gap(12),
-              Text(context.l10n.financeDescription),
+              _FieldLabel(context.l10n.financeDescription),
               const shad.Gap(4),
-              TextFormField(
+              shad.TextArea(
                 controller: _descriptionController,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText: context.l10n.taskPortfolioInitiativeDescriptionHint,
+                placeholder: Text(
+                  context.l10n.taskPortfolioInitiativeDescriptionHint,
                 ),
-                minLines: 2,
-                maxLines: 4,
+                initialHeight: 88,
+                minHeight: 88,
+                maxHeight: 140,
               ),
               const shad.Gap(12),
-              Text(context.l10n.taskPortfolioInitiativeStatus),
+              _FieldLabel(context.l10n.taskPortfolioInitiativeStatus),
               const shad.Gap(4),
-              DropdownButtonFormField<String>(
-                initialValue: _status,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                ),
-                items: _initiativeStatuses
-                    .map(
-                      (value) => DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(_initiativeStatusLabel(context, value)),
+              shad.OutlineButton(
+                onPressed: _pickStatus,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _initiativeStatusLabel(context, _status),
+                        textAlign: TextAlign.left,
                       ),
-                    )
-                    .toList(growable: false),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _status = value);
-                  }
-                },
+                    ),
+                    const Icon(shad.LucideIcons.chevronDown, size: 16),
+                  ],
+                ),
               ),
             ],
           ),
@@ -117,30 +121,107 @@ class _TaskInitiativeDialogState extends State<TaskInitiativeDialog> {
       ),
       actions: [
         shad.OutlineButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
         ),
         shad.PrimaryButton(
-          onPressed: _submit,
-          child: Text(
-            isEditing
-                ? context.l10n.timerSave
-                : context.l10n.taskPortfolioCreateInitiative,
-          ),
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: shad.CircularProgressIndicator(),
+                )
+              : Text(
+                  isEditing
+                      ? context.l10n.timerSave
+                      : context.l10n.taskPortfolioCreateInitiative,
+                ),
         ),
       ],
     );
   }
 
-  void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+  Future<void> _submit() async {
+    if (_isSubmitting) return;
 
-    Navigator.of(context).pop(
-      TaskInitiativeFormValue(
-        name: _nameController.text.trim(),
-        description: _normalizeDescription(_descriptionController.text),
-        status: _status,
-      ),
+    final trimmedName = _nameController.text.trim();
+    if (trimmedName.isEmpty) {
+      setState(() {
+        _nameError = context.l10n.taskPortfolioInitiativeNameRequired;
+      });
+      return;
+    }
+
+    if (_nameError != null) {
+      setState(() {
+        _nameError = null;
+      });
+    }
+
+    final value = TaskInitiativeFormValue(
+      name: trimmedName,
+      description: _normalizeDescription(_descriptionController.text),
+      status: _status,
     );
+
+    final submit = widget.onSubmit;
+    if (submit == null) {
+      Navigator.of(context).pop(value);
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final success = await submit(value);
+    if (!mounted) return;
+
+    if (!success) {
+      setState(() {
+        _isSubmitting = false;
+      });
+      return;
+    }
+
+    Navigator.of(context).pop();
+  }
+
+  Future<void> _pickStatus() async {
+    final selected = await shad.showDialog<String>(
+      context: context,
+      builder: (dialogCtx) {
+        return shad.AlertDialog(
+          title: Text(context.l10n.taskPortfolioInitiativeStatus),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 260),
+              child: ListView(
+                shrinkWrap: true,
+                children: _initiativeStatuses
+                    .map(
+                      (value) => shad.GhostButton(
+                        onPressed: () => Navigator.of(dialogCtx).pop(value),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(_initiativeStatusLabel(context, value)),
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selected == null) {
+      return;
+    }
+
+    setState(() => _status = selected);
   }
 }

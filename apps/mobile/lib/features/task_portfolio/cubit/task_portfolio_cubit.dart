@@ -92,7 +92,10 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     );
   }
 
-  Future<void> load(String wsId) async {
+  Future<void> load(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
     final cacheKey = _cacheKey(wsId);
@@ -101,7 +104,7 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
       decode: _decodeCacheJson,
     );
 
-    if (cached.hasValue) {
+    if (!forceRefresh && cached.hasValue) {
       final json = cached.data!;
       emit(
         state.copyWith(
@@ -354,7 +357,7 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
         return;
       }
       emit(state.copyWith(isMutating: false, clearError: true));
-      await load(wsId);
+      await load(wsId, forceRefresh: true);
     } catch (_) {
       if (state.workspaceId == wsId) {
         emit(state.copyWith(isMutating: false));
