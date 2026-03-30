@@ -687,7 +687,7 @@
     "taskLabelsDeleted": "Label deleted.",
     "taskLabelsName": "Label name",
     "taskLabelsNameRequired": "Label name is required",
-    "taskLabelsColorInvalid": "Choose one of the supported preset colors",
+    "taskLabelsColorInvalid": "Enter a valid hex color",
     "taskLabelsEmptyTitle": "No labels yet",
     "taskLabelsEmptyDescription": "Create labels to tag and organize task work.",
     "taskEstimatesDescription": "Configure estimation methods for your task boards and review their current coverage.",

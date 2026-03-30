@@ -687,7 +687,7 @@
     "taskLabelsDeleted": "Đã xóa nhãn.",
     "taskLabelsName": "Tên nhãn",
     "taskLabelsNameRequired": "Tên nhãn là bắt buộc",
-    "taskLabelsColorInvalid": "Chọn một trong các màu cài sẵn được hỗ trợ",
+    "taskLabelsColorInvalid": "Nhập mã màu hex hợp lệ",
     "taskLabelsEmptyTitle": "Chưa có nhãn",
     "taskLabelsEmptyDescription": "Tạo nhãn để gắn thẻ và sắp xếp công việc.",
     "taskEstimatesDescription": "Cấu hình phương pháp ước lượng cho các bảng công việc và xem mức độ áp dụng hiện tại.",

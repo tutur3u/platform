@@ -1682,7 +1682,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskLabelsNameRequired => 'Label name is required';
 
   @override
-  String get taskLabelsColorInvalid => 'Choose one of the supported preset colors';
+  String get taskLabelsColorInvalid => 'Enter a valid hex color';
 
   @override
   String get taskLabelsEmptyTitle => 'No labels yet';

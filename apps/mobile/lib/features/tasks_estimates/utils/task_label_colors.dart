@@ -1,12 +1,6 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:mobile/features/tasks_estimates/utils/task_label_color_presets.g.dart';
 
-export 'package:mobile/features/tasks_estimates/utils/task_label_color_presets.g.dart'
-    show taskLabelColorPresets;
-
-final Set<String> _taskLabelColorPresetSet = taskLabelColorPresets.toSet();
+const String kDefaultTaskLabelColor = '#3B82F6';
 final RegExp _taskLabelHexPattern = RegExp(
   r'^#?(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$',
 );
@@ -41,23 +35,10 @@ Color? parseTaskLabelColor(String? raw) {
   return Color(value);
 }
 
-bool isTaskLabelColorPreset(String? raw) {
-  final normalized = normalizeTaskLabelColor(raw);
-  if (normalized == null) {
-    return false;
-  }
-  return _taskLabelColorPresetSet.contains(normalized);
-}
-
 String taskLabelColorOrDefault(String? raw) {
   final normalized = normalizeTaskLabelColor(raw);
-  if (normalized != null && _taskLabelColorPresetSet.contains(normalized)) {
+  if (normalized != null) {
     return normalized;
   }
-  return taskLabelColorPresets[5];
-}
-
-String randomTaskLabelColorPreset({Random? random}) {
-  final rng = random ?? Random();
-  return taskLabelColorPresets[rng.nextInt(taskLabelColorPresets.length)];
+  return kDefaultTaskLabelColor;
 }

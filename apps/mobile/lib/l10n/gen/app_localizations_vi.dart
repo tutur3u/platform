@@ -1682,7 +1682,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskLabelsNameRequired => 'Tên nhãn là bắt buộc';
 
   @override
-  String get taskLabelsColorInvalid => 'Chọn một trong các màu cài sẵn được hỗ trợ';
+  String get taskLabelsColorInvalid => 'Nhập mã màu hex hợp lệ';
 
   @override
   String get taskLabelsEmptyTitle => 'Chưa có nhãn';
