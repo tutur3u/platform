@@ -9,7 +9,7 @@ import {
   XIcon,
   ZoomInIcon,
 } from '@tuturuuu/icons';
-import { listInquiryMediaUrls } from '@tuturuuu/internal-api';
+import type { updateInquiry as updateInquiryApi } from '@tuturuuu/internal-api';
 import type { Product, SupportType } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -25,50 +25,13 @@ import { format } from 'date-fns';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useInquiryMediaUrlsQuery, useUpdateInquiryMutation } from './hooks';
 import type { ExtendedSupportInquiry } from './page';
 
 // Helper function to determine if a file is a video based on extension
 function isVideoFile(filename: string): boolean {
   const videoExtensions = ['.mp4', '.webm', '.mov'];
   return videoExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
-}
-
-// Custom hook for generating signed URLs for media files (images and videos)
-function useSignedMediaUrls(
-  inquiryId: string,
-  mediaFiles: string[] | null
-): {
-  mediaUrls: Record<string, string>;
-  isLoading: boolean;
-} {
-  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-
-  const generateSignedUrls = useCallback(async () => {
-    if (!mediaFiles || mediaFiles.length === 0) {
-      setMediaUrls({});
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    const urls = await listInquiryMediaUrls(inquiryId, mediaFiles).catch(
-      (error) => {
-        console.error('Error generating signed URLs for inquiry media:', error);
-        return {} as Record<string, string>;
-      }
-    );
-
-    setMediaUrls(urls);
-    setIsLoading(false);
-  }, [mediaFiles, inquiryId]);
-
-  // Generate URLs when media files change
-  useEffect(() => {
-    generateSignedUrls();
-  }, [generateSignedUrls]);
-
-  return { mediaUrls, isLoading };
 }
 
 interface InquiryDetailModalProps {
@@ -124,14 +87,15 @@ export function InquiryDetailModal({
   const hasMarkedAsRead = useRef(false);
 
   const inquiryId = inquiry.id;
-  const { mediaUrls, isLoading } = useSignedMediaUrls(
+  const { data: mediaUrls = {}, isLoading } = useInquiryMediaUrlsQuery(
     inquiryId,
     inquiry.images
   );
+  const updateInquiryMutation = useUpdateInquiryMutation(inquiryId);
 
   const updateInquiry = useCallback(
     async (
-      updates: { is_read?: boolean; is_resolved?: boolean },
+      updates: Parameters<typeof updateInquiryApi>[1],
       showToast = true
     ) => {
       const isResolvingUpdate = updates.is_resolved !== undefined;
@@ -140,15 +104,7 @@ export function InquiryDetailModal({
       }
 
       try {
-        const response = await fetch(`/api/v1/inquiries/${inquiry.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updates),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update inquiry');
-        }
+        await updateInquiryMutation.mutateAsync(updates);
 
         if (showToast) {
           toast.success('Inquiry updated successfully');
@@ -166,7 +122,7 @@ export function InquiryDetailModal({
         }
       }
     },
-    [inquiry.id, onUpdate, router]
+    [onUpdate, router, updateInquiryMutation]
   );
 
   // Mark as read when modal opens (only once)

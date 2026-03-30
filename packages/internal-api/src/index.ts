@@ -100,7 +100,7 @@ export {
   type SendInfrastructurePushTestResponse,
   sendInfrastructurePushTest,
 } from './infrastructure';
-export { listInquiryMediaUrls } from './inquiries';
+export { listInquiryMediaUrls, updateInquiry } from './inquiries';
 export { listWorkspaceEmails } from './mail';
 export { getCurrentUserNovaTeam } from './nova';
 export { forceSendWorkspacePostEmail } from './posts';

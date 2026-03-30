@@ -24,3 +24,22 @@ export async function listInquiryMediaUrls(
 
   return payload.urls ?? {};
 }
+
+export async function updateInquiry(
+  inquiryId: string,
+  updates: { is_read?: boolean; is_resolved?: boolean },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: unknown }>(
+    `/api/v1/inquiries/${encodePathSegment(inquiryId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+      cache: 'no-store',
+    }
+  );
+}
