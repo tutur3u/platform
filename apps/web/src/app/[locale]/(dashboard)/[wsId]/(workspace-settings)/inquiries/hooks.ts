@@ -15,7 +15,10 @@ export interface InquiryUpdateMutationInput {
 }
 
 interface UseUpdateInquiryMutationOptions {
-  onSuccess?: (input: InquiryUpdateMutationInput) => void;
+  onSuccess?: (
+    result: UpdateInquiryResponse,
+    input: InquiryUpdateMutationInput
+  ) => void;
   onError?: (error: unknown, input: InquiryUpdateMutationInput) => void;
 }
 
@@ -23,8 +26,10 @@ export function useInquiryMediaUrlsQuery(
   inquiryId: string,
   mediaFiles: string[] | null
 ) {
+  const mediaFilesKey = mediaFiles?.slice().sort().join('|') ?? '';
+
   return useQuery({
-    queryKey: ['inquiries', inquiryId, 'media-urls', mediaFiles],
+    queryKey: ['inquiries', inquiryId, 'media-urls', mediaFilesKey],
     queryFn: async () => {
       if (!mediaFiles || mediaFiles.length === 0) {
         return {} as Record<string, string>;
@@ -47,8 +52,8 @@ export function useUpdateInquiryMutation(
   return useMutation({
     mutationFn: async (input: InquiryUpdateMutationInput) =>
       updateInquiryFn(inquiryId, input.updates),
-    onSuccess: (_, input) => {
-      options?.onSuccess?.(input);
+    onSuccess: (result, input) => {
+      options?.onSuccess?.(result, input);
     },
     onError: (error, input) => {
       options?.onError?.(error, input);

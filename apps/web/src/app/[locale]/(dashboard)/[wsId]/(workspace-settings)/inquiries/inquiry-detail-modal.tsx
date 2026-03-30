@@ -79,21 +79,26 @@ export function InquiryDetailModal({
   onUpdate,
 }: InquiryDetailModalProps) {
   const router = useRouter();
+  const [currentInquiry, setCurrentInquiry] = useState(inquiry);
   const [selectedMedia, setSelectedMedia] = useState<{
     url: string;
     isVideo: boolean;
   } | null>(null);
 
-  const inquiryId = inquiry.id;
+  const inquiryId = currentInquiry.id;
   const { data: mediaUrls = {}, isLoading } = useInquiryMediaUrlsQuery(
     inquiryId,
-    inquiry.images
+    currentInquiry.images
   );
   const updateInquiryMutation = useUpdateInquiryMutation(
     inquiryId,
     updateInquiryApi,
     {
-      onSuccess: (input) => {
+      onSuccess: (result, input) => {
+        setCurrentInquiry((prev) => ({
+          ...prev,
+          ...result.data,
+        }));
         if (input.showToast !== false) {
           toast.success('Inquiry updated successfully');
         }
@@ -116,13 +121,17 @@ export function InquiryDetailModal({
     updateInquiryMutation;
 
   useEffect(() => {
-    if (isOpen && !inquiry.is_read) {
+    setCurrentInquiry(inquiry);
+  }, [inquiry]);
+
+  useEffect(() => {
+    if (isOpen && !currentInquiry.is_read && !isUpdatingInquiry) {
       mutateInquiry({
         updates: { is_read: true },
         showToast: false,
       });
     }
-  }, [inquiry.is_read, isOpen, mutateInquiry]);
+  }, [currentInquiry.is_read, isOpen, isUpdatingInquiry, mutateInquiry]);
 
   const handleResolve = () => {
     mutateInquiry({
@@ -166,7 +175,7 @@ export function InquiryDetailModal({
                 Support Inquiry
               </DialogTitle>
               <div className="flex items-center gap-2">
-                {inquiry.is_resolved ? (
+                {currentInquiry.is_resolved ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -214,20 +223,20 @@ export function InquiryDetailModal({
                 {/* Subject - Clean and focused */}
                 <div className="space-y-3">
                   <h1 className="font-bold text-2xl text-foreground leading-tight md:text-3xl">
-                    {inquiry.subject}
+                    {currentInquiry.subject}
                   </h1>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
-                      className={`${SUPPORT_TYPE_COLORS[inquiry.type]} border`}
+                      className={`${SUPPORT_TYPE_COLORS[currentInquiry.type]} border`}
                     >
-                      {SUPPORT_TYPE_LABELS[inquiry.type]}
+                      {SUPPORT_TYPE_LABELS[currentInquiry.type]}
                     </Badge>
                     <Badge variant="outline" className="border-border/60">
-                      {PRODUCT_LABELS[inquiry.product]}
+                      {PRODUCT_LABELS[currentInquiry.product]}
                     </Badge>
                     <span className="text-muted-foreground text-sm">•</span>
-                    {inquiry.is_resolved ? (
+                    {currentInquiry.is_resolved ? (
                       <span className="flex items-center gap-1.5 text-dynamic-green text-sm">
                         <CheckCircleIcon className="h-4 w-4" />
                         Resolved
@@ -238,7 +247,7 @@ export function InquiryDetailModal({
                         Open
                       </span>
                     )}
-                    {!inquiry.is_read && (
+                    {!currentInquiry.is_read && (
                       <>
                         <span className="text-muted-foreground text-sm">•</span>
                         <span className="flex items-center gap-1.5 font-medium text-dynamic-red text-sm">
@@ -251,26 +260,29 @@ export function InquiryDetailModal({
 
                 {/* Submitter Info - Minimal card */}
                 <div className="flex items-start gap-4 rounded-lg border bg-muted/20 p-4">
-                  {inquiry.users ? (
+                  {currentInquiry.users ? (
                     <>
                       <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarImage src={inquiry.users.avatar_url || ''} />
+                        <AvatarImage
+                          src={currentInquiry.users.avatar_url || ''}
+                        />
                         <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                          {inquiry.users.display_name?.[0] ||
-                            inquiry.users.user_private_details.email?.[0] ||
+                          {currentInquiry.users.display_name?.[0] ||
+                            currentInquiry.users.user_private_details
+                              .email?.[0] ||
                             'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1 space-y-1">
                         <p className="font-medium text-foreground">
-                          {inquiry.users.display_name || 'Unknown User'}
+                          {currentInquiry.users.display_name || 'Unknown User'}
                         </p>
                         <p className="text-muted-foreground text-sm">
-                          {inquiry.users.user_private_details.email}
+                          {currentInquiry.users.user_private_details.email}
                         </p>
                         <p className="text-muted-foreground text-xs">
                           {format(
-                            new Date(inquiry.created_at),
+                            new Date(currentInquiry.created_at),
                             'MMM d, yyyy · h:mm a'
                           )}
                         </p>
@@ -280,19 +292,19 @@ export function InquiryDetailModal({
                     <>
                       <Avatar className="h-12 w-12 shrink-0">
                         <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                          {inquiry.name[0] || 'U'}
+                          {currentInquiry.name[0] || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1 space-y-1">
                         <p className="font-medium text-foreground">
-                          {inquiry.name}
+                          {currentInquiry.name}
                         </p>
                         <p className="text-muted-foreground text-sm">
-                          {inquiry.email}
+                          {currentInquiry.email}
                         </p>
                         <p className="text-muted-foreground text-xs">
                           {format(
-                            new Date(inquiry.created_at),
+                            new Date(currentInquiry.created_at),
                             'MMM d, yyyy · h:mm a'
                           )}
                         </p>
@@ -308,17 +320,17 @@ export function InquiryDetailModal({
                   </h2>
                   <div className="rounded-lg border bg-background p-4 md:p-6">
                     <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-                      {inquiry.message}
+                      {currentInquiry.message}
                     </p>
                   </div>
                 </div>
 
                 {/* Attachments - Functional display */}
-                {inquiry.images && inquiry.images.length > 0 && (
+                {currentInquiry.images && currentInquiry.images.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                        Attachments ({inquiry.images.length})
+                        Attachments ({currentInquiry.images.length})
                       </h2>
                     </div>
                     {isLoading ? (
@@ -330,7 +342,7 @@ export function InquiryDetailModal({
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                        {inquiry.images.map((mediaPath, index) => {
+                        {currentInquiry.images.map((mediaPath, index) => {
                           const mediaUrl = mediaUrls[mediaPath];
                           if (!mediaUrl) return null;
 
@@ -338,7 +350,7 @@ export function InquiryDetailModal({
 
                           return (
                             <button
-                              key={`${inquiry.id}-media-${index}`}
+                              key={`${currentInquiry.id}-media-${index}`}
                               type="button"
                               className="group relative aspect-square overflow-hidden rounded-lg border bg-muted/50 transition-all hover:border-foreground/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-dynamic-blue/50"
                               onClick={() => handleMediaClick(mediaPath)}
