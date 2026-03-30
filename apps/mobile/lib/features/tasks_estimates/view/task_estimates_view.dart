@@ -305,6 +305,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     final rootNavigator = Navigator.of(context, rootNavigator: true);
     final created = await showAdaptiveSheet<bool>(
       context: context,
+      useRootNavigator: true,
       builder: (_) => TaskLabelDialog(
         title: l10n.taskLabelsCreate,
         submitLabel: l10n.taskLabelsCreate,
@@ -369,6 +370,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     final rootNavigator = Navigator.of(context, rootNavigator: true);
     final updated = await showAdaptiveSheet<bool>(
       context: context,
+      useRootNavigator: true,
       builder: (_) => TaskLabelDialog(
         title: l10n.taskLabelsEdit,
         submitLabel: l10n.timerSave,
@@ -435,6 +437,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     final deleted =
         await showAdaptiveSheet<bool>(
           context: context,
+          useRootNavigator: true,
           builder: (_) => AsyncDeleteConfirmationDialog(
             title: context.l10n.taskLabelsDelete,
             message: context.l10n.taskLabelsDeleteConfirm,
