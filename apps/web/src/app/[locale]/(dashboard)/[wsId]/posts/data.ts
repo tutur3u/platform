@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/db';
 import {
   autoSkipOldPostEmails,
   getPostEmailMaxAgeCutoff,
@@ -79,32 +80,11 @@ interface PostEmailSummaryRpcRow {
   queue_skipped_count: number | null;
 }
 
-interface PostEmailRowsRpcArgs {
-  p_ws_id: string;
-  p_cutoff: string;
-  p_start_date?: string;
-  p_end_date?: string;
-  p_limit: number;
-  p_offset: number;
-  p_included_group_ids?: string[];
-  p_excluded_group_ids?: string[];
-  p_stage?: PostReviewStage[];
-  p_approval_status?: PostApprovalStatus;
-  p_user_id?: string;
-  p_queue_status?: PostEmailQueueStatus;
-}
+type PostEmailRowsRpcArgs =
+  Database['public']['Functions']['get_workspace_post_review_rows']['Args'];
 
-interface PostEmailSummaryRpcArgs {
-  p_ws_id: string;
-  p_cutoff: string;
-  p_start_date?: string;
-  p_end_date?: string;
-  p_included_group_ids?: string[];
-  p_excluded_group_ids?: string[];
-  p_user_id?: string;
-  p_approval_status?: PostApprovalStatus;
-  p_queue_status?: PostEmailQueueStatus;
-}
+type PostEmailSummaryRpcArgs =
+  Database['public']['Functions']['get_workspace_post_review_summary']['Args'];
 
 function normalizeQueueStatus(
   value?: string | null

@@ -42,11 +42,16 @@ import { DEFAULT_POST_REVIEW_STAGE } from './types';
 export default function PostsFilters({
   wsId,
   statusSummary,
+  defaultDateRange,
   noInclude = false,
   noExclude = false,
 }: {
   wsId: string;
   statusSummary: PostEmailStatusSummary;
+  defaultDateRange: {
+    start: string;
+    end: string;
+  };
   noInclude?: boolean;
   noExclude?: boolean;
 }) {
@@ -69,6 +74,9 @@ export default function PostsFilters({
   const excludedUserGroups =
     (data?.excludedUserGroups as UserGroup[] | undefined) ?? [];
   const users = (data?.users as WorkspaceUser[] | undefined) ?? [];
+  const hasNonDefaultDateRange =
+    (queryState.start ?? defaultDateRange.start) !== defaultDateRange.start ||
+    (queryState.end ?? defaultDateRange.end) !== defaultDateRange.end;
 
   const hasAnyFilters = useMemo(
     () =>
@@ -77,13 +85,12 @@ export default function PostsFilters({
           queryState.showAll ||
           queryState.approvalStatus ||
           queryState.queueStatus ||
-          queryState.start ||
-          queryState.end ||
+          hasNonDefaultDateRange ||
           queryState.userId ||
           (queryState.includedGroups?.length ?? 0) > 0 ||
           (queryState.excludedGroups?.length ?? 0) > 0
       ),
-    [queryState]
+    [hasNonDefaultDateRange, queryState]
   );
 
   const setPageOne = (values: Partial<PostsSearchParams>) =>

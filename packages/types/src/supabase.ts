@@ -25235,11 +25235,13 @@ export type Database = {
       get_workspace_post_review_base_rows: {
         Args: {
           p_cutoff?: string;
+          p_end_date?: string;
           p_excluded_group_ids?: string[];
           p_group_id?: string;
           p_included_group_ids?: string[];
           p_post_id?: string;
           p_q?: string;
+          p_start_date?: string;
           p_user_id?: string;
           p_ws_id: string;
         };

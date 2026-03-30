@@ -40,6 +40,42 @@ function normalizeSearchParamsForComparison(value: string) {
   return new URLSearchParams(entries).toString();
 }
 
+function pickFirstRawValue(value?: string | string[]): string | null {
+  if (Array.isArray(value)) {
+    const first = value.find((entry) => entry.trim().length > 0);
+    return first ?? null;
+  }
+
+  return value && value.trim().length > 0 ? value : null;
+}
+
+function normalizeIsoDate(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = dayjs(value);
+  if (!parsed.isValid()) {
+    return null;
+  }
+
+  return parsed.toISOString();
+}
+
+function normalizeExclusiveEndDate(value?: string | null): string | null {
+  const normalized = normalizeIsoDate(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = dayjs(normalized);
+  if (parsed.millisecond() === 999) {
+    return parsed.add(1, 'millisecond').toISOString();
+  }
+
+  return normalized;
+}
+
 export function buildCanonicalPostsSearchParams(
   rawSearchParams: RawPostsSearchParams,
   parsedSearchParams: Awaited<ReturnType<typeof postsSearchParamsCache.parse>>,
@@ -48,13 +84,31 @@ export function buildCanonicalPostsSearchParams(
     end?: string | null;
   }
 ) {
+  let normalizedStart = normalizeIsoDate(
+    parsedSearchParams.start ?? pickFirstRawValue(rawSearchParams.start)
+  );
+  let normalizedEnd = normalizeExclusiveEndDate(
+    parsedSearchParams.end ?? pickFirstRawValue(rawSearchParams.end)
+  );
+
+  if (
+    normalizedStart &&
+    normalizedEnd &&
+    dayjs(normalizedStart).isAfter(dayjs(normalizedEnd))
+  ) {
+    normalizedStart = null;
+    normalizedEnd = null;
+  }
+
   const normalizedStage =
     parsedSearchParams.stage ??
     normalizeRawPostReviewStage(rawSearchParams.stage) ??
     null;
   const normalizedSearchParams = applyDefaultPostStageFilter({
     ...parsedSearchParams,
+    end: normalizedEnd,
     showAll: normalizedStage ? null : (parsedSearchParams.showAll ?? null),
+    start: normalizedStart,
     stage: normalizedStage,
   });
 
@@ -100,11 +154,11 @@ export function buildDefaultPostsDateRange(timezoneSetting?: string | null): {
       ? timezoneSetting
       : 'UTC';
 
-  const end = dayjs().tz(timezoneToUse).endOf('day');
-  const start = end.subtract(29, 'day').startOf('day');
+  const endExclusive = dayjs().tz(timezoneToUse).add(1, 'day').startOf('day');
+  const start = endExclusive.subtract(30, 'day');
 
   return {
     start: start.toISOString(),
-    end: end.toISOString(),
+    end: endExclusive.toISOString(),
   };
 }
