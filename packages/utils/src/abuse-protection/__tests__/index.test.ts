@@ -12,6 +12,7 @@ import {
   MAX_BLOCK_LEVEL,
   REDIS_KEYS,
   recordOTPSendSuccess,
+  resetOtpLimitsForEmail,
   WINDOW_MS,
 } from '../index';
 
@@ -395,6 +396,26 @@ describe('abuse-protection', () => {
       expect(attempt.remainingAttempts).toBe(
         ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE - 1
       );
+    });
+  });
+
+  describe('resetOtpLimitsForEmail', () => {
+    it.each([
+      'user@@example.com',
+      'user@example',
+      'user..name@example.com',
+      'user@-example.com',
+      'user@example..com',
+    ])('rejects malformed email input: %s', async (email) => {
+      await expect(
+        resetOtpLimitsForEmail({
+          email,
+          clearEmailScoped: true,
+          clearRelatedIpCounters: false,
+          clearRelatedIpBlocks: false,
+          adminUserId: 'admin-user-id',
+        })
+      ).rejects.toThrow('Email is invalid');
     });
   });
 });
