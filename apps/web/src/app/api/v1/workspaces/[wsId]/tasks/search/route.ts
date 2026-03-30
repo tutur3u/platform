@@ -1,5 +1,9 @@
 import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
@@ -65,17 +69,43 @@ function enhanceSearchQuery(query: string): string {
 
 export async function POST(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
-    const { wsId } = await params;
+    const supabase = await createClient(req);
+    const { wsId: id } = await params;
 
-    // Check authentication
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error(
+        'Error verifying workspace membership for task search:',
+        membershipError
+      );
+      return NextResponse.json(
+        { message: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const sbAdmin = await createAdminClient();
 
     // Get search query from request body
     const body = await req.json();
@@ -105,7 +135,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     // Call the hybrid match_tasks function with both embedding and text
-    const { data, error } = await supabase.rpc('match_tasks', {
+    const { data, error } = await sbAdmin.rpc('match_tasks', {
       query_embedding: JSON.stringify(embedding),
       query_text: query.trim(), // Pass original query for full-text search
       match_threshold: matchThreshold,

@@ -563,11 +563,136 @@ export interface ResetOtpLimitsForEmailResult {
   unblockedIpCount: number;
 }
 
+function isAsciiLetterOrDigit(char: string): boolean {
+  const code = char.charCodeAt(0);
+
+  return (
+    (code >= 48 && code <= 57) ||
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122)
+  );
+}
+
+function isAllowedLocalEmailCharacter(char: string): boolean {
+  if (isAsciiLetterOrDigit(char)) {
+    return true;
+  }
+
+  switch (char) {
+    case '!':
+    case '#':
+    case '$':
+    case '%':
+    case '&':
+    case "'":
+    case '*':
+    case '+':
+    case '-':
+    case '.':
+    case '/':
+    case '=':
+    case '?':
+    case '^':
+    case '_':
+    case '`':
+    case '{':
+    case '|':
+    case '}':
+    case '~':
+      return true;
+    default:
+      return false;
+  }
+}
+
+function isValidEmailDomainLabel(label: string): boolean {
+  if (!label || label.startsWith('-') || label.endsWith('-')) {
+    return false;
+  }
+
+  for (const char of label) {
+    if (!isAsciiLetterOrDigit(char) && char !== '-') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function hasWhitespace(text: string): boolean {
+  for (const char of text) {
+    if (
+      char === ' ' ||
+      char === '\t' ||
+      char === '\n' ||
+      char === '\r' ||
+      char === '\f' ||
+      char === '\v'
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isValidNormalizedEmail(email: string): boolean {
+  if (!email || email.length > 254 || hasWhitespace(email)) {
+    return false;
+  }
+
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex !== email.lastIndexOf('@')) {
+    return false;
+  }
+
+  const localPart = email.slice(0, atIndex);
+  const domainPart = email.slice(atIndex + 1);
+
+  if (
+    !localPart ||
+    !domainPart ||
+    localPart.length > 64 ||
+    domainPart.length > 253 ||
+    localPart.startsWith('.') ||
+    localPart.endsWith('.') ||
+    localPart.includes('..') ||
+    domainPart.startsWith('.') ||
+    domainPart.endsWith('.') ||
+    domainPart.includes('..')
+  ) {
+    return false;
+  }
+
+  for (const char of localPart) {
+    if (!isAllowedLocalEmailCharacter(char)) {
+      return false;
+    }
+  }
+
+  const domainLabels = domainPart.split('.');
+  if (domainLabels.length < 2) {
+    return false;
+  }
+
+  for (const label of domainLabels) {
+    if (!isValidEmailDomainLabel(label)) {
+      return false;
+    }
+  }
+
+  const topLevelDomain = domainLabels[domainLabels.length - 1];
+  if (!topLevelDomain || topLevelDomain.length < 2) {
+    return false;
+  }
+
+  return true;
+}
+
 function normalizeOtpResetEmail(email: string): string {
   const normalized = email.trim().toLowerCase();
-  const regex = /\S+@\S+\.\S+/;
 
-  if (!normalized || !regex.test(normalized)) {
+  if (!isValidNormalizedEmail(normalized)) {
     throw new Error('Email is invalid');
   }
 

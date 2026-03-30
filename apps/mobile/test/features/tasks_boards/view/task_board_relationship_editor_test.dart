@@ -5,9 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_link_option.dart';
+import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -81,6 +84,33 @@ class _FakeTaskRepository extends TaskRepository {
       ],
       tasks: tasks,
     );
+  }
+
+  @override
+  Future<List<TaskBoardTask>> getBoardTasksForList(
+    String wsId, {
+    required String listId,
+    int limit = 50,
+    int offset = 0,
+    List<WorkspaceUserOption> members = const <WorkspaceUserOption>[],
+    List<TaskLabel> labels = const <TaskLabel>[],
+    List<TaskProjectSummary> projects = const <TaskProjectSummary>[],
+  }) async {
+    if (listId != 'list-1') {
+      return const <TaskBoardTask>[];
+    }
+    if (offset > 0) {
+      return const <TaskBoardTask>[];
+    }
+
+    return _seedTasks
+        .map(
+          (task) => task.copyWith(
+            relationships: _relationshipsByTaskId[task.id],
+            relationshipsLoaded: true,
+          ),
+        )
+        .toList(growable: false);
   }
 
   @override

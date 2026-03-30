@@ -1308,10 +1308,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailUntitledTask => 'Untitled task';
 
   @override
-  String get taskBoardDetailListView => 'List view';
+  String get taskBoardDetailListView => 'List';
 
   @override
-  String get taskBoardDetailKanbanView => 'Kanban view';
+  String get taskBoardDetailKanbanView => 'Kanban';
 
   @override
   String get taskBoardDetailSearchPlaceholder => 'Search tasks';

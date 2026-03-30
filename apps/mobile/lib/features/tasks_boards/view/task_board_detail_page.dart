@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';

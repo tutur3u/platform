@@ -66,10 +66,17 @@ class TaskBoardDetailState extends Equatable {
     this.workspaceId,
     this.boardId,
     this.board,
-    this.currentView = TaskBoardDetailView.list,
+    this.currentView = TaskBoardDetailView.kanban,
     this.searchQuery = '',
     this.filters = const TaskBoardDetailFilters(),
     this.taskDescriptionSearchIndex = const <String, String>{},
+    this.listTasksByListId = const <String, List<TaskBoardTask>>{},
+    this.loadedListIds = const <String>{},
+    this.loadingListIds = const <String>{},
+    this.listHasMoreById = const <String, bool>{},
+    this.listOffsetsById = const <String, int>{},
+    this.listPageSizeById = const <String, int>{},
+    this.listLoadErrorById = const <String, String>{},
     this.selectedTaskId,
     this.isMutating = false,
     this.mutationError,
@@ -84,10 +91,19 @@ class TaskBoardDetailState extends Equatable {
   final String searchQuery;
   final TaskBoardDetailFilters filters;
   final Map<String, String> taskDescriptionSearchIndex;
+  final Map<String, List<TaskBoardTask>> listTasksByListId;
+  final Set<String> loadedListIds;
+  final Set<String> loadingListIds;
+  final Map<String, bool> listHasMoreById;
+  final Map<String, int> listOffsetsById;
+  final Map<String, int> listPageSizeById;
+  final Map<String, String> listLoadErrorById;
   final String? selectedTaskId;
   final bool isMutating;
   final String? mutationError;
   final String? error;
+
+  bool get isLoadingListTasks => loadingListIds.isNotEmpty;
 
   List<TaskBoardTask> get filteredTasks {
     final source = board?.tasks ?? const <TaskBoardTask>[];
@@ -203,6 +219,13 @@ class TaskBoardDetailState extends Equatable {
     String? searchQuery,
     TaskBoardDetailFilters? filters,
     Map<String, String>? taskDescriptionSearchIndex,
+    Map<String, List<TaskBoardTask>>? listTasksByListId,
+    Set<String>? loadedListIds,
+    Set<String>? loadingListIds,
+    Map<String, bool>? listHasMoreById,
+    Map<String, int>? listOffsetsById,
+    Map<String, int>? listPageSizeById,
+    Map<String, String>? listLoadErrorById,
     Object? selectedTaskId = _taskBoardDetailSentinel,
     bool? isMutating,
     Object? mutationError = _taskBoardDetailSentinel,
@@ -226,6 +249,13 @@ class TaskBoardDetailState extends Equatable {
       filters: filters ?? this.filters,
       taskDescriptionSearchIndex:
           taskDescriptionSearchIndex ?? this.taskDescriptionSearchIndex,
+      listTasksByListId: listTasksByListId ?? this.listTasksByListId,
+      loadedListIds: loadedListIds ?? this.loadedListIds,
+      loadingListIds: loadingListIds ?? this.loadingListIds,
+      listHasMoreById: listHasMoreById ?? this.listHasMoreById,
+      listOffsetsById: listOffsetsById ?? this.listOffsetsById,
+      listPageSizeById: listPageSizeById ?? this.listPageSizeById,
+      listLoadErrorById: listLoadErrorById ?? this.listLoadErrorById,
       selectedTaskId: selectedTaskId == _taskBoardDetailSentinel
           ? this.selectedTaskId
           : selectedTaskId as String?,
@@ -253,6 +283,13 @@ class TaskBoardDetailState extends Equatable {
     searchQuery,
     filters,
     taskDescriptionSearchIndex,
+    listTasksByListId,
+    loadedListIds,
+    loadingListIds,
+    listHasMoreById,
+    listOffsetsById,
+    listPageSizeById,
+    listLoadErrorById,
     selectedTaskId,
     isMutating,
     mutationError,
