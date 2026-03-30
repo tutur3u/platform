@@ -1,3 +1,7 @@
+import { isValidTimezone } from '@tuturuuu/utils/timezone';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import {
   createLoader,
   createSearchParamsCache,
@@ -10,6 +14,9 @@ import {
   postsSearchParamParsers,
 } from './search-params';
 import type { RawPostsSearchParams } from './types';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export const postsSearchParamsCache = createSearchParamsCache(
   postsSearchParamParsers
@@ -35,7 +42,11 @@ function normalizeSearchParamsForComparison(value: string) {
 
 export function buildCanonicalPostsSearchParams(
   rawSearchParams: RawPostsSearchParams,
-  parsedSearchParams: Awaited<ReturnType<typeof postsSearchParamsCache.parse>>
+  parsedSearchParams: Awaited<ReturnType<typeof postsSearchParamsCache.parse>>,
+  defaults?: {
+    start?: string | null;
+    end?: string | null;
+  }
 ) {
   const normalizedStage =
     parsedSearchParams.stage ??
@@ -47,8 +58,21 @@ export function buildCanonicalPostsSearchParams(
     stage: normalizedStage,
   });
 
+  const shouldApplyDefaultDateRange =
+    !normalizedSearchParams.start &&
+    !normalizedSearchParams.end &&
+    Boolean(defaults?.start && defaults?.end);
+
+  const normalizedWithDateRange = shouldApplyDefaultDateRange
+    ? {
+        ...normalizedSearchParams,
+        start: defaults?.start ?? null,
+        end: defaults?.end ?? null,
+      }
+    : normalizedSearchParams;
+
   const canonicalSearchParams = serializePostsSearchParams(
-    normalizedSearchParams
+    normalizedWithDateRange
   ).replace(/^\?/, '');
   const canonicalSearchParamsEncoded = new URLSearchParams(
     canonicalSearchParams
@@ -63,4 +87,24 @@ export function buildCanonicalPostsSearchParams(
   }
 
   return canonicalSearchParamsEncoded;
+}
+
+export function buildDefaultPostsDateRange(timezoneSetting?: string | null): {
+  start: string;
+  end: string;
+} {
+  const timezoneToUse =
+    timezoneSetting &&
+    timezoneSetting !== 'auto' &&
+    isValidTimezone(timezoneSetting)
+      ? timezoneSetting
+      : 'UTC';
+
+  const end = dayjs().tz(timezoneToUse).endOf('day');
+  const start = end.subtract(29, 'day').startOf('day');
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  };
 }

@@ -4,7 +4,10 @@ import {
   normalizeRawPostReviewStage,
   shouldApplyDefaultPostStageFilter,
 } from './search-params';
-import { buildCanonicalPostsSearchParams } from './search-params.server';
+import {
+  buildCanonicalPostsSearchParams,
+  buildDefaultPostsDateRange,
+} from './search-params.server';
 
 describe('posts search params helpers', () => {
   it('injects the default stage filter when no stage or legacy status filters are present', () => {
@@ -161,5 +164,44 @@ describe('posts search params helpers', () => {
         }
       )
     ).toBeNull();
+  });
+
+  it('applies default last-30-days range when no date params are present', () => {
+    const canonical =
+      buildCanonicalPostsSearchParams(
+        { page: '1' },
+        {
+          approvalStatus: null,
+          cursor: null,
+          end: null,
+          excludedGroups: [],
+          includedGroups: [],
+          page: 1,
+          pageSize: 10,
+          queueStatus: null,
+          showAll: null,
+          stage: null,
+          start: null,
+          userId: null,
+        },
+        {
+          start: '2026-03-01T00:00:00.000Z',
+          end: '2026-03-30T23:59:59.999Z',
+        }
+      ) ?? '';
+
+    const params = new URLSearchParams(canonical);
+    expect(params.get('start')).toBe('2026-03-01T00:00:00.000Z');
+    expect(params.get('end')).toBe('2026-03-30T23:59:59.999Z');
+  });
+
+  it('builds UTC defaults when timezone is auto or invalid', () => {
+    const autoRange = buildDefaultPostsDateRange('auto');
+    const invalidRange = buildDefaultPostsDateRange('Invalid/Timezone');
+
+    expect(autoRange.start).toContain('T');
+    expect(autoRange.end).toContain('T');
+    expect(invalidRange.start).toContain('T');
+    expect(invalidRange.end).toContain('T');
   });
 });

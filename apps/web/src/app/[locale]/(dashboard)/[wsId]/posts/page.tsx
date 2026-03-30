@@ -1,5 +1,5 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -7,6 +7,7 @@ import PostsClient from './client';
 import { getPostsPageData } from './data';
 import {
   buildCanonicalPostsSearchParams,
+  buildDefaultPostsDateRange,
   postsSearchParamsCache,
 } from './search-params.server';
 import type { RawPostsSearchParams } from './types';
@@ -28,9 +29,12 @@ export default async function PostsPage({
   const parsedSearchParams = await postsSearchParamsCache.parse(
     searchParamsData as Record<string, string | string[] | undefined>
   );
+  const workspace = await getWorkspace(wsId);
+  const defaultDateRange = buildDefaultPostsDateRange(workspace?.timezone);
   const canonicalSearchParams = buildCanonicalPostsSearchParams(
     searchParamsData,
-    parsedSearchParams
+    parsedSearchParams,
+    defaultDateRange
   );
 
   if (canonicalSearchParams) {
