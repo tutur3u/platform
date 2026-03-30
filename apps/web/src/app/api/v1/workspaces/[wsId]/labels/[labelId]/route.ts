@@ -4,11 +4,6 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import {
-  isTaskLabelColorPreset,
-  normalizeTaskLabelColor,
-} from '../label-color';
-
 interface RouteParams {
   params: Promise<{
     wsId: string;
@@ -21,10 +16,8 @@ const LabelSchema = z.object({
   color: z
     .string()
     .trim()
-    .min(1, 'Color is required')
-    .transform((value) => normalizeTaskLabelColor(value))
-    .refine((value) => isTaskLabelColorPreset(value), {
-      message: 'Color must be one of the supported preset colors',
+    .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, {
+      message: 'Color must be a valid hex color code',
     }),
 });
 
