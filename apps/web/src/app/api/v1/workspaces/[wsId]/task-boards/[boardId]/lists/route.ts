@@ -61,10 +61,10 @@ export async function POST(
     const access = await requireBoardAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { supabase, boardId } = access;
+    const { sbAdmin, boardId } = access;
     const body = createListSchema.parse(await request.json());
 
-    const { data: list, error } = await supabase.rpc(
+    const { data: list, error } = await sbAdmin.rpc(
       'create_task_list_with_next_position',
       {
         p_board_id: boardId,
