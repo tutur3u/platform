@@ -551,7 +551,12 @@ export async function getPermissions({
   const sbAdmin = await createAdminClient();
 
   // Handle "personal" workspace slug by looking up the user's personal workspace
-  const resolvedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
+  let resolvedWorkspaceId: string;
+  try {
+    resolvedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return null;
+  }
 
   const permissionsQuery = sbAdmin
     .from('workspace_role_members')
