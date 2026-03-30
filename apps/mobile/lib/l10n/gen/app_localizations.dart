@@ -3304,7 +3304,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskLabelsColorInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Choose one of the supported preset colors'**
+  /// **'Enter a valid hex color'**
   String get taskLabelsColorInvalid;
 
   /// No description provided for @taskLabelsEmptyTitle.

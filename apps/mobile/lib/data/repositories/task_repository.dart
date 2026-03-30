@@ -785,8 +785,8 @@ class TaskRepository {
     required String color,
   }) async {
     final normalizedColor = normalizeTaskLabelColor(color);
-    if (normalizedColor == null || !isTaskLabelColorPreset(normalizedColor)) {
-      throw const FormatException('Invalid task label color preset');
+    if (normalizedColor == null) {
+      throw const FormatException('Invalid task label color');
     }
 
     final response = await _apiClient.postJson(
@@ -807,8 +807,8 @@ class TaskRepository {
     required String color,
   }) async {
     final normalizedColor = normalizeTaskLabelColor(color);
-    if (normalizedColor == null || !isTaskLabelColorPreset(normalizedColor)) {
-      throw const FormatException('Invalid task label color preset');
+    if (normalizedColor == null) {
+      throw const FormatException('Invalid task label color');
     }
 
     final response = await _apiClient.patchJson(

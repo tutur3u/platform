@@ -285,126 +285,131 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
       return;
     }
     if (_activeTab == _tabLabels) {
-      await context.read<TaskLabelsCubit>().loadLabels(wsId);
+      await context.read<TaskLabelsCubit>().loadLabels(
+        wsId,
+        forceRefresh: true,
+      );
       return;
     }
     await context.read<TaskEstimatesCubit>().loadBoards(wsId);
   }
 
   Future<void> _openCreateLabel() async {
-    final result = await shad.showDialog<TaskLabelFormValue>(
-      context: context,
-      builder: (_) => TaskLabelDialog(
-        title: context.l10n.taskLabelsCreate,
-        submitLabel: context.l10n.taskLabelsCreate,
-      ),
-    );
-    if (result == null || !mounted) {
-      return;
-    }
-
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) {
       return;
     }
 
     final rootNavigator = Navigator.of(context, rootNavigator: true);
-    try {
-      await context.read<TaskLabelsCubit>().createLabel(
-        wsId: wsId,
-        name: result.name,
-        color: result.color,
-      );
-      if (!mounted || !rootNavigator.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: rootNavigator.context,
-        builder: (_, overlay) =>
-            shad.Alert(content: Text(context.l10n.taskLabelsCreated)),
-      );
-      setState(() => _activeTab = _tabLabels);
-    } on ApiException catch (error) {
-      if (!mounted || !rootNavigator.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: rootNavigator.context,
-        builder: (_, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.commonSomethingWentWrong),
-          content: Text(error.message),
-        ),
-      );
-    } on Exception {
-      if (!mounted || !rootNavigator.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: rootNavigator.context,
-        builder: (ctx, overlay) => shad.Alert.destructive(
-          content: Text(ctx.l10n.commonSomethingWentWrong),
-        ),
-      );
+    final created = await shad.showDialog<bool>(
+      context: context,
+      builder: (_) => TaskLabelDialog(
+        title: context.l10n.taskLabelsCreate,
+        submitLabel: context.l10n.taskLabelsCreate,
+        onSubmit: (value) async {
+          try {
+            await context.read<TaskLabelsCubit>().createLabel(
+              wsId: wsId,
+              name: value.name,
+              color: value.color,
+            );
+            return true;
+          } on ApiException catch (error) {
+            if (rootNavigator.mounted) {
+              shad.showToast(
+                context: rootNavigator.context,
+                builder: (_, overlay) => shad.Alert.destructive(
+                  title: Text(context.l10n.commonSomethingWentWrong),
+                  content: Text(error.message),
+                ),
+              );
+            }
+            return false;
+          } on Exception {
+            if (rootNavigator.mounted) {
+              shad.showToast(
+                context: rootNavigator.context,
+                builder: (ctx, overlay) => shad.Alert.destructive(
+                  content: Text(ctx.l10n.commonSomethingWentWrong),
+                ),
+              );
+            }
+            return false;
+          }
+        },
+      ),
+    );
+
+    if (created != true || !mounted || !rootNavigator.mounted) {
+      return;
     }
+
+    shad.showToast(
+      context: rootNavigator.context,
+      builder: (_, overlay) =>
+          shad.Alert(content: Text(context.l10n.taskLabelsCreated)),
+    );
+    setState(() => _activeTab = _tabLabels);
   }
 
   Future<void> _openEditLabel(TaskLabel label) async {
-    final result = await shad.showDialog<TaskLabelFormValue>(
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) {
+      return;
+    }
+
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final updated = await shad.showDialog<bool>(
       context: context,
       builder: (_) => TaskLabelDialog(
         title: context.l10n.taskLabelsEdit,
         submitLabel: context.l10n.timerSave,
         initialName: label.name,
         initialColor: label.color,
+        onSubmit: (value) async {
+          try {
+            await context.read<TaskLabelsCubit>().updateLabel(
+              wsId: wsId,
+              labelId: label.id,
+              name: value.name,
+              color: value.color,
+            );
+            return true;
+          } on ApiException catch (error) {
+            if (rootNavigator.mounted) {
+              shad.showToast(
+                context: rootNavigator.context,
+                builder: (_, overlay) => shad.Alert.destructive(
+                  title: Text(context.l10n.commonSomethingWentWrong),
+                  content: Text(error.message),
+                ),
+              );
+            }
+            return false;
+          } on Exception {
+            if (rootNavigator.mounted) {
+              shad.showToast(
+                context: rootNavigator.context,
+                builder: (ctx, overlay) => shad.Alert.destructive(
+                  content: Text(ctx.l10n.commonSomethingWentWrong),
+                ),
+              );
+            }
+            return false;
+          }
+        },
       ),
     );
-    if (result == null || !mounted) {
+
+    if (updated != true || !mounted || !rootNavigator.mounted) {
       return;
     }
 
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) {
-      return;
-    }
-
-    final rootNavigator = Navigator.of(context, rootNavigator: true);
-    try {
-      await context.read<TaskLabelsCubit>().updateLabel(
-        wsId: wsId,
-        labelId: label.id,
-        name: result.name,
-        color: result.color,
-      );
-      if (!mounted || !rootNavigator.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: rootNavigator.context,
-        builder: (_, overlay) =>
-            shad.Alert(content: Text(context.l10n.taskLabelsUpdated)),
-      );
-    } on ApiException catch (error) {
-      if (!mounted || !rootNavigator.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: rootNavigator.context,
-        builder: (_, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.commonSomethingWentWrong),
-          content: Text(error.message),
-        ),
-      );
-    } on Exception {
-      if (!mounted || !rootNavigator.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: rootNavigator.context,
-        builder: (ctx, overlay) => shad.Alert.destructive(
-          content: Text(ctx.l10n.commonSomethingWentWrong),
-        ),
-      );
-    }
+    shad.showToast(
+      context: rootNavigator.context,
+      builder: (_, overlay) =>
+          shad.Alert(content: Text(context.l10n.taskLabelsUpdated)),
+    );
   }
 
   Future<void> _deleteLabel(TaskLabel label) async {

@@ -81,7 +81,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
     );
   }
 
-  Future<void> loadLabels(String wsId) async {
+  Future<void> loadLabels(String wsId, {bool forceRefresh = false}) async {
     final token = ++_currentRequestToken;
     final shouldReplaceLabels = state.wsId != wsId;
     final cacheKey = _cacheKey(wsId);
@@ -90,7 +90,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
       key: cacheKey,
       decode: _decodeCacheJson,
     );
-    if (cached.hasValue) {
+    if (cached.hasValue && !forceRefresh) {
       final json = cached.data!;
       emit(
         state.copyWith(
@@ -177,7 +177,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
       if (_lastLoadWsId != wsId || state.wsId != wsId) {
         return;
       }
-      await loadLabels(wsId);
+      await loadLabels(wsId, forceRefresh: true);
     } on Exception catch (error) {
       emit(
         state.copyWith(
@@ -206,7 +206,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
       if (_lastLoadWsId != wsId || state.wsId != wsId) {
         return;
       }
-      await loadLabels(wsId);
+      await loadLabels(wsId, forceRefresh: true);
     } on Exception catch (error) {
       emit(
         state.copyWith(
@@ -228,16 +228,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
       if (_lastLoadWsId != wsId || state.wsId != wsId) {
         return;
       }
-      final filtered = state.labels
-          .where((label) => label.id != labelId)
-          .toList(growable: false);
-      emit(
-        state.copyWith(
-          status: TaskLabelsStatus.loaded,
-          labels: filtered,
-          error: null,
-        ),
-      );
+      await loadLabels(wsId, forceRefresh: true);
     } on Exception catch (error) {
       emit(
         state.copyWith(

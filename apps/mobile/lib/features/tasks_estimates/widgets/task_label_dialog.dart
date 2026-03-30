@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -17,6 +19,7 @@ class TaskLabelDialog extends StatefulWidget {
   const TaskLabelDialog({
     required this.title,
     required this.submitLabel,
+    required this.onSubmit,
     this.initialName,
     this.initialColor,
     super.key,
@@ -24,6 +27,7 @@ class TaskLabelDialog extends StatefulWidget {
 
   final String title;
   final String submitLabel;
+  final Future<bool> Function(TaskLabelFormValue value) onSubmit;
   final String? initialName;
   final String? initialColor;
 
@@ -32,9 +36,11 @@ class TaskLabelDialog extends StatefulWidget {
 }
 
 class _TaskLabelDialogState extends State<TaskLabelDialog> {
-  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _colorController;
+  String? _nameError;
+  String? _colorError;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -54,130 +60,252 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedColor = normalizeTaskLabelColor(_colorController.text);
     final previewColor =
         parseTaskLabelColor(_colorController.text) ?? const Color(0xFF3B82F6);
+    final theme = shad.Theme.of(context);
+    final previewName = _nameController.text.trim();
 
     return shad.AlertDialog(
       title: Text(widget.title),
-      content: Form(
-        key: _formKey,
-        child: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(context.l10n.taskLabelsName),
-              const shad.Gap(4),
-              TextFormField(
-                controller: _nameController,
-                autofocus: true,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return context.l10n.taskLabelsNameRequired;
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(context.l10n.taskLabelsName),
+            const shad.Gap(4),
+            shad.TextField(
+              controller: _nameController,
+              hintText: context.l10n.taskLabelsName,
+              autofocus: true,
+              onChanged: (_) {
+                setState(() {
+                  if (_nameError != null) {
+                    _nameError = null;
                   }
-                  return null;
-                },
+                });
+              },
+            ),
+            if (_nameError != null) ...[
+              const shad.Gap(8),
+              Text(
+                _nameError!,
+                style: theme.typography.small.copyWith(
+                  color: theme.colorScheme.destructive,
+                ),
               ),
-              const shad.Gap(12),
-              Text(context.l10n.calendarEventColor),
-              const shad.Gap(4),
-              Row(
+            ],
+            const shad.Gap(12),
+            const shad.Gap(12),
+            Text(context.l10n.calendarEventColor),
+            const shad.Gap(4),
+            Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: previewColor,
+                  ),
+                ),
+                const shad.Gap(8),
+                Expanded(
+                  child: shad.TextField(
+                    controller: _colorController,
+                    hintText: kDefaultTaskLabelColor,
+                    onChanged: (_) {
+                      setState(() {
+                        _colorError = null;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const shad.Gap(8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                shad.OutlineButton(
+                  onPressed: _openColorPicker,
+                  child: Text(context.l10n.financePickColor),
+                ),
+                shad.OutlineButton(
+                  onPressed: () {
+                    setState(() {
+                      _colorController.text = randomHexColor();
+                      _colorError = null;
+                    });
+                  },
+                  child: Text(context.l10n.financeRandomizeColor),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+              child: Row(
                 children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: previewColor,
+                  Text(
+                    context.l10n.financePreview,
+                    style: theme.typography.small.copyWith(
+                      color: theme.colorScheme.mutedForeground,
                     ),
                   ),
                   const shad.Gap(8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _colorController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: '#3B82F6',
-                      ),
-                      validator: (value) {
-                        if (!isTaskLabelColorPreset(value)) {
-                          return context.l10n.taskLabelsColorInvalid;
-                        }
-                        return null;
-                      },
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                ],
-              ),
-              const shad.Gap(8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final color in taskLabelColorPresets)
-                    GestureDetector(
-                      onTap: () {
-                        _colorController.text = taskLabelColorOrDefault(color);
-                        setState(() {});
-                      },
-                      child: Container(
-                        width: 28,
-                        height: 28,
+                  Builder(
+                    builder: (context) {
+                      final labelText = previewName.isEmpty
+                          ? context.l10n.taskLabelsName
+                          : previewName;
+                      final parsedPreviewColor = parseTaskLabelColor(
+                        _colorController.text,
+                      );
+
+                      if (parsedPreviewColor == null) {
+                        return shad.OutlineBadge(child: Text(labelText));
+                      }
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: parseTaskLabelColor(color),
+                          color: parsedPreviewColor.withAlpha(28),
+                          borderRadius: BorderRadius.circular(999),
                           border: Border.all(
-                            color:
-                                selectedColor == normalizeTaskLabelColor(color)
-                                ? Colors.white
-                                : Colors.transparent,
-                            width: 2,
+                            color: parsedPreviewColor.withAlpha(180),
                           ),
                         ),
-                      ),
-                    ),
-                  shad.OutlineButton(
-                    onPressed: () {
-                      _colorController.text = taskLabelColorOrDefault(
-                        randomTaskLabelColorPreset(),
+                        child: Text(
+                          labelText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.small.copyWith(
+                            fontSize: 11,
+                            color: parsedPreviewColor.withAlpha(240),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       );
-                      setState(() {});
                     },
-                    child: Text(context.l10n.financeRandomizeColor),
                   ),
                 ],
               ),
+            ),
+            if (_colorError != null) ...[
+              const shad.Gap(8),
+              Text(
+                _colorError!,
+                style: theme.typography.small.copyWith(
+                  color: theme.colorScheme.destructive,
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
       actions: [
         shad.OutlineButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
         ),
         shad.PrimaryButton(
-          onPressed: _submit,
-          child: Text(widget.submitLabel),
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: shad.CircularProgressIndicator(),
+                )
+              : Text(widget.submitLabel),
         ),
       ],
     );
   }
 
-  void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) {
+  Future<void> _openColorPicker() async {
+    var selected =
+        parseTaskLabelColor(_colorController.text) ?? const Color(0xFF3B82F6);
+
+    final result = await shad.showDialog<Color>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return shad.AlertDialog(
+              title: Text(context.l10n.financePickColor),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ColorPicker(
+                  pickerColor: selected,
+                  onColorChanged: (color) =>
+                      setDialogState(() => selected = color),
+                  enableAlpha: false,
+                  portraitOnly: true,
+                  labelTypes: const [ColorLabelType.hex],
+                  pickerAreaHeightPercent: 0.72,
+                  displayThumbColor: true,
+                  hexInputBar: true,
+                ),
+              ),
+              actions: [
+                shad.OutlineButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(context.l10n.commonCancel),
+                ),
+                shad.PrimaryButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(selected),
+                  child: Text(context.l10n.timerSave),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _colorController.text = colorToHexString(result);
+        _colorError = null;
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    final name = _nameController.text.trim();
+    final normalizedColor = normalizeTaskLabelColor(_colorController.text);
+    final hasNameError = name.isEmpty;
+    final hasColorError = normalizedColor == null;
+
+    setState(() {
+      _nameError = hasNameError ? context.l10n.taskLabelsNameRequired : null;
+      _colorError = hasColorError ? context.l10n.taskLabelsColorInvalid : null;
+    });
+
+    if (hasNameError || hasColorError) {
       return;
     }
 
-    Navigator.of(context).pop(
+    setState(() => _isSubmitting = true);
+    final shouldClose = await widget.onSubmit(
       TaskLabelFormValue(
-        name: _nameController.text.trim(),
-        color: taskLabelColorOrDefault(_colorController.text),
+        name: name,
+        color: normalizedColor,
       ),
     );
+    if (!mounted) {
+      return;
+    }
+
+    if (shouldClose) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    setState(() => _isSubmitting = false);
   }
 }
