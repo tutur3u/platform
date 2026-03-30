@@ -1,4 +1,4 @@
-import { TypedSupabaseClient } from '@tuturuuu/supabase';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import {
   createClient,
   createDynamicAdminClient,
