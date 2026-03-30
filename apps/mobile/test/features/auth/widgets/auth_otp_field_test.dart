@@ -6,6 +6,37 @@ import '../../../helpers/helpers.dart';
 
 void main() {
   group('AuthOtpField', () {
+    testWidgets('uses a full-size editable surface for focus and paste', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+
+      addTearDown(() {
+        controller.dispose();
+        focusNode.dispose();
+      });
+
+      await tester.pumpApp(
+        Scaffold(
+          body: AuthOtpField(
+            controller: controller,
+            focusNode: focusNode,
+            onChanged: (_) {},
+          ),
+        ),
+      );
+
+      final fieldSize = tester.getSize(find.byType(AuthOtpField));
+      final inputSize = tester.getSize(
+        find.byKey(const ValueKey('auth-otp-input')),
+      );
+
+      expect(inputSize, fieldSize);
+      expect(inputSize.width, greaterThan(250));
+      expect(inputSize.height, 56);
+    });
+
     testWidgets('supports paste and sanitizes to six digits', (tester) async {
       final controller = TextEditingController();
       final focusNode = FocusNode();

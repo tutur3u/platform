@@ -9,6 +9,7 @@ class AuthOtpField extends StatefulWidget {
     required this.onChanged,
     this.length = 6,
     this.enabled = true,
+    this.autofocus = false,
     this.onCompleted,
     super.key,
   });
@@ -19,6 +20,7 @@ class AuthOtpField extends StatefulWidget {
   final ValueChanged<String>? onCompleted;
   final int length;
   final bool enabled;
+  final bool autofocus;
 
   @override
   State<AuthOtpField> createState() => _AuthOtpFieldState();
@@ -89,121 +91,127 @@ class _AuthOtpFieldState extends State<AuthOtpField> {
     final theme = shad.Theme.of(context);
     final code = widget.controller.text;
     final hasFocus = widget.focusNode.hasFocus;
+    const slotWidth = 46.0;
+    const slotHeight = 56.0;
+    const slotSpacing = 10.0;
+    final fieldWidth =
+        (widget.length * slotWidth) + ((widget.length - 1) * slotSpacing);
 
     return Semantics(
       textField: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.enabled ? widget.focusNode.requestFocus : null,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      child: SizedBox(
+        width: fieldWidth,
+        height: slotHeight,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            SizedBox(
-              width: 1,
-              height: 1,
-              child: Opacity(
-                opacity: 0,
-                child: TextField(
-                  key: const ValueKey('auth-otp-input'),
-                  controller: widget.controller,
-                  focusNode: widget.focusNode,
-                  enabled: widget.enabled,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  enableInteractiveSelection: true,
-                  showCursor: false,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  autofillHints: const [AutofillHints.oneTimeCode],
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(widget.length),
-                  ],
-                  style: const TextStyle(
-                    color: Colors.transparent,
-                    height: 0.01,
-                    fontSize: 1,
-                  ),
-                  cursorColor: Colors.transparent,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    counterText: '',
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: _handleTextChanged,
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(widget.length, (index) {
-                final isFilled = index < code.length;
-                final activeIndex = code.length >= widget.length
-                    ? widget.length - 1
-                    : code.length;
-                final isActive = hasFocus && index == activeIndex;
-                final char = isFilled ? code[index] : '';
+            IgnorePointer(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.length, (index) {
+                  final isFilled = index < code.length;
+                  final activeIndex = code.length >= widget.length
+                      ? widget.length - 1
+                      : code.length;
+                  final isActive = hasFocus && index == activeIndex;
+                  final char = isFilled ? code[index] : '';
 
-                return Padding(
-                  padding: EdgeInsets.only(
-                    right: index == widget.length - 1 ? 0 : 10,
-                  ),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOutCubic,
-                    width: 46,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: isFilled
-                          ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                          : theme.colorScheme.muted.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(17),
-                      border: Border.all(
-                        color: isActive
-                            ? theme.colorScheme.primary.withValues(alpha: 0.4)
-                            : theme.colorScheme.border.withValues(alpha: 0.28),
-                      ),
-                      boxShadow: isActive
-                          ? [
-                              BoxShadow(
-                                color: theme.colorScheme.primary.withValues(
-                                  alpha: 0.08,
-                                ),
-                                blurRadius: 14,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : const [],
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: index == widget.length - 1 ? 0 : slotSpacing,
                     ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Text(
-                          char,
-                          style: theme.typography.h3.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: isFilled
-                                ? theme.colorScheme.foreground
-                                : theme.colorScheme.mutedForeground,
-                          ),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOutCubic,
+                      width: slotWidth,
+                      height: slotHeight,
+                      decoration: BoxDecoration(
+                        color: isFilled
+                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                            : theme.colorScheme.muted.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(17),
+                        border: Border.all(
+                          color: isActive
+                              ? theme.colorScheme.primary.withValues(alpha: 0.4)
+                              : theme.colorScheme.border.withValues(
+                                  alpha: 0.28,
+                                ),
                         ),
-                        if (isActive && !isFilled)
-                          Positioned(
-                            bottom: 14,
-                            child: Container(
-                              width: 2,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
+                        boxShadow: isActive
+                            ? [
+                                BoxShadow(
+                                  color: theme.colorScheme.primary.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : const [],
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text(
+                            char,
+                            style: theme.typography.h3.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: isFilled
+                                  ? theme.colorScheme.foreground
+                                  : theme.colorScheme.mutedForeground,
                             ),
                           ),
-                      ],
+                          if (isActive && !isFilled)
+                            Positioned(
+                              bottom: 14,
+                              child: Container(
+                                width: 2,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
+            ),
+            Positioned.fill(
+              child: TextField(
+                key: const ValueKey('auth-otp-input'),
+                controller: widget.controller,
+                focusNode: widget.focusNode,
+                enabled: widget.enabled,
+                autofocus: widget.autofocus,
+                autocorrect: false,
+                enableSuggestions: false,
+                enableInteractiveSelection: true,
+                showCursor: false,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                textAlign: TextAlign.center,
+                autofillHints: const [AutofillHints.oneTimeCode],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(widget.length),
+                ],
+                style: theme.typography.h3.copyWith(
+                  color: Colors.transparent,
+                  height: 1,
+                ),
+                cursorColor: Colors.transparent,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  counterText: '',
+                  contentPadding: EdgeInsets.zero,
+                  isCollapsed: true,
+                ),
+                onChanged: _handleTextChanged,
+              ),
             ),
           ],
         ),
