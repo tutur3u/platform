@@ -7,9 +7,14 @@ class _BoardListSection extends StatelessWidget {
     required this.board,
     required this.list,
     required this.tasks,
+    required this.isTasksLoaded,
     required this.onTaskTap,
     required this.onTaskMove,
     required this.onCreateTask,
+    required this.isLoadingTasks,
+    required this.hasLoadError,
+    required this.hasMoreTasks,
+    this.onLoadMoreTasks,
     this.onEditList,
     this.isExpanded = true,
     this.collapsible = false,
@@ -19,12 +24,17 @@ class _BoardListSection extends StatelessWidget {
   final TaskBoardDetail board;
   final TaskBoardList list;
   final List<TaskBoardTask> tasks;
+  final bool isTasksLoaded;
   final bool isExpanded;
   final bool collapsible;
   final VoidCallback? onToggleExpanded;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
   final VoidCallback onCreateTask;
+  final bool isLoadingTasks;
+  final bool hasLoadError;
+  final bool hasMoreTasks;
+  final VoidCallback? onLoadMoreTasks;
   final VoidCallback? onEditList;
 
   @override
@@ -160,10 +170,46 @@ class _BoardListSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const shad.Gap(10),
-                      if (tasks.isEmpty)
-                        Text(
-                          context.l10n.taskBoardDetailNoTasksInList,
-                          style: theme.typography.textMuted,
+                      if (tasks.isEmpty && isLoadingTasks)
+                        _PaginatedPlaceholder(
+                          minHeight: 140,
+                          horizontalPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          style: style,
+                          state: _PaginatedPlaceholderState.loading,
+                          onCreateTask: onCreateTask,
+                        )
+                      else if (tasks.isEmpty && hasLoadError)
+                        _PaginatedPlaceholder(
+                          minHeight: 140,
+                          horizontalPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          style: style,
+                          state: _PaginatedPlaceholderState.error,
+                          onCreateTask: onCreateTask,
+                          onRetry: onLoadMoreTasks,
+                        )
+                      else if (tasks.isEmpty && !isTasksLoaded)
+                        _PaginatedPlaceholder(
+                          minHeight: 140,
+                          horizontalPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          style: style,
+                          state: _PaginatedPlaceholderState.notLoaded,
+                          onCreateTask: onCreateTask,
+                        )
+                      else if (tasks.isEmpty)
+                        _PaginatedPlaceholder(
+                          minHeight: 140,
+                          horizontalPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          style: style,
+                          state: _PaginatedPlaceholderState.empty,
+                          onCreateTask: onCreateTask,
                         )
                       else
                         ...tasks.map(
@@ -176,6 +222,27 @@ class _BoardListSection extends StatelessWidget {
                               onTap: () => onTaskTap(task),
                               onMove: () => onTaskMove(task),
                             ),
+                          ),
+                        ),
+                      if (tasks.isNotEmpty && (isLoadingTasks || hasMoreTasks))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 8),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: isLoadingTasks
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: shad.CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : shad.OutlineButton(
+                                    onPressed: onLoadMoreTasks,
+                                    child: Text(
+                                      context.l10n.timerHistoryLoadMore,
+                                    ),
+                                  ),
                           ),
                         ),
                     ],
@@ -215,205 +282,235 @@ class _BoardTaskTile extends StatelessWidget {
     final isOverdue = _taskIsOverdue(task);
     final relationshipIndicators = _taskRelationshipIndicators(task);
 
-    return InkWell(
+    return ClipRRect(
       borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        decoration: BoxDecoration(
-          color: listStyle.surface.withValues(alpha: 0.36),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: listStyle.accent.withValues(alpha: 0.24)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 28,
-              height: 3,
-              decoration: BoxDecoration(
-                color: listStyle.accent.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-            const shad.Gap(8),
-            // Top row: ticket ID | avatars + menu
-            Row(
-              children: [
-                shad.OutlineBadge(child: Text(_taskReference(task, board))),
-                const Spacer(),
-                if (task.assignees.isNotEmpty) ...[
-                  _AssigneeAvatarStack(assignees: task.assignees),
-                  const shad.Gap(4),
-                ],
-                PopupMenuButton<_BoardTaskMenuAction>(
-                  tooltip: context.l10n.taskBoardDetailTaskActions,
-                  onSelected: (action) {
-                    if (action == _BoardTaskMenuAction.move) {
-                      onMove();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<_BoardTaskMenuAction>(
-                      value: _BoardTaskMenuAction.move,
-                      child: Text(context.l10n.taskBoardDetailMoveTask),
-                    ),
-                  ],
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 4),
-                    child: Icon(Icons.more_horiz, size: 18),
-                  ),
+          onTap: onTap,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Container(
+                  color: listStyle.accent.withValues(alpha: 0.07),
                 ),
-              ],
-            ),
-            const shad.Gap(6),
-            // Title
-            Text(
-              title,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w600,
               ),
-            ),
-            // Start date (future only)
-            if (startLabel != null) ...[
-              const shad.Gap(4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule_outlined,
-                    size: 11,
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                  const shad.Gap(3),
-                  Text(
-                    startLabel,
-                    style: theme.typography.small.copyWith(
-                      fontSize: 11,
-                      color: theme.colorScheme.mutedForeground,
-                    ),
-                  ),
-                ],
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 4,
+                  color: listStyle.accent.withValues(alpha: 0.7),
+                ),
               ),
-            ],
-            // Due date
-            if (dueLabel != null) ...[
-              const shad.Gap(4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 11,
-                    color: isOverdue
-                        ? kTaskBoardOverdueColor
-                        : theme.colorScheme.mutedForeground,
-                  ),
-                  const shad.Gap(3),
-                  Text(
-                    dueLabel,
-                    style: theme.typography.small.copyWith(
-                      fontSize: 11,
-                      color: isOverdue
-                          ? kTaskBoardOverdueColor
-                          : theme.colorScheme.mutedForeground,
-                      fontWeight: isOverdue
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                  ),
-                  if (isOverdue) ...[
-                    const shad.Gap(4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kTaskBoardOverdueColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        context.l10n.taskBoardDetailOverdue,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top row: [badge + title | assignees + menu]
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              shad.OutlineBadge(
+                                child: Text(_taskReference(task, board)),
+                              ),
+                              const shad.Gap(4),
+                              Text(
+                                title,
+                                style: theme.typography.small.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        const shad.Gap(8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (task.assignees.isNotEmpty) ...[
+                              _AssigneeAvatarStack(assignees: task.assignees),
+                              const shad.Gap(4),
+                            ],
+                            PopupMenuButton<_BoardTaskMenuAction>(
+                              tooltip: context.l10n.taskBoardDetailTaskActions,
+                              onSelected: (action) {
+                                if (action == _BoardTaskMenuAction.move) {
+                                  onMove();
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                PopupMenuItem<_BoardTaskMenuAction>(
+                                  value: _BoardTaskMenuAction.move,
+                                  child: Text(
+                                    context.l10n.taskBoardDetailMoveTask,
+                                  ),
+                                ),
+                              ],
+                              child: const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(Icons.more_horiz, size: 18),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ],
-              ),
-            ],
-            if (relationshipIndicators.isNotEmpty) ...[
-              const shad.Gap(8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: relationshipIndicators
-                    .map(
-                      (indicator) => _TaskRelationshipIndicatorBadge(
-                        indicator: indicator,
-                      ),
-                    )
-                    .toList(growable: false),
-              ),
-            ],
-            // Chips row: priority, estimation, project, labels
-            if (_hasChips(
-              estimationLabel,
-              task,
-              hasDescription: hasDescription,
-            )) ...[
-              const shad.Gap(8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  _TaskPriorityChip(priority: task.priority),
-                  if (estimationLabel != null)
-                    shad.OutlineBadge(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                    // Start date (future only)
+                    if (startLabel != null) ...[
+                      const shad.Gap(4),
+                      Row(
                         children: [
-                          const Icon(shad.LucideIcons.timer, size: 12),
+                          Icon(
+                            Icons.schedule_outlined,
+                            size: 11,
+                            color: theme.colorScheme.mutedForeground,
+                          ),
                           const shad.Gap(3),
                           Text(
-                            estimationLabel,
+                            startLabel,
                             style: theme.typography.small.copyWith(
                               fontSize: 11,
+                              color: theme.colorScheme.mutedForeground,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ...task.projects
-                      .take(1)
-                      .map(
-                        (project) =>
-                            _ProjectBadge(label: _taskProjectLabel(project)),
+                    ],
+                    // Due date
+                    if (dueLabel != null) ...[
+                      const shad.Gap(4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 11,
+                            color: isOverdue
+                                ? kTaskBoardOverdueColor
+                                : theme.colorScheme.mutedForeground,
+                          ),
+                          const shad.Gap(3),
+                          Text(
+                            dueLabel,
+                            style: theme.typography.small.copyWith(
+                              fontSize: 11,
+                              color: isOverdue
+                                  ? kTaskBoardOverdueColor
+                                  : theme.colorScheme.mutedForeground,
+                              fontWeight: isOverdue
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          if (isOverdue) ...[
+                            const shad.Gap(4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: kTaskBoardOverdueColor,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                context.l10n.taskBoardDetailOverdue,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                  ...task.labels.take(2).map(_TaskLabelBadge.new),
-                  if (task.labels.length > 2)
-                    shad.OutlineBadge(
-                      child: Text('+${task.labels.length - 2}'),
-                    ),
-                  if (hasDescription)
-                    Tooltip(
-                      message: context.l10n.taskBoardDetailTaskDescriptionLabel,
-                      child: shad.OutlineBadge(
-                        child: Icon(
-                          Icons.notes_outlined,
-                          size: 14,
-                          color: theme.colorScheme.mutedForeground,
-                        ),
+                    ],
+                    if (relationshipIndicators.isNotEmpty) ...[
+                      const shad.Gap(8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: relationshipIndicators
+                            .map(
+                              (indicator) => _TaskRelationshipIndicatorBadge(
+                                indicator: indicator,
+                              ),
+                            )
+                            .toList(growable: false),
                       ),
-                    ),
-                ],
+                    ],
+                    // Chips row: priority, estimation, project, labels
+                    if (_hasChips(
+                      estimationLabel,
+                      task,
+                      hasDescription: hasDescription,
+                    )) ...[
+                      const shad.Gap(8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          _TaskPriorityChip(priority: task.priority),
+                          if (estimationLabel != null)
+                            shad.OutlineBadge(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(shad.LucideIcons.timer, size: 12),
+                                  const shad.Gap(3),
+                                  Text(
+                                    estimationLabel,
+                                    style: theme.typography.small.copyWith(
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ...task.projects
+                              .take(1)
+                              .map(
+                                (project) => _ProjectBadge(
+                                  label: _taskProjectLabel(project),
+                                ),
+                              ),
+                          ...task.labels.take(2).map(_TaskLabelBadge.new),
+                          if (task.labels.length > 2)
+                            shad.OutlineBadge(
+                              child: Text('+${task.labels.length - 2}'),
+                            ),
+                          if (hasDescription)
+                            Tooltip(
+                              message: context
+                                  .l10n
+                                  .taskBoardDetailTaskDescriptionLabel,
+                              child: shad.OutlineBadge(
+                                child: Icon(
+                                  Icons.notes_outlined,
+                                  size: 14,
+                                  color: theme.colorScheme.mutedForeground,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -425,15 +522,27 @@ class _KanbanColumn extends StatelessWidget {
     required this.board,
     required this.list,
     required this.tasks,
+    required this.isTasksLoaded,
+    required this.height,
+    required this.isLoadingTasks,
+    required this.hasLoadError,
+    required this.hasMoreTasks,
     required this.onTaskTap,
     required this.onTaskMove,
     required this.onCreateTask,
+    this.onLoadMoreTasks,
     this.onEditList,
   });
 
   final TaskBoardDetail board;
   final TaskBoardList list;
   final List<TaskBoardTask> tasks;
+  final bool isTasksLoaded;
+  final double height;
+  final bool isLoadingTasks;
+  final bool hasLoadError;
+  final bool hasMoreTasks;
+  final VoidCallback? onLoadMoreTasks;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
   final VoidCallback onCreateTask;
@@ -441,16 +550,317 @@ class _KanbanColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = list.name?.trim().isNotEmpty == true
+        ? list.name!.trim()
+        : context.l10n.taskBoardDetailUntitledList;
+    final style = _taskBoardListVisualStyle(context, list);
+    final theme = shad.Theme.of(context);
+
     return SizedBox(
-      width: context.isCompact ? 280 : 320,
-      child: _BoardListSection(
-        board: board,
-        list: list,
-        tasks: tasks,
-        onTaskTap: onTaskTap,
-        onTaskMove: onTaskMove,
-        onCreateTask: onCreateTask,
-        onEditList: onEditList,
+      width: context.isCompact ? 264 : 300,
+      height: height,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: shad.Card(
+          padding: EdgeInsets.zero,
+          child: ColoredBox(
+            color: style.accent.withValues(alpha: 0.05),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: style.surfaceBorder),
+                          ),
+                        ),
+                        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+                        child: Row(
+                          children: [
+                            Icon(
+                              style.statusIcon,
+                              size: 14,
+                              color: style.statusBadge.textColor,
+                            ),
+                            const shad.Gap(6),
+                            Expanded(
+                              child: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.small.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const shad.Gap(4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.background.withValues(
+                                  alpha: 0.72,
+                                ),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: style.accent.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Text(
+                                context.l10n.taskBoardsTasksCount(tasks.length),
+                                style: theme.typography.small.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            shad.IconButton.ghost(
+                              icon: Icon(Icons.add, color: style.accent),
+                              onPressed: onCreateTask,
+                            ),
+                            if (onEditList != null)
+                              PopupMenuButton<_BoardListMenuAction>(
+                                tooltip:
+                                    context.l10n.taskBoardDetailListActions,
+                                onSelected: (action) {
+                                  if (action == _BoardListMenuAction.edit) {
+                                    onEditList?.call();
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  PopupMenuItem<_BoardListMenuAction>(
+                                    value: _BoardListMenuAction.edit,
+                                    child: Text(
+                                      context.l10n.taskBoardDetailEditList,
+                                    ),
+                                  ),
+                                ],
+                                child: const Padding(
+                                  padding: EdgeInsets.only(left: 6),
+                                  child: Icon(Icons.more_horiz, size: 18),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: tasks.isEmpty && isLoadingTasks
+                            ? _PaginatedPlaceholder(
+                                minHeight: 170,
+                                horizontalPadding: const EdgeInsets.all(10),
+                                style: style,
+                                state: _PaginatedPlaceholderState.loading,
+                                onCreateTask: onCreateTask,
+                              )
+                            : tasks.isEmpty && hasLoadError
+                            ? _PaginatedPlaceholder(
+                                minHeight: 170,
+                                horizontalPadding: const EdgeInsets.all(10),
+                                style: style,
+                                state: _PaginatedPlaceholderState.error,
+                                onCreateTask: onCreateTask,
+                                onRetry: onLoadMoreTasks,
+                              )
+                            : tasks.isEmpty && !isTasksLoaded
+                            ? _PaginatedPlaceholder(
+                                minHeight: 170,
+                                horizontalPadding: const EdgeInsets.all(10),
+                                style: style,
+                                state: _PaginatedPlaceholderState.notLoaded,
+                                onCreateTask: onCreateTask,
+                              )
+                            : tasks.isEmpty
+                            ? _PaginatedPlaceholder(
+                                minHeight: 170,
+                                horizontalPadding: const EdgeInsets.all(10),
+                                style: style,
+                                state: _PaginatedPlaceholderState.empty,
+                                onCreateTask: onCreateTask,
+                              )
+                            : ListView.separated(
+                                primary: false,
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                                itemCount:
+                                    tasks.length +
+                                    ((isLoadingTasks || hasMoreTasks) ? 1 : 0),
+                                separatorBuilder: (_, _) => const shad.Gap(6),
+                                itemBuilder: (context, index) {
+                                  if (index >= tasks.length) {
+                                    if (isLoadingTasks) {
+                                      return const Center(
+                                        child: SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: shad.CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    return Center(
+                                      child: shad.OutlineButton(
+                                        onPressed: onLoadMoreTasks,
+                                        child: Text(
+                                          context.l10n.timerHistoryLoadMore,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final task = tasks[index];
+                                  return _BoardTaskTile(
+                                    board: board,
+                                    listStyle: style,
+                                    task: task,
+                                    onTap: () => onTaskTap(task),
+                                    onMove: () => onTaskMove(task),
+                                  );
+                                },
+                              ),
+                      ),
+                      // Container(
+                      //   decoration: BoxDecoration(
+                      //     border: Border(
+                      //       top: BorderSide(color: style.surfaceBorder),
+                      //     ),
+                      //   ),
+                      //   padding: const EdgeInsets.all(8),
+                      //   child: InkWell(
+                      //     borderRadius: BorderRadius.circular(8),
+                      //     onTap: onCreateTask,
+                      //     child: Container(
+                      //       width: double.infinity,
+                      //       padding: const EdgeInsets.symmetric(
+                      //         vertical: 7,
+                      //         horizontal: 10,
+                      //       ),
+                      //       decoration: BoxDecoration(
+                      //         borderRadius: BorderRadius.circular(8),
+                      //         border: Border.all(color: style.surfaceBorder),
+                      //       ),
+                      //       child: Row(
+                      //         mainAxisSize: MainAxisSize.min,
+                      //         children: [
+                      //           Icon(
+                      //             Icons.add,
+                      //             size: 14,
+                      //             color: theme.colorScheme.mutedForeground,
+                      //           ),
+                      //           const shad.Gap(4),
+                      //           Text(
+                      //             context.l10n.taskBoardDetailCreateTask,
+                      //             style: theme.typography.small.copyWith(
+                      //               fontSize: 12,
+                      //               color: theme.colorScheme.mutedForeground,
+                      //             ),
+                      //           ),
+                      //         ],
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _PaginatedPlaceholderState { loading, notLoaded, empty, error }
+
+class _PaginatedPlaceholder extends StatelessWidget {
+  const _PaginatedPlaceholder({
+    required this.minHeight,
+    required this.horizontalPadding,
+    required this.style,
+    required this.state,
+    required this.onCreateTask,
+    this.onRetry,
+  });
+
+  final double minHeight;
+  final EdgeInsets horizontalPadding;
+  final _TaskBoardListVisualStyle style;
+  final _PaginatedPlaceholderState state;
+  final VoidCallback onCreateTask;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final isLoading = state == _PaginatedPlaceholderState.loading;
+    final isEmpty = state == _PaginatedPlaceholderState.empty;
+    final isError = state == _PaginatedPlaceholderState.error;
+
+    return Padding(
+      padding: horizontalPadding,
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(minHeight: minHeight),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.background.withValues(alpha: 0.65),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: style.surfaceBorder.withValues(alpha: 0.7)),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: shad.CircularProgressIndicator(strokeWidth: 2),
+                )
+              else if (isEmpty)
+                Icon(Icons.inbox_outlined, size: 28, color: style.accent)
+              else if (isError)
+                Icon(
+                  Icons.error_outline,
+                  size: 24,
+                  color: theme.colorScheme.destructive,
+                ),
+              if (isLoading || isEmpty || isError) const shad.Gap(10),
+              Text(
+                isLoading
+                    ? context.l10n.notificationsLoadingMore
+                    : isError
+                    ? context.l10n.commonSomethingWentWrong
+                    : context.l10n.taskBoardDetailNoTasksInList,
+                textAlign: TextAlign.center,
+                style: theme.typography.textMuted,
+              ),
+              if (isEmpty) ...[
+                const shad.Gap(12),
+                shad.PrimaryButton(
+                  leading: const Icon(Icons.add),
+                  size: shad.ButtonSize.small,
+                  onPressed: onCreateTask,
+                  child: Text(context.l10n.taskBoardDetailCreateTask),
+                ),
+              ],
+              if (isError && onRetry != null) ...[
+                const shad.Gap(12),
+                shad.OutlineButton(
+                  onPressed: onRetry,
+                  child: Text(context.l10n.commonRetry),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

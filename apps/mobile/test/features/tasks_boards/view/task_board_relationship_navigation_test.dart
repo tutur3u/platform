@@ -7,8 +7,11 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/models/task_label.dart';
+import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -24,6 +27,44 @@ class _CrossBoardTaskRepository extends TaskRepository {
   static const _boardBId = 'board-b';
   static const _taskAId = 'task-a1';
   static const _taskBId = 'task-b1';
+
+  static const TaskBoardTask _taskA = TaskBoardTask(
+    id: _taskAId,
+    listId: 'list-a',
+    displayNumber: 1,
+    name: 'Task A1',
+    relationshipsLoaded: true,
+    relationships: TaskRelationshipsResponse(
+      relatedTasks: [
+        RelatedTaskInfo(
+          id: _taskBId,
+          name: 'Task B1',
+          displayNumber: 1,
+          boardId: _boardBId,
+          boardName: 'Board B',
+        ),
+      ],
+    ),
+  );
+
+  static const TaskBoardTask _taskB = TaskBoardTask(
+    id: _taskBId,
+    listId: 'list-b',
+    displayNumber: 1,
+    name: 'Task B1',
+    relationshipsLoaded: true,
+    relationships: TaskRelationshipsResponse(
+      relatedTasks: [
+        RelatedTaskInfo(
+          id: _taskAId,
+          name: 'Task A1',
+          displayNumber: 1,
+          boardId: _boardAId,
+          boardName: 'Board A',
+        ),
+      ],
+    ),
+  );
 
   @override
   Future<TaskBoardDetail> getTaskBoardDetail(
@@ -45,26 +86,7 @@ class _CrossBoardTaskRepository extends TaskRepository {
             color: 'BLUE',
           ),
         ],
-        tasks: const [
-          TaskBoardTask(
-            id: _taskAId,
-            listId: 'list-a',
-            displayNumber: 1,
-            name: 'Task A1',
-            relationshipsLoaded: true,
-            relationships: TaskRelationshipsResponse(
-              relatedTasks: [
-                RelatedTaskInfo(
-                  id: _taskBId,
-                  name: 'Task B1',
-                  displayNumber: 1,
-                  boardId: _boardBId,
-                  boardName: 'Board B',
-                ),
-              ],
-            ),
-          ),
-        ],
+        tasks: const [_taskA],
       );
     }
 
@@ -83,30 +105,32 @@ class _CrossBoardTaskRepository extends TaskRepository {
             color: 'GREEN',
           ),
         ],
-        tasks: const [
-          TaskBoardTask(
-            id: _taskBId,
-            listId: 'list-b',
-            displayNumber: 1,
-            name: 'Task B1',
-            relationshipsLoaded: true,
-            relationships: TaskRelationshipsResponse(
-              relatedTasks: [
-                RelatedTaskInfo(
-                  id: _taskAId,
-                  name: 'Task A1',
-                  displayNumber: 1,
-                  boardId: _boardAId,
-                  boardName: 'Board A',
-                ),
-              ],
-            ),
-          ),
-        ],
+        tasks: const [_taskB],
       );
     }
 
     throw StateError('Unknown board: $boardId');
+  }
+
+  @override
+  Future<List<TaskBoardTask>> getBoardTasksForList(
+    String wsId, {
+    required String listId,
+    int limit = 50,
+    int offset = 0,
+    List<WorkspaceUserOption> members = const <WorkspaceUserOption>[],
+    List<TaskLabel> labels = const <TaskLabel>[],
+    List<TaskProjectSummary> projects = const <TaskProjectSummary>[],
+  }) async {
+    if (offset > 0) {
+      return const <TaskBoardTask>[];
+    }
+
+    return switch (listId) {
+      'list-a' => const <TaskBoardTask>[_taskA],
+      'list-b' => const <TaskBoardTask>[_taskB],
+      _ => const <TaskBoardTask>[],
+    };
   }
 }
 

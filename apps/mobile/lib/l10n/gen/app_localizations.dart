@@ -2596,13 +2596,13 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailListView.
   ///
   /// In en, this message translates to:
-  /// **'List view'**
+  /// **'List'**
   String get taskBoardDetailListView;
 
   /// No description provided for @taskBoardDetailKanbanView.
   ///
   /// In en, this message translates to:
-  /// **'Kanban view'**
+  /// **'Kanban'**
   String get taskBoardDetailKanbanView;
 
   /// No description provided for @taskBoardDetailSearchPlaceholder.
