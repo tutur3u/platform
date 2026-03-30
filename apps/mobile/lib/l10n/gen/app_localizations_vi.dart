@@ -1314,7 +1314,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailKanbanView => 'Kanban';
 
   @override
+  String get taskBoardDetailTimelineView => 'Dòng thời gian';
+
+  @override
+  String get taskBoardDetailSearchTitle => 'Tìm kiếm công việc';
+
+  @override
   String get taskBoardDetailSearchPlaceholder => 'Tìm kiếm công việc';
+
+  @override
+  String get taskBoardDetailSearchDone => 'Xong';
 
   @override
   String get taskBoardDetailNoListsTitle => 'Chưa có danh sách';
@@ -1327,6 +1336,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailNoMatchingTasks => 'Không có công việc nào khớp với từ khóa tìm kiếm.';
+
+  @override
+  String get taskBoardDetailTimelineEmptyTitle => 'Chưa có công việc nào được lên lịch';
+
+  @override
+  String get taskBoardDetailTimelineEmptyDescription => 'Thêm ngày bắt đầu và ngày kết thúc cho công việc để hiển thị trên dòng thời gian.';
+
+  @override
+  String get taskBoardDetailTimelineUnscheduledTitle => 'Công việc chưa lên lịch';
 
   @override
   String get taskBoardDetailTaskActions => 'Thao tác công việc';

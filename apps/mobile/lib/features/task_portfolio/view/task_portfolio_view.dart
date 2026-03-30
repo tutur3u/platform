@@ -11,6 +11,7 @@ import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_actions.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_permissions_controller.dart';
@@ -86,6 +87,36 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
         child: Stack(
           children: [
             _buildContent(context),
+            ShellMiniNav(
+              ownerId: 'task-portfolio-mini-nav',
+              locations: const {Routes.taskPortfolio},
+              deepLinkBackRoute: Routes.tasks,
+              items: [
+                ShellMiniNavItemSpec(
+                  id: 'back',
+                  icon: Icons.chevron_left,
+                  label: context.l10n.navBack,
+                  callbackToken: 'back',
+                  onPressed: () => context.go(Routes.tasks),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'projects',
+                  icon: Icons.folder_open_outlined,
+                  label: context.l10n.taskPortfolioProjectsTab,
+                  selected: _activeTab == _tabProjects,
+                  callbackToken: 'projects-$_activeTab',
+                  onPressed: () => setState(() => _activeTab = _tabProjects),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'initiatives',
+                  icon: Icons.account_tree_outlined,
+                  label: context.l10n.taskPortfolioInitiativesTab,
+                  selected: _activeTab != _tabProjects,
+                  callbackToken: 'initiatives-$_activeTab',
+                  onPressed: () => setState(() => _activeTab = 1),
+                ),
+              ],
+            ),
             if (_permissionsController.canManageProjects)
               SpeedDialFab(
                 label: context.l10n.taskPortfolioTitle,
@@ -143,36 +174,15 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
 
         return ResponsiveWrapper(
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: shad.Tabs(
-                  index: _activeTab,
-                  onChanged: (value) => setState(() => _activeTab = value),
-                  children: [
-                    shad.TabItem(
-                      child: Text(context.l10n.taskPortfolioProjectsTab),
-                    ),
-                    shad.TabItem(
-                      child: Text(context.l10n.taskPortfolioInitiativesTab),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _reload,
-                  child: _activeTab == _tabProjects
-                      ? _buildProjectsList(context, state, listBottomPadding)
-                      : _buildInitiativesList(
-                          context,
-                          state,
-                          listBottomPadding,
-                        ),
-                ),
-              ),
-            ],
+          child: RefreshIndicator(
+            onRefresh: _reload,
+            child: _activeTab == _tabProjects
+                ? _buildProjectsList(context, state, listBottomPadding)
+                : _buildInitiativesList(
+                    context,
+                    state,
+                    listBottomPadding,
+                  ),
           ),
         );
       },

@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
@@ -30,6 +31,8 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -51,6 +54,7 @@ part 'task_board_detail_page_sheet_logic.dart';
 part 'task_board_detail_page_sheet_dialogs.dart';
 part 'task_board_detail_page_sheet_widgets.dart';
 part 'task_board_detail_page_states.dart';
+part 'task_board_detail_page_timeline.dart';
 part 'task_board_detail_page_utils.dart';
 part 'task_board_detail_page_view.dart';
 

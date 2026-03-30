@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/user_task.dart';
+import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -152,8 +153,8 @@ class _TaskTile extends StatelessWidget {
       if (listName != null && listName.isNotEmpty) listName,
     ].join(' / ');
 
-    // TODO(navigation): Open the mobile task detail flow once a route exists.
     return shad.GhostButton(
+      onPressed: () => openUserTaskBoardDetail(context, task),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
         child: Row(

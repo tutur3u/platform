@@ -246,6 +246,9 @@ extension _ShellPageNavigation on _ShellPageState {
   ValueKey<String> _miniNavKey(String moduleId, String itemId) =>
       ValueKey<String>('mini-nav-$moduleId-$itemId');
 
+  ValueKey<String> _injectedMiniNavKey(String ownerId, String itemId) =>
+      ValueKey<String>('injected-mini-nav-$ownerId-$itemId');
+
   Key _miniSelectedKey(BuildContext context, List<MiniAppNavItem> items) {
     if (items.isEmpty) {
       return _ShellPageState._backToRootKey;
@@ -260,6 +263,75 @@ extension _ShellPageNavigation on _ShellPageState {
     }
 
     return _miniNavKey(activeModule.id, item.id);
+  }
+
+  Key? _injectedMiniSelectedKey(ShellMiniNavRegistration? registration) {
+    if (registration == null || registration.items.isEmpty) {
+      return null;
+    }
+
+    final selectedItem = registration.items.firstWhere(
+      (item) => item.selected,
+      orElse: () => registration.items.first,
+    );
+    return _injectedMiniNavKey(registration.ownerId, selectedItem.id);
+  }
+
+  List<shad.NavigationItem> _buildInjectedMiniNavItems(
+    BuildContext context,
+    ShellMiniNavRegistration registration,
+  ) {
+    final theme = shad.Theme.of(context);
+    final labelStyle = theme.typography.p.copyWith(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+    );
+    final isCompact = context.isCompact;
+    final useDenseCompactLabels = isCompact && registration.items.length >= 4;
+    final miniLabelStyle = useDenseCompactLabels
+        ? labelStyle.copyWith(fontSize: 10)
+        : labelStyle;
+    final miniItemSpacing = useDenseCompactLabels
+        ? 1.0
+        : _ShellPageState._navItemSpacing;
+    final miniIconSize = useDenseCompactLabels
+        ? 20.0
+        : _ShellPageState._navIconSize;
+
+    return registration.items.indexed
+        .map((entry) {
+          final item = entry.$2;
+          return shad.NavigationItem(
+            key: _injectedMiniNavKey(registration.ownerId, item.id),
+            spacing: miniItemSpacing,
+            label: isCompact
+                ? _buildAnimatedNavElement(
+                    itemIndex: entry.$1,
+                    slotDelay: 0.08,
+                    child: Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: miniLabelStyle,
+                    ),
+                  )
+                : null,
+            child: isCompact
+                ? _buildAnimatedNavElement(
+                    itemIndex: entry.$1,
+                    slotDelay: 0,
+                    child: Icon(item.icon, size: miniIconSize),
+                  )
+                : _buildHorizontalNavItem(
+                    icon: item.icon,
+                    label: item.label,
+                    style: labelStyle,
+                    itemIndex: entry.$1,
+                  ),
+          );
+        })
+        .toList(growable: false);
   }
 
   int _miniSelectedIndex(String location, List<MiniAppNavItem> items) {
