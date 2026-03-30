@@ -9,7 +9,7 @@ import {
   XIcon,
   ZoomInIcon,
 } from '@tuturuuu/icons';
-import { listInquiryMediaUrls } from '@tuturuuu/internal-api';
+import { updateInquiry as updateInquiryApi } from '@tuturuuu/internal-api';
 import type { Product, SupportType } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -24,51 +24,14 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useInquiryMediaUrlsQuery, useUpdateInquiryMutation } from './hooks';
 import type { ExtendedSupportInquiry } from './page';
 
 // Helper function to determine if a file is a video based on extension
 function isVideoFile(filename: string): boolean {
   const videoExtensions = ['.mp4', '.webm', '.mov'];
   return videoExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
-}
-
-// Custom hook for generating signed URLs for media files (images and videos)
-function useSignedMediaUrls(
-  inquiryId: string,
-  mediaFiles: string[] | null
-): {
-  mediaUrls: Record<string, string>;
-  isLoading: boolean;
-} {
-  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-
-  const generateSignedUrls = useCallback(async () => {
-    if (!mediaFiles || mediaFiles.length === 0) {
-      setMediaUrls({});
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    const urls = await listInquiryMediaUrls(inquiryId, mediaFiles).catch(
-      (error) => {
-        console.error('Error generating signed URLs for inquiry media:', error);
-        return {} as Record<string, string>;
-      }
-    );
-
-    setMediaUrls(urls);
-    setIsLoading(false);
-  }, [mediaFiles, inquiryId]);
-
-  // Generate URLs when media files change
-  useEffect(() => {
-    generateSignedUrls();
-  }, [generateSignedUrls]);
-
-  return { mediaUrls, isLoading };
 }
 
 interface InquiryDetailModalProps {
@@ -116,79 +79,71 @@ export function InquiryDetailModal({
   onUpdate,
 }: InquiryDetailModalProps) {
   const router = useRouter();
+  const [currentInquiry, setCurrentInquiry] = useState(inquiry);
   const [selectedMedia, setSelectedMedia] = useState<{
     url: string;
     isVideo: boolean;
   } | null>(null);
-  const [isResolvingUpdating, setIsResolvingUpdating] = useState(false);
-  const hasMarkedAsRead = useRef(false);
 
-  const inquiryId = inquiry.id;
-  const { mediaUrls, isLoading } = useSignedMediaUrls(
+  const inquiryId = currentInquiry.id;
+  const { data: mediaUrls = {}, isLoading } = useInquiryMediaUrlsQuery(
     inquiryId,
-    inquiry.images
+    currentInquiry.images
   );
-
-  const updateInquiry = useCallback(
-    async (
-      updates: { is_read?: boolean; is_resolved?: boolean },
-      showToast = true
-    ) => {
-      const isResolvingUpdate = updates.is_resolved !== undefined;
-      if (isResolvingUpdate) {
-        setIsResolvingUpdating(true);
-      }
-
-      try {
-        const response = await fetch(`/api/v1/inquiries/${inquiry.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updates),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update inquiry');
-        }
-
-        if (showToast) {
+  const updateInquiryMutation = useUpdateInquiryMutation(
+    inquiryId,
+    updateInquiryApi,
+    {
+      onSuccess: (result, input) => {
+        setCurrentInquiry((prev) => ({
+          ...prev,
+          ...result.data,
+        }));
+        if (input.showToast !== false) {
           toast.success('Inquiry updated successfully');
         }
         onUpdate?.();
         router.refresh();
-      } catch (error) {
+
+        if (input.closeOnSuccess) {
+          onClose();
+        }
+      },
+      onError: (error, input) => {
         console.error('Error updating inquiry:', error);
-        if (showToast) {
+        if (input.showToast !== false) {
           toast.error('Failed to update inquiry');
         }
-      } finally {
-        if (isResolvingUpdate) {
-          setIsResolvingUpdating(false);
-        }
-      }
-    },
-    [inquiry.id, onUpdate, router]
+      },
+    }
   );
+  const { isPending: isUpdatingInquiry, mutate: mutateInquiry } =
+    updateInquiryMutation;
 
-  // Mark as read when modal opens (only once)
   useEffect(() => {
-    if (isOpen && !inquiry.is_read && !hasMarkedAsRead.current) {
-      hasMarkedAsRead.current = true;
-      updateInquiry({ is_read: true }, false); // Don't show toast for auto-read
-    }
+    setCurrentInquiry(inquiry);
+  }, [inquiry]);
 
-    // Reset the ref when modal closes
-    if (!isOpen) {
-      hasMarkedAsRead.current = false;
+  useEffect(() => {
+    if (isOpen && !currentInquiry.is_read && !isUpdatingInquiry) {
+      mutateInquiry({
+        updates: { is_read: true },
+        showToast: false,
+      });
     }
-  }, [isOpen, inquiry.is_read, updateInquiry]);
+  }, [currentInquiry.is_read, isOpen, isUpdatingInquiry, mutateInquiry]);
 
-  const handleResolve = async () => {
-    await updateInquiry({ is_resolved: true });
-    onClose();
+  const handleResolve = () => {
+    mutateInquiry({
+      updates: { is_resolved: true },
+      closeOnSuccess: true,
+    });
   };
 
   const handleReopen = () => {
-    updateInquiry({ is_resolved: false });
+    mutateInquiry({
+      updates: { is_resolved: false },
+    });
   };
 
   const handleMediaClick = (mediaPath: string) => {
@@ -220,15 +175,15 @@ export function InquiryDetailModal({
                 Support Inquiry
               </DialogTitle>
               <div className="flex items-center gap-2">
-                {inquiry.is_resolved ? (
+                {currentInquiry.is_resolved ? (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleReopen}
-                    disabled={isResolvingUpdating}
+                    disabled={isUpdatingInquiry}
                     className="transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5"
                   >
-                    {isResolvingUpdating ? (
+                    {isUpdatingInquiry ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <ClockIcon className="mr-2 h-4 w-4" />
@@ -240,9 +195,9 @@ export function InquiryDetailModal({
                     variant="default"
                     size="sm"
                     onClick={handleResolve}
-                    disabled={isResolvingUpdating}
+                    disabled={isUpdatingInquiry}
                   >
-                    {isResolvingUpdating ? (
+                    {isUpdatingInquiry ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <CheckCircleIcon className="mr-2 h-4 w-4" />
@@ -268,20 +223,20 @@ export function InquiryDetailModal({
                 {/* Subject - Clean and focused */}
                 <div className="space-y-3">
                   <h1 className="font-bold text-2xl text-foreground leading-tight md:text-3xl">
-                    {inquiry.subject}
+                    {currentInquiry.subject}
                   </h1>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
-                      className={`${SUPPORT_TYPE_COLORS[inquiry.type]} border`}
+                      className={`${SUPPORT_TYPE_COLORS[currentInquiry.type]} border`}
                     >
-                      {SUPPORT_TYPE_LABELS[inquiry.type]}
+                      {SUPPORT_TYPE_LABELS[currentInquiry.type]}
                     </Badge>
                     <Badge variant="outline" className="border-border/60">
-                      {PRODUCT_LABELS[inquiry.product]}
+                      {PRODUCT_LABELS[currentInquiry.product]}
                     </Badge>
                     <span className="text-muted-foreground text-sm">•</span>
-                    {inquiry.is_resolved ? (
+                    {currentInquiry.is_resolved ? (
                       <span className="flex items-center gap-1.5 text-dynamic-green text-sm">
                         <CheckCircleIcon className="h-4 w-4" />
                         Resolved
@@ -292,7 +247,7 @@ export function InquiryDetailModal({
                         Open
                       </span>
                     )}
-                    {!inquiry.is_read && (
+                    {!currentInquiry.is_read && (
                       <>
                         <span className="text-muted-foreground text-sm">•</span>
                         <span className="flex items-center gap-1.5 font-medium text-dynamic-red text-sm">
@@ -305,26 +260,29 @@ export function InquiryDetailModal({
 
                 {/* Submitter Info - Minimal card */}
                 <div className="flex items-start gap-4 rounded-lg border bg-muted/20 p-4">
-                  {inquiry.users ? (
+                  {currentInquiry.users ? (
                     <>
                       <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarImage src={inquiry.users.avatar_url || ''} />
+                        <AvatarImage
+                          src={currentInquiry.users.avatar_url || ''}
+                        />
                         <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                          {inquiry.users.display_name?.[0] ||
-                            inquiry.users.user_private_details.email?.[0] ||
+                          {currentInquiry.users.display_name?.[0] ||
+                            currentInquiry.users.user_private_details
+                              .email?.[0] ||
                             'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1 space-y-1">
                         <p className="font-medium text-foreground">
-                          {inquiry.users.display_name || 'Unknown User'}
+                          {currentInquiry.users.display_name || 'Unknown User'}
                         </p>
                         <p className="text-muted-foreground text-sm">
-                          {inquiry.users.user_private_details.email}
+                          {currentInquiry.users.user_private_details.email}
                         </p>
                         <p className="text-muted-foreground text-xs">
                           {format(
-                            new Date(inquiry.created_at),
+                            new Date(currentInquiry.created_at),
                             'MMM d, yyyy · h:mm a'
                           )}
                         </p>
@@ -334,19 +292,19 @@ export function InquiryDetailModal({
                     <>
                       <Avatar className="h-12 w-12 shrink-0">
                         <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                          {inquiry.name[0] || 'U'}
+                          {currentInquiry.name[0] || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1 space-y-1">
                         <p className="font-medium text-foreground">
-                          {inquiry.name}
+                          {currentInquiry.name}
                         </p>
                         <p className="text-muted-foreground text-sm">
-                          {inquiry.email}
+                          {currentInquiry.email}
                         </p>
                         <p className="text-muted-foreground text-xs">
                           {format(
-                            new Date(inquiry.created_at),
+                            new Date(currentInquiry.created_at),
                             'MMM d, yyyy · h:mm a'
                           )}
                         </p>
@@ -362,17 +320,17 @@ export function InquiryDetailModal({
                   </h2>
                   <div className="rounded-lg border bg-background p-4 md:p-6">
                     <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-                      {inquiry.message}
+                      {currentInquiry.message}
                     </p>
                   </div>
                 </div>
 
                 {/* Attachments - Functional display */}
-                {inquiry.images && inquiry.images.length > 0 && (
+                {currentInquiry.images && currentInquiry.images.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h2 className="font-semibold text-foreground text-sm uppercase tracking-wide">
-                        Attachments ({inquiry.images.length})
+                        Attachments ({currentInquiry.images.length})
                       </h2>
                     </div>
                     {isLoading ? (
@@ -384,7 +342,7 @@ export function InquiryDetailModal({
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                        {inquiry.images.map((mediaPath, index) => {
+                        {currentInquiry.images.map((mediaPath, index) => {
                           const mediaUrl = mediaUrls[mediaPath];
                           if (!mediaUrl) return null;
 
@@ -392,7 +350,7 @@ export function InquiryDetailModal({
 
                           return (
                             <button
-                              key={`${inquiry.id}-media-${index}`}
+                              key={`${currentInquiry.id}-media-${index}`}
                               type="button"
                               className="group relative aspect-square overflow-hidden rounded-lg border bg-muted/50 transition-all hover:border-foreground/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-dynamic-blue/50"
                               onClick={() => handleMediaClick(mediaPath)}

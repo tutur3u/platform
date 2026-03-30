@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import {
   AlertCircle,
   AlertTriangle,
@@ -8,6 +9,11 @@ import {
   Upload,
   X,
 } from '@tuturuuu/icons';
+import {
+  createReportUploadUrls,
+  deleteReportUploadPaths,
+  submitReport,
+} from '@tuturuuu/internal-api/reports';
 import type { Product, SupportType } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -45,7 +51,7 @@ interface ReportProblemFormData {
 }
 
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_FILES = 10;
+const MAX_FILES = 5;
 
 // Allowed media types
 const ALLOWED_IMAGE_TYPES = [
@@ -55,6 +61,114 @@ const ALLOWED_IMAGE_TYPES = [
   'image/gif',
 ];
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+
+interface SubmitReportMutationInput {
+  product: Product;
+  type: SupportType;
+  suggestion: string;
+  subject: string;
+  media: File[];
+}
+
+function useSubmitReportMutation() {
+  return useMutation({
+    mutationFn: async ({
+      product,
+      type,
+      suggestion,
+      subject,
+      media,
+    }: SubmitReportMutationInput) => {
+      const uploadedPaths: string[] = [];
+
+      const cleanupUploadedMedia = async () => {
+        if (uploadedPaths.length === 0) {
+          return;
+        }
+
+        try {
+          await deleteReportUploadPaths({ paths: uploadedPaths });
+        } catch (cleanupError) {
+          console.error(
+            'Failed to clean up uploaded support report media:',
+            cleanupError
+          );
+        }
+      };
+
+      try {
+        if (media.length > 0) {
+          const { uploads } = await createReportUploadUrls({
+            files: media.map((file) => ({
+              filename: file.name,
+              contentType: file.type,
+              size: file.size,
+            })),
+          });
+
+          if (uploads.length !== media.length) {
+            throw new Error('Failed to prepare media uploads');
+          }
+
+          for (const [index, upload] of uploads.entries()) {
+            const file = media[index];
+
+            if (!file) {
+              throw new Error('Missing media file during upload');
+            }
+
+            let uploadResponse = await fetch(upload.signedUrl, {
+              method: 'PUT',
+              cache: 'no-store',
+              headers: {
+                Authorization: `Bearer ${upload.token}`,
+                'Content-Type': file.type || 'application/octet-stream',
+              },
+              body: file,
+            });
+
+            if (!uploadResponse.ok) {
+              uploadResponse = await fetch(upload.signedUrl, {
+                method: 'PUT',
+                cache: 'no-store',
+                headers: {
+                  Authorization: `Bearer ${upload.token}`,
+                },
+                body: file,
+              });
+            }
+
+            if (!uploadResponse.ok) {
+              const text = await uploadResponse.text().catch(() => '');
+              throw new Error(
+                `Failed to upload media (${uploadResponse.status})${text ? `: ${text}` : ''}`
+              );
+            }
+
+            uploadedPaths.push(upload.path);
+          }
+        }
+
+        const result = await submitReport({
+          product,
+          type,
+          suggestion,
+          subject,
+          imagePaths: uploadedPaths,
+        });
+
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to submit report');
+        }
+
+        return result;
+      } catch (error) {
+        await cleanupUploadedMedia();
+        throw error;
+      }
+    },
+  });
+}
 
 // Zod schema for form validation
 const reportProblemSchema = z.object({
@@ -162,7 +276,6 @@ export function ReportProblemDialog({
     media: [],
   });
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     product?: string;
@@ -173,6 +286,8 @@ export function ReportProblemDialog({
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaPreviewsRef = useRef<string[]>([]);
+  const submitReportMutation = useSubmitReportMutation();
+  const isSubmitting = submitReportMutation.isPending;
 
   const validateForm = () => {
     const result = reportProblemSchema.safeParse(formData);
@@ -517,48 +632,29 @@ export function ReportProblemDialog({
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      // Default API submission logic
-      const apiFormData = new FormData();
-      apiFormData.append('product', formData.product);
-      apiFormData.append('type', formData.type);
-      apiFormData.append('suggestion', formData.suggestion);
+      const validatedForm = reportProblemSchema.parse(formData);
 
       // Generate a subject based on the type and product
-      const subject = `${formData.type === 'bug' ? 'Bug Report' : 'Feature Request'} - ${
-        DEFAULT_PRODUCTS.find((p) => p.value === formData.product)?.label ||
-        formData.product
+      const subject = `${validatedForm.type === 'bug' ? 'Bug Report' : 'Feature Request'} - ${
+        DEFAULT_PRODUCTS.find((p) => p.value === validatedForm.product)
+          ?.label || validatedForm.product
       }`;
-      apiFormData.append('subject', subject);
 
-      // Append media files
-      formData.media.forEach((file, index) => {
-        apiFormData.append(`media_${index}`, file);
+      await submitReportMutation.mutateAsync({
+        product: validatedForm.product,
+        type: validatedForm.type,
+        suggestion: validatedForm.suggestion,
+        subject,
+        media: validatedForm.media,
       });
-
-      // Submit to API
-      const response = await fetch('/api/reports', {
-        method: 'POST',
-        body: apiFormData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        toast.success(t('report-submitted-success'));
-      } else {
-        throw new Error(result.message || 'Failed to submit report');
-      }
+      toast.success(t('report-submitted-success'));
 
       // Close dialog (which will also trigger cleanup)
       handleOpenChange(false);
     } catch (error) {
       console.error('Failed to submit report:', error);
       toast.error('Failed to submit report. Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

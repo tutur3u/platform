@@ -1,8 +1,18 @@
+import type { SupportInquiry } from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
 } from './client';
+
+export interface UpdateInquiryPayload {
+  is_read?: boolean;
+  is_resolved?: boolean;
+}
+
+export interface UpdateInquiryResponse {
+  data: SupportInquiry;
+}
 
 export async function listInquiryMediaUrls(
   inquiryId: string,
@@ -23,4 +33,23 @@ export async function listInquiryMediaUrls(
   );
 
   return payload.urls ?? {};
+}
+
+export async function updateInquiry(
+  inquiryId: string,
+  updates: UpdateInquiryPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpdateInquiryResponse>(
+    `/api/v1/inquiries/${encodePathSegment(inquiryId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+      cache: 'no-store',
+    }
+  );
 }
