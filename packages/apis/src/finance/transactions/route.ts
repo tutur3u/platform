@@ -237,7 +237,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
   }
 
-  const { data: transaction, error } = await supabase
+  const { data: transaction, error } = await sbAdmin
     .from('wallet_transactions')
     .insert({
       amount: data.amount,
@@ -272,7 +272,7 @@ export async function POST(req: Request, { params }: Params) {
       tag_id: tagId,
     }));
 
-    const { error: tagError } = await supabase
+    const { error: tagError } = await sbAdmin
       .from('wallet_transaction_tags')
       .insert(tagInserts);
 
