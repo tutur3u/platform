@@ -552,22 +552,10 @@ export async function getPermissions({
 
   // Handle "personal" workspace slug by looking up the user's personal workspace
   let resolvedWorkspaceId: string;
-  if (wsId.toUpperCase() === PERSONAL_WORKSPACE_SLUG.toUpperCase()) {
-    const { data: personalWorkspace } = await sbAdmin
-      .from('workspaces')
-      .select('id')
-      .eq('personal', true)
-      .eq('creator_id', user.id)
-      .single();
-
-    if (!personalWorkspace) {
-      console.error('Personal workspace not found for user', user.id);
-      return null;
-    }
-
-    resolvedWorkspaceId = personalWorkspace.id;
-  } else {
-    resolvedWorkspaceId = resolveWorkspaceId(wsId);
+  try {
+    resolvedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return null;
   }
 
   const permissionsQuery = sbAdmin
