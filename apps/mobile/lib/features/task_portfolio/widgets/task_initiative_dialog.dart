@@ -75,7 +75,7 @@ class _TaskInitiativeDialogState extends State<TaskInitiativeDialog> {
               shad.TextField(
                 controller: _nameController,
                 autofocus: true,
-                placeholder: Text(context.l10n.taskPortfolioInitiativeName),
+                hintText: context.l10n.taskPortfolioInitiativeName,
               ),
               if (_nameError != null) ...[
                 const shad.Gap(4),
@@ -91,9 +91,7 @@ class _TaskInitiativeDialogState extends State<TaskInitiativeDialog> {
               const shad.Gap(4),
               shad.TextArea(
                 controller: _descriptionController,
-                placeholder: Text(
-                  context.l10n.taskPortfolioInitiativeDescriptionHint,
-                ),
+                hintText: context.l10n.taskPortfolioInitiativeDescriptionHint,
                 initialHeight: 88,
                 minHeight: 88,
                 maxHeight: 140,
@@ -102,7 +100,7 @@ class _TaskInitiativeDialogState extends State<TaskInitiativeDialog> {
               _FieldLabel(context.l10n.taskPortfolioInitiativeStatus),
               const shad.Gap(4),
               shad.OutlineButton(
-                onPressed: _pickStatus,
+                onPressed: _isSubmitting ? null : _pickStatus,
                 child: Row(
                   children: [
                     Expanded(
@@ -189,28 +187,37 @@ class _TaskInitiativeDialogState extends State<TaskInitiativeDialog> {
   }
 
   Future<void> _pickStatus() async {
-    final selected = await shad.showDialog<String>(
+    final selected = await showAdaptiveSheet<String>(
       context: context,
+      maxDialogWidth: 420,
       builder: (dialogCtx) {
-        return shad.AlertDialog(
-          title: Text(context.l10n.taskPortfolioInitiativeStatus),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 260),
-              child: ListView(
-                shrinkWrap: true,
-                children: _initiativeStatuses
-                    .map(
-                      (value) => shad.GhostButton(
-                        onPressed: () => Navigator.of(dialogCtx).pop(value),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(_initiativeStatusLabel(context, value)),
+        return BackButtonListener(
+          onBackButtonPressed: () async {
+            if (dialogCtx.mounted) {
+              await Navigator.maybePop(dialogCtx);
+            }
+            return true;
+          },
+          child: shad.AlertDialog(
+            title: Text(context.l10n.taskPortfolioInitiativeStatus),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 260),
+                child: ListView(
+                  shrinkWrap: true,
+                  children: _initiativeStatuses
+                      .map(
+                        (value) => shad.GhostButton(
+                          onPressed: () => Navigator.of(dialogCtx).pop(value),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(_initiativeStatusLabel(context, value)),
+                          ),
                         ),
-                      ),
-                    )
-                    .toList(growable: false),
+                      )
+                      .toList(growable: false),
+                ),
               ),
             ),
           ),
