@@ -193,6 +193,7 @@ export function TasksTab({
       <div className="flex items-center gap-2 border-b px-6 py-3">
         <div className="flex-1">
           <BoardHeader
+            workspaceId={wsId}
             board={virtualBoard}
             currentView={currentView}
             currentUserId={currentUserId}

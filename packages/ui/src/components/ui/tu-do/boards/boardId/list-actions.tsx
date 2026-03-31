@@ -95,11 +95,53 @@ export function ListActions({
         }
       );
     },
+    onMutate: async () => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['task_lists', boardId] }),
+        queryClient.cancelQueries({ queryKey: ['tasks', boardId] }),
+      ]);
+
+      const previousLists = queryClient.getQueryData<TaskList[]>([
+        'task_lists',
+        boardId,
+      ]);
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: TaskList[] | undefined) => {
+          if (!old) return old;
+          return old.filter((list) => list.id !== listId);
+        }
+      );
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.filter((task) => task.list_id !== listId);
+        }
+      );
+
+      return { previousLists, previousTasks };
+    },
     onSuccess: () => {
+      broadcast?.('list:delete', { listId });
       setIsDeleteDialogOpen(false);
       onUpdate();
     },
-    onError: (error) => {
+    onError: (error, _, context) => {
+      if (context?.previousLists) {
+        queryClient.setQueryData(
+          ['task_lists', boardId],
+          context.previousLists
+        );
+      }
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
       toast.error(error instanceof Error ? error.message : t('save_failed'));
     },
   });
@@ -123,6 +165,10 @@ export function ListActions({
     },
     onMutate: async (trimmedName) => {
       await queryClient.cancelQueries({ queryKey: ['task_lists', boardId] });
+      const previousLists = queryClient.getQueryData<TaskList[]>([
+        'task_lists',
+        boardId,
+      ]);
 
       queryClient.setQueryData(
         ['task_lists', boardId],
@@ -133,6 +179,8 @@ export function ListActions({
           );
         }
       );
+
+      return { previousLists };
     },
     onSuccess: (_, trimmedName) => {
       broadcast?.('list:upsert', { list: { id: listId, name: trimmedName } });
@@ -140,8 +188,13 @@ export function ListActions({
       onEditOpenChange(false);
       onUpdate();
     },
-    onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+    onError: (error, _, context) => {
+      if (context?.previousLists) {
+        queryClient.setQueryData(
+          ['task_lists', boardId],
+          context.previousLists
+        );
+      }
       toast.error(error instanceof Error ? error.message : t('save_failed'));
     },
   });

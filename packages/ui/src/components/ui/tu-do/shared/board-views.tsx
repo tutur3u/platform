@@ -73,6 +73,7 @@ export function BoardViews({
   const t = useTranslations('common');
   const tBoards = useTranslations('ws-task-boards');
   const queryClient = useQueryClient();
+  const effectiveWorkspaceId = board.ws_id ?? workspace.id;
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
@@ -96,11 +97,11 @@ export function BoardViews({
   const shouldEagerLoadTasks =
     currentView === 'list' || currentView === 'timeline';
   const fetchBoardTasks = useCallback(async () => {
-    const result = await listWorkspaceTasks(board.ws_id ?? workspace.id, {
+    const result = await listWorkspaceTasks(effectiveWorkspaceId, {
       boardId: board.id,
     });
     return result.tasks;
-  }, [board.id, board.ws_id, workspace.id]);
+  }, [board.id, effectiveWorkspaceId]);
 
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
@@ -130,6 +131,22 @@ export function BoardViews({
     refetchOnMount: 'always',
     staleTime: 0,
   });
+
+  const initialTaskLists = useMemo(
+    () => lists.filter((list) => !list.deleted),
+    [lists]
+  );
+
+  const { data: boardLists = initialTaskLists } = useQuery({
+    queryKey: ['task_lists', board.id],
+    queryFn: async () => initialTaskLists,
+    initialData: initialTaskLists,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    queryClient.setQueryData(['task_lists', board.id], initialTaskLists);
+  }, [board.id, initialTaskLists, queryClient]);
 
   useLayoutEffect(() => {
     const savedConfig = loadBoardConfig(board.id);
@@ -166,8 +183,8 @@ export function BoardViews({
   );
 
   const activeLists = useMemo(
-    () => lists.filter((list) => !list.deleted),
-    [lists]
+    () => boardLists.filter((list) => !list.deleted),
+    [boardLists]
   );
 
   // When filters or sorting are active, auto-load all remaining pages so
@@ -196,7 +213,7 @@ export function BoardViews({
     isLoading: isSearchLoading,
     isFetching: isSearchFetching,
   } = useSemanticTaskSearch({
-    wsId: workspace.id,
+    wsId: effectiveWorkspaceId,
     query: filters.searchQuery || '',
     matchThreshold: 0.3,
     matchCount: 50,
@@ -553,7 +570,7 @@ export function BoardViews({
           <KanbanBoard
             workspace={workspace}
             workspaceTier={workspaceTier}
-            workspaceId={board.ws_id ?? workspace.id}
+            workspaceId={effectiveWorkspaceId}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
@@ -568,7 +585,7 @@ export function BoardViews({
       case 'list':
         return (
           <ListView
-            workspaceId={board.ws_id ?? workspace.id}
+            workspaceId={effectiveWorkspaceId}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
@@ -579,7 +596,7 @@ export function BoardViews({
       case 'timeline':
         return (
           <TimelineBoard
-            wsId={board.ws_id ?? workspace.id}
+            wsId={effectiveWorkspaceId}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
@@ -591,7 +608,7 @@ export function BoardViews({
           <KanbanBoard
             workspace={workspace}
             workspaceTier={workspaceTier}
-            workspaceId={board.ws_id ?? workspace.id}
+            workspaceId={effectiveWorkspaceId}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
@@ -609,6 +626,7 @@ export function BoardViews({
   return (
     <div className="-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
       <BoardHeader
+        workspaceId={effectiveWorkspaceId}
         board={board}
         currentUserId={currentUserId}
         currentView={currentView}
@@ -620,7 +638,7 @@ export function BoardViews({
         onListStatusFilterChange={setListStatusFilter}
         isPersonalWorkspace={workspace.personal}
         isSearching={isSearchLoading || isSearchFetching}
-        lists={lists}
+        lists={boardLists}
         onUpdate={handleUpdate}
         onRecycleBinOpen={() => setRecycleBinOpen(true)}
         isMultiSelectMode={isMultiSelectMode}
@@ -631,9 +649,9 @@ export function BoardViews({
       <RecycleBinPanel
         open={recycleBinOpen}
         onOpenChange={setRecycleBinOpen}
-        wsId={board.ws_id ?? workspace.id}
+        wsId={effectiveWorkspaceId}
         boardId={board.id}
-        lists={lists}
+        lists={boardLists}
         translations={{
           recycleBin: t('recycle_bin'),
           recycleBinDescription: t('recycle_bin_description'),

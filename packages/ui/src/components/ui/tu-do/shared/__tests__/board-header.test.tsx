@@ -91,7 +91,9 @@ const mockBoard = {
   ws_id: 'ws-1',
 } as const;
 
-function renderBoardHeader() {
+function renderBoardHeader(
+  overrides?: Partial<React.ComponentProps<typeof BoardHeader>>
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -103,6 +105,7 @@ function renderBoardHeader() {
   return render(
     <QueryClientProvider client={queryClient}>
       <BoardHeader
+        workspaceId="ws-1"
         board={mockBoard}
         currentView="kanban"
         filters={{
@@ -123,6 +126,7 @@ function renderBoardHeader() {
         onUpdate={vi.fn()}
         onViewChange={vi.fn()}
         setIsMultiSelectMode={vi.fn()}
+        {...overrides}
       />
     </QueryClientProvider>
   );
@@ -142,5 +146,24 @@ describe('BoardHeader', () => {
     );
     expect(boardLayoutSettingsProps?.boardId).toBe('board-1');
     expect(boardLayoutSettingsProps?.wsId).toBe('ws-1');
+  });
+
+  it('uses the explicit workspace id when the board payload omits ws_id', () => {
+    renderBoardHeader({
+      workspaceId: 'ws-fallback',
+      board: {
+        archived_at: null,
+        id: 'board-1',
+        name: 'Roadmap',
+        ticket_prefix: 'RD',
+        ws_id: null,
+      },
+    });
+
+    expect(screen.getByTestId('board-layout-settings')).toHaveAttribute(
+      'data-ws-id',
+      'ws-fallback'
+    );
+    expect(boardLayoutSettingsProps?.wsId).toBe('ws-fallback');
   });
 });

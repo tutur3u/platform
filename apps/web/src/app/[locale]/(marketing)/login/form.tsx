@@ -153,6 +153,7 @@ export default function LoginForm({
     otp: false,
     password: false,
   });
+  const oauthErrorToastKeyRef = useRef<string | null>(null);
 
   // Server action transitions
   const [isPendingSendOtp, startSendOtpTransition] = useTransition();
@@ -753,6 +754,32 @@ export default function LoginForm({
 
     checkUser();
   }, [needsMFA, supabase.auth]);
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+
+    if (!error && !errorDescription) {
+      oauthErrorToastKeyRef.current = null;
+      return;
+    }
+
+    const toastKey = `${error ?? ''}:${errorDescription ?? ''}`;
+    if (oauthErrorToastKeyRef.current === toastKey) {
+      return;
+    }
+
+    oauthErrorToastKeyRef.current = toastKey;
+    setLoading(false);
+
+    toast.error(t('login.failed'), {
+      description:
+        errorDescription ||
+        (error === 'auth_failed'
+          ? t('login.oauth_callback_failed')
+          : t('login.social_sign_in_failed')),
+    });
+  }, [searchParams, t]);
 
   useEffect(() => {
     const processUrl = async () => {

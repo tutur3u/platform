@@ -231,6 +231,8 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Markdown Separator Validation**: When detecting Markdown table separator rows, do not use ambiguous regex character ranges like `[\s:-|]`. Escape or reposition `-`, or prefer explicit per-character validation, to avoid false positives and CodeQL `js/overly-large-range` alerts.
 - **Special Tag Prompt Rules**: Custom tags like `@<FOLLOWUP>` must not contain internal whitespace, but blank lines between distinct prompt sections are required.
 - **Module Boundaries**: When file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
+- **Board Workspace ID Fallback Propagation**: In shared board surfaces, normalize `effectiveWorkspaceId = board.ws_id ?? workspace.id` once near the top-level view and pass that explicit id through headers, dialogs, filters, forms, and mutations. Do not let child actions keep reading raw `board.ws_id`, or some board payloads will still fail list/board mutations with local `"Workspace ID is required"` errors even though the page already knows the correct workspace.
+- **Cache-Driven Task List Rollbacks**: When a board view renders columns/lists from the TanStack `['task_lists', boardId]` cache, list rename/delete mutations must restore cached `task_lists`/`tasks` snapshots on error. Do not rely on `invalidateQueries` alone for rollback, because cache-driven list UIs may not refetch immediately and will otherwise stay stuck in the optimistic state.
 
 ### 6.3 Security & Validation
 

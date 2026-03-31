@@ -33,6 +33,7 @@ import {
 import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskList } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import {
   AlertDialog,
@@ -710,14 +711,54 @@ export function BoardLayoutSettings({
       if (!wsId) throw new Error('Workspace ID is required');
       await updateWorkspaceTaskList(wsId, boardId, listId, { deleted: true });
     },
-    onSuccess: () => {
+    onMutate: async (listId) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['task_lists', boardId] }),
+        queryClient.cancelQueries({ queryKey: ['tasks', boardId] }),
+      ]);
+
+      const previousLists = queryClient.getQueryData<WorkspaceTaskList[]>([
+        'task_lists',
+        boardId,
+      ]);
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
+
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: WorkspaceTaskList[] | undefined) => {
+          if (!old) return old;
+          return old.filter((list) => list.id !== listId);
+        }
+      );
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.filter((task) => task.list_id !== listId);
+        }
+      );
+
+      return { previousLists, previousTasks };
+    },
+    onSuccess: (_, listId) => {
       toast.success(t.listDeletedSuccessfully);
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+      broadcast?.('list:delete', { listId });
       setDeletingList(null);
       onUpdate();
     },
-    onError: (error: any) => {
+    onError: (error: any, _, context) => {
+      if (context?.previousLists) {
+        queryClient.setQueryData(
+          ['task_lists', boardId],
+          context.previousLists
+        );
+      }
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
       toast.error(error.message || t.failedToDeleteList);
     },
   });
@@ -1007,6 +1048,7 @@ export function BoardLayoutSettings({
         open={creatingList}
         onOpenChange={setCreatingList}
         boardId={boardId}
+        wsId={wsId}
         onSuccess={() => {
           onUpdate();
         }}

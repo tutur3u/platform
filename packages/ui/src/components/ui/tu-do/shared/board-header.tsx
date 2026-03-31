@@ -96,10 +96,12 @@ import type { BoardFiltersMetadata } from './task-filter.types';
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
 
 interface Props {
+  workspaceId: string;
   board: Pick<
     WorkspaceTaskBoard,
-    'id' | 'name' | 'ws_id' | 'ticket_prefix' | 'archived_at'
+    'id' | 'name' | 'ticket_prefix' | 'archived_at'
   > & {
+    ws_id?: WorkspaceTaskBoard['ws_id'] | null;
     icon?: WorkspaceTaskBoard['icon'];
   };
   currentUserId?: string;
@@ -122,6 +124,7 @@ interface Props {
 }
 
 export function BoardHeader({
+  workspaceId,
   board,
   currentUserId,
   currentView,
@@ -157,7 +160,7 @@ export function BoardHeader({
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
-  const { archiveBoard, unarchiveBoard } = useBoardActions(board.ws_id);
+  const { archiveBoard, unarchiveBoard } = useBoardActions(workspaceId);
   const queryClient = useQueryClient();
   const router = useRouter();
   const tasksHref = useTasksHref();
@@ -224,8 +227,8 @@ export function BoardHeader({
   async function handleDelete() {
     try {
       setIsLoading(true);
-      await deleteWorkspaceTaskBoard(board.ws_id, board.id);
-      router.push(`/${board.ws_id}${tasksHref('/boards')}`);
+      await deleteWorkspaceTaskBoard(workspaceId, board.id);
+      router.push(`/${workspaceId}${tasksHref('/boards')}`);
     } catch (error) {
       console.error('Failed to delete board:', error);
     } finally {
@@ -240,7 +243,7 @@ export function BoardHeader({
       // Validate and clean the prefix
       const cleanedPrefix = ticketPrefix.trim().toUpperCase();
 
-      await updateWorkspaceTaskBoard(board.ws_id, board.id, {
+      await updateWorkspaceTaskBoard(workspaceId, board.id, {
         ticket_prefix: cleanedPrefix || null,
       });
 
@@ -352,7 +355,7 @@ export function BoardHeader({
             </Link>
           )}
           <BoardSwitcher
-            board={board}
+            board={{ ...board, ws_id: workspaceId }}
             translations={{
               loadingBoards: t('common.loading'),
               noOtherBoards: t('common.no_other_boards'),
@@ -537,7 +540,7 @@ export function BoardHeader({
 
           {/* Task Filter */}
           <TaskFilter
-            wsId={board.ws_id}
+            wsId={workspaceId}
             currentUserId={currentUserId}
             filters={filters}
             onFiltersChange={onFiltersChange}
@@ -994,7 +997,7 @@ export function BoardHeader({
             </DialogDescription>
           </DialogHeader>
           <TaskBoardForm
-            wsId={board.ws_id}
+            wsId={workspaceId}
             data={{
               id: board.id,
               name: board.name ?? '',
@@ -1008,7 +1011,7 @@ export function BoardHeader({
                 queryKey: ['task-board', board.id],
               });
               queryClient.invalidateQueries({
-                queryKey: ['other-boards', board.ws_id, board.id],
+                queryKey: ['other-boards', workspaceId, board.id],
               });
             }}
           />
@@ -1016,13 +1019,13 @@ export function BoardHeader({
       </Dialog>
       {/* Duplicate Board Dialog */}
       <CopyBoardDialog
-        board={{ id: board.id, ws_id: board.ws_id, name: board.name }}
+        board={{ id: board.id, ws_id: workspaceId, name: board.name }}
         open={duplicateBoardOpen}
         onOpenChange={setDuplicateBoardOpen}
       />
       {/* Save as Template Dialog */}
       <SaveAsTemplateDialog
-        board={{ id: board.id, ws_id: board.ws_id, name: board.name }}
+        board={{ id: board.id, ws_id: workspaceId, name: board.name }}
         open={saveAsTemplateOpen}
         onOpenChange={setSaveAsTemplateOpen}
       />
@@ -1032,7 +1035,7 @@ export function BoardHeader({
           open={layoutSettingsOpen}
           onOpenChange={setLayoutSettingsOpen}
           boardId={board.id}
-          wsId={board.ws_id}
+          wsId={workspaceId}
           lists={lists}
           onUpdate={onUpdate}
           translations={{

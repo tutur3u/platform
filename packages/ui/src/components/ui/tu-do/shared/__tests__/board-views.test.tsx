@@ -155,7 +155,7 @@ function renderBoardViews(overrides?: { lists?: TaskList[]; tasks?: Task[] }) {
     },
   });
 
-  return render(
+  const result = render(
     <QueryClientProvider client={queryClient}>
       <HotkeysProvider>
         <BoardViews
@@ -169,6 +169,11 @@ function renderBoardViews(overrides?: { lists?: TaskList[]; tasks?: Task[] }) {
       </HotkeysProvider>
     </QueryClientProvider>
   );
+
+  return {
+    ...result,
+    queryClient,
+  };
 }
 
 describe('BoardViews', () => {
@@ -276,6 +281,62 @@ describe('BoardViews', () => {
         projects: [],
       }
     );
+  });
+
+  it('passes the effective workspace id into board header', () => {
+    renderBoardViews();
+
+    expect(boardHeaderProps?.workspaceId).toBe('ws-1');
+  });
+
+  it('rerenders kanban when the task list cache changes', async () => {
+    const { queryClient } = renderBoardViews();
+
+    expect(kanbanBoardProps?.lists).toEqual(mockLists);
+
+    await act(async () => {
+      queryClient.setQueryData(
+        ['task_lists', 'board-1'],
+        [
+          mockLists[0],
+          {
+            ...mockLists[1]!,
+            name: 'Doing',
+          },
+        ]
+      );
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.lists).toEqual([
+        mockLists[0],
+        {
+          ...mockLists[1]!,
+          name: 'Doing',
+        },
+      ]);
+    });
+  });
+
+  it('removes deleted lists from kanban when the task list cache updates', async () => {
+    const { queryClient } = renderBoardViews();
+
+    await act(async () => {
+      queryClient.setQueryData(
+        ['task_lists', 'board-1'],
+        [
+          mockLists[0],
+          {
+            ...mockLists[1]!,
+            deleted: true,
+          },
+        ]
+      );
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.lists).toEqual([mockLists[0]]);
+    });
   });
 
   it('eagerly fetches the full board task set when switching to list view', async () => {
