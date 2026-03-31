@@ -24,29 +24,23 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { XLSX } from '@tuturuuu/ui/xlsx';
-import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import {
   type GroupMembershipFilter,
   getGroupMembershipTranslationKey,
 } from './group-membership';
+import {
+  buildWorkspaceUsersSearchParams,
+  type ResolvedUsersDatabaseFilters,
+  type UsersDatabaseRequireAttention,
+  type UsersDatabaseStatus,
+} from './resolved-filters';
 
 type ExportDataType = 'all-users' | 'users-with-promotions';
-type UserStatus = 'active' | 'archived' | 'archived_until' | 'all';
 type LinkStatus = 'all' | 'linked' | 'virtual';
-
-interface SearchParams {
-  q?: string;
-  page?: number;
-  pageSize?: number;
-  includedGroups?: string | string[];
-  excludedGroups?: string | string[];
-  status?: UserStatus;
-  linkStatus?: LinkStatus;
-  groupMembership?: GroupMembershipFilter;
-}
+type UserStatus = UsersDatabaseStatus;
 
 type ExportWorkspaceUser = WorkspaceUser & {
   is_guest?: boolean;
@@ -67,49 +61,36 @@ interface ExportPageResult {
   scannedCount: number;
 }
 
+interface ExportRequestParams {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+  includedGroups?: string[];
+  excludedGroups?: string[];
+  status?: UserStatus;
+  linkStatus?: LinkStatus;
+  requireAttention?: UsersDatabaseRequireAttention;
+  groupMembership?: GroupMembershipFilter;
+}
+
 export default function ExportDialogContent({
   wsId,
   exportType = 'users',
-  searchParams: searchParamsProp,
+  filters,
   showDataTypeSelector = false,
 }: {
   wsId: string;
   exportType?: string;
-  searchParams?: SearchParams;
+  filters: ResolvedUsersDatabaseFilters;
   showDataTypeSelector?: boolean;
 }) {
   const t = useTranslations();
-  const urlSearchParams = useSearchParams();
-
-  const searchParams = useMemo((): SearchParams => {
-    if (searchParamsProp) {
-      return {
-        ...searchParamsProp,
-        status: parseUserStatus(searchParamsProp.status),
-        linkStatus: parseLinkStatus(searchParamsProp.linkStatus),
-        groupMembership: parseGroupMembership(searchParamsProp.groupMembership),
-      };
-    }
-
-    return {
-      q: urlSearchParams.get('q') || undefined,
-      includedGroups: urlSearchParams.getAll('includedGroups'),
-      excludedGroups: urlSearchParams.getAll('excludedGroups'),
-      status: parseUserStatus(urlSearchParams.get('status')),
-      linkStatus: parseLinkStatus(urlSearchParams.get('linkStatus')),
-      groupMembership: parseGroupMembership(
-        urlSearchParams.get('groupMembership')
-      ),
-    };
-  }, [searchParamsProp, urlSearchParams]);
 
   const [filename, setFilename] = useState('');
   const [exportFileType, setExportFileType] = useState('excel');
   const [exportDataType, setExportDataType] =
     useState<ExportDataType>('all-users');
-  const [exportStatus, setExportStatus] = useState<UserStatus>(
-    searchParams.status ?? 'active'
-  );
+  const [exportStatus, setExportStatus] = useState<UserStatus>(filters.status);
   const [progress, setProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [processedUsers, setProcessedUsers] = useState(0);
@@ -121,20 +102,16 @@ export default function ExportDialogContent({
       ? 'users-with-promotions'
       : exportType;
 
-  const includedGroups = useMemo(
-    () => normalizeStringArray(searchParams.includedGroups),
-    [searchParams.includedGroups]
-  );
-  const excludedGroups = useMemo(
-    () => normalizeStringArray(searchParams.excludedGroups),
-    [searchParams.excludedGroups]
-  );
-  const linkStatus = searchParams.linkStatus ?? 'all';
-  const groupMembership = searchParams.groupMembership ?? 'all';
+  const includedGroups = filters.includedGroups;
+  const excludedGroups = filters.excludedGroups;
+  const linkStatus: LinkStatus = filters.linkStatus;
+  const groupMembership: GroupMembershipFilter = filters.groupMembership;
+  const requireAttention: UsersDatabaseRequireAttention =
+    filters.requireAttention;
 
   useEffect(() => {
-    setExportStatus(searchParams.status ?? 'active');
-  }, [searchParams.status]);
+    setExportStatus(filters.status);
+  }, [filters.status]);
 
   const defaultFilename = `${[
     effectiveExportType === 'users-with-promotions'
@@ -170,11 +147,12 @@ export default function ExportDialogContent({
         const pageResult = await fetchData(wsId, {
           page: currentPage,
           pageSize,
-          q: searchParams.q,
+          q: filters.q,
           includedGroups,
           excludedGroups,
           status: exportStatus,
           linkStatus,
+          requireAttention,
           groupMembership,
         });
 
@@ -272,11 +250,11 @@ export default function ExportDialogContent({
                 )}
               />
             ) : null}
-            {searchParams.q ? (
+            {filters.q ? (
               <ScopeBadge
                 icon={<Search className="h-3.5 w-3.5" />}
                 label={t('search.search')}
-                value={searchParams.q}
+                value={filters.q}
               />
             ) : null}
             {includedGroups.length > 0 ? (
@@ -445,8 +423,9 @@ async function getData(
     excludedGroups = [],
     status = 'active',
     linkStatus = 'all',
+    requireAttention = 'all',
     groupMembership = 'all',
-  }: SearchParams = {}
+  }: ExportRequestParams = {}
 ): Promise<ExportPageResult> {
   const response = await fetchWorkspaceUsersPage(wsId, {
     q,
@@ -456,6 +435,7 @@ async function getData(
     excludedGroups,
     status,
     linkStatus,
+    requireAttention,
     groupMembership,
   });
 
@@ -476,8 +456,9 @@ async function getUsersWithLinkedPromotions(
     excludedGroups = [],
     status = 'active',
     linkStatus = 'all',
+    requireAttention = 'all',
     groupMembership = 'all',
-  }: SearchParams = {}
+  }: ExportRequestParams = {}
 ): Promise<ExportPageResult> {
   const response = await fetchWorkspaceUsersPage(wsId, {
     q,
@@ -487,6 +468,7 @@ async function getUsersWithLinkedPromotions(
     excludedGroups,
     status,
     linkStatus,
+    requireAttention,
     groupMembership,
     withPromotions: true,
   });
@@ -508,32 +490,23 @@ async function fetchWorkspaceUsersPage(
     excludedGroups = [],
     status = 'active',
     linkStatus = 'all',
+    requireAttention = 'all',
     groupMembership = 'all',
     withPromotions = false,
-  }: SearchParams & { withPromotions?: boolean } = {}
+  }: ExportRequestParams & { withPromotions?: boolean } = {}
 ): Promise<WorkspaceUsersApiResponse> {
-  const searchParams = new URLSearchParams();
-
-  if (q) {
-    searchParams.set('q', q);
-  }
-
-  searchParams.set('page', String(page));
-  searchParams.set('pageSize', String(pageSize));
-  searchParams.set('status', status);
-  searchParams.set('linkStatus', linkStatus);
-  searchParams.set('groupMembership', groupMembership);
-  if (withPromotions) {
-    searchParams.set('withPromotions', 'true');
-  }
-
-  for (const group of normalizeStringArray(includedGroups)) {
-    searchParams.append('includedGroups', group);
-  }
-
-  for (const group of normalizeStringArray(excludedGroups)) {
-    searchParams.append('excludedGroups', group);
-  }
+  const searchParams = buildWorkspaceUsersSearchParams({
+    q: q ?? '',
+    page,
+    pageSize,
+    includedGroups,
+    excludedGroups,
+    status,
+    linkStatus,
+    requireAttention,
+    groupMembership,
+    withPromotions,
+  });
 
   const response = await fetch(
     `/api/v1/workspaces/${wsId}/users/database?${searchParams.toString()}`,
@@ -591,17 +564,6 @@ function getFileExtension(fileType: string) {
   }
 }
 
-function normalizeStringArray(value?: string | string[]) {
-  if (!value) {
-    return [];
-  }
-
-  return (Array.isArray(value) ? value : [value])
-    .flatMap((entry) => entry.split(','))
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
-
 function tidyExportErrorMessage(message: string) {
   const trimmed = message.trim();
 
@@ -645,20 +607,6 @@ function getLinkStatusTranslationKey(status: LinkStatus) {
   }
 }
 
-function parseGroupMembership(
-  value?: string | null
-): GroupMembershipFilter | undefined {
-  switch (value) {
-    case 'all':
-    case 'at-least-one':
-    case 'exactly-one':
-    case 'none':
-      return value;
-    default:
-      return undefined;
-  }
-}
-
 function getLinkStatusIcon(status: LinkStatus) {
   switch (status) {
     case 'linked':
@@ -668,27 +616,6 @@ function getLinkStatusIcon(status: LinkStatus) {
     default:
       return <Users className="h-3.5 w-3.5" />;
   }
-}
-
-function parseUserStatus(value?: string | null): UserStatus {
-  if (
-    value === 'active' ||
-    value === 'archived' ||
-    value === 'archived_until' ||
-    value === 'all'
-  ) {
-    return value;
-  }
-
-  return 'active';
-}
-
-function parseLinkStatus(value?: string | null): LinkStatus {
-  if (value === 'all' || value === 'linked' || value === 'virtual') {
-    return value;
-  }
-
-  return 'all';
 }
 
 function ScopeBadge({

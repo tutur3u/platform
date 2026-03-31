@@ -22,11 +22,13 @@ import {
   parseDatabaseLinkStatus,
 } from '@/lib/users-database-filters';
 import { getUserColumns } from './columns';
+import ExportDialogContent from './export-dialog-content';
 import {
   useDefaultExcludedGroups,
   useWorkspaceUserFields,
   useWorkspaceUsers,
 } from './hooks';
+import { resolveUsersDatabaseFilters } from './resolved-filters';
 import { UsersFilterPanel } from './users-filter-panel';
 
 interface Props {
@@ -43,8 +45,8 @@ interface Props {
   initialDefaultExcludedGroups?: string[];
   initialFeaturedGroupIds?: string[];
   toolbarImportContent?: ReactNode;
-  toolbarExportContent?: ReactNode;
   toolbarActions?: ReactNode;
+  canExport?: boolean;
 }
 
 export function WorkspaceUsersTable({
@@ -54,8 +56,8 @@ export function WorkspaceUsersTable({
   initialDefaultExcludedGroups = [],
   initialFeaturedGroupIds = [],
   toolbarImportContent,
-  toolbarExportContent,
   toolbarActions,
+  canExport = false,
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
@@ -176,6 +178,20 @@ export function WorkspaceUsersTable({
   const isUserDefaultsReady = !isLoadingLinkStatus && !isLoadingGroupMembership;
   const isInitialized = !isLoadingDefaults && isUserDefaultsReady;
 
+  const resolvedFilters = resolveUsersDatabaseFilters({
+    q,
+    includedGroups,
+    excludedGroups,
+    status,
+    linkStatus,
+    requireAttention,
+    groupMembership,
+    defaultExcludedGroups,
+    hasAppliedDefaultExcludedGroups: hasAppliedDefaults.current,
+    defaultLinkStatus,
+    defaultGroupMembership,
+  });
+
   // Apply default excluded groups to URL state on mount if no exclusions set
   useEffect(() => {
     if (!shouldApplyDefaultExcludedGroups) return;
@@ -218,15 +234,15 @@ export function WorkspaceUsersTable({
   const { data, isLoading, isFetching, error } = useWorkspaceUsers(
     wsId,
     {
-      q,
+      q: resolvedFilters.q,
       page,
       pageSize,
-      includedGroups,
-      excludedGroups: effectiveExcludedGroups,
-      status: status as 'active' | 'archived' | 'archived_until' | 'all',
-      linkStatus: effectiveLinkStatus,
-      requireAttention: requireAttention as 'all' | 'true' | 'false',
-      groupMembership: effectiveGroupMembership,
+      includedGroups: resolvedFilters.includedGroups,
+      excludedGroups: resolvedFilters.excludedGroups,
+      status: resolvedFilters.status,
+      linkStatus: resolvedFilters.linkStatus,
+      requireAttention: resolvedFilters.requireAttention,
+      groupMembership: resolvedFilters.groupMembership,
     },
     {
       enabled: isInitialized,
@@ -368,19 +384,28 @@ export function WorkspaceUsersTable({
           />
         }
         toolbarImportContent={toolbarImportContent}
-        toolbarExportContent={toolbarExportContent}
+        toolbarExportContent={
+          canExport ? (
+            <ExportDialogContent
+              wsId={wsId}
+              exportType="users"
+              showDataTypeSelector
+              filters={resolvedFilters}
+            />
+          ) : undefined
+        }
         toolbarActions={toolbarActions}
         onSearch={handleSearch}
         setParams={handleSetParams}
         resetParams={handleResetParams}
         isFiltered={
-          !!q ||
-          status !== 'active' ||
-          effectiveLinkStatus !== defaultLinkStatus ||
-          requireAttention !== 'all' ||
-          effectiveGroupMembership !== defaultGroupMembership ||
-          includedGroups.length > 0 ||
-          effectiveExcludedGroups.length > 0
+          !!resolvedFilters.q ||
+          resolvedFilters.status !== 'active' ||
+          resolvedFilters.linkStatus !== defaultLinkStatus ||
+          resolvedFilters.requireAttention !== 'all' ||
+          resolvedFilters.groupMembership !== defaultGroupMembership ||
+          resolvedFilters.includedGroups.length > 0 ||
+          resolvedFilters.excludedGroups.length > 0
         }
         onRefresh={() => {
           queryClient.invalidateQueries({

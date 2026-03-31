@@ -10,6 +10,11 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import type { GroupMembershipFilter } from './group-membership';
+import {
+  buildWorkspaceUsersSearchParams,
+  type UsersDatabaseRequireAttention,
+  type UsersDatabaseStatus,
+} from './resolved-filters';
 
 const GROUPS_PAGE_SIZE = 200;
 
@@ -87,9 +92,9 @@ export interface WorkspaceUsersParams {
   pageSize?: number;
   includedGroups?: string[];
   excludedGroups?: string[];
-  status?: 'active' | 'archived' | 'archived_until' | 'all';
+  status?: UsersDatabaseStatus;
   linkStatus?: 'all' | 'linked' | 'virtual';
-  requireAttention?: 'all' | 'true' | 'false';
+  requireAttention?: UsersDatabaseRequireAttention;
   groupMembership?: GroupMembershipFilter;
 }
 
@@ -143,22 +148,16 @@ export function useWorkspaceUsers(
       },
     ],
     queryFn: async (): Promise<WorkspaceUsersResponse> => {
-      const searchParams = new URLSearchParams();
-
-      if (q) searchParams.set('q', q);
-      searchParams.set('page', String(page));
-      searchParams.set('pageSize', String(pageSize));
-      searchParams.set('status', status);
-      searchParams.set('linkStatus', linkStatus);
-      searchParams.set('requireAttention', requireAttention);
-      searchParams.set('groupMembership', groupMembership);
-
-      includedGroups.forEach((group) => {
-        searchParams.append('includedGroups', group);
-      });
-
-      excludedGroups.forEach((group) => {
-        searchParams.append('excludedGroups', group);
+      const searchParams = buildWorkspaceUsersSearchParams({
+        q,
+        page,
+        pageSize,
+        includedGroups,
+        excludedGroups,
+        status,
+        linkStatus,
+        requireAttention,
+        groupMembership,
       });
 
       const response = await fetch(

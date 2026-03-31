@@ -7,7 +7,6 @@ import { getTranslations } from 'next-intl/server';
 import { AuditLogTable } from './audit-log-table';
 import { DuplicateUsersDialog } from './components/duplicate-users-dialog';
 import { DatabaseTabs } from './database-tabs';
-import ExportDialogContent from './export-dialog-content';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
 import { WorkspaceUsersTable } from './workspace-users-table';
@@ -112,15 +111,7 @@ export default async function WorkspaceUsersPage({
         toolbarImportContent={
           canExportUsers ? <ImportDialogContent wsId={wsId} /> : undefined
         }
-        toolbarExportContent={
-          canExportUsers && (
-            <ExportDialogContent
-              wsId={wsId}
-              exportType="users"
-              showDataTypeSelector
-            />
-          )
-        }
+        canExport={canExportUsers}
       />
     ) : undefined;
 
