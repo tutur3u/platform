@@ -411,9 +411,6 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     if (cached != null) {
       final effectiveHistoryAnchorDate =
           requestedHistoryAnchorDate ?? cached.historyAnchorDate;
-      final hasRequestedHistoryContext =
-          requestedHistoryAnchorDate != null ||
-          requestedHistoryViewMode != cached.historyViewMode;
       final shouldRefreshForHistoryContext =
           requestedHistoryViewMode != cached.historyViewMode ||
           !_isSameCalendarDay(
@@ -424,16 +421,28 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         cached.copyWith(
           historyViewMode: requestedHistoryViewMode,
           historyAnchorDate: effectiveHistoryAnchorDate,
+          historySessions: shouldRefreshForHistoryContext
+              ? const []
+              : cached.historySessions,
+          historyHasMore:
+              !shouldRefreshForHistoryContext && cached.historyHasMore,
+          clearHistoryNextCursor: shouldRefreshForHistoryContext,
+          clearHistoryPeriodStats: shouldRefreshForHistoryContext,
+          isHistoryLoading: shouldRefreshForHistoryContext,
+          isHistoryLoadingMore: false,
           status: TimeTrackerStatus.loaded,
           isFromCache: true,
-          isRefreshing: forceRefresh || !cachedRead.isFresh,
+          isRefreshing:
+              forceRefresh ||
+              !cachedRead.isFresh ||
+              shouldRefreshForHistoryContext,
           lastUpdatedAt: cachedRead.fetchedAt,
           clearError: true,
         ),
       );
       if (!forceRefresh &&
           cachedRead.isFresh &&
-          (!hasRequestedHistoryContext || !shouldRefreshForHistoryContext)) {
+          !shouldRefreshForHistoryContext) {
         if (cached.runningSession != null && !cached.isPaused) {
           _startTick();
         }
@@ -575,6 +584,8 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           state.copyWith(
             status: TimeTrackerStatus.loaded,
             isRefreshing: false,
+            isHistoryLoading: false,
+            isHistoryLoadingMore: false,
             error: e.toString(),
           ),
         );
