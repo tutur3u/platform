@@ -20,7 +20,7 @@ class _ProjectDetailsCard extends StatelessWidget {
     final editLabel = context.l10n.taskPortfolioEditProject;
     final deleteLabel = context.l10n.taskPortfolioDeleteProject;
 
-    return shad.Card(
+    return TaskSurfacePane(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -125,7 +125,7 @@ class _LinkedTasksCard extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final unlinkLabel = context.l10n.taskPortfolioUnlinkTask;
 
-    return shad.Card(
+    return TaskSurfacePane(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

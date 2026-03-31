@@ -10,6 +10,7 @@ import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/widgets/my_tasks_header.dart';
 import 'package:mobile/features/tasks/widgets/task_section_accordion.dart';
+import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -156,7 +157,7 @@ class _TaskListViewState extends State<_TaskListView> {
                       todayCount: state.todayTasks.length,
                       upcomingCount: state.upcomingTasks.length,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     if (state.overdueTasks.isNotEmpty)
                       TaskSectionAccordion(
                         title: l10n.tasksOverdue,
@@ -195,7 +196,7 @@ class _TaskListViewState extends State<_TaskListView> {
                               TaskListSection.today,
                             ),
                       ),
-                    if (state.todayTasks.isNotEmpty) const SizedBox(height: 10),
+                    if (state.todayTasks.isNotEmpty) const SizedBox(height: 12),
                     if (state.upcomingTasks.isNotEmpty)
                       TaskSectionAccordion(
                         title: l10n.tasksUpcoming,
@@ -214,9 +215,9 @@ class _TaskListViewState extends State<_TaskListView> {
                             ),
                       ),
                     if (state.upcomingTasks.isNotEmpty)
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                     if (state.totalActiveTasks == 0) const _AllCaughtUpView(),
-                    if (state.totalActiveTasks == 0) const SizedBox(height: 10),
+                    if (state.totalActiveTasks == 0) const SizedBox(height: 12),
                     if (state.completedTasks.isNotEmpty)
                       TaskSectionAccordion(
                         title: l10n.tasksCompleted,
@@ -261,53 +262,11 @@ class _AllCaughtUpView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.75),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: Colors.green.shade700.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(
-                Icons.check_rounded,
-                size: 28,
-                color: Colors.green.shade700,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              l10n.tasksAllCaughtUp,
-              style: theme.typography.h4.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l10n.tasksAllCaughtUpSubtitle,
-              style: theme.typography.textSmall.copyWith(
-                color: theme.colorScheme.mutedForeground,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return TaskSurfaceMessageCard(
+      icon: Icons.check_rounded,
+      title: l10n.tasksAllCaughtUp,
+      description: l10n.tasksAllCaughtUpSubtitle,
+      accentColor: Colors.green.shade700,
     );
   }
 }
@@ -322,22 +281,18 @@ class _ErrorView extends StatelessWidget {
     final l10n = context.l10n;
 
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: shad.Theme.of(context).colorScheme.destructive,
-          ),
-          const SizedBox(height: 16),
-          Text(error ?? l10n.tasksLoadError, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          shad.SecondaryButton(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: TaskSurfaceMessageCard(
+          icon: Icons.error_outline,
+          title: l10n.tasksLoadError,
+          description: error ?? l10n.commonSomethingWentWrong,
+          accentColor: shad.Theme.of(context).colorScheme.destructive,
+          action: shad.SecondaryButton(
             onPressed: () => _reload(context),
             child: Text(l10n.commonRetry),
           ),
-        ],
+        ),
       ),
     );
   }

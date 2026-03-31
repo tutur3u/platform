@@ -1314,7 +1314,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailKanbanView => 'Kanban';
 
   @override
+  String get taskBoardDetailTimelineView => 'Timeline';
+
+  @override
+  String get taskBoardDetailSearchTitle => 'Search tasks';
+
+  @override
   String get taskBoardDetailSearchPlaceholder => 'Search tasks';
+
+  @override
+  String get taskBoardDetailSearchDone => 'Done';
 
   @override
   String get taskBoardDetailNoListsTitle => 'No lists yet';
@@ -1327,6 +1336,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailNoMatchingTasks => 'No tasks match your search.';
+
+  @override
+  String get taskBoardDetailTimelineEmptyTitle => 'No scheduled tasks yet';
+
+  @override
+  String get taskBoardDetailTimelineEmptyDescription => 'Add start and end dates to tasks to place them on the timeline.';
+
+  @override
+  String get taskBoardDetailTimelineUnscheduledTitle => 'Unscheduled tasks';
 
   @override
   String get taskBoardDetailTaskActions => 'Task actions';

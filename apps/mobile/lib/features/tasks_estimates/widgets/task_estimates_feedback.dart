@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -15,27 +16,11 @@ class TaskEstimatesAccessDenied extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.lock_outline,
-              size: 48,
-              color: shad.Theme.of(context).colorScheme.mutedForeground,
-            ),
-            const shad.Gap(16),
-            Text(
-              context.l10n.taskEstimatesAccessDeniedTitle,
-              textAlign: TextAlign.center,
-              style: shad.Theme.of(context).typography.large,
-            ),
-            const shad.Gap(8),
-            Text(
-              context.l10n.taskEstimatesAccessDeniedDescription,
-              textAlign: TextAlign.center,
-              style: shad.Theme.of(context).typography.textMuted,
-            ),
-          ],
+        child: TaskSurfaceMessageCard(
+          icon: Icons.lock_outline,
+          title: context.l10n.taskEstimatesAccessDeniedTitle,
+          description: context.l10n.taskEstimatesAccessDeniedDescription,
+          accentColor: const Color(0xFF64748B),
         ),
       ),
     );
@@ -50,21 +35,14 @@ class TaskEstimatesErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: shad.Theme.of(context).colorScheme.destructive,
-          ),
-          const shad.Gap(16),
-          Text(
-            error ?? context.l10n.commonSomethingWentWrong,
-            textAlign: TextAlign.center,
-          ),
-          const shad.Gap(16),
-          shad.SecondaryButton(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: TaskSurfaceMessageCard(
+          icon: Icons.error_outline,
+          title: context.l10n.commonSomethingWentWrong,
+          description: error ?? context.l10n.commonSomethingWentWrong,
+          accentColor: shad.Theme.of(context).colorScheme.destructive,
+          action: shad.SecondaryButton(
             onPressed: () {
               final wsId = context
                   .read<WorkspaceCubit>()
@@ -77,7 +55,7 @@ class TaskEstimatesErrorView extends StatelessWidget {
             },
             child: Text(context.l10n.commonRetry),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -95,26 +73,13 @@ class TaskEstimatesEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
-      child: Column(
-        children: [
-          Icon(
-            Icons.calculate_outlined,
-            size: 48,
-            color: theme.colorScheme.mutedForeground,
-          ),
-          const shad.Gap(12),
-          Text(title, style: theme.typography.large),
-          const shad.Gap(6),
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: theme.typography.textMuted,
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: TaskSurfaceMessageCard(
+        icon: Icons.calculate_outlined,
+        title: title,
+        description: description,
+        accentColor: const Color(0xFF0F766E),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/data/models/task_label.dart';
+import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimates_feedback.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -24,29 +25,24 @@ class TaskLabelsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: labels.isEmpty
-          ? TaskEstimatesEmptyState(
-              title: l10n.taskLabelsEmptyTitle,
-              description: l10n.taskLabelsEmptyDescription,
-            )
-          : ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: labels.length,
-              separatorBuilder: (_, _) => const shad.Gap(8),
-              itemBuilder: (context, index) {
-                final label = labels[index];
-                return _TaskLabelCard(
-                  label: label,
+    return labels.isEmpty
+        ? TaskEstimatesEmptyState(
+            title: l10n.taskLabelsEmptyTitle,
+            description: l10n.taskLabelsEmptyDescription,
+          )
+        : Column(
+            children: [
+              for (var index = 0; index < labels.length; index++) ...[
+                if (index > 0) const shad.Gap(10),
+                _TaskLabelCard(
+                  label: labels[index],
                   disabled: isSaving,
-                  onEdit: () => onEdit(label),
-                  onDelete: () => onDelete(label),
-                );
-              },
-            ),
-    );
+                  onEdit: () => onEdit(labels[index]),
+                  onDelete: () => onDelete(labels[index]),
+                ),
+              ],
+            ],
+          );
   }
 }
 
@@ -71,13 +67,22 @@ class _TaskLabelCard extends StatelessWidget {
         ? label.color.toUpperCase()
         : colorToHexString(theme.colorScheme.primary);
 
-    return shad.Card(
+    return TaskSurfacePane(
       child: Row(
         children: [
           Container(
-            width: 14,
-            height: 14,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.28),
+                  blurRadius: 14,
+                ),
+              ],
+            ),
           ),
           const shad.Gap(12),
           Expanded(
@@ -89,7 +94,7 @@ class _TaskLabelCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.typography.p.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const shad.Gap(2),

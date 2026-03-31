@@ -21,6 +21,7 @@ import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -262,11 +263,32 @@ class _ShellPageState extends State<ShellPage>
           child: IgnorePointer(
             ignoring: _suppressPointerInput,
             child: BlocBuilder<AppTabCubit, AppTabState>(
-              builder: (context, state) => _buildCompactLayout(
-                context,
-                state,
-                activeModule: activeModule,
-              ),
+              builder: (context, state) {
+                final miniNavCubit = lookupShellMiniNavCubit(context);
+                if (miniNavCubit == null) {
+                  return _buildCompactLayout(
+                    context,
+                    state,
+                    activeModule: activeModule,
+                  );
+                }
+
+                return BlocBuilder<ShellMiniNavCubit, ShellMiniNavState>(
+                  bloc: miniNavCubit,
+                  buildWhen: (previous, current) =>
+                      previous.resolveForLocation(widget.matchedLocation) !=
+                      current.resolveForLocation(widget.matchedLocation),
+                  builder: (context, miniNavState) => _buildCompactLayout(
+                    context,
+                    state,
+                    activeModule: activeModule,
+                    injectedMiniNavRegistration: miniNavState
+                        .resolveForLocation(
+                          widget.matchedLocation,
+                        ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -310,9 +332,13 @@ class _ShellPageState extends State<ShellPage>
   Future<void> _handleBackNavigation(BuildContext context) async {
     final currentLocation = _normalizeRouteLocation(widget.matchedLocation);
     final miniAppRoot = Routes.miniAppRootForLocation(currentLocation);
+    final injectedDeepLinkBackRoute = lookupShellMiniNavCubit(
+      context,
+    )?.state.deepLinkBackRouteForLocation(currentLocation);
     _debugBack(
       'handleBackNavigation.evaluate',
-      'current=$currentLocation miniAppRoot=$miniAppRoot',
+      'current=$currentLocation miniAppRoot=$miniAppRoot '
+          'injectedBack=$injectedDeepLinkBackRoute',
     );
     if (miniAppRoot != null && miniAppRoot != currentLocation) {
       final previousMiniAppLocation = _peekPreviousRoute(currentLocation);
@@ -333,12 +359,13 @@ class _ShellPageState extends State<ShellPage>
         }
       }
 
-      _debugBack('handleBackNavigation.toMiniAppRoot', miniAppRoot);
+      final fallbackRoute = injectedDeepLinkBackRoute ?? miniAppRoot;
+      _debugBack('handleBackNavigation.toMiniAppRoot', fallbackRoute);
       _debugShellNav(
-        '[ShellNav] go $miniAppRoot from back mini-app root fallback',
+        '[ShellNav] go $fallbackRoute from back mini-app root fallback',
       );
       _isHandlingBackNavigation = true;
-      context.go(miniAppRoot);
+      context.go(fallbackRoute);
       return;
     }
 

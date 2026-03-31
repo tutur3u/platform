@@ -209,11 +209,13 @@ extension _ShellPageLayout on _ShellPageState {
     BuildContext context,
     AppTabState state, {
     required AppModule? activeModule,
+    ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
     return _buildGlobalCompactScaffold(
       context,
       state,
       activeModule: activeModule,
+      injectedMiniNavRegistration: injectedMiniNavRegistration,
     );
   }
 
@@ -221,17 +223,27 @@ extension _ShellPageLayout on _ShellPageState {
     BuildContext context,
     AppTabState state, {
     AppModule? activeModule,
+    ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
     final l10n = context.l10n;
-    final isMiniAppRoute = activeModule != null;
+    final isMiniAppRoute =
+        activeModule != null || injectedMiniNavRegistration != null;
     final activeMiniNavItems = isMiniAppRoute
-        ? activeModule.miniAppNavItemsFor(context)
+        ? activeModule?.miniAppNavItemsFor(context) ?? const <MiniAppNavItem>[]
         : const <MiniAppNavItem>[];
-    final selectedKey = isMiniAppRoute
+    final useInjectedMiniNav = injectedMiniNavRegistration != null;
+    final selectedKey = useInjectedMiniNav
+        ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
+        : isMiniAppRoute
         ? _miniSelectedKey(context, activeMiniNavItems)
         : _selectedKeyForLocation(widget.matchedLocation);
     final globalItems = _buildNavItems(context, state, l10n);
-    final miniItems = isMiniAppRoute
+    final miniItems = useInjectedMiniNav
+        ? _buildInjectedMiniNavItems(
+            context,
+            injectedMiniNavRegistration,
+          )
+        : activeModule != null
         ? _buildMiniAppNavItems(context, activeModule, activeMiniNavItems)
         : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
@@ -253,7 +265,11 @@ extension _ShellPageLayout on _ShellPageState {
           ]
         : const <Widget>[];
     final navVariantKey = ValueKey<String>(
-      isMiniAppRoute ? 'mini-nav-${activeModule.id}' : 'global-nav',
+      useInjectedMiniNav
+          ? 'mini-nav-${injectedMiniNavRegistration.ownerId}'
+          : activeModule != null
+          ? 'mini-nav-${activeModule.id}'
+          : 'global-nav',
     );
     final navContent = isCompact
         ? shad.NavigationBar(
@@ -263,7 +279,12 @@ extension _ShellPageLayout on _ShellPageState {
               horizontal: isMiniAppRoute ? 4 : 8,
               vertical: 4,
             ),
-            onSelected: (key) => isMiniAppRoute
+            onSelected: (key) => useInjectedMiniNav
+                ? _onInjectedMiniNavItemTapped(
+                    key,
+                    injectedMiniNavRegistration,
+                  )
+                : isMiniAppRoute
                 ? _onMiniAppItemTapped(
                     key,
                     context,
@@ -281,7 +302,12 @@ extension _ShellPageLayout on _ShellPageState {
         : CustomNavigationBar(
             key: navVariantKey,
             selectedKey: selectedKey,
-            onSelected: (key) => isMiniAppRoute
+            onSelected: (key) => useInjectedMiniNav
+                ? _onInjectedMiniNavItemTapped(
+                    key,
+                    injectedMiniNavRegistration,
+                  )
+                : isMiniAppRoute
                 ? _onMiniAppItemTapped(
                     key,
                     context,

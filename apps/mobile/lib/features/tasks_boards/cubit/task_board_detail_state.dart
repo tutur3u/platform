@@ -4,7 +4,7 @@ const _taskBoardDetailSentinel = Object();
 
 enum TaskBoardDetailStatus { initial, loading, loaded, error }
 
-enum TaskBoardDetailView { list, kanban }
+enum TaskBoardDetailView { list, kanban, timeline }
 
 class TaskBoardDetailFilters extends Equatable {
   const TaskBoardDetailFilters({

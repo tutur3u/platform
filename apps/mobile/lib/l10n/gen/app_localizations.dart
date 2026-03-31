@@ -2605,11 +2605,29 @@ abstract class AppLocalizations {
   /// **'Kanban'**
   String get taskBoardDetailKanbanView;
 
+  /// No description provided for @taskBoardDetailTimelineView.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get taskBoardDetailTimelineView;
+
+  /// No description provided for @taskBoardDetailSearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get taskBoardDetailSearchTitle;
+
   /// No description provided for @taskBoardDetailSearchPlaceholder.
   ///
   /// In en, this message translates to:
   /// **'Search tasks'**
   String get taskBoardDetailSearchPlaceholder;
+
+  /// No description provided for @taskBoardDetailSearchDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get taskBoardDetailSearchDone;
 
   /// No description provided for @taskBoardDetailNoListsTitle.
   ///
@@ -2634,6 +2652,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No tasks match your search.'**
   String get taskBoardDetailNoMatchingTasks;
+
+  /// No description provided for @taskBoardDetailTimelineEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No scheduled tasks yet'**
+  String get taskBoardDetailTimelineEmptyTitle;
+
+  /// No description provided for @taskBoardDetailTimelineEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add start and end dates to tasks to place them on the timeline.'**
+  String get taskBoardDetailTimelineEmptyDescription;
+
+  /// No description provided for @taskBoardDetailTimelineUnscheduledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unscheduled tasks'**
+  String get taskBoardDetailTimelineUnscheduledTitle;
 
   /// No description provided for @taskBoardDetailTaskActions.
   ///

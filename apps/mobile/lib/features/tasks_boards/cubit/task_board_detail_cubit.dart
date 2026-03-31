@@ -497,6 +497,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
   void setView(TaskBoardDetailView view) {
     emit(state.copyWith(currentView: view));
+    if (view == TaskBoardDetailView.timeline) {
+      unawaited(ensureAllListsLoaded());
+    }
   }
 
   void setSearchQuery(String value) {
