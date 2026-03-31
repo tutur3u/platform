@@ -92,35 +92,41 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     );
   }
 
-  Future<void> load(String wsId) async {
+  Future<void> load(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
     final cacheKey = _cacheKey(wsId);
-    final cached = await CacheStore.instance.read<Map<String, dynamic>>(
-      key: cacheKey,
-      decode: _decodeCacheJson,
-    );
-
-    if (cached.hasValue) {
-      final json = cached.data!;
-      emit(
-        state.copyWith(
-          status: TaskPortfolioStatus.loaded,
-          workspaceId: wsId,
-          projects: ((json['projects'] as List<dynamic>?) ?? const <dynamic>[])
-              .whereType<Map<String, dynamic>>()
-              .map(TaskProjectSummary.fromJson)
-              .toList(growable: false),
-          initiatives:
-              ((json['initiatives'] as List<dynamic>?) ?? const <dynamic>[])
-                  .whereType<Map<String, dynamic>>()
-                  .map(TaskInitiativeSummary.fromJson)
-                  .toList(growable: false),
-          clearError: true,
-        ),
+    if (!forceRefresh) {
+      final cached = await CacheStore.instance.read<Map<String, dynamic>>(
+        key: cacheKey,
+        decode: _decodeCacheJson,
       );
-      if (cached.isFresh) {
-        return;
+
+      if (cached.hasValue) {
+        final json = cached.data!;
+        emit(
+          state.copyWith(
+            status: TaskPortfolioStatus.loaded,
+            workspaceId: wsId,
+            projects:
+                ((json['projects'] as List<dynamic>?) ?? const <dynamic>[])
+                    .whereType<Map<String, dynamic>>()
+                    .map(TaskProjectSummary.fromJson)
+                    .toList(growable: false),
+            initiatives:
+                ((json['initiatives'] as List<dynamic>?) ?? const <dynamic>[])
+                    .whereType<Map<String, dynamic>>()
+                    .map(TaskInitiativeSummary.fromJson)
+                    .toList(growable: false),
+            clearError: true,
+          ),
+        );
+        if (cached.isFresh) {
+          return;
+        }
       }
     }
 
@@ -350,11 +356,12 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     emit(state.copyWith(isMutating: true, clearError: true));
     try {
       await action();
+      await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
+      emit(state.copyWith(isMutating: false, clearError: true));
       if (state.workspaceId != wsId) {
         return;
       }
-      emit(state.copyWith(isMutating: false, clearError: true));
-      await load(wsId);
+      await load(wsId, forceRefresh: true);
     } catch (_) {
       if (state.workspaceId == wsId) {
         emit(state.copyWith(isMutating: false));
