@@ -45,6 +45,7 @@ export function useBulkAddProject(
 
       if (uncachedTaskIds.length > 0) {
         try {
+          const uncachedTaskIdSet = new Set(uncachedTaskIds);
           const { tasks } = await listWorkspaceTasks(
             wsId,
             { boardId, includeRelationshipSummary: true },
@@ -58,6 +59,9 @@ export function useBulkAddProject(
                 const existing = old ?? [];
                 const merged = new Map(existing.map((task) => [task.id, task]));
                 for (const fetchedTask of tasks) {
+                  if (!uncachedTaskIdSet.has(fetchedTask.id)) {
+                    continue;
+                  }
                   merged.set(fetchedTask.id, fetchedTask as Task);
                 }
                 return Array.from(merged.values());
@@ -253,6 +257,7 @@ export function useBulkRemoveProject(
 
       if (uncachedTaskIds.length > 0) {
         try {
+          const uncachedTaskIdSet = new Set(uncachedTaskIds);
           const { tasks } = await listWorkspaceTasks(
             wsId,
             { boardId, includeRelationshipSummary: true },
@@ -266,6 +271,9 @@ export function useBulkRemoveProject(
                 const existing = old ?? [];
                 const merged = new Map(existing.map((task) => [task.id, task]));
                 for (const fetchedTask of tasks) {
+                  if (!uncachedTaskIdSet.has(fetchedTask.id)) {
+                    continue;
+                  }
                   merged.set(fetchedTask.id, fetchedTask as Task);
                 }
                 return Array.from(merged.values());

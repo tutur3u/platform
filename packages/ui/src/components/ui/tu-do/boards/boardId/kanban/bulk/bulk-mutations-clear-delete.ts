@@ -441,13 +441,35 @@ export function useBulkDeleteTasks(
               existing.map((task) => [task.id, task])
             );
             const previousTasks = context.previousTasks as Task[];
+            const previousOrder = new Map(
+              previousTasks.map((task, index) => [task.id, index])
+            );
 
-            return previousTasks.filter((task) => {
-              if (failedTaskIds.has(task.id)) {
-                return true;
+            for (const previousTask of previousTasks) {
+              if (!failedTaskIds.has(previousTask.id)) {
+                continue;
               }
 
-              return existingById.has(task.id);
+              existingById.set(previousTask.id, previousTask);
+            }
+
+            return Array.from(existingById.values()).sort((a, b) => {
+              const aIndex = previousOrder.get(a.id);
+              const bIndex = previousOrder.get(b.id);
+
+              if (typeof aIndex === 'number' && typeof bIndex === 'number') {
+                return aIndex - bIndex;
+              }
+
+              if (typeof aIndex === 'number') {
+                return -1;
+              }
+
+              if (typeof bIndex === 'number') {
+                return 1;
+              }
+
+              return 0;
             });
           }
         );

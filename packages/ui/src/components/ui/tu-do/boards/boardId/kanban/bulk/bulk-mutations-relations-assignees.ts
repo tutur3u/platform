@@ -20,6 +20,16 @@ export function useBulkAddAssignee(
   broadcast?: BoardBroadcastFn | null,
   i18n?: BulkOperationI18n
 ) {
+  const cachedMembers =
+    (queryClient.getQueryData(['workspace-members', wsId]) as
+      | WorkspaceMember[]
+      | undefined) ?? [];
+  const allWorkspaceMembers = [...workspaceMembers, ...cachedMembers];
+  const resolveMember = (assigneeId: string) =>
+    allWorkspaceMembers.find(
+      (member) => member.id === assigneeId || member.user_id === assigneeId
+    );
+
   return useMutation({
     mutationFn: async ({
       assigneeId,
@@ -32,6 +42,7 @@ export function useBulkAddAssignee(
       const succeededTaskIds: string[] = [];
       const failedTaskIds: string[] = [];
       const failures: Array<{ taskId: string; error: string }> = [];
+      const updatedAssigneesByTaskId = new Map<string, Task['assignees']>();
       const apiOptions = getInternalApiOptions();
 
       for (const taskId of taskIds) {
@@ -55,11 +66,31 @@ export function useBulkAddAssignee(
             ...new Set([...currentAssigneeIds, assigneeId]),
           ];
 
-          await updateWorkspaceTask(
+          const resolvedMember = resolveMember(assigneeId);
+          const optimisticAssignee = {
+            id: assigneeId,
+            display_name:
+              resolvedMember?.display_name ||
+              resolvedMember?.email ||
+              assigneeId,
+            email: resolvedMember?.email || '',
+            avatar_url: resolvedMember?.avatar_url ?? undefined,
+          };
+          const fallbackAssignees = taskRecord.assignees?.some(
+            (assignee) => assignee.id === assigneeId
+          )
+            ? (taskRecord.assignees ?? [])
+            : [...(taskRecord.assignees ?? []), optimisticAssignee];
+
+          const { task: updatedTask } = await updateWorkspaceTask(
             wsId,
             taskId,
             { assignee_ids: nextAssigneeIds },
             apiOptions
+          );
+          updatedAssigneesByTaskId.set(
+            taskId,
+            updatedTask?.assignees ?? fallbackAssignees
           );
           succeededTaskIds.push(taskId);
           successCount++;
@@ -89,6 +120,7 @@ export function useBulkAddAssignee(
         failures,
         succeededTaskIds,
         failedTaskIds,
+        updatedAssigneesByTaskId,
       };
     },
     onMutate: async ({ assigneeId, taskIds }) => {
@@ -101,12 +133,12 @@ export function useBulkAddAssignee(
         return !task?.assignees?.some((a) => a.id === assigneeId);
       });
 
-      const member = workspaceMembers.find((m) => m.id === assigneeId);
+      const member = resolveMember(assigneeId);
       const assigneeData = member || {
         id: assigneeId,
-        display_name: i18n?.loadingAssigneeName() || 'Loading...',
+        display_name: assigneeId,
         email: '',
-        avatar_url: null,
+        avatar_url: undefined,
       };
 
       queryClient.setQueryData(
@@ -179,6 +211,25 @@ export function useBulkAddAssignee(
       const succeededModifiedTaskIds = data.succeededTaskIds.filter((taskId) =>
         modifiedTaskIdSet.has(taskId)
       );
+
+      if (data.updatedAssigneesByTaskId.size > 0) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              const updatedAssignees = data.updatedAssigneesByTaskId.get(
+                task.id
+              );
+              if (!updatedAssignees) return task;
+              return {
+                ...task,
+                assignees: updatedAssignees,
+              };
+            });
+          }
+        );
+      }
 
       for (const tid of succeededModifiedTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
