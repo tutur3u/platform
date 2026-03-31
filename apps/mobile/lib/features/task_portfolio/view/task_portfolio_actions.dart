@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
@@ -124,19 +125,25 @@ class TaskPortfolioActions {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    await shad.showDialog<void>(
+    await showAdaptiveSheet<void>(
       context: context,
-      barrierDismissible: false,
+      enableDrag: false,
+      useRootNavigator: true,
       builder: (_) => TaskInitiativeDialog(
-        onSubmit: (result) => _runActionWithResult(
-          () => context.read<TaskPortfolioCubit>().createInitiative(
-            wsId: wsId,
-            name: result.name,
-            description: result.description,
-            status: result.status,
-          ),
-          successMessage: context.l10n.taskPortfolioInitiativeCreated,
-        ),
+        onSubmit: (result) {
+          if (!context.mounted) return Future.value(false);
+          final cubit = context.read<TaskPortfolioCubit>();
+          final successMessage = context.l10n.taskPortfolioInitiativeCreated;
+          return _runActionWithResult(
+            () => cubit.createInitiative(
+              wsId: wsId,
+              name: result.name,
+              description: result.description,
+              status: result.status,
+            ),
+            successMessage: successMessage,
+          );
+        },
       ),
     );
   }
@@ -145,21 +152,27 @@ class TaskPortfolioActions {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    await shad.showDialog<void>(
+    await showAdaptiveSheet<void>(
       context: context,
-      barrierDismissible: false,
+      enableDrag: false,
+      useRootNavigator: true,
       builder: (_) => TaskInitiativeDialog(
         initiative: initiative,
-        onSubmit: (result) => _runActionWithResult(
-          () => context.read<TaskPortfolioCubit>().updateInitiative(
-            wsId: wsId,
-            initiativeId: initiative.id,
-            name: result.name,
-            description: result.description,
-            status: result.status,
-          ),
-          successMessage: context.l10n.taskPortfolioInitiativeUpdated,
-        ),
+        onSubmit: (result) {
+          if (!context.mounted) return Future.value(false);
+          final cubit = context.read<TaskPortfolioCubit>();
+          final successMessage = context.l10n.taskPortfolioInitiativeUpdated;
+          return _runActionWithResult(
+            () => cubit.updateInitiative(
+              wsId: wsId,
+              initiativeId: initiative.id,
+              name: result.name,
+              description: result.description,
+              status: result.status,
+            ),
+            successMessage: successMessage,
+          );
+        },
       ),
     );
   }
