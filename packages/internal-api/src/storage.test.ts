@@ -83,11 +83,15 @@ describe('workspace task upload helpers', () => {
       'https://upload.example.com/signed',
       expect.objectContaining({
         method: 'PUT',
-        headers: expect.objectContaining({
-          Authorization: 'Bearer token-1',
-        }),
       })
     );
+
+    const thirdCallOptions = fetchMock.mock.calls[2]?.[1] as {
+      headers?: Record<string, string>;
+    };
+    const thirdCallHeaders = thirdCallOptions?.headers ?? {};
+    expect(thirdCallHeaders.Authorization).toBe('Bearer token-1');
+    expect(thirdCallHeaders['Content-Type']).toBeUndefined();
 
     expect(result).toEqual({
       path: 'task-images/file.png',

@@ -84,7 +84,7 @@ async function resolveSignedUrl(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!permissions.containsPermission('view_drive')) {
+  if (permissions.withoutPermission('view_drive')) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }
@@ -93,7 +93,7 @@ async function resolveSignedUrl(
 
   if (
     isTaskImagesPath &&
-    !permissions.containsPermission('manage_drive_tasks_directory')
+    permissions.withoutPermission('manage_drive_tasks_directory')
   ) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },

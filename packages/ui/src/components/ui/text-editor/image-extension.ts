@@ -406,6 +406,15 @@ export const CustomImage = (options: ImageOptions = {}) => {
 
                 if (images.length === 0) return false;
 
+                const hasTextOrHtml = Array.from(items).some(
+                  (item) =>
+                    item.type === 'text/plain' || item.type === 'text/html'
+                );
+
+                if (hasTextOrHtml) {
+                  return false;
+                }
+
                 if (!onImageUpload) {
                   event.preventDefault();
                   toast.error('Insufficient permissions', {

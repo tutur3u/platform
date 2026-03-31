@@ -5,14 +5,7 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
-interface WorkspaceStorageUploadUrlResponse {
-  signedUrl?: string;
-  token?: string;
-  path?: string;
-  fullPath?: string;
-}
-
-interface WorkspaceTaskUploadUrlResponse {
+interface WorkspaceUploadUrlResponse {
   signedUrl?: string;
   token?: string;
   path?: string;
@@ -66,24 +59,18 @@ interface WorkspaceStorageDeleteResponse {
   };
 }
 
-export async function uploadWorkspaceStorageFile(
-  workspaceId: string,
+interface SignedUploadPayload {
+  signedUrl: string;
+  token: string;
+  path: string;
+  fullPath: string | null;
+}
+
+async function uploadFileWithSignedUrl(
   file: File,
-  options?: {
-    path?: string;
-    upsert?: boolean;
-  },
-  clientOptions?: InternalApiClientOptions
+  uploadUrlResult: SignedUploadPayload,
+  fetchImpl: typeof fetch
 ) {
-  const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
-
-  const uploadUrlResult = await createWorkspaceStorageUploadUrl(
-    workspaceId,
-    file.name,
-    options,
-    clientOptions
-  );
-
   let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
     method: 'PUT',
     cache: 'no-store',
@@ -118,6 +105,39 @@ export async function uploadWorkspaceStorageFile(
   };
 }
 
+function parseSignedUploadPayload(payload: WorkspaceUploadUrlResponse) {
+  if (!payload.signedUrl || !payload.token || !payload.path) {
+    throw new Error('Missing upload URL payload');
+  }
+
+  return {
+    signedUrl: payload.signedUrl,
+    token: payload.token,
+    path: payload.path,
+    fullPath: payload.fullPath ?? null,
+  } satisfies SignedUploadPayload;
+}
+
+export async function uploadWorkspaceStorageFile(
+  workspaceId: string,
+  file: File,
+  options?: {
+    path?: string;
+    upsert?: boolean;
+  },
+  clientOptions?: InternalApiClientOptions
+) {
+  const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
+  const uploadUrlResult = await createWorkspaceStorageUploadUrl(
+    workspaceId,
+    file.name,
+    options,
+    clientOptions
+  );
+
+  return uploadFileWithSignedUrl(file, uploadUrlResult, fetchImpl);
+}
+
 export async function uploadWorkspaceTaskFile(
   workspaceId: string,
   file: File,
@@ -127,7 +147,6 @@ export async function uploadWorkspaceTaskFile(
   clientOptions?: InternalApiClientOptions
 ) {
   const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
-
   const uploadUrlResult = await createWorkspaceTaskUploadUrl(
     workspaceId,
     file.name,
@@ -135,38 +154,7 @@ export async function uploadWorkspaceTaskFile(
     clientOptions
   );
 
-  let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
-    method: 'PUT',
-    cache: 'no-store',
-    headers: {
-      Authorization: `Bearer ${uploadUrlResult.token}`,
-      'Content-Type': file.type || 'application/octet-stream',
-    },
-    body: file,
-  });
-
-  if (!uploadResponse.ok) {
-    uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
-      method: 'PUT',
-      cache: 'no-store',
-      headers: {
-        Authorization: `Bearer ${uploadUrlResult.token}`,
-      },
-      body: file,
-    });
-  }
-
-  if (!uploadResponse.ok) {
-    const message = await uploadResponse.text().catch(() => '');
-    throw new Error(
-      `Failed to upload file (${uploadResponse.status})${message ? `: ${message}` : ''}`
-    );
-  }
-
-  return {
-    path: uploadUrlResult.path,
-    fullPath: uploadUrlResult.fullPath,
-  };
+  return uploadFileWithSignedUrl(file, uploadUrlResult, fetchImpl);
 }
 
 export async function createWorkspaceStorageUploadUrl(
@@ -179,7 +167,7 @@ export async function createWorkspaceStorageUploadUrl(
   clientOptions?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(clientOptions);
-  const payload = await client.json<WorkspaceStorageUploadUrlResponse>(
+  const payload = await client.json<WorkspaceUploadUrlResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/upload-url`,
     {
       method: 'POST',
@@ -195,16 +183,7 @@ export async function createWorkspaceStorageUploadUrl(
     }
   );
 
-  if (!payload.signedUrl || !payload.token || !payload.path) {
-    throw new Error('Missing upload URL payload');
-  }
-
-  return {
-    signedUrl: payload.signedUrl,
-    token: payload.token,
-    path: payload.path,
-    fullPath: payload.fullPath ?? null,
-  };
+  return parseSignedUploadPayload(payload);
 }
 
 export async function createWorkspaceTaskUploadUrl(
@@ -216,7 +195,7 @@ export async function createWorkspaceTaskUploadUrl(
   clientOptions?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(clientOptions);
-  const payload = await client.json<WorkspaceTaskUploadUrlResponse>(
+  const payload = await client.json<WorkspaceUploadUrlResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/upload-url`,
     {
       method: 'POST',
@@ -231,16 +210,7 @@ export async function createWorkspaceTaskUploadUrl(
     }
   );
 
-  if (!payload.signedUrl || !payload.token || !payload.path) {
-    throw new Error('Missing upload URL payload');
-  }
-
-  return {
-    signedUrl: payload.signedUrl,
-    token: payload.token,
-    path: payload.path,
-    fullPath: payload.fullPath ?? null,
-  };
+  return parseSignedUploadPayload(payload);
 }
 
 export async function createWorkspaceStorageSignedUrl(
