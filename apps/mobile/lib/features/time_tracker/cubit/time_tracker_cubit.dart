@@ -394,6 +394,14 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     final loadDataRequestToken = ++_loadDataRequestToken;
     _goalsWorkspaceRequestToken++;
     _goalsRequestVersionByWs.clear();
+    final requestedHistoryViewMode = state.historyViewMode;
+    final requestedHistoryAnchorDate = state.historyAnchorDate == null
+        ? null
+        : DateTime(
+            state.historyAnchorDate!.year,
+            state.historyAnchorDate!.month,
+            state.historyAnchorDate!.day,
+          );
     final cached = _cachedStateFor(wsId: wsId, userId: userId);
     final cachedRead = await CacheStore.instance.read<Map<String, dynamic>>(
       key: _cacheKey(wsId, userId),
@@ -401,16 +409,40 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     );
 
     if (cached != null) {
+      final effectiveHistoryAnchorDate =
+          requestedHistoryAnchorDate ?? cached.historyAnchorDate;
+      final shouldRefreshForHistoryContext =
+          requestedHistoryViewMode != cached.historyViewMode ||
+          !_isSameCalendarDay(
+            requestedHistoryAnchorDate,
+            cached.historyAnchorDate,
+          );
       emit(
         cached.copyWith(
+          historyViewMode: requestedHistoryViewMode,
+          historyAnchorDate: effectiveHistoryAnchorDate,
+          historySessions: shouldRefreshForHistoryContext
+              ? const []
+              : cached.historySessions,
+          historyHasMore:
+              !shouldRefreshForHistoryContext && cached.historyHasMore,
+          clearHistoryNextCursor: shouldRefreshForHistoryContext,
+          clearHistoryPeriodStats: shouldRefreshForHistoryContext,
+          isHistoryLoading: shouldRefreshForHistoryContext,
+          isHistoryLoadingMore: false,
           status: TimeTrackerStatus.loaded,
           isFromCache: true,
-          isRefreshing: forceRefresh || !cachedRead.isFresh,
+          isRefreshing:
+              forceRefresh ||
+              !cachedRead.isFresh ||
+              shouldRefreshForHistoryContext,
           lastUpdatedAt: cachedRead.fetchedAt,
           clearError: true,
         ),
       );
-      if (!forceRefresh && cachedRead.isFresh) {
+      if (!forceRefresh &&
+          cachedRead.isFresh &&
+          !shouldRefreshForHistoryContext) {
         if (cached.runningSession != null && !cached.isPaused) {
           _startTick();
         }
@@ -552,6 +584,8 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           state.copyWith(
             status: TimeTrackerStatus.loaded,
             isRefreshing: false,
+            isHistoryLoading: false,
+            isHistoryLoadingMore: false,
             error: e.toString(),
           ),
         );
@@ -1600,6 +1634,15 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   String? _normalizeUserId(String? userId) {
     if (userId == null || userId.isEmpty) return null;
     return userId;
+  }
+
+  bool _isSameCalendarDay(DateTime? first, DateTime? second) {
+    if (first == null || second == null) {
+      return first == second;
+    }
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
   }
 
   Future<(List<TimeTrackingSession>, TimeTrackerStats)> _loadRecentAndSummary(

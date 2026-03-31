@@ -10,6 +10,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/features/time_tracker/utils/threshold.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class MissedEntryDialog extends StatefulWidget {
@@ -437,36 +438,18 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
 
   Future<void> _pickImageSource() async {
     final l10n = context.l10n;
-    final source = await shad.showDialog<_ImageSourceSelection>(
+    final source = await showImageSourcePickerDialog(
       context: context,
-      builder: (dialogCtx) {
-        final barrierColor = Theme.of(
-          dialogCtx,
-        ).colorScheme.scrim.withValues(alpha: 0.55);
-        return shad.AlertDialog(
-          barrierColor: barrierColor,
-          title: Text(l10n.selectImageSource),
-          actions: [
-            shad.OutlineButton(
-              onPressed: () =>
-                  Navigator.of(dialogCtx).pop(_ImageSourceSelection.camera),
-              child: Text(l10n.camera),
-            ),
-            shad.PrimaryButton(
-              onPressed: () =>
-                  Navigator.of(dialogCtx).pop(_ImageSourceSelection.gallery),
-              child: Text(l10n.gallery),
-            ),
-          ],
-        );
-      },
+      title: l10n.selectImageSource,
+      cameraLabel: l10n.camera,
+      galleryLabel: l10n.gallery,
     );
 
     if (source == null) {
       return;
     }
 
-    if (source == _ImageSourceSelection.camera) {
+    if (source == ImageSource.camera) {
       final image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 85,
@@ -587,8 +570,6 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
     return '${s}s';
   }
 }
-
-enum _ImageSourceSelection { camera, gallery }
 
 class _DateTimePicker extends StatefulWidget {
   const _DateTimePicker({
