@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const memberMaybeSingle = vi.fn();
   const workspaceConfigsIn = vi.fn();
+  const listWorkspaceDefaultIncludedGroupIds = vi.fn();
   const getPermissions = vi.fn();
   const normalizeWorkspaceId = vi.fn(() => Promise.resolve('normalized-ws'));
 
@@ -51,6 +52,7 @@ const mocks = vi.hoisted(() => {
     memberMaybeSingle,
     normalizeWorkspaceId,
     sessionSupabase,
+    listWorkspaceDefaultIncludedGroupIds,
     workspaceConfigsIn,
   };
 });
@@ -63,6 +65,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mocks.getPermissions,
   normalizeWorkspaceId: mocks.normalizeWorkspaceId,
+}));
+
+vi.mock('@/lib/workspace-default-included-groups', () => ({
+  listWorkspaceDefaultIncludedGroupIds:
+    mocks.listWorkspaceDefaultIncludedGroupIds,
 }));
 
 describe('workspace settings configs route', () => {
@@ -83,6 +90,9 @@ describe('workspace settings configs route', () => {
     mocks.workspaceConfigsIn.mockResolvedValue({
       data: [{ id: 'REPORT_CONFIG_A', value: 'enabled' }],
       error: null,
+    });
+    mocks.listWorkspaceDefaultIncludedGroupIds.mockResolvedValue({
+      data: ['group-1', 'group-2'],
     });
 
     mocks.getPermissions.mockResolvedValue({
@@ -114,6 +124,34 @@ describe('workspace settings configs route', () => {
       mocks.sessionSupabase
     );
     expect(mocks.getPermissions).not.toHaveBeenCalled();
+  });
+
+  it('includes dedicated default included groups in batch config reads', async () => {
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs?ids=DATABASE_DEFAULT_INCLUDED_GROUPS,REPORT_CONFIG_A'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      DATABASE_DEFAULT_INCLUDED_GROUPS: 'group-1,group-2',
+      REPORT_CONFIG_A: 'enabled',
+    });
+    expect(mocks.listWorkspaceDefaultIncludedGroupIds).toHaveBeenCalledWith(
+      mocks.adminSupabase,
+      'normalized-ws'
+    );
+    expect(mocks.workspaceConfigsIn).toHaveBeenCalledWith('id', [
+      'REPORT_CONFIG_A',
+    ]);
   });
 
   it('returns 500 when workspace membership lookup fails in GET', async () => {

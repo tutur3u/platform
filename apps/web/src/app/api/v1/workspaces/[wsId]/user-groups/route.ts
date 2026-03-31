@@ -1,8 +1,4 @@
-import {
-  DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-  parseWorkspaceConfigIdList,
-} from '@tuturuuu/internal-api/workspace-configs';
+import { DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
@@ -11,6 +7,7 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { appendWorkspaceDefaultIncludedGroupId } from '@/lib/workspace-default-included-groups';
 
 const CreateUserGroupSchema = z
   .object({
@@ -126,10 +123,10 @@ export async function POST(req: Request, { params }: Params) {
     .from('workspace_configs')
     .select('id, value')
     .eq('ws_id', wsId)
-    .in('id', [
-      DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-      DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-    ]);
+    .eq(
+      'id',
+      DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
+    );
 
   if (configError) {
     console.error(
@@ -149,30 +146,16 @@ export async function POST(req: Request, { params }: Params) {
     )?.value === 'true';
 
   if (autoAddNewGroupsToDefaultIncludedGroups && createdGroup?.id) {
-    const existingDefaultIncludedGroups = parseWorkspaceConfigIdList(
-      resolvedConfigRows.find(
-        (config) => config.id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
-      )?.value
+    const { errorMessage } = await appendWorkspaceDefaultIncludedGroupId(
+      sbAdmin,
+      wsId,
+      createdGroup.id
     );
-    const nextDefaultIncludedGroups = [
-      ...new Set([...existingDefaultIncludedGroups, createdGroup.id]),
-    ];
 
-    const { error: updateConfigError } = await sbAdmin
-      .from('workspace_configs')
-      .upsert({
-        id: DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-        ws_id: wsId,
-        value: nextDefaultIncludedGroups.join(','),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('ws_id', wsId)
-      .eq('id', DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID);
-
-    if (updateConfigError) {
+    if (errorMessage) {
       console.error(
         'Error updating default included user groups after group creation:',
-        updateConfigError
+        errorMessage
       );
     }
   }

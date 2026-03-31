@@ -1,3 +1,4 @@
+import { DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import {
   createAdminClient,
   createClient,
@@ -7,6 +8,10 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  listWorkspaceDefaultIncludedGroupIds,
+  replaceWorkspaceDefaultIncludedGroupIds,
+} from '@/lib/workspace-default-included-groups';
 import { getWorkspaceConfig } from '@/lib/workspace-helper';
 
 interface Params {
@@ -67,7 +72,28 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const { value } = await req.json();
+  if (value !== undefined && value !== null && typeof value !== 'string') {
+    return NextResponse.json(
+      { message: 'Invalid workspace config value' },
+      { status: 400 }
+    );
+  }
+
   const sbAdmin = await createAdminClient();
+
+  if (id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID) {
+    const { errorMessage } = await replaceWorkspaceDefaultIncludedGroupIds(
+      sbAdmin,
+      wsId,
+      value
+    );
+
+    if (errorMessage) {
+      return NextResponse.json({ message: errorMessage }, { status: 500 });
+    }
+
+    return NextResponse.json({ message: 'success' });
+  }
 
   const { error } = await sbAdmin
     .from('workspace_configs')
@@ -83,7 +109,10 @@ export async function PUT(req: Request, { params }: Params) {
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error upserting workspace config' },
+      {
+        message:
+          error.message || error.details || 'Error upserting workspace config',
+      },
       { status: 500 }
     );
   }
@@ -120,6 +149,23 @@ export async function GET(req: Request, { params }: Params) {
 
   if (!memberCheck) {
     return NextResponse.json({}, { status: 403 });
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  if (id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID) {
+    const { data, errorMessage } = await listWorkspaceDefaultIncludedGroupIds(
+      sbAdmin,
+      wsId
+    );
+
+    if (errorMessage) {
+      return NextResponse.json({ message: errorMessage }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      value: data.length > 0 ? data.join(',') : null,
+    });
   }
 
   const value = await getWorkspaceConfig(wsId, id);

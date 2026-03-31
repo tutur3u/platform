@@ -1,3 +1,4 @@
+import { DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import {
   createAdminClient,
   createClient,
@@ -8,6 +9,7 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { listWorkspaceDefaultIncludedGroupIds } from '@/lib/workspace-default-included-groups';
 
 type AutoApprovalSummary = {
   posts: number;
@@ -85,16 +87,42 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const uniqueIds = [...new Set(idsRaw)];
     const ids = uniqueIds.filter(Boolean);
+    const shouldResolveDefaultIncludedGroups = ids.includes(
+      DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
+    );
+    const workspaceConfigIds = ids.filter(
+      (id) => id !== DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
+    );
 
-    // Fetch workspace configurations
-    const { data: configs, error } = await sbAdmin
-      .from('workspace_configs')
-      .select('id, value')
-      .eq('ws_id', wsId)
-      .in('id', ids);
+    let configs: { id: string; value: string }[] = [];
 
-    if (error) {
-      console.error('Error fetching workspace configs:', error);
+    if (workspaceConfigIds.length > 0) {
+      const { data, error } = await sbAdmin
+        .from('workspace_configs')
+        .select('id, value')
+        .eq('ws_id', wsId)
+        .in('id', workspaceConfigIds);
+
+      if (error) {
+        console.error('Error fetching workspace configs:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch workspace configs' },
+          { status: 500 }
+        );
+      }
+
+      configs = data ?? [];
+    }
+
+    const defaultIncludedGroups = shouldResolveDefaultIncludedGroups
+      ? await listWorkspaceDefaultIncludedGroupIds(sbAdmin, wsId)
+      : { data: [] as string[] };
+
+    if (defaultIncludedGroups.errorMessage) {
+      console.error(
+        'Error fetching default included user groups:',
+        defaultIncludedGroups.errorMessage
+      );
       return NextResponse.json(
         { error: 'Failed to fetch workspace configs' },
         { status: 500 }
@@ -106,6 +134,14 @@ export async function GET(req: NextRequest, { params }: Params) {
     );
     const result: Record<string, string | null> = {};
     for (const id of ids) {
+      if (id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID) {
+        result[id] =
+          defaultIncludedGroups.data.length > 0
+            ? defaultIncludedGroups.data.join(',')
+            : null;
+        continue;
+      }
+
       result[id] = configMap.get(id) ?? null;
     }
 
