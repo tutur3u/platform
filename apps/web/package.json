@@ -51,7 +51,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@json-render/core": "^0.16.0",
     "@json-render/react": "^0.16.0",
-    "@mantine/charts": "^8.3.18",
+    "@mantine/charts": "^9.0.0",
     "@mantine/core": "^8.3.18",
     "@mantine/hooks": "^8.3.18",
     "@marsidev/react-turnstile": "^1.5.0",
