@@ -1,6 +1,7 @@
 import { match } from '@formatjs/intl-localematcher';
 import { updateSession } from '@ncthub/supabase/next/proxy';
 import type { SupabaseUser } from '@ncthub/supabase/next/user';
+import { guardApiProxyRequest } from '@ncthub/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -9,11 +10,19 @@ import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
+  if (req.nextUrl.pathname.startsWith('/api')) {
+    const guardResponse = await guardApiProxyRequest(req, {
+      prefixBase: 'proxy:web:api',
+    });
+    if (guardResponse) {
+      return guardResponse;
+    }
+
+    return NextResponse.next();
+  }
+
   // Make sure user session is always refreshed
   const { res, user } = await updateSession(req);
-
-  // If current path starts with /api, return without redirecting
-  if (req.nextUrl.pathname.startsWith('/api')) return res;
 
   // Handle special cases for public paths
   const { res: nextRes, redirect } = handleRedirect({ req, res, user });
