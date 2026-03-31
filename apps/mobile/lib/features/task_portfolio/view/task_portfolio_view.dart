@@ -274,7 +274,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   Future<void> _reload() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
-    await context.read<TaskPortfolioCubit>().load(wsId);
+    await context.read<TaskPortfolioCubit>().load(wsId, forceRefresh: true);
   }
 
   Future<void> _openCreateProject() async {

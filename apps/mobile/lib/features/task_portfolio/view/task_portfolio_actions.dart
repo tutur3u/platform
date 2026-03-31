@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
@@ -121,45 +122,58 @@ class TaskPortfolioActions {
   }
 
   Future<void> openCreateInitiative() async {
-    final result = await shad.showDialog<TaskInitiativeFormValue>(
-      context: context,
-      builder: (_) => const TaskInitiativeDialog(),
-    );
-    if (result == null || !context.mounted) return;
-
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().createInitiative(
-        wsId: wsId,
-        name: result.name,
-        description: result.description,
-        status: result.status,
+    await showAdaptiveSheet<void>(
+      context: context,
+      enableDrag: false,
+      useRootNavigator: true,
+      builder: (_) => TaskInitiativeDialog(
+        onSubmit: (result) {
+          if (!context.mounted) return Future.value(false);
+          final cubit = context.read<TaskPortfolioCubit>();
+          final successMessage = context.l10n.taskPortfolioInitiativeCreated;
+          return _runActionWithResult(
+            () => cubit.createInitiative(
+              wsId: wsId,
+              name: result.name,
+              description: result.description,
+              status: result.status,
+            ),
+            successMessage: successMessage,
+          );
+        },
       ),
-      successMessage: context.l10n.taskPortfolioInitiativeCreated,
     );
   }
 
   Future<void> openEditInitiative(TaskInitiativeSummary initiative) async {
-    final result = await shad.showDialog<TaskInitiativeFormValue>(
-      context: context,
-      builder: (_) => TaskInitiativeDialog(initiative: initiative),
-    );
-    if (result == null || !context.mounted) return;
-
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().updateInitiative(
-        wsId: wsId,
-        initiativeId: initiative.id,
-        name: result.name,
-        description: result.description,
-        status: result.status,
+    await showAdaptiveSheet<void>(
+      context: context,
+      enableDrag: false,
+      useRootNavigator: true,
+      builder: (_) => TaskInitiativeDialog(
+        initiative: initiative,
+        onSubmit: (result) {
+          if (!context.mounted) return Future.value(false);
+          final cubit = context.read<TaskPortfolioCubit>();
+          final successMessage = context.l10n.taskPortfolioInitiativeUpdated;
+          return _runActionWithResult(
+            () => cubit.updateInitiative(
+              wsId: wsId,
+              initiativeId: initiative.id,
+              name: result.name,
+              description: result.description,
+              status: result.status,
+            ),
+            successMessage: successMessage,
+          );
+        },
       ),
-      successMessage: context.l10n.taskPortfolioInitiativeUpdated,
     );
   }
 
@@ -251,11 +265,19 @@ class TaskPortfolioActions {
     Future<void> Function() action, {
     required String successMessage,
   }) async {
+    await _runActionWithResult(action, successMessage: successMessage);
+  }
+
+  Future<bool> _runActionWithResult(
+    Future<void> Function() action, {
+    required String successMessage,
+  }) async {
     try {
       await action();
       if (context.mounted) {
         _showSuccessToast(successMessage);
       }
+      return true;
     } on ApiException catch (error) {
       if (context.mounted) {
         _showErrorToast(
@@ -264,10 +286,12 @@ class TaskPortfolioActions {
               : error.message,
         );
       }
+      return false;
     } on Exception {
       if (context.mounted) {
         _showErrorToast(context.l10n.commonSomethingWentWrong);
       }
+      return false;
     }
   }
 
