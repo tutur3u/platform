@@ -80,62 +80,20 @@ class _FilterDropdownSection extends StatelessWidget {
   }
 
   Future<void> _openSelectionMenu(BuildContext context) async {
-    final draftSelectedIds = Set<String>.from(selectedIds);
-
-    final completer = shad.showDropdown<void>(
+    final nextSelectedIds = await showAdaptiveSheet<Set<String>>(
       context: context,
       builder: (_) {
-        return StatefulBuilder(
-          builder: (menuContext, setMenuState) {
-            return shad.DropdownMenu(
-              children: [
-                shad.MenuButton(
-                  leading: draftSelectedIds.isEmpty
-                      ? const Icon(Icons.check, size: 16)
-                      : const SizedBox(width: 16, height: 16),
-                  autoClose: false,
-                  onPressed: (_) => setMenuState(draftSelectedIds.clear),
-                  child: Text(context.l10n.taskBoardDetailNone),
-                ),
-                ...options.map(
-                  (option) => shad.MenuCheckbox(
-                    value: draftSelectedIds.contains(option.id),
-                    autoClose: false,
-                    onChanged: (_, checked) => setMenuState(() {
-                      if (checked) {
-                        draftSelectedIds.add(option.id);
-                      } else {
-                        draftSelectedIds.remove(option.id);
-                      }
-                    }),
-                    child: _FilterOptionContent(option: option),
-                  ),
-                ),
-                const shad.MenuDivider(),
-                shad.MenuLabel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const shad.Gap(8),
-                      shad.PrimaryButton(
-                        leading: const Icon(Icons.check, size: 16),
-                        onPressed: () {
-                          onApplySelection(Set<String>.from(draftSelectedIds));
-                          unawaited(shad.closeOverlay<void>(menuContext));
-                        },
-                        child: Text(context.l10n.taskBoardDetailApplyFilters),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
+        return _FilterSelectionSheet(
+          title: title,
+          options: options,
+          initialSelectedIds: selectedIds,
         );
       },
     );
 
-    await completer.future;
+    if (nextSelectedIds != null) {
+      onApplySelection(nextSelectedIds);
+    }
   }
 
   String _selectedSummary(BuildContext context) {
@@ -161,6 +119,145 @@ class _FilterDropdownSection extends StatelessWidget {
   }
 }
 
+class _FilterSelectionSheet extends StatefulWidget {
+  const _FilterSelectionSheet({
+    required this.title,
+    required this.options,
+    required this.initialSelectedIds,
+  });
+
+  final String title;
+  final List<_FilterMenuOption> options;
+  final Set<String> initialSelectedIds;
+
+  @override
+  State<_FilterSelectionSheet> createState() => _FilterSelectionSheetState();
+}
+
+class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
+  late Set<String> _draftSelectedIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftSelectedIds = Set<String>.from(widget.initialSelectedIds);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final borderRadius = context.isCompact
+        ? const BorderRadius.vertical(top: Radius.circular(16))
+        : BorderRadius.circular(12);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: shad.Theme.of(context).colorScheme.background,
+        borderRadius: borderRadius,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + bottomInset),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: shad.Theme.of(
+                        context,
+                      ).typography.large.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  shad.IconButton.ghost(
+                    icon: const Icon(Icons.close),
+                    onPressed: () async {
+                      await Navigator.maybePop(context);
+                    },
+                  ),
+                ],
+              ),
+              const shad.Gap(12),
+              if (widget.options.isEmpty)
+                Text(
+                  context.l10n.taskBoardDetailNoFilterOptions,
+                  style: shad.Theme.of(context).typography.textMuted,
+                )
+              else
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+                  ),
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: _draftSelectedIds.isEmpty
+                            ? const Icon(Icons.check, size: 16)
+                            : const SizedBox(width: 16, height: 16),
+                        title: Text(context.l10n.taskBoardDetailNone),
+                        onTap: () => setState(_draftSelectedIds.clear),
+                      ),
+                      ...widget.options.map(
+                        (option) {
+                          final checked = _draftSelectedIds.contains(option.id);
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: checked
+                                ? const Icon(Icons.check, size: 16)
+                                : const SizedBox(width: 16, height: 16),
+                            title: _FilterOptionContent(option: option),
+                            onTap: () => setState(() {
+                              if (checked) {
+                                _draftSelectedIds.remove(option.id);
+                              } else {
+                                _draftSelectedIds.add(option.id);
+                              }
+                            }),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              const shad.Gap(16),
+              Row(
+                children: [
+                  Expanded(
+                    child: shad.OutlineButton(
+                      onPressed: _draftSelectedIds.isEmpty
+                          ? null
+                          : () => setState(_draftSelectedIds.clear),
+                      child: Text(context.l10n.taskBoardDetailClearFilters),
+                    ),
+                  ),
+                  const shad.Gap(10),
+                  Expanded(
+                    child: shad.PrimaryButton(
+                      leading: const Icon(Icons.check, size: 16),
+                      onPressed: () {
+                        Navigator.of(
+                          context,
+                        ).pop(Set<String>.from(_draftSelectedIds));
+                      },
+                      child: Text(context.l10n.taskBoardDetailApplyFilters),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FilterOptionContent extends StatelessWidget {
   const _FilterOptionContent({required this.option});
 
@@ -176,8 +273,8 @@ class _FilterOptionContent extends StatelessWidget {
           if (option.avatarUrl?.trim().isNotEmpty == true) ...[
             CircleAvatar(
               radius: 9,
-              backgroundImage: NetworkImage(option.avatarUrl!.trim()),
-              onBackgroundImageError: (error, stackTrace) {},
+              foregroundImage: NetworkImage(option.avatarUrl!.trim()),
+              onForegroundImageError: (error, stackTrace) {},
               child: Text(
                 option.label.isNotEmpty
                     ? option.label.substring(0, 1).toUpperCase()

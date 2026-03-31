@@ -71,36 +71,33 @@ class _TaskBoardAdvancedFilterSheetState
         .toList(growable: false);
     final statusOptions = availableStatuses
         .map(
-          (status) => _FilterMenuOption(
-            id: status,
-            label: _taskBoardListStatusLabel(context, status),
-            kind: _FilterMenuOptionKind.status,
-            foreground: _taskBoardListStatusBadgeColors(
-              context,
-              status,
-            ).textColor,
-            background: _taskBoardListStatusBadgeColors(
-              context,
-              status,
-            ).backgroundColor,
-            border: _taskBoardListStatusBadgeColors(
-              context,
-              status,
-            ).borderColor,
-          ),
+          (status) {
+            final badge = _taskBoardListStatusBadgeColors(context, status);
+            return _FilterMenuOption(
+              id: status,
+              label: _taskBoardListStatusLabel(context, status),
+              kind: _FilterMenuOptionKind.status,
+              foreground: badge.textColor,
+              background: badge.backgroundColor,
+              border: badge.borderColor,
+            );
+          },
         )
         .toList(growable: false);
     final priorityOptions = _priorityOptions
         .map(
-          (priority) => _FilterMenuOption(
-            id: priority,
-            label: _taskPriorityStyle(context, priority).label,
-            icon: _taskPriorityStyle(context, priority).icon,
-            kind: _FilterMenuOptionKind.priority,
-            foreground: _taskPriorityStyle(context, priority).foreground,
-            background: _taskPriorityStyle(context, priority).background,
-            border: _taskPriorityStyle(context, priority).border,
-          ),
+          (priority) {
+            final style = _taskPriorityStyle(context, priority);
+            return _FilterMenuOption(
+              id: priority,
+              label: style.label,
+              icon: style.icon,
+              kind: _FilterMenuOptionKind.priority,
+              foreground: style.foreground,
+              background: style.background,
+              border: style.border,
+            );
+          },
         )
         .toList(growable: false);
     final assigneeOptions = widget.members
@@ -269,9 +266,7 @@ class _TaskBoardAdvancedFilterSheetState
     } on Exception {
       if (!mounted) return;
       final navigator = Navigator.of(context);
-      if (navigator.canPop()) {
-        navigator.pop();
-      }
+      await navigator.maybePop();
     }
   }
 }
