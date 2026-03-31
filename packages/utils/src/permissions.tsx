@@ -322,10 +322,26 @@ export const permissionGroups = ({
         title: t('sidebar_tabs.drive'),
         permissions: [
           {
+            id: 'view_drive',
+            icon: <Eye />,
+            title: t('ws-roles.view_drive'),
+            description: t('ws-roles.view_drive_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
             id: 'manage_drive',
             icon: <ServerCog />,
             title: t('ws-roles.manage_drive'),
             description: t('ws-roles.manage_drive_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'manage_drive_tasks_directory',
+            icon: <ServerCog />,
+            title: t('ws-roles.manage_drive_tasks_directory'),
+            description: t('ws-roles.manage_drive_tasks_directory_description'),
             disableOnProduction: false,
             disabled: false,
           },

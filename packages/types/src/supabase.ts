@@ -28498,7 +28498,9 @@ export type Database = {
         | 'approve_reports'
         | 'approve_posts'
         | 'manage_forms'
-        | 'view_form_analytics';
+        | 'view_form_analytics'
+        | 'manage_drive_tasks_directory'
+        | 'view_drive';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -30604,6 +30606,8 @@ export const Constants = {
         'approve_posts',
         'manage_forms',
         'view_form_analytics',
+        'manage_drive_tasks_directory',
+        'view_drive',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

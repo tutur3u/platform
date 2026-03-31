@@ -42,12 +42,12 @@ export async function POST(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // if (permissions.withoutPermission('manage_drive')) {
-    //   return NextResponse.json(
-    //     { message: 'Insufficient permissions' },
-    //     { status: 403 }
-    //   );
-    // }
+    if (permissions.withoutPermission('manage_drive')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
 
     let payload: unknown;
     try {
