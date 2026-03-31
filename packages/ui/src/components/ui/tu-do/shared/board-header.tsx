@@ -1032,6 +1032,7 @@ export function BoardHeader({
           open={layoutSettingsOpen}
           onOpenChange={setLayoutSettingsOpen}
           boardId={board.id}
+          wsId={board.ws_id}
           lists={lists}
           onUpdate={onUpdate}
           translations={{
