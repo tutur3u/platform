@@ -3,9 +3,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import {
+  checkWorkspacePermission,
   createWorkspaceTask,
   updateWorkspaceCalendarEvent,
-  uploadWorkspaceStorageFile,
+  uploadWorkspaceTaskFile,
 } from '@tuturuuu/internal-api';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -174,6 +175,23 @@ export function TaskEditDialog({
   // Disable editing if we are viewing via a shared link
   // User requested: always disable editing for shared tasks, regardless of permission
   const disabled = !!shareCode;
+
+  const { data: canManageTaskMedia = false } = useQuery({
+    queryKey: [
+      'workspace-permission',
+      effectiveTaskWsId,
+      'manage_drive_tasks_directory',
+    ],
+    queryFn: async () => {
+      const result = await checkWorkspacePermission(
+        effectiveTaskWsId,
+        'manage_drive_tasks_directory'
+      );
+      return result.hasPermission;
+    },
+    enabled: Boolean(effectiveTaskWsId) && !disabled,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -853,13 +871,16 @@ export function TaskEditDialog({
   const handleImageUpload = useCallback(
     async (file: File): Promise<string> => {
       if (!effectiveTaskWsId) {
-        throw new Error('Workspace ID is required for image upload');
+        throw new Error(t('error'));
+      }
+      if (!canManageTaskMedia) {
+        throw new Error(t('insufficient_permissions'));
       }
       try {
-        const uploadResult = await uploadWorkspaceStorageFile(
+        const uploadResult = await uploadWorkspaceTaskFile(
           effectiveTaskWsId,
           file,
-          { path: 'task-images' }
+          { taskId: task?.id }
         );
 
         const query = new URLSearchParams({ path: uploadResult.path });
@@ -869,18 +890,19 @@ export function TaskEditDialog({
 
         return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?${query.toString()}`;
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Failed to upload image';
+        const message = error instanceof Error ? error.message : t('error');
         toast({
-          title: 'Upload failed',
+          title: t('error'),
           description: message,
           variant: 'destructive',
         });
         throw error;
       }
     },
-    [effectiveTaskWsId, task?.id, toast]
+    [canManageTaskMedia, effectiveTaskWsId, task?.id, t, toast]
   );
+
+  const imageUploadHandler = canManageTaskMedia ? handleImageUpload : undefined;
 
   const handleEstimationConfigSuccess = useCallback(async () => {
     await queryClient.invalidateQueries({
@@ -1646,7 +1668,7 @@ export function TaskEditDialog({
                         }
                       : null
                   }
-                  onImageUpload={handleImageUpload}
+                  onImageUpload={imageUploadHandler}
                   onEditorReady={handleEditorReady}
                   onDescriptionStorageLengthChange={
                     handleDescriptionStorageLengthChange

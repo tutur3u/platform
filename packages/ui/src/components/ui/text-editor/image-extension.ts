@@ -1,4 +1,5 @@
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   type EditorState,
   NodeSelection,
@@ -393,8 +394,6 @@ export const CustomImage = (options: ImageOptions = {}) => {
           props: {
             handleDOMEvents: {
               paste: (view, event: ClipboardEvent) => {
-                if (!onImageUpload) return false;
-
                 const items = event.clipboardData?.items;
                 if (!items) return false;
 
@@ -406,6 +405,15 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   .filter((file): file is File => file !== null);
 
                 if (images.length === 0) return false;
+
+                if (!onImageUpload) {
+                  event.preventDefault();
+                  toast.error('Insufficient permissions', {
+                    description:
+                      'You do not have permission to upload images in this editor.',
+                  });
+                  return true;
+                }
 
                 event.preventDefault();
 
@@ -542,8 +550,6 @@ export const CustomImage = (options: ImageOptions = {}) => {
           props: {
             handleDOMEvents: {
               drop: (view: EditorView, event: DragEvent) => {
-                if (!onImageUpload && !onVideoUpload) return false;
-
                 const hasFiles = event.dataTransfer?.files?.length;
                 if (!hasFiles) return false;
 
@@ -552,6 +558,18 @@ export const CustomImage = (options: ImageOptions = {}) => {
                 const videos = files.filter((file) => /video/i.test(file.type));
 
                 if (images.length === 0 && videos.length === 0) return false;
+
+                if (images.length > 0 && !onImageUpload) {
+                  toast.error('Insufficient permissions', {
+                    description:
+                      'You do not have permission to upload images in this editor.',
+                  });
+                }
+
+                if (!onImageUpload && !onVideoUpload) {
+                  event.preventDefault();
+                  return true;
+                }
 
                 event.preventDefault();
 

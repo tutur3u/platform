@@ -12,6 +12,13 @@ interface WorkspaceStorageUploadUrlResponse {
   fullPath?: string;
 }
 
+interface WorkspaceTaskUploadUrlResponse {
+  signedUrl?: string;
+  token?: string;
+  path?: string;
+  fullPath?: string;
+}
+
 interface WorkspaceStorageShareResponse {
   signedUrl?: string;
 }
@@ -111,6 +118,57 @@ export async function uploadWorkspaceStorageFile(
   };
 }
 
+export async function uploadWorkspaceTaskFile(
+  workspaceId: string,
+  file: File,
+  options?: {
+    taskId?: string;
+  },
+  clientOptions?: InternalApiClientOptions
+) {
+  const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
+
+  const uploadUrlResult = await createWorkspaceTaskUploadUrl(
+    workspaceId,
+    file.name,
+    options,
+    clientOptions
+  );
+
+  let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
+    method: 'PUT',
+    cache: 'no-store',
+    headers: {
+      Authorization: `Bearer ${uploadUrlResult.token}`,
+      'Content-Type': file.type || 'application/octet-stream',
+    },
+    body: file,
+  });
+
+  if (!uploadResponse.ok) {
+    uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
+      method: 'PUT',
+      cache: 'no-store',
+      headers: {
+        Authorization: `Bearer ${uploadUrlResult.token}`,
+      },
+      body: file,
+    });
+  }
+
+  if (!uploadResponse.ok) {
+    const message = await uploadResponse.text().catch(() => '');
+    throw new Error(
+      `Failed to upload file (${uploadResponse.status})${message ? `: ${message}` : ''}`
+    );
+  }
+
+  return {
+    path: uploadUrlResult.path,
+    fullPath: uploadUrlResult.fullPath,
+  };
+}
+
 export async function createWorkspaceStorageUploadUrl(
   workspaceId: string,
   filename: string,
@@ -132,6 +190,42 @@ export async function createWorkspaceStorageUploadUrl(
         filename,
         path: options?.path,
         upsert: options?.upsert,
+      }),
+      cache: 'no-store',
+    }
+  );
+
+  if (!payload.signedUrl || !payload.token || !payload.path) {
+    throw new Error('Missing upload URL payload');
+  }
+
+  return {
+    signedUrl: payload.signedUrl,
+    token: payload.token,
+    path: payload.path,
+    fullPath: payload.fullPath ?? null,
+  };
+}
+
+export async function createWorkspaceTaskUploadUrl(
+  workspaceId: string,
+  filename: string,
+  options?: {
+    taskId?: string;
+  },
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  const payload = await client.json<WorkspaceTaskUploadUrlResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/upload-url`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        filename,
+        taskId: options?.taskId,
       }),
       cache: 'no-store',
     }

@@ -77,8 +77,28 @@ async function resolveSignedUrl(
     return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
   }
 
+  const isTaskImagesPath =
+    sanitizedPath === 'task-images' || sanitizedPath.startsWith('task-images/');
+
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!permissions.containsPermission('view_drive')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
+  if (
+    isTaskImagesPath &&
+    !permissions.containsPermission('manage_drive_tasks_directory')
+  ) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
   }
 
   const sbStorageAdmin = await createDynamicAdminClient();
