@@ -1,10 +1,12 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_view.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -99,6 +101,7 @@ void main() {
             providers: [
               BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
               BlocProvider<TaskPortfolioCubit>.value(value: taskPortfolioCubit),
+              BlocProvider(create: (_) => ShellMiniNavCubit()),
             ],
             child: TaskPortfolioView(
               permissionsRepository: permissionsRepository,
@@ -107,7 +110,18 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Initiatives'));
+        final miniNavCubit = BlocProvider.of<ShellMiniNavCubit>(
+          tester.element(find.byType(TaskPortfolioView)),
+        );
+        final miniNav = miniNavCubit.state.resolveForLocation(
+          Routes.taskPortfolio,
+        );
+        expect(miniNav, isNotNull);
+
+        miniNav!.items
+            .firstWhere((item) => item.id == 'initiatives')
+            .onPressed
+            ?.call();
         await tester.pumpAndSettle();
 
         await tester.tap(find.text('Manage projects'));

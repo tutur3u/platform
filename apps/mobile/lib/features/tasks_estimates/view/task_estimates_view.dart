@@ -2,14 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_labels_cubit.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimate_boards_section.dart';
@@ -96,6 +99,36 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         child: Stack(
           children: [
             _buildContent(context),
+            ShellMiniNav(
+              ownerId: 'task-estimates-mini-nav',
+              locations: const {Routes.taskEstimates},
+              deepLinkBackRoute: Routes.tasks,
+              items: [
+                ShellMiniNavItemSpec(
+                  id: 'back',
+                  icon: Icons.chevron_left,
+                  label: context.l10n.navBack,
+                  callbackToken: 'back',
+                  onPressed: () => context.go(Routes.tasks),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'estimates',
+                  icon: Icons.calculate_outlined,
+                  label: context.l10n.taskEstimatesTitle,
+                  selected: _activeTab == _tabEstimates,
+                  callbackToken: 'estimates-$_activeTab',
+                  onPressed: () => setState(() => _activeTab = _tabEstimates),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'labels',
+                  icon: Icons.label_outline,
+                  label: context.l10n.taskLabelsTab,
+                  selected: _activeTab == _tabLabels,
+                  callbackToken: 'labels-$_activeTab',
+                  onPressed: () => setState(() => _activeTab = _tabLabels),
+                ),
+              ],
+            ),
             if (_canManageProjects)
               SpeedDialFab(
                 label: context.l10n.taskPlanningTitle,
@@ -164,52 +197,27 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
 
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                    child: shad.Tabs(
-                      index: _activeTab,
-                      onChanged: (value) => setState(() => _activeTab = value),
-                      children: [
-                        shad.TabItem(
-                          child: Text(context.l10n.taskEstimatesTitle),
-                        ),
-                        shad.TabItem(child: Text(context.l10n.taskLabelsTab)),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () => _reload(context),
-                      child: ListView(
-                        padding: EdgeInsets.fromLTRB(
-                          0,
-                          12,
-                          0,
-                          listBottomPadding,
-                        ),
-                        children: [
-                          if (_activeTab == _tabEstimates)
-                            TaskEstimateBoardsSection(
-                              boards: estimatesState.boards,
-                              isUpdating:
-                                  estimatesState.status ==
-                                  TaskEstimatesStatus.updating,
-                            )
-                          else
-                            TaskLabelsSection(
-                              labels: labelsState.labels,
-                              isSaving:
-                                  labelsState.status == TaskLabelsStatus.saving,
-                              onEdit: _openEditLabel,
-                              onDelete: _deleteLabel,
-                            ),
-                        ],
+              child: RefreshIndicator(
+                onRefresh: () => _reload(context),
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
+                  children: [
+                    if (_activeTab == _tabEstimates)
+                      TaskEstimateBoardsSection(
+                        boards: estimatesState.boards,
+                        isUpdating:
+                            estimatesState.status ==
+                            TaskEstimatesStatus.updating,
+                      )
+                    else
+                      TaskLabelsSection(
+                        labels: labelsState.labels,
+                        isSaving: labelsState.status == TaskLabelsStatus.saving,
+                        onEdit: _openEditLabel,
+                        onDelete: _deleteLabel,
                       ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },

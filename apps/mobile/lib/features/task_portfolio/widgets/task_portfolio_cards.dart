@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
+import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -20,14 +21,32 @@ class TaskProjectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final accent = switch (project.healthStatus) {
+      'off_track' => theme.colorScheme.destructive,
+      'at_risk' => const Color(0xFFF59E0B),
+      _ => const Color(0xFF2563EB),
+    };
 
-    return shad.Card(
+    return TaskSurfacePane(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.folder_open_outlined,
+                  color: accent,
+                ),
+              ),
+              const shad.Gap(12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,7 +54,7 @@ class TaskProjectCard extends StatelessWidget {
                     Text(
                       project.name,
                       style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const shad.Gap(6),
@@ -72,7 +91,7 @@ class TaskProjectCard extends StatelessWidget {
               ),
             ],
           ),
-          const shad.Gap(12),
+          const shad.Gap(14),
           Text(
             (project.description?.trim().isNotEmpty ?? false)
                 ? project.description!.trim()
@@ -81,7 +100,7 @@ class TaskProjectCard extends StatelessWidget {
               color: theme.colorScheme.mutedForeground,
             ),
           ),
-          const shad.Gap(12),
+          const shad.Gap(14),
           // Timeline row (only when at least one date is set)
           if (project.startDate != null || project.endDate != null) ...[
             _TimelineRow(
@@ -137,14 +156,28 @@ class TaskInitiativeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    const accent = Color(0xFF7C3AED);
 
-    return shad.Card(
+    return TaskSurfacePane(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.account_tree_outlined,
+                  color: accent,
+                ),
+              ),
+              const shad.Gap(12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +185,7 @@ class TaskInitiativeCard extends StatelessWidget {
                     Text(
                       initiative.name,
                       style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const shad.Gap(6),
@@ -174,7 +207,7 @@ class TaskInitiativeCard extends StatelessWidget {
               ),
             ],
           ),
-          const shad.Gap(12),
+          const shad.Gap(14),
           Text(
             (initiative.description?.trim().isNotEmpty ?? false)
                 ? initiative.description!.trim()
@@ -183,7 +216,7 @@ class TaskInitiativeCard extends StatelessWidget {
               color: theme.colorScheme.mutedForeground,
             ),
           ),
-          const shad.Gap(12),
+          const shad.Gap(14),
           _InfoPill(
             icon: Icons.account_tree_outlined,
             label:
@@ -214,7 +247,7 @@ class TaskInitiativeCard extends StatelessWidget {
                 color: theme.colorScheme.mutedForeground,
               ),
             ),
-          const shad.Gap(12),
+          const shad.Gap(14),
           shad.OutlineButton(
             onPressed: onManageProjects,
             child: Text(context.l10n.taskPortfolioManageProjects),

@@ -146,6 +146,7 @@ export {
   listWorkspaceStorageObjects,
   renameWorkspaceStorageObject,
   uploadWorkspaceStorageFile,
+  uploadWorkspaceTaskFile,
 } from './storage';
 export {
   addWorkspaceTaskLabel,

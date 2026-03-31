@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_config.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ShellTopBarTitle extends StatelessWidget {
@@ -11,7 +14,32 @@ class ShellTopBarTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = ShellChromeConfig.forLocation(context, matchedLocation);
+    final titleOverrideCubit = lookupShellTitleOverrideCubit(context);
 
+    if (titleOverrideCubit == null) {
+      return _ShellTopBarTitleContent(title: config.title);
+    }
+
+    return BlocBuilder<ShellTitleOverrideCubit, ShellTitleOverrideState>(
+      bloc: titleOverrideCubit,
+      buildWhen: (previous, current) =>
+          previous.resolveForLocation(matchedLocation) !=
+          current.resolveForLocation(matchedLocation),
+      builder: (context, state) {
+        final title = state.resolveForLocation(matchedLocation) ?? config.title;
+        return _ShellTopBarTitleContent(title: title);
+      },
+    );
+  }
+}
+
+class _ShellTopBarTitleContent extends StatelessWidget {
+  const _ShellTopBarTitleContent({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
       height: mobileSectionAppBarHeight,
       child: Row(
@@ -26,7 +54,7 @@ class ShellTopBarTitle extends StatelessWidget {
           Expanded(
             child: Align(
               alignment: Alignment.centerLeft,
-              child: _AnimatedTitleText(title: config.title),
+              child: _AnimatedTitleText(title: title),
             ),
           ),
         ],

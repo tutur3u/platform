@@ -14,8 +14,11 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
+import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -71,6 +74,8 @@ Widget _buildTestApp({
       BlocProvider.value(value: appTabCubit),
       BlocProvider<AuthCubit>.value(value: authCubit),
       BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+      BlocProvider(create: (_) => ShellMiniNavCubit()),
+      BlocProvider(create: (_) => ShellTitleOverrideCubit()),
       if (shellProfileCubit != null)
         BlocProvider<ShellProfileCubit>.value(value: shellProfileCubit)
       else
@@ -129,9 +134,17 @@ GoRouter _buildRouter({required String initialLocation}) {
           ),
           GoRoute(
             path: Routes.taskBoardDetail,
-            builder: (context, state) => _RoutePage(
-              label: 'task-board-${state.pathParameters['boardId']}',
+            builder: (context, state) => _TaskBoardDetailRoutePage(
+              boardId: state.pathParameters['boardId'] ?? 'unknown',
             ),
+          ),
+          GoRoute(
+            path: Routes.taskEstimates,
+            builder: (context, state) => const _TaskEstimatesRoutePage(),
+          ),
+          GoRoute(
+            path: Routes.taskPortfolio,
+            builder: (context, state) => const _TaskPortfolioRoutePage(),
           ),
           GoRoute(
             path: Routes.finance,
@@ -170,6 +183,118 @@ class _RoutePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(child: Text(label));
+  }
+}
+
+class _TaskBoardDetailRoutePage extends StatelessWidget {
+  const _TaskBoardDetailRoutePage({required this.boardId});
+
+  final String boardId;
+
+  @override
+  Widget build(BuildContext context) {
+    final location = Routes.taskBoardDetailPath(boardId);
+    return Stack(
+      children: [
+        _RoutePage(label: 'task-board-$boardId'),
+        ShellMiniNav(
+          ownerId: 'task-board-$boardId',
+          locations: {location},
+          deepLinkBackRoute: Routes.taskBoards,
+          items: [
+            ShellMiniNavItemSpec(
+              id: 'back',
+              icon: Icons.chevron_left,
+              label: context.l10n.navBack,
+              callbackToken: boardId,
+            ),
+          ],
+        ),
+        ShellTitleOverride(
+          ownerId: 'task-board-title-$boardId',
+          locations: {location},
+          title: 'Board $boardId',
+        ),
+      ],
+    );
+  }
+}
+
+class _TaskEstimatesRoutePage extends StatelessWidget {
+  const _TaskEstimatesRoutePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const _RoutePage(label: 'task-estimates'),
+        ShellMiniNav(
+          ownerId: 'task-estimates-mini-nav',
+          locations: const {Routes.taskEstimates},
+          deepLinkBackRoute: Routes.tasks,
+          items: [
+            ShellMiniNavItemSpec(
+              id: 'back',
+              icon: Icons.chevron_left,
+              label: context.l10n.navBack,
+              callbackToken: 'back',
+            ),
+            ShellMiniNavItemSpec(
+              id: 'estimates',
+              icon: Icons.calculate_outlined,
+              label: context.l10n.taskEstimatesTitle,
+              selected: true,
+              callbackToken: 'estimates',
+            ),
+            ShellMiniNavItemSpec(
+              id: 'labels',
+              icon: Icons.label_outline,
+              label: context.l10n.taskLabelsTab,
+              callbackToken: 'labels',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TaskPortfolioRoutePage extends StatelessWidget {
+  const _TaskPortfolioRoutePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const _RoutePage(label: 'task-portfolio'),
+        ShellMiniNav(
+          ownerId: 'task-portfolio-mini-nav',
+          locations: const {Routes.taskPortfolio},
+          deepLinkBackRoute: Routes.tasks,
+          items: [
+            ShellMiniNavItemSpec(
+              id: 'back',
+              icon: Icons.chevron_left,
+              label: context.l10n.navBack,
+              callbackToken: 'back',
+            ),
+            ShellMiniNavItemSpec(
+              id: 'projects',
+              icon: Icons.folder_open_outlined,
+              label: context.l10n.taskPortfolioProjectsTab,
+              selected: true,
+              callbackToken: 'projects',
+            ),
+            ShellMiniNavItemSpec(
+              id: 'initiatives',
+              icon: Icons.account_tree_outlined,
+              label: context.l10n.taskPortfolioInitiativesTab,
+              callbackToken: 'initiatives',
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -347,6 +472,40 @@ void main() {
       expect(find.text(l10n.taskBoardsTitle), findsOneWidget);
       expect(find.text(l10n.taskPlanningTitle), findsOneWidget);
       expect(find.text(l10n.taskPortfolioTitle), findsOneWidget);
+    });
+
+    testWidgets('injected mini-nav takes precedence over module mini-nav', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final router = _buildRouter(initialLocation: Routes.taskPortfolio);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+          shellProfileCubit: shellProfileCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      final shellContext = tester.element(find.byType(ShellPage));
+      final l10n = AppLocalizations.of(shellContext);
+
+      expect(find.text(l10n.navBack), findsOneWidget);
+      expect(find.text(l10n.taskPortfolioProjectsTab), findsOneWidget);
+      expect(find.text(l10n.taskPortfolioInitiativesTab), findsOneWidget);
+      expect(find.text(l10n.taskBoardsTitle), findsNothing);
+      expect(find.text(l10n.taskPlanningTitle), findsNothing);
     });
 
     testWidgets('system back from mini-app root goes to apps picker', (
@@ -795,7 +954,10 @@ void main() {
         await tester.binding.handlePopRoute();
         await _pumpForTransitions(tester);
 
-        expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
+        expect(
+          router.routeInformationProvider.value.uri.path,
+          Routes.taskBoards,
+        );
       },
     );
 
@@ -833,7 +995,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
 
-      expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
+      expect(router.routeInformationProvider.value.uri.path, Routes.taskBoards);
     });
 
     testWidgets(

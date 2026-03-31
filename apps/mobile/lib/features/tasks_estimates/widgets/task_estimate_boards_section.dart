@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
+import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
 import 'package:mobile/features/tasks_estimates/utils/estimation_type_meta.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimate_dialog.dart';
@@ -25,24 +25,22 @@ class TaskEstimateBoardsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: boards.isEmpty
-          ? TaskEstimatesEmptyState(
-              title: l10n.taskEstimatesNoBoardsTitle,
-              description: l10n.taskEstimatesNoBoardsDescription,
-            )
-          : ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: boards.length,
-              itemBuilder: (context, index) => _TaskEstimateBoardTile(
-                board: boards[index],
-                enabled: !isUpdating,
-              ),
-              separatorBuilder: (context, index) => const shad.Gap(8),
-            ),
-    );
+    return boards.isEmpty
+        ? TaskEstimatesEmptyState(
+            title: l10n.taskEstimatesNoBoardsTitle,
+            description: l10n.taskEstimatesNoBoardsDescription,
+          )
+        : Column(
+            children: [
+              for (var index = 0; index < boards.length; index++) ...[
+                if (index > 0) const shad.Gap(10),
+                _TaskEstimateBoardTile(
+                  board: boards[index],
+                  enabled: !isUpdating,
+                ),
+              ],
+            ],
+          );
   }
 }
 
@@ -60,13 +58,12 @@ class _TaskEstimateBoardTile extends StatelessWidget {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final type = estimationTypeMeta(context, board.estimationType);
-    final locale = Localizations.localeOf(context).toString();
     final boardName = board.name ?? l10n.taskEstimatesUnnamedBoard;
 
-    return shad.Card(
+    return TaskSurfacePane(
       padding: EdgeInsets.zero,
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(24),
         onTap: enabled
             ? () {
                 final cubit = context.read<TaskEstimatesCubit>();
@@ -82,7 +79,7 @@ class _TaskEstimateBoardTile extends StatelessWidget {
               }
             : null,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -96,7 +93,7 @@ class _TaskEstimateBoardTile extends StatelessWidget {
                         Text(
                           boardName,
                           style: theme.typography.p.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const shad.Gap(8),
@@ -116,10 +113,13 @@ class _TaskEstimateBoardTile extends StatelessWidget {
                     ),
                   ),
                   const shad.Gap(8),
-                  const Icon(Icons.chevron_right),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: theme.colorScheme.primary,
+                  ),
                 ],
               ),
-              const shad.Gap(8),
+              const shad.Gap(10),
               Text(
                 type.description(
                   isExtended: board.extendedEstimation,
@@ -127,15 +127,6 @@ class _TaskEstimateBoardTile extends StatelessWidget {
                 ),
                 style: theme.typography.textMuted,
               ),
-              if (board.createdAt != null) ...[
-                const shad.Gap(8),
-                Text(
-                  DateFormat.yMd(locale).format(board.createdAt!),
-                  style: theme.typography.textSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ],
             ],
           ),
         ),

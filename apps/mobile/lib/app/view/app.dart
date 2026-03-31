@@ -36,9 +36,12 @@ import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
+import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_boards_cubit.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_labels_cubit.dart';
@@ -85,7 +88,9 @@ class _AppState extends State<App> {
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final AppTabCubit _appTabCubit;
   late final ShellChromeActionsCubit _shellChromeActionsCubit;
+  late final ShellMiniNavCubit _shellMiniNavCubit;
   late final ShellProfileCubit _shellProfileCubit;
+  late final ShellTitleOverrideCubit _shellTitleOverrideCubit;
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
 
@@ -127,9 +132,11 @@ class _AppState extends State<App> {
     _calendarSettingsCubit = CalendarSettingsCubit();
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
     _shellChromeActionsCubit = ShellChromeActionsCubit();
+    _shellMiniNavCubit = ShellMiniNavCubit();
     _shellProfileCubit = ShellProfileCubit(
       profileRepository: _profileRepository,
     );
+    _shellTitleOverrideCubit = ShellTitleOverrideCubit();
     _lifecycleObserver = _AppLifecycleObserver(() {
       unawaited(_appVersionCubit.checkVersion(background: true));
       unawaited(CacheWarmupCoordinator.instance.prewarmHome());
@@ -347,8 +354,12 @@ class _AppState extends State<App> {
     }
 
     if (request.opensTask) {
-      final taskRoute = Routes.taskBoardDetailPath(request.boardId!);
-      _router.go('$taskRoute?taskId=${request.entityId!}');
+      _router.go(
+        taskBoardDetailLocation(
+          boardId: request.boardId!,
+          taskId: request.entityId!,
+        ),
+      );
       return;
     }
 
@@ -367,7 +378,9 @@ class _AppState extends State<App> {
     unawaited(_calendarSettingsCubit.close());
     unawaited(_appTabCubit.close());
     unawaited(_shellChromeActionsCubit.close());
+    unawaited(_shellMiniNavCubit.close());
     unawaited(_shellProfileCubit.close());
+    unawaited(_shellTitleOverrideCubit.close());
     unawaited(PushNotificationService.instance.dispose());
     super.dispose();
   }
@@ -384,7 +397,9 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _calendarSettingsCubit),
         BlocProvider.value(value: _appTabCubit),
         BlocProvider.value(value: _shellChromeActionsCubit),
+        BlocProvider.value(value: _shellMiniNavCubit),
         BlocProvider.value(value: _shellProfileCubit),
+        BlocProvider.value(value: _shellTitleOverrideCubit),
       ],
       child: MultiBlocListener(
         listeners: [

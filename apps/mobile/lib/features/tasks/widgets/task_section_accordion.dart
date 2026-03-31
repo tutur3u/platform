@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' hide Badge;
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/user_task.dart';
+import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
+import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -31,106 +33,111 @@ class TaskSectionAccordion extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final count = trailingCount ?? tasks.length;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card.withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accentColor.withValues(alpha: 0.16)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InkWell(
-              onTap: onToggle,
-              borderRadius: BorderRadius.circular(14),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+    return TaskSurfacePane(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(18),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Color.alphaBlend(
+                        accentColor.withValues(alpha: 0.1),
+                        theme.colorScheme.secondary,
                       ),
-                      child: Center(child: icon),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: theme.typography.p.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            subtitle,
-                            style: theme.typography.xSmall.copyWith(
-                              color: theme.colorScheme.mutedForeground,
-                            ),
-                          ),
-                        ],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: accentColor.withValues(alpha: 0.12),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.muted,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '$count',
-                        style: theme.typography.xSmall.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.mutedForeground,
+                    child: Center(child: icon),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: theme.typography.p.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitle,
+                          style: theme.typography.xSmall.copyWith(
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Color.alphaBlend(
+                        accentColor.withValues(alpha: 0.08),
+                        theme.colorScheme.secondary,
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: accentColor.withValues(alpha: 0.1),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Icon(
-                      isCollapsed ? Icons.expand_more : Icons.expand_less,
-                      color: theme.colorScheme.mutedForeground,
+                    child: Text(
+                      '$count',
+                      style: theme.typography.xSmall.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: accentColor,
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    isCollapsed ? Icons.expand_more : Icons.expand_less,
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ],
               ),
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeInOut,
-              child: isCollapsed
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < tasks.length; i++) ...[
-                            _TaskTile(task: tasks[i]),
-                            if (i != tasks.length - 1)
-                              Divider(
-                                height: 14,
-                                color: theme.colorScheme.border.withValues(
-                                  alpha: 0.45,
-                                ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            child: isCollapsed
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < tasks.length; i++) ...[
+                          _TaskTile(task: tasks[i]),
+                          if (i != tasks.length - 1)
+                            Divider(
+                              height: 16,
+                              color: theme.colorScheme.border.withValues(
+                                alpha: 0.45,
                               ),
-                          ],
+                            ),
                         ],
-                      ),
+                      ],
                     ),
-            ),
-          ],
-        ),
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -152,8 +159,8 @@ class _TaskTile extends StatelessWidget {
       if (listName != null && listName.isNotEmpty) listName,
     ].join(' / ');
 
-    // TODO(navigation): Open the mobile task detail flow once a route exists.
     return shad.GhostButton(
+      onPressed: () => openUserTaskBoardDetail(context, task),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
         child: Row(

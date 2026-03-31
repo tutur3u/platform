@@ -336,7 +336,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   String? _pendingInitialTaskId;
   bool _didHandleInitialTaskNavigation = false;
   bool _isHandlingInitialTaskNavigation = false;
-  bool _showSearchField = false;
 
   @override
   void initState() {
@@ -443,10 +442,19 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   current.taskDescriptionSearchIndex,
           builder: (context, state) {
             final detail = state.board;
+            final boardRoute = Routes.taskBoardDetailPath(widget.boardId);
             final shellActionRegistration = ShellChromeActions(
               ownerId: 'task-board-detail-${widget.boardId}',
-              locations: {Routes.taskBoardDetailPath(widget.boardId)},
+              locations: {boardRoute},
               actions: [
+                ShellActionSpec(
+                  id: 'task-board-detail-search',
+                  icon: Icons.search,
+                  tooltip: context.l10n.taskBoardDetailSearchTitle,
+                  highlighted: state.searchQuery.trim().isNotEmpty,
+                  enabled: detail != null,
+                  onPressed: () => unawaited(_openSearchSheet(context)),
+                ),
                 ShellActionSpec(
                   id: 'task-board-detail-filter',
                   icon: state.filters.hasAdvancedFilters
@@ -473,12 +481,66 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                 ),
               ],
             );
+            final shellMiniNavRegistration = ShellMiniNav(
+              ownerId: 'task-board-mini-nav-${widget.boardId}',
+              locations: {boardRoute},
+              deepLinkBackRoute: Routes.taskBoards,
+              items: [
+                ShellMiniNavItemSpec(
+                  id: 'back',
+                  icon: Icons.chevron_left,
+                  label: context.l10n.navBack,
+                  callbackToken: 'back',
+                  onPressed: () => context.go(Routes.taskBoards),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'kanban',
+                  icon: Icons.view_kanban_outlined,
+                  label: context.l10n.taskBoardDetailKanbanView,
+                  selected: state.currentView == TaskBoardDetailView.kanban,
+                  callbackToken: 'kanban-${state.currentView.name}',
+                  onPressed: () => context.read<TaskBoardDetailCubit>().setView(
+                    TaskBoardDetailView.kanban,
+                  ),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'list',
+                  icon: Icons.view_list_outlined,
+                  label: context.l10n.taskBoardDetailListView,
+                  selected: state.currentView == TaskBoardDetailView.list,
+                  callbackToken: 'list-${state.currentView.name}',
+                  onPressed: () => context.read<TaskBoardDetailCubit>().setView(
+                    TaskBoardDetailView.list,
+                  ),
+                ),
+                ShellMiniNavItemSpec(
+                  id: 'timeline',
+                  icon: Icons.timeline_outlined,
+                  label: context.l10n.taskBoardDetailTimelineView,
+                  selected: state.currentView == TaskBoardDetailView.timeline,
+                  callbackToken: 'timeline-${state.currentView.name}',
+                  onPressed: () => context.read<TaskBoardDetailCubit>().setView(
+                    TaskBoardDetailView.timeline,
+                  ),
+                ),
+              ],
+            );
+            final shellTitleRegistration = detail == null
+                ? const SizedBox.shrink()
+                : ShellTitleOverride(
+                    ownerId: 'task-board-title-${widget.boardId}',
+                    locations: {boardRoute},
+                    title: detail.name?.trim().isNotEmpty == true
+                        ? detail.name!.trim()
+                        : context.l10n.taskBoardDetailUntitledBoard,
+                  );
 
             if (state.status == TaskBoardDetailStatus.loading &&
                 detail == null) {
               return Stack(
                 children: [
                   shellActionRegistration,
+                  shellMiniNavRegistration,
                   const Center(child: NovaLoadingIndicator()),
                 ],
               );
@@ -488,6 +550,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               return Stack(
                 children: [
                   shellActionRegistration,
+                  shellMiniNavRegistration,
                   _TaskBoardDetailErrorState(
                     message: context.l10n.taskBoardDetailLoadError,
                     onRetry: () =>
@@ -501,6 +564,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               return Stack(
                 children: [
                   shellActionRegistration,
+                  shellMiniNavRegistration,
                   _TaskBoardDetailErrorState(
                     message: context.l10n.taskBoardDetailLoadError,
                     onRetry: () =>
@@ -514,6 +578,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               return Stack(
                 children: [
                   shellActionRegistration,
+                  shellMiniNavRegistration,
                   _NoListsState(
                     onCreateList: () =>
                         unawaited(_openCreateListDialog(context)),
@@ -541,270 +606,132 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                 ),
               );
             }
-            final searchFieldVisible =
-                _showSearchField || state.searchQuery.trim().isNotEmpty;
 
             return Stack(
               children: [
                 shellActionRegistration,
+                shellMiniNavRegistration,
+                shellTitleRegistration,
                 ResponsiveWrapper(
                   maxWidth: ResponsivePadding.maxContentWidth(
                     context.deviceClass,
                   ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              detail.name?.trim().isNotEmpty == true
-                                  ? detail.name!.trim()
-                                  : context.l10n.taskBoardDetailUntitledBoard,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style:
-                                  shad.Theme.of(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return RefreshIndicator(
+                        onRefresh: () =>
+                            context.read<TaskBoardDetailCubit>().reload(),
+                        child: switch (state.currentView) {
+                          TaskBoardDetailView.list => _TaskBoardListView(
+                            boardId: widget.boardId,
+                            lists: sortedLists,
+                            tasksByList: filteredByList,
+                            state: state,
+                            board: detail,
+                            bottomPadding: bottomPadding,
+                            viewportHeight: constraints.maxHeight,
+                            listScrollController: _listScrollController,
+                            collapsedListIds: _collapsedListIds,
+                            onToggleExpanded: (listId) {
+                              setState(() {
+                                if (_collapsedListIds.contains(listId)) {
+                                  _collapsedListIds.remove(listId);
+                                } else {
+                                  _collapsedListIds.add(listId);
+                                }
+                              });
+                            },
+                            onRequestInitialLoad: _requestInitialListLoadOnce,
+                            onLoadMore: (listId, pageSizeHint) => context
+                                .read<TaskBoardDetailCubit>()
+                                .loadListTasks(
+                                  listId: listId,
+                                  loadMore: true,
+                                  pageSizeHint: pageSizeHint,
+                                ),
+                            onRetryLoad: (listId, pageSizeHint) => context
+                                .read<TaskBoardDetailCubit>()
+                                .loadListTasks(
+                                  listId: listId,
+                                  forceRefresh: true,
+                                  pageSizeHint: pageSizeHint,
+                                ),
+                            onTaskTap: (task) =>
+                                _openTaskDetails(context, task, sortedLists),
+                            onTaskMove: (task) =>
+                                _openMoveTaskPicker(context, task, sortedLists),
+                            onCreateTask: (listId) => _openTaskCreateSheet(
+                              context,
+                              lists: sortedLists,
+                              defaultListId: listId,
+                            ),
+                            onEditList: (list) =>
+                                _openEditListDialog(context, list),
+                          ),
+                          TaskBoardDetailView.kanban => _TaskBoardKanbanView(
+                            boardId: widget.boardId,
+                            lists: sortedLists,
+                            tasksByList: filteredByList,
+                            state: state,
+                            board: detail,
+                            bottomPadding: bottomPadding,
+                            viewportHeight: constraints.maxHeight,
+                            kanbanVerticalScrollController:
+                                _kanbanVerticalScrollController,
+                            kanbanHorizontalScrollController:
+                                _kanbanHorizontalScrollController,
+                            onRequestInitialLoad: _requestInitialListLoadOnce,
+                            onLoadMore: (listId, pageSizeHint) => context
+                                .read<TaskBoardDetailCubit>()
+                                .loadListTasks(
+                                  listId: listId,
+                                  loadMore: true,
+                                  pageSizeHint: pageSizeHint,
+                                ),
+                            onRetryLoad: (listId, pageSizeHint) => context
+                                .read<TaskBoardDetailCubit>()
+                                .loadListTasks(
+                                  listId: listId,
+                                  forceRefresh: true,
+                                  pageSizeHint: pageSizeHint,
+                                ),
+                            onTaskTap: (task) =>
+                                _openTaskDetails(context, task, sortedLists),
+                            onTaskMove: (task) =>
+                                _openMoveTaskPicker(context, task, sortedLists),
+                            onCreateTask: (listId) => _openTaskCreateSheet(
+                              context,
+                              lists: sortedLists,
+                              defaultListId: listId,
+                            ),
+                            onEditList: (list) =>
+                                _openEditListDialog(context, list),
+                          ),
+                          TaskBoardDetailView.timeline =>
+                            _TaskBoardTimelineView(
+                              board: detail,
+                              lists: sortedLists,
+                              tasksByList: filteredByList,
+                              bottomPadding: bottomPadding,
+                              onTaskTap: (task) =>
+                                  _openTaskDetails(context, task, sortedLists),
+                              onTimelineTaskCommit:
+                                  ({
+                                    required task,
+                                    required listId,
+                                    required startDate,
+                                    required endDate,
+                                  }) => _commitTimelineTaskChange(
                                     context,
-                                  ).typography.large.copyWith(
-                                    fontWeight: FontWeight.w700,
+                                    task: task,
+                                    listId: listId,
+                                    startDate: startDate,
+                                    endDate: endDate,
                                   ),
                             ),
-                            if (state.filters.hasAdvancedFilters) ...[
-                              const shad.Gap(8),
-                              shad.OutlineBadge(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.filter_alt_outlined,
-                                      size: 14,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      context.l10n.taskBoardDetailFiltersActive,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            const shad.Gap(12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: shad.Tabs(
-                                    expand: true,
-                                    index:
-                                        state.currentView ==
-                                            TaskBoardDetailView.kanban
-                                        ? 0
-                                        : 1,
-                                    onChanged: (value) {
-                                      final nextView = value == 0
-                                          ? TaskBoardDetailView.kanban
-                                          : TaskBoardDetailView.list;
-                                      context
-                                          .read<TaskBoardDetailCubit>()
-                                          .setView(nextView);
-                                    },
-                                    children: [
-                                      shad.TabItem(
-                                        child: FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                LucideIcons.squareKanban,
-                                              ),
-                                              const shad.Gap(5),
-                                              Text(
-                                                context
-                                                    .l10n
-                                                    .taskBoardDetailKanbanView,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      shad.TabItem(
-                                        child: FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(LucideIcons.list),
-                                              const shad.Gap(5),
-                                              Text(
-                                                context
-                                                    .l10n
-                                                    .taskBoardDetailListView,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const shad.Gap(8),
-                                shad.IconButton.ghost(
-                                  icon: Icon(
-                                    searchFieldVisible
-                                        ? Icons.close
-                                        : Icons.search,
-                                  ),
-                                  onPressed: () {
-                                    final cubit = context
-                                        .read<TaskBoardDetailCubit>();
-                                    if (searchFieldVisible) {
-                                      setState(() => _showSearchField = false);
-                                      _searchController.clear();
-                                      cubit.setSearchQuery('');
-                                      return;
-                                    }
-                                    setState(() => _showSearchField = true);
-                                  },
-                                ),
-                              ],
-                            ),
-                            if (searchFieldVisible) ...[
-                              const shad.Gap(10),
-                              shad.TextField(
-                                controller: _searchController,
-                                hintText: context
-                                    .l10n
-                                    .taskBoardDetailSearchPlaceholder,
-                                onChanged: (value) => context
-                                    .read<TaskBoardDetailCubit>()
-                                    .setSearchQuery(value),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return RefreshIndicator(
-                              onRefresh: () =>
-                                  context.read<TaskBoardDetailCubit>().reload(),
-                              child:
-                                  state.currentView == TaskBoardDetailView.list
-                                  ? _TaskBoardListView(
-                                      boardId: widget.boardId,
-                                      lists: sortedLists,
-                                      tasksByList: filteredByList,
-                                      state: state,
-                                      board: detail,
-                                      bottomPadding: bottomPadding,
-                                      viewportHeight: constraints.maxHeight,
-                                      listScrollController:
-                                          _listScrollController,
-                                      collapsedListIds: _collapsedListIds,
-                                      onToggleExpanded: (listId) {
-                                        setState(() {
-                                          if (_collapsedListIds.contains(
-                                            listId,
-                                          )) {
-                                            _collapsedListIds.remove(listId);
-                                          } else {
-                                            _collapsedListIds.add(listId);
-                                          }
-                                        });
-                                      },
-                                      onRequestInitialLoad:
-                                          _requestInitialListLoadOnce,
-                                      onLoadMore: (listId, pageSizeHint) =>
-                                          context
-                                              .read<TaskBoardDetailCubit>()
-                                              .loadListTasks(
-                                                listId: listId,
-                                                loadMore: true,
-                                                pageSizeHint: pageSizeHint,
-                                              ),
-                                      onRetryLoad: (listId, pageSizeHint) =>
-                                          context
-                                              .read<TaskBoardDetailCubit>()
-                                              .loadListTasks(
-                                                listId: listId,
-                                                forceRefresh: true,
-                                                pageSizeHint: pageSizeHint,
-                                              ),
-                                      onTaskTap: (task) => _openTaskDetails(
-                                        context,
-                                        task,
-                                        sortedLists,
-                                      ),
-                                      onTaskMove: (task) => _openMoveTaskPicker(
-                                        context,
-                                        task,
-                                        sortedLists,
-                                      ),
-                                      onCreateTask: (listId) =>
-                                          _openTaskCreateSheet(
-                                            context,
-                                            lists: sortedLists,
-                                            defaultListId: listId,
-                                          ),
-                                      onEditList: (list) =>
-                                          _openEditListDialog(context, list),
-                                    )
-                                  : _TaskBoardKanbanView(
-                                      boardId: widget.boardId,
-                                      lists: sortedLists,
-                                      tasksByList: filteredByList,
-                                      state: state,
-                                      board: detail,
-                                      bottomPadding: bottomPadding,
-                                      viewportHeight: constraints.maxHeight,
-                                      kanbanVerticalScrollController:
-                                          _kanbanVerticalScrollController,
-                                      kanbanHorizontalScrollController:
-                                          _kanbanHorizontalScrollController,
-                                      onRequestInitialLoad:
-                                          _requestInitialListLoadOnce,
-                                      onLoadMore: (listId, pageSizeHint) =>
-                                          context
-                                              .read<TaskBoardDetailCubit>()
-                                              .loadListTasks(
-                                                listId: listId,
-                                                loadMore: true,
-                                                pageSizeHint: pageSizeHint,
-                                              ),
-                                      onRetryLoad: (listId, pageSizeHint) =>
-                                          context
-                                              .read<TaskBoardDetailCubit>()
-                                              .loadListTasks(
-                                                listId: listId,
-                                                forceRefresh: true,
-                                                pageSizeHint: pageSizeHint,
-                                              ),
-                                      onTaskTap: (task) => _openTaskDetails(
-                                        context,
-                                        task,
-                                        sortedLists,
-                                      ),
-                                      onTaskMove: (task) => _openMoveTaskPicker(
-                                        context,
-                                        task,
-                                        sortedLists,
-                                      ),
-                                      onCreateTask: (listId) =>
-                                          _openTaskCreateSheet(
-                                            context,
-                                            lists: sortedLists,
-                                            defaultListId: listId,
-                                          ),
-                                      onEditList: (list) =>
-                                          _openEditListDialog(context, list),
-                                    ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                        },
+                      );
+                    },
                   ),
                 ),
                 SpeedDialFab(
@@ -985,6 +912,132 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     );
 
     await showAdaptiveDrawer(context: context, builder: (_) => content);
+  }
+
+  Future<void> _openSearchSheet(BuildContext context) async {
+    final cubit = context.read<TaskBoardDetailCubit>();
+    if (_searchController.text != cubit.state.searchQuery) {
+      _searchController.value = TextEditingValue(
+        text: cubit.state.searchQuery,
+        selection: TextSelection.collapsed(
+          offset: cubit.state.searchQuery.length,
+        ),
+      );
+    }
+
+    await showAdaptiveDrawer(
+      context: context,
+      builder: (drawerContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.taskBoardDetailSearchTitle,
+                      style: shad.Theme.of(context).typography.large.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const shad.Gap(12),
+                    shad.TextField(
+                      controller: _searchController,
+                      hintText: context.l10n.taskBoardDetailSearchPlaceholder,
+                      onChanged: (value) {
+                        cubit.setSearchQuery(value);
+                        setModalState(() {});
+                      },
+                    ),
+                    const shad.Gap(12),
+                    Row(
+                      children: [
+                        if (_searchController.text.trim().isNotEmpty)
+                          shad.OutlineButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              cubit.setSearchQuery('');
+                              setModalState(() {});
+                            },
+                            child: Text(context.l10n.commonClearSearch),
+                          ),
+                        const Spacer(),
+                        shad.PrimaryButton(
+                          onPressed: () => Navigator.of(drawerContext).pop(),
+                          child: Text(context.l10n.taskBoardDetailSearchDone),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _commitTimelineTaskChange(
+    BuildContext context, {
+    required TaskBoardTask task,
+    required String listId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final cubit = context.read<TaskBoardDetailCubit>();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
+
+    try {
+      await cubit.updateTask(
+        taskId: task.id,
+        name: task.name?.trim().isNotEmpty == true
+            ? task.name!.trim()
+            : context.l10n.taskBoardDetailUntitledTask,
+        description: task.description,
+        priority: task.priority,
+        startDate: startDate,
+        endDate: endDate,
+        estimationPoints: task.estimationPoints,
+        labelIds: task.labelIds,
+        projectIds: task.projectIds,
+        assigneeIds: task.assigneeIds,
+      );
+      if (!context.mounted) {
+        return;
+      }
+      if (listId != task.listId) {
+        await cubit.moveTask(taskId: task.id, listId: listId);
+      }
+    } on ApiException catch (error) {
+      if (!toastContext.mounted) {
+        return;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(
+            error.message.trim().isNotEmpty
+                ? error.message
+                : fallbackErrorMessage,
+          ),
+        ),
+      );
+    } on Exception {
+      if (!toastContext.mounted) {
+        return;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) =>
+            shad.Alert.destructive(content: Text(fallbackErrorMessage)),
+      );
+    }
   }
 
   Future<void> _openMoveTaskPicker(

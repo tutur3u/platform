@@ -1,12 +1,35 @@
 part of 'shell_page.dart';
 
 extension _ShellPageInteractions on _ShellPageState {
+  void _onInjectedMiniNavItemTapped(
+    Key? key,
+    ShellMiniNavRegistration? registration,
+  ) {
+    if (registration == null) {
+      return;
+    }
+
+    final selected = registration.items.firstWhere(
+      (item) => _injectedMiniNavKey(registration.ownerId, item.id) == key,
+      orElse: () => registration.items.first,
+    );
+
+    if (!selected.enabled) {
+      return;
+    }
+
+    selected.onPressed?.call();
+  }
+
   Future<void> _onMiniAppItemTapped(
     Key? key,
     BuildContext context,
-    AppModule activeModule,
+    AppModule? activeModule,
     List<MiniAppNavItem> activeMiniNavItems,
   ) async {
+    if (activeModule == null) {
+      return;
+    }
     _debugBack(
       'miniAppNav.tap',
       'key=$key activeModule=${activeModule.id} '

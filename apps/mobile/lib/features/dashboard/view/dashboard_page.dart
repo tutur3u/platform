@@ -15,6 +15,7 @@ import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
+import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
@@ -1007,65 +1008,131 @@ class _TaskRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = _priorityColor(task.priority);
     final theme = Theme.of(context);
-    final background = Color.alphaBlend(
-      accent.withValues(alpha: 0.1),
-      theme.colorScheme.surfaceContainerLow,
-    );
+    final boardName = task.list?.board?.name;
+    final listName = task.list?.name;
+    final dueLabel = _dueLabel(context, task.endDate);
+    final priorityLabel = switch (task.priority) {
+      'critical' => context.l10n.tasksPriorityCritical,
+      'high' => context.l10n.tasksPriorityHigh,
+      'low' => context.l10n.tasksPriorityLow,
+      _ => context.l10n.tasksPriorityNormal,
+    };
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: background.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.28),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            margin: const EdgeInsets.only(top: 4),
-            decoration: BoxDecoration(
-              color: accent,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  task.name ?? 'Untitled task',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => openUserTaskBoardDetail(context, task),
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  accent.withValues(alpha: 0.14),
+                  theme.colorScheme.surfaceContainerLow,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  [
-                        task.list?.board?.name,
-                        task.list?.name,
-                        _dueLabel(context, task.endDate),
-                      ]
-                      .whereType<String>()
-                      .where((value) => value.isNotEmpty)
-                      .join(' • '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                Color.alphaBlend(
+                  accent.withValues(alpha: 0.06),
+                  theme.colorScheme.surfaceContainerLowest,
                 ),
               ],
             ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: accent.withValues(alpha: 0.26),
+            ),
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    margin: const EdgeInsets.only(top: 5),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task.name ?? context.l10n.tasksUntitled,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (boardName != null && boardName.isNotEmpty)
+                              _DashboardTaskPill(
+                                icon: Icons.view_kanban_outlined,
+                                label: boardName,
+                              ),
+                            if (listName != null && listName.isNotEmpty)
+                              _DashboardTaskPill(
+                                icon: Icons.list_alt_outlined,
+                                label: listName,
+                              ),
+                            _DashboardTaskPill(
+                              icon: Icons.schedule_outlined,
+                              label: dueLabel,
+                              accent: accent,
+                            ),
+                            _DashboardTaskPill(
+                              icon: Icons.flag_outlined,
+                              label: priorityLabel,
+                              accent: accent,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          context.l10n.dashboardOpenTasks,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.arrow_outward_rounded, size: 14),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1092,6 +1159,47 @@ class _TaskRow extends StatelessWidget {
     if (delta == 1) return l10n.dashboardTaskTomorrow;
     final formattedDate = DateFormat('EEE, d MMM').format(date);
     return '${l10n.dashboardTaskUpcoming} • $formattedDate';
+  }
+}
+
+class _DashboardTaskPill extends StatelessWidget {
+  const _DashboardTaskPill({
+    required this.icon,
+    required this.label,
+    this.accent,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foreground = accent ?? theme.colorScheme.onSurfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: foreground.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: foreground.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: foreground.withValues(alpha: 0.92)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: foreground.withValues(alpha: 0.96),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

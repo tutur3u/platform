@@ -1,1835 +1,40 @@
-/**
- * Bulk operations for kanban board using TanStack Query mutations
- * Handles batch updates for multiple selected tasks with proper optimistic updates
- *
- * Key Design Principles:
- * - Uses TanStack Query useMutation for all operations
- * - Optimistic updates with automatic rollback on error
- * - Cancels outgoing refetches to prevent race conditions
- * - No manual invalidation - relies on mutation lifecycle
- */
+'use client';
 
-import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { toast } from '@tuturuuu/ui/sonner';
-import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
-import { moveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { useEffect } from 'react';
-import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
-import { calculateDaysUntilEndOfWeek } from '../../../../utils/weekDateUtils';
+import {
+  useBulkClearAssignees,
+  useBulkClearLabels,
+  useBulkClearProjects,
+  useBulkDeleteTasks,
+} from './bulk-mutations-clear-delete';
+import {
+  useBulkMoveToBoard,
+  useBulkMoveToList,
+  useBulkMoveToStatus,
+} from './bulk-mutations-move';
+import {
+  useBulkAddAssignee,
+  useBulkAddLabel,
+  useBulkAddProject,
+  useBulkRemoveAssignee,
+  useBulkRemoveLabel,
+  useBulkRemoveProject,
+} from './bulk-mutations-relations';
+import {
+  useBulkUpdateCustomDueDate,
+  useBulkUpdateDueDate,
+  useBulkUpdateEstimation,
+  useBulkUpdatePriority,
+} from './bulk-mutations-updates';
+import { useBulkOperationI18n } from './bulk-operation-i18n';
+import type { BulkOperationsConfig } from './bulk-operation-types';
 
-interface WorkspaceProject {
-  id: string;
-  name: string;
-  status: string | null;
-}
-
-interface WorkspaceMember {
-  id: string;
-  display_name: string;
-  email: string;
-  avatar_url: string | null;
-}
-
-interface BulkOperationsConfig {
-  queryClient: QueryClient;
-  supabase?: SupabaseClient;
-  wsId: string;
-  boardId: string;
-  selectedTasks: Set<string>;
-  columns: TaskList[];
-  workspaceLabels?: WorkspaceLabel[];
-  workspaceProjects?: WorkspaceProject[];
-  workspaceMembers?: WorkspaceMember[];
-  weekStartsOn?: 0 | 1 | 6;
-  setBulkWorking: (working: boolean) => void;
-  clearSelection: () => void;
-  setBulkDeleteOpen: (open: boolean) => void;
-  broadcast?: BoardBroadcastFn | null;
-}
-
-/**
- * Bulk update priority mutation
- */
-function useBulkUpdatePriority(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      priority,
-      taskIds,
-    }: {
-      priority: Task['priority'] | null;
-      taskIds: string[];
-    }) => {
-      console.log('🔄 Bulk priority mutation called with taskIds:', taskIds);
-      // Update one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ priority })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to update priority for all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, priority, taskIds, failures };
-    },
-    onMutate: async ({ priority, taskIds }) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-      // Snapshot previous state
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      // Optimistic update
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => (taskIdSet.has(t.id) ? { ...t, priority } : t));
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      // Rollback on error
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk priority update failed', error);
-      toast.error('Failed to update priority for selected tasks');
-    },
-    onSuccess: (data) => {
-      console.log(
-        `✅ Updated ${data.count} tasks with priority: ${data.priority}`
-      );
-      for (const tid of data.taskIds) {
-        broadcast?.('task:upsert', {
-          task: { id: tid, priority: data.priority },
-        });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial update completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
-        });
-      } else {
-        toast.success('Priority updated', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk update estimation mutation
- */
-function useBulkUpdateEstimation(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      points,
-      taskIds,
-    }: {
-      points: number | null;
-      taskIds: string[];
-    }) => {
-      console.log('🔄 Bulk estimation mutation called with taskIds:', taskIds);
-      // Update one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ estimation_points: points })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to update estimation for all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, points, taskIds, failures };
-    },
-    onMutate: async ({ points, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, estimation_points: points } : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk estimation update failed', error);
-      toast.error('Failed to update estimation for selected tasks');
-    },
-    onSuccess: (data) => {
-      console.log(
-        `✅ Updated ${data.count} tasks with estimation: ${data.points}`
-      );
-      for (const tid of data.taskIds) {
-        broadcast?.('task:upsert', {
-          task: { id: tid, estimation_points: data.points },
-        });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial update completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
-        });
-      } else {
-        toast.success('Estimation updated', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk update due date mutation
- */
-function useBulkUpdateDueDate(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  weekStartsOn: 0 | 1 | 6 = 0,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      preset,
-      taskIds,
-    }: {
-      preset: 'today' | 'tomorrow' | 'this_week' | 'next_week' | 'clear';
-      taskIds: string[];
-    }) => {
-      console.log('🔄 Bulk due date mutation called with taskIds:', taskIds);
-      let newDate: string | null = null;
-      if (preset !== 'clear') {
-        const d = new Date();
-        if (preset === 'tomorrow') {
-          d.setDate(d.getDate() + 1);
-        } else if (preset === 'this_week') {
-          // Calculate days until end of week (respects first day of week setting)
-          d.setDate(d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn));
-        } else if (preset === 'next_week') {
-          // Calculate days until end of next week
-          d.setDate(
-            d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn) + 7
-          );
-        }
-        d.setHours(23, 59, 59, 999);
-        newDate = d.toISOString();
-      }
-
-      // Update one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ end_date: newDate })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to update due date for all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, end_date: newDate, taskIds, failures };
-    },
-    onMutate: async ({ preset, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      let newDate: string | null = null;
-      if (preset !== 'clear') {
-        const d = new Date();
-        if (preset === 'tomorrow') {
-          d.setDate(d.getDate() + 1);
-        } else if (preset === 'this_week') {
-          // Calculate days until end of week (respects first day of week setting)
-          d.setDate(d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn));
-        } else if (preset === 'next_week') {
-          // Calculate days until end of next week
-          d.setDate(
-            d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn) + 7
-          );
-        }
-        d.setHours(23, 59, 59, 999);
-        newDate = d.toISOString();
-      }
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk due date update failed', error);
-      toast.error('Failed to update due date for selected tasks');
-    },
-    onSuccess: (data) => {
-      console.log(
-        `✅ Updated ${data.count} tasks with due date: ${data.end_date}`
-      );
-      for (const tid of data.taskIds) {
-        broadcast?.('task:upsert', {
-          task: { id: tid, end_date: data.end_date },
-        });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial update completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
-        });
-      } else {
-        toast.success('Due date updated', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk update custom due date mutation
- */
-function useBulkUpdateCustomDueDate(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      date,
-      taskIds,
-    }: {
-      date: Date | null;
-      taskIds: string[];
-    }) => {
-      console.log(
-        '🔄 Bulk custom due date mutation called with taskIds:',
-        taskIds
-      );
-      const newDate = date ? date.toISOString() : null;
-
-      // Update one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ end_date: newDate })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to update due date for all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, end_date: newDate, taskIds, failures };
-    },
-    onMutate: async ({ date, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const newDate = date ? date.toISOString() : null;
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk custom due date update failed', error);
-      toast.error('Failed to update due date for selected tasks');
-    },
-    onSuccess: (data) => {
-      console.log(
-        `✅ Updated ${data.count} tasks with custom due date: ${data.end_date}`
-      );
-      for (const tid of data.taskIds) {
-        broadcast?.('task:upsert', {
-          task: { id: tid, end_date: data.end_date },
-        });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial update completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
-        });
-      } else {
-        toast.success('Due date updated', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk move to board mutation
- */
-function useBulkMoveToBoard(
-  queryClient: QueryClient,
-  wsId: string,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      targetBoardId,
-      targetListId,
-      taskIds,
-    }: {
-      targetBoardId: string;
-      targetListId: string;
-      taskIds: string[];
-    }) => {
-      console.log(
-        '🔄 Bulk move to board mutation called with taskIds:',
-        taskIds,
-        'targetBoardId:',
-        targetBoardId
-      );
-
-      // Move one by one to ensure triggers fire for each task and consistent logic
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      const movedTasks: Task[] = [];
-
-      for (const taskId of taskIds) {
-        try {
-          const result = await moveTaskToBoard(
-            wsId,
-            taskId,
-            targetListId,
-            targetBoardId
-          );
-          movedTasks.push(result.task);
-          successCount++;
-        } catch (error: any) {
-          failures.push({ taskId, error: error.message || 'Unknown error' });
-        }
-      }
-
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to move all ${taskIds.length} tasks to board ${targetBoardId}`
-        );
-      }
-
-      return {
-        count: successCount,
-        targetBoardId,
-        targetListId,
-        taskIds,
-        failures,
-        movedTasks,
-      };
-    },
-    onMutate: async ({ targetBoardId, targetListId, taskIds }) => {
-      // Cancel outgoing refetches for both boards
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks', targetBoardId] });
-
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-      const previousTargetTasks = queryClient.getQueryData([
-        'tasks',
-        targetBoardId,
-      ]);
-
-      const taskIdSet = new Set(taskIds);
-
-      // Optimistically remove from source board
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.filter((t) => !taskIdSet.has(t.id));
-        }
-      );
-
-      // Optimistically add to target board (best effort estimation)
-      // We need to fetch the tasks from the source cache first to move them
-      const tasksToMove = (previousTasks as Task[] | undefined)?.filter((t) =>
-        taskIdSet.has(t.id)
-      );
-
-      if (tasksToMove && tasksToMove.length > 0) {
-        queryClient.setQueryData(
-          ['tasks', targetBoardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old; // If target board not loaded, we don't need to add optimistic updates
-
-            // We need to check target list status for completion to set closed_at correctly
-            // This is hard to do optimistically without target list data, so we'll guess or assume active
-            // Ideally we'd look up the target list in cache, but let's just update list_id for now
-            const optimisticMovedTasks = tasksToMove.map((t) => ({
-              ...t,
-              list_id: targetListId,
-              // We don't change closed_at here because we don't know target list status easily
-              // The server response will fix it quickly
-            }));
-
-            return [...old, ...optimisticMovedTasks];
-          }
-        );
-      }
-
-      return { previousTasks, previousTargetTasks, tasksToMove };
-    },
-    onError: (error, variables, context) => {
-      // Rollback both boards
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      if (context?.previousTargetTasks) {
-        queryClient.setQueryData(
-          ['tasks', variables.targetBoardId],
-          context.previousTargetTasks
-        );
-      }
-      console.error('Bulk move to board failed', error);
-      toast.error('Failed to move selected tasks to another board');
-    },
-    onSuccess: (data, _variables, context) => {
-      console.log(
-        `✅ Moved ${data.count} tasks to board ${data.targetBoardId}`
-      );
-      const movedIds = new Set(data.movedTasks.map((task) => task.id));
-      const failedTasks = (context?.tasksToMove ?? []).filter(
-        (task) => !movedIds.has(task.id)
-      );
-
-      if (failedTasks.length > 0) {
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            const existing = old ?? [];
-            const failedIdSet = new Set(failedTasks.map((task) => task.id));
-            const preserved = existing.filter(
-              (task) => !failedIdSet.has(task.id)
-            );
-            return [...preserved, ...failedTasks];
-          }
-        );
-      }
-
-      // Broadcast task deletion from source board
-      for (const tid of data.movedTasks.map((task) => task.id)) {
-        broadcast?.('task:delete', { taskId: tid });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial move completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
-        });
-      } else {
-        toast.success('Tasks moved to board', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
-        });
-      }
-
-      // Update target board cache with actual server results (including correct closed_at status)
-      if (data.movedTasks && data.movedTasks.length > 0) {
-        queryClient.setQueryData(
-          ['tasks', data.targetBoardId],
-          (old: Task[] | undefined) => {
-            if (!old) return data.movedTasks;
-
-            // Remove any optimistic versions and add real ones
-            const failedIds = new Set(failedTasks.map((task) => task.id));
-            const filteredOld = old.filter(
-              (task) => !movedIds.has(task.id) && !failedIds.has(task.id)
-            );
-
-            return [...filteredOld, ...data.movedTasks];
-          }
-        );
-      }
-    },
-  });
-}
-
-/**
- * Bulk move to list mutation (general - accepts any list ID)
- */
-function useBulkMoveToList(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      listId,
-      listName,
-      taskIds,
-    }: {
-      listId: string;
-      listName: string;
-      taskIds: string[];
-    }) => {
-      console.log(
-        '🔄 Bulk move to list mutation called with taskIds:',
-        taskIds
-      );
-
-      // Update one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      const taskTimestamps = new Map<
-        string,
-        { completed_at: string | null; closed_at: string | null }
-      >();
-      for (const taskId of taskIds) {
-        const { data, error } = await supabase
-          .from('tasks')
-          .update({ list_id: listId })
-          .eq('id', taskId)
-          .select('id, completed_at, closed_at')
-          .single();
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          taskTimestamps.set(taskId, {
-            completed_at: data.completed_at,
-            closed_at: data.closed_at,
-          });
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(`Failed to move all ${taskIds.length} tasks to list`);
-      }
-      return {
-        count: successCount,
-        listId,
-        listName,
-        taskIds,
-        failures,
-        taskTimestamps,
-      };
-    },
-    onMutate: async ({ listId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, list_id: listId } : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk move to list failed', error);
-      toast.error('Failed to move selected tasks');
-    },
-    onSuccess: (data) => {
-      console.log(`✅ Moved ${data.count} tasks to ${data.listName}`);
-      // Update sender's own cache with DB-computed timestamps
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            const timestamps = data.taskTimestamps.get(t.id);
-            return timestamps
-              ? {
-                  ...t,
-                  completed_at: timestamps.completed_at,
-                  closed_at: timestamps.closed_at,
-                }
-              : t;
-          });
-        }
-      );
-      for (const tid of data.taskIds) {
-        const timestamps = data.taskTimestamps.get(tid);
-        broadcast?.('task:upsert', {
-          task: {
-            id: tid,
-            list_id: data.listId,
-            completed_at: timestamps?.completed_at,
-            closed_at: timestamps?.closed_at,
-          },
-        });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial move completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
-        });
-      } else {
-        toast.success(`Tasks moved to ${data.listName}`, {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk move to status mutation (for quick actions - done/closed)
- */
-function useBulkMoveToStatus(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  columns: TaskList[],
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      status,
-      taskIds,
-    }: {
-      status: 'done' | 'closed';
-      taskIds: string[];
-    }) => {
-      console.log(
-        '🔄 Bulk move to status mutation called with taskIds:',
-        taskIds
-      );
-      const targetList = columns.find((c) => c.status === status);
-      if (!targetList) throw new Error(`No ${status} list found`);
-
-      // Update one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      const taskTimestamps = new Map<
-        string,
-        { completed_at: string | null; closed_at: string | null }
-      >();
-      for (const taskId of taskIds) {
-        const { data, error } = await supabase
-          .from('tasks')
-          .update({ list_id: targetList.id })
-          .eq('id', taskId)
-          .select('id, completed_at, closed_at')
-          .single();
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          taskTimestamps.set(taskId, {
-            completed_at: data.completed_at,
-            closed_at: data.closed_at,
-          });
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to move all ${taskIds.length} tasks to ${status}`
-        );
-      }
-      return {
-        count: successCount,
-        status,
-        targetListId: targetList.id,
-        taskIds,
-        failures,
-        taskTimestamps,
-      };
-    },
-    onMutate: async ({ status, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const targetList = columns.find((c) => c.status === status);
-      if (!targetList) return { previousTasks };
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, list_id: targetList.id } : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk status move failed', error);
-      toast.error('Failed to move selected tasks');
-    },
-    onSuccess: (data) => {
-      console.log(`✅ Moved ${data.count} tasks to ${data.status} list`);
-      // Update sender's own cache with DB-computed timestamps
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            const timestamps = data.taskTimestamps.get(t.id);
-            return timestamps
-              ? {
-                  ...t,
-                  completed_at: timestamps.completed_at,
-                  closed_at: timestamps.closed_at,
-                }
-              : t;
-          });
-        }
-      );
-      for (const tid of data.taskIds) {
-        const timestamps = data.taskTimestamps.get(tid);
-        broadcast?.('task:upsert', {
-          task: {
-            id: tid,
-            list_id: data.targetListId,
-            completed_at: timestamps?.completed_at,
-            closed_at: timestamps?.closed_at,
-          },
-        });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial move completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
-        });
-      } else {
-        toast.success(`Tasks moved to ${data.status}`, {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk add label mutation
- */
-function useBulkAddLabel(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  workspaceLabels: WorkspaceLabel[],
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      labelId,
-      taskIds,
-    }: {
-      labelId: string;
-      taskIds: string[];
-    }) => {
-      console.log('🔄 Bulk add label mutation called with taskIds:', taskIds);
-
-      // Insert one by one to ensure triggers fire for each task
-      // Note: We try all tasks - duplicates are handled gracefully
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase.from('task_labels').insert({
-          task_id: taskId,
-          label_id: labelId,
-        });
-        // Ignore duplicate errors (already has label)
-        if (
-          error &&
-          error.code !== '23505' &&
-          !String(error.message).toLowerCase().includes('duplicate')
-        ) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(`Failed to add label to all ${taskIds.length} tasks`);
-      }
-
-      return { count: successCount, labelId, taskIds, failures };
-    },
-    onMutate: async ({ labelId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const current = (previousTasks as Task[] | undefined) || [];
-      const labelMeta = workspaceLabels.find((l) => l.id === labelId);
-
-      const missingTaskIds = taskIds.filter((id) => {
-        const t = current.find((ct) => ct.id === id);
-        return !t?.labels?.some((l) => l.id === labelId);
-      });
-
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            if (!missingTaskIds.includes(t.id)) return t;
-            return {
-              ...t,
-              labels: [
-                ...(t.labels || []),
-                {
-                  id: labelId,
-                  name: labelMeta?.name || 'Label',
-                  color: labelMeta?.color || '#3b82f6',
-                  created_at: new Date().toISOString(),
-                },
-              ],
-            } as Task;
-          });
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk add label failed', error);
-      toast.error('Failed to add label to selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      const labelMeta = workspaceLabels.find((l) => l.id === data.labelId);
-      const labelName = labelMeta?.name || 'Label';
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial label addition completed', {
-          description: `Added "${labelName}" to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Label added', {
-          description: `Added "${labelName}" to ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk remove label mutation
- */
-function useBulkRemoveLabel(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  workspaceLabels: WorkspaceLabel[],
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      labelId,
-      taskIds,
-    }: {
-      labelId: string;
-      taskIds: string[];
-    }) => {
-      console.log(
-        '🔄 Bulk remove label mutation called with taskIds:',
-        taskIds
-      );
-      // Delete one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_labels')
-          .delete()
-          .eq('task_id', taskId)
-          .eq('label_id', labelId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to remove label from all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, labelId, taskIds, failures };
-    },
-    onMutate: async ({ labelId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id)
-              ? {
-                  ...t,
-                  labels: (t.labels || []).filter((l) => l.id !== labelId),
-                }
-              : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk remove label failed', error);
-      toast.error('Failed to remove label from selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      const labelMeta = workspaceLabels.find((l) => l.id === data.labelId);
-      const labelName = labelMeta?.name || 'Label';
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial label removal completed', {
-          description: `Removed "${labelName}" from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Label removed', {
-          description: `Removed "${labelName}" from ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk add project mutation
- */
-function useBulkAddProject(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  workspaceProjects: WorkspaceProject[],
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      projectId,
-      taskIds,
-    }: {
-      projectId: string;
-      taskIds: string[];
-    }) => {
-      console.log('🔄 Bulk add project mutation called with taskIds:', taskIds);
-
-      // Insert one by one to ensure triggers fire for each task
-      // Note: We try all tasks - duplicates are handled gracefully
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase.from('task_project_tasks').insert({
-          task_id: taskId,
-          project_id: projectId,
-        });
-        // Ignore duplicate errors (already has project)
-        if (
-          error &&
-          error.code !== '23505' &&
-          !String(error.message).toLowerCase().includes('duplicate')
-        ) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(`Failed to add project to all ${taskIds.length} tasks`);
-      }
-
-      return { count: successCount, projectId, taskIds, failures };
-    },
-    onMutate: async ({ projectId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const current = (previousTasks as Task[] | undefined) || [];
-      const projectMeta = workspaceProjects.find((p) => p.id === projectId);
-
-      const missingTaskIds = taskIds.filter((id) => {
-        const t = current.find((ct) => ct.id === id);
-        return !t?.projects?.some((p) => p.id === projectId);
-      });
-
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            if (!missingTaskIds.includes(t.id)) return t;
-            return {
-              ...t,
-              projects: [
-                ...(t.projects || []),
-                {
-                  id: projectId,
-                  name: projectMeta?.name || 'Project',
-                  status: projectMeta?.status || null,
-                },
-              ],
-            } as Task;
-          });
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk add project failed', error);
-      toast.error('Failed to add project to selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      const projectMeta = workspaceProjects.find(
-        (p) => p.id === data.projectId
-      );
-      const projectName = projectMeta?.name || 'Project';
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial project addition completed', {
-          description: `Added "${projectName}" to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Project added', {
-          description: `Added "${projectName}" to ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk remove project mutation
- */
-function useBulkRemoveProject(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  workspaceProjects: WorkspaceProject[],
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      projectId,
-      taskIds,
-    }: {
-      projectId: string;
-      taskIds: string[];
-    }) => {
-      console.log(
-        '🔄 Bulk remove project mutation called with taskIds:',
-        taskIds
-      );
-      // Delete one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_project_tasks')
-          .delete()
-          .eq('task_id', taskId)
-          .eq('project_id', projectId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to remove project from all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, projectId, taskIds, failures };
-    },
-    onMutate: async ({ projectId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id)
-              ? {
-                  ...t,
-                  projects: (t.projects || []).filter(
-                    (p) => p.id !== projectId
-                  ),
-                }
-              : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk remove project failed', error);
-      toast.error('Failed to remove project from selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      const projectMeta = workspaceProjects.find(
-        (p) => p.id === data.projectId
-      );
-      const projectName = projectMeta?.name || 'Project';
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial project removal completed', {
-          description: `Removed "${projectName}" from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Project removed', {
-          description: `Removed "${projectName}" from ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk add assignee mutation
- */
-function useBulkAddAssignee(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  workspaceMembers: WorkspaceMember[] = [],
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      assigneeId,
-      taskIds,
-    }: {
-      assigneeId: string;
-      taskIds: string[];
-    }) => {
-      console.log(
-        '🔄 Bulk add assignee mutation called with taskIds:',
-        taskIds
-      );
-
-      // Insert one by one to ensure triggers fire for each task
-      // Note: We try all tasks - duplicates are handled gracefully
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase.from('task_assignees').insert({
-          task_id: taskId,
-          user_id: assigneeId,
-        });
-        // Ignore duplicate errors (already has assignee)
-        if (
-          error &&
-          error.code !== '23505' &&
-          !String(error.message).toLowerCase().includes('duplicate')
-        ) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to add assignee to all ${taskIds.length} tasks`
-        );
-      }
-
-      return { count: successCount, assigneeId, taskIds, failures };
-    },
-    onMutate: async ({ assigneeId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const current = (previousTasks as Task[] | undefined) || [];
-
-      const missingTaskIds = taskIds.filter((id) => {
-        const t = current.find((ct) => ct.id === id);
-        return !t?.assignees?.some((a) => a.id === assigneeId);
-      });
-
-      // Look up assignee data from workspace members if available
-      const member = workspaceMembers.find((m) => m.id === assigneeId);
-      const assigneeData = member || {
-        id: assigneeId,
-        display_name: 'Loading...',
-        email: '',
-        avatar_url: null,
-      };
-
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            if (!missingTaskIds.includes(t.id)) return t;
-            // Use real assignee data if available, otherwise use placeholder
-            // The realtime subscription will reconcile the final data
-            return {
-              ...t,
-              assignees: [...(t.assignees || []), assigneeData],
-            } as Task;
-          });
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk add assignee failed', error);
-      toast.error('Failed to add assignee to selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial assignee addition completed', {
-          description: `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Assignee added', {
-          description: `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk remove assignee mutation
- */
-function useBulkRemoveAssignee(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({
-      assigneeId,
-      taskIds,
-    }: {
-      assigneeId: string;
-      taskIds: string[];
-    }) => {
-      console.log(
-        '🔄 Bulk remove assignee mutation called with taskIds:',
-        taskIds
-      );
-      // Delete one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_assignees')
-          .delete()
-          .eq('task_id', taskId)
-          .eq('user_id', assigneeId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(
-          `Failed to remove assignee from all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, assigneeId, taskIds, failures };
-    },
-    onMutate: async ({ assigneeId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id)
-              ? {
-                  ...t,
-                  assignees: (t.assignees || []).filter(
-                    (a) => a.id !== assigneeId
-                  ),
-                }
-              : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk remove assignee failed', error);
-      toast.error('Failed to remove assignee from selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial assignee removal completed', {
-          description: `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Assignee removed', {
-          description: `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk clear ALL labels from selected tasks
- */
-function useBulkClearLabels(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
-      console.log(
-        '🔄 Bulk clear labels mutation called with taskIds:',
-        taskIds
-      );
-      // Delete one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_labels')
-          .delete()
-          .eq('task_id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0 && taskIds.length > 0) {
-        throw new Error(
-          `Failed to clear labels from all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, taskIds, failures };
-    },
-    onMutate: async ({ taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, labels: [] } : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk clear labels failed', error);
-      toast.error('Failed to clear labels from selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial label clear completed', {
-          description: `Cleared labels from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Labels cleared', {
-          description: `Cleared all labels from ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk clear ALL projects from selected tasks
- */
-function useBulkClearProjects(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
-      console.log(
-        '🔄 Bulk clear projects mutation called with taskIds:',
-        taskIds
-      );
-      // Delete one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_project_tasks')
-          .delete()
-          .eq('task_id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0 && taskIds.length > 0) {
-        throw new Error(
-          `Failed to clear projects from all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, taskIds, failures };
-    },
-    onMutate: async ({ taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, projects: [] } : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk clear projects failed', error);
-      toast.error('Failed to clear projects from selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial project clear completed', {
-          description: `Cleared projects from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Projects cleared', {
-          description: `Cleared all projects from ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk clear ALL assignees from selected tasks
- */
-function useBulkClearAssignees(
-  queryClient: QueryClient,
-  supabase: SupabaseClient,
-  boardId: string,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
-      console.log(
-        '🔄 Bulk clear assignees mutation called with taskIds:',
-        taskIds
-      );
-      // Delete one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_assignees')
-          .delete()
-          .eq('task_id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
-          successCount++;
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0 && taskIds.length > 0) {
-        throw new Error(
-          `Failed to clear assignees from all ${taskIds.length} tasks`
-        );
-      }
-      return { count: successCount, taskIds, failures };
-    },
-    onMutate: async ({ taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, assignees: [] } : t
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk clear assignees failed', error);
-      toast.error('Failed to clear assignees from selected tasks');
-    },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
-        broadcast?.('task:relations-changed', { taskId: tid });
-      }
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial assignee clear completed', {
-          description: `Cleared assignees from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
-      } else {
-        toast.success('Assignees cleared', {
-          description: `Cleared all assignees from ${data.count} task${data.count === 1 ? '' : 's'}`,
-        });
-      }
-    },
-  });
-}
-
-/**
- * Bulk delete tasks mutation
- */
-function useBulkDeleteTasks(
-  queryClient: QueryClient,
-  wsId: string,
-  boardId: string,
-  clearSelection: () => void,
-  setBulkDeleteOpen: (open: boolean) => void,
-  broadcast?: BoardBroadcastFn | null
-) {
-  return useMutation({
-    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
-      console.log('🔄 Bulk delete mutation called with taskIds:', taskIds);
-      // Update one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const failures: Array<{ taskId: string; error: string }> = [];
-      for (const taskId of taskIds) {
-        try {
-          await updateWorkspaceTask(
-            wsId,
-            taskId,
-            { deleted: true },
-            {
-              baseUrl:
-                typeof window !== 'undefined'
-                  ? window.location.origin
-                  : undefined,
-            }
-          );
-          successCount++;
-        } catch (error) {
-          failures.push({
-            taskId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
-      // If all failed, throw to trigger onError handler
-      if (successCount === 0) {
-        throw new Error(`Failed to delete all ${taskIds.length} tasks`);
-      }
-      return { count: successCount, taskIds, failures };
-    },
-    onMutate: async ({ taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      // Optimistically remove from cache
-      const taskIdSet = new Set(taskIds);
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.filter((t) => !taskIdSet.has(t.id));
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-      console.error('Bulk delete failed', error);
-      toast.error('Failed to delete selected tasks');
-    },
-    onSuccess: (data) => {
-      console.log(`✅ Deleted ${data.count} tasks`);
-      for (const tid of data.taskIds) {
-        broadcast?.('task:delete', { taskId: tid });
-      }
-      clearSelection();
-      setBulkDeleteOpen(false);
-      if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial deletion completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} deleted, ${data.failures.length} failed to delete`,
-        });
-      } else {
-        toast.success('Deleted selected tasks');
-      }
-    },
-  });
-}
-
-/**
- * Hook that creates all bulk operations using TanStack Query mutations
- */
 export function useBulkOperations(config: BulkOperationsConfig) {
+  const i18n = useBulkOperationI18n();
+
   const {
     queryClient,
-    supabase: providedSupabase,
     wsId,
     boardId,
     selectedTasks,
@@ -1843,105 +48,118 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     setBulkDeleteOpen,
     broadcast,
   } = config;
-  const supabase = providedSupabase ?? createClient();
 
-  // Create all mutations (pass taskIds at call time, not hook creation time)
   const priorityMutation = useBulkUpdatePriority(
     queryClient,
-    supabase,
+    wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const estimationMutation = useBulkUpdateEstimation(
     queryClient,
-    supabase,
+    wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const dueDateMutation = useBulkUpdateDueDate(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     weekStartsOn,
-    broadcast
+    broadcast,
+    i18n
   );
   const customDueDateMutation = useBulkUpdateCustomDueDate(
     queryClient,
-    supabase,
+    wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const moveToListMutation = useBulkMoveToList(
     queryClient,
-    supabase,
+    wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const statusMutation = useBulkMoveToStatus(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     columns,
-    broadcast
+    broadcast,
+    i18n
   );
   const addLabelMutation = useBulkAddLabel(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceLabels,
-    broadcast
+    broadcast,
+    i18n
   );
   const removeLabelMutation = useBulkRemoveLabel(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceLabels,
-    broadcast
+    broadcast,
+    i18n
   );
   const addProjectMutation = useBulkAddProject(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceProjects,
-    broadcast
+    broadcast,
+    i18n
   );
   const removeProjectMutation = useBulkRemoveProject(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceProjects,
-    broadcast
+    broadcast,
+    i18n
   );
   const addAssigneeMutation = useBulkAddAssignee(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceMembers,
-    broadcast
+    broadcast,
+    i18n
   );
   const removeAssigneeMutation = useBulkRemoveAssignee(
     queryClient,
-    supabase,
+    wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const clearLabelsMutation = useBulkClearLabels(
     queryClient,
-    supabase,
+    wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const clearProjectsMutation = useBulkClearProjects(
     queryClient,
-    supabase,
+    wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const clearAssigneesMutation = useBulkClearAssignees(
     queryClient,
-    supabase,
+    wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const deleteMutation = useBulkDeleteTasks(
     queryClient,
@@ -1949,16 +167,17 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     boardId,
     clearSelection,
     setBulkDeleteOpen,
-    broadcast
+    broadcast,
+    i18n
   );
   const moveToBoardMutation = useBulkMoveToBoard(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
 
-  // Track loading state
   const isAnyMutationPending =
     priorityMutation.isPending ||
     estimationMutation.isPending ||
@@ -1978,107 +197,103 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     deleteMutation.isPending ||
     moveToBoardMutation.isPending;
 
-  // Update bulk working state (side effect, not memoization)
   useEffect(() => {
     setBulkWorking(isAnyMutationPending);
   }, [isAnyMutationPending, setBulkWorking]);
 
-  // Helper to get list ID by status
   function getListIdByStatus(status: 'done' | 'closed'): string | null {
     const list = columns.find((c) => c.status === status);
     return list ? String(list.id) : null;
   }
 
-  // Return wrapped mutation functions
-  // IMPORTANT: Capture taskIds at call time, not at hook creation time
   return {
     bulkUpdatePriority: async (priority: Task['priority'] | null) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await priorityMutation.mutateAsync({ priority, taskIds });
     },
     bulkUpdateEstimation: async (points: number | null) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await estimationMutation.mutateAsync({ points, taskIds });
     },
     bulkUpdateDueDate: async (
       preset: 'today' | 'tomorrow' | 'this_week' | 'next_week' | 'clear'
     ) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await dueDateMutation.mutateAsync({ preset, taskIds });
     },
     bulkUpdateCustomDueDate: async (date: Date | null) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await customDueDateMutation.mutateAsync({ date, taskIds });
     },
     bulkMoveToList: async (listId: string, listName: string) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await moveToListMutation.mutateAsync({ listId, listName, taskIds });
     },
     bulkMoveToStatus: async (status: 'done' | 'closed') => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       const listId = getListIdByStatus(status);
       if (!listId) return;
       await statusMutation.mutateAsync({ status, taskIds });
     },
     bulkAddLabel: async (labelId: string) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await addLabelMutation.mutateAsync({ labelId, taskIds });
     },
     bulkRemoveLabel: async (labelId: string) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await removeLabelMutation.mutateAsync({ labelId, taskIds });
     },
     bulkAddProject: async (projectId: string) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await addProjectMutation.mutateAsync({ projectId, taskIds });
     },
     bulkRemoveProject: async (projectId: string) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await removeProjectMutation.mutateAsync({ projectId, taskIds });
     },
     bulkAddAssignee: async (assigneeId: string) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await addAssigneeMutation.mutateAsync({ assigneeId, taskIds });
     },
     bulkRemoveAssignee: async (assigneeId: string) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await removeAssigneeMutation.mutateAsync({ assigneeId, taskIds });
     },
     bulkClearLabels: async () => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await clearLabelsMutation.mutateAsync({ taskIds });
     },
     bulkClearProjects: async () => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await clearProjectsMutation.mutateAsync({ taskIds });
     },
     bulkClearAssignees: async () => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await clearAssigneesMutation.mutateAsync({ taskIds });
     },
     bulkDeleteTasks: async () => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await deleteMutation.mutateAsync({ taskIds });
     },
     bulkMoveToBoard: async (targetBoardId: string, targetListId: string) => {
       const taskIds = Array.from(selectedTasks);
-      if (taskIds.length === 0) return;
+      if (!taskIds.length) return;
       await moveToBoardMutation.mutateAsync({
         targetBoardId,
         targetListId,
@@ -2089,10 +304,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
   };
 }
 
-// Backward compatibility: Keep the old factory function signature but mark as deprecated
 export function createBulkOperations(_config: BulkOperationsConfig): never {
-  // This factory function has been deprecated in favor of useBulkOperations hook
-  // The kanban component should use useBulkOperations directly for proper React Query integration
   throw new Error(
     'createBulkOperations is deprecated. Use useBulkOperations hook instead.'
   );

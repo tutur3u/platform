@@ -50,7 +50,7 @@ export interface TaskDescriptionEditorProps {
   collaborationUser: { name: string; color: string } | null;
 
   // Callbacks
-  onImageUpload: (file: File) => Promise<string>;
+  onImageUpload?: (file: File) => Promise<string>;
   onEditorReady: (editor: Editor) => void;
   onDescriptionStorageLengthChange: (storageLength: number) => void;
   descriptionStorageLength: number;
