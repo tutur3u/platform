@@ -38,11 +38,17 @@ export interface NavLink {
   requireRootWorkspace?: boolean;
   disableOnProduction?: boolean;
   experimental?: 'alpha' | 'beta' | 'new';
-  deferredQueryParamsFromWorkspaceConfig?: {
-    configId: string;
-    queryParam: string;
-    onlyWhenPathPrefix?: string;
-  };
+  deferredQueryParamsFromWorkspaceConfig?:
+    | {
+        configId: string;
+        queryParam: string;
+        onlyWhenPathPrefix?: string;
+      }
+    | {
+        configId: string;
+        queryParam: string;
+        onlyWhenPathPrefix?: string;
+      }[];
 }
 
 interface Props {

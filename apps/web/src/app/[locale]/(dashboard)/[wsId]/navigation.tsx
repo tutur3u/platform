@@ -94,7 +94,10 @@ import {
   Wallet,
   Warehouse,
 } from '@tuturuuu/icons';
-import { DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api';
+import {
+  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   ROOT_WORKSPACE_ID,
@@ -622,10 +625,16 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/users/database`,
               icon: <BookUser className="h-5 w-5" />,
               disabled: usersDatabaseDisabled,
-              deferredQueryParamsFromWorkspaceConfig: {
-                configId: DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
-                queryParam: 'excludedGroups',
-              },
+              deferredQueryParamsFromWorkspaceConfig: [
+                {
+                  configId: DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
+                  queryParam: 'includedGroups',
+                },
+                {
+                  configId: DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+                  queryParam: 'excludedGroups',
+                },
+              ],
             },
             {
               title: t('workspace-users-tabs.groups'),

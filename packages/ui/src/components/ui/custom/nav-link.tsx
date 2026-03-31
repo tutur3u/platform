@@ -146,27 +146,46 @@ export function NavLink({
     !!href &&
     !newTab &&
     !!link.deferredQueryParamsFromWorkspaceConfig &&
-    (!link.deferredQueryParamsFromWorkspaceConfig.onlyWhenPathPrefix ||
-      matchesPathPrefix(
-        pathname,
-        link.deferredQueryParamsFromWorkspaceConfig.onlyWhenPathPrefix
-      ));
+    (Array.isArray(link.deferredQueryParamsFromWorkspaceConfig)
+      ? link.deferredQueryParamsFromWorkspaceConfig
+      : [link.deferredQueryParamsFromWorkspaceConfig]
+    ).every(
+      (deferredConfig) =>
+        !deferredConfig.onlyWhenPathPrefix ||
+        matchesPathPrefix(pathname, deferredConfig.onlyWhenPathPrefix)
+    );
 
-  const deferredConfig = link.deferredQueryParamsFromWorkspaceConfig;
-  const deferredQueryParam = deferredConfig?.queryParam ?? 'excludedGroups';
+  const deferredConfigs = (
+    Array.isArray(link.deferredQueryParamsFromWorkspaceConfig)
+      ? link.deferredQueryParamsFromWorkspaceConfig
+      : link.deferredQueryParamsFromWorkspaceConfig
+        ? [link.deferredQueryParamsFromWorkspaceConfig]
+        : []
+  ).map((deferredConfig) => ({
+    ...deferredConfig,
+    queryParam: deferredConfig.queryParam ?? 'excludedGroups',
+  }));
 
   const {
-    data: resolvedQueryParamIds,
+    data: resolvedQueryParamIdLists,
     isLoading: isResolvingHref,
     isError: isResolveHrefError,
   } = useQuery({
     queryKey: [
       'nav-workspace-config-id-list',
       wsId,
-      deferredConfig?.configId,
-      deferredQueryParam,
+      deferredConfigs.map((deferredConfig) => [
+        deferredConfig.configId,
+        deferredConfig.queryParam,
+      ]),
     ],
-    queryFn: () => getWorkspaceConfigIdList(wsId, deferredConfig!.configId),
+    queryFn: async () =>
+      Promise.all(
+        deferredConfigs.map(async (deferredConfig) => ({
+          queryParam: deferredConfig.queryParam,
+          ids: await getWorkspaceConfigIdList(wsId, deferredConfig.configId),
+        }))
+      ),
     enabled: shouldResolveQueryParamsFromConfig,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -176,16 +195,21 @@ export function NavLink({
     shouldResolveQueryParamsFromConfig && href
       ? (() => {
           if (isResolveHrefError) return href;
-          if (!resolvedQueryParamIds) return undefined;
+          if (!resolvedQueryParamIdLists) return undefined;
 
           const url = new URL(href, window.location.origin);
-          url.searchParams.delete(deferredQueryParam);
 
-          if (resolvedQueryParamIds.length > 0) {
-            url.searchParams.set(
-              deferredQueryParam,
-              resolvedQueryParamIds.join(',')
-            );
+          for (const deferredConfig of deferredConfigs) {
+            url.searchParams.delete(deferredConfig.queryParam);
+          }
+
+          for (const resolvedQueryParamIdList of resolvedQueryParamIdLists) {
+            if (resolvedQueryParamIdList.ids.length > 0) {
+              url.searchParams.set(
+                resolvedQueryParamIdList.queryParam,
+                resolvedQueryParamIdList.ids.join(',')
+              );
+            }
           }
 
           return `${url.pathname}${url.search}${url.hash}`;

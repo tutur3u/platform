@@ -1,9 +1,16 @@
+import {
+  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_FEATURED_GROUPS_CONFIG_ID,
+  parseWorkspaceConfigIdList,
+} from '@tuturuuu/internal-api/workspace-configs';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { listWorkspaceDefaultIncludedGroupIds } from '@/lib/workspace-default-included-groups';
 import { AuditLogTable } from './audit-log-table';
 import { DuplicateUsersDialog } from './components/duplicate-users-dialog';
 import { DatabaseTabs } from './database-tabs';
@@ -97,12 +104,39 @@ export default async function WorkspaceUsersPage({
     canCheckUserAttendance,
   };
 
+  const sbAdmin = await createAdminClient();
+  const [{ data: defaultIncludedGroupIds }, { data: workspaceConfigs }] =
+    await Promise.all([
+      listWorkspaceDefaultIncludedGroupIds(sbAdmin, wsId),
+      sbAdmin
+        .from('workspace_configs')
+        .select('id, value')
+        .eq('ws_id', wsId)
+        .in('id', [
+          DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+          DATABASE_FEATURED_GROUPS_CONFIG_ID,
+        ]),
+    ]);
+
+  const workspaceConfigMap = new Map(
+    (workspaceConfigs ?? []).map((config) => [config.id, config.value])
+  );
+  const initialDefaultExcludedGroups = parseWorkspaceConfigIdList(
+    workspaceConfigMap.get(DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID)
+  );
+  const initialFeaturedGroupIds = parseWorkspaceConfigIdList(
+    workspaceConfigMap.get(DATABASE_FEATURED_GROUPS_CONFIG_ID)
+  );
+
   const usersContent =
     activeTab === 'users' ? (
       <WorkspaceUsersTable
         wsId={wsId}
         locale={locale}
         permissions={permissions}
+        initialDefaultIncludedGroups={defaultIncludedGroupIds}
+        initialDefaultExcludedGroups={initialDefaultExcludedGroups}
+        initialFeaturedGroupIds={initialFeaturedGroupIds}
         toolbarActions={
           canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (
             <DuplicateUsersDialog wsId={wsId} />
