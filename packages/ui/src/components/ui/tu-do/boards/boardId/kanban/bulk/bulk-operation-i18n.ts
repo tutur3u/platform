@@ -107,9 +107,10 @@ export interface BulkOperationI18n {
 
 export function useBulkOperationI18n(): BulkOperationI18n {
   const t = useTranslations('ws-task-boards.bulk.operations');
+  type OperationTranslationKey = Parameters<typeof t>[0];
 
   const translate = (
-    key: string,
+    key: OperationTranslationKey,
     fallback: string,
     values?: TranslationValues
   ) => {

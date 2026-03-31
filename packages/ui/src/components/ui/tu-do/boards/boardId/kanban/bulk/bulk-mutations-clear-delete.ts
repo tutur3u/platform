@@ -433,31 +433,22 @@ export function useBulkDeleteTasks(
       );
 
       if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
         queryClient.setQueryData(
           ['tasks', boardId],
           (old: Task[] | undefined) => {
             const existing = old ?? [];
-            const existingIds = new Set(existing.map((task) => task.id));
-            const restoredFailedTasks: Task[] = [];
+            const existingById = new Map(
+              existing.map((task) => [task.id, task])
+            );
+            const previousTasks = context.previousTasks as Task[];
 
-            for (const failedTaskId of failedTaskIds) {
-              if (existingIds.has(failedTaskId)) {
-                continue;
+            return previousTasks.filter((task) => {
+              if (failedTaskIds.has(task.id)) {
+                return true;
               }
 
-              const previousTask = previousTaskMap.get(failedTaskId);
-              if (previousTask) {
-                restoredFailedTasks.push(previousTask);
-              }
-            }
-
-            return restoredFailedTasks.length > 0
-              ? [...existing, ...restoredFailedTasks]
-              : existing;
+              return existingById.has(task.id);
+            });
           }
         );
       }

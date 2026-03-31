@@ -174,7 +174,7 @@ export function useBulkAddAssignee(
       }
 
       const modifiedTaskIdSet = new Set(
-        context?.modifiedTaskIds ?? data.taskIds
+        context?.modifiedTaskIds ?? data.succeededTaskIds
       );
       const succeededModifiedTaskIds = data.succeededTaskIds.filter((taskId) =>
         modifiedTaskIdSet.has(taskId)
@@ -359,7 +359,7 @@ export function useBulkRemoveAssignee(
       }
 
       const modifiedTaskIdSet = new Set(
-        context?.modifiedTaskIds ?? data.taskIds
+        context?.modifiedTaskIds ?? data.succeededTaskIds
       );
       const succeededModifiedTaskIds = data.succeededTaskIds.filter((taskId) =>
         modifiedTaskIdSet.has(taskId)

@@ -45,12 +45,21 @@ export function useBulkMoveToBoard(
           movedTasks.push(result.task);
           successCount++;
         } catch (error: unknown) {
+          let fallbackError = 'Unknown error';
+          if (typeof error !== 'undefined') {
+            try {
+              fallbackError = JSON.stringify(error) || fallbackError;
+            } catch {
+              fallbackError = String(error);
+            }
+          }
+
           const errorMessage =
             error instanceof Error
               ? error.message
               : typeof error === 'string'
                 ? error
-                : JSON.stringify(error) || 'Unknown error';
+                : fallbackError;
           failures.push({
             taskId,
             error: errorMessage,
@@ -212,6 +221,7 @@ export function useBulkMoveToList(
       taskIds: string[];
     }) => {
       let successCount = 0;
+      const movedTaskIds: string[] = [];
       const failures: Array<{ taskId: string; error: string }> = [];
       const taskTimestamps = new Map<
         string,
@@ -231,6 +241,7 @@ export function useBulkMoveToList(
             completed_at: updatedTask.completed_at ?? null,
             closed_at: updatedTask.closed_at ?? null,
           });
+          movedTaskIds.push(taskId);
           successCount++;
         } catch (error) {
           failures.push({
@@ -249,6 +260,7 @@ export function useBulkMoveToList(
         listId,
         listName,
         taskIds,
+        movedTaskIds,
         failures,
         taskTimestamps,
       };
@@ -279,7 +291,28 @@ export function useBulkMoveToList(
         i18n?.failedMoveSelectedTasks() ?? 'Failed to move selected tasks'
       );
     },
-    onSuccess: (data) => {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
@@ -297,7 +330,7 @@ export function useBulkMoveToList(
         }
       );
 
-      for (const tid of data.taskIds) {
+      for (const tid of data.movedTaskIds) {
         const timestamps = data.taskTimestamps.get(tid);
         broadcast?.('task:upsert', {
           task: {
