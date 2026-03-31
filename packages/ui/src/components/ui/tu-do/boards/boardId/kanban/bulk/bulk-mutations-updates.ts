@@ -27,12 +27,14 @@ export function useBulkUpdatePriority(
       taskIds: string[];
     }) => {
       let successCount = 0;
+      const succeededTaskIds: string[] = [];
       const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
       for (const taskId of taskIds) {
         try {
           await updateWorkspaceTask(wsId, taskId, { priority }, apiOptions);
+          succeededTaskIds.push(taskId);
           successCount++;
         } catch (error) {
           failures.push({
@@ -48,7 +50,13 @@ export function useBulkUpdatePriority(
         );
       }
 
-      return { count: successCount, priority, taskIds, failures };
+      return {
+        count: successCount,
+        priority,
+        taskIds,
+        failures,
+        succeededTaskIds,
+      };
     },
     onMutate: async ({ priority, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -75,8 +83,29 @@ export function useBulkUpdatePriority(
           'Failed to update priority for selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      for (const tid of data.succeededTaskIds) {
         broadcast?.('task:upsert', {
           task: { id: tid, priority: data.priority },
         });
@@ -121,6 +150,7 @@ export function useBulkUpdateEstimation(
       taskIds: string[];
     }) => {
       let successCount = 0;
+      const succeededTaskIds: string[] = [];
       const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
@@ -132,6 +162,7 @@ export function useBulkUpdateEstimation(
             { estimation_points: points },
             apiOptions
           );
+          succeededTaskIds.push(taskId);
           successCount++;
         } catch (error) {
           failures.push({
@@ -147,7 +178,13 @@ export function useBulkUpdateEstimation(
         );
       }
 
-      return { count: successCount, points, taskIds, failures };
+      return {
+        count: successCount,
+        points,
+        taskIds,
+        failures,
+        succeededTaskIds,
+      };
     },
     onMutate: async ({ points, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -176,8 +213,29 @@ export function useBulkUpdateEstimation(
           'Failed to update estimation for selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      for (const tid of data.succeededTaskIds) {
         broadcast?.('task:upsert', {
           task: { id: tid, estimation_points: data.points },
         });
@@ -224,6 +282,7 @@ export function useBulkUpdateDueDate(
     }) => {
       const newDate = resolveDueDatePreset(preset, weekStartsOn);
       let successCount = 0;
+      const succeededTaskIds: string[] = [];
       const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
@@ -235,6 +294,7 @@ export function useBulkUpdateDueDate(
             { end_date: newDate },
             apiOptions
           );
+          succeededTaskIds.push(taskId);
           successCount++;
         } catch (error) {
           failures.push({
@@ -250,7 +310,13 @@ export function useBulkUpdateDueDate(
         );
       }
 
-      return { count: successCount, end_date: newDate, taskIds, failures };
+      return {
+        count: successCount,
+        end_date: newDate,
+        taskIds,
+        failures,
+        succeededTaskIds,
+      };
     },
     onMutate: async ({ preset, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -280,8 +346,29 @@ export function useBulkUpdateDueDate(
           'Failed to update due date for selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      for (const tid of data.succeededTaskIds) {
         broadcast?.('task:upsert', {
           task: { id: tid, end_date: data.end_date },
         });
@@ -327,6 +414,7 @@ export function useBulkUpdateCustomDueDate(
     }) => {
       const newDate = date ? date.toISOString() : null;
       let successCount = 0;
+      const succeededTaskIds: string[] = [];
       const failures: Array<{ taskId: string; error: string }> = [];
       const apiOptions = getInternalApiOptions();
 
@@ -338,6 +426,7 @@ export function useBulkUpdateCustomDueDate(
             { end_date: newDate },
             apiOptions
           );
+          succeededTaskIds.push(taskId);
           successCount++;
         } catch (error) {
           failures.push({
@@ -353,7 +442,13 @@ export function useBulkUpdateCustomDueDate(
         );
       }
 
-      return { count: successCount, end_date: newDate, taskIds, failures };
+      return {
+        count: successCount,
+        end_date: newDate,
+        taskIds,
+        failures,
+        succeededTaskIds,
+      };
     },
     onMutate: async ({ date, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -383,8 +478,29 @@ export function useBulkUpdateCustomDueDate(
           'Failed to update due date for selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      for (const tid of data.succeededTaskIds) {
         broadcast?.('task:upsert', {
           task: { id: tid, end_date: data.end_date },
         });

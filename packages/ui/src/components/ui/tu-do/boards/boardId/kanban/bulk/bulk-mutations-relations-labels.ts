@@ -76,6 +76,7 @@ export function useBulkAddLabel(
                 ...(task.labels || []),
                 {
                   id: labelId,
+                  ws_id: wsId || labelMeta?.ws_id || '',
                   name: labelMeta?.name || i18n?.defaultLabelName() || 'Label',
                   color: labelMeta?.color || '#3b82f6',
                   created_at: new Date().toISOString(),
@@ -86,7 +87,7 @@ export function useBulkAddLabel(
         }
       );
 
-      return { previousTasks };
+      return { previousTasks, modifiedTaskIds: missingTaskIds };
     },
     onError: (error, _, context) => {
       if (context?.previousTasks) {
@@ -97,8 +98,34 @@ export function useBulkAddLabel(
         i18n?.failedAddLabel() ?? 'Failed to add label to selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      const modifiedTaskIds = context?.modifiedTaskIds ?? data.taskIds;
+      const succeededModifiedTaskIds = modifiedTaskIds.filter(
+        (taskId) => !failedTaskIds.has(taskId)
+      );
+
+      for (const tid of succeededModifiedTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
 
@@ -173,6 +200,11 @@ export function useBulkRemoveLabel(
     onMutate: async ({ labelId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const current = (previousTasks as Task[] | undefined) || [];
+      const modifiedTaskIds = taskIds.filter((id) => {
+        const task = current.find((ct) => ct.id === id);
+        return !!task?.labels?.some((label) => label.id === labelId);
+      });
       const taskIdSet = new Set(taskIds);
 
       queryClient.setQueryData(
@@ -190,7 +222,7 @@ export function useBulkRemoveLabel(
         }
       );
 
-      return { previousTasks };
+      return { previousTasks, modifiedTaskIds };
     },
     onError: (error, _, context) => {
       if (context?.previousTasks) {
@@ -202,8 +234,34 @@ export function useBulkRemoveLabel(
           'Failed to remove label from selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      const modifiedTaskIds = context?.modifiedTaskIds ?? data.taskIds;
+      const succeededModifiedTaskIds = modifiedTaskIds.filter(
+        (taskId) => !failedTaskIds.has(taskId)
+      );
+
+      for (const tid of succeededModifiedTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
 

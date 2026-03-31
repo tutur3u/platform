@@ -73,8 +73,33 @@ export function useBulkClearLabels(
           'Failed to clear labels from selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      const succeededTaskIds = data.taskIds.filter(
+        (taskId) => !failedTaskIds.has(taskId)
+      );
+
+      for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
 
@@ -167,8 +192,33 @@ export function useBulkClearProjects(
           'Failed to clear projects from selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      const succeededTaskIds = data.taskIds.filter(
+        (taskId) => !failedTaskIds.has(taskId)
+      );
+
+      for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
 
@@ -261,8 +311,33 @@ export function useBulkClearAssignees(
           'Failed to clear assignees from selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (!failedTaskIds.has(task.id)) return task;
+              return previousTaskMap.get(task.id) ?? task;
+            });
+          }
+        );
+      }
+
+      const succeededTaskIds = data.taskIds.filter(
+        (taskId) => !failedTaskIds.has(taskId)
+      );
+
+      for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
 
@@ -303,6 +378,7 @@ export function useBulkDeleteTasks(
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
 
       for (const taskId of taskIds) {
         try {
@@ -310,12 +386,7 @@ export function useBulkDeleteTasks(
             wsId,
             taskId,
             { deleted: true },
-            {
-              baseUrl:
-                typeof window !== 'undefined'
-                  ? window.location.origin
-                  : undefined,
-            }
+            apiOptions
           );
           successCount++;
         } catch (error) {
@@ -356,8 +427,46 @@ export function useBulkDeleteTasks(
         i18n?.failedDeleteTasks() ?? 'Failed to delete selected tasks'
       );
     },
-    onSuccess: (data) => {
-      for (const tid of data.taskIds) {
+    onSuccess: (data, _variables, context) => {
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+
+      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
+        const previousTaskMap = new Map(
+          (context.previousTasks as Task[]).map((task) => [task.id, task])
+        );
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            const existing = old ?? [];
+            const existingIds = new Set(existing.map((task) => task.id));
+            const restoredFailedTasks: Task[] = [];
+
+            for (const failedTaskId of failedTaskIds) {
+              if (existingIds.has(failedTaskId)) {
+                continue;
+              }
+
+              const previousTask = previousTaskMap.get(failedTaskId);
+              if (previousTask) {
+                restoredFailedTasks.push(previousTask);
+              }
+            }
+
+            return restoredFailedTasks.length > 0
+              ? [...existing, ...restoredFailedTasks]
+              : existing;
+          }
+        );
+      }
+
+      const succeededTaskIds = data.taskIds.filter(
+        (taskId) => !failedTaskIds.has(taskId)
+      );
+
+      for (const tid of succeededTaskIds) {
         broadcast?.('task:delete', { taskId: tid });
       }
 

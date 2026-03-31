@@ -113,11 +113,11 @@ export function useBulkOperationI18n(): BulkOperationI18n {
     fallback: string,
     values?: TranslationValues
   ) => {
-    try {
-      return formatFallback(String(t.raw(key as never)), values);
-    } catch {
-      return formatFallback(fallback, values);
+    if (t.has(key)) {
+      return formatFallback(String(t.raw(key)), values);
     }
+
+    return formatFallback(fallback, values);
   };
 
   return {
