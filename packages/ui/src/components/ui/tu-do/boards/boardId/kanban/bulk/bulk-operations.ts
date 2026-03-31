@@ -1,18 +1,8 @@
-/**
- * Bulk operations for kanban board using TanStack Query mutations
- * Handles batch updates for multiple selected tasks with proper optimistic updates
- *
- * Key Design Principles:
- * - Uses TanStack Query useMutation for all operations
- * - Optimistic updates with automatic rollback on error
- * - Cancels outgoing refetches to prevent race conditions
- * - No manual invalidation - relies on mutation lifecycle
- */
+'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
 import {
   addWorkspaceTaskLabel,
-  getWorkspaceTask,
   moveWorkspaceTask,
   removeWorkspaceTaskLabel,
   updateWorkspaceTask,
@@ -21,72 +11,23 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
-import { calculateDaysUntilEndOfWeek } from '../../../../utils/weekDateUtils';
-
-interface WorkspaceProject {
-  id: string;
-  name: string;
-  status: string | null;
-}
-
-interface WorkspaceMember {
-  id: string;
-  display_name: string;
-  email: string;
-  avatar_url: string | null;
-}
-
-interface BulkOperationsConfig {
-  queryClient: QueryClient;
-  wsId: string;
-  boardId: string;
-  selectedTasks: Set<string>;
-  columns: TaskList[];
-  workspaceLabels?: WorkspaceLabel[];
-  workspaceProjects?: WorkspaceProject[];
-  workspaceMembers?: WorkspaceMember[];
-  weekStartsOn?: 0 | 1 | 6;
-  setBulkWorking: (working: boolean) => void;
-  clearSelection: () => void;
-  setBulkDeleteOpen: (open: boolean) => void;
-  broadcast?: BoardBroadcastFn | null;
-}
-
-function getInternalApiOptions() {
-  if (typeof window === 'undefined') {
-    return undefined;
-  }
-
-  return { baseUrl: window.location.origin };
-}
-
-async function getTaskForRelationMutation(
-  queryClient: QueryClient,
-  boardId: string,
-  wsId: string,
-  taskId: string
-) {
-  const cachedTasks = queryClient.getQueryData(['tasks', boardId]) as
-    | Task[]
-    | undefined;
-  const cachedTask = cachedTasks?.find((task) => task.id === taskId);
-  if (cachedTask) {
-    return cachedTask;
-  }
-
-  try {
-    const { task } = await getWorkspaceTask(
-      wsId,
-      taskId,
-      getInternalApiOptions()
-    );
-    return task as Task;
-  } catch {
-    return null;
-  }
-}
+import {
+  type BulkOperationI18n,
+  createBulkOperationI18n,
+} from './bulk-operation-i18n';
+import type {
+  BulkOperationsConfig,
+  WorkspaceMember,
+  WorkspaceProject,
+} from './bulk-operation-types';
+import {
+  getInternalApiOptions,
+  getTaskForRelationMutation,
+  resolveDueDatePreset,
+} from './bulk-operation-utils';
 
 /**
  * Bulk update priority mutation
@@ -95,7 +36,8 @@ function useBulkUpdatePriority(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -154,7 +96,10 @@ function useBulkUpdatePriority(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk priority update failed', error);
-      toast.error('Failed to update priority for selected tasks');
+      toast.error(
+        i18n?.failedUpdatePriority() ??
+          'Failed to update priority for selected tasks'
+      );
     },
     onSuccess: (data) => {
       console.log(
@@ -166,12 +111,22 @@ function useBulkUpdatePriority(
         });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial update completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
-        });
+        toast.warning(
+          i18n?.partialUpdateCompletedTitle() ?? 'Partial update completed',
+          {
+            description:
+              i18n?.updatedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
+          }
+        );
       } else {
-        toast.success('Priority updated', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
+        toast.success(i18n?.priorityUpdatedTitle() ?? 'Priority updated', {
+          description:
+            i18n?.updatedDescription(data.count) ??
+            `${data.count} task${data.count === 1 ? '' : 's'} updated`,
         });
       }
     },
@@ -185,7 +140,8 @@ function useBulkUpdateEstimation(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -246,7 +202,10 @@ function useBulkUpdateEstimation(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk estimation update failed', error);
-      toast.error('Failed to update estimation for selected tasks');
+      toast.error(
+        i18n?.failedUpdateEstimation() ??
+          'Failed to update estimation for selected tasks'
+      );
     },
     onSuccess: (data) => {
       console.log(
@@ -258,12 +217,22 @@ function useBulkUpdateEstimation(
         });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial update completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
-        });
+        toast.warning(
+          i18n?.partialUpdateCompletedTitle() ?? 'Partial update completed',
+          {
+            description:
+              i18n?.updatedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
+          }
+        );
       } else {
-        toast.success('Estimation updated', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
+        toast.success(i18n?.estimationUpdatedTitle() ?? 'Estimation updated', {
+          description:
+            i18n?.updatedDescription(data.count) ??
+            `${data.count} task${data.count === 1 ? '' : 's'} updated`,
         });
       }
     },
@@ -278,7 +247,8 @@ function useBulkUpdateDueDate(
   wsId: string,
   boardId: string,
   weekStartsOn: 0 | 1 | 6 = 0,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -289,23 +259,7 @@ function useBulkUpdateDueDate(
       taskIds: string[];
     }) => {
       console.log('🔄 Bulk due date mutation called with taskIds:', taskIds);
-      let newDate: string | null = null;
-      if (preset !== 'clear') {
-        const d = new Date();
-        if (preset === 'tomorrow') {
-          d.setDate(d.getDate() + 1);
-        } else if (preset === 'this_week') {
-          // Calculate days until end of week (respects first day of week setting)
-          d.setDate(d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn));
-        } else if (preset === 'next_week') {
-          // Calculate days until end of next week
-          d.setDate(
-            d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn) + 7
-          );
-        }
-        d.setHours(23, 59, 59, 999);
-        newDate = d.toISOString();
-      }
+      const newDate = resolveDueDatePreset(preset, weekStartsOn);
 
       // Update one by one to ensure triggers fire for each task
       let successCount = 0;
@@ -339,23 +293,7 @@ function useBulkUpdateDueDate(
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
-      let newDate: string | null = null;
-      if (preset !== 'clear') {
-        const d = new Date();
-        if (preset === 'tomorrow') {
-          d.setDate(d.getDate() + 1);
-        } else if (preset === 'this_week') {
-          // Calculate days until end of week (respects first day of week setting)
-          d.setDate(d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn));
-        } else if (preset === 'next_week') {
-          // Calculate days until end of next week
-          d.setDate(
-            d.getDate() + calculateDaysUntilEndOfWeek(weekStartsOn) + 7
-          );
-        }
-        d.setHours(23, 59, 59, 999);
-        newDate = d.toISOString();
-      }
+      const newDate = resolveDueDatePreset(preset, weekStartsOn);
 
       const taskIdSet = new Set(taskIds);
       queryClient.setQueryData(
@@ -375,7 +313,10 @@ function useBulkUpdateDueDate(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk due date update failed', error);
-      toast.error('Failed to update due date for selected tasks');
+      toast.error(
+        i18n?.failedUpdateDueDate() ??
+          'Failed to update due date for selected tasks'
+      );
     },
     onSuccess: (data) => {
       console.log(
@@ -387,12 +328,22 @@ function useBulkUpdateDueDate(
         });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial update completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
-        });
+        toast.warning(
+          i18n?.partialUpdateCompletedTitle() ?? 'Partial update completed',
+          {
+            description:
+              i18n?.updatedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
+          }
+        );
       } else {
-        toast.success('Due date updated', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
+        toast.success(i18n?.dueDateUpdatedTitle() ?? 'Due date updated', {
+          description:
+            i18n?.updatedDescription(data.count) ??
+            `${data.count} task${data.count === 1 ? '' : 's'} updated`,
         });
       }
     },
@@ -406,7 +357,8 @@ function useBulkUpdateCustomDueDate(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -473,7 +425,10 @@ function useBulkUpdateCustomDueDate(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk custom due date update failed', error);
-      toast.error('Failed to update due date for selected tasks');
+      toast.error(
+        i18n?.failedUpdateDueDate() ??
+          'Failed to update due date for selected tasks'
+      );
     },
     onSuccess: (data) => {
       console.log(
@@ -485,12 +440,22 @@ function useBulkUpdateCustomDueDate(
         });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial update completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
-        });
+        toast.warning(
+          i18n?.partialUpdateCompletedTitle() ?? 'Partial update completed',
+          {
+            description:
+              i18n?.updatedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
+          }
+        );
       } else {
-        toast.success('Due date updated', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} updated`,
+        toast.success(i18n?.dueDateUpdatedTitle() ?? 'Due date updated', {
+          description:
+            i18n?.updatedDescription(data.count) ??
+            `${data.count} task${data.count === 1 ? '' : 's'} updated`,
         });
       }
     },
@@ -504,7 +469,8 @@ function useBulkMoveToBoard(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -626,7 +592,10 @@ function useBulkMoveToBoard(
         );
       }
       console.error('Bulk move to board failed', error);
-      toast.error('Failed to move selected tasks to another board');
+      toast.error(
+        i18n?.failedMoveToAnotherBoard() ??
+          'Failed to move selected tasks to another board'
+      );
     },
     onSuccess: (data, _variables, context) => {
       console.log(
@@ -662,13 +631,23 @@ function useBulkMoveToBoard(
         broadcast?.('task:delete', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial move completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
-        });
+        toast.warning(
+          i18n?.partialMoveCompletedTitle() ?? 'Partial move completed',
+          {
+            description:
+              i18n?.movedPartialDescription(data.count, data.failures.length) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
+          }
+        );
       } else {
-        toast.success('Tasks moved to board', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
-        });
+        toast.success(
+          i18n?.tasksMovedToBoardTitle() ?? 'Tasks moved to board',
+          {
+            description:
+              i18n?.movedDescription(data.count) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
+          }
+        );
       }
 
       // Update target board cache with actual server results (including correct closed_at status)
@@ -699,7 +678,8 @@ function useBulkMoveToList(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -779,7 +759,9 @@ function useBulkMoveToList(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk move to list failed', error);
-      toast.error('Failed to move selected tasks');
+      toast.error(
+        i18n?.failedMoveSelectedTasks() ?? 'Failed to move selected tasks'
+      );
     },
     onSuccess: (data) => {
       console.log(`✅ Moved ${data.count} tasks to ${data.listName}`);
@@ -812,13 +794,24 @@ function useBulkMoveToList(
         });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial move completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
-        });
+        toast.warning(
+          i18n?.partialMoveCompletedTitle() ?? 'Partial move completed',
+          {
+            description:
+              i18n?.movedPartialDescription(data.count, data.failures.length) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
+          }
+        );
       } else {
-        toast.success(`Tasks moved to ${data.listName}`, {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
-        });
+        toast.success(
+          i18n?.tasksMovedToListTitle(data.listName) ??
+            `Tasks moved to ${data.listName}`,
+          {
+            description:
+              i18n?.movedDescription(data.count) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
+          }
+        );
       }
     },
   });
@@ -832,7 +825,8 @@ function useBulkMoveToStatus(
   wsId: string,
   boardId: string,
   columns: TaskList[],
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -917,7 +911,9 @@ function useBulkMoveToStatus(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk status move failed', error);
-      toast.error('Failed to move selected tasks');
+      toast.error(
+        i18n?.failedMoveSelectedTasks() ?? 'Failed to move selected tasks'
+      );
     },
     onSuccess: (data) => {
       console.log(`✅ Moved ${data.count} tasks to ${data.status} list`);
@@ -950,13 +946,24 @@ function useBulkMoveToStatus(
         });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial move completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
-        });
+        toast.warning(
+          i18n?.partialMoveCompletedTitle() ?? 'Partial move completed',
+          {
+            description:
+              i18n?.movedPartialDescription(data.count, data.failures.length) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
+          }
+        );
       } else {
-        toast.success(`Tasks moved to ${data.status}`, {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
-        });
+        toast.success(
+          i18n?.tasksMovedToStatusTitle(data.status) ??
+            `Tasks moved to ${data.status}`,
+          {
+            description:
+              i18n?.movedDescription(data.count) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} moved successfully`,
+          }
+        );
       }
     },
   });
@@ -970,7 +977,8 @@ function useBulkAddLabel(
   wsId: string,
   boardId: string,
   workspaceLabels: WorkspaceLabel[],
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1032,7 +1040,7 @@ function useBulkAddLabel(
                 ...(t.labels || []),
                 {
                   id: labelId,
-                  name: labelMeta?.name || 'Label',
+                  name: labelMeta?.name || i18n?.defaultLabelName() || 'Label',
                   color: labelMeta?.color || '#3b82f6',
                   created_at: new Date().toISOString(),
                 },
@@ -1049,21 +1057,35 @@ function useBulkAddLabel(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk add label failed', error);
-      toast.error('Failed to add label to selected tasks');
+      toast.error(
+        i18n?.failedAddLabel() ?? 'Failed to add label to selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
       const labelMeta = workspaceLabels.find((l) => l.id === data.labelId);
-      const labelName = labelMeta?.name || 'Label';
+      const labelName = labelMeta?.name || i18n?.defaultLabelName() || 'Label';
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial label addition completed', {
-          description: `Added "${labelName}" to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialLabelAdditionCompletedTitle() ??
+            'Partial label addition completed',
+          {
+            description:
+              i18n?.labelAddedPartialDescription(
+                labelName,
+                data.count,
+                data.failures.length
+              ) ??
+              `Added "${labelName}" to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Label added', {
-          description: `Added "${labelName}" to ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.labelAddedTitle() ?? 'Label added', {
+          description:
+            i18n?.labelAddedDescription(labelName, data.count) ??
+            `Added "${labelName}" to ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1078,7 +1100,8 @@ function useBulkRemoveLabel(
   wsId: string,
   boardId: string,
   workspaceLabels: WorkspaceLabel[],
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1142,21 +1165,36 @@ function useBulkRemoveLabel(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk remove label failed', error);
-      toast.error('Failed to remove label from selected tasks');
+      toast.error(
+        i18n?.failedRemoveLabel() ??
+          'Failed to remove label from selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
       const labelMeta = workspaceLabels.find((l) => l.id === data.labelId);
-      const labelName = labelMeta?.name || 'Label';
+      const labelName = labelMeta?.name || i18n?.defaultLabelName() || 'Label';
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial label removal completed', {
-          description: `Removed "${labelName}" from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialLabelRemovalCompletedTitle() ??
+            'Partial label removal completed',
+          {
+            description:
+              i18n?.labelRemovedPartialDescription(
+                labelName,
+                data.count,
+                data.failures.length
+              ) ??
+              `Removed "${labelName}" from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Label removed', {
-          description: `Removed "${labelName}" from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.labelRemovedTitle() ?? 'Label removed', {
+          description:
+            i18n?.labelRemovedDescription(labelName, data.count) ??
+            `Removed "${labelName}" from ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1171,7 +1209,8 @@ function useBulkAddProject(
   wsId: string,
   boardId: string,
   workspaceProjects: WorkspaceProject[],
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1257,7 +1296,10 @@ function useBulkAddProject(
                 ...(t.projects || []),
                 {
                   id: projectId,
-                  name: projectMeta?.name || 'Project',
+                  name:
+                    projectMeta?.name ||
+                    i18n?.defaultProjectName() ||
+                    'Project',
                   status: projectMeta?.status || null,
                 },
               ],
@@ -1273,7 +1315,9 @@ function useBulkAddProject(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk add project failed', error);
-      toast.error('Failed to add project to selected tasks');
+      toast.error(
+        i18n?.failedAddProject() ?? 'Failed to add project to selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
@@ -1282,14 +1326,27 @@ function useBulkAddProject(
       const projectMeta = workspaceProjects.find(
         (p) => p.id === data.projectId
       );
-      const projectName = projectMeta?.name || 'Project';
+      const projectName =
+        projectMeta?.name || i18n?.defaultProjectName() || 'Project';
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial project addition completed', {
-          description: `Added "${projectName}" to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialProjectAdditionCompletedTitle() ??
+            'Partial project addition completed',
+          {
+            description:
+              i18n?.projectAddedPartialDescription(
+                projectName,
+                data.count,
+                data.failures.length
+              ) ??
+              `Added "${projectName}" to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Project added', {
-          description: `Added "${projectName}" to ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.projectAddedTitle() ?? 'Project added', {
+          description:
+            i18n?.projectAddedDescription(projectName, data.count) ??
+            `Added "${projectName}" to ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1304,7 +1361,8 @@ function useBulkRemoveProject(
   wsId: string,
   boardId: string,
   workspaceProjects: WorkspaceProject[],
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1390,7 +1448,10 @@ function useBulkRemoveProject(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk remove project failed', error);
-      toast.error('Failed to remove project from selected tasks');
+      toast.error(
+        i18n?.failedRemoveProject() ??
+          'Failed to remove project from selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
@@ -1399,14 +1460,27 @@ function useBulkRemoveProject(
       const projectMeta = workspaceProjects.find(
         (p) => p.id === data.projectId
       );
-      const projectName = projectMeta?.name || 'Project';
+      const projectName =
+        projectMeta?.name || i18n?.defaultProjectName() || 'Project';
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial project removal completed', {
-          description: `Removed "${projectName}" from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialProjectRemovalCompletedTitle() ??
+            'Partial project removal completed',
+          {
+            description:
+              i18n?.projectRemovedPartialDescription(
+                projectName,
+                data.count,
+                data.failures.length
+              ) ??
+              `Removed "${projectName}" from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Project removed', {
-          description: `Removed "${projectName}" from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.projectRemovedTitle() ?? 'Project removed', {
+          description:
+            i18n?.projectRemovedDescription(projectName, data.count) ??
+            `Removed "${projectName}" from ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1421,7 +1495,8 @@ function useBulkAddAssignee(
   wsId: string,
   boardId: string,
   workspaceMembers: WorkspaceMember[] = [],
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1503,7 +1578,7 @@ function useBulkAddAssignee(
       const member = workspaceMembers.find((m) => m.id === assigneeId);
       const assigneeData = member || {
         id: assigneeId,
-        display_name: 'Loading...',
+        display_name: i18n?.loadingAssigneeName() || 'Loading...',
         email: '',
         avatar_url: null,
       };
@@ -1531,19 +1606,32 @@ function useBulkAddAssignee(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk add assignee failed', error);
-      toast.error('Failed to add assignee to selected tasks');
+      toast.error(
+        i18n?.failedAddAssignee() ?? 'Failed to add assignee to selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial assignee addition completed', {
-          description: `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialAssigneeAdditionCompletedTitle() ??
+            'Partial assignee addition completed',
+          {
+            description:
+              i18n?.assigneeAddedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Assignee added', {
-          description: `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.assigneeAddedTitle() ?? 'Assignee added', {
+          description:
+            i18n?.assigneeAddedDescription(data.count) ??
+            `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1557,7 +1645,8 @@ function useBulkRemoveAssignee(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1643,19 +1732,33 @@ function useBulkRemoveAssignee(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk remove assignee failed', error);
-      toast.error('Failed to remove assignee from selected tasks');
+      toast.error(
+        i18n?.failedRemoveAssignee() ??
+          'Failed to remove assignee from selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial assignee removal completed', {
-          description: `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialAssigneeRemovalCompletedTitle() ??
+            'Partial assignee removal completed',
+          {
+            description:
+              i18n?.assigneeRemovedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Assignee removed', {
-          description: `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.assigneeRemovedTitle() ?? 'Assignee removed', {
+          description:
+            i18n?.assigneeRemovedDescription(data.count) ??
+            `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1669,7 +1772,8 @@ function useBulkClearLabels(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
@@ -1727,19 +1831,33 @@ function useBulkClearLabels(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk clear labels failed', error);
-      toast.error('Failed to clear labels from selected tasks');
+      toast.error(
+        i18n?.failedClearLabels() ??
+          'Failed to clear labels from selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial label clear completed', {
-          description: `Cleared labels from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialLabelClearCompletedTitle() ??
+            'Partial label clear completed',
+          {
+            description:
+              i18n?.labelsClearedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `Cleared labels from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Labels cleared', {
-          description: `Cleared all labels from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.labelsClearedTitle() ?? 'Labels cleared', {
+          description:
+            i18n?.labelsClearedDescription(data.count) ??
+            `Cleared all labels from ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1753,7 +1871,8 @@ function useBulkClearProjects(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
@@ -1811,19 +1930,33 @@ function useBulkClearProjects(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk clear projects failed', error);
-      toast.error('Failed to clear projects from selected tasks');
+      toast.error(
+        i18n?.failedClearProjects() ??
+          'Failed to clear projects from selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial project clear completed', {
-          description: `Cleared projects from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialProjectClearCompletedTitle() ??
+            'Partial project clear completed',
+          {
+            description:
+              i18n?.projectsClearedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `Cleared projects from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Projects cleared', {
-          description: `Cleared all projects from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.projectsClearedTitle() ?? 'Projects cleared', {
+          description:
+            i18n?.projectsClearedDescription(data.count) ??
+            `Cleared all projects from ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1837,7 +1970,8 @@ function useBulkClearAssignees(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
@@ -1895,19 +2029,33 @@ function useBulkClearAssignees(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk clear assignees failed', error);
-      toast.error('Failed to clear assignees from selected tasks');
+      toast.error(
+        i18n?.failedClearAssignees() ??
+          'Failed to clear assignees from selected tasks'
+      );
     },
     onSuccess: (data) => {
       for (const tid of data.taskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial assignee clear completed', {
-          description: `Cleared assignees from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
-        });
+        toast.warning(
+          i18n?.partialAssigneeClearCompletedTitle() ??
+            'Partial assignee clear completed',
+          {
+            description:
+              i18n?.assigneesClearedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `Cleared assignees from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
       } else {
-        toast.success('Assignees cleared', {
-          description: `Cleared all assignees from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        toast.success(i18n?.assigneesClearedTitle() ?? 'Assignees cleared', {
+          description:
+            i18n?.assigneesClearedDescription(data.count) ??
+            `Cleared all assignees from ${data.count} task${data.count === 1 ? '' : 's'}`,
         });
       }
     },
@@ -1923,7 +2071,8 @@ function useBulkDeleteTasks(
   boardId: string,
   clearSelection: () => void,
   setBulkDeleteOpen: (open: boolean) => void,
-  broadcast?: BoardBroadcastFn | null
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
@@ -1979,7 +2128,9 @@ function useBulkDeleteTasks(
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
       console.error('Bulk delete failed', error);
-      toast.error('Failed to delete selected tasks');
+      toast.error(
+        i18n?.failedDeleteTasks() ?? 'Failed to delete selected tasks'
+      );
     },
     onSuccess: (data) => {
       console.log(`✅ Deleted ${data.count} tasks`);
@@ -1989,11 +2140,21 @@ function useBulkDeleteTasks(
       clearSelection();
       setBulkDeleteOpen(false);
       if (data.failures && data.failures.length > 0) {
-        toast.warning('Partial deletion completed', {
-          description: `${data.count} task${data.count === 1 ? '' : 's'} deleted, ${data.failures.length} failed to delete`,
-        });
+        toast.warning(
+          i18n?.partialDeletionCompletedTitle() ?? 'Partial deletion completed',
+          {
+            description:
+              i18n?.deletedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `${data.count} task${data.count === 1 ? '' : 's'} deleted, ${data.failures.length} failed to delete`,
+          }
+        );
       } else {
-        toast.success('Deleted selected tasks');
+        toast.success(
+          i18n?.deletedSelectedTasksTitle() ?? 'Deleted selected tasks'
+        );
       }
     },
   });
@@ -2003,6 +2164,9 @@ function useBulkDeleteTasks(
  * Hook that creates all bulk operations using TanStack Query mutations
  */
 export function useBulkOperations(config: BulkOperationsConfig) {
+  const t = useTranslations();
+  const i18n = createBulkOperationI18n(t);
+
   const {
     queryClient,
     wsId,
@@ -2024,98 +2188,113 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const estimationMutation = useBulkUpdateEstimation(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const dueDateMutation = useBulkUpdateDueDate(
     queryClient,
     wsId,
     boardId,
     weekStartsOn,
-    broadcast
+    broadcast,
+    i18n
   );
   const customDueDateMutation = useBulkUpdateCustomDueDate(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const moveToListMutation = useBulkMoveToList(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const statusMutation = useBulkMoveToStatus(
     queryClient,
     wsId,
     boardId,
     columns,
-    broadcast
+    broadcast,
+    i18n
   );
   const addLabelMutation = useBulkAddLabel(
     queryClient,
     wsId,
     boardId,
     workspaceLabels,
-    broadcast
+    broadcast,
+    i18n
   );
   const removeLabelMutation = useBulkRemoveLabel(
     queryClient,
     wsId,
     boardId,
     workspaceLabels,
-    broadcast
+    broadcast,
+    i18n
   );
   const addProjectMutation = useBulkAddProject(
     queryClient,
     wsId,
     boardId,
     workspaceProjects,
-    broadcast
+    broadcast,
+    i18n
   );
   const removeProjectMutation = useBulkRemoveProject(
     queryClient,
     wsId,
     boardId,
     workspaceProjects,
-    broadcast
+    broadcast,
+    i18n
   );
   const addAssigneeMutation = useBulkAddAssignee(
     queryClient,
     wsId,
     boardId,
     workspaceMembers,
-    broadcast
+    broadcast,
+    i18n
   );
   const removeAssigneeMutation = useBulkRemoveAssignee(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const clearLabelsMutation = useBulkClearLabels(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const clearProjectsMutation = useBulkClearProjects(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const clearAssigneesMutation = useBulkClearAssignees(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
   const deleteMutation = useBulkDeleteTasks(
     queryClient,
@@ -2123,13 +2302,15 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     boardId,
     clearSelection,
     setBulkDeleteOpen,
-    broadcast
+    broadcast,
+    i18n
   );
   const moveToBoardMutation = useBulkMoveToBoard(
     queryClient,
     wsId,
     boardId,
-    broadcast
+    broadcast,
+    i18n
   );
 
   // Track loading state
