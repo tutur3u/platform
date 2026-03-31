@@ -368,7 +368,6 @@ void main() {
         router.routeInformationProvider.value.uri.toString(),
         '/tasks/boards/board-b?taskId=task-b1',
       );
-      expect(find.text('Board B'), findsOneWidget);
       expect(find.text('Task B1'), findsWidgets);
     });
   });

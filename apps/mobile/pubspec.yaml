@@ -14,7 +14,7 @@ dependencies:
   cloudflare_turnstile: ^3.6.2
   connectivity_plus: ^7.0.0
   cupertino_icons: ^1.0.9
-  device_info_plus: ^12.4.0
+  device_info_plus: 12.3.0
   equatable: ^2.0.8
   file_picker: ^10.3.10
   firebase_analytics: ^12.2.0
