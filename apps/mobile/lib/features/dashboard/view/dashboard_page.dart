@@ -17,6 +17,7 @@ import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -358,9 +359,10 @@ class _DashboardWorkspacePickerCard extends StatelessWidget {
       builder: (context, state) {
         final theme = Theme.of(context);
         final isDark = theme.brightness == Brightness.dark;
+        final currentWorkspace = state.currentWorkspace;
         final workspaceName = displayWorkspaceNameOrFallback(
           context,
-          state.currentWorkspace,
+          currentWorkspace,
         );
 
         return Material(
@@ -405,21 +407,24 @@ class _DashboardWorkspacePickerCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(
-                        alpha: isDark ? 0.22 : 0.12,
+                  if (currentWorkspace != null)
+                    WorkspaceAvatar(workspace: currentWorkspace, radius: 21)
+                  else
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: isDark ? 0.22 : 0.12,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      borderRadius: BorderRadius.circular(14),
+                      child: Icon(
+                        Icons.workspaces_outlined,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.workspaces_outlined,
-                      size: 20,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
