@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
   getWorkspaceConfigIdList,
 } from '@tuturuuu/internal-api/workspace-configs';
@@ -356,6 +357,23 @@ export function useDefaultExcludedGroups(
       getWorkspaceConfigIdList(
         wsId,
         DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID
+      ),
+    initialData: options?.initialData,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 20 * 60 * 1000, // 20 minutes
+  });
+}
+
+export function useDefaultIncludedGroups(
+  wsId: string,
+  options?: { initialData?: string[] }
+) {
+  return useQuery({
+    queryKey: ['workspace-default-included-groups', wsId],
+    queryFn: () =>
+      getWorkspaceConfigIdList(
+        wsId,
+        DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
       ),
     initialData: options?.initialData,
     staleTime: 10 * 60 * 1000, // 10 minutes

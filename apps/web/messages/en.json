@@ -7755,6 +7755,8 @@
       "title": "User Settings"
     },
     "user_management": {
+      "auto_add_new_groups_to_default_included_groups_help": "Automatically append each newly created user group to the default included groups list.",
+      "auto_add_new_groups_to_default_included_groups_label": "Auto-add new groups to default included groups",
       "database_filters": "Database Filters",
       "database_filters_description": "Configure personal defaults and workspace group filters for the users database",
       "default_excluded_groups_help": "Groups selected here will be excluded by default when you visit the database page. You can still change filters on the page.",
@@ -7764,6 +7766,8 @@
       "default_group_membership": "Default Group Membership",
       "default_group_membership_help": "This membership filter will be applied when you open the users database page. You can still change it on the page.",
       "default_group_placeholder": "Select a group",
+      "default_included_groups_help": "Groups selected here will be included by default when you visit the database page. You can still change filters on the page.",
+      "default_included_groups_label": "Default Included Groups",
       "default_link_status": "Default Link Status",
       "default_link_status_help": "This link-status filter will be applied when you open the users database page. You can still change it on the page.",
       "featured_groups": "Featured Groups",

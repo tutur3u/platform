@@ -5,6 +5,23 @@ import {
 } from './resolved-filters';
 
 describe('resolveUsersDatabaseFilters', () => {
+  it('uses default included groups when included groups are empty and defaults have not been applied yet', () => {
+    expect(
+      resolveUsersDatabaseFilters({
+        includedGroups: [],
+        defaultIncludedGroups: ['group-a', 'group-a', 'group-b'],
+        hasAppliedDefaultIncludedGroups: false,
+      })
+    ).toMatchObject({
+      includedGroups: ['group-a', 'group-b'],
+      excludedGroups: [],
+      status: 'active',
+      linkStatus: 'all',
+      requireAttention: 'all',
+      groupMembership: 'all',
+    });
+  });
+
   it('uses default excluded groups when included groups are empty and defaults have not been applied yet', () => {
     expect(
       resolveUsersDatabaseFilters({

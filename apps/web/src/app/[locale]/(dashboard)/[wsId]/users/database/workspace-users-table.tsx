@@ -25,6 +25,7 @@ import { getUserColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
 import {
   useDefaultExcludedGroups,
+  useDefaultIncludedGroups,
   useWorkspaceUserFields,
   useWorkspaceUsers,
 } from './hooks';
@@ -43,6 +44,7 @@ interface Props {
     canCheckUserAttendance: boolean;
   };
   initialDefaultExcludedGroups?: string[];
+  initialDefaultIncludedGroups?: string[];
   initialFeaturedGroupIds?: string[];
   toolbarImportContent?: ReactNode;
   toolbarActions?: ReactNode;
@@ -54,6 +56,7 @@ export function WorkspaceUsersTable({
   locale,
   permissions,
   initialDefaultExcludedGroups = [],
+  initialDefaultIncludedGroups = [],
   initialFeaturedGroupIds = [],
   toolbarImportContent,
   toolbarActions,
@@ -154,6 +157,10 @@ export function WorkspaceUsersTable({
     })
   );
 
+  const { data: defaultIncludedGroups, isLoading: isLoadingIncludedDefaults } =
+    useDefaultIncludedGroups(wsId, {
+      initialData: initialDefaultIncludedGroups,
+    });
   const { data: defaultExcludedGroups, isLoading: isLoadingDefaults } =
     useDefaultExcludedGroups(wsId, {
       initialData: initialDefaultExcludedGroups,
@@ -162,21 +169,26 @@ export function WorkspaceUsersTable({
     useWorkspaceUserFields(wsId);
 
   // Track if defaults have been applied (prevents re-apply on clear)
-  const hasAppliedDefaults = useRef(false);
+  const hasAppliedDefaultIncludedGroups = useRef(false);
+  const hasAppliedDefaultExcludedGroups = useRef(false);
+
+  const shouldApplyDefaultIncludedGroups =
+    !isLoadingIncludedDefaults &&
+    !hasAppliedDefaultIncludedGroups.current &&
+    includedGroups.length === 0 &&
+    !!defaultIncludedGroups &&
+    defaultIncludedGroups.length > 0;
 
   const shouldApplyDefaultExcludedGroups =
     !isLoadingDefaults &&
-    !hasAppliedDefaults.current && // Only apply once per session
+    !hasAppliedDefaultExcludedGroups.current && // Only apply once per session
     excludedGroups === null &&
     !!defaultExcludedGroups &&
     defaultExcludedGroups.length > 0;
 
-  const effectiveExcludedGroups =
-    excludedGroups ??
-    (hasAppliedDefaults.current ? [] : (defaultExcludedGroups ?? []));
-
   const isUserDefaultsReady = !isLoadingLinkStatus && !isLoadingGroupMembership;
-  const isInitialized = !isLoadingDefaults && isUserDefaultsReady;
+  const isInitialized =
+    !isLoadingDefaults && !isLoadingIncludedDefaults && isUserDefaultsReady;
 
   const resolvedFilters = resolveUsersDatabaseFilters({
     q,
@@ -186,16 +198,29 @@ export function WorkspaceUsersTable({
     linkStatus,
     requireAttention,
     groupMembership,
+    defaultIncludedGroups,
     defaultExcludedGroups,
-    hasAppliedDefaultExcludedGroups: hasAppliedDefaults.current,
+    hasAppliedDefaultIncludedGroups: hasAppliedDefaultIncludedGroups.current,
+    hasAppliedDefaultExcludedGroups: hasAppliedDefaultExcludedGroups.current,
     defaultLinkStatus,
     defaultGroupMembership,
   });
 
+  // Apply default included groups to URL state on mount if no inclusions set
+  useEffect(() => {
+    if (!shouldApplyDefaultIncludedGroups) return;
+    hasAppliedDefaultIncludedGroups.current = true;
+    void setIncludedGroups(defaultIncludedGroups);
+  }, [
+    defaultIncludedGroups,
+    setIncludedGroups,
+    shouldApplyDefaultIncludedGroups,
+  ]);
+
   // Apply default excluded groups to URL state on mount if no exclusions set
   useEffect(() => {
     if (!shouldApplyDefaultExcludedGroups) return;
-    hasAppliedDefaults.current = true; // Mark as applied to prevent re-apply on clear
+    hasAppliedDefaultExcludedGroups.current = true;
     void setExcludedGroups(defaultExcludedGroups);
   }, [
     defaultExcludedGroups,
@@ -363,7 +388,7 @@ export function WorkspaceUsersTable({
             linkStatus={effectiveLinkStatus}
             requireAttention={requireAttention as 'all' | 'true' | 'false'}
             groupMembership={effectiveGroupMembership}
-            effectiveExcludedGroups={effectiveExcludedGroups}
+            effectiveExcludedGroups={resolvedFilters.excludedGroups}
             initialFeaturedGroupIds={initialFeaturedGroupIds}
             onStatusChange={(val) => {
               setStatus(val);

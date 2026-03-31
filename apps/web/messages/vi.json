@@ -7755,6 +7755,8 @@
       "title": "Cài đặt người dùng"
     },
     "user_management": {
+      "auto_add_new_groups_to_default_included_groups_help": "Tự động thêm mỗi nhóm người dùng mới tạo vào danh sách nhóm được bao gồm mặc định.",
+      "auto_add_new_groups_to_default_included_groups_label": "Tự động thêm nhóm mới vào nhóm bao gồm mặc định",
       "database_filters": "Bộ lọc Cơ sở dữ liệu",
       "database_filters_description": "Cấu hình mặc định cá nhân và bộ lọc nhóm cấp không gian làm việc cho cơ sở dữ liệu người dùng",
       "default_excluded_groups_help": "Các nhóm được chọn ở đây sẽ bị loại trừ theo mặc định khi bạn truy cập trang cơ sở dữ liệu. Bạn vẫn có thể thay đổi bộ lọc trên trang.",
@@ -7764,6 +7766,8 @@
       "default_group_membership": "Mặc định theo Thành viên Nhóm",
       "default_group_membership_help": "Bộ lọc trạng thái thành viên nhóm này sẽ được áp dụng khi bạn mở trang cơ sở dữ liệu người dùng. Bạn vẫn có thể thay đổi nó trên trang.",
       "default_group_placeholder": "Chọn một nhóm",
+      "default_included_groups_help": "Các nhóm được chọn ở đây sẽ được bao gồm theo mặc định khi bạn truy cập trang cơ sở dữ liệu. Bạn vẫn có thể thay đổi bộ lọc trên trang.",
+      "default_included_groups_label": "Nhóm Bao gồm Mặc định",
       "default_link_status": "Trạng thái Liên kết Mặc định",
       "default_link_status_help": "Bộ lọc trạng thái liên kết này sẽ được áp dụng khi bạn mở trang cơ sở dữ liệu người dùng. Bạn vẫn có thể thay đổi nó trên trang.",
       "featured_groups": "Nhóm Nổi bật",

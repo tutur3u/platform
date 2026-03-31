@@ -214,7 +214,9 @@ export {
   updateWorkspaceUserFeedback,
 } from './users-feedbacks';
 export {
+  DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
   getOptionalWorkspaceConfig,
   getWorkspaceConfig,

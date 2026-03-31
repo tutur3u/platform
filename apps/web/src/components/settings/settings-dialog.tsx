@@ -29,7 +29,9 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import {
+  DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
   parseWorkspaceConfigIdList,
 } from '@tuturuuu/internal-api/workspace-configs';
@@ -116,7 +118,9 @@ export function SettingsDialog({
     wsId ?? '',
     wsId
       ? [
+          DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
           DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+          DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
           DATABASE_FEATURED_GROUPS_CONFIG_ID,
         ]
       : []
@@ -166,8 +170,15 @@ export function SettingsDialog({
     workspacePermissions?.manage_subscription ?? false;
   const canManageWorkspaceSettings =
     workspacePermissions?.manage_workspace_settings ?? false;
+  const autoAddNewGroupsToDefaultIncludedGroups =
+    workspaceCustomConfigs[
+      DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
+    ] === 'true';
   const defaultExcludedGroupIds = parseWorkspaceConfigIdList(
     workspaceCustomConfigs[DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID]
+  );
+  const defaultIncludedGroupIds = parseWorkspaceConfigIdList(
+    workspaceCustomConfigs[DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID]
   );
   const featuredGroupIds = parseWorkspaceConfigIdList(
     workspaceCustomConfigs[DATABASE_FEATURED_GROUPS_CONFIG_ID]
@@ -841,7 +852,11 @@ export function SettingsDialog({
             <DatabaseDefaultFiltersSettings />
             <UsersManagementSettings
               wsId={wsId}
+              initialIncludedGroupIds={defaultIncludedGroupIds}
               initialSelectedGroupIds={defaultExcludedGroupIds}
+              initialAutoAddNewGroupsToDefaultIncludedGroups={
+                autoAddNewGroupsToDefaultIncludedGroups
+              }
               isConfigLoading={isLoadingWorkspaceCustomConfigs}
             />
           </div>

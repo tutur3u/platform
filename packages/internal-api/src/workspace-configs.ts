@@ -6,7 +6,11 @@ import {
 
 export const DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID =
   'DATABASE_DEFAULT_EXCLUDED_GROUPS';
+export const DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID =
+  'DATABASE_DEFAULT_INCLUDED_GROUPS';
 export const DATABASE_FEATURED_GROUPS_CONFIG_ID = 'DATABASE_FEATURED_GROUPS';
+export const DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID =
+  'DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS';
 
 type WorkspaceConfigResponse = {
   value: string | null;
@@ -108,20 +112,27 @@ export async function getWorkspaceUsersDatabaseFilterSettings(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const [defaultExcludedGroupIds, featuredGroupIds] = await Promise.all([
-    getWorkspaceConfigIdList(
-      workspaceId,
-      DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
-      options
-    ),
-    getWorkspaceConfigIdList(
-      workspaceId,
-      DATABASE_FEATURED_GROUPS_CONFIG_ID,
-      options
-    ),
-  ]);
+  const [defaultIncludedGroupIds, defaultExcludedGroupIds, featuredGroupIds] =
+    await Promise.all([
+      getWorkspaceConfigIdList(
+        workspaceId,
+        DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
+        options
+      ),
+      getWorkspaceConfigIdList(
+        workspaceId,
+        DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+        options
+      ),
+      getWorkspaceConfigIdList(
+        workspaceId,
+        DATABASE_FEATURED_GROUPS_CONFIG_ID,
+        options
+      ),
+    ]);
 
   return {
+    defaultIncludedGroupIds,
     defaultExcludedGroupIds,
     featuredGroupIds,
   };

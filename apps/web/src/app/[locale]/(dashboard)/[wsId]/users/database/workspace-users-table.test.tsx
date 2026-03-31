@@ -53,6 +53,10 @@ vi.mock('@/hooks/use-user-config', () => ({
 }));
 
 vi.mock('./hooks', () => ({
+  useDefaultIncludedGroups: vi.fn(() => ({
+    data: ['default-included-group'],
+    isLoading: false,
+  })),
   useDefaultExcludedGroups: vi.fn(() => ({
     data: ['default-group'],
     isLoading: false,
@@ -129,7 +133,7 @@ describe('WorkspaceUsersTable', () => {
     });
 
     expect(useWorkspaceUsersMock.mock.calls[0]?.[1]).toMatchObject({
-      includedGroups: [],
+      includedGroups: ['default-included-group'],
       excludedGroups: ['default-group'],
       status: 'active',
       linkStatus: 'all',

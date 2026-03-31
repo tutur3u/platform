@@ -28,7 +28,9 @@ export interface UsersDatabaseFilters {
 }
 
 export interface ResolveUsersDatabaseFiltersInput extends UsersDatabaseFilters {
+  defaultIncludedGroups?: string[] | null;
   defaultExcludedGroups?: string[] | null;
+  hasAppliedDefaultIncludedGroups?: boolean;
   hasAppliedDefaultExcludedGroups?: boolean;
   defaultLinkStatus?: DatabaseLinkStatus;
   defaultGroupMembership?: DatabaseGroupMembership;
@@ -77,14 +79,23 @@ export function resolveUsersDatabaseFilters({
   linkStatus,
   requireAttention,
   groupMembership,
+  defaultIncludedGroups,
   defaultExcludedGroups,
+  hasAppliedDefaultIncludedGroups = false,
   hasAppliedDefaultExcludedGroups = false,
   defaultLinkStatus = DEFAULT_DATABASE_LINK_STATUS,
   defaultGroupMembership = DEFAULT_DATABASE_GROUP_MEMBERSHIP,
 }: ResolveUsersDatabaseFiltersInput): ResolvedUsersDatabaseFilters {
+  const normalizedIncludedGroups = normalizeStringArray(includedGroups);
+
   return {
     q: (q ?? '').trim(),
-    includedGroups: normalizeStringArray(includedGroups),
+    includedGroups:
+      normalizedIncludedGroups.length > 0
+        ? normalizedIncludedGroups
+        : hasAppliedDefaultIncludedGroups
+          ? []
+          : normalizeStringArray(defaultIncludedGroups),
     excludedGroups: normalizeStringArray(
       excludedGroups ??
         (hasAppliedDefaultExcludedGroups ? [] : (defaultExcludedGroups ?? []))
