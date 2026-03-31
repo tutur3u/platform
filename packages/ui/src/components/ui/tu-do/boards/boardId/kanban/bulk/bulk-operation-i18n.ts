@@ -1,4 +1,6 @@
-type TranslationValues = Record<string, string | number>;
+import { useTranslations } from 'next-intl';
+
+type TranslationValues = Record<string, string | number | Date>;
 
 function formatFallback(template: string, values?: TranslationValues): string {
   if (!values) {
@@ -103,16 +105,16 @@ export interface BulkOperationI18n {
   loadingAssigneeName: () => string;
 }
 
-export function createBulkOperationI18n(
-  t: (key: string, values?: TranslationValues) => string
-): BulkOperationI18n {
+export function useBulkOperationI18n(): BulkOperationI18n {
+  const t = useTranslations('ws-task-boards.bulk.operations');
+
   const translate = (
     key: string,
     fallback: string,
     values?: TranslationValues
   ) => {
     try {
-      return t(`ws-task-boards.bulk.operations.${key}`, values);
+      return formatFallback(String(t.raw(key as never)), values);
     } catch {
       return formatFallback(fallback, values);
     }

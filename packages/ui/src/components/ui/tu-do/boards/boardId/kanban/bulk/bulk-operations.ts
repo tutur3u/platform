@@ -1,7 +1,6 @@
 'use client';
 
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import {
   useBulkClearAssignees,
@@ -28,12 +27,11 @@ import {
   useBulkUpdateEstimation,
   useBulkUpdatePriority,
 } from './bulk-mutations-updates';
-import { createBulkOperationI18n } from './bulk-operation-i18n';
+import { useBulkOperationI18n } from './bulk-operation-i18n';
 import type { BulkOperationsConfig } from './bulk-operation-types';
 
 export function useBulkOperations(config: BulkOperationsConfig) {
-  const t = useTranslations();
-  const i18n = createBulkOperationI18n(t);
+  const i18n = useBulkOperationI18n();
 
   const {
     queryClient,
