@@ -45,8 +45,8 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-hotkeys": "^0.9.0",
-    "@tanstack/react-pacer": "^0.21.0",
-    "@tanstack/react-query": "^5.95.2",
+    "@tanstack/react-pacer": "^0.21.1",
+    "@tanstack/react-query": "^5.96.0",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.23",
     "@tiptap/core": "3.21.0",
@@ -98,7 +98,7 @@
     "moment": "^2.30.1",
     "motion": "^12.38.0",
     "next": "^16.2.1",
-    "next-intl": "^4.8.3",
+    "next-intl": "^4.8.4",
     "next-themes": "^0.4.6",
     "nuqs": "^2.8.9",
     "prosemirror-state": "^1.4.4",
@@ -131,7 +131,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",
     "@tailwindcss/typography": "^0.5.19",
-    "@tanstack/react-query": "^5.95.2",
+    "@tanstack/react-query": "^5.96.0",
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -156,7 +156,7 @@
     "vitest": "^4.1.2"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.95.2",
+    "@tanstack/react-query": "^5.96.0",
     "@tanstack/react-table": "^8.21.3"
   },
   "exports": {

@@ -32,7 +32,7 @@
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.95.2",
+    "@tanstack/react-query": "^5.96.0",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
@@ -41,13 +41,13 @@
     "@tuturuuu/utils": "workspace:*",
     "cookies-next": "^6.1.1",
     "next": "^16.2.1",
-    "next-intl": "^4.8.3",
+    "next-intl": "^4.8.4",
     "next-themes": "^0.4.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@tanstack/react-query-devtools": "^5.95.2",
+    "@tanstack/react-query-devtools": "^5.96.0",
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.5.0",

@@ -14,7 +14,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@noble/ciphers": "^2.1.1",
     "@noble/hashes": "^2.0.1",
-    "@tanstack/react-query": "^5.95.2",
+    "@tanstack/react-query": "^5.96.0",
     "@tiptap/core": "3.21.0",
     "@tiptap/react": "3.21.0",
     "@tuturuuu/google": "workspace:*",
