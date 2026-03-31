@@ -42,6 +42,8 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'task_board_detail_page_cards.dart';
 part 'task_board_detail_page_actions.dart';
+part 'task_board_detail_page_actions_filter_sheet.dart';
+part 'task_board_detail_page_actions_filter_widgets.dart';
 part 'task_board_detail_page_detail_sheet.dart';
 part 'task_board_detail_page_detail_sheet_description.dart';
 part 'task_board_detail_page_detail_sheet_shared_widgets.dart';
