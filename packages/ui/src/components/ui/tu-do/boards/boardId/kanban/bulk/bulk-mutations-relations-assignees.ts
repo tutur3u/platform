@@ -1,0 +1,274 @@
+'use client';
+
+import { type QueryClient, useMutation } from '@tanstack/react-query';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import { toast } from '@tuturuuu/ui/sonner';
+import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
+import type { BulkOperationI18n } from './bulk-operation-i18n';
+import type { WorkspaceMember } from './bulk-operation-types';
+import {
+  getInternalApiOptions,
+  getTaskForRelationMutation,
+} from './bulk-operation-utils';
+
+export function useBulkAddAssignee(
+  queryClient: QueryClient,
+  wsId: string,
+  boardId: string,
+  workspaceMembers: WorkspaceMember[] = [],
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
+) {
+  return useMutation({
+    mutationFn: async ({
+      assigneeId,
+      taskIds,
+    }: {
+      assigneeId: string;
+      taskIds: string[];
+    }) => {
+      let successCount = 0;
+      const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
+
+      for (const taskId of taskIds) {
+        try {
+          const taskRecord = await getTaskForRelationMutation(
+            queryClient,
+            boardId,
+            wsId,
+            taskId
+          );
+
+          if (!taskRecord) {
+            throw new Error('Task not found');
+          }
+
+          const currentAssigneeIds = (taskRecord.assignees || [])
+            .map((assignee) => assignee.id)
+            .filter((id): id is string => !!id);
+
+          const nextAssigneeIds = [
+            ...new Set([...currentAssigneeIds, assigneeId]),
+          ];
+
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { assignee_ids: nextAssigneeIds },
+            apiOptions
+          );
+          successCount++;
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
+          if (!message.toLowerCase().includes('duplicate')) {
+            failures.push({ taskId, error: message });
+          } else {
+            successCount++;
+          }
+        }
+      }
+
+      if (successCount === 0) {
+        throw new Error(
+          `Failed to add assignee to all ${taskIds.length} tasks`
+        );
+      }
+
+      return { count: successCount, assigneeId, taskIds, failures };
+    },
+    onMutate: async ({ assigneeId, taskIds }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const current = (previousTasks as Task[] | undefined) || [];
+
+      const missingTaskIds = taskIds.filter((id) => {
+        const task = current.find((ct) => ct.id === id);
+        return !task?.assignees?.some((a) => a.id === assigneeId);
+      });
+
+      const member = workspaceMembers.find((m) => m.id === assigneeId);
+      const assigneeData = member || {
+        id: assigneeId,
+        display_name: i18n?.loadingAssigneeName() || 'Loading...',
+        email: '',
+        avatar_url: null,
+      };
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) => {
+            if (!missingTaskIds.includes(task.id)) return task;
+            return {
+              ...task,
+              assignees: [...(task.assignees || []), assigneeData],
+            } as Task;
+          });
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      console.error('Bulk add assignee failed', error);
+      toast.error(
+        i18n?.failedAddAssignee() ?? 'Failed to add assignee to selected tasks'
+      );
+    },
+    onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
+
+      if (data.failures.length > 0) {
+        toast.warning(
+          i18n?.partialAssigneeAdditionCompletedTitle() ??
+            'Partial assignee addition completed',
+          {
+            description:
+              i18n?.assigneeAddedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
+      } else {
+        toast.success(i18n?.assigneeAddedTitle() ?? 'Assignee added', {
+          description:
+            i18n?.assigneeAddedDescription(data.count) ??
+            `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}`,
+        });
+      }
+    },
+  });
+}
+
+export function useBulkRemoveAssignee(
+  queryClient: QueryClient,
+  wsId: string,
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null,
+  i18n?: BulkOperationI18n
+) {
+  return useMutation({
+    mutationFn: async ({
+      assigneeId,
+      taskIds,
+    }: {
+      assigneeId: string;
+      taskIds: string[];
+    }) => {
+      let successCount = 0;
+      const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
+
+      for (const taskId of taskIds) {
+        try {
+          const taskRecord = await getTaskForRelationMutation(
+            queryClient,
+            boardId,
+            wsId,
+            taskId
+          );
+
+          if (!taskRecord) {
+            throw new Error('Task not found');
+          }
+
+          const nextAssigneeIds = (taskRecord.assignees || [])
+            .map((assignee) => assignee.id)
+            .filter((id): id is string => !!id && id !== assigneeId);
+
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { assignee_ids: nextAssigneeIds },
+            apiOptions
+          );
+          successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      if (successCount === 0) {
+        throw new Error(
+          `Failed to remove assignee from all ${taskIds.length} tasks`
+        );
+      }
+
+      return { count: successCount, assigneeId, taskIds, failures };
+    },
+    onMutate: async ({ assigneeId, taskIds }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const taskIdSet = new Set(taskIds);
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) =>
+            taskIdSet.has(task.id)
+              ? {
+                  ...task,
+                  assignees: (task.assignees || []).filter(
+                    (a) => a.id !== assigneeId
+                  ),
+                }
+              : task
+          );
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+      console.error('Bulk remove assignee failed', error);
+      toast.error(
+        i18n?.failedRemoveAssignee() ??
+          'Failed to remove assignee from selected tasks'
+      );
+    },
+    onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
+
+      if (data.failures.length > 0) {
+        toast.warning(
+          i18n?.partialAssigneeRemovalCompletedTitle() ??
+            'Partial assignee removal completed',
+          {
+            description:
+              i18n?.assigneeRemovedPartialDescription(
+                data.count,
+                data.failures.length
+              ) ??
+              `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
+          }
+        );
+      } else {
+        toast.success(i18n?.assigneeRemovedTitle() ?? 'Assignee removed', {
+          description:
+            i18n?.assigneeRemovedDescription(data.count) ??
+            `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}`,
+        });
+      }
+    },
+  });
+}
