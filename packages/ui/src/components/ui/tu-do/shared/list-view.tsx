@@ -16,7 +16,6 @@ import {
   unicornHead,
   X,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
@@ -109,7 +108,6 @@ export function ListView({
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
   const queryClient = useQueryClient();
-  const supabase = createClient();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
@@ -149,7 +147,6 @@ export function ListView({
   const { bulkDeleteTasks, bulkUpdateDueDate, bulkUpdatePriority } =
     useBulkOperations({
       queryClient,
-      supabase,
       wsId: workspaceId,
       boardId,
       selectedTasks,

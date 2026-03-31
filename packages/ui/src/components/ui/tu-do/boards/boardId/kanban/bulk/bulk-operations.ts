@@ -10,14 +10,17 @@
  */
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  addWorkspaceTaskLabel,
+  getWorkspaceTask,
+  moveWorkspaceTask,
+  removeWorkspaceTaskLabel,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
-import { moveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { useEffect } from 'react';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import { calculateDaysUntilEndOfWeek } from '../../../../utils/weekDateUtils';
@@ -37,7 +40,6 @@ interface WorkspaceMember {
 
 interface BulkOperationsConfig {
   queryClient: QueryClient;
-  supabase?: SupabaseClient;
   wsId: string;
   boardId: string;
   selectedTasks: Set<string>;
@@ -52,12 +54,46 @@ interface BulkOperationsConfig {
   broadcast?: BoardBroadcastFn | null;
 }
 
+function getInternalApiOptions() {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  return { baseUrl: window.location.origin };
+}
+
+async function getTaskForRelationMutation(
+  queryClient: QueryClient,
+  boardId: string,
+  wsId: string,
+  taskId: string
+) {
+  const cachedTasks = queryClient.getQueryData(['tasks', boardId]) as
+    | Task[]
+    | undefined;
+  const cachedTask = cachedTasks?.find((task) => task.id === taskId);
+  if (cachedTask) {
+    return cachedTask;
+  }
+
+  try {
+    const { task } = await getWorkspaceTask(
+      wsId,
+      taskId,
+      getInternalApiOptions()
+    );
+    return task as Task;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Bulk update priority mutation
  */
 function useBulkUpdatePriority(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -73,15 +109,16 @@ function useBulkUpdatePriority(
       // Update one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ priority })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(wsId, taskId, { priority }, apiOptions);
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -146,7 +183,7 @@ function useBulkUpdatePriority(
  */
 function useBulkUpdateEstimation(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -162,15 +199,21 @@ function useBulkUpdateEstimation(
       // Update one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ estimation_points: points })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { estimation_points: points },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -232,7 +275,7 @@ function useBulkUpdateEstimation(
  */
 function useBulkUpdateDueDate(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   weekStartsOn: 0 | 1 | 6 = 0,
   broadcast?: BoardBroadcastFn | null
@@ -267,15 +310,21 @@ function useBulkUpdateDueDate(
       // Update one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ end_date: newDate })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { end_date: newDate },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -355,7 +404,7 @@ function useBulkUpdateDueDate(
  */
 function useBulkUpdateCustomDueDate(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -376,15 +425,21 @@ function useBulkUpdateCustomDueDate(
       // Update one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ end_date: newDate })
-          .eq('id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { end_date: newDate },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -472,14 +527,18 @@ function useBulkMoveToBoard(
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
       const movedTasks: Task[] = [];
+      const apiOptions = getInternalApiOptions();
 
       for (const taskId of taskIds) {
         try {
-          const result = await moveTaskToBoard(
+          const result = await moveWorkspaceTask(
             wsId,
             taskId,
-            targetListId,
-            targetBoardId
+            {
+              list_id: targetListId,
+              target_board_id: targetBoardId,
+            },
+            apiOptions
           );
           movedTasks.push(result.task);
           successCount++;
@@ -573,9 +632,15 @@ function useBulkMoveToBoard(
       console.log(
         `✅ Moved ${data.count} tasks to board ${data.targetBoardId}`
       );
-      const movedIds = new Set(data.movedTasks.map((task) => task.id));
-      const failedTasks = (context?.tasksToMove ?? []).filter(
-        (task) => !movedIds.has(task.id)
+      const failedTaskIds = new Set(
+        data.failures.map((failure) => failure.taskId)
+      );
+      const movedTaskIds = data.taskIds.filter(
+        (taskId) => !failedTaskIds.has(taskId)
+      );
+      const movedIds = new Set(movedTaskIds);
+      const failedTasks = (context?.tasksToMove ?? []).filter((task) =>
+        failedTaskIds.has(task.id)
       );
 
       if (failedTasks.length > 0) {
@@ -593,7 +658,7 @@ function useBulkMoveToBoard(
       }
 
       // Broadcast task deletion from source board
-      for (const tid of data.movedTasks.map((task) => task.id)) {
+      for (const tid of movedTaskIds) {
         broadcast?.('task:delete', { taskId: tid });
       }
       if (data.failures && data.failures.length > 0) {
@@ -632,7 +697,7 @@ function useBulkMoveToBoard(
  */
 function useBulkMoveToList(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -658,21 +723,25 @@ function useBulkMoveToList(
         string,
         { completed_at: string | null; closed_at: string | null }
       >();
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { data, error } = await supabase
-          .from('tasks')
-          .update({ list_id: listId })
-          .eq('id', taskId)
-          .select('id, completed_at, closed_at')
-          .single();
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          const { task: updatedTask } = await moveWorkspaceTask(
+            wsId,
+            taskId,
+            { list_id: listId },
+            apiOptions
+          );
           taskTimestamps.set(taskId, {
-            completed_at: data.completed_at,
-            closed_at: data.closed_at,
+            completed_at: updatedTask.completed_at ?? null,
+            closed_at: updatedTask.closed_at ?? null,
           });
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -760,7 +829,7 @@ function useBulkMoveToList(
  */
 function useBulkMoveToStatus(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   columns: TaskList[],
   broadcast?: BoardBroadcastFn | null
@@ -787,21 +856,25 @@ function useBulkMoveToStatus(
         string,
         { completed_at: string | null; closed_at: string | null }
       >();
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { data, error } = await supabase
-          .from('tasks')
-          .update({ list_id: targetList.id })
-          .eq('id', taskId)
-          .select('id, completed_at, closed_at')
-          .single();
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          const { task: updatedTask } = await moveWorkspaceTask(
+            wsId,
+            taskId,
+            { list_id: targetList.id },
+            apiOptions
+          );
           taskTimestamps.set(taskId, {
-            completed_at: data.completed_at,
-            closed_at: data.closed_at,
+            completed_at: updatedTask.completed_at ?? null,
+            closed_at: updatedTask.closed_at ?? null,
           });
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -894,7 +967,7 @@ function useBulkMoveToStatus(
  */
 function useBulkAddLabel(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   workspaceLabels: WorkspaceLabel[],
   broadcast?: BoardBroadcastFn | null
@@ -913,20 +986,19 @@ function useBulkAddLabel(
       // Note: We try all tasks - duplicates are handled gracefully
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase.from('task_labels').insert({
-          task_id: taskId,
-          label_id: labelId,
-        });
-        // Ignore duplicate errors (already has label)
-        if (
-          error &&
-          error.code !== '23505' &&
-          !String(error.message).toLowerCase().includes('duplicate')
-        ) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await addWorkspaceTaskLabel(wsId, taskId, labelId, apiOptions);
           successCount++;
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
+          if (!message.toLowerCase().includes('duplicate')) {
+            failures.push({ taskId, error: message });
+          } else {
+            successCount++;
+          }
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1003,7 +1075,7 @@ function useBulkAddLabel(
  */
 function useBulkRemoveLabel(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   workspaceLabels: WorkspaceLabel[],
   broadcast?: BoardBroadcastFn | null
@@ -1023,16 +1095,16 @@ function useBulkRemoveLabel(
       // Delete one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_labels')
-          .delete()
-          .eq('task_id', taskId)
-          .eq('label_id', labelId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await removeWorkspaceTaskLabel(wsId, taskId, labelId, apiOptions);
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1096,7 +1168,7 @@ function useBulkRemoveLabel(
  */
 function useBulkAddProject(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   workspaceProjects: WorkspaceProject[],
   broadcast?: BoardBroadcastFn | null
@@ -1115,20 +1187,43 @@ function useBulkAddProject(
       // Note: We try all tasks - duplicates are handled gracefully
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase.from('task_project_tasks').insert({
-          task_id: taskId,
-          project_id: projectId,
-        });
-        // Ignore duplicate errors (already has project)
-        if (
-          error &&
-          error.code !== '23505' &&
-          !String(error.message).toLowerCase().includes('duplicate')
-        ) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          const taskRecord = await getTaskForRelationMutation(
+            queryClient,
+            boardId,
+            wsId,
+            taskId
+          );
+
+          if (!taskRecord) {
+            throw new Error('Task not found');
+          }
+
+          const currentProjectIds = (taskRecord.projects || [])
+            .map((project) => project.id)
+            .filter((id): id is string => !!id);
+
+          const nextProjectIds = [
+            ...new Set([...currentProjectIds, projectId]),
+          ];
+
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { project_ids: nextProjectIds },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
+          if (!message.toLowerCase().includes('duplicate')) {
+            failures.push({ taskId, error: message });
+          } else {
+            successCount++;
+          }
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1206,7 +1301,7 @@ function useBulkAddProject(
  */
 function useBulkRemoveProject(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   workspaceProjects: WorkspaceProject[],
   broadcast?: BoardBroadcastFn | null
@@ -1226,16 +1321,36 @@ function useBulkRemoveProject(
       // Delete one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_project_tasks')
-          .delete()
-          .eq('task_id', taskId)
-          .eq('project_id', projectId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          const taskRecord = await getTaskForRelationMutation(
+            queryClient,
+            boardId,
+            wsId,
+            taskId
+          );
+
+          if (!taskRecord) {
+            throw new Error('Task not found');
+          }
+
+          const nextProjectIds = (taskRecord.projects || [])
+            .map((project) => project.id)
+            .filter((id): id is string => !!id && id !== projectId);
+
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { project_ids: nextProjectIds },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1303,7 +1418,7 @@ function useBulkRemoveProject(
  */
 function useBulkAddAssignee(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   workspaceMembers: WorkspaceMember[] = [],
   broadcast?: BoardBroadcastFn | null
@@ -1325,20 +1440,43 @@ function useBulkAddAssignee(
       // Note: We try all tasks - duplicates are handled gracefully
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase.from('task_assignees').insert({
-          task_id: taskId,
-          user_id: assigneeId,
-        });
-        // Ignore duplicate errors (already has assignee)
-        if (
-          error &&
-          error.code !== '23505' &&
-          !String(error.message).toLowerCase().includes('duplicate')
-        ) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          const taskRecord = await getTaskForRelationMutation(
+            queryClient,
+            boardId,
+            wsId,
+            taskId
+          );
+
+          if (!taskRecord) {
+            throw new Error('Task not found');
+          }
+
+          const currentAssigneeIds = (taskRecord.assignees || [])
+            .map((assignee) => assignee.id)
+            .filter((id): id is string => !!id);
+
+          const nextAssigneeIds = [
+            ...new Set([...currentAssigneeIds, assigneeId]),
+          ];
+
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { assignee_ids: nextAssigneeIds },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
+          if (!message.toLowerCase().includes('duplicate')) {
+            failures.push({ taskId, error: message });
+          } else {
+            successCount++;
+          }
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1417,7 +1555,7 @@ function useBulkAddAssignee(
  */
 function useBulkRemoveAssignee(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -1436,16 +1574,36 @@ function useBulkRemoveAssignee(
       // Delete one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_assignees')
-          .delete()
-          .eq('task_id', taskId)
-          .eq('user_id', assigneeId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          const taskRecord = await getTaskForRelationMutation(
+            queryClient,
+            boardId,
+            wsId,
+            taskId
+          );
+
+          if (!taskRecord) {
+            throw new Error('Task not found');
+          }
+
+          const nextAssigneeIds = (taskRecord.assignees || [])
+            .map((assignee) => assignee.id)
+            .filter((id): id is string => !!id && id !== assigneeId);
+
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { assignee_ids: nextAssigneeIds },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1509,7 +1667,7 @@ function useBulkRemoveAssignee(
  */
 function useBulkClearLabels(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -1522,15 +1680,21 @@ function useBulkClearLabels(
       // Delete one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_labels')
-          .delete()
-          .eq('task_id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { label_ids: [] },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1587,7 +1751,7 @@ function useBulkClearLabels(
  */
 function useBulkClearProjects(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -1600,15 +1764,21 @@ function useBulkClearProjects(
       // Delete one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_project_tasks')
-          .delete()
-          .eq('task_id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { project_ids: [] },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1665,7 +1835,7 @@ function useBulkClearProjects(
  */
 function useBulkClearAssignees(
   queryClient: QueryClient,
-  supabase: SupabaseClient,
+  wsId: string,
   boardId: string,
   broadcast?: BoardBroadcastFn | null
 ) {
@@ -1678,15 +1848,21 @@ function useBulkClearAssignees(
       // Delete one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const apiOptions = getInternalApiOptions();
       for (const taskId of taskIds) {
-        const { error } = await supabase
-          .from('task_assignees')
-          .delete()
-          .eq('task_id', taskId);
-        if (error) {
-          failures.push({ taskId, error: error.message });
-        } else {
+        try {
+          await updateWorkspaceTask(
+            wsId,
+            taskId,
+            { assignee_ids: [] },
+            apiOptions
+          );
           successCount++;
+        } catch (error) {
+          failures.push({
+            taskId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
         }
       }
       // If all failed, throw to trigger onError handler
@@ -1829,7 +2005,6 @@ function useBulkDeleteTasks(
 export function useBulkOperations(config: BulkOperationsConfig) {
   const {
     queryClient,
-    supabase: providedSupabase,
     wsId,
     boardId,
     selectedTasks,
@@ -1843,103 +2018,102 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     setBulkDeleteOpen,
     broadcast,
   } = config;
-  const supabase = providedSupabase ?? createClient();
 
   // Create all mutations (pass taskIds at call time, not hook creation time)
   const priorityMutation = useBulkUpdatePriority(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );
   const estimationMutation = useBulkUpdateEstimation(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );
   const dueDateMutation = useBulkUpdateDueDate(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     weekStartsOn,
     broadcast
   );
   const customDueDateMutation = useBulkUpdateCustomDueDate(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );
   const moveToListMutation = useBulkMoveToList(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );
   const statusMutation = useBulkMoveToStatus(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     columns,
     broadcast
   );
   const addLabelMutation = useBulkAddLabel(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceLabels,
     broadcast
   );
   const removeLabelMutation = useBulkRemoveLabel(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceLabels,
     broadcast
   );
   const addProjectMutation = useBulkAddProject(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceProjects,
     broadcast
   );
   const removeProjectMutation = useBulkRemoveProject(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceProjects,
     broadcast
   );
   const addAssigneeMutation = useBulkAddAssignee(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     workspaceMembers,
     broadcast
   );
   const removeAssigneeMutation = useBulkRemoveAssignee(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );
   const clearLabelsMutation = useBulkClearLabels(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );
   const clearProjectsMutation = useBulkClearProjects(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );
   const clearAssigneesMutation = useBulkClearAssignees(
     queryClient,
-    supabase,
+    wsId,
     boardId,
     broadcast
   );
