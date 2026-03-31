@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/period_stats.dart';
+import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/models/time_tracking/session_page.dart';
+import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
@@ -27,7 +30,12 @@ void main() {
     registerFallbackValue(DateTime(2000));
   });
 
-  setUp(() {
+  setUpAll(() async {
+    await CacheStore.instance.init();
+  });
+
+  setUp(() async {
+    await CacheStore.instance.clearScope();
     SharedPreferences.setMockInitialValues({});
   });
 
@@ -198,6 +206,85 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+      'loadData refreshes history when route context changes date',
+      () async {
+        when(
+          () => repository.getRunningSession(any()),
+        ).thenAnswer((_) async => null);
+        when(
+          () => repository.getCategories(any()),
+        ).thenAnswer((_) async => const []);
+        when(
+          () => repository.getSessions(
+            any(),
+            limit: any(named: 'limit'),
+          ),
+        ).thenAnswer((_) async => const <TimeTrackingSession>[]);
+        when(
+          () => repository.getStats(
+            any(),
+            any(),
+            timezone: any(named: 'timezone'),
+          ),
+        ).thenAnswer((_) async => const TimeTrackerStats());
+        when(
+          () => repository.getHistorySessions(
+            any(),
+            dateFrom: any(named: 'dateFrom'),
+            dateTo: any(named: 'dateTo'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (_) async => const TimeTrackingSessionPage(
+            sessions: [],
+            hasMore: false,
+          ),
+        );
+        when(
+          () => repository.getPeriodStats(
+            any(),
+            dateFrom: any(named: 'dateFrom'),
+            dateTo: any(named: 'dateTo'),
+            userId: any(named: 'userId'),
+            timezone: any(named: 'timezone'),
+          ),
+        ).thenAnswer((_) async => const TimeTrackingPeriodStats());
+        when(
+          () => repository.loadPomodoroSettings(),
+        ).thenAnswer((_) async => const PomodoroSettings());
+        when(
+          () => repository.getWorkspaceSettings(any()),
+        ).thenAnswer((_) async => null);
+
+        await cubit.loadData('ws-1', 'user-1');
+        clearInteractions(repository);
+
+        final targetDate = DateTime(2026, 1, 15, 14, 30);
+        cubit.setHistoryContext(
+          viewMode: HistoryViewMode.day,
+          anchorDate: targetDate,
+        );
+
+        await cubit.loadData('ws-1', 'user-1');
+
+        expect(cubit.state.historyViewMode, HistoryViewMode.day);
+        expect(cubit.state.historyAnchorDate, DateTime(2026, 1, 15));
+        verify(
+          () => repository.getHistorySessions(
+            'ws-1',
+            dateFrom: DateTime(2026, 1, 15),
+            dateTo: DateTime(2026, 1, 15, 23, 59, 59, 999, 999),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+            userId: 'user-1',
+          ),
+        ).called(1);
+      },
+    );
   });
 
   group('TimeTrackerCubit goal loading behavior', () {
