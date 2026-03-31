@@ -7207,6 +7207,7 @@
     "name": "Tên",
     "price": "Giá",
     "price_by_warehouse": "Giá theo kho hàng",
+    "status": "Trạng thái",
     "stock": "Tồn kho",
     "stock_by_warehouse": "Tồn kho theo kho hàng",
     "unit": "Đơn vị",
@@ -12132,8 +12133,20 @@
     "dialog": {
       "description": "Thông tin sản phẩm và quản lý"
     },
+    "export": {
+      "csv": "Xuất CSV",
+      "description": "Tải xuống danh sách sản phẩm hiện tại với các bộ lọc tìm kiếm, danh mục và lưu trữ đang được áp dụng.",
+      "excel": "Xuất Excel",
+      "failed": "Không thể xuất sản phẩm",
+      "title": "Xuất sản phẩm"
+    },
     "failed_delete_product": "Đã có lỗi xảy ra khi xóa sản phẩm",
     "failed_save_product": "Đã có lỗi xảy ra khi lưu sản phẩm",
+    "filters": {
+      "category": "Danh mục",
+      "status": "Trạng thái",
+      "uncategorized": "Chưa phân loại"
+    },
     "form": {
       "add_warehouse": "Thêm kho hàng",
       "amount": "Số lượng",
@@ -12159,8 +12172,11 @@
       "warehouse": "Kho hàng"
     },
     "messages": {
+      "archive_confirmation": "Bạn có chắc chắn muốn lưu trữ \"{name}\" không? Sản phẩm đã lưu trữ sẽ bị ẩn khỏi danh sách và bộ chọn sản phẩm mặc định.",
+      "archive_product_title": "Lưu trữ sản phẩm",
       "delete_confirmation": "Bạn có chắc chắn muốn xóa \"{name}\"? Hành động này không thể hoàn tác.",
       "deleting": "Đang xóa...",
+      "failed_archive_product": "Không thể cập nhật trạng thái lưu trữ của sản phẩm",
       "failed_delete_product": "Đã có lỗi xảy ra khi xóa sản phẩm",
       "failed_update_details": "Đã có lỗi xảy ra khi cập nhật chi tiết sản phẩm",
       "failed_update_product": "Đã có lỗi xảy ra khi cập nhật sản phẩm",
@@ -12168,9 +12184,13 @@
       "no_changes_to_save": "Không có thay đổi để lưu",
       "no_delete_permission": "Bạn không có quyền xóa kho hàng",
       "no_stock_changes": "Chưa có thay đổi kho nào",
+      "product_archived_successfully": "Đã lưu trữ sản phẩm thành công",
       "product_deleted_successfully": "Sản phẩm được xóa thành công",
+      "product_restored_successfully": "Đã khôi phục sản phẩm thành công",
       "product_updated_successfully": "Sản phẩm được cập nhật thành công",
       "recently": "Gần đây",
+      "restore_confirmation": "Bạn có chắc chắn muốn khôi phục \"{name}\" không? Sản phẩm sẽ xuất hiện lại trong các danh sách sản phẩm đang hoạt động.",
+      "restore_product_title": "Khôi phục sản phẩm",
       "stock_low_warning": "Số lượng tồn kho thấp hơn mức tối thiểu",
       "unlimited_stock_available": "Sản phẩm này có kho không giới hạn."
     },

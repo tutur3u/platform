@@ -3,6 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { AlertTriangle, Warehouse } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
@@ -64,6 +65,30 @@ export const productColumns = ({
         />
       ),
       cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+    },
+    {
+      id: 'status',
+      accessorFn: (row) => (row.archived ? 'archived' : 'active'),
+      enableSorting: false,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.status`)}
+        />
+      ),
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className={
+            row.original.archived
+              ? 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
+              : 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+          }
+        >
+          {row.original.archived ? t('common.archived') : t('common.active')}
+        </Badge>
+      ),
     },
     {
       accessorKey: 'category',

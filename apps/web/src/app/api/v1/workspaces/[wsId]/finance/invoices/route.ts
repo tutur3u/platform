@@ -118,6 +118,7 @@ export async function calculateInvoiceValues(
     .in('product_id', productIds)
     .in('unit_id', unitIds)
     .in('warehouse_id', warehouseIds)
+    .filter('workspace_products.archived', 'eq', 'false')
     .eq('workspace_products.ws_id', wsId);
 
   if (productError) {
@@ -569,6 +570,7 @@ export async function POST(req: Request, { params }: Params) {
         'id',
         productValues.map((product) => product.product_id)
       )
+      .filter('archived', 'eq', 'false')
       .eq('ws_id', wsId);
 
     if (productsError) {

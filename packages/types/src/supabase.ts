@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1';
+    PostgrestVersion: '14.4';
   };
   public: {
     Tables: {
@@ -18521,6 +18521,7 @@ export type Database = {
       };
       workspace_products: {
         Row: {
+          archived: boolean;
           avatar_url: string | null;
           category_id: string;
           created_at: string | null;
@@ -18533,6 +18534,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          archived?: boolean;
           avatar_url?: string | null;
           category_id: string;
           created_at?: string | null;
@@ -18545,6 +18547,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          archived?: boolean;
           avatar_url?: string | null;
           category_id?: string;
           created_at?: string | null;

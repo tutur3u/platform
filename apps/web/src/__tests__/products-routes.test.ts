@@ -67,8 +67,10 @@ const mocks = vi.hoisted(() => {
           select: vi.fn((fields: string) => {
             if (fields === 'count()') {
               return {
-                eq: vi.fn().mockReturnValue({
-                  single: productCountSingle,
+                filter: vi.fn().mockReturnValue({
+                  eq: vi.fn().mockReturnValue({
+                    single: productCountSingle,
+                  }),
                 }),
               };
             }

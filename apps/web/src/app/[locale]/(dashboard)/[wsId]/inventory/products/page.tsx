@@ -29,9 +29,11 @@ interface Props {
     wsId: string;
   }>;
   searchParams: Promise<{
+    categoryId?: string;
     q: string;
     page: string;
     pageSize: string;
+    status?: 'active' | 'archived' | 'all';
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }>;
@@ -121,15 +123,19 @@ export default async function WorkspaceProductsPage({
 async function getInitialData(
   wsId: string,
   {
+    categoryId,
     q,
     page = '1',
     pageSize = '10',
+    status = 'active',
     sortBy,
     sortOrder,
   }: {
+    categoryId?: string;
     q?: string;
     page?: string;
     pageSize?: string;
+    status?: 'active' | 'archived' | 'all';
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   },
@@ -160,6 +166,9 @@ async function getInitialData(
       )
       .eq('ws_id', wsId);
 
+    if (status === 'active') query = query.filter('archived', 'eq', 'false');
+    if (status === 'archived') query = query.filter('archived', 'eq', 'true');
+    if (categoryId) query = query.eq('category_id', categoryId);
     if (q) query = query.ilike('name', `%${q}%`);
     query = query.range(start, end).limit(parsedSize);
 
@@ -187,6 +196,9 @@ async function getInitialData(
       })
       .eq('ws_id', wsId);
 
+    if (status === 'active') query = query.filter('archived', 'eq', 'false');
+    if (status === 'archived') query = query.filter('archived', 'eq', 'true');
+    if (categoryId) query = query.eq('category_id', categoryId);
     if (q) query = query.ilike('name', `%${q}%`);
     query = query.range(start, end).limit(parsedSize);
 
@@ -208,53 +220,64 @@ async function getInitialData(
     count = fetchedCount;
   }
 
-  const data = (rawData || []).map((item: RawInventoryProductWithChanges) => ({
-    id: item.id,
-    name: item.name,
-    manufacturer: item.manufacturer,
-    description: item.description,
-    usage: item.usage,
-    unit: canViewStockQuantity
-      ? item.inventory_products?.[0]?.inventory_units?.name
-      : null,
-    stock: canViewStockQuantity
-      ? (item.inventory_products || []).map((inventory: InventoryProduct) => ({
-          amount: inventory.amount,
-          min_amount: inventory.min_amount,
-          unit: inventory.inventory_units?.name,
-          warehouse: inventory.inventory_warehouses?.name,
-          price: inventory.price,
-        }))
-      : [],
-    // Inventory with ids for editing
-    inventory: canViewStockQuantity
-      ? (item.inventory_products || []).map((inventory: InventoryProduct) => ({
-          unit_id: inventory.unit_id,
-          warehouse_id: inventory.warehouse_id,
-          amount: inventory.amount,
-          min_amount: inventory.min_amount,
-          price: inventory.price,
-        }))
-      : [],
-    min_amount: canViewStockQuantity
-      ? item.inventory_products?.[0]?.min_amount || 0
-      : 0,
-    warehouse: canViewStockQuantity
-      ? item.inventory_products?.[0]?.inventory_warehouses?.name
-      : null,
-    category: item.product_categories?.name,
-    category_id: item.category_id,
-    ws_id: item.ws_id,
-    created_at: item.created_at,
-    stock_changes: canViewStockQuantity
-      ? item.product_stock_changes?.map((change: ProductStockChange) => ({
-          amount: change.amount,
-          creator: change.creator,
-          beneficiary: change.beneficiary,
-          created_at: change.created_at,
-        })) || []
-      : [],
-  }));
+  const data = (rawData || []).map((item: RawInventoryProductWithChanges) => {
+    const product = item as RawInventoryProductWithChanges & {
+      archived?: boolean;
+    };
+
+    return {
+      archived: product.archived ?? false,
+      id: item.id,
+      name: item.name,
+      manufacturer: item.manufacturer,
+      description: item.description,
+      usage: item.usage,
+      unit: canViewStockQuantity
+        ? item.inventory_products?.[0]?.inventory_units?.name
+        : null,
+      stock: canViewStockQuantity
+        ? (item.inventory_products || []).map(
+            (inventory: InventoryProduct) => ({
+              amount: inventory.amount,
+              min_amount: inventory.min_amount,
+              unit: inventory.inventory_units?.name,
+              warehouse: inventory.inventory_warehouses?.name,
+              price: inventory.price,
+            })
+          )
+        : [],
+      // Inventory with ids for editing
+      inventory: canViewStockQuantity
+        ? (item.inventory_products || []).map(
+            (inventory: InventoryProduct) => ({
+              unit_id: inventory.unit_id,
+              warehouse_id: inventory.warehouse_id,
+              amount: inventory.amount,
+              min_amount: inventory.min_amount,
+              price: inventory.price,
+            })
+          )
+        : [],
+      min_amount: canViewStockQuantity
+        ? item.inventory_products?.[0]?.min_amount || 0
+        : 0,
+      warehouse: canViewStockQuantity
+        ? item.inventory_products?.[0]?.inventory_warehouses?.name
+        : null,
+      category: item.product_categories?.name,
+      category_id: item.category_id,
+      ws_id: item.ws_id,
+      created_at: item.created_at,
+      stock_changes: canViewStockQuantity
+        ? item.product_stock_changes?.map((change: ProductStockChange) => ({
+            amount: change.amount,
+            creator: change.creator,
+            beneficiary: change.beneficiary,
+            created_at: change.created_at,
+          })) || []
+        : [],
+    };
+  });
 
   return { data, count } as { data: Product[]; count: number };
 }

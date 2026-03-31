@@ -58,6 +58,7 @@ export async function GET(request: Request, { params }: Params) {
       .select(
         `id, name, description, manufacturer, category_id, inventory_products!inventory_products_product_id_fkey(unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(id, name), inventory_warehouses!inventory_products_warehouse_id_fkey(id, name))`
       )
+      .filter('archived', 'eq', 'false')
       .eq('ws_id', wsId)
       .order('name');
 

@@ -13,7 +13,9 @@ import {
 } from 'nuqs';
 import { useCallback, useState } from 'react';
 import { productColumns } from './columns';
-import { useWorkspaceProducts } from './hooks';
+import { productStatusValues, useWorkspaceProducts } from './hooks';
+import { ProductsExportDialogContent } from './products-export-dialog-content';
+import { ProductsFilters } from './products-filters';
 import { ProductQuickDialog } from './quick-dialog';
 
 interface Props {
@@ -94,18 +96,42 @@ export function ProductsPageClient({
     })
   );
 
+  const [categoryId, setCategoryId] = useQueryState(
+    'categoryId',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
+
+  const [status, setStatus] = useQueryState(
+    'status',
+    parseAsStringLiteral(productStatusValues)
+      .withDefault('active')
+      .withOptions({
+        shallow: true,
+      })
+  );
+
   const { data, isLoading, isFetching } = useWorkspaceProducts(
     wsId,
     {
+      categoryId: categoryId || undefined,
       q,
       page,
       pageSize,
+      status,
       sortBy: sortBy || undefined,
       sortOrder: sortOrder || undefined,
     },
     {
       initialData:
-        !q && page === 1 && pageSize === 10 && !sortBy && !sortOrder
+        !categoryId &&
+        !q &&
+        page === 1 &&
+        pageSize === 10 &&
+        status === 'active' &&
+        !sortBy &&
+        !sortOrder
           ? initialData
           : undefined,
     }
@@ -161,12 +187,22 @@ export function ProductsPageClient({
   );
 
   const handleResetParams = useCallback(() => {
+    setCategoryId(null);
     setQ(null);
     setPage(null);
     setPageSize(null);
+    setStatus(null);
     setSortBy(null);
     setSortOrder(null);
-  }, [setQ, setPage, setPageSize, setSortBy, setSortOrder]);
+  }, [
+    setCategoryId,
+    setPage,
+    setPageSize,
+    setQ,
+    setSortBy,
+    setSortOrder,
+    setStatus,
+  ]);
 
   const showLoadingOverlay = isFetching && !isLoading;
 
@@ -189,6 +225,28 @@ export function ProductsPageClient({
         count={data?.count}
         namespace="product-data-table"
         columnGenerator={productColumns}
+        filters={
+          <ProductsFilters
+            wsId={wsId}
+            categoryId={categoryId || undefined}
+            status={status}
+            onCategoryChange={(value) => {
+              setCategoryId(value || null);
+              setPage(1);
+            }}
+            onStatusChange={(value) => {
+              setStatus(value);
+              setPage(1);
+            }}
+          />
+        }
+        isFiltered={
+          Boolean(categoryId) ||
+          Boolean(q) ||
+          status !== 'active' ||
+          Boolean(sortBy) ||
+          Boolean(sortOrder)
+        }
         pageIndex={page - 1}
         pageSize={pageSize}
         onSearch={handleSearch}
@@ -210,6 +268,17 @@ export function ProductsPageClient({
           usage: false,
           created_at: false,
         }}
+        toolbarExportContent={
+          <ProductsExportDialogContent
+            wsId={wsId}
+            q={q || undefined}
+            categoryId={categoryId || undefined}
+            status={status}
+            sortBy={sortBy || undefined}
+            sortOrder={sortOrder || undefined}
+            currency={currency}
+          />
+        }
         onRefresh={() => {
           queryClient.invalidateQueries({
             queryKey: ['workspace-products', wsId],

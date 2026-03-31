@@ -77,8 +77,12 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const item = data as unknown as RawInventoryProductWithChanges;
+  const product = item as RawInventoryProductWithChanges & {
+    archived?: boolean;
+  };
 
   const formattedProduct = {
+    archived: product.archived ?? false,
     id: item.id,
     name: item.name,
     manufacturer: item.manufacturer,

@@ -7207,6 +7207,7 @@
     "name": "Name",
     "price": "Price",
     "price_by_warehouse": "Price by Warehouse",
+    "status": "Status",
     "stock": "Stock",
     "stock_by_warehouse": "Stock by Warehouse",
     "unit": "Unit",
@@ -12132,8 +12133,20 @@
     "dialog": {
       "description": "Product information and management"
     },
+    "export": {
+      "csv": "Export CSV",
+      "description": "Download the current product list with the active search, category, and archive filters applied.",
+      "excel": "Export Excel",
+      "failed": "Failed to export products",
+      "title": "Export products"
+    },
     "failed_delete_product": "Failed to delete product",
     "failed_save_product": "Failed when saving product",
+    "filters": {
+      "category": "Category",
+      "status": "Status",
+      "uncategorized": "Uncategorized"
+    },
     "form": {
       "add_warehouse": "Add warehouse",
       "amount": "Amount",
@@ -12159,8 +12172,11 @@
       "warehouse": "Warehouse"
     },
     "messages": {
+      "archive_confirmation": "Are you sure you want to archive \"{name}\"? Archived products are hidden from the default product list and selectors.",
+      "archive_product_title": "Archive product",
       "delete_confirmation": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
       "deleting": "Deleting...",
+      "failed_archive_product": "Failed to update product archive status",
       "failed_delete_product": "Failed to delete product",
       "failed_update_details": "Failed to update product details",
       "failed_update_product": "Failed to update product",
@@ -12168,9 +12184,13 @@
       "no_changes_to_save": "No changes to save",
       "no_delete_permission": "You do not have permission to delete inventory",
       "no_stock_changes": "No stock changes yet",
+      "product_archived_successfully": "Product archived successfully",
       "product_deleted_successfully": "Product deleted successfully",
+      "product_restored_successfully": "Product restored successfully",
       "product_updated_successfully": "Product updated successfully",
       "recently": "Recently",
+      "restore_confirmation": "Are you sure you want to restore \"{name}\"? It will appear in active product lists again.",
+      "restore_product_title": "Restore product",
       "stock_low_warning": "Stock is below minimum amount",
       "unlimited_stock_available": "This product has unlimited stock available."
     },

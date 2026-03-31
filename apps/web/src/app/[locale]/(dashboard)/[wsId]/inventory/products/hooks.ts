@@ -4,10 +4,15 @@ import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 
+export const productStatusValues = ['active', 'archived', 'all'] as const;
+export type ProductStatusFilter = (typeof productStatusValues)[number];
+
 export interface ProductsParams {
+  categoryId?: string;
   q?: string;
   page?: number;
   pageSize?: number;
+  status?: ProductStatusFilter;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -15,6 +20,43 @@ export interface ProductsParams {
 export interface ProductsResponse {
   data: Product[];
   count: number;
+}
+
+export async function fetchWorkspaceProducts(
+  wsId: string,
+  params: ProductsParams = {}
+): Promise<ProductsResponse> {
+  const {
+    categoryId,
+    q = '',
+    page = 1,
+    pageSize = 10,
+    status = 'active',
+    sortBy,
+    sortOrder,
+  } = params;
+
+  const searchParams = new URLSearchParams();
+
+  if (categoryId) searchParams.set('categoryId', categoryId);
+  if (q) searchParams.set('q', q);
+  searchParams.set('page', String(page));
+  searchParams.set('pageSize', String(pageSize));
+  searchParams.set('status', status);
+  if (sortBy) searchParams.set('sortBy', sortBy);
+  if (sortOrder) searchParams.set('sortOrder', sortOrder);
+
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/inventory/products?${searchParams.toString()}`,
+    { cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspace products');
+  }
+
+  const json = await response.json();
+  return json as ProductsResponse;
 }
 
 export function useWorkspaceProducts(
@@ -25,35 +67,32 @@ export function useWorkspaceProducts(
     initialData?: ProductsResponse;
   }
 ) {
-  const { q = '', page = 1, pageSize = 10, sortBy, sortOrder } = params;
+  const {
+    categoryId,
+    q = '',
+    page = 1,
+    pageSize = 10,
+    status = 'active',
+    sortBy,
+    sortOrder,
+  } = params;
 
   return useQuery({
     queryKey: [
       'workspace-products',
       wsId,
-      { q, page, pageSize, sortBy, sortOrder },
+      { categoryId, q, page, pageSize, status, sortBy, sortOrder },
     ],
-    queryFn: async (): Promise<ProductsResponse> => {
-      const searchParams = new URLSearchParams();
-
-      if (q) searchParams.set('q', q);
-      searchParams.set('page', String(page));
-      searchParams.set('pageSize', String(pageSize));
-      if (sortBy) searchParams.set('sortBy', sortBy);
-      if (sortOrder) searchParams.set('sortOrder', sortOrder);
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/inventory/products?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspace products');
-      }
-
-      const json = await response.json();
-      return json as ProductsResponse;
-    },
+    queryFn: () =>
+      fetchWorkspaceProducts(wsId, {
+        categoryId,
+        q,
+        page,
+        pageSize,
+        status,
+        sortBy,
+        sortOrder,
+      }),
     enabled: options?.enabled !== false,
     initialData: options?.initialData,
     placeholderData: keepPreviousData,

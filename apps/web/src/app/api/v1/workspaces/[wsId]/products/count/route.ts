@@ -39,6 +39,7 @@ async function getDataWithApiKey({
   const mainQuery = sbAdmin
     .from('workspace_products')
     .select('count()')
+    .filter('archived', 'eq', 'false')
     .eq('ws_id', wsId)
     .single();
 
@@ -94,6 +95,7 @@ async function getDataFromSession({
   const { data, error } = await sbAdmin
     .from('workspace_products')
     .select('count()')
+    .filter('archived', 'eq', 'false')
     .eq('ws_id', normalizedWsId)
     .single();
 

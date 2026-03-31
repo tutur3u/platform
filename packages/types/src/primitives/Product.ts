@@ -1,4 +1,5 @@
 export interface Product {
+  archived?: boolean;
   id: string;
   name?: string;
   manufacturer?: string;
@@ -50,6 +51,7 @@ export interface Product {
 
 // TODO: deprecate Product type for Product2
 export interface Product2 {
+  archived?: boolean;
   id: string;
   name: string;
   manufacturer?: string;
