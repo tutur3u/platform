@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions, audit;
 
-select plan(10);
+select plan(14);
 
 insert into public.users (id)
 values
@@ -335,6 +335,118 @@ select is(
   ),
   0::bigint,
   'backfill does not insert rows for other workspaces'
+);
+
+insert into public.workspace_user_status_changes (
+  user_id,
+  ws_id,
+  archived,
+  archived_until,
+  creator_id,
+  actor_auth_uid,
+  source,
+  created_at
+)
+values (
+  '00000000-0000-0000-0000-000000000720',
+  '00000000-0000-0000-0000-000000000710',
+  true,
+  '2026-03-20T00:00:00Z',
+  '00000000-0000-0000-0000-000000000721',
+  '00000000-0000-0000-0000-000000000701',
+  'backfilled',
+  '2026-03-15T08:00:00Z'
+);
+
+select is(
+  (
+    select count(*)
+    from public.list_workspace_user_audit_feed(
+      '00000000-0000-0000-0000-000000000710',
+      '2026-03-01T00:00:00Z',
+      '2026-04-01T00:00:00Z',
+      'all',
+      'all',
+      null,
+      null,
+      20,
+      0
+    )
+  ),
+  5::bigint,
+  'list_workspace_user_audit_feed includes unmatched legacy status rows'
+);
+
+select is(
+  (
+    select string_agg(
+      total_events::text || ':' ||
+      archived_events::text || ':' ||
+      reactivated_events::text || ':' ||
+      archive_timing_events::text || ':' ||
+      profile_updates::text || ':' ||
+      affected_users_count::text || ':' ||
+      coalesce(top_actor_name, '') || ':' ||
+      top_actor_count::text,
+      ''
+    )
+    from public.summarize_workspace_user_audit_feed(
+      '00000000-0000-0000-0000-000000000710',
+      '2026-03-01T00:00:00Z',
+      '2026-04-01T00:00:00Z',
+      'all',
+      'all',
+      null,
+      null
+    )
+  ),
+  '5:2:1:1:1:1:Linked Actor User:4',
+  'summarize_workspace_user_audit_feed returns exact counts and top actor from normalized feed'
+);
+
+select is(
+  (
+    select string_agg(
+      bucket_key || ':' ||
+      total_count::text || ':' ||
+      archived_count::text || ':' ||
+      reactivated_count::text || ':' ||
+      archive_timing_count::text || ':' ||
+      profile_update_count::text,
+      ''
+    )
+    from public.list_workspace_user_audit_bucket_counts(
+      '00000000-0000-0000-0000-000000000710',
+      '2026-03-01T00:00:00Z',
+      '2026-04-01T00:00:00Z',
+      'monthly',
+      'all',
+      'all',
+      null,
+      null
+    )
+  ),
+  '2026-03-01:1:1:0:0:02026-03-05:1:0:1:0:02026-03-07:1:0:0:1:02026-03-09:1:0:0:0:12026-03-15:1:1:0:0:0',
+  'list_workspace_user_audit_bucket_counts returns per-bucket status counts without rounding'
+);
+
+select is(
+  (
+    select max(total_count)
+    from public.list_workspace_user_audit_feed(
+      '00000000-0000-0000-0000-000000000710',
+      '2026-03-01T00:00:00Z',
+      '2026-04-01T00:00:00Z',
+      'all',
+      'all',
+      null,
+      null,
+      2,
+      0
+    )
+  ),
+  5::bigint,
+  'paginated feed rows carry the exact total_count for the filtered result set'
 );
 
 select * from finish();

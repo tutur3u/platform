@@ -25992,6 +25992,57 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      list_workspace_user_audit_bucket_counts: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_period: string;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          archive_timing_count: number;
+          archived_count: number;
+          bucket_key: string;
+          profile_update_count: number;
+          reactivated_count: number;
+          total_count: number;
+        }[];
+      };
+      list_workspace_user_audit_feed: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          actor_auth_uid: string;
+          actor_email: string;
+          actor_id: string;
+          actor_name: string;
+          actor_workspace_user_id: string;
+          affected_user_email: string;
+          affected_user_id: string;
+          affected_user_name: string;
+          after: Json;
+          audit_record_id: number;
+          before: Json;
+          changed_fields: string[];
+          event_kind: string;
+          occurred_at: string;
+          source: string;
+          total_count: number;
+        }[];
+      };
       list_workspace_user_audit_records: {
         Args: { p_end: string; p_start: string; p_ws_id: string };
         Returns: {
@@ -26453,6 +26504,28 @@ export type Database = {
           sum: number;
         }[];
       };
+      summarize_workspace_user_audit_feed: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          affected_users_count: number;
+          archive_related_events: number;
+          archive_timing_events: number;
+          archived_events: number;
+          profile_updates: number;
+          reactivated_events: number;
+          top_actor_count: number;
+          top_actor_name: string;
+          total_events: number;
+        }[];
+      };
       sync_my_notifications: {
         Args: never;
         Returns: {
@@ -26819,6 +26892,42 @@ export type Database = {
       workspace_has_available_seats: {
         Args: { target_ws_id: string };
         Returns: boolean;
+      };
+      workspace_user_audit_changed_fields: {
+        Args: { next_record: Json; previous_record: Json };
+        Returns: string[];
+      };
+      workspace_user_audit_changed_snapshot: {
+        Args: { next_record: Json; p_use_next: boolean; previous_record: Json };
+        Returns: Json;
+      };
+      workspace_user_audit_event_kind: {
+        Args: {
+          next_record: Json;
+          p_op: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE';
+          previous_record: Json;
+        };
+        Returns: string;
+      };
+      workspace_user_audit_feed: {
+        Args: { p_end: string; p_start: string; p_ws_id: string };
+        Returns: {
+          actor_auth_uid: string;
+          actor_email: string;
+          actor_id: string;
+          actor_name: string;
+          actor_workspace_user_id: string;
+          affected_user_email: string;
+          affected_user_id: string;
+          affected_user_name: string;
+          after: Json;
+          audit_record_id: number;
+          before: Json;
+          changed_fields: string[];
+          event_kind: string;
+          occurred_at: string;
+          source: string;
+        }[];
       };
       workspace_user_audit_user_id: {
         Args: { next_record: Json; previous_record: Json };

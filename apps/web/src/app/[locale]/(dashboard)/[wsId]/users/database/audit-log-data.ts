@@ -3,17 +3,14 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { z } from 'zod';
 import {
   buildWorkspaceUserAuditSummary,
-  filterWorkspaceUserAuditEvents,
   humanizeAuditField,
   normalizeAuditFieldValue,
-  normalizeWorkspaceUserAuditEvent,
-  summarizeWorkspaceUserAuditEvents,
+  type WorkspaceUserAuditChartStat,
   type WorkspaceUserAuditEvent,
   type WorkspaceUserAuditEventKind,
   type WorkspaceUserAuditFieldChange,
   type WorkspaceUserAuditIdentity,
-  type WorkspaceUserAuditRawRecord,
-  type WorkspaceUserAuditRecordRow,
+  type WorkspaceUserAuditSummary,
 } from '@/lib/workspace-user-audit/normalize';
 import {
   getAuditLogTimeOptions,
@@ -43,37 +40,44 @@ const AuditLogPaginationSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
 });
 
-type PlatformUserRow = {
-  id: string;
-  display_name: string | null;
-  user_private_details?:
-    | {
-        full_name: string | null;
-        email: string | null;
-      }
-    | {
-        full_name: string | null;
-        email: string | null;
-      }[]
-    | null;
-};
-
-type WorkspaceUserRow = {
-  id: string;
-  full_name: string | null;
-  display_name: string | null;
-  email: string | null;
-};
-
-type WorkspaceUserLinkRow = {
-  platform_user_id: string;
-  virtual_user_id: string;
-  workspace_user: WorkspaceUserRow | WorkspaceUserRow[] | null;
-};
-
-type StatusSourceRow = {
-  audit_record_version_id: number | null;
+type AuditFeedRow = {
+  audit_record_id: number;
+  event_kind: WorkspaceUserAuditEventKind;
+  occurred_at: string;
   source: AuditLogSource;
+  affected_user_id: string;
+  affected_user_name: string | null;
+  affected_user_email: string | null;
+  actor_auth_uid: string | null;
+  actor_workspace_user_id: string | null;
+  actor_id: string | null;
+  actor_name: string | null;
+  actor_email: string | null;
+  changed_fields: string[] | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  total_count?: number | null;
+};
+
+type AuditSummaryRow = {
+  total_events: number | null;
+  archived_events: number | null;
+  reactivated_events: number | null;
+  archive_timing_events: number | null;
+  archive_related_events: number | null;
+  profile_updates: number | null;
+  affected_users_count: number | null;
+  top_actor_name: string | null;
+  top_actor_count: number | null;
+};
+
+type AuditBucketRow = {
+  bucket_key: string;
+  total_count: number | null;
+  archived_count: number | null;
+  reactivated_count: number | null;
+  archive_timing_count: number | null;
+  profile_update_count: number | null;
 };
 
 export type LegacyStatusChangeRow = {
@@ -95,62 +99,248 @@ function resolveSourceFilter(value?: string): AuditLogSourceFilter {
   return AuditLogSourceSchema.catch('all').parse(value);
 }
 
-function normalizeName(...values: Array<string | null | undefined>) {
-  for (const value of values) {
-    if (value && value.trim().length > 0) {
-      return value.trim();
-    }
-  }
-
-  return null;
+function toCount(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
-function extractUserPrivateDetails(
-  value: PlatformUserRow['user_private_details']
-): { full_name: string | null; email: string | null } | null {
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value ?? null;
-}
-
-function batchValues<T>(values: T[], batchSize = 500) {
-  const nextBatches: T[][] = [];
-
-  for (let index = 0; index < values.length; index += batchSize) {
-    nextBatches.push(values.slice(index, index + batchSize));
-  }
-
-  return nextBatches;
-}
-
-function asAuditRawRecord(value: unknown): WorkspaceUserAuditRawRecord | null {
+function asRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
+    return {};
   }
 
-  return value as WorkspaceUserAuditRawRecord;
+  return value as Record<string, unknown>;
 }
 
-async function fetchAuditRows(
+function buildFieldChangesFromSnapshots(
+  changedFields: string[],
+  beforeRecord: Record<string, unknown>,
+  afterRecord: Record<string, unknown>
+) {
+  return changedFields.map<WorkspaceUserAuditFieldChange>((field) => ({
+    field,
+    label: humanizeAuditField(field),
+    before: normalizeAuditFieldValue(beforeRecord[field]),
+    after: normalizeAuditFieldValue(afterRecord[field]),
+  }));
+}
+
+function mapFeedRowToEvent(row: AuditFeedRow): WorkspaceUserAuditEvent {
+  const changedFields = row.changed_fields ?? [];
+  const beforeRecord = asRecord(row.before);
+  const afterRecord = asRecord(row.after);
+
+  return {
+    auditRecordId: row.audit_record_id,
+    eventKind: row.event_kind,
+    summary: buildWorkspaceUserAuditSummary(
+      row.event_kind,
+      row.affected_user_name ?? row.affected_user_email,
+      changedFields
+    ),
+    changedFields,
+    fieldChanges: buildFieldChangesFromSnapshots(
+      changedFields,
+      beforeRecord,
+      afterRecord
+    ),
+    before: Object.fromEntries(
+      Object.entries(beforeRecord).map(([key, value]) => [
+        key,
+        normalizeAuditFieldValue(value),
+      ])
+    ),
+    after: Object.fromEntries(
+      Object.entries(afterRecord).map(([key, value]) => [
+        key,
+        normalizeAuditFieldValue(value),
+      ])
+    ),
+    affectedUser: {
+      id: row.affected_user_id,
+      name: row.affected_user_name,
+      email: row.affected_user_email,
+    },
+    actor: {
+      authUid: row.actor_auth_uid,
+      workspaceUserId: row.actor_workspace_user_id,
+      id: row.actor_id,
+      name: row.actor_name,
+      email: row.actor_email,
+    },
+    occurredAt: row.occurred_at,
+    source: row.source,
+  };
+}
+
+function buildChartStatsFromBuckets({
+  locale,
+  period,
+  start,
+  end,
+  bucketRows,
+}: {
+  locale: string;
+  period: AuditLogPeriod;
+  start: Date;
+  end: Date;
+  bucketRows: AuditBucketRow[];
+}) {
+  const bucketLookup = new Map(
+    bucketRows.map((row) => [
+      row.bucket_key,
+      {
+        totalCount: toCount(row.total_count),
+        archivedCount: toCount(row.archived_count),
+        reactivatedCount: toCount(row.reactivated_count),
+        archiveTimingCount: toCount(row.archive_timing_count),
+        profileUpdateCount: toCount(row.profile_update_count),
+      },
+    ])
+  );
+
+  if (period === 'yearly') {
+    const formatter = new Intl.DateTimeFormat(locale, {
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const stats: WorkspaceUserAuditChartStat[] = [];
+    const current = new Date(start);
+
+    while (current < end) {
+      const key = `${current.getFullYear()}-${`${current.getMonth() + 1}`.padStart(2, '0')}`;
+      const counts = bucketLookup.get(key);
+
+      stats.push({
+        key,
+        label: new Intl.DateTimeFormat(locale, { month: 'short' }).format(
+          current
+        ),
+        tooltipLabel: formatter.format(current),
+        totalCount: counts?.totalCount ?? 0,
+        archivedCount: counts?.archivedCount ?? 0,
+        reactivatedCount: counts?.reactivatedCount ?? 0,
+        archiveTimingCount: counts?.archiveTimingCount ?? 0,
+        profileUpdateCount: counts?.profileUpdateCount ?? 0,
+      });
+
+      current.setMonth(current.getMonth() + 1);
+    }
+
+    return stats;
+  }
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  const stats = [];
+  const current = new Date(start);
+
+  while (current < end) {
+    const yearValue = current.getFullYear();
+    const monthValue = `${current.getMonth() + 1}`.padStart(2, '0');
+    const dayValue = `${current.getDate()}`.padStart(2, '0');
+    const key = `${yearValue}-${monthValue}-${dayValue}`;
+    const counts = bucketLookup.get(key);
+
+    stats.push({
+      key,
+      label: `${current.getDate()}`,
+      tooltipLabel: formatter.format(current),
+      totalCount: counts?.totalCount ?? 0,
+      archivedCount: counts?.archivedCount ?? 0,
+      reactivatedCount: counts?.reactivatedCount ?? 0,
+      archiveTimingCount: counts?.archiveTimingCount ?? 0,
+      profileUpdateCount: counts?.profileUpdateCount ?? 0,
+    });
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return stats;
+}
+
+async function fetchAuditFeedPage(
   sbAdmin: TypedSupabaseClient,
   {
     wsId,
     start,
     end,
+    eventKind,
+    source,
+    affectedUserQuery,
+    actorQuery,
+    limit,
+    offset,
   }: {
     wsId: string;
     start: Date;
     end: Date;
+    eventKind: AuditLogEventKindFilter;
+    source: AuditLogSourceFilter;
+    affectedUserQuery?: string;
+    actorQuery?: string;
+    limit: number;
+    offset: number;
+  }
+) {
+  const { data, error } = await sbAdmin.rpc('list_workspace_user_audit_feed', {
+    p_ws_id: wsId,
+    p_start: start.toISOString(),
+    p_end: end.toISOString(),
+    p_event_kind: eventKind,
+    p_source: source,
+    p_affected_user_query: affectedUserQuery?.trim() || undefined,
+    p_actor_query: actorQuery?.trim() || undefined,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as AuditFeedRow[];
+
+  return {
+    count: toCount(rows[0]?.total_count),
+    data: rows.map(mapFeedRowToEvent),
+  };
+}
+
+async function fetchAuditSummary(
+  sbAdmin: TypedSupabaseClient,
+  {
+    wsId,
+    start,
+    end,
+    eventKind,
+    source,
+    affectedUserQuery,
+    actorQuery,
+  }: {
+    wsId: string;
+    start: Date;
+    end: Date;
+    eventKind: AuditLogEventKindFilter;
+    source: AuditLogSourceFilter;
+    affectedUserQuery?: string;
+    actorQuery?: string;
   }
 ) {
   const { data, error } = await sbAdmin.rpc(
-    'list_workspace_user_audit_records',
+    'summarize_workspace_user_audit_feed',
     {
       p_ws_id: wsId,
       p_start: start.toISOString(),
       p_end: end.toISOString(),
+      p_event_kind: eventKind,
+      p_source: source,
+      p_affected_user_query: affectedUserQuery?.trim() || undefined,
+      p_actor_query: actorQuery?.trim() || undefined,
     }
   );
 
@@ -158,184 +348,65 @@ async function fetchAuditRows(
     throw error;
   }
 
-  return (data ?? []).map((row) => ({
-    audit_record_id: row.audit_record_id,
-    op: row.op,
-    ts: row.ts,
-    record: asAuditRawRecord(row.record),
-    old_record: asAuditRawRecord(row.old_record),
-    auth_uid: row.auth_uid ?? null,
-    auth_role: row.auth_role ?? null,
-    ws_id: row.ws_id,
-  }));
+  const row = ((data ?? [])[0] ?? null) as AuditSummaryRow | null;
+
+  return {
+    totalEvents: toCount(row?.total_events),
+    archivedEvents: toCount(row?.archived_events),
+    reactivatedEvents: toCount(row?.reactivated_events),
+    archiveTimingEvents: toCount(row?.archive_timing_events),
+    archiveRelatedEvents: toCount(row?.archive_related_events),
+    profileUpdates: toCount(row?.profile_updates),
+    affectedUsersCount: toCount(row?.affected_users_count),
+    topActorName: row?.top_actor_name ?? null,
+    topActorCount: toCount(row?.top_actor_count),
+  } satisfies Omit<
+    WorkspaceUserAuditSummary,
+    'peakBucketLabel' | 'peakBucketCount'
+  >;
 }
 
-async function fetchStatusSources(
+async function fetchAuditBucketCounts(
   sbAdmin: TypedSupabaseClient,
-  wsId: string,
-  auditRecordIds: number[]
-) {
-  const sourceLookup = new Map<number, AuditLogSource>();
-
-  for (const batch of batchValues(auditRecordIds)) {
-    const { data, error } = await sbAdmin
-      .from('workspace_user_status_changes')
-      .select('audit_record_version_id, source')
-      .eq('ws_id', wsId)
-      .in('audit_record_version_id', batch);
-
-    if (error) {
-      throw error;
-    }
-
-    for (const row of (data ?? []) as StatusSourceRow[]) {
-      if (typeof row.audit_record_version_id === 'number') {
-        sourceLookup.set(row.audit_record_version_id, row.source ?? 'live');
-      }
-    }
+  {
+    wsId,
+    start,
+    end,
+    period,
+    eventKind,
+    source,
+    affectedUserQuery,
+    actorQuery,
+  }: {
+    wsId: string;
+    start: Date;
+    end: Date;
+    period: AuditLogPeriod;
+    eventKind: AuditLogEventKindFilter;
+    source: AuditLogSourceFilter;
+    affectedUserQuery?: string;
+    actorQuery?: string;
   }
-
-  return sourceLookup;
-}
-
-async function fetchLegacyStatusRows(
-  sbAdmin: TypedSupabaseClient,
-  wsId: string,
-  start: Date,
-  end: Date
 ) {
-  const { data, error } = await sbAdmin
-    .from('workspace_user_status_changes')
-    .select(
-      'user_id, archived, archived_until, creator_id, actor_auth_uid, source, audit_record_version_id, created_at'
-    )
-    .eq('ws_id', wsId)
-    .gte('created_at', start.toISOString())
-    .lt('created_at', end.toISOString())
-    .order('created_at', { ascending: true });
+  const { data, error } = await sbAdmin.rpc(
+    'list_workspace_user_audit_bucket_counts',
+    {
+      p_ws_id: wsId,
+      p_start: start.toISOString(),
+      p_end: end.toISOString(),
+      p_period: period,
+      p_event_kind: eventKind,
+      p_source: source,
+      p_affected_user_query: affectedUserQuery?.trim() || undefined,
+      p_actor_query: actorQuery?.trim() || undefined,
+    }
+  );
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []) as LegacyStatusChangeRow[];
-}
-
-async function fetchAffectedUsers(
-  sbAdmin: TypedSupabaseClient,
-  wsId: string,
-  affectedUserIds: string[]
-) {
-  const affectedUserLookup = new Map<string, WorkspaceUserAuditIdentity>();
-
-  for (const batch of batchValues(affectedUserIds)) {
-    const { data, error } = await sbAdmin
-      .from('workspace_users')
-      .select('id, full_name, display_name, email')
-      .eq('ws_id', wsId)
-      .in('id', batch);
-
-    if (error) {
-      throw error;
-    }
-
-    for (const row of (data ?? []) as WorkspaceUserRow[]) {
-      affectedUserLookup.set(row.id, {
-        id: row.id,
-        name: normalizeName(row.full_name, row.display_name),
-        email: row.email ?? null,
-      });
-    }
-  }
-
-  return affectedUserLookup;
-}
-
-async function fetchActorIdentities(
-  sbAdmin: TypedSupabaseClient,
-  wsId: string,
-  authUserIds: string[]
-) {
-  const actorLookup = new Map<
-    string,
-    WorkspaceUserAuditIdentity & { workspaceUserId: string | null }
-  >();
-
-  if (authUserIds.length === 0) {
-    return actorLookup;
-  }
-
-  for (const batch of batchValues(authUserIds)) {
-    const [
-      { data: linkedUsers, error: linkedUsersError },
-      { data: users, error: usersError },
-    ] = await Promise.all([
-      sbAdmin
-        .from('workspace_user_linked_users')
-        .select(
-          'platform_user_id, virtual_user_id, workspace_user:workspace_users!virtual_user_id(id, full_name, display_name, email)'
-        )
-        .eq('ws_id', wsId)
-        .in('platform_user_id', batch),
-      sbAdmin
-        .from('users')
-        .select('id, display_name, user_private_details(full_name, email)')
-        .in('id', batch),
-    ]);
-
-    if (linkedUsersError) {
-      throw linkedUsersError;
-    }
-
-    if (usersError) {
-      throw usersError;
-    }
-
-    const platformUserLookup = new Map<string, WorkspaceUserAuditIdentity>();
-
-    for (const row of (users ?? []) as PlatformUserRow[]) {
-      const privateDetails = extractUserPrivateDetails(
-        row.user_private_details
-      );
-      platformUserLookup.set(row.id, {
-        id: row.id,
-        name: normalizeName(privateDetails?.full_name, row.display_name),
-        email: privateDetails?.email ?? null,
-      });
-    }
-
-    for (const row of (linkedUsers ?? []) as WorkspaceUserLinkRow[]) {
-      const workspaceUser = Array.isArray(row.workspace_user)
-        ? (row.workspace_user[0] ?? null)
-        : row.workspace_user;
-      const platformUser = platformUserLookup.get(row.platform_user_id);
-
-      actorLookup.set(row.platform_user_id, {
-        id: row.platform_user_id,
-        workspaceUserId: row.virtual_user_id,
-        name: normalizeName(
-          workspaceUser?.full_name,
-          workspaceUser?.display_name,
-          platformUser?.name
-        ),
-        email: workspaceUser?.email ?? platformUser?.email ?? null,
-      });
-    }
-
-    for (const authUserId of batch) {
-      if (!actorLookup.has(authUserId)) {
-        const platformUser = platformUserLookup.get(authUserId);
-        actorLookup.set(authUserId, {
-          id: authUserId,
-          workspaceUserId: null,
-          name: platformUser?.name ?? null,
-          email: platformUser?.email ?? null,
-        });
-      }
-    }
-  }
-
-  return actorLookup;
+  return (data ?? []) as AuditBucketRow[];
 }
 
 function createSyntheticAuditRecordId(seed: string, index: number) {
@@ -493,96 +564,6 @@ export function buildLegacyStatusEvents({
   });
 }
 
-async function loadWorkspaceUserAuditEvents({
-  wsId,
-  start,
-  end,
-}: {
-  wsId: string;
-  start: Date;
-  end: Date;
-}) {
-  const sbAdmin = await createAdminClient();
-  const auditRows = await fetchAuditRows(sbAdmin, {
-    wsId,
-    start,
-    end,
-  });
-  const legacyStatusRows = await fetchLegacyStatusRows(
-    sbAdmin,
-    wsId,
-    start,
-    end
-  );
-  const auditRecordIds = auditRows.map((row) => row.audit_record_id);
-  const auditRecordIdSet = new Set(auditRecordIds);
-  const unmatchedLegacyStatusRows = legacyStatusRows.filter(
-    (row) =>
-      typeof row.audit_record_version_id !== 'number' ||
-      !auditRecordIdSet.has(row.audit_record_version_id)
-  );
-  const getAffectedUserId = (row: WorkspaceUserAuditRecordRow) =>
-    typeof row.record?.id === 'string'
-      ? row.record.id
-      : typeof row.old_record?.id === 'string'
-        ? row.old_record.id
-        : null;
-  const workspaceUserIds = Array.from(
-    new Set(
-      [
-        ...auditRows.map((row) => getAffectedUserId(row)),
-        ...unmatchedLegacyStatusRows.map((row) => row.user_id),
-        ...unmatchedLegacyStatusRows.map((row) => row.creator_id),
-      ].filter((value): value is string => Boolean(value))
-    )
-  );
-  const affectedUserIds = Array.from(
-    new Set(
-      auditRows
-        .map((row) => getAffectedUserId(row))
-        .filter((value): value is string => Boolean(value))
-    )
-  );
-  const actorUserIds = Array.from(
-    new Set(
-      [
-        ...auditRows.map((row) => row.auth_uid),
-        ...unmatchedLegacyStatusRows.map((row) => row.actor_auth_uid),
-      ].filter((value): value is string => Boolean(value))
-    )
-  );
-
-  const [statusSources, affectedUsers, actors, workspaceUsers] =
-    await Promise.all([
-      fetchStatusSources(sbAdmin, wsId, auditRecordIds),
-      fetchAffectedUsers(sbAdmin, wsId, affectedUserIds),
-      fetchActorIdentities(sbAdmin, wsId, actorUserIds),
-      fetchAffectedUsers(sbAdmin, wsId, workspaceUserIds),
-    ]);
-
-  const normalizedAuditEvents = auditRows
-    .map((row) =>
-      normalizeWorkspaceUserAuditEvent({
-        row,
-        affectedUser: affectedUsers.get(getAffectedUserId(row) ?? '') ?? null,
-        actor: (row.auth_uid ? actors.get(row.auth_uid) : null) ?? null,
-        source: statusSources.get(row.audit_record_id) ?? 'live',
-      })
-    )
-    .filter((event): event is WorkspaceUserAuditEvent => Boolean(event));
-  const legacyStatusEvents = buildLegacyStatusEvents({
-    rows: unmatchedLegacyStatusRows,
-    affectedUsers: workspaceUsers,
-    authActors: actors,
-    workspaceUsers,
-  });
-
-  return [...normalizedAuditEvents, ...legacyStatusEvents].sort(
-    (left, right) =>
-      new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime()
-  );
-}
-
 export function getRecentAuditLogTimeOptions(
   locale: string,
   period: AuditLogPeriod
@@ -638,29 +619,60 @@ export async function getAuditLogView({
     });
 
   try {
-    const allEvents = await loadWorkspaceUserAuditEvents({
-      wsId,
-      start,
-      end,
-    });
-    const filteredEvents = filterWorkspaceUserAuditEvents(allEvents, {
-      eventKind: resolvedEventKind,
-      source: resolvedSource,
-      affectedUserQuery,
-      actorQuery,
-    });
-    const startIndex = (validatedPage - 1) * validatedPageSize;
-    const pageEvents = filteredEvents.slice(
-      startIndex,
-      startIndex + validatedPageSize
-    );
-    const { summary, chartStats } = summarizeWorkspaceUserAuditEvents({
-      events: filteredEvents,
+    const sbAdmin = await createAdminClient();
+    const offset = (validatedPage - 1) * validatedPageSize;
+    const [feedPage, summaryBase, bucketRows] = await Promise.all([
+      fetchAuditFeedPage(sbAdmin, {
+        wsId,
+        start,
+        end,
+        eventKind: resolvedEventKind,
+        source: resolvedSource,
+        affectedUserQuery,
+        actorQuery,
+        limit: validatedPageSize,
+        offset,
+      }),
+      fetchAuditSummary(sbAdmin, {
+        wsId,
+        start,
+        end,
+        eventKind: resolvedEventKind,
+        source: resolvedSource,
+        affectedUserQuery,
+        actorQuery,
+      }),
+      fetchAuditBucketCounts(sbAdmin, {
+        wsId,
+        start,
+        end,
+        period: resolvedPeriod,
+        eventKind: resolvedEventKind,
+        source: resolvedSource,
+        affectedUserQuery,
+        actorQuery,
+      }),
+    ]);
+    const chartStats = buildChartStatsFromBuckets({
       locale,
       period: resolvedPeriod,
       start,
       end,
+      bucketRows,
     });
+    const peakBucket =
+      chartStats.reduce<WorkspaceUserAuditChartStat | null>((peak, bucket) => {
+        if (!peak || bucket.totalCount > peak.totalCount) {
+          return bucket;
+        }
+
+        return peak;
+      }, null) ?? null;
+    const summary: WorkspaceUserAuditSummary = {
+      ...summaryBase,
+      peakBucketLabel: peakBucket?.tooltipLabel ?? null,
+      peakBucketCount: peakBucket?.totalCount ?? 0,
+    };
 
     return {
       period: resolvedPeriod,
@@ -671,9 +683,9 @@ export async function getAuditLogView({
       actorQuery: actorQuery?.trim() ?? '',
       page: validatedPage,
       pageSize: validatedPageSize,
-      count: filteredEvents.length,
-      data: pageEvents,
-      allFilteredEvents: filteredEvents,
+      count: feedPage.count,
+      data: feedPage.data,
+      allFilteredEvents: [] as WorkspaceUserAuditEvent[],
       summary,
       chartStats,
     };
@@ -731,22 +743,23 @@ export async function listAuditLogEventsForRange({
   offset?: number;
   limit?: number;
 }) {
+  const sbAdmin = await createAdminClient();
   const resolvedEventKind = resolveEventKindFilter(eventKind);
   const resolvedSource = resolveSourceFilter(source);
-  const allEvents = await loadWorkspaceUserAuditEvents({
+  const response = await fetchAuditFeedPage(sbAdmin, {
     wsId,
     start: new Date(start),
     end: new Date(end),
-  });
-  const filteredEvents = filterWorkspaceUserAuditEvents(allEvents, {
     eventKind: resolvedEventKind,
     source: resolvedSource,
     affectedUserQuery,
     actorQuery,
+    limit,
+    offset,
   });
 
   return {
-    count: filteredEvents.length,
-    data: filteredEvents.slice(offset, offset + limit),
+    count: response.count,
+    data: response.data,
   };
 }
