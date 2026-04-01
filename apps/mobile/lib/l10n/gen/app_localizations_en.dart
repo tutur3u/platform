@@ -1380,6 +1380,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionComingSoon => 'Description editing is coming soon on mobile.';
 
   @override
+  String get taskBoardDetailTaskDescriptionDone => 'Done';
+
+  @override
+  String get taskBoardDetailTaskDescriptionPersonalOnly => 'Description editing is currently available only in personal workspaces.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceTitle => 'Add image';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceCamera => 'Camera';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Gallery';
+
+  @override
   String get taskBoardDetailTaskListLabel => 'List';
 
   @override

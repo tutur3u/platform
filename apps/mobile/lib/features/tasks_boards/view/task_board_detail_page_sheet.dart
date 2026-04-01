@@ -9,6 +9,7 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
     required this.labels,
     required this.members,
     required this.projects,
+    required this.isPersonalWorkspace,
   });
 
   final TaskBoardTask? task;
@@ -18,6 +19,7 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
   final List<TaskLabel> labels;
   final List<WorkspaceUserOption> members;
   final List<TaskProjectSummary> projects;
+  final bool isPersonalWorkspace;
 
   @override
   State<_TaskBoardTaskEditorSheet> createState() =>
@@ -67,7 +69,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   bool get _isCreate => widget.task == null;
 
   bool get _isTaskDescriptionEditingEnabled {
-    return Env.isTaskDescriptionEditingEnabled;
+    return Env.isDevelopment ||
+        (Env.isTaskDescriptionEditingEnabled && widget.isPersonalWorkspace);
   }
 
   bool get _isBusy {
@@ -84,7 +87,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     }
 
     if (_isTaskDescriptionEditingEnabled) {
-      final description = FormDirtyUtils.normalizeOptionalText(
+      final description = normalizeTaskDescriptionPayload(
         _descriptionController.text,
       );
       if (description != _initialDescription) {
@@ -158,12 +161,14 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     super.initState();
     final task = widget.task;
     _nameController = TextEditingController(text: task?.name ?? '');
+    final initialDescriptionText =
+        normalizeTaskDescriptionPayload(task?.description ?? '') ?? '';
     _descriptionController = TextEditingController(
-      text: task?.description ?? '',
+      text: initialDescriptionText,
     );
     _initialName = (task?.name ?? '').trim();
-    _initialDescription = FormDirtyUtils.normalizeOptionalText(
-      task?.description ?? '',
+    _initialDescription = normalizeTaskDescriptionPayload(
+      initialDescriptionText,
     );
     _initialPriority = _normalizePriority(task?.priority);
     _initialEstimationPoints = task?.estimationPoints;
@@ -350,15 +355,18 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
               ),
               if (_isTaskDescriptionEditingEnabled) ...[
                 const shad.Gap(10),
-                shad.TextField(
-                  controller: _descriptionController,
-                  maxLines: 3,
-                  hintText: context.l10n.taskBoardDetailTaskDescriptionHint,
+                _SelectionFieldButton(
+                  label: context.l10n.taskBoardDetailTaskDescriptionLabel,
+                  value: _descriptionEditorSummary(context),
+                  enabled: !_isBusy,
+                  onPressed: () => unawaited(_openDescriptionEditor(context)),
                 ),
               ] else ...[
                 const shad.Gap(10),
                 Text(
-                  context.l10n.taskBoardDetailTaskDescriptionComingSoon,
+                  Env.isTaskDescriptionEditingEnabled
+                      ? context.l10n.taskBoardDetailTaskDescriptionPersonalOnly
+                      : context.l10n.taskBoardDetailTaskDescriptionComingSoon,
                   style: shad.Theme.of(context).typography.small.copyWith(
                     color: shad.Theme.of(context).colorScheme.mutedForeground,
                   ),
@@ -722,6 +730,117 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     await _closeTaskEditor(this);
   }
 
+  String _descriptionEditorSummary(BuildContext context) {
+    final parsed = parseTipTapTaskDescription(_descriptionController.text);
+    final raw =
+        parsed?.plainText ?? parsed?.markdown ?? _descriptionController.text;
+    final summary = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (summary.isEmpty) {
+      return context.l10n.taskBoardDetailTaskDescriptionHint;
+    }
+    return summary;
+  }
+
+  Future<void> _openDescriptionEditor(BuildContext context) async {
+    if (!_isTaskDescriptionEditingEnabled || _isBusy) {
+      return;
+    }
+
+    final l10n = context.l10n;
+    await showAdaptiveSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      builder: (sheetContext) {
+        return _TaskDescriptionEditorOverlay(
+          title: l10n.taskBoardDetailTaskDescriptionLabel,
+          initialValue: _descriptionController.text,
+          enabled: !_isBusy,
+          hintText: l10n.taskBoardDetailTaskDescriptionHint,
+          onChanged: (value) {
+            if (_descriptionController.text == value) {
+              return;
+            }
+            _descriptionController.text = value;
+          },
+          onRequestImageUpload: _isBusy
+              ? null
+              : () => _uploadDescriptionInlineImage(sheetContext),
+        );
+      },
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<String?> _uploadDescriptionInlineImage(BuildContext context) async {
+    final providerContext = this.context;
+    final l10n = context.l10n;
+    final taskCubit = providerContext.read<TaskBoardDetailCubit>();
+    final wsId = taskCubit.state.workspaceId;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+
+    final source = await showImageSourcePickerDialog(
+      context: context,
+      title: l10n.taskBoardDetailTaskDescriptionImageSourceTitle,
+      cameraLabel: l10n.taskBoardDetailTaskDescriptionImageSourceCamera,
+      galleryLabel: l10n.taskBoardDetailTaskDescriptionImageSourceGallery,
+    );
+    if (source == null || !mounted) {
+      return null;
+    }
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 92);
+    if (picked == null || !mounted) {
+      return null;
+    }
+
+    final fallbackErrorMessage = l10n.commonSomethingWentWrong;
+
+    try {
+      if (wsId == null || wsId.trim().isEmpty) {
+        throw const ApiException(
+          message: 'Workspace not selected',
+          statusCode: 0,
+        );
+      }
+
+      final uploadedUrl = await taskCubit.uploadTaskDescriptionImage(
+        wsId: wsId,
+        localFilePath: picked.path,
+        taskId: widget.task?.id,
+      );
+      return uploadedUrl;
+    } on ApiException catch (error) {
+      if (!mounted || !toastContext.mounted) {
+        return null;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(
+            error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
+          ),
+        ),
+      );
+      return null;
+    } on Object catch (error) {
+      if (!mounted || !toastContext.mounted) {
+        return null;
+      }
+      final message = error.toString().trim();
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(message.isEmpty ? fallbackErrorMessage : message),
+        ),
+      );
+      return null;
+    }
+  }
+
   Future<void> _loadRelationshipsIfNeeded({bool force = false}) async {
     await _loadTaskRelationshipsIfNeeded(this, force: force);
   }
@@ -772,5 +891,76 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     if (labels.isEmpty) return '${selectedIds.length}';
     if (labels.length <= 2) return labels.join(', ');
     return '${labels.take(2).join(', ')} +${labels.length - 2}';
+  }
+}
+
+class _TaskDescriptionEditorOverlay extends StatelessWidget {
+  const _TaskDescriptionEditorOverlay({
+    required this.title,
+    required this.initialValue,
+    required this.enabled,
+    required this.hintText,
+    required this.onChanged,
+    required this.onRequestImageUpload,
+  });
+
+  final String title;
+  final String initialValue;
+  final bool enabled;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+  final Future<String?> Function()? onRequestImageUpload;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final overlayHeight = context.isCompact
+        ? screenHeight * 0.9
+        : math.min(screenHeight * 0.85, 760).toDouble();
+
+    return Container(
+      height: overlayHeight,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.typography.large,
+                ),
+              ),
+              shad.IconButton.ghost(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.maybePop(context),
+              ),
+            ],
+          ),
+          const shad.Gap(10),
+          Expanded(
+            child: _TaskDescriptionRichEditor(
+              initialValue: initialValue,
+              enabled: enabled,
+              hintText: hintText,
+              editorHeight: context.isCompact ? 460 : 500,
+              onChanged: onChanged,
+              onRequestImageUpload: onRequestImageUpload,
+            ),
+          ),
+          const shad.Gap(12),
+          shad.PrimaryButton(
+            onPressed: () => Navigator.maybePop(context),
+            child: Text(context.l10n.taskBoardDetailTaskDescriptionDone),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -2737,6 +2737,36 @@ abstract class AppLocalizations {
   /// **'Description editing is coming soon on mobile.'**
   String get taskBoardDetailTaskDescriptionComingSoon;
 
+  /// No description provided for @taskBoardDetailTaskDescriptionDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get taskBoardDetailTaskDescriptionDone;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionPersonalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Description editing is currently available only in personal workspaces.'**
+  String get taskBoardDetailTaskDescriptionPersonalOnly;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionImageSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add image'**
+  String get taskBoardDetailTaskDescriptionImageSourceTitle;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionImageSourceCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get taskBoardDetailTaskDescriptionImageSourceCamera;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionImageSourceGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get taskBoardDetailTaskDescriptionImageSourceGallery;
+
   /// No description provided for @taskBoardDetailTaskListLabel.
   ///
   /// In en, this message translates to:

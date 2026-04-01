@@ -14,6 +14,7 @@ dependencies:
   cloudflare_turnstile: ^3.6.2
   connectivity_plus: ^7.0.0
   cupertino_icons: ^1.0.9
+  dart_quill_delta: ^10.8.3
   device_info_plus: 12.3.0
   equatable: ^2.0.8
   file_picker: ^10.3.10
@@ -32,6 +33,7 @@ dependencies:
   flutter_markdown: ^0.7.7+1
   flutter_native_splash: ^2.4.7
   flutter_pcm_sound: ^3.3.3
+  flutter_quill: ^11.5.0
   flutter_secure_storage: ^10.0.0
   flutter_svg: ^2.2.4
   flutter_timezone: ^5.0.2

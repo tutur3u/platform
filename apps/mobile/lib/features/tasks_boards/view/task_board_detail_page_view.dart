@@ -878,6 +878,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         labels: board.labels,
         members: board.members,
         projects: board.projects,
+        isPersonalWorkspace:
+            context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
+            false,
       ),
     );
 
@@ -908,6 +911,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         labels: board.labels,
         members: board.members,
         projects: board.projects,
+        isPersonalWorkspace:
+            context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
+            false,
       ),
     );
 

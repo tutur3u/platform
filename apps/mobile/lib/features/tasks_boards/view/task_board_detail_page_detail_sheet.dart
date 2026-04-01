@@ -8,6 +8,7 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
     required this.labels,
     required this.members,
     required this.projects,
+    required this.isPersonalWorkspace,
   });
 
   final TaskBoardTask task;
@@ -16,6 +17,7 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
   final List<TaskLabel> labels;
   final List<WorkspaceUserOption> members;
   final List<TaskProjectSummary> projects;
+  final bool isPersonalWorkspace;
 
   @override
   State<_TaskBoardTaskDetailSheet> createState() =>
@@ -389,6 +391,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         labels: widget.labels,
         members: widget.members,
         projects: widget.projects,
+        isPersonalWorkspace: widget.isPersonalWorkspace,
       ),
     );
 

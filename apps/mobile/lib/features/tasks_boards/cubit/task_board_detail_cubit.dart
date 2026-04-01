@@ -286,6 +286,18 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
+  Future<String> uploadTaskDescriptionImage({
+    required String wsId,
+    required String localFilePath,
+    String? taskId,
+  }) {
+    return _taskRepository.uploadTaskDescriptionImage(
+      wsId: wsId,
+      localFilePath: localFilePath,
+      taskId: taskId,
+    );
+  }
+
   Future<void> updateTask({
     required String taskId,
     required String name,
@@ -308,23 +320,33 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     await _runMutation(
-      () => _taskRepository.updateBoardTask(
-        wsId: wsId,
-        taskId: taskId,
-        name: name,
-        description: description,
-        priority: priority,
-        startDate: startDate,
-        endDate: endDate,
-        estimationPoints: estimationPoints,
-        labelIds: labelIds,
-        projectIds: projectIds,
-        assigneeIds: assigneeIds,
-        clearDescription: clearDescription,
-        clearStartDate: clearStartDate,
-        clearEndDate: clearEndDate,
-        clearEstimationPoints: clearEstimationPoints,
-      ),
+      () async {
+        await _taskRepository.updateBoardTask(
+          wsId: wsId,
+          taskId: taskId,
+          name: name,
+          priority: priority,
+          startDate: startDate,
+          endDate: endDate,
+          estimationPoints: estimationPoints,
+          labelIds: labelIds,
+          projectIds: projectIds,
+          assigneeIds: assigneeIds,
+          clearStartDate: clearStartDate,
+          clearEndDate: clearEndDate,
+          clearEstimationPoints: clearEstimationPoints,
+        );
+
+        if (description != null || clearDescription) {
+          await _taskRepository.updateTaskDescription(
+            wsId: wsId,
+            taskId: taskId,
+            description: clearDescription ? null : description,
+          );
+        }
+
+        return null;
+      },
     );
   }
 

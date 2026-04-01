@@ -1380,6 +1380,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionComingSoon => 'Tính năng chỉnh sửa mô tả sẽ sớm có trên mobile.';
 
   @override
+  String get taskBoardDetailTaskDescriptionDone => 'Xong';
+
+  @override
+  String get taskBoardDetailTaskDescriptionPersonalOnly => 'Tính năng chỉnh sửa mô tả hiện chỉ khả dụng trong không gian làm việc cá nhân.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceTitle => 'Thêm hình ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceCamera => 'Máy ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Thư viện';
+
+  @override
   String get taskBoardDetailTaskListLabel => 'Danh sách';
 
   @override
