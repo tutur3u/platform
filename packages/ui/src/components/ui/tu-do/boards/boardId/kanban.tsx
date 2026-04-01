@@ -13,7 +13,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -23,6 +23,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { useBoardConfig, useReorderTask } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-presence-provider';
@@ -37,6 +38,7 @@ import { useBulkOperations } from './kanban/bulk/bulk-operations';
 import { useAppliedSets } from './kanban/data/use-applied-sets';
 import { useBulkResources } from './kanban/data/use-bulk-resources';
 import { useFilteredResources } from './kanban/data/use-filtered-resources';
+import { sortKanbanColumns } from './kanban/dnd/column-reorder';
 import { DragPreview } from './kanban/dnd/drag-preview';
 import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
 import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
@@ -83,6 +85,10 @@ export function KanbanBoard({
   isMultiSelectMode,
   setIsMultiSelectMode,
 }: Props) {
+  const tLayout = useTranslations('ws-task-boards.layout_settings');
+  const invalidColumnMoveMessage = tLayout.has('cannot_reorder_across_statuses')
+    ? tLayout('cannot_reorder_across_statuses')
+    : 'Task lists can only be reordered within the same status group';
   const { modKey } = usePlatform();
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [bulkWorking, setBulkWorking] = useState(false);
@@ -106,34 +112,31 @@ export function KanbanBoard({
   const { weekStartsOn } = useCalendarPreferences();
 
   const { data: boardConfig } = useBoardConfig(boardId, workspaceId);
+  const persistListPositions = useCallback(
+    async (updates: Array<{ listId: string; newPosition: number }>) => {
+      if (!boardId || updates.length === 0) return;
 
-  // Move list mutation for reordering columns
-  const moveListMutation = useMutation({
-    mutationFn: async ({
-      listId,
-      newPosition,
-    }: {
-      listId: string;
-      newPosition: number;
-    }) => {
-      await updateWorkspaceTaskList(workspaceId, boardId ?? '', listId, {
-        position: newPosition,
-      });
-      return { listId, newPosition };
+      await Promise.all(
+        updates.map(({ listId, newPosition }) =>
+          updateWorkspaceTaskList(workspaceId, boardId, listId, {
+            position: newPosition,
+          })
+        )
+      );
     },
-    onError: (error) => {
-      console.error('Failed to reorder list:', error);
-      toast.error('Failed to reorder list');
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-    },
-  });
+    [boardId, workspaceId]
+  );
 
   const columns: TaskList[] = lists.map((list) => ({
     ...list,
     title: list.name,
   }));
 
-  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+  const orderedColumns = useMemo(() => sortKanbanColumns(columns), [columns]);
+  const columnsId = useMemo(
+    () => orderedColumns.map((col) => col.id),
+    [orderedColumns]
+  );
 
   // Selection Hook
   const { selectedTasks, handleTaskSelect, clearSelection } = useMultiSelect(
@@ -170,7 +173,7 @@ export function KanbanBoard({
     wsId: workspaceId,
     boardId: boardId ?? '',
     selectedTasks,
-    columns,
+    columns: orderedColumns,
     workspaceLabels,
     workspaceProjects,
     weekStartsOn,
@@ -232,13 +235,14 @@ export function KanbanBoard({
   } = useKanbanDnd({
     wsId: workspaceId,
     boardId,
-    columns,
+    columns: orderedColumns,
     tasks,
     disableSort,
     selectedTasks,
     isMultiSelectMode,
     clearSelection,
-    moveListMutation,
+    persistListPositions,
+    invalidColumnMoveMessage,
     reorderTaskMutation,
     taskHeightsRef,
     scrollContainerRef,
@@ -356,7 +360,7 @@ export function KanbanBoard({
           autoScroll={false}
         >
           <KanbanColumns
-            columns={columns}
+            columns={orderedColumns}
             tasks={tasks}
             boardId={boardId ?? ''}
             workspaceId={workspaceId}
@@ -387,7 +391,7 @@ export function KanbanBoard({
               activeTask={activeTask}
               activeColumn={activeColumn}
               tasks={tasks}
-              columns={columns}
+              columns={orderedColumns}
               boardId={boardId ?? ''}
               isPersonalWorkspace={workspace.personal}
               isMultiSelectMode={isMultiSelectMode}

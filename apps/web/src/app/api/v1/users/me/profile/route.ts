@@ -33,7 +33,7 @@ export const GET = withSessionAuth(
       // Fetch private details (includes email)
       const { data: privateData } = await supabase
         .from('user_private_details')
-        .select('full_name, new_email, email')
+        .select('full_name, new_email, email, default_workspace_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -45,6 +45,7 @@ export const GET = withSessionAuth(
         full_name: privateData?.full_name || null,
         new_email: privateData?.new_email || null,
         created_at: userData.created_at,
+        default_workspace_id: privateData?.default_workspace_id || null,
       });
     } catch (error) {
       console.error('Request error:', error);

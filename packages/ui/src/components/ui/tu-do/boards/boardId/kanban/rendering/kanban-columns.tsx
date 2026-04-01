@@ -77,96 +77,79 @@ export function KanbanColumns({
         strategy={horizontalListSortingStrategy}
       >
         <div className="flex h-full gap-2 p-2">
-          {[...columns]
-            .sort((a, b) => {
-              // First sort by status priority, then by position within status
-              const statusOrder = {
-                documents: 0,
-                not_started: 1,
-                active: 2,
-                done: 3,
-                closed: 4,
-              };
-              const statusA =
-                statusOrder[a.status as keyof typeof statusOrder] ?? 999;
-              const statusB =
-                statusOrder[b.status as keyof typeof statusOrder] ?? 999;
-              if (statusA !== statusB) return statusA - statusB;
-              return a.position - b.position;
-            })
-            .map((list) => {
-              // Filter tasks for this list
-              let listTasks = tasks.filter((task) => task.list_id === list.id);
+          {columns.map((list) => {
+            // Filter tasks for this list
+            let listTasks = tasks.filter((task) => task.list_id === list.id);
 
-              // Sort tasks - done/closed lists ALWAYS sort by timestamps only, others respect disableSort
-              listTasks = listTasks.sort((a, b) => {
-                // For done lists, ONLY sort by completed_at (most recent first) - no fallback to sort_key
-                if (list.status === 'done') {
-                  const completionA = a.completed_at
-                    ? new Date(a.completed_at).getTime()
-                    : 0;
-                  const completionB = b.completed_at
-                    ? new Date(b.completed_at).getTime()
-                    : 0;
-                  return completionB - completionA; // Always return, never fall through
+            // Sort tasks - done/closed lists ALWAYS sort by timestamps only, others respect disableSort
+            listTasks = listTasks.sort((a, b) => {
+              // For done lists, ONLY sort by completed_at (most recent first) - no fallback to sort_key
+              if (list.status === 'done') {
+                const completionA = a.completed_at
+                  ? new Date(a.completed_at).getTime()
+                  : 0;
+                const completionB = b.completed_at
+                  ? new Date(b.completed_at).getTime()
+                  : 0;
+                return completionB - completionA; // Always return, never fall through
+              }
+
+              // For closed lists, ONLY sort by closed_at (most recent first) - no fallback to sort_key
+              if (list.status === 'closed') {
+                const closedA = a.closed_at
+                  ? new Date(a.closed_at).getTime()
+                  : 0;
+                const closedB = b.closed_at
+                  ? new Date(b.closed_at).getTime()
+                  : 0;
+                return closedB - closedA; // Always return, never fall through
+              }
+
+              // For all other lists, only sort by sort_key if parent hasn't already sorted
+              if (!disableSort) {
+                const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
+                const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
+                if (sortA !== sortB) return sortA - sortB;
+                if (!a.created_at || !b.created_at) return 0;
+                return (
+                  new Date(a.created_at).getTime() -
+                  new Date(b.created_at).getTime()
+                );
+              }
+
+              return 0;
+            });
+
+            return (
+              <BoardColumn
+                key={list.id}
+                column={list}
+                boardId={boardId ?? ''}
+                tasks={listTasks}
+                isPersonalWorkspace={isPersonalWorkspace}
+                onUpdate={onUpdate}
+                onAddTask={() =>
+                  boardId && createTask(boardId, list.id, columns, filters)
                 }
-
-                // For closed lists, ONLY sort by closed_at (most recent first) - no fallback to sort_key
-                if (list.status === 'closed') {
-                  const closedA = a.closed_at
-                    ? new Date(a.closed_at).getTime()
-                    : 0;
-                  const closedB = b.closed_at
-                    ? new Date(b.closed_at).getTime()
-                    : 0;
-                  return closedB - closedA; // Always return, never fall through
+                selectedTasks={selectedTasks}
+                isMultiSelectMode={isMultiSelectMode}
+                setIsMultiSelectMode={setIsMultiSelectMode}
+                onTaskSelect={onTaskSelect}
+                onClearSelection={onClearSelection}
+                dragPreviewPosition={
+                  dragPreviewPosition?.listId === String(list.id)
+                    ? dragPreviewPosition
+                    : null
                 }
-
-                // For all other lists, only sort by sort_key if parent hasn't already sorted
-                if (!disableSort) {
-                  const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                  const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                  if (sortA !== sortB) return sortA - sortB;
-                  if (!a.created_at || !b.created_at) return 0;
-                  return (
-                    new Date(a.created_at).getTime() -
-                    new Date(b.created_at).getTime()
-                  );
-                }
-
-                return 0;
-              });
-
-              return (
-                <BoardColumn
-                  key={list.id}
-                  column={list}
-                  boardId={boardId ?? ''}
-                  tasks={listTasks}
-                  isPersonalWorkspace={isPersonalWorkspace}
-                  onUpdate={onUpdate}
-                  onAddTask={() =>
-                    boardId && createTask(boardId, list.id, columns, filters)
-                  }
-                  selectedTasks={selectedTasks}
-                  isMultiSelectMode={isMultiSelectMode}
-                  setIsMultiSelectMode={setIsMultiSelectMode}
-                  onTaskSelect={onTaskSelect}
-                  onClearSelection={onClearSelection}
-                  dragPreviewPosition={
-                    dragPreviewPosition?.listId === String(list.id)
-                      ? dragPreviewPosition
-                      : null
-                  }
-                  taskHeightsRef={taskHeightsRef}
-                  optimisticUpdateInProgress={optimisticUpdateInProgress}
-                  filters={filters}
-                  bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
-                  workspaceId={workspaceId}
-                  wsId={workspaceId}
-                />
-              );
-            })}
+                taskHeightsRef={taskHeightsRef}
+                optimisticUpdateInProgress={optimisticUpdateInProgress}
+                filters={filters}
+                bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+                workspaceId={workspaceId}
+                wsId={workspaceId}
+              />
+            );
+          })}
           <TaskListForm boardId={boardId ?? ''} onListCreated={onUpdate} />
         </div>
       </SortableContext>

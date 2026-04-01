@@ -20,10 +20,11 @@ export const MAX_SAFE_INTEGER_SORT = Number.MAX_SAFE_INTEGER;
  * Defines the visual order of columns in the kanban board
  */
 export const STATUS_ORDER = {
-  not_started: 0,
-  active: 1,
-  done: 2,
-  closed: 3,
+  documents: 0,
+  not_started: 1,
+  active: 2,
+  done: 3,
+  closed: 4,
 } as const;
 
 /**

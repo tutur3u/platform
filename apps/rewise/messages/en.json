@@ -12064,6 +12064,7 @@
       "backlog": "Backlog",
       "blue": "Blue",
       "cannot_move_to_closed": "Cannot move list to or from closed status",
+      "cannot_reorder_across_statuses": "Task lists can only be reordered within the same status group",
       "change_color": "Change Color",
       "closed": "Closed",
       "color_updated": "Color updated successfully",
