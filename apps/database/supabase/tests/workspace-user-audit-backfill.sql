@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions, audit;
 
-select plan(14);
+select plan(15);
 
 insert into public.users (id)
 values
@@ -447,6 +447,33 @@ select is(
   ),
   5::bigint,
   'paginated feed rows carry the exact total_count for the filtered result set'
+);
+
+select is(
+  (
+    select
+      (payload->>'count') || ':' ||
+      jsonb_array_length(payload->'rows')::text || ':' ||
+      (payload->'summary'->>'total_events') || ':' ||
+      (payload->'summary'->>'archived_events') || ':' ||
+      (payload->'summary'->>'reactivated_events')
+    from (
+      select public.get_workspace_user_audit_view(
+        '00000000-0000-0000-0000-000000000710',
+        '2026-03-01T00:00:00Z',
+        '2026-04-01T00:00:00Z',
+        'monthly',
+        'all',
+        'all',
+        null,
+        null,
+        2,
+        0
+      ) as payload
+    ) view_payload
+  ),
+  '5:2:5:2:1',
+  'get_workspace_user_audit_view returns exact counts and the requested page slice'
 );
 
 select * from finish();

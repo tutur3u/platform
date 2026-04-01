@@ -80,6 +80,13 @@ type AuditBucketRow = {
   profile_update_count: number | null;
 };
 
+type AuditViewPayload = {
+  count: number | null;
+  rows: AuditFeedRow[] | null;
+  summary: AuditSummaryRow | null;
+  buckets: AuditBucketRow[] | null;
+};
+
 export type LegacyStatusChangeRow = {
   user_id: string;
   archived: boolean;
@@ -311,62 +318,7 @@ async function fetchAuditFeedPage(
   };
 }
 
-async function fetchAuditSummary(
-  sbAdmin: TypedSupabaseClient,
-  {
-    wsId,
-    start,
-    end,
-    eventKind,
-    source,
-    affectedUserQuery,
-    actorQuery,
-  }: {
-    wsId: string;
-    start: Date;
-    end: Date;
-    eventKind: AuditLogEventKindFilter;
-    source: AuditLogSourceFilter;
-    affectedUserQuery?: string;
-    actorQuery?: string;
-  }
-) {
-  const { data, error } = await sbAdmin.rpc(
-    'summarize_workspace_user_audit_feed',
-    {
-      p_ws_id: wsId,
-      p_start: start.toISOString(),
-      p_end: end.toISOString(),
-      p_event_kind: eventKind,
-      p_source: source,
-      p_affected_user_query: affectedUserQuery?.trim() || undefined,
-      p_actor_query: actorQuery?.trim() || undefined,
-    }
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  const row = ((data ?? [])[0] ?? null) as AuditSummaryRow | null;
-
-  return {
-    totalEvents: toCount(row?.total_events),
-    archivedEvents: toCount(row?.archived_events),
-    reactivatedEvents: toCount(row?.reactivated_events),
-    archiveTimingEvents: toCount(row?.archive_timing_events),
-    archiveRelatedEvents: toCount(row?.archive_related_events),
-    profileUpdates: toCount(row?.profile_updates),
-    affectedUsersCount: toCount(row?.affected_users_count),
-    topActorName: row?.top_actor_name ?? null,
-    topActorCount: toCount(row?.top_actor_count),
-  } satisfies Omit<
-    WorkspaceUserAuditSummary,
-    'peakBucketLabel' | 'peakBucketCount'
-  >;
-}
-
-async function fetchAuditBucketCounts(
+async function fetchAuditView(
   sbAdmin: TypedSupabaseClient,
   {
     wsId,
@@ -377,6 +329,8 @@ async function fetchAuditBucketCounts(
     source,
     affectedUserQuery,
     actorQuery,
+    limit,
+    offset,
   }: {
     wsId: string;
     start: Date;
@@ -386,27 +340,51 @@ async function fetchAuditBucketCounts(
     source: AuditLogSourceFilter;
     affectedUserQuery?: string;
     actorQuery?: string;
+    limit: number;
+    offset: number;
   }
 ) {
-  const { data, error } = await sbAdmin.rpc(
-    'list_workspace_user_audit_bucket_counts',
-    {
-      p_ws_id: wsId,
-      p_start: start.toISOString(),
-      p_end: end.toISOString(),
-      p_period: period,
-      p_event_kind: eventKind,
-      p_source: source,
-      p_affected_user_query: affectedUserQuery?.trim() || undefined,
-      p_actor_query: actorQuery?.trim() || undefined,
-    }
-  );
+  const { data, error } = await sbAdmin.rpc('get_workspace_user_audit_view', {
+    p_ws_id: wsId,
+    p_start: start.toISOString(),
+    p_end: end.toISOString(),
+    p_period: period,
+    p_event_kind: eventKind,
+    p_source: source,
+    p_affected_user_query: affectedUserQuery?.trim() || undefined,
+    p_actor_query: actorQuery?.trim() || undefined,
+    p_limit: limit,
+    p_offset: offset,
+  });
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []) as AuditBucketRow[];
+  const payload = asRecord(data) as AuditViewPayload;
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  const bucketRows = Array.isArray(payload.buckets) ? payload.buckets : [];
+  const summaryRow = payload.summary ?? null;
+
+  return {
+    count: toCount(payload.count),
+    data: rows.map(mapFeedRowToEvent),
+    summary: {
+      totalEvents: toCount(summaryRow?.total_events),
+      archivedEvents: toCount(summaryRow?.archived_events),
+      reactivatedEvents: toCount(summaryRow?.reactivated_events),
+      archiveTimingEvents: toCount(summaryRow?.archive_timing_events),
+      archiveRelatedEvents: toCount(summaryRow?.archive_related_events),
+      profileUpdates: toCount(summaryRow?.profile_updates),
+      affectedUsersCount: toCount(summaryRow?.affected_users_count),
+      topActorName: summaryRow?.top_actor_name ?? null,
+      topActorCount: toCount(summaryRow?.top_actor_count),
+    } satisfies Omit<
+      WorkspaceUserAuditSummary,
+      'peakBucketLabel' | 'peakBucketCount'
+    >,
+    bucketRows,
+  };
 }
 
 function createSyntheticAuditRecordId(seed: string, index: number) {
@@ -621,44 +599,24 @@ export async function getAuditLogView({
   try {
     const sbAdmin = await createAdminClient();
     const offset = (validatedPage - 1) * validatedPageSize;
-    const [feedPage, summaryBase, bucketRows] = await Promise.all([
-      fetchAuditFeedPage(sbAdmin, {
-        wsId,
-        start,
-        end,
-        eventKind: resolvedEventKind,
-        source: resolvedSource,
-        affectedUserQuery,
-        actorQuery,
-        limit: validatedPageSize,
-        offset,
-      }),
-      fetchAuditSummary(sbAdmin, {
-        wsId,
-        start,
-        end,
-        eventKind: resolvedEventKind,
-        source: resolvedSource,
-        affectedUserQuery,
-        actorQuery,
-      }),
-      fetchAuditBucketCounts(sbAdmin, {
-        wsId,
-        start,
-        end,
-        period: resolvedPeriod,
-        eventKind: resolvedEventKind,
-        source: resolvedSource,
-        affectedUserQuery,
-        actorQuery,
-      }),
-    ]);
+    const view = await fetchAuditView(sbAdmin, {
+      wsId,
+      start,
+      end,
+      period: resolvedPeriod,
+      eventKind: resolvedEventKind,
+      source: resolvedSource,
+      affectedUserQuery,
+      actorQuery,
+      limit: validatedPageSize,
+      offset,
+    });
     const chartStats = buildChartStatsFromBuckets({
       locale,
       period: resolvedPeriod,
       start,
       end,
-      bucketRows,
+      bucketRows: view.bucketRows,
     });
     const peakBucket =
       chartStats.reduce<WorkspaceUserAuditChartStat | null>((peak, bucket) => {
@@ -669,7 +627,7 @@ export async function getAuditLogView({
         return peak;
       }, null) ?? null;
     const summary: WorkspaceUserAuditSummary = {
-      ...summaryBase,
+      ...view.summary,
       peakBucketLabel: peakBucket?.tooltipLabel ?? null,
       peakBucketCount: peakBucket?.totalCount ?? 0,
     };
@@ -683,8 +641,8 @@ export async function getAuditLogView({
       actorQuery: actorQuery?.trim() ?? '',
       page: validatedPage,
       pageSize: validatedPageSize,
-      count: feedPage.count,
-      data: feedPage.data,
+      count: view.count,
+      data: view.data,
       allFilteredEvents: [] as WorkspaceUserAuditEvent[],
       summary,
       chartStats,

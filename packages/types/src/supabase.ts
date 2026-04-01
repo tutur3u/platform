@@ -25705,6 +25705,21 @@ export type Database = {
         Args: { end_date?: string; start_date?: string; ws_id: string };
         Returns: number;
       };
+      get_workspace_user_audit_view: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_period: string;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_workspace_user_groups: {
         Args: {
           _ws_id: string;
@@ -26911,6 +26926,34 @@ export type Database = {
       };
       workspace_user_audit_feed: {
         Args: { p_end: string; p_start: string; p_ws_id: string };
+        Returns: {
+          actor_auth_uid: string;
+          actor_email: string;
+          actor_id: string;
+          actor_name: string;
+          actor_workspace_user_id: string;
+          affected_user_email: string;
+          affected_user_id: string;
+          affected_user_name: string;
+          after: Json;
+          audit_record_id: number;
+          before: Json;
+          changed_fields: string[];
+          event_kind: string;
+          occurred_at: string;
+          source: string;
+        }[];
+      };
+      workspace_user_audit_filtered_feed: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
         Returns: {
           actor_auth_uid: string;
           actor_email: string;
