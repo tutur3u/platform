@@ -1,7 +1,15 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { CheckIcon, ChevronDown, PlusCircle } from '@tuturuuu/icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  CheckIcon,
+  ChevronDown,
+  Loader2,
+  PlusCircle,
+  Star,
+} from '@tuturuuu/icons';
+import { updateCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api/users';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
@@ -17,6 +25,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useForm } from '../../../hooks/use-form';
+import { useWorkspaceUser } from '../../../hooks/use-workspace-user';
 import { zodResolver } from '../../../resolvers';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Badge } from '../badge';
@@ -113,17 +122,20 @@ export function WorkspaceSelect({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
 
   const { data: workspaces } = useQuery({
     queryKey: ['workspaces'],
     queryFn: fetchWorkspaces,
     enabled: !!wsId,
   });
+  const { data: currentUser } = useWorkspaceUser();
 
   const resolvedWorkspaceId =
     wsId && wsId !== PERSONAL_WORKSPACE_SLUG
       ? resolveWorkspaceId(wsId)
       : undefined;
+  const defaultWorkspaceId = currentUser?.default_workspace_id || null;
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -136,6 +148,34 @@ export function WorkspaceSelect({
   const [showNewWorkspaceDialog, setShowNewWorkspaceDialog] = useState(false);
 
   const [loading, setLoading] = useState(false);
+
+  const updateDefaultWorkspaceMutation = useMutation({
+    mutationFn: (workspaceId: string) =>
+      updateCurrentUserDefaultWorkspace(workspaceId),
+    onSuccess: (_, workspaceId) => {
+      queryClient.setQueryData(
+        ['workspace-user'],
+        (previous: WorkspaceUser | undefined) =>
+          previous
+            ? {
+                ...previous,
+                default_workspace_id: workspaceId,
+              }
+            : previous
+      );
+
+      void queryClient.invalidateQueries({ queryKey: ['workspace-user'] });
+      void queryClient.invalidateQueries({ queryKey: ['default-workspace'] });
+      void queryClient.invalidateQueries({ queryKey: ['user'] });
+      void queryClient.invalidateQueries({ queryKey: ['user-workspaces'] });
+      void queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      router.refresh();
+    },
+    onError: (error) => {
+      console.error('Error updating default workspace:', error);
+      toast.error(t('common.error'));
+    },
+  });
 
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     if (disableCreateNewWorkspace) return;
@@ -203,6 +243,7 @@ export function WorkspaceSelect({
       label: t('common.system'),
       teams: [
         {
+          id: rootWorkspace.id,
           label: rootWorkspace.name || t('common.root'),
           value: ROOT_WORKSPACE_ID,
           avatarUrl: rootWorkspace.avatar_url || TUTURUUU_LOGO_URL,
@@ -220,6 +261,7 @@ export function WorkspaceSelect({
       label: t('common.personal_account'),
       teams: [
         {
+          id: personalWorkspace.id,
           label: personalWorkspace.name || 'Personal',
           value: PERSONAL_WORKSPACE_SLUG,
           avatarUrl: personalWorkspace.avatar_url,
@@ -244,6 +286,7 @@ export function WorkspaceSelect({
           avatar_url?: string | null;
           tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
         }) => ({
+          id: workspace.id,
           label: workspace.name || 'Untitled',
           value: toWorkspaceSlug(workspace.id, {
             personal: workspace?.personal,
@@ -259,6 +302,7 @@ export function WorkspaceSelect({
     id: string;
     label: string;
     teams: {
+      id: string;
       label: string;
       value: string | undefined;
       isCreator?: boolean;
@@ -368,60 +412,124 @@ export function WorkspaceSelect({
                   <CommandGroup key={group.label} heading={group.label}>
                     {group.teams.map(
                       (team: {
+                        id: string;
                         label: string;
                         value: string | undefined;
                         isCreator?: boolean;
                         avatarUrl?: string | null;
                         tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
                         isRoot?: boolean;
-                      }) => (
-                        <CommandItem
-                          key={team.value}
-                          value={`${team.label} ${team.value || ''}`}
-                          onSelect={() => {
-                            if (!team?.value || team?.value === wsId) return;
-                            onValueChange(team.value);
-                            setOpen(false);
-                          }}
-                          className={cn(
-                            'text-sm',
-                            wsId === team.value && 'bg-accent'
-                          )}
-                          disabled={!team}
-                        >
-                          <WorkspaceIcon
-                            name={team.label}
-                            avatarUrl={team.avatarUrl}
-                          />
-                          <span className="line-clamp-1 text-xs">
-                            {team.label}
-                          </span>
-                          {showTierBadges && (
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
-                                (!team.tier || team.tier === 'FREE') &&
-                                  'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
-                                team.tier === 'PLUS' &&
-                                  'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
-                                team.tier === 'PRO' &&
-                                  'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
-                                team.tier === 'ENTERPRISE' &&
-                                  'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
-                              )}
-                            >
-                              {team.tier || 'FREE'}
-                            </Badge>
-                          )}
-                          <CheckIcon
+                      }) => {
+                        const isCurrentWorkspace = wsId === team.value;
+                        const isDefaultWorkspace =
+                          defaultWorkspaceId === team.id;
+                        const isUpdatingDefaultWorkspace =
+                          updateDefaultWorkspaceMutation.isPending &&
+                          updateDefaultWorkspaceMutation.variables === team.id;
+
+                        return (
+                          <CommandItem
+                            key={team.value}
+                            value={`${team.label} ${team.value || ''}`}
+                            onSelect={() => {
+                              if (!team?.value || team?.value === wsId) return;
+                              onValueChange(team.value);
+                              setOpen(false);
+                            }}
                             className={cn(
-                              'ml-auto h-4 w-4',
-                              wsId === team.value ? 'opacity-100' : 'opacity-0'
+                              'gap-1.5 text-sm',
+                              isCurrentWorkspace && 'bg-accent'
                             )}
-                          />
-                        </CommandItem>
-                      )
+                            disabled={!team}
+                          >
+                            <WorkspaceIcon
+                              name={team.label}
+                              avatarUrl={team.avatarUrl}
+                            />
+                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                              <span className="line-clamp-1 min-w-0 flex-1 text-xs">
+                                {team.label}
+                              </span>
+                              {showTierBadges && (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
+                                    (!team.tier || team.tier === 'FREE') &&
+                                      'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
+                                    team.tier === 'PLUS' &&
+                                      'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
+                                    team.tier === 'PRO' &&
+                                      'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
+                                    team.tier === 'ENTERPRISE' &&
+                                      'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                                  )}
+                                >
+                                  {team.tier || 'FREE'}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex shrink-0 items-center gap-0.5">
+                              <Button
+                                type="button"
+                                variant={
+                                  isDefaultWorkspace ? 'secondary' : 'ghost'
+                                }
+                                size="xs"
+                                className={cn(
+                                  'h-6 w-6 shrink-0 rounded-sm p-0',
+                                  isDefaultWorkspace &&
+                                    'bg-dynamic-amber/12 text-dynamic-amber hover:bg-dynamic-amber/18 hover:text-dynamic-amber'
+                                )}
+                                aria-label="Default workspace"
+                                title="Default workspace"
+                                disabled={
+                                  isDefaultWorkspace ||
+                                  isUpdatingDefaultWorkspace ||
+                                  updateDefaultWorkspaceMutation.isPending
+                                }
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                }}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+
+                                  if (
+                                    isDefaultWorkspace ||
+                                    isUpdatingDefaultWorkspace
+                                  ) {
+                                    return;
+                                  }
+
+                                  updateDefaultWorkspaceMutation.mutate(
+                                    team.id
+                                  );
+                                }}
+                              >
+                                {isUpdatingDefaultWorkspace ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Star
+                                    className={cn(
+                                      'h-3 w-3',
+                                      isDefaultWorkspace && 'fill-current'
+                                    )}
+                                  />
+                                )}
+                              </Button>
+                              <CheckIcon
+                                className={cn(
+                                  'h-3.5 w-3.5 shrink-0',
+                                  isCurrentWorkspace
+                                    ? 'opacity-100'
+                                    : 'opacity-0'
+                                )}
+                              />
+                            </div>
+                          </CommandItem>
+                        );
+                      }
                     )}
                   </CommandGroup>
                 ))}

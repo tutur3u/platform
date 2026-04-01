@@ -205,6 +205,7 @@ export {
   getCurrentUserProfile,
   getUserCalendarSettings,
   getUserConfig,
+  updateCurrentUserDefaultWorkspace,
   updateUserConfig,
 } from './users';
 export {
