@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:mobile/core/utils/tiptap_document_codec.dart';
 
 String? quillDocumentToTipTapJson(Document document) {
   final ops = document.toDelta().toJson();
@@ -13,22 +14,18 @@ String? quillDocumentToTipTapJson(Document document) {
 }
 
 Document tipTapJsonToQuillDocument(String? rawDescription) {
-  final raw = rawDescription?.trim() ?? '';
-  if (raw.isEmpty) {
+  final decoded = decodeTipTapDescription(rawDescription);
+  if (decoded.isEmpty) {
     return Document();
   }
 
-  try {
-    final parsed = jsonDecode(raw);
-    if (parsed is Map<String, dynamic> && parsed['type'] == 'doc') {
-      final delta = _tipTapDocToDelta(parsed);
-      return Document.fromDelta(delta);
-    }
-  } on FormatException {
-    // Fall back to plain text representation.
+  final doc = decoded.document;
+  if (doc != null) {
+    final delta = _tipTapDocToDelta(doc);
+    return Document.fromDelta(delta);
   }
 
-  return Document()..insert(0, raw);
+  return Document()..insert(0, decoded.trimmed);
 }
 
 Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
@@ -78,6 +75,8 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
             _QuillSegment.image(src: image),
           ],
         );
+        // An image block embed ends the current line
+        pushCurrentLine(const <String, dynamic>{});
         continue;
       }
 
@@ -89,6 +88,33 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
             _QuillSegment.video(src: video),
           ],
         );
+        // A video block embed ends the current line
+        pushCurrentLine(const <String, dynamic>{});
+        continue;
+      }
+
+      // Mention embed (inline – stays in the current line).
+      final mention = insert['mention'];
+      if (mention is String && mention.trim().isNotEmpty) {
+        current = current.copyWith(
+          segments: [
+            ...current.segments,
+            _QuillSegment.mention(data: mention),
+          ],
+        );
+        continue;
+      }
+
+      // Table embed (block – ends the current line).
+      final table = insert['table'];
+      if (table is String && table.trim().isNotEmpty) {
+        current = current.copyWith(
+          segments: [
+            ...current.segments,
+            _QuillSegment.table(data: table),
+          ],
+        );
+        pushCurrentLine(const <String, dynamic>{});
       }
     }
   }
@@ -97,7 +123,7 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
     lines.add(current);
   }
 
-  final nodes = _mergeAdjacentListNodes(
+  final nodes = _buildListTree(
     lines.map(_lineToTipTapNode).whereType<Map<String, dynamic>>().toList(),
   );
 
@@ -110,12 +136,16 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
 Map<String, dynamic>? _lineToTipTapNode(_QuillLine line) {
   final inlineNodes = _lineSegmentsToTipTapInlineNodes(line.segments);
   final attrs = line.lineAttrs;
+  final textAlign = _extractTextAlign(attrs['align']);
 
   if ((attrs['header'] as num?) != null) {
     final level = (attrs['header'] as num?)?.toInt() ?? 1;
     return {
       'type': 'heading',
-      'attrs': {'level': level.clamp(1, 6)},
+      'attrs': {
+        'level': level.clamp(1, 6),
+        if (textAlign != null) 'textAlign': textAlign,
+      },
       'content': inlineNodes,
     };
   }
@@ -149,9 +179,12 @@ Map<String, dynamic>? _lineToTipTapNode(_QuillLine line) {
 
   if (attrs['list'] is String) {
     final listValue = attrs['list'] as String;
+    final indent = (attrs['indent'] as num?)?.toInt() ?? 0;
+
     if (listValue == 'checked' || listValue == 'unchecked') {
       return {
         'type': 'taskList',
+        if (indent > 0) '_indent': indent,
         'content': [
           {
             'type': 'taskItem',
@@ -167,6 +200,7 @@ Map<String, dynamic>? _lineToTipTapNode(_QuillLine line) {
     final listType = listValue == 'ordered' ? 'orderedList' : 'bulletList';
     return {
       'type': listType,
+      if (indent > 0) '_indent': indent,
       'content': [
         {
           'type': 'listItem',
@@ -178,14 +212,75 @@ Map<String, dynamic>? _lineToTipTapNode(_QuillLine line) {
     };
   }
 
+  // Image-only line (from embed): segments contain a single image
+  if (inlineNodes.isEmpty &&
+      line.segments.length == 1 &&
+      line.segments.first.kind == _QuillSegmentKind.image) {
+    final src = line.segments.first.src ?? '';
+    if (src.isNotEmpty) {
+      return {
+        'type': 'image',
+        'attrs': {'src': src},
+      };
+    }
+    return null;
+  }
+
+  // Video-only line (from embed)
+  if (inlineNodes.isEmpty &&
+      line.segments.length == 1 &&
+      line.segments.first.kind == _QuillSegmentKind.video) {
+    final src = line.segments.first.src ?? '';
+    if (src.isNotEmpty) {
+      return {
+        'type': 'video',
+        'attrs': {'src': src},
+      };
+    }
+    return null;
+  }
+
+  // Table-only line (from embed): restore the full TipTap table node.
+  if (inlineNodes.isEmpty &&
+      line.segments.length == 1 &&
+      line.segments.first.kind == _QuillSegmentKind.table) {
+    final data = line.segments.first.src ?? '';
+    if (data.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(data);
+        if (decoded is Map<String, dynamic> && decoded['type'] == 'table') {
+          return decoded;
+        }
+      } on Object {
+        // Ignore malformed table data.
+      }
+    }
+    return null;
+  }
+
   if (inlineNodes.isEmpty) {
     return null;
   }
 
   return {
     'type': 'paragraph',
+    if (textAlign != null) 'attrs': {'textAlign': textAlign},
     'content': inlineNodes,
   };
+}
+
+String? _extractTextAlign(Object? alignValue) {
+  if (alignValue is! String) {
+    return null;
+  }
+  final normalized = alignValue.trim().toLowerCase();
+  if (normalized == 'center' || normalized == 'right' || normalized == 'left') {
+    return normalized;
+  }
+  if (normalized == 'justify') {
+    return 'left';
+  }
+  return null;
 }
 
 List<Map<String, dynamic>> _lineSegmentsToTipTapInlineNodes(
@@ -209,28 +304,22 @@ List<Map<String, dynamic>> _lineSegmentsToTipTapInlineNodes(
       continue;
     }
 
-    if (segment.kind == _QuillSegmentKind.image) {
-      final src = segment.src?.trim() ?? '';
-      if (src.isEmpty) {
-        continue;
+    // Mention embeds are inline – convert back to TipTap mention nodes.
+    if (segment.kind == _QuillSegmentKind.mention) {
+      final data = segment.src ?? '';
+      if (data.isEmpty) continue;
+      try {
+        final attrs = jsonDecode(data);
+        if (attrs is Map<String, dynamic>) {
+          nodes.add({'type': 'mention', 'attrs': attrs});
+        }
+      } on Object {
+        // Ignore malformed mention data.
       }
-      nodes.add({
-        'type': 'image',
-        'attrs': {'src': src},
-      });
       continue;
     }
 
-    if (segment.kind == _QuillSegmentKind.video) {
-      final src = segment.src?.trim() ?? '';
-      if (src.isEmpty) {
-        continue;
-      }
-      nodes.add({
-        'type': 'video',
-        'attrs': {'src': src},
-      });
-    }
+    // Image, video, and table embeds are handled at the line level.
   }
 
   return nodes;
@@ -248,8 +337,27 @@ List<Map<String, dynamic>> _marksFromQuillAttrs(Map<String, dynamic> attrs) {
   if (attrs['strike'] == true) {
     marks.add({'type': 'strike'});
   }
+  if (attrs['underline'] == true) {
+    marks.add({'type': 'underline'});
+  }
   if (attrs['code'] == true) {
     marks.add({'type': 'code'});
+  }
+
+  final script = attrs['script'];
+  if (script == 'sub') {
+    marks.add({'type': 'subscript'});
+  }
+  if (script == 'super') {
+    marks.add({'type': 'superscript'});
+  }
+
+  final background = attrs['background'];
+  if (background is String && background.trim().isNotEmpty) {
+    marks.add({
+      'type': 'highlight',
+      'attrs': {'color': background.trim()},
+    });
   }
 
   final link = attrs['link'];
@@ -263,44 +371,104 @@ List<Map<String, dynamic>> _marksFromQuillAttrs(Map<String, dynamic> attrs) {
   return marks;
 }
 
-List<Map<String, dynamic>> _mergeAdjacentListNodes(
-  List<Map<String, dynamic>> nodes,
-) {
-  final merged = <Map<String, dynamic>>[];
-  for (final node in nodes) {
-    if (merged.isNotEmpty) {
-      final previous = merged.last;
-      final currentType = node['type'];
-      final previousType = previous['type'];
+/// Builds the final TipTap node list, merging adjacent same-type lists and
+/// nesting indented list items into their parent list items.
+List<Map<String, dynamic>> _buildListTree(List<Map<String, dynamic>> nodes) {
+  final result = <Map<String, dynamic>>[];
 
-      if ((currentType == 'bulletList' || currentType == 'orderedList') &&
-          currentType == previousType) {
-        final previousContent =
-            (previous['content'] as List?)?.cast<Map<String, dynamic>>() ??
-            <Map<String, dynamic>>[];
-        final currentContent =
-            (node['content'] as List?)?.cast<Map<String, dynamic>>() ??
-            <Map<String, dynamic>>[];
-        previous['content'] = [...previousContent, ...currentContent];
-        continue;
-      }
+  for (final rawNode in nodes) {
+    final type = rawNode['type'];
+    final isListNode =
+        type == 'bulletList' || type == 'orderedList' || type == 'taskList';
 
-      if (currentType == 'taskList' && previousType == 'taskList') {
-        final previousContent =
-            (previous['content'] as List?)?.cast<Map<String, dynamic>>() ??
-            <Map<String, dynamic>>[];
-        final currentContent =
-            (node['content'] as List?)?.cast<Map<String, dynamic>>() ??
-            <Map<String, dynamic>>[];
-        previous['content'] = [...previousContent, ...currentContent];
-        continue;
-      }
+    if (!isListNode) {
+      result.add(rawNode);
+      continue;
     }
 
-    merged.add(node);
+    final indent = (rawNode['_indent'] as int?) ?? 0;
+    // Strip the temporary Quill-indent metadata from the final TipTap node.
+    final node = Map<String, dynamic>.from(rawNode)..remove('_indent');
+
+    if (indent == 0) {
+      // Top-level list: merge adjacent same-type lists.
+      if (result.isNotEmpty && result.last['type'] == type) {
+        _mergeListItems(result.last, node);
+      } else {
+        result.add(node);
+      }
+    } else {
+      // Indented list: nest inside the last item of the nearest parent list.
+      if (result.isNotEmpty) {
+        final parent = result.last;
+        if (parent['type'] == 'bulletList' ||
+            parent['type'] == 'orderedList' ||
+            parent['type'] == 'taskList') {
+          _nestListIntoParent(parent, node, indent);
+          continue;
+        }
+      }
+      // No suitable parent found – add as top-level fallback.
+      result.add(node);
+    }
   }
 
-  return merged;
+  return result;
+}
+
+/// Appends the items from [source] into [target]'s content list.
+void _mergeListItems(
+  Map<String, dynamic> target,
+  Map<String, dynamic> source,
+) {
+  final targetContent =
+      (target['content'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+  final sourceContent =
+      (source['content'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+  target['content'] = [...targetContent, ...sourceContent];
+}
+
+/// Recursively nests [child] list into the last item of [parent] at the
+/// given [depth] (1 = direct child, 2 = grandchild, …).
+void _nestListIntoParent(
+  Map<String, dynamic> parent,
+  Map<String, dynamic> child,
+  int depth,
+) {
+  final parentContent =
+      (parent['content'] as List?)?.cast<Map<String, dynamic>>();
+  if (parentContent == null || parentContent.isEmpty) return;
+
+  final lastItem = parentContent.last;
+  final lastItemContent =
+      List<Map<String, dynamic>>.from(
+        (lastItem['content'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+      );
+
+  if (depth == 1) {
+    // Try to merge with an existing sub-list of the same type at the end.
+    if (lastItemContent.isNotEmpty &&
+        lastItemContent.last['type'] == child['type']) {
+      _mergeListItems(lastItemContent.last, child);
+    } else {
+      lastItemContent.add(child);
+    }
+    lastItem['content'] = lastItemContent;
+  } else {
+    // Go deeper – recurse into the last nested sub-list.
+    final lastSubList = lastItemContent.lastWhere(
+      (n) =>
+          n['type'] == 'bulletList' ||
+          n['type'] == 'orderedList' ||
+          n['type'] == 'taskList',
+      orElse: () => <String, dynamic>{},
+    );
+
+    if (lastSubList.isNotEmpty) {
+      _nestListIntoParent(lastSubList, child, depth - 1);
+      lastItem['content'] = lastItemContent;
+    }
+  }
 }
 
 Delta _tipTapDocToDelta(Map<String, dynamic> doc) {
@@ -318,7 +486,11 @@ Delta _tipTapDocToDelta(Map<String, dynamic> doc) {
   return delta;
 }
 
-void _appendBlockNodeToDelta(Object? node, Delta delta) {
+void _appendBlockNodeToDelta(
+  Object? node,
+  Delta delta, {
+  int indent = 0,
+}) {
   if (node is! Map<String, dynamic>) {
     return;
   }
@@ -371,6 +543,15 @@ void _appendBlockNodeToDelta(Object? node, Delta delta) {
     return;
   }
 
+  if (type == 'table') {
+    // Store the full TipTap table node as a Quill block embed so the editor
+    // can render it as a proper table widget.
+    delta
+      ..insert({'table': jsonEncode(node)})
+      ..insert('\n');
+    return;
+  }
+
   if (type == 'bulletList' || type == 'orderedList') {
     final listItems = (node['content'] as List?)?.cast<Object?>() ?? const [];
     final listKind = type == 'orderedList' ? 'ordered' : 'bullet';
@@ -382,7 +563,9 @@ void _appendBlockNodeToDelta(Object? node, Delta delta) {
       final itemParagraphs =
           (item['content'] as List?)?.cast<Object?>() ?? const [];
       if (itemParagraphs.isEmpty) {
-        delta.insert('\n', {'list': listKind});
+        final lineAttrs = <String, dynamic>{'list': listKind};
+        if (indent > 0) lineAttrs['indent'] = indent;
+        delta.insert('\n', lineAttrs);
         continue;
       }
 
@@ -390,9 +573,12 @@ void _appendBlockNodeToDelta(Object? node, Delta delta) {
         if (paragraph is Map<String, dynamic> &&
             paragraph['type'] == 'paragraph') {
           _appendInlineContentToDelta(paragraph['content'], delta);
-          delta.insert('\n', {'list': listKind});
+          final lineAttrs = <String, dynamic>{'list': listKind};
+          if (indent > 0) lineAttrs['indent'] = indent;
+          delta.insert('\n', lineAttrs);
         } else {
-          _appendBlockNodeToDelta(paragraph, delta);
+          // Nested list or other block – increase indent level.
+          _appendBlockNodeToDelta(paragraph, delta, indent: indent + 1);
         }
       }
     }
@@ -411,7 +597,9 @@ void _appendBlockNodeToDelta(Object? node, Delta delta) {
       final itemParagraphs =
           (item['content'] as List?)?.cast<Object?>() ?? const [];
       if (itemParagraphs.isEmpty) {
-        delta.insert('\n', {'list': listKind});
+        final lineAttrs = <String, dynamic>{'list': listKind};
+        if (indent > 0) lineAttrs['indent'] = indent;
+        delta.insert('\n', lineAttrs);
         continue;
       }
 
@@ -419,9 +607,11 @@ void _appendBlockNodeToDelta(Object? node, Delta delta) {
         if (paragraph is Map<String, dynamic> &&
             paragraph['type'] == 'paragraph') {
           _appendInlineContentToDelta(paragraph['content'], delta);
-          delta.insert('\n', {'list': listKind});
+          final lineAttrs = <String, dynamic>{'list': listKind};
+          if (indent > 0) lineAttrs['indent'] = indent;
+          delta.insert('\n', lineAttrs);
         } else {
-          _appendBlockNodeToDelta(paragraph, delta);
+          _appendBlockNodeToDelta(paragraph, delta, indent: indent + 1);
         }
       }
     }
@@ -433,6 +623,20 @@ void _appendBlockNodeToDelta(Object? node, Delta delta) {
     if (src.isNotEmpty) {
       delta
         ..insert({'image': src})
+        ..insert('\n');
+    }
+    return;
+  }
+
+  if (type == 'video' || type == 'youtube') {
+    final attrs = node['attrs'] as Map?;
+    final src =
+        ((attrs?['src'] as String?) ?? (attrs?['videoId'] as String?))
+            ?.trim() ??
+        '';
+    if (src.isNotEmpty) {
+      delta
+        ..insert({'video': src})
         ..insert('\n');
     }
     return;
@@ -484,6 +688,15 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
       continue;
     }
 
+    if (type == 'mention') {
+      // Store the full mention attrs as a Quill inline embed so the editor
+      // can render the green mention chip inline.
+      final attrs = child['attrs'];
+      final payload = attrs is Map<String, dynamic> ? jsonEncode(attrs) : '{}';
+      delta.insert({'mention': payload});
+      continue;
+    }
+
     if (type == 'video') {
       final src = ((child['attrs'] as Map?)?['src'] as String?)?.trim() ?? '';
       if (src.isNotEmpty) {
@@ -491,8 +704,21 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
       }
       continue;
     }
+
+    if (type == 'youtube') {
+      final attrs = child['attrs'] as Map?;
+      final src =
+          ((attrs?['src'] as String?) ?? (attrs?['videoId'] as String?))
+              ?.trim() ??
+          '';
+      if (src.isNotEmpty) {
+        delta.insert({'video': src});
+      }
+      continue;
+    }
   }
 }
+
 
 Map<String, dynamic> _quillAttrsFromTipTapMarks(Object? marksValue) {
   final marks = (marksValue as List?)?.cast<Object?>() ?? const [];
@@ -510,8 +736,17 @@ Map<String, dynamic> _quillAttrsFromTipTapMarks(Object? marksValue) {
       attrs['italic'] = true;
     } else if (type == 'strike') {
       attrs['strike'] = true;
+    } else if (type == 'underline') {
+      attrs['underline'] = true;
     } else if (type == 'code') {
       attrs['code'] = true;
+    } else if (type == 'subscript') {
+      attrs['script'] = 'sub';
+    } else if (type == 'superscript') {
+      attrs['script'] = 'super';
+    } else if (type == 'highlight') {
+      attrs['background'] =
+          ((mark['attrs'] as Map?)?['color'] as String?) ?? '#FFF59D';
     } else if (type == 'link') {
       final href = (mark['attrs'] as Map?)?['href'];
       if (href is String && href.trim().isNotEmpty) {
@@ -558,32 +793,7 @@ bool _deltaEndsWithNewLine(Delta delta) {
 }
 
 bool _isTipTapDocEmpty(Map<String, dynamic> node) {
-  if (node['type'] == 'text') {
-    final text = (node['text'] as String?)?.trim() ?? '';
-    return text.isEmpty;
-  }
-
-  final type = node['type'];
-  if (type == 'image' ||
-      type == 'imageResize' ||
-      type == 'video' ||
-      type == 'youtube' ||
-      type == 'mention' ||
-      type == 'horizontalRule') {
-    return false;
-  }
-
-  final content = (node['content'] as List?)?.cast<Object?>() ?? const [];
-  if (content.isEmpty) {
-    return true;
-  }
-
-  return content.every((child) {
-    if (child is! Map<String, dynamic>) {
-      return true;
-    }
-    return _isTipTapDocEmpty(child);
-  });
+  return !tipTapNodeHasContent(node);
 }
 
 class _QuillLine {
@@ -606,7 +816,7 @@ class _QuillLine {
   }
 }
 
-enum _QuillSegmentKind { text, image, video }
+enum _QuillSegmentKind { text, image, video, mention, table }
 
 class _QuillSegment {
   const _QuillSegment._({
@@ -626,6 +836,14 @@ class _QuillSegment {
 
   const _QuillSegment.video({required String src})
     : this._(kind: _QuillSegmentKind.video, src: src);
+
+  /// Inline mention: [src] holds the JSON-encoded mention attrs map.
+  const _QuillSegment.mention({required String data})
+    : this._(kind: _QuillSegmentKind.mention, src: data);
+
+  /// Block table: [src] holds the JSON-encoded full TipTap table node.
+  const _QuillSegment.table({required String data})
+    : this._(kind: _QuillSegmentKind.table, src: data);
 
   final _QuillSegmentKind kind;
   final String? text;

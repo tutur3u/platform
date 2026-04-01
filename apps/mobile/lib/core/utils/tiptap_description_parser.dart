@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'package:mobile/core/utils/tiptap_document_codec.dart';
 
 class TipTapMention {
   const TipTapMention({
@@ -50,24 +50,27 @@ class _ParseContext {
 }
 
 ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
-  final trimmed = rawDescription?.trim();
-  if (trimmed == null || trimmed.isEmpty) return null;
+  final decoded = decodeTipTapDescription(rawDescription);
+  if (decoded.isEmpty) return null;
 
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-    return ParsedTipTapDescription(markdown: trimmed, plainText: trimmed);
+  if (!decoded.isTipTapDocument) {
+    return ParsedTipTapDescription(
+      markdown: decoded.trimmed,
+      plainText: decoded.trimmed,
+    );
   }
 
   try {
-    final decoded = jsonDecode(trimmed);
-    if (_isEmptyTipTapDocument(decoded)) {
+    final doc = decoded.document;
+    if (doc == null || !tipTapNodeHasContent(doc)) {
       return null;
     }
 
     final context = _ParseContext();
     final markdown = _collapseWhitespace(
-      _extractMarkdown(decoded, context).trim(),
+      _extractMarkdown(doc, context).trim(),
     );
-    final plainText = _collapseWhitespace(_extractPlainText(decoded).trim());
+    final plainText = _collapseWhitespace(_extractPlainText(doc).trim());
 
     if (markdown.isEmpty && plainText.isEmpty) {
       return null;
@@ -82,15 +85,11 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
       mentions: List.unmodifiable(context.mentions),
     );
   } on Object {
-    return ParsedTipTapDescription(markdown: trimmed, plainText: trimmed);
+    return ParsedTipTapDescription(
+      markdown: decoded.trimmed,
+      plainText: decoded.trimmed,
+    );
   }
-}
-
-bool _isEmptyTipTapDocument(Object? decoded) {
-  if (decoded is! Map) return false;
-  if (decoded['type'] != 'doc') return false;
-  final content = decoded['content'];
-  return content is List && content.isEmpty;
 }
 
 String _collapseWhitespace(String value) {

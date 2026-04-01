@@ -949,7 +949,6 @@ class _TaskDescriptionEditorOverlay extends StatelessWidget {
               initialValue: initialValue,
               enabled: enabled,
               hintText: hintText,
-              editorHeight: context.isCompact ? 460 : 500,
               onChanged: onChanged,
               onRequestImageUpload: onRequestImageUpload,
             ),
