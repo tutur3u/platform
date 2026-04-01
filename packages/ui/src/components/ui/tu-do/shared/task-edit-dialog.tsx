@@ -28,6 +28,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
+import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
 import { getActiveBroadcast } from './board-broadcast-context';
 import { createInitialSuggestionState } from './mention-system/types';
@@ -67,7 +68,9 @@ import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
 import type {
   PendingRelationship,
   PendingRelationshipType,
+  PendingTaskRelationships,
 } from './task-edit-dialog/types/pending-relationship';
+import { getSeededPendingTaskRelationships } from './task-edit-dialog/types/pending-relationship';
 import {
   broadcastTaskDescriptionUpsert,
   getDraftStorageKey,
@@ -167,6 +170,7 @@ export function TaskEditDialog({
   const queryClient = useQueryClient();
   const t = useTranslations('common');
   const dialogT = useTranslations('ws-task-boards.dialog');
+  const { registerCloseRequestHandler } = useTaskDialogContext();
 
   // Access workspace tier for tier-aware collaboration settings (null outside the provider)
   const presenceCtx = useOptionalWorkspacePresenceContext();
@@ -645,22 +649,23 @@ export function TaskEditDialog({
   });
 
   // Change detection
-  const { hasUnsavedChanges, canSave } = useTaskChangeDetection({
-    task,
-    name: formState.name,
-    description: formState.description,
-    priority: formState.priority,
-    startDate: formState.startDate,
-    endDate: formState.endDate,
-    selectedListId: formState.selectedListId,
-    estimationPoints: formState.estimationPoints,
-    selectedLabels: formState.selectedLabels,
-    selectedAssignees: formState.selectedAssignees,
-    isCreateMode,
-    isLoading,
-    collaborationMode,
-    draftId,
-  });
+  const { hasUnsavedChanges, canSave, parseDescription } =
+    useTaskChangeDetection({
+      task,
+      name: formState.name,
+      description: formState.description,
+      priority: formState.priority,
+      startDate: formState.startDate,
+      endDate: formState.endDate,
+      selectedListId: formState.selectedListId,
+      estimationPoints: formState.estimationPoints,
+      selectedLabels: formState.selectedLabels,
+      selectedAssignees: formState.selectedAssignees,
+      isCreateMode,
+      isLoading,
+      collaborationMode,
+      draftId,
+    });
 
   // Task mutations
   const {
@@ -721,6 +726,16 @@ export function TaskEditDialog({
     onUpdate,
   });
 
+  const seededPendingRelationships = useMemo<PendingTaskRelationships>(
+    () =>
+      getSeededPendingTaskRelationships({
+        parentTaskId,
+        parentTaskName,
+        pendingRelationship,
+      }),
+    [parentTaskId, parentTaskName, pendingRelationship]
+  );
+
   // Task dependencies
   const {
     isLoading: dependenciesLoading,
@@ -738,12 +753,14 @@ export function TaskEditDialog({
     addRelatedTask,
     removeRelatedTask,
     savingRelationship,
+    pendingRelationships,
   } = useTaskDependencies({
     taskId: task?.id,
     boardId,
     wsId: effectiveTaskWsId,
     listId: task?.list_id,
     isCreateMode,
+    initialPendingRelationships: seededPendingRelationships,
     onUpdate,
   });
 
@@ -1062,6 +1079,7 @@ export function TaskEditDialog({
     sharedPermission,
     parentTaskId,
     pendingRelationship,
+    pendingTaskRelationships: pendingRelationships,
     draftStorageKey,
     name: formState.name,
     description: formState.description,
@@ -1110,6 +1128,16 @@ export function TaskEditDialog({
     }
 
     const currentContent = flushEditorPendingRef.current();
+    const currentSerializedDescription =
+      serializeTaskDescriptionContent(currentContent) ?? null;
+    const initialSerializedDescription =
+      serializeTaskDescriptionContent(parseDescription(task.description)) ??
+      null;
+
+    if (currentSerializedDescription === initialSerializedDescription) {
+      return true;
+    }
+
     const yjsState =
       currentContent && editorInstance?.schema
         ? Array.from(
@@ -1129,11 +1157,28 @@ export function TaskEditDialog({
   }, [
     isCreateMode,
     task?.id,
+    task?.description,
     effectiveTaskWsId,
     editorInstance,
     boardId,
+    parseDescription,
     queryClient,
   ]);
+
+  const hasPendingRealtimeDescriptionChanges = useCallback(() => {
+    if (isCreateMode || !task?.id || !flushEditorPendingRef.current) {
+      return false;
+    }
+
+    const currentContent = flushEditorPendingRef.current();
+    const currentSerializedDescription =
+      serializeTaskDescriptionContent(currentContent) ?? null;
+    const initialSerializedDescription =
+      serializeTaskDescriptionContent(parseDescription(task.description)) ??
+      null;
+
+    return currentSerializedDescription !== initialSerializedDescription;
+  }, [isCreateMode, parseDescription, task?.description, task?.id]);
 
   // Close handlers
   const { handleClose, handleForceClose, handleNavigateBack, handleCloseRef } =
@@ -1150,6 +1195,7 @@ export function TaskEditDialog({
       onNavigateToTask,
       flushNameUpdate,
       persistTaskDescription: persistTaskDescriptionOnClose,
+      hasPendingRealtimeDescriptionChanges,
       onCloseBlocked: () => {
         const closeFailedTitle = dialogT.has('description_close_failed_title')
           ? dialogT('description_close_failed_title')
@@ -1197,6 +1243,21 @@ export function TaskEditDialog({
       handleAttemptClose,
     ]
   );
+
+  useEffect(() => {
+    if (!isOpen) {
+      registerCloseRequestHandler(null);
+      return;
+    }
+
+    registerCloseRequestHandler(() => {
+      handleAttemptClose();
+    });
+
+    return () => {
+      registerCloseRequestHandler(null);
+    };
+  }, [handleAttemptClose, isOpen, registerCloseRequestHandler]);
 
   // Unsaved changes warning handlers
   const handleWarningDiscard = useCallback(() => {
@@ -1610,6 +1671,12 @@ export function TaskEditDialog({
                     boardId={boardId}
                     listId={task?.list_id}
                     isCreateMode={isCreateMode}
+                    initialActiveTab={
+                      seededPendingRelationships.initialActiveTab
+                    }
+                    initialDependencySubTab={
+                      seededPendingRelationships.initialDependencySubTab
+                    }
                     parentTask={parentTask}
                     childTasks={childTasks}
                     blockingTasks={blockingTasks}
@@ -1627,11 +1694,17 @@ export function TaskEditDialog({
                     onNavigateToTask={async (taskId) => {
                       if (onNavigateToTask) await onNavigateToTask(taskId);
                     }}
-                    onAddSubtask={onAddSubtask}
-                    onAddParentTask={onAddParentTask}
-                    onAddBlockingTaskDialog={onAddBlockingTask}
-                    onAddBlockedByTaskDialog={onAddBlockedByTask}
-                    onAddRelatedTaskDialog={onAddRelatedTask}
+                    onAddSubtask={isCreateMode ? undefined : onAddSubtask}
+                    onAddParentTask={isCreateMode ? undefined : onAddParentTask}
+                    onAddBlockingTaskDialog={
+                      isCreateMode ? undefined : onAddBlockingTask
+                    }
+                    onAddBlockedByTaskDialog={
+                      isCreateMode ? undefined : onAddBlockedByTask
+                    }
+                    onAddRelatedTaskDialog={
+                      isCreateMode ? undefined : onAddRelatedTask
+                    }
                     onAddExistingAsSubtask={addChildTask}
                     isSaving={!!savingRelationship}
                     savingTaskId={savingRelationship}

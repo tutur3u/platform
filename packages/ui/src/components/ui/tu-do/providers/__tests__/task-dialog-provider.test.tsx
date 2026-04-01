@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TaskFilters } from '../../boards/boardId/task-filter';
 import {
   TaskDialogProvider,
@@ -60,6 +60,10 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 );
 
 describe('TaskDialogProvider', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('should enable collaborationMode for paid task workspaces opened by id', async () => {
     mockGetCurrentUserTask.mockResolvedValueOnce({
       task: {
@@ -220,7 +224,8 @@ describe('TaskDialogProvider', () => {
     }
   });
 
-  it('should preserve task data when switching between tasks', () => {
+  it('queues the next task instead of replacing the active task immediately', () => {
+    vi.useFakeTimers();
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
 
     const task1 = { ...mockTask, id: 'task-1', name: 'Task 1' };
@@ -233,10 +238,24 @@ describe('TaskDialogProvider', () => {
     expect(result.current.state.task?.name).toBe('Task 1');
 
     act(() => {
+      result.current.registerCloseRequestHandler(() => {
+        result.current.closeDialog();
+      });
+    });
+
+    act(() => {
       result.current.openTask(task2, 'board-1', [mockList]);
     });
 
+    expect(result.current.state.isOpen).toBe(false);
+    expect(result.current.state.task).toBeUndefined();
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
     expect(result.current.state.task?.name).toBe('Task 2');
+    expect(result.current.state.isOpen).toBe(true);
   });
 
   it('should handle empty availableLists', () => {
@@ -283,6 +302,48 @@ describe('TaskDialogProvider', () => {
       list_id: 'list-1',
       name: 'Prefilled timeline task',
       start_date: '2026-03-07T00:00:00.000Z',
+    });
+  });
+
+  it('should seed parent task state for createSubtask', () => {
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+
+    act(() => {
+      result.current.createSubtask(
+        'task-parent',
+        'Parent task',
+        'board-1',
+        'list-1',
+        [mockList]
+      );
+    });
+
+    expect(result.current.state.mode).toBe('create');
+    expect(result.current.state.parentTaskId).toBe('task-parent');
+    expect(result.current.state.parentTaskName).toBe('Parent task');
+    expect(result.current.state.pendingRelationship).toBeUndefined();
+  });
+
+  it('should seed pending relationship state for createTaskWithRelationship', () => {
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+
+    act(() => {
+      result.current.createTaskWithRelationship(
+        'blocking',
+        'task-2',
+        'Blocking task',
+        'board-1',
+        'list-1',
+        [mockList]
+      );
+    });
+
+    expect(result.current.state.mode).toBe('create');
+    expect(result.current.state.parentTaskId).toBeUndefined();
+    expect(result.current.state.pendingRelationship).toEqual({
+      type: 'blocking',
+      relatedTaskId: 'task-2',
+      relatedTaskName: 'Blocking task',
     });
   });
 

@@ -98,6 +98,7 @@ describe('useTaskDialogClose', () => {
         onClose: vi.fn(),
         flushNameUpdate: vi.fn(),
         persistTaskDescription,
+        hasPendingRealtimeDescriptionChanges: () => true,
         setShowSyncWarning,
       })
     );
@@ -108,6 +109,36 @@ describe('useTaskDialogClose', () => {
 
     expect(setShowSyncWarning).toHaveBeenCalledWith(true);
     expect(persistTaskDescription).not.toHaveBeenCalled();
+  });
+
+  it('closes immediately when collaboration is reconnecting but description content is unchanged', async () => {
+    const onClose = vi.fn();
+    const flushNameUpdate = vi.fn().mockResolvedValue(undefined);
+    const persistTaskDescription = vi.fn();
+
+    const { result } = renderHook(() =>
+      useTaskDialogClose({
+        taskId: 'task-1',
+        isCreateMode: false,
+        collaborationMode: true,
+        synced: false,
+        connected: false,
+        draftStorageKey: 'draft-key',
+        onClose,
+        flushNameUpdate,
+        persistTaskDescription,
+        hasPendingRealtimeDescriptionChanges: () => false,
+        setShowSyncWarning: vi.fn(),
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleClose();
+    });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(flushNameUpdate).toHaveBeenCalledTimes(1);
+    expect(persistTaskDescription).toHaveBeenCalledTimes(1);
   });
 
   it('force closes immediately and continues persistence in the background', async () => {

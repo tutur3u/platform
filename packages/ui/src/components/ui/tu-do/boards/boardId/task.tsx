@@ -26,6 +26,7 @@ import {
   Trash2,
 } from '@tuturuuu/icons';
 import {
+  getWorkspaceTask,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
 } from '@tuturuuu/internal-api/tasks';
@@ -71,7 +72,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useTaskCardRelationships } from '../../hooks/useTaskCardRelationships';
+import {
+  enqueueTaskCardRelationshipRequest,
+  useTaskCardRelationships,
+} from '../../hooks/useTaskCardRelationships';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useTaskDialogState } from '../../hooks/useTaskDialogState';
 import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
@@ -79,6 +83,7 @@ import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
 import { useTaskDialogContext } from '../../providers/task-dialog-provider';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
+import { formatRelationshipTaskIdentifier } from '../../shared/relationship-task-identifier';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskShareDialog } from '../../shared/task-share-dialog';
@@ -109,6 +114,7 @@ import { TaskCustomDateDialog } from './task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from './task-dialogs/TaskDeleteDialog';
 import { TaskNewLabelDialog } from './task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from './task-dialogs/TaskNewProjectDialog';
+import { getTaskCardParentBadgeState } from './task-parent-badge-state';
 
 interface TaskCardProps {
   task: Task;
@@ -160,6 +166,7 @@ function TaskCardInner({
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [isInViewport, setIsInViewport] = useState(false);
   const [relationshipMenusOpen, setRelationshipMenusOpen] = useState({
     parent: false,
     dependencies: false,
@@ -169,6 +176,7 @@ function TaskCardInner({
     relationshipMenusOpen.parent ||
     relationshipMenusOpen.dependencies ||
     relationshipMenusOpen.related;
+  const cardElementRef = useRef<HTMLDivElement | null>(null);
 
   // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
@@ -280,22 +288,138 @@ function TaskCardInner({
     taskId: task.id,
     boardId,
     wsId: effectiveWorkspaceId,
-    enabled: isAnyRelationshipMenuOpen,
+    enabled: isAnyRelationshipMenuOpen && isInViewport,
   });
 
   const relationshipSummary =
     task.relationship_summary ??
     ({
       parent_task_id: null,
+      parent_task: null,
       child_count: 0,
       blocked_by_count: 0,
       blocking_count: 0,
       related_count: 0,
     } as const);
 
-  const hasParentRelationship = hasLoadedRelationships
-    ? !!parentTask
-    : !!relationshipSummary.parent_task_id;
+  const summaryParentTaskId = relationshipSummary.parent_task_id;
+  const summaryParentTask = relationshipSummary.parent_task ?? null;
+  const { data: cachedBoardParentTask } = useQuery({
+    queryKey: ['tasks', boardId],
+    queryFn: async () => [] as Task[],
+    enabled: false,
+    select: (tasks: Task[]) => {
+      if (!summaryParentTaskId) {
+        return null;
+      }
+
+      const match = tasks.find(
+        (candidate) => candidate.id === summaryParentTaskId
+      );
+      if (!match) {
+        return null;
+      }
+
+      return {
+        id: match.id,
+        name: match.name,
+        display_number: match.display_number,
+        ticket_prefix:
+          'ticket_prefix' in match && typeof match.ticket_prefix === 'string'
+            ? match.ticket_prefix
+            : (boardConfig?.ticket_prefix ?? null),
+      };
+    },
+  });
+  const shouldHydrateParentTask =
+    isInViewport &&
+    !!effectiveWorkspaceId &&
+    !!summaryParentTaskId &&
+    !summaryParentTask &&
+    !cachedBoardParentTask &&
+    (!parentTask || parentTask.id !== summaryParentTaskId);
+  const { data: hydratedParentTask } = useQuery({
+    queryKey: [
+      'task-parent-summary',
+      effectiveWorkspaceId,
+      summaryParentTaskId ?? 'none',
+    ],
+    queryFn: async () => {
+      if (!effectiveWorkspaceId || !summaryParentTaskId) {
+        return null;
+      }
+
+      const response = await enqueueTaskCardRelationshipRequest(() =>
+        getWorkspaceTask(effectiveWorkspaceId, summaryParentTaskId)
+      );
+      const fetchedTask = response.task;
+
+      return {
+        id: fetchedTask.id,
+        name: fetchedTask.name,
+        display_number: fetchedTask.display_number,
+        ticket_prefix:
+          'ticket_prefix' in fetchedTask &&
+          typeof fetchedTask.ticket_prefix === 'string'
+            ? fetchedTask.ticket_prefix
+            : fetchedTask.board_id === boardId
+              ? (boardConfig?.ticket_prefix ?? null)
+              : null,
+      };
+    },
+    enabled: shouldHydrateParentTask,
+    staleTime: 5 * 60 * 1000,
+  });
+  const [resolvedParentTask, setResolvedParentTask] = useState(
+    summaryParentTask ?? parentTask
+  );
+
+  useEffect(() => {
+    if (parentTask?.id && parentTask.id === summaryParentTaskId) {
+      setResolvedParentTask(parentTask);
+      return;
+    }
+
+    if (summaryParentTask?.id && summaryParentTask.id === summaryParentTaskId) {
+      setResolvedParentTask(summaryParentTask);
+      return;
+    }
+
+    if (
+      cachedBoardParentTask?.id &&
+      cachedBoardParentTask.id === summaryParentTaskId
+    ) {
+      setResolvedParentTask(cachedBoardParentTask);
+      return;
+    }
+
+    if (
+      hydratedParentTask?.id &&
+      hydratedParentTask.id === summaryParentTaskId
+    ) {
+      setResolvedParentTask(hydratedParentTask);
+      return;
+    }
+
+    if (!summaryParentTaskId) {
+      setResolvedParentTask(null);
+    }
+  }, [
+    cachedBoardParentTask,
+    hydratedParentTask,
+    parentTask,
+    summaryParentTask,
+    summaryParentTaskId,
+  ]);
+
+  const { hasParentRelationship, parentBadgeTask } =
+    getTaskCardParentBadgeState({
+      summaryParentTaskId,
+      summaryParentTask,
+      parentTask,
+      resolvedParentTask,
+      hasLoadedRelationships,
+    });
   const childTaskCount = hasLoadedRelationships
     ? childTasks.length
     : relationshipSummary.child_count;
@@ -308,6 +432,9 @@ function TaskCardInner({
   const relatedTaskCount = hasLoadedRelationships
     ? relatedTasks.length
     : relationshipSummary.related_count;
+  const parentBadgeIdentifier = parentBadgeTask
+    ? formatRelationshipTaskIdentifier(parentBadgeTask)
+    : null;
 
   // Fetch available task lists using React Query (same key as other components)
   const { data: availableLists = [] } = useQuery({
@@ -478,6 +605,40 @@ function TaskCardInner({
       disabled: dragDisabled,
       transition: null, // Disable @dnd-kit's built-in transitions
     });
+
+  const setCardRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      cardElementRef.current = node;
+      setNodeRef(node);
+    },
+    [setNodeRef]
+  );
+
+  useEffect(() => {
+    const node = cardElementRef.current;
+    if (!node) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsInViewport(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) {
+          return;
+        }
+        setIsInViewport(entry.isIntersecting);
+      },
+      {
+        rootMargin: '220px 0px',
+        threshold: 0.05,
+      }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   const style: React.CSSProperties = {
     transform: isDragging
@@ -788,10 +949,12 @@ function TaskCardInner({
           <Badge
             key="parent"
             variant="secondary"
-            className="h-5 shrink-0 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 text-[10px] text-dynamic-purple"
+            className="flex h-6 max-w-full shrink-0 items-center gap-1.5 overflow-hidden rounded-full border border-dynamic-purple/35 bg-dynamic-purple/10 px-2.5 text-[10px] text-dynamic-purple"
             title={
-              parentTask
-                ? t('subtask_of', { name: parentTask.name })
+              parentBadgeTask
+                ? parentBadgeIdentifier
+                  ? `${parentBadgeIdentifier} · ${parentBadgeTask.name}`
+                  : t('subtask_of', { name: parentBadgeTask.name })
                 : undefined
             }
             ref={(el) => {
@@ -799,7 +962,16 @@ function TaskCardInner({
             }}
           >
             <ArrowUpCircle className="h-2.5 w-2.5" />
-            {parentTask?.name ?? t('parent_task')}
+            {parentBadgeIdentifier && (
+              <span className="rounded-full bg-dynamic-purple/12 px-1.5 py-0.5 font-mono text-[9px] leading-none">
+                {parentBadgeIdentifier}
+              </span>
+            )}
+            <span className="truncate">
+              {parentBadgeTask?.name ||
+                parentBadgeIdentifier ||
+                t('parent_task')}
+            </span>
           </Badge>
         ),
       });
@@ -919,7 +1091,7 @@ function TaskCardInner({
     descriptionMeta.totalCheckboxes,
     descriptionMeta.checkedCheckboxes,
     descriptionMeta.indeterminateCheckboxes,
-    parentTask,
+    parentBadgeTask,
     hasParentRelationship,
     childTasks,
     childTaskCount,
@@ -928,6 +1100,7 @@ function TaskCardInner({
     blockedByCount,
     relatedTaskCount,
     t,
+    parentBadgeIdentifier,
   ]);
 
   // Calculate visible badges based on available width
@@ -1091,7 +1264,7 @@ function TaskCardInner({
     <Card
       data-id={task.id}
       data-task-id={task.id}
-      ref={setNodeRef}
+      ref={setCardRefs}
       style={style}
       onClick={handleCardClick}
       onContextMenu={(e) => {

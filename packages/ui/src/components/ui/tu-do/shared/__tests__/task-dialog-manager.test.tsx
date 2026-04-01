@@ -31,6 +31,7 @@ vi.mock('next/navigation', () => ({
 const {
   mockGetCurrentUserProfile,
   mockGetCurrentUserTask,
+  mockGetWorkspaceTask,
   mockListWorkspaceLabels,
   mockListWorkspaceMembers,
   mockListWorkspaceTaskProjectsByIds,
@@ -38,6 +39,7 @@ const {
 } = vi.hoisted(() => ({
   mockGetCurrentUserProfile: vi.fn(),
   mockGetCurrentUserTask: vi.fn(),
+  mockGetWorkspaceTask: vi.fn(),
   mockListWorkspaceLabels: vi.fn(),
   mockListWorkspaceMembers: vi.fn(),
   mockListWorkspaceTaskProjectsByIds: vi.fn(),
@@ -52,6 +54,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   getCurrentUserTask: mockGetCurrentUserTask,
+  getWorkspaceTask: mockGetWorkspaceTask,
   listWorkspaceTaskProjectsByIds: mockListWorkspaceTaskProjectsByIds,
   resolveTaskProjectWorkspaceId: mockResolveTaskProjectWorkspaceId,
 }));
@@ -149,13 +152,22 @@ vi.mock('../task-edit-dialog', () => ({
     isOpen,
     task,
     onClose,
+    onNavigateToTask,
   }: {
     isOpen: boolean;
     task?: Task;
     onClose: () => void;
+    onNavigateToTask?: (taskId: string) => Promise<void>;
   }) => (
     <div data-testid="task-edit-dialog" data-open={isOpen}>
       {task && <div data-testid="task-name">{task.name}</div>}
+      <button
+        type="button"
+        onClick={() => void onNavigateToTask?.('task-2')}
+        data-testid="navigate-button"
+      >
+        Navigate
+      </button>
       <button type="button" onClick={onClose} data-testid="close-button">
         Close
       </button>
@@ -234,6 +246,14 @@ beforeEach(() => {
   });
   mockListWorkspaceLabels.mockResolvedValue({ labels: [] });
   mockListWorkspaceMembers.mockResolvedValue({ members: [] });
+  mockGetWorkspaceTask.mockResolvedValue({
+    task: {
+      ...mockTask,
+      id: 'task-2',
+      name: 'Related Task',
+      board_id: 'board-1',
+    },
+  });
   mockListWorkspaceTaskProjectsByIds.mockResolvedValue([]);
   mockResolveTaskProjectWorkspaceId.mockResolvedValue('workspace-1');
   fetchMock.mockResolvedValue({
@@ -503,6 +523,55 @@ describe('TaskDialogManager', () => {
         document.querySelector('[data-testid="task-name"]')
       ).toHaveTextContent('Test Task');
     });
+  });
+
+  it('opens relationship navigation targets from the current board cache before falling back to user-task lookup', async () => {
+    const queryClient = createTestQueryClient();
+
+    queryClient.setQueryData(
+      ['tasks', 'board-1'],
+      [
+        mockTask,
+        {
+          ...mockTask,
+          id: 'task-2',
+          name: 'Cached Related Task',
+        },
+      ]
+    );
+
+    const TestComponent = () => {
+      const { openTask } = useTaskDialogContext();
+
+      React.useEffect(() => {
+        openTask(mockTask, 'board-1', [mockList]);
+      }, [openTask]);
+
+      return <TaskDialogManager wsId="workspace-1" />;
+    };
+
+    const { getByTestId } = render(
+      <QueryClientProvider client={queryClient}>
+        <TaskDialogProvider>
+          <TestComponent />
+        </TaskDialogProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('task-name')).toHaveTextContent('Test Task');
+    });
+
+    mockGetCurrentUserTask.mockClear();
+    mockGetWorkspaceTask.mockClear();
+
+    fireEvent.click(getByTestId('navigate-button'));
+
+    await waitFor(() => {
+      expect(getByTestId('task-name')).toHaveTextContent('Cached Related Task');
+    });
+
+    expect(mockGetCurrentUserTask).not.toHaveBeenCalled();
   });
 
   it('should use replaceState to revert URL when dialog closes', async () => {

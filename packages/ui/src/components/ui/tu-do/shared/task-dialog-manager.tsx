@@ -1,7 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
+import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -31,10 +32,12 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     isPersonalWorkspace,
     triggerClose,
     triggerUpdate,
+    openTask,
     openTaskById,
     createSubtask,
     createTaskWithRelationship,
   } = useTaskDialogContext();
+  const queryClient = useQueryClient();
 
   // Store the original pathname before URL manipulation
   const originalPathnameRef = useRef<string | null>(null);
@@ -168,9 +171,62 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   // Navigate to a task by opening it in the dialog
   const handleNavigateToTask = useCallback(
     async (taskId: string) => {
+      if (taskId === state.task?.id) {
+        return;
+      }
+
+      if (state.boardId) {
+        const cachedTasks =
+          queryClient.getQueryData<Task[]>(['tasks', state.boardId]) ?? [];
+        const cachedTask = cachedTasks.find((task) => task.id === taskId);
+
+        if (cachedTask) {
+          openTask(cachedTask, state.boardId, state.availableLists, false, {
+            taskWsId: state.taskWsId,
+            taskWorkspacePersonal: state.taskWorkspacePersonal,
+            taskWorkspaceTier: state.taskWorkspaceTier,
+          });
+          return;
+        }
+      }
+
+      const currentTaskWsId = state.taskWsId ?? wsId;
+
+      try {
+        const { task } = await getWorkspaceTask(currentTaskWsId, taskId, {
+          fetch: (input, init) =>
+            fetch(new URL(String(input), window.location.origin).toString(), {
+              ...init,
+              cache: 'no-store',
+            }),
+        });
+
+        if (task.board_id && task.board_id === state.boardId) {
+          openTask(task as Task, task.board_id, state.availableLists, false, {
+            taskWsId: currentTaskWsId,
+            taskWorkspacePersonal: state.taskWorkspacePersonal,
+            taskWorkspaceTier: state.taskWorkspaceTier,
+          });
+          return;
+        }
+      } catch {
+        // Fall back to the generic current-user task lookup below.
+      }
+
       await openTaskById(taskId);
     },
-    [openTaskById]
+    [
+      openTask,
+      openTaskById,
+      queryClient,
+      state.availableLists,
+      state.boardId,
+      state.task?.id,
+      state.taskWorkspacePersonal,
+      state.taskWorkspaceTier,
+      state.taskWsId,
+      wsId,
+    ]
   );
 
   useEffect(() => {

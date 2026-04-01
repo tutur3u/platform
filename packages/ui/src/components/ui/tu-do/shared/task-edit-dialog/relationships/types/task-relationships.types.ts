@@ -18,6 +18,8 @@ export interface TaskRelationshipsPropertiesProps {
   boardId: string;
   listId?: string;
   isCreateMode: boolean;
+  initialActiveTab?: RelationshipTab;
+  initialDependencySubTab?: DependencySubTab;
 
   // Data
   parentTask: RelatedTaskInfo | null;
@@ -129,6 +131,7 @@ export interface SubtasksSectionProps {
   taskId?: string;
   boardId: string;
   listId?: string;
+  parentTaskId?: string | null;
   childTasks: RelatedTaskInfo[];
   onNavigateToTask: (taskId: string) => void;
   onAddSubtask?: () => void;
@@ -153,6 +156,7 @@ export interface SubtaskActionButtonsProps {
 export interface DependenciesSectionProps {
   wsId: string;
   taskId?: string;
+  initialSubTab?: DependencySubTab;
   blockingTasks: RelatedTaskInfo[];
   blockedByTasks: RelatedTaskInfo[];
   isSaving: boolean;

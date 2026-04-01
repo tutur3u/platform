@@ -18,6 +18,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -139,6 +140,11 @@ interface TaskDialogContextValue {
 
   // Trigger the registered close callback (internal use)
   triggerClose: () => void;
+
+  // Register the active dialog close handler so queued opens can close safely first
+  registerCloseRequestHandler: (
+    handler: (() => void | Promise<void>) | null
+  ) => void;
 }
 
 const TaskDialogContext = createContext<TaskDialogContextValue | null>(null);
@@ -167,6 +173,13 @@ export function TaskDialogProvider({
   const [state, setState] = useState<TaskDialogState>({
     isOpen: false,
   });
+  const isDialogOpenRef = useRef(state.isOpen);
+  const queuedDialogStatesRef = useRef<TaskDialogState[]>([]);
+  const queuedOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeRequestHandlerRef = useRef<(() => void | Promise<void>) | null>(
+    null
+  );
+  const closeRequestInFlightRef = useRef(false);
 
   // Read cursorsEnabled from workspace presence context (true in DEV_MODE or PRO+ tiers)
   // Note: realtimeEnabled is NOT read from context — it's derived from the task's own
@@ -190,6 +203,90 @@ export function TaskDialogProvider({
   const updateCallbacksRef = useRef<Set<() => void>>(new Set());
   // Store the close callback in a ref for dynamic registration
   const closeCallbackRef = useRef<(() => void) | null>(null);
+
+  const registerCloseRequestHandler = useCallback(
+    (handler: (() => void | Promise<void>) | null) => {
+      closeRequestHandlerRef.current = handler;
+    },
+    []
+  );
+
+  const flushQueuedDialogState = useCallback(() => {
+    if (
+      queuedOpenTimerRef.current ||
+      queuedDialogStatesRef.current.length === 0
+    ) {
+      return;
+    }
+
+    const nextDialogState = queuedDialogStatesRef.current.shift();
+    if (!nextDialogState) {
+      return;
+    }
+
+    queuedOpenTimerRef.current = setTimeout(() => {
+      queuedOpenTimerRef.current = null;
+      setState(nextDialogState);
+    }, 0);
+  }, []);
+
+  const closeDialog = useCallback(() => {
+    setState({
+      isOpen: false,
+    });
+  }, []);
+
+  const queueDialogState = useCallback(
+    (nextDialogState: TaskDialogState) => {
+      if (
+        !isDialogOpenRef.current &&
+        !queuedOpenTimerRef.current &&
+        queuedDialogStatesRef.current.length === 0
+      ) {
+        setState(nextDialogState);
+        return;
+      }
+
+      queuedDialogStatesRef.current.push(nextDialogState);
+
+      if (closeRequestInFlightRef.current || !isDialogOpenRef.current) {
+        return;
+      }
+
+      closeRequestInFlightRef.current = true;
+
+      const requestClose = closeRequestHandlerRef.current;
+
+      if (requestClose) {
+        void Promise.resolve(requestClose()).catch((error) => {
+          console.error('Failed to request task dialog close:', error);
+        });
+        return;
+      }
+
+      closeDialog();
+    },
+    [closeDialog]
+  );
+
+  useEffect(() => {
+    isDialogOpenRef.current = state.isOpen;
+
+    if (state.isOpen) {
+      return;
+    }
+
+    closeRequestInFlightRef.current = false;
+    flushQueuedDialogState();
+  }, [flushQueuedDialogState, state.isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (queuedOpenTimerRef.current) {
+        clearTimeout(queuedOpenTimerRef.current);
+      }
+    };
+  }, []);
 
   const openTask = useCallback(
     (
@@ -215,7 +312,7 @@ export function TaskDialogProvider({
         options?.taskWorkspaceTier
       );
 
-      setState({
+      queueDialogState({
         isOpen: true,
         task,
         boardId,
@@ -229,7 +326,7 @@ export function TaskDialogProvider({
         taskWorkspaceTier: options?.taskWorkspaceTier,
       });
     },
-    [canUseTaskCursors, isPersonalWorkspace]
+    [canUseTaskCursors, isPersonalWorkspace, queueDialogState]
   );
 
   const openTaskById = useCallback(
@@ -280,7 +377,7 @@ export function TaskDialogProvider({
         );
 
         // Open the task in edit mode
-        setState({
+        queueDialogState({
           isOpen: true,
           task: transformedTask as Task,
           boardId: transformedTask.list?.board_id ?? undefined,
@@ -296,7 +393,7 @@ export function TaskDialogProvider({
         console.error('Failed to open task:', error);
       }
     },
-    [canUseTaskCursors, isPersonalWorkspace]
+    [canUseTaskCursors, isPersonalWorkspace, queueDialogState]
   );
 
   const createTask = useCallback(
@@ -324,7 +421,7 @@ export function TaskDialogProvider({
         }
       ) as Task;
 
-      setState({
+      queueDialogState({
         isOpen: true,
         task,
         boardId,
@@ -334,7 +431,7 @@ export function TaskDialogProvider({
         filters,
       });
     },
-    []
+    [queueDialogState]
   );
 
   const createSubtask = useCallback(
@@ -345,7 +442,7 @@ export function TaskDialogProvider({
       listId: string,
       availableLists?: TaskList[]
     ) => {
-      setState({
+      queueDialogState({
         isOpen: true,
         task: {
           id: 'new',
@@ -365,7 +462,7 @@ export function TaskDialogProvider({
         parentTaskName,
       });
     },
-    []
+    [queueDialogState]
   );
 
   const createTaskWithRelationship = useCallback(
@@ -377,7 +474,7 @@ export function TaskDialogProvider({
       listId: string,
       availableLists?: TaskList[]
     ) => {
-      setState({
+      queueDialogState({
         isOpen: true,
         task: {
           id: 'new',
@@ -400,7 +497,7 @@ export function TaskDialogProvider({
         },
       });
     },
-    []
+    [queueDialogState]
   );
 
   const editDraft = useCallback(
@@ -507,7 +604,7 @@ export function TaskDialogProvider({
         projects,
       } as Task;
 
-      setState({
+      queueDialogState({
         isOpen: true,
         task: fakeTask,
         boardId: draft.board_id || '',
@@ -516,14 +613,8 @@ export function TaskDialogProvider({
         draftId: draft.id,
       });
     },
-    []
+    [queueDialogState]
   );
-
-  const closeDialog = useCallback(() => {
-    setState({
-      isOpen: false,
-    });
-  }, []);
 
   // Register an update callback (returns cleanup function)
   const onUpdate = useCallback((callback: () => void) => {
@@ -591,6 +682,7 @@ export function TaskDialogProvider({
       onClose,
       triggerUpdate,
       triggerClose,
+      registerCloseRequestHandler,
     }),
     [
       state,
@@ -606,6 +698,7 @@ export function TaskDialogProvider({
       onClose,
       triggerUpdate,
       triggerClose,
+      registerCloseRequestHandler,
     ]
   );
 

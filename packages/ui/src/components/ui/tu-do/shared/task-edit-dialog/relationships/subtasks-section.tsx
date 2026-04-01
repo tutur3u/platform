@@ -10,6 +10,7 @@ import type { SubtasksSectionProps } from './types/task-relationships.types';
 export function SubtasksSection({
   wsId,
   taskId,
+  parentTaskId,
   childTasks,
   onNavigateToTask,
   onAddSubtask,
@@ -21,11 +22,14 @@ export function SubtasksSection({
 
   const excludeIds = React.useMemo(() => {
     const ids = taskId ? [taskId] : [];
+    if (parentTaskId) {
+      ids.push(parentTaskId);
+    }
     for (const t of childTasks) {
       ids.push(t.id);
     }
     return ids;
-  }, [taskId, childTasks]);
+  }, [taskId, parentTaskId, childTasks]);
 
   const hasAddOptions = onAddSubtask || onAddExistingAsSubtask;
 

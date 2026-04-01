@@ -37,21 +37,26 @@ export function SubtaskActionButtons({
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between gap-2 text-muted-foreground"
+              className="h-11 w-full justify-between rounded-2xl border-border/70 border-dashed bg-muted/10 px-3 text-muted-foreground hover:border-border hover:bg-muted/20 hover:text-foreground"
               disabled={isSaving || disabled}
             >
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-dynamic-purple" />
-                Add sub-task
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-purple/10 text-dynamic-purple">
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <span className="font-medium">Add sub-task</span>
               </div>
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-full">
+          <DropdownMenuContent
+            align="start"
+            className="w-72 rounded-2xl border-border/70 p-1.5"
+          >
             <DropdownMenuItem
               onClick={onAddSubtask}
               disabled={isSaving || disabled}
-              className="cursor-pointer"
+              className="cursor-pointer rounded-xl px-3 py-2.5"
             >
               <Sparkles className="mr-2 h-4 w-4 text-dynamic-purple" />
               <span>Create new sub-task</span>
@@ -59,7 +64,7 @@ export function SubtaskActionButtons({
             <PopoverTrigger asChild>
               <DropdownMenuItem
                 disabled={isSaving || disabled}
-                className="cursor-pointer"
+                className="cursor-pointer rounded-xl px-3 py-2.5"
                 onSelect={(e) => e.preventDefault()}
               >
                 <Plus className="mr-2 h-4 w-4 text-dynamic-green" />
@@ -99,12 +104,14 @@ export function SubtaskActionButtons({
     return (
       <Button
         variant="outline"
-        className="w-full justify-start gap-2 text-muted-foreground"
+        className="h-11 w-full justify-start gap-3 rounded-2xl border-border/70 border-dashed bg-muted/10 px-3 text-muted-foreground hover:border-border hover:bg-muted/20 hover:text-foreground"
         onClick={onAddSubtask}
         disabled={isSaving || disabled}
       >
-        <Sparkles className="h-4 w-4 text-dynamic-purple" />
-        Create new sub-task
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-purple/10 text-dynamic-purple">
+          <Sparkles className="h-4 w-4" />
+        </span>
+        <span className="font-medium">Create new sub-task</span>
       </Button>
     );
   }
