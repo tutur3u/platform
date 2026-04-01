@@ -132,16 +132,19 @@ export function TaskRelationshipsProperties({
               {parentTask && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
+                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
                 >
                   <ArrowUpCircle className="h-2.5 w-2.5" />
                   {t('ws-task-boards.dialog.parent')}
+                  <span className="rounded-full bg-background/80 px-1.5 py-0.5 leading-none">
+                    1
+                  </span>
                 </Badge>
               )}
               {childTasks.length > 0 && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
+                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
                 >
                   <ListTree className="h-2.5 w-2.5" />
                   {childTasks.length}
@@ -150,7 +153,7 @@ export function TaskRelationshipsProperties({
               {dependencyCount > 0 && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-red/30 bg-dynamic-red/10 px-2 font-medium text-[10px] text-dynamic-red"
+                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-red/30 bg-dynamic-red/10 px-2 font-medium text-[10px] text-dynamic-red"
                 >
                   <Ban className="h-2.5 w-2.5" />
                   {dependencyCount}
@@ -159,7 +162,7 @@ export function TaskRelationshipsProperties({
               {relatedTasks.length > 0 && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 font-medium text-[10px] text-dynamic-blue"
+                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 font-medium text-[10px] text-dynamic-blue"
                 >
                   <Link2 className="h-2.5 w-2.5" />
                   {relatedTasks.length}
@@ -177,24 +180,8 @@ export function TaskRelationshipsProperties({
       {/* Expandable content */}
       {isExpanded && (
         <div className="space-y-3 px-4 pb-4 md:px-8">
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-background/70 px-3 py-2 text-muted-foreground text-xs">
-            {tabs.map((tab) => (
-              <Badge
-                key={tab.id}
-                variant="secondary"
-                className="h-6 rounded-full border border-border/60 bg-muted/40 px-2.5 font-medium text-[10px]"
-              >
-                {tab.icon}
-                <span className="ml-1">{tab.label}</span>
-                <span className="ml-1 rounded-full bg-background/80 px-1.5 py-0.5 leading-none">
-                  {tab.count}
-                </span>
-              </Badge>
-            ))}
-          </div>
-
           {/* Tab navigation */}
-          <div className="flex gap-2 overflow-x-auto rounded-2xl border border-border/60 bg-muted/15 p-1">
+          <div className="flex gap-2 overflow-x-auto rounded-full border border-border/60 bg-muted/15 p-1">
             {tabs.map((tab) => (
               <TabButton
                 key={tab.id}
