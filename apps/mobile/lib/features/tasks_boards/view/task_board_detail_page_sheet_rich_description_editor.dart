@@ -79,6 +79,28 @@ class _TaskDescriptionRichEditorState
 
     final serialized = quillDocumentToTipTapJson(_resolvedController.document);
     widget.onChanged(serialized ?? '');
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  bool _isAttributeActive(String key, [dynamic value]) {
+    final active = _resolvedController.getSelectionStyle().attributes[key];
+    if (active == null) {
+      return false;
+    }
+    if (value == null) {
+      return true;
+    }
+    return active.value == value;
+  }
+
+  bool get _isTaskListActive {
+    final value = _resolvedController
+        .getSelectionStyle()
+        .attributes['list']
+        ?.value;
+    return value == 'checked' || value == 'unchecked';
   }
 
   Future<void> _insertImage() async {
@@ -112,11 +134,15 @@ class _TaskDescriptionRichEditorState
     );
   }
 
-  void _toggleAttribute(Attribute<dynamic> attribute) {
+  void _toggleAttributeValue(String key, dynamic value) {
     if (!widget.enabled) {
       return;
     }
-    _resolvedController.formatSelection(attribute);
+
+    final style = _resolvedController.getSelectionStyle();
+    final current = style.attributes[key]?.value;
+    final next = current == value ? null : value;
+    _resolvedController.formatSelection(Attribute.fromKeyValue(key, next));
   }
 
   @override
@@ -136,14 +162,38 @@ class _TaskDescriptionRichEditorState
           children: [
             _TaskDescriptionToolbar(
               enabled: widget.enabled,
-              onBold: () => _toggleAttribute(Attribute.bold),
-              onItalic: () => _toggleAttribute(Attribute.italic),
-              onStrike: () => _toggleAttribute(Attribute.strikeThrough),
-              onHeading1: () => _toggleAttribute(Attribute.h1),
-              onHeading2: () => _toggleAttribute(Attribute.h2),
-              onBulletList: () => _toggleAttribute(Attribute.ul),
-              onOrderedList: () => _toggleAttribute(Attribute.ol),
-              onQuote: () => _toggleAttribute(Attribute.blockQuote),
+              onBold: () => _toggleAttributeValue('bold', true),
+              isBoldActive: _isAttributeActive('bold', true),
+              onItalic: () => _toggleAttributeValue('italic', true),
+              isItalicActive: _isAttributeActive('italic', true),
+              onUnderline: () => _toggleAttributeValue('underline', true),
+              isUnderlineActive: _isAttributeActive('underline', true),
+              onStrike: () => _toggleAttributeValue('strike', true),
+              isStrikeActive: _isAttributeActive('strike', true),
+              onInlineCode: () => _toggleAttributeValue('code', true),
+              isInlineCodeActive: _isAttributeActive('code', true),
+              onSubscript: () => _toggleAttributeValue('script', 'sub'),
+              isSubscriptActive: _isAttributeActive('script', 'sub'),
+              onSuperscript: () => _toggleAttributeValue('script', 'super'),
+              isSuperscriptActive: _isAttributeActive('script', 'super'),
+              onHighlight: () => _toggleAttributeValue('background', '#FFF59D'),
+              isHighlightActive: _isAttributeActive('background'),
+              onHeading1: () => _toggleAttributeValue('header', 1),
+              isHeading1Active: _isAttributeActive('header', 1),
+              onHeading2: () => _toggleAttributeValue('header', 2),
+              isHeading2Active: _isAttributeActive('header', 2),
+              onHeading3: () => _toggleAttributeValue('header', 3),
+              isHeading3Active: _isAttributeActive('header', 3),
+              onBulletList: () => _toggleAttributeValue('list', 'bullet'),
+              isBulletListActive: _isAttributeActive('list', 'bullet'),
+              onOrderedList: () => _toggleAttributeValue('list', 'ordered'),
+              isOrderedListActive: _isAttributeActive('list', 'ordered'),
+              onTaskList: () => _toggleAttributeValue('list', 'checked'),
+              isTaskListActive: _isTaskListActive,
+              onQuote: () => _toggleAttributeValue('blockquote', true),
+              isQuoteActive: _isAttributeActive('blockquote', true),
+              onCodeBlock: () => _toggleAttributeValue('code-block', true),
+              isCodeBlockActive: _isAttributeActive('code-block', true),
               onImage: _insertImage,
             ),
             Divider(height: 1, color: theme.colorScheme.border),
@@ -178,25 +228,73 @@ class _TaskDescriptionToolbar extends StatelessWidget {
   const _TaskDescriptionToolbar({
     required this.enabled,
     required this.onBold,
+    required this.isBoldActive,
     required this.onItalic,
+    required this.isItalicActive,
+    required this.onUnderline,
+    required this.isUnderlineActive,
     required this.onStrike,
+    required this.isStrikeActive,
+    required this.onInlineCode,
+    required this.isInlineCodeActive,
+    required this.onSubscript,
+    required this.isSubscriptActive,
+    required this.onSuperscript,
+    required this.isSuperscriptActive,
+    required this.onHighlight,
+    required this.isHighlightActive,
     required this.onHeading1,
+    required this.isHeading1Active,
     required this.onHeading2,
+    required this.isHeading2Active,
+    required this.onHeading3,
+    required this.isHeading3Active,
     required this.onBulletList,
+    required this.isBulletListActive,
     required this.onOrderedList,
+    required this.isOrderedListActive,
+    required this.onTaskList,
+    required this.isTaskListActive,
     required this.onQuote,
+    required this.isQuoteActive,
+    required this.onCodeBlock,
+    required this.isCodeBlockActive,
     required this.onImage,
   });
 
   final bool enabled;
   final VoidCallback onBold;
+  final bool isBoldActive;
   final VoidCallback onItalic;
+  final bool isItalicActive;
+  final VoidCallback onUnderline;
+  final bool isUnderlineActive;
   final VoidCallback onStrike;
+  final bool isStrikeActive;
+  final VoidCallback onInlineCode;
+  final bool isInlineCodeActive;
+  final VoidCallback onSubscript;
+  final bool isSubscriptActive;
+  final VoidCallback onSuperscript;
+  final bool isSuperscriptActive;
+  final VoidCallback onHighlight;
+  final bool isHighlightActive;
   final VoidCallback onHeading1;
+  final bool isHeading1Active;
   final VoidCallback onHeading2;
+  final bool isHeading2Active;
+  final VoidCallback onHeading3;
+  final bool isHeading3Active;
   final VoidCallback onBulletList;
+  final bool isBulletListActive;
   final VoidCallback onOrderedList;
+  final bool isOrderedListActive;
+  final VoidCallback onTaskList;
+  final bool isTaskListActive;
   final VoidCallback onQuote;
+  final bool isQuoteActive;
+  final VoidCallback onCodeBlock;
+  final bool isCodeBlockActive;
   final Future<void> Function() onImage;
 
   static const double _btnSize = 34;
@@ -205,6 +303,7 @@ class _TaskDescriptionToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final l10n = context.l10n;
 
     return ColoredBox(
       color: theme.colorScheme.secondary.withValues(alpha: 0.25),
@@ -216,58 +315,122 @@ class _TaskDescriptionToolbar extends StatelessWidget {
             _iconBtn(
               context,
               icon: shad.LucideIcons.bold,
-              tooltip: 'Bold',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarBold,
               onPressed: enabled ? onBold : null,
+              isActive: isBoldActive,
             ),
             _iconBtn(
               context,
               icon: shad.LucideIcons.italic,
-              tooltip: 'Italic',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarItalic,
               onPressed: enabled ? onItalic : null,
+              isActive: isItalicActive,
+            ),
+            _iconBtn(
+              context,
+              icon: shad.LucideIcons.underline,
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarUnderline,
+              onPressed: enabled ? onUnderline : null,
+              isActive: isUnderlineActive,
             ),
             _iconBtn(
               context,
               icon: shad.LucideIcons.strikethrough,
-              tooltip: 'Strikethrough',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarStrikethrough,
               onPressed: enabled ? onStrike : null,
+              isActive: isStrikeActive,
+            ),
+            _iconBtn(
+              context,
+              icon: shad.LucideIcons.code,
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarInlineCode,
+              onPressed: enabled ? onInlineCode : null,
+              isActive: isInlineCodeActive,
+            ),
+            _iconBtn(
+              context,
+              icon: shad.LucideIcons.highlighter,
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarHighlight,
+              onPressed: enabled ? onHighlight : null,
+              isActive: isHighlightActive,
+            ),
+            _labelBtn(
+              context,
+              label: 'x2',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarSubscript,
+              onPressed: enabled ? onSubscript : null,
+              isActive: isSubscriptActive,
+            ),
+            _labelBtn(
+              context,
+              label: 'x^2',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarSuperscript,
+              onPressed: enabled ? onSuperscript : null,
+              isActive: isSuperscriptActive,
             ),
             _divider(context),
             _labelBtn(
               context,
               label: 'H1',
-              tooltip: 'Heading 1',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarHeading1,
               onPressed: enabled ? onHeading1 : null,
+              isActive: isHeading1Active,
             ),
             _labelBtn(
               context,
               label: 'H2',
-              tooltip: 'Heading 2',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarHeading2,
               onPressed: enabled ? onHeading2 : null,
+              isActive: isHeading2Active,
+            ),
+            _labelBtn(
+              context,
+              label: 'H3',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarHeading3,
+              onPressed: enabled ? onHeading3 : null,
+              isActive: isHeading3Active,
             ),
             _divider(context),
             _iconBtn(
               context,
               icon: shad.LucideIcons.list,
-              tooltip: 'Bullet list',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarBulletList,
               onPressed: enabled ? onBulletList : null,
+              isActive: isBulletListActive,
             ),
             _iconBtn(
               context,
               icon: shad.LucideIcons.listOrdered,
-              tooltip: 'Ordered list',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarOrderedList,
               onPressed: enabled ? onOrderedList : null,
+              isActive: isOrderedListActive,
+            ),
+            _iconBtn(
+              context,
+              icon: shad.LucideIcons.listTodo,
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarTaskList,
+              onPressed: enabled ? onTaskList : null,
+              isActive: isTaskListActive,
             ),
             _iconBtn(
               context,
               icon: shad.LucideIcons.quote,
-              tooltip: 'Blockquote',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarBlockquote,
               onPressed: enabled ? onQuote : null,
+              isActive: isQuoteActive,
+            ),
+            _iconBtn(
+              context,
+              icon: shad.LucideIcons.fileCode,
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarCodeBlock,
+              onPressed: enabled ? onCodeBlock : null,
+              isActive: isCodeBlockActive,
             ),
             _divider(context),
             _iconBtn(
               context,
               icon: shad.LucideIcons.image,
-              tooltip: 'Insert image',
+              tooltip: l10n.taskBoardDetailTaskDescriptionToolbarInsertImage,
               onPressed: enabled ? () => unawaited(onImage()) : null,
             ),
           ],
@@ -281,17 +444,21 @@ class _TaskDescriptionToolbar extends StatelessWidget {
     required IconData icon,
     required String tooltip,
     required VoidCallback? onPressed,
+    bool isActive = false,
   }) {
     final theme = shad.Theme.of(context);
-    final color = onPressed != null
-        ? theme.colorScheme.foreground
-        : theme.colorScheme.mutedForeground.withValues(alpha: 0.45);
+    final color = onPressed == null
+        ? theme.colorScheme.mutedForeground.withValues(alpha: 0.45)
+        : isActive
+        ? theme.colorScheme.primary
+        : theme.colorScheme.foreground;
 
     return Tooltip(
       message: tooltip,
       child: _ToolbarButton(
         size: _btnSize,
         onPressed: onPressed,
+        isActive: isActive,
         child: Icon(icon, size: _iconSize, color: color),
       ),
     );
@@ -302,17 +469,21 @@ class _TaskDescriptionToolbar extends StatelessWidget {
     required String label,
     required String tooltip,
     required VoidCallback? onPressed,
+    bool isActive = false,
   }) {
     final theme = shad.Theme.of(context);
-    final color = onPressed != null
-        ? theme.colorScheme.foreground
-        : theme.colorScheme.mutedForeground.withValues(alpha: 0.45);
+    final color = onPressed == null
+        ? theme.colorScheme.mutedForeground.withValues(alpha: 0.45)
+        : isActive
+        ? theme.colorScheme.primary
+        : theme.colorScheme.foreground;
 
     return Tooltip(
       message: tooltip,
       child: _ToolbarButton(
         size: _btnSize,
         onPressed: onPressed,
+        isActive: isActive,
         child: Text(
           label,
           style: TextStyle(
@@ -342,24 +513,33 @@ class _ToolbarButton extends StatelessWidget {
   const _ToolbarButton({
     required this.size,
     required this.onPressed,
+    required this.isActive,
     required this.child,
   });
 
   final double size;
   final VoidCallback? onPressed;
+  final bool isActive;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final isDisabled = onPressed == null;
+    final activeBackground = theme.colorScheme.primary.withValues(alpha: 0.14);
+    final activeBorder = theme.colorScheme.primary.withValues(alpha: 0.45);
 
     return SizedBox(
       width: size,
       height: size,
       child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(7),
+        color: isActive && !isDisabled ? activeBackground : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(7),
+          side: BorderSide(
+            color: isActive && !isDisabled ? activeBorder : Colors.transparent,
+          ),
+        ),
         child: InkWell(
           borderRadius: BorderRadius.circular(7),
           onTap: isDisabled ? null : onPressed,
@@ -607,8 +787,7 @@ class _QuillTableEmbedBuilder extends EmbedBuilder {
         continue;
       }
 
-      final cells =
-          (rowRaw['content'] as List?)?.cast<Object?>() ?? const [];
+      final cells = (rowRaw['content'] as List?)?.cast<Object?>() ?? const [];
       final isHeader = isFirstRow;
       final cellWidgets = <Widget>[];
 

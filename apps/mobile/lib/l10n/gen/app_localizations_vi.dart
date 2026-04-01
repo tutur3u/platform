@@ -1395,6 +1395,57 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Thư viện';
 
   @override
+  String get taskBoardDetailTaskDescriptionToolbarBlockquote => 'Trích dẫn';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBold => 'In đậm';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBulletList => 'Danh sách chấm tròn';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarCodeBlock => 'Khối mã';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading1 => 'Tiêu đề 1';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading2 => 'Tiêu đề 2';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading3 => 'Tiêu đề 3';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHighlight => 'Tô sáng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInlineCode => 'Mã nội tuyến';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInsertImage => 'Chèn hình ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarItalic => 'In nghiêng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarOrderedList => 'Danh sách đánh số';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarStrikethrough => 'Gạch ngang';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSubscript => 'Chỉ số dưới';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSuperscript => 'Chỉ số trên';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Danh sách công việc';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Gạch dưới';
+
+  @override
   String get taskBoardDetailTaskListLabel => 'Danh sách';
 
   @override

@@ -187,8 +187,7 @@ void main() {
         // Table must be a Quill block embed, not pipe-delimited plain text.
         final hasTableEmbed = ops.any(
           (op) =>
-              op['insert'] is Map &&
-              (op['insert'] as Map).containsKey('table'),
+              op['insert'] is Map && (op['insert'] as Map).containsKey('table'),
         );
         expect(hasTableEmbed, isTrue);
       },
@@ -284,11 +283,11 @@ void main() {
       expect(content.first['type'], 'bulletList');
 
       // The parent item's content should include a nested bulletList.
-      final parentItems =
-          (content.first['content'] as List).cast<Map<String, dynamic>>();
+      final parentItems = (content.first['content'] as List)
+          .cast<Map<String, dynamic>>();
       expect(parentItems.length, 1);
-      final parentItemContent =
-          (parentItems.first['content'] as List).cast<Map<String, dynamic>>();
+      final parentItemContent = (parentItems.first['content'] as List)
+          .cast<Map<String, dynamic>>();
       expect(
         parentItemContent.any((n) => n['type'] == 'bulletList'),
         isTrue,
@@ -468,8 +467,7 @@ void main() {
       expect(
         ops.any(
           (op) =>
-              op['insert'] is Map &&
-              (op['insert'] as Map).containsKey('table'),
+              op['insert'] is Map && (op['insert'] as Map).containsKey('table'),
         ),
         isTrue,
       );

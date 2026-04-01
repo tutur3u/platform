@@ -70,15 +70,7 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 220),
-                          child: Scrollbar(
-                            thumbVisibility: false,
-                            child: SingleChildScrollView(
-                              child: _buildDescriptionMarkdown(context, theme),
-                            ),
-                          ),
-                        ),
+                        _buildDescriptionMarkdown(context, theme),
                         const shad.Gap(8),
                         Align(
                           alignment: Alignment.centerRight,

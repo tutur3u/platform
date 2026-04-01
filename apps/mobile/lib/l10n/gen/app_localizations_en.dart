@@ -1395,6 +1395,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Gallery';
 
   @override
+  String get taskBoardDetailTaskDescriptionToolbarBlockquote => 'Block quote';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBold => 'Bold';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBulletList => 'Bullet list';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarCodeBlock => 'Code block';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading1 => 'Heading 1';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading2 => 'Heading 2';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading3 => 'Heading 3';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHighlight => 'Highlight';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInlineCode => 'Inline code';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInsertImage => 'Insert image';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarItalic => 'Italic';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarOrderedList => 'Ordered list';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarStrikethrough => 'Strikethrough';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSubscript => 'Subscript';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSuperscript => 'Superscript';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Task list';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Underline';
+
+  @override
   String get taskBoardDetailTaskListLabel => 'List';
 
   @override

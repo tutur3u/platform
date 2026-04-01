@@ -435,15 +435,14 @@ void _nestListIntoParent(
   Map<String, dynamic> child,
   int depth,
 ) {
-  final parentContent =
-      (parent['content'] as List?)?.cast<Map<String, dynamic>>();
+  final parentContent = (parent['content'] as List?)
+      ?.cast<Map<String, dynamic>>();
   if (parentContent == null || parentContent.isEmpty) return;
 
   final lastItem = parentContent.last;
-  final lastItemContent =
-      List<Map<String, dynamic>>.from(
-        (lastItem['content'] as List?)?.cast<Map<String, dynamic>>() ?? [],
-      );
+  final lastItemContent = List<Map<String, dynamic>>.from(
+    (lastItem['content'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+  );
 
   if (depth == 1) {
     // Try to merge with an existing sub-list of the same type at the end.
@@ -718,7 +717,6 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
     }
   }
 }
-
 
 Map<String, dynamic> _quillAttrsFromTipTapMarks(Object? marksValue) {
   final marks = (marksValue as List?)?.cast<Object?>() ?? const [];

@@ -26,6 +26,9 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
 
 class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   static const int _detailsTabIndex = 0;
+  static const double _compactSheetMinSize = 0.2;
+  static const double _compactSheetInitialSize = 0.4;
+  static const double _compactSheetMaxSize = 0.95;
 
   late TaskBoardTask _task;
   int _activeTab = _detailsTabIndex;
@@ -62,6 +65,43 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (context.isCompact) {
+      final theme = shad.Theme.of(context);
+      return DraggableScrollableSheet(
+        initialChildSize: _compactSheetInitialSize,
+        minChildSize: _compactSheetMinSize,
+        maxChildSize: _compactSheetMaxSize,
+        snap: true,
+        snapSizes: const [
+          _compactSheetMinSize,
+          _compactSheetInitialSize,
+          _compactSheetMaxSize,
+        ],
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.background,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+            ),
+            child: _buildScrollableBody(
+              context,
+              scrollController: scrollController,
+            ),
+          );
+        },
+      );
+    }
+
+    return _buildScrollableBody(context);
+  }
+
+  Widget _buildScrollableBody(
+    BuildContext context, {
+    ScrollController? scrollController,
+  }) {
     final theme = shad.Theme.of(context);
     final title = _task.name?.trim().isNotEmpty == true
         ? _task.name!.trim()
@@ -78,6 +118,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
+        controller: scrollController,
         padding: EdgeInsets.fromLTRB(
           16,
           12,
@@ -87,6 +128,21 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (context.isCompact) ...[
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.mutedForeground.withValues(
+                      alpha: 0.45,
+                    ),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const shad.Gap(10),
+            ],
             Row(
               children: [
                 Expanded(
@@ -372,7 +428,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
 
   Future<void> _navigateAcrossBoard(GoRouter router, Uri destination) async {
     try {
-      await shad.closeOverlay<void>(context);
+      await Navigator.maybePop(context);
     } on Exception catch (error) {
       debugPrint('Task relationship overlay close failed: $error');
     }
