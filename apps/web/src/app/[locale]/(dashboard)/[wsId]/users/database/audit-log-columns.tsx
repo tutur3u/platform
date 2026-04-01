@@ -1,112 +1,157 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { Badge } from '@tuturuuu/ui/badge';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { format } from 'date-fns';
+import { humanizeAuditField } from '@/lib/workspace-user-audit/normalize';
+import type { AuditLogEntry } from './audit-log-types';
 
-interface AuditLogEntry {
-  id: string;
-  user_id: string;
-  ws_id: string;
-  archived: boolean;
-  archived_until: string | null;
-  creator_id: string;
-  created_at: string;
-  user_full_name?: string | null;
-  creator_full_name?: string | null;
+function eventTone(eventKind: AuditLogEntry['eventKind']) {
+  switch (eventKind) {
+    case 'archived':
+      return 'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20';
+    case 'reactivated':
+      return 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20';
+    case 'archive_until_changed':
+      return 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20';
+    case 'created':
+      return 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20';
+    case 'deleted':
+      return 'bg-destructive/10 text-destructive border-destructive/20';
+    default:
+      return 'bg-muted text-foreground border-border';
+  }
+}
+
+function formatChangedFields(
+  fields: string[],
+  t: ColumnGeneratorOptions<AuditLogEntry>['t'],
+  namespace: string
+) {
+  if (fields.length === 0) {
+    return t(`${namespace}.no_fields`);
+  }
+
+  const firstField = fields[0];
+  const firstLabel = firstField
+    ? humanizeAuditField(firstField)
+    : t(`${namespace}.no_fields`);
+
+  if (fields.length === 1) {
+    return firstLabel;
+  }
+
+  return t(`${namespace}.field_summary`, {
+    firstField: firstLabel,
+    count: fields.length - 1,
+  });
 }
 
 export const getAuditLogColumns = ({
   t,
   namespace,
-}: ColumnGeneratorOptions<AuditLogEntry>): ColumnDef<AuditLogEntry>[] => [
-  {
-    accessorKey: 'id',
-    header: t(`${namespace}.id`),
-    cell: ({ row }) => (
-      <div className="text-muted-foreground text-sm">{row.getValue('id')}</div>
-    ),
-  },
-  {
-    accessorKey: 'user_full_name',
-    header: t(`${namespace}.user_full_name`),
-    cell: ({ row }) => (
-      <div className="font-medium">
-        {row.original.user_full_name || t(`${namespace}.unknown_user`)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'archived',
-    header: t('common.status'),
-    cell: ({ row }) => {
-      const isArchived = row.getValue('archived');
-      return (
-        <div className="flex items-center gap-2">
-          {isArchived ? (
-            <>
-              <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
-              <span className="text-sm">{t(`${namespace}.archived`)}</span>
-            </>
-          ) : (
-            <>
-              <div className="h-2 w-2 rounded-full bg-dynamic-green" />
-              <span className="text-sm">{t(`${namespace}.active`)}</span>
-            </>
+}: ColumnGeneratorOptions<AuditLogEntry>): ColumnDef<AuditLogEntry>[] => {
+  const resolvedNamespace = namespace || 'audit-log-table';
+
+  return [
+    {
+      accessorKey: 'eventKind',
+      header: t(`${resolvedNamespace}.action`),
+      cell: ({ row }) => (
+        <div className="space-y-2">
+          <Badge
+            variant="outline"
+            className={`rounded-full px-2.5 py-0.5 ${eventTone(row.original.eventKind)}`}
+          >
+            {t(`${resolvedNamespace}.event_kind.${row.original.eventKind}`)}
+          </Badge>
+          <p className="text-muted-foreground text-sm">
+            {row.original.summary}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'affectedUser.name',
+      header: t(`${resolvedNamespace}.affected_user`),
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <div className="font-medium">
+            {row.original.affectedUser.name ||
+              row.original.affectedUser.email ||
+              t(`${resolvedNamespace}.unknown_user`)}
+          </div>
+          {row.original.affectedUser.email ? (
+            <div className="text-muted-foreground text-xs">
+              {row.original.affectedUser.email}
+            </div>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'actor.name',
+      header: t(`${resolvedNamespace}.actor`),
+      cell: ({ row }) => (
+        <div className="space-y-1 text-sm">
+          <div>
+            {row.original.actor.name ||
+              row.original.actor.email ||
+              t(`${resolvedNamespace}.system`)}
+          </div>
+          {row.original.actor.email ? (
+            <div className="text-muted-foreground text-xs">
+              {row.original.actor.email}
+            </div>
+          ) : row.original.actor.authUid ? (
+            <div className="font-mono text-[11px] text-muted-foreground">
+              {row.original.actor.authUid}
+            </div>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'changedFields',
+      header: t(`${resolvedNamespace}.changed_fields`),
+      cell: ({ row }) => (
+        <div className="text-sm">
+          {formatChangedFields(
+            row.original.changedFields,
+            t,
+            resolvedNamespace
           )}
         </div>
-      );
+      ),
     },
-  },
-  {
-    accessorKey: 'archived_until',
-    header: t(`${namespace}.archived_until`),
-    cell: ({ row }) => {
-      const date = row.getValue('archived_until') as string | null;
-      if (!date)
-        return (
-          <div className="text-muted-foreground text-sm">
-            {t(`${namespace}.dash`)}
-          </div>
-        );
-      try {
-        return <div className="text-sm">{format(new Date(date), 'PPP p')}</div>;
-      } catch {
-        return (
-          <div className="text-muted-foreground text-sm">
-            {t(`${namespace}.invalid_date`)}
-          </div>
-        );
-      }
+    {
+      accessorKey: 'source',
+      header: t(`${resolvedNamespace}.source`),
+      cell: ({ row }) => (
+        <Badge variant="secondary" className="rounded-full">
+          {t(`${resolvedNamespace}.source_label.${row.original.source}`)}
+        </Badge>
+      ),
     },
-  },
-  {
-    accessorKey: 'creator_full_name',
-    header: t(`${namespace}.creator_full_name`),
-    cell: ({ row }) => (
-      <div className="text-sm">
-        {row.original.creator_full_name || t(`${namespace}.system`)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'created_at',
-    header: t(`${namespace}.created_at`),
-    cell: ({ row }) => {
-      const date = row.getValue('created_at') as string;
-      try {
-        return (
-          <div className="text-muted-foreground text-sm">
-            {format(new Date(date), 'PPP p')}
-          </div>
-        );
-      } catch {
-        return (
-          <div className="text-muted-foreground text-sm">
-            {t(`${namespace}.invalid_date`)}
-          </div>
-        );
-      }
+    {
+      accessorKey: 'occurredAt',
+      header: t(`${resolvedNamespace}.occurred_at`),
+      cell: ({ row }) => {
+        try {
+          return (
+            <div className="text-muted-foreground text-sm">
+              {format(new Date(row.original.occurredAt), 'PPP p')}
+            </div>
+          );
+        } catch {
+          return (
+            <div className="text-muted-foreground text-sm">
+              {t(`${resolvedNamespace}.invalid_date`)}
+            </div>
+          );
+        }
+      },
     },
-  },
-];
+  ];
+};

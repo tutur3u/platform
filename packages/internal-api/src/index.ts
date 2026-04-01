@@ -226,6 +226,15 @@ export {
   updateWorkspaceConfig,
 } from './workspace-configs';
 export {
+  type BackfillWorkspaceUserStatusChangesPayload,
+  type BackfillWorkspaceUserStatusChangesResponse,
+  backfillWorkspaceUserStatusChanges,
+  listWorkspaceUserAuditLogs,
+  type WorkspaceUserAuditEventResponse,
+  type WorkspaceUserAuditLogQuery,
+  type WorkspaceUserAuditLogsResponse,
+} from './workspace-user-audit';
+export {
   getWorkspace,
   listWorkspaceMembers,
   listWorkspaces,

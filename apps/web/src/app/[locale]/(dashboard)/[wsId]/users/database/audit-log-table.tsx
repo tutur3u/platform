@@ -7,8 +7,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { getTranslations } from 'next-intl/server';
 import {
-  getAuditLogInsights,
-  getAuditLogPage,
+  getAuditLogView,
   getRecentAuditLogTimeOptions,
 } from './audit-log-data';
 import { AuditLogDataTable } from './audit-log-data-table';
@@ -21,10 +20,14 @@ interface Props {
   period?: string;
   month?: string;
   year?: string;
-  status?: string;
+  eventKind?: string;
+  source?: string;
+  affectedUserQuery?: string;
+  actorQuery?: string;
   page?: number;
   pageSize?: number;
   canExport?: boolean;
+  canRepairStatusHistory?: boolean;
 }
 
 export async function AuditLogTable({
@@ -33,30 +36,29 @@ export async function AuditLogTable({
   period,
   month,
   year,
-  status,
+  eventKind,
+  source,
+  affectedUserQuery,
+  actorQuery,
   page = 1,
   pageSize = 10,
   canExport = false,
+  canRepairStatusHistory = false,
 }: Props) {
   const t = await getTranslations('audit-log-insights');
-  const [pageData, insights] = await Promise.all([
-    getAuditLogPage({
-      wsId,
-      period,
-      month,
-      year,
-      status,
-      page,
-      pageSize,
-    }),
-    getAuditLogInsights({
-      wsId,
-      locale,
-      period,
-      month,
-      year,
-    }),
-  ]);
+  const view = await getAuditLogView({
+    wsId,
+    locale,
+    period,
+    month,
+    year,
+    eventKind,
+    source,
+    affectedUserQuery,
+    actorQuery,
+    page,
+    pageSize,
+  });
 
   const resolvedPeriod = resolveAuditLogPeriod(period);
   const timeOptions = getRecentAuditLogTimeOptions(locale, resolvedPeriod);
@@ -66,13 +68,17 @@ export async function AuditLogTable({
       <AuditLogInsights
         wsId={wsId}
         locale={locale}
-        selectedPeriod={insights.period}
-        selectedValue={insights.timeValue}
+        selectedPeriod={view.period}
+        selectedValue={view.selectedValue}
         timeOptions={timeOptions}
-        summary={insights.summary}
-        chartStats={insights.chartStats}
-        status={pageData.status}
+        summary={view.summary}
+        chartStats={view.chartStats}
+        eventKind={view.eventKind}
+        source={view.source}
+        affectedUserQuery={view.affectedUserQuery}
+        actorQuery={view.actorQuery}
         canExport={canExport}
+        canRepairStatusHistory={canRepairStatusHistory}
       />
 
       <Card className="border-border/60 shadow-sm">
@@ -82,11 +88,14 @@ export async function AuditLogTable({
         </CardHeader>
         <CardContent>
           <AuditLogDataTable
-            data={pageData.data}
-            count={pageData.count}
-            page={pageData.page}
-            pageSize={pageData.pageSize}
-            status={pageData.status}
+            data={view.data}
+            count={view.count}
+            page={view.page}
+            pageSize={view.pageSize}
+            eventKind={view.eventKind}
+            source={view.source}
+            affectedUserQuery={view.affectedUserQuery}
+            actorQuery={view.actorQuery}
           />
         </CardContent>
       </Card>

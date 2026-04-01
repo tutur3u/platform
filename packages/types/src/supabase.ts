@@ -20442,33 +20442,77 @@ export type Database = {
       };
       workspace_user_status_changes: {
         Row: {
+          actor_auth_uid: string | null;
           archived: boolean;
           archived_until: string | null;
+          audit_record_version_id: number | null;
           created_at: string;
-          creator_id: string;
+          creator_id: string | null;
           id: string;
+          source: string;
           user_id: string;
           ws_id: string;
         };
         Insert: {
+          actor_auth_uid?: string | null;
           archived: boolean;
           archived_until?: string | null;
+          audit_record_version_id?: number | null;
           created_at?: string;
-          creator_id: string;
+          creator_id?: string | null;
           id?: string;
+          source?: string;
           user_id: string;
           ws_id: string;
         };
         Update: {
+          actor_auth_uid?: string | null;
           archived?: boolean;
           archived_until?: string | null;
+          audit_record_version_id?: number | null;
           created_at?: string;
-          creator_id?: string;
+          creator_id?: string | null;
           id?: string;
+          source?: string;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_user_status_changes_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_audit_record_version_id_fkey';
+            columns: ['audit_record_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'audit_logs';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_user_status_changes_creator_id_fkey';
             columns: ['creator_id'];
@@ -22958,6 +23002,72 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      admin_create_workspace_user_with_audit_actor: {
+        Args: { p_actor_auth_uid?: string; p_payload: Json; p_ws_id: string };
+        Returns: {
+          address: string | null;
+          archived: boolean;
+          archived_until: string | null;
+          avatar_url: string | null;
+          balance: number | null;
+          birthday: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          display_name: string | null;
+          email: string | null;
+          ethnicity: string | null;
+          full_name: string | null;
+          gender: string | null;
+          guardian: string | null;
+          id: string;
+          national_id: string | null;
+          note: string | null;
+          phone: string | null;
+          referred_by: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_users';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      admin_delete_workspace_user_with_audit_actor: {
+        Args: { p_actor_auth_uid?: string; p_user_id: string; p_ws_id: string };
+        Returns: {
+          address: string | null;
+          archived: boolean;
+          archived_until: string | null;
+          avatar_url: string | null;
+          balance: number | null;
+          birthday: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          display_name: string | null;
+          email: string | null;
+          ethnicity: string | null;
+          full_name: string | null;
+          gender: string | null;
+          guardian: string | null;
+          id: string;
+          national_id: string | null;
+          note: string | null;
+          phone: string | null;
+          referred_by: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_users';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       admin_get_ai_credit_entity_detail: {
         Args: { p_user_id?: string; p_ws_id?: string };
         Returns: Json;
@@ -23001,6 +23111,44 @@ export type Database = {
         }[];
       };
       admin_reset_rate_limits: { Args: never; Returns: number };
+      admin_update_workspace_user_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_payload: Json;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          address: string | null;
+          archived: boolean;
+          archived_until: string | null;
+          avatar_url: string | null;
+          balance: number | null;
+          birthday: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          display_name: string | null;
+          email: string | null;
+          ethnicity: string | null;
+          full_name: string | null;
+          gender: string | null;
+          guardian: string | null;
+          id: string;
+          national_id: string | null;
+          note: string | null;
+          phone: string | null;
+          referred_by: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_users';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
@@ -23045,6 +23193,21 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      backfill_workspace_user_status_changes: {
+        Args: { p_dry_run?: boolean; p_limit?: number; p_ws_id: string };
+        Returns: {
+          actor_auth_uid: string;
+          archived: boolean;
+          archived_until: string;
+          audit_record_version_id: number;
+          created_at: string;
+          creator_id: string;
+          event_kind: string;
+          source: string;
+          user_id: string;
+          ws_id: string;
+        }[];
       };
       calculate_next_occurrence: {
         Args: {
@@ -25829,6 +25992,19 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      list_workspace_user_audit_records: {
+        Args: { p_end: string; p_start: string; p_ws_id: string };
+        Returns: {
+          audit_record_id: number;
+          auth_role: string;
+          auth_uid: string;
+          old_record: Json;
+          op: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE';
+          record: Json;
+          ts: string;
+          ws_id: string;
+        }[];
+      };
       match_memories: {
         Args: {
           filter_category?: string;
@@ -26300,6 +26476,7 @@ export type Database = {
             Args: { input_date: string; week_start_day?: number };
             Returns: string;
           };
+      try_parse_uuid: { Args: { value: string }; Returns: string };
       unlink_task_project_with_actor: {
         Args: {
           p_actor_user_id?: string;
@@ -26642,6 +26819,14 @@ export type Database = {
       workspace_has_available_seats: {
         Args: { target_ws_id: string };
         Returns: boolean;
+      };
+      workspace_user_audit_user_id: {
+        Args: { next_record: Json; previous_record: Json };
+        Returns: string;
+      };
+      workspace_user_audit_ws_id: {
+        Args: { next_record: Json; previous_record: Json };
+        Returns: string;
       };
     };
     Enums: {
