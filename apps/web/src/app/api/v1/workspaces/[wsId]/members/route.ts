@@ -1,6 +1,5 @@
-import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import { headers } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@ncthub/supabase/next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
@@ -8,151 +7,106 @@ interface Params {
   }>;
 }
 
-export async function GET(req: NextRequest, { params }: Params) {
+export async function PUT(req: NextRequest, { params }: Params) {
   const { wsId } = await params;
-
-  const apiKey = (await headers()).get('API_KEY');
-  return apiKey
-    ? getDataWithApiKey(req, { wsId, apiKey })
-    : getDataFromSession(req, { wsId });
-}
-
-async function getDataWithApiKey(
-  req: NextRequest,
-  {
-    wsId,
-    apiKey,
-  }: {
-    wsId: string;
-    apiKey: string;
-  }
-) {
-  const sbAdmin = await createAdminClient();
-
-  const apiCheckQuery = sbAdmin
-    .from('workspace_api_keys')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('value', apiKey)
-    .single();
-
-  const mainQuery = sbAdmin
-    .from('workspace_members')
-    .select('*, ...user_private_details(email), ...users(display_name)', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
-
   const searchParams = req.nextUrl.searchParams;
-  const query = searchParams.get('q');
 
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const limit = searchParams.get('limit');
+  const userId = searchParams.get('id');
+  const userEmail = searchParams.get('email');
 
-  console.log({ query, from, to, limit });
+  const supabase = await createClient();
+  const { pending, role, role_title } = await req.json();
 
-  if (query) mainQuery.textSearch('full_name', query);
-  if (from && to) mainQuery.range(parseInt(from), parseInt(to));
-  if (limit) mainQuery.limit(parseInt(limit));
+  let query: any;
 
-  const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
-
-  const { error: apiError } = apiCheck;
-
-  if (apiError) {
-    console.log(apiError);
-    return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
+  if (pending) {
+    if (userId) {
+      query = supabase
+        .from('workspace_invites')
+        .update({ role: role, role_title: role_title })
+        .eq('ws_id', wsId)
+        .eq('user_id', userId);
+    } else if (userEmail) {
+      query = supabase
+        .from('workspace_email_invites')
+        .update({ role: role, role_title: role_title })
+        .eq('ws_id', wsId)
+        .eq('email', userEmail);
+    } else {
+      return NextResponse.json(
+        { message: 'Missing user id or email' },
+        { status: 400 }
+      );
+    }
+  } else {
+    if (userId) {
+      query = supabase
+        .from('workspace_members')
+        .update({ role: role, role_title: role_title })
+        .eq('ws_id', wsId)
+        .eq('user_id', userId);
+    } else {
+      return NextResponse.json({ message: 'Missing user id' }, { status: 400 });
+    }
   }
 
-  const { data, count, error } = response;
+  const { error } = await query;
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching workspace users' },
+      { message: 'Error updating workspace member' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ data, count });
+  return NextResponse.json({ message: 'success' });
 }
 
-async function getDataFromSession(
-  req: NextRequest,
-  { wsId }: { wsId: string }
-) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { error: userError } = await supabase
-    .from('workspace_members')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('ws_id', wsId)
-    .single();
-
-  if (userError) {
-    console.log(userError);
-    return NextResponse.json(
-      { message: 'Error fetching workspace users' },
-      { status: 500 }
-    );
-  }
-
-  const sbAdmin = await createAdminClient();
-
-  const mainQuery = sbAdmin
-    .from('workspace_members')
-    .select('*, ...users(id, display_name, ...user_private_details(email))')
-    .eq('ws_id', wsId);
-
-  const searchParams = new URLSearchParams(req.nextUrl.search);
-  const query = searchParams.get('query');
-
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const limit = searchParams.get('limit');
-
-  if (query) mainQuery.textSearch('full_name', query);
-  if (from && to) mainQuery.range(parseInt(from), parseInt(to));
-  if (limit) mainQuery.limit(parseInt(limit));
-
-  const { data, error } = await mainQuery;
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching workspace users' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json(data || []);
-}
-
-export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const data = await req.json();
+export async function DELETE(req: NextRequest, { params }: Params) {
   const { wsId } = await params;
+  const searchParams = req.nextUrl.searchParams;
 
-  const { error } = await supabase.from('workspace_members').insert({
-    ...data,
-    ws_id: wsId,
-  });
+  const userId = searchParams.get('id');
+  const userEmail = searchParams.get('email');
 
-  if (error) {
-    console.log(error);
+  const supabase = await createClient();
+
+  const inviteQuery = userId
+    ? supabase
+        .from('workspace_invites')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('user_id', userId)
+    : { error: undefined };
+
+  const emailInviteQuery = userEmail
+    ? supabase
+        .from('workspace_email_invites')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('email', userEmail)
+    : { error: undefined };
+
+  const memberQuery = userId
+    ? supabase
+        .from('workspace_members')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('user_id', userId)
+    : { error: undefined };
+
+  // use Promise.all to run all queries in parallel
+  const [inviteData, emailInviteData, memberData] = await Promise.all([
+    inviteQuery,
+    emailInviteQuery,
+    memberQuery,
+  ]);
+
+  if (inviteData.error || emailInviteData.error || memberData.error) {
+    console.log(inviteData.error, emailInviteData.error, memberData.error);
     return NextResponse.json(
-      { message: 'Error creating workspace user' },
+      { message: 'Error deleting workspace member' },
       { status: 500 }
     );
   }
