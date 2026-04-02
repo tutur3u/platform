@@ -29,11 +29,15 @@ class ParsedTipTapDescription {
     required this.markdown,
     required this.plainText,
     this.mentions = const <TipTapMention>[],
+    this.rawJson,
   });
 
   final String markdown;
   final String plainText;
   final List<TipTapMention> mentions;
+
+  /// The original TipTap JSON document for rendering with full feature parity.
+  final String? rawJson;
 
   bool get hasContent => plainText.trim().isNotEmpty;
 }
@@ -57,6 +61,7 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
     return ParsedTipTapDescription(
       markdown: decoded.trimmed,
       plainText: decoded.trimmed,
+      rawJson: rawDescription,
     );
   }
 
@@ -83,11 +88,13 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
       markdown: resolvedMarkdown,
       plainText: resolvedPlainText,
       mentions: List.unmodifiable(context.mentions),
+      rawJson: rawDescription,
     );
   } on Object {
     return ParsedTipTapDescription(
       markdown: decoded.trimmed,
       plainText: decoded.trimmed,
+      rawJson: rawDescription,
     );
   }
 }
