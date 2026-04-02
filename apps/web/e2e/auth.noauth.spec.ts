@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { openPasswordStage } from './helpers/auth';
 import { DEFAULT_LOCALE, TEST_USER } from './helpers/constants';
 
 test.describe('Authentication (unauthenticated)', () => {
-  test('login page renders with email input and sign-in button', async ({
+  test('login page renders with email input and primary auth button', async ({
     page,
   }) => {
     await page.goto(`/${DEFAULT_LOCALE}/login`, {
@@ -15,19 +16,9 @@ test.describe('Authentication (unauthenticated)', () => {
       .first();
     await expect(emailInput).toBeVisible({ timeout: 30_000 });
 
-    // Auth layout can show either password-only sign in or OTP+password forms.
-    // Avoid broad regex that can match social buttons and trip strict mode.
-    const continueWithEmailButton = page.getByRole('button', {
-      name: /continue with email/i,
-    });
-
-    if ((await continueWithEmailButton.count()) > 0) {
-      await expect(continueWithEmailButton.first()).toBeVisible();
-    } else {
-      await expect(
-        page.getByRole('button', { name: /^sign in$/i })
-      ).toBeVisible();
-    }
+    await expect(
+      page.getByRole('button', { name: /^(continue|sign in)$/i }).first()
+    ).toBeVisible();
   });
 
   test('root page is accessible to unauthenticated users (marketing page)', async ({
@@ -46,23 +37,12 @@ test.describe('Authentication (unauthenticated)', () => {
   });
 
   test('password login with seed account succeeds', async ({ page }) => {
-    // In dev mode, default tab is password and fields are pre-filled
+    // The current auth flow can require an email-first step before password.
     await page.goto(`/${DEFAULT_LOCALE}/login?passwordless=false`, {
       waitUntil: 'domcontentloaded',
     });
 
-    // Wait for the form to load
-    const emailInput = page
-      .getByPlaceholder('Enter your email or username')
-      .first();
-    await expect(emailInput).toBeVisible({ timeout: 30_000 });
-
-    // Clear and fill email
-    await emailInput.clear();
-    await emailInput.fill(TEST_USER.email);
-
-    // Fill in password
-    const passwordInput = page.getByPlaceholder('Enter your password');
+    const passwordInput = await openPasswordStage(page, TEST_USER.email);
     await passwordInput.clear();
     await passwordInput.fill(TEST_USER.password);
 

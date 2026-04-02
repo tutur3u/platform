@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { AUTH_STATE_PATH, TEST_USER } from './constants';
 
 /**
@@ -22,23 +22,17 @@ import { AUTH_STATE_PATH, TEST_USER } from './constants';
  */
 export async function authenticateTestUser(page: Page): Promise<void> {
   // Step 1: Navigate to login page with password tab
-  // The ?passwordless=false query param ensures the password tab is shown
-  // We use the locale-agnostic path to avoid unnecessary redirects
+  // We use the locale-agnostic path to avoid unnecessary redirects.
   await page.goto('/login?passwordless=false', {
     waitUntil: 'domcontentloaded',
   });
 
-  // Step 2: Wait for the login form to render (Turbopack may need time to compile)
-  const emailInput = page
-    .getByPlaceholder('Enter your email or username')
-    .first();
-  await emailInput.waitFor({ state: 'visible', timeout: 60_000 });
+  // Step 2: Advance through the current identify step until the password form
+  // is visible. The login UI is multi-step now, but older environments can
+  // still render the password field immediately.
+  const passwordInput = await openPasswordStage(page, TEST_USER.email);
 
   // Step 3: Fill in test credentials
-  await emailInput.clear();
-  await emailInput.fill(TEST_USER.email);
-
-  const passwordInput = page.getByPlaceholder('Enter your password');
   await passwordInput.clear();
   await passwordInput.fill(TEST_USER.password);
 
@@ -74,4 +68,26 @@ export async function authenticateTestUser(page: Page): Promise<void> {
 
   // Step 7: Save browser state (cookies + localStorage) for reuse
   await page.context().storageState({ path: AUTH_STATE_PATH });
+}
+
+export async function openPasswordStage(
+  page: Page,
+  email: string
+): Promise<Locator> {
+  const emailInput = page
+    .getByPlaceholder('Enter your email or username')
+    .first();
+  await emailInput.waitFor({ state: 'visible', timeout: 60_000 });
+  await emailInput.clear();
+  await emailInput.fill(email);
+
+  const passwordInput = page.getByPlaceholder('Enter your password');
+  if (await passwordInput.isVisible()) {
+    return passwordInput;
+  }
+
+  await page.getByRole('button', { name: /^continue$/i }).click();
+  await passwordInput.waitFor({ state: 'visible', timeout: 30_000 });
+
+  return passwordInput;
 }
