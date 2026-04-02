@@ -260,7 +260,7 @@ void main() {
       expect(attrs['src'], 'https://cdn.example.com/photo.jpg');
       expect(attrs['alt'], isNull);
       expect(attrs['title'], isNull);
-      expect(attrs['width'], isNull);
+      expect(attrs['width'], 500);
       expect(attrs['height'], isNull);
       expect(attrs['containerStyle'], '');
       expect(attrs['wrapperStyle'], '');

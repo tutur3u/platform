@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -122,11 +123,29 @@ class _TaskDescriptionVideoPlayerState
     extends State<_TaskDescriptionVideoPlayer> {
   VideoPlayerController? _controller;
   late final Future<void> _initializeFuture;
+  bool _showControls = true;
+  Timer? _controlsTimer;
 
   @override
   void initState() {
     super.initState();
     _initializeFuture = _initializeController();
+  }
+
+  void _startControlsTimer() {
+    _controlsTimer?.cancel();
+    _controlsTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && _controller?.value.isPlaying == true) {
+        setState(() => _showControls = false);
+      }
+    });
+  }
+
+  void _toggleControls() {
+    setState(() => _showControls = !_showControls);
+    if (_showControls) {
+      _startControlsTimer();
+    }
   }
 
   Future<void> _initializeController() async {
@@ -165,10 +184,37 @@ class _TaskDescriptionVideoPlayerState
     if (url.contains('/storage/share') ||
         (url.contains('/api/v1/') && url.contains('path='))) {
       try {
-        // First try a HEAD request to see if we get a redirect
+        final internalUri = Uri.parse(url);
+
+        // Resolve redirect target without auto-following redirects.
+        final httpClient = HttpClient();
+        try {
+          final request = await httpClient
+              .openUrl('HEAD', internalUri)
+              .timeout(const Duration(seconds: 10));
+          request
+            ..followRedirects = false
+            ..maxRedirects = 0;
+          for (final entry in {...?headers, 'Accept': '*/*'}.entries) {
+            request.headers.set(entry.key, entry.value);
+          }
+
+          final response = await request.close().timeout(
+            const Duration(seconds: 10),
+          );
+
+          final location = response.headers.value(HttpHeaders.locationHeader);
+          if (location != null && location.isNotEmpty) {
+            return internalUri.resolve(location).toString();
+          }
+        } finally {
+          httpClient.close(force: true);
+        }
+
+        // Fallback path if endpoint is non-redirecting in this environment.
         final headResponse = await http
             .head(
-              Uri.parse(url),
+              internalUri,
               headers: {
                 ...?headers,
                 'Accept': '*/*',
@@ -177,23 +223,17 @@ class _TaskDescriptionVideoPlayerState
             .timeout(const Duration(seconds: 10));
 
         final redirectedHeadUrl = headResponse.request?.url.toString();
-        if (redirectedHeadUrl != null && redirectedHeadUrl.isNotEmpty) {
+        if (redirectedHeadUrl != null &&
+            redirectedHeadUrl.isNotEmpty &&
+            !redirectedHeadUrl.contains('10.0.2.2')) {
           return redirectedHeadUrl;
         }
 
-        // Follow redirect if we get a 302/301 with Location header
-        if (headResponse.statusCode >= 300 &&
-            headResponse.statusCode < 400 &&
-            headResponse.headers['location'] != null) {
-          return headResponse.headers['location']!;
-        }
-
-        // If HEAD returns 200, try GET to get the response body
         if (headResponse.statusCode == 200) {
           // Might be JSON with signedUrl, fetch and parse
           final getResponse = await http
               .get(
-                Uri.parse(url),
+                internalUri,
                 headers: {
                   ...?headers,
                   'Accept': '*/*',
@@ -202,7 +242,9 @@ class _TaskDescriptionVideoPlayerState
               .timeout(const Duration(seconds: 30));
 
           final redirectedGetUrl = getResponse.request?.url.toString();
-          if (redirectedGetUrl != null && redirectedGetUrl.isNotEmpty) {
+          if (redirectedGetUrl != null &&
+              redirectedGetUrl.isNotEmpty &&
+              !redirectedGetUrl.contains('10.0.2.2')) {
             return redirectedGetUrl;
           }
 
@@ -226,10 +268,8 @@ class _TaskDescriptionVideoPlayerState
               }
             }
 
-            // If content-type is video, URL is the video itself
-            if (contentType.startsWith('video/')) {
-              return url;
-            }
+            // If content-type is video but URL is still local cleartext,
+            // keep searching for a signed URL and avoid returning it.
           }
         }
       } on Exception catch (e) {
@@ -243,11 +283,26 @@ class _TaskDescriptionVideoPlayerState
 
   @override
   void dispose() {
+    _controlsTimer?.cancel();
     final controller = _controller;
     if (controller != null) {
       unawaited(controller.dispose());
     }
     super.dispose();
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    if (hours > 0) {
+      final mStr = minutes.toString().padLeft(2, '0');
+      final sStr = seconds.toString().padLeft(2, '0');
+      return '$hours:$mStr:$sStr';
+    }
+    final mStr = minutes.toString().padLeft(2, '0');
+    final sStr = seconds.toString().padLeft(2, '0');
+    return '$mStr:$sStr';
   }
 
   @override
@@ -302,43 +357,215 @@ class _TaskDescriptionVideoPlayerState
             ? controller.value.aspectRatio
             : 16 / 9;
 
+        final position = controller.value.position;
+        final duration = controller.value.duration;
+        final progress = duration.inMilliseconds > 0
+            ? position.inMilliseconds / duration.inMilliseconds
+            : 0.0;
+
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              AspectRatio(
-                aspectRatio: aspectRatio,
-                child: VideoPlayer(controller),
-              ),
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (controller.value.isPlaying) {
-                        unawaited(controller.pause());
-                      } else {
-                        unawaited(controller.play());
-                      }
-                    });
-                  },
-                  child: ColoredBox(
-                    color: Colors.black.withValues(
-                      alpha: controller.value.isPlaying ? 0.08 : 0.3,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        controller.value.isPlaying
-                            ? Icons.pause_circle_filled
-                            : Icons.play_circle_fill,
-                        size: 48,
-                        color: Colors.white,
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: GestureDetector(
+              onTap: _toggleControls,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Video
+                  VideoPlayer(controller),
+
+                  // Play/Pause overlay (shown when paused or controls visible)
+                  if (!controller.value.isPlaying || _showControls)
+                    AnimatedOpacity(
+                      opacity: controller.value.isPlaying && !_showControls
+                          ? 0
+                          : 1,
+                      duration: const Duration(milliseconds: 200),
+                      child: ColoredBox(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        child: Center(
+                          child: IconButton(
+                            iconSize: 64,
+                            icon: Icon(
+                              controller.value.isPlaying
+                                  ? Icons.pause_circle_filled
+                                  : Icons.play_circle_fill,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                if (controller.value.isPlaying) {
+                                  unawaited(controller.pause());
+                                } else {
+                                  unawaited(controller.play());
+                                  _startControlsTimer();
+                                }
+                              });
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
+
+                  // Controls overlay
+                  if (_showControls)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: AnimatedOpacity(
+                        opacity: _showControls ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.8),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                          child: SafeArea(
+                            top: false,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Progress bar
+                                Row(
+                                  children: [
+                                    // Current time
+                                    Text(
+                                      _formatDuration(position),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // Scrubber
+                                    Expanded(
+                                      child: SliderTheme(
+                                        data: SliderTheme.of(context).copyWith(
+                                          activeTrackColor: Colors.white,
+                                          inactiveTrackColor: Colors.white
+                                              .withValues(alpha: 0.3),
+                                          thumbColor: Colors.white,
+                                          overlayColor: Colors.white.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          trackHeight: 4,
+                                          thumbShape:
+                                              const RoundSliderThumbShape(
+                                                enabledThumbRadius: 6,
+                                              ),
+                                        ),
+                                        child: Slider(
+                                          value: progress.clamp(0, 1),
+                                          onChanged: (value) {
+                                            final newPosition = Duration(
+                                              milliseconds:
+                                                  (value *
+                                                          duration
+                                                              .inMilliseconds)
+                                                      .toInt(),
+                                            );
+                                            unawaited(
+                                              controller.seekTo(newPosition),
+                                            );
+                                          },
+                                          onChangeStart: (_) =>
+                                              _controlsTimer?.cancel(),
+                                          onChangeEnd: (_) =>
+                                              _startControlsTimer(),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // Total duration
+                                    Text(
+                                      _formatDuration(duration),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                // Volume and mute controls
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        controller.value.volume == 0
+                                            ? Icons.volume_off
+                                            : controller.value.volume < 0.5
+                                            ? Icons.volume_down
+                                            : Icons.volume_up,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          if (controller.value.volume > 0) {
+                                            unawaited(controller.setVolume(0));
+                                          } else {
+                                            unawaited(
+                                              controller.setVolume(1),
+                                            );
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    SizedBox(
+                                      width: 100,
+                                      child: SliderTheme(
+                                        data: SliderTheme.of(context).copyWith(
+                                          activeTrackColor: Colors.white,
+                                          inactiveTrackColor: Colors.white
+                                              .withValues(alpha: 0.3),
+                                          thumbColor: Colors.white,
+                                          overlayColor: Colors.white.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          trackHeight: 3,
+                                          thumbShape:
+                                              const RoundSliderThumbShape(
+                                                enabledThumbRadius: 5,
+                                              ),
+                                        ),
+                                        child: Slider(
+                                          value: controller.value.volume,
+                                          onChanged: (value) {
+                                            unawaited(
+                                              controller.setVolume(value),
+                                            );
+                                          },
+                                          onChangeStart: (_) =>
+                                              _controlsTimer?.cancel(),
+                                          onChangeEnd: (_) =>
+                                              _startControlsTimer(),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
