@@ -355,11 +355,11 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
               ),
               if (_isTaskDescriptionEditingEnabled) ...[
                 const shad.Gap(10),
-                _SelectionFieldButton(
-                  label: context.l10n.taskBoardDetailTaskDescriptionLabel,
-                  value: _descriptionEditorSummary(context),
-                  enabled: !_isBusy,
-                  onPressed: () => unawaited(_openDescriptionEditor(context)),
+                _EditFieldButton(
+                  label: context.l10n.taskBoardDetailTaskEditDescription,
+                  onPressed: _isBusy
+                      ? null
+                      : () => unawaited(_openDescriptionEditor(context)),
                 ),
               ] else ...[
                 const shad.Gap(10),
@@ -377,30 +377,19 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         ),
         const shad.Gap(10),
         _EditorSectionCard(
-          title: context.l10n.taskBoardDetailPriority,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _priorityOptions
-                    .map((value) {
-                      final selected = _priority == value;
-                      final label = _taskPriorityLabel(context, value);
-                      return selected
-                          ? shad.PrimaryButton(
-                              onPressed: () {},
-                              child: Text(label),
-                            )
-                          : shad.OutlineButton(
-                              onPressed: _isBusy
-                                  ? null
-                                  : () => setState(() => _priority = value),
-                              child: Text(label),
-                            );
-                    })
-                    .toList(growable: false),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailPriority,
+                options: _taskEditorPriorityOptions(context),
+                selectedIds: {_priority},
+                enabled: !_isBusy,
+                singleSelection: true,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  final selectedPriority = nextSelectedIds.firstOrNull;
+                  _priority = _normalizePriority(selectedPriority);
+                }),
               ),
             ],
           ),
@@ -434,32 +423,49 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         _EditorSectionCard(
           child: Column(
             children: [
-              _SelectionFieldButton(
-                label: context.l10n.taskBoardDetailTaskEstimation,
-                value: _estimationLabel(context),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailTaskEstimation,
+                options: _taskEditorEstimationOptions(),
+                selectedIds: {
+                  if (_estimationPoints != null) '${_estimationPoints!}',
+                },
                 enabled: !_isBusy,
-                onPressed: _pickEstimation,
+                singleSelection: true,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  _estimationPoints = int.tryParse(
+                    nextSelectedIds.firstOrNull ?? '',
+                  );
+                }),
               ),
               const shad.Gap(8),
-              _SelectionFieldButton(
-                label: context.l10n.taskBoardDetailTaskAssignees,
-                value: _selectedAssigneesLabel(context),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailTaskAssignees,
+                options: _taskEditorAssigneeOptions(),
+                selectedIds: _selectedAssigneeIds,
                 enabled: !_isBusy,
-                onPressed: _pickAssignees,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  _selectedAssigneeIds = nextSelectedIds;
+                }),
               ),
               const shad.Gap(8),
-              _SelectionFieldButton(
-                label: context.l10n.taskBoardDetailTaskLabels,
-                value: _selectedLabelsLabel(context),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailTaskLabels,
+                options: _taskEditorLabelOptions(),
+                selectedIds: _selectedLabelIds,
                 enabled: !_isBusy,
-                onPressed: _pickLabels,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  _selectedLabelIds = nextSelectedIds;
+                }),
               ),
               const shad.Gap(8),
-              _SelectionFieldButton(
-                label: context.l10n.taskBoardDetailTaskProjects,
-                value: _selectedProjectsLabel(context),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailTaskProjects,
+                options: _taskEditorProjectOptions(),
+                selectedIds: _selectedProjectIds,
                 enabled: !_isBusy,
-                onPressed: _pickProjects,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  _selectedProjectIds = nextSelectedIds;
+                }),
               ),
             ],
           ),
@@ -650,22 +656,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     await _pickTaskDate(this, isStart: isStart);
   }
 
-  Future<void> _pickEstimation() async {
-    await _pickTaskEstimation(this);
-  }
-
-  Future<void> _pickAssignees() async {
-    await _pickTaskAssignees(this);
-  }
-
-  Future<void> _pickLabels() async {
-    await _pickTaskLabels(this);
-  }
-
-  Future<void> _pickProjects() async {
-    await _pickTaskProjects(this);
-  }
-
   Future<void> _pickParentTask() async {
     await _pickTaskRelationship(this, role: _TaskRelationshipRole.parentTask);
   }
@@ -728,17 +718,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
 
   Future<void> _closeEditor() async {
     await _closeTaskEditor(this);
-  }
-
-  String _descriptionEditorSummary(BuildContext context) {
-    final parsed = parseTipTapTaskDescription(_descriptionController.text);
-    final raw =
-        parsed?.plainText ?? parsed?.markdown ?? _descriptionController.text;
-    final summary = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (summary.isEmpty) {
-      return context.l10n.taskBoardDetailTaskDescriptionHint;
-    }
-    return summary;
   }
 
   Future<void> _openDescriptionEditor(BuildContext context) async {
@@ -861,36 +840,72 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     return _selectedTaskListLabel(this, context);
   }
 
-  String _estimationLabel(BuildContext context) {
-    return _taskEditorEstimationLabel(this, context);
-  }
-
-  String _selectedAssigneesLabel(BuildContext context) {
-    return _selectedTaskAssigneesLabel(this, context);
-  }
-
-  String _selectedLabelsLabel(BuildContext context) {
-    return _selectedTaskLabelsLabel(this, context);
-  }
-
-  String _selectedProjectsLabel(BuildContext context) {
-    return _selectedTaskProjectsLabel(this, context);
-  }
-
-  String _selectionSummary({
-    required Set<String> selectedIds,
-    required List<_MultiSelectOption> options,
-    required String emptyLabel,
-  }) {
-    if (selectedIds.isEmpty) return emptyLabel;
-    final labels = options
-        .where((option) => selectedIds.contains(option.id))
-        .map((option) => option.label.trim())
-        .where((label) => label.isNotEmpty)
+  List<_FilterMenuOption> _taskEditorPriorityOptions(BuildContext context) {
+    return _priorityOptions
+        .map((priority) {
+          final style = _taskPriorityStyle(context, priority);
+          return _FilterMenuOption(
+            id: priority,
+            label: style.label,
+            icon: style.icon,
+            kind: _FilterMenuOptionKind.priority,
+            foreground: style.foreground,
+            background: style.background,
+            border: style.border,
+          );
+        })
         .toList(growable: false);
-    if (labels.isEmpty) return '${selectedIds.length}';
-    if (labels.length <= 2) return labels.join(', ');
-    return '${labels.take(2).join(', ')} +${labels.length - 2}';
+  }
+
+  List<_FilterMenuOption> _taskEditorEstimationOptions() {
+    final options = _taskEstimationOptions(widget.board);
+    return options
+        .map(
+          (value) => _FilterMenuOption(
+            id: '$value',
+            label: _taskEstimationPointLabel(
+              points: value,
+              board: widget.board,
+            ),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<_FilterMenuOption> _taskEditorAssigneeOptions() {
+    return widget.members
+        .map(
+          (member) => _FilterMenuOption(
+            id: member.id,
+            label: member.label,
+            avatarUrl: member.avatarUrl,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<_FilterMenuOption> _taskEditorLabelOptions() {
+    return widget.labels
+        .map(
+          (label) => _FilterMenuOption(
+            id: label.id,
+            label: label.name.trim().isEmpty ? label.id : label.name,
+            kind: _FilterMenuOptionKind.label,
+            color: parseTaskLabelColor(label.color),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<_FilterMenuOption> _taskEditorProjectOptions() {
+    return widget.projects
+        .map(
+          (project) => _FilterMenuOption(
+            id: project.id,
+            label: project.name.trim().isEmpty ? project.id : project.name,
+          ),
+        )
+        .toList(growable: false);
   }
 }
 

@@ -1374,6 +1374,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionLabel => 'Mô tả';
 
   @override
+  String get taskBoardDetailTaskEditDescription => 'Chỉnh sửa mô tả';
+
+  @override
   String get taskBoardDetailTaskDescriptionHint => 'Thêm mô tả';
 
   @override

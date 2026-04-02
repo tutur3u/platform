@@ -32,12 +32,16 @@ class _FilterDropdownSection extends StatelessWidget {
     required this.options,
     required this.selectedIds,
     required this.onApplySelection,
+    this.enabled = true,
+    this.singleSelection = false,
   });
 
   final String title;
   final List<_FilterMenuOption> options;
   final Set<String> selectedIds;
   final ValueChanged<Set<String>> onApplySelection;
+  final bool enabled;
+  final bool singleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +64,9 @@ class _FilterDropdownSection extends StatelessWidget {
           )
         else
           shad.OutlineButton(
-            onPressed: () => unawaited(_openSelectionMenu(context)),
+            onPressed: enabled
+                ? () => unawaited(_openSelectionMenu(context))
+                : null,
             child: Row(
               children: [
                 Expanded(
@@ -87,6 +93,7 @@ class _FilterDropdownSection extends StatelessWidget {
           title: title,
           options: options,
           initialSelectedIds: selectedIds,
+          singleSelection: singleSelection,
         );
       },
     );
@@ -124,11 +131,13 @@ class _FilterSelectionSheet extends StatefulWidget {
     required this.title,
     required this.options,
     required this.initialSelectedIds,
+    this.singleSelection = false,
   });
 
   final String title;
   final List<_FilterMenuOption> options;
   final Set<String> initialSelectedIds;
+  final bool singleSelection;
 
   @override
   State<_FilterSelectionSheet> createState() => _FilterSelectionSheetState();
@@ -216,7 +225,11 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
                               if (checked) {
                                 _draftSelectedIds.remove(option.id);
                               } else {
-                                _draftSelectedIds.add(option.id);
+                                if (widget.singleSelection) {
+                                  _draftSelectedIds = {option.id};
+                                } else {
+                                  _draftSelectedIds.add(option.id);
+                                }
                               }
                             }),
                           );

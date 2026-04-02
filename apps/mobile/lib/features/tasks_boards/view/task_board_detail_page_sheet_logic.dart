@@ -757,76 +757,6 @@ Future<void> _pickTaskDate(
   });
 }
 
-Future<void> _pickTaskEstimation(_TaskBoardTaskEditorSheetState state) async {
-  final result = await shad.showDialog<String>(
-    context: state.context,
-    builder: (context) => _TaskEstimationPickerDialog(
-      selectedValue: state._estimationPoints?.toString(),
-      options: _taskEstimationOptions(state.widget.board),
-      mapValueLabel: (value) => _taskEstimationPointLabel(
-        points: value,
-        board: state.widget.board,
-      ),
-    ),
-  );
-
-  if (result == null || !state.mounted) return;
-  state._updateState(() {
-    state._estimationPoints = result == 'none' ? null : int.tryParse(result);
-  });
-}
-
-Future<void> _pickTaskAssignees(_TaskBoardTaskEditorSheetState state) async {
-  final nextValues = await shad.showDialog<Set<String>>(
-    context: state.context,
-    builder: (context) => _TaskMultiSelectDialog(
-      title: state.context.l10n.taskBoardDetailTaskSelectAssignees,
-      options: [
-        for (final member in state.widget.members)
-          _MultiSelectOption(id: member.id, label: member.label),
-      ],
-      selectedIds: state._selectedAssigneeIds,
-    ),
-  );
-
-  if (nextValues == null || !state.mounted) return;
-  state._updateState(() => state._selectedAssigneeIds = nextValues);
-}
-
-Future<void> _pickTaskLabels(_TaskBoardTaskEditorSheetState state) async {
-  final nextValues = await shad.showDialog<Set<String>>(
-    context: state.context,
-    builder: (context) => _TaskMultiSelectDialog(
-      title: state.context.l10n.taskBoardDetailTaskSelectLabels,
-      options: [
-        for (final label in state.widget.labels)
-          _MultiSelectOption(id: label.id, label: label.name),
-      ],
-      selectedIds: state._selectedLabelIds,
-    ),
-  );
-
-  if (nextValues == null || !state.mounted) return;
-  state._updateState(() => state._selectedLabelIds = nextValues);
-}
-
-Future<void> _pickTaskProjects(_TaskBoardTaskEditorSheetState state) async {
-  final nextValues = await shad.showDialog<Set<String>>(
-    context: state.context,
-    builder: (context) => _TaskMultiSelectDialog(
-      title: state.context.l10n.taskBoardDetailTaskSelectProjects,
-      options: [
-        for (final project in state.widget.projects)
-          _MultiSelectOption(id: project.id, label: project.name),
-      ],
-      selectedIds: state._selectedProjectIds,
-    ),
-  );
-
-  if (nextValues == null || !state.mounted) return;
-  state._updateState(() => state._selectedProjectIds = nextValues);
-}
-
 Future<void> _closeTaskEditor(_TaskBoardTaskEditorSheetState state) async {
   try {
     await shad.closeOverlay<void>(state.context);
@@ -879,60 +809,6 @@ String _selectedTaskListLabel(
   }
 
   return context.l10n.taskBoardDetailUntitledList;
-}
-
-String _taskEditorEstimationLabel(
-  _TaskBoardTaskEditorSheetState state,
-  BuildContext context,
-) {
-  return state._estimationPoints == null
-      ? context.l10n.taskBoardDetailTaskEstimationNone
-      : _taskEstimationPointLabel(
-          points: state._estimationPoints!,
-          board: state.widget.board,
-        );
-}
-
-String _selectedTaskAssigneesLabel(
-  _TaskBoardTaskEditorSheetState state,
-  BuildContext context,
-) {
-  return state._selectionSummary(
-    selectedIds: state._selectedAssigneeIds,
-    options: [
-      for (final member in state.widget.members)
-        _MultiSelectOption(id: member.id, label: member.label),
-    ],
-    emptyLabel: context.l10n.taskBoardDetailNone,
-  );
-}
-
-String _selectedTaskLabelsLabel(
-  _TaskBoardTaskEditorSheetState state,
-  BuildContext context,
-) {
-  return state._selectionSummary(
-    selectedIds: state._selectedLabelIds,
-    options: [
-      for (final label in state.widget.labels)
-        _MultiSelectOption(id: label.id, label: label.name),
-    ],
-    emptyLabel: context.l10n.taskBoardDetailNone,
-  );
-}
-
-String _selectedTaskProjectsLabel(
-  _TaskBoardTaskEditorSheetState state,
-  BuildContext context,
-) {
-  return state._selectionSummary(
-    selectedIds: state._selectedProjectIds,
-    options: [
-      for (final project in state.widget.projects)
-        _MultiSelectOption(id: project.id, label: project.name),
-    ],
-    emptyLabel: context.l10n.taskBoardDetailNone,
-  );
 }
 
 void _showTaskEditorErrorToast(

@@ -563,6 +563,7 @@
     "taskBoardDetailTaskTitleHint": "Công việc chưa đặt tên",
     "taskBoardDetailTaskTitleRequired": "Tiêu đề công việc là bắt buộc",
     "taskBoardDetailTaskDescriptionLabel": "Mô tả",
+    "taskBoardDetailTaskEditDescription": "Chỉnh sửa mô tả",
     "taskBoardDetailTaskDescriptionHint": "Thêm mô tả",
     "taskBoardDetailTaskDescriptionComingSoon": "Tính năng chỉnh sửa mô tả sẽ sớm có trên mobile.",
     "taskBoardDetailTaskDescriptionDone": "Xong",

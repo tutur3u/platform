@@ -80,6 +80,35 @@ class _EditorSectionCard extends StatelessWidget {
   }
 }
 
+class _EditFieldButton extends StatelessWidget {
+  const _EditFieldButton({
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return shad.OutlineButton(
+      onPressed: onPressed,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Icon(
+            Icons.edit,
+            size: 16,
+            color: theme.colorScheme.mutedForeground,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SelectionFieldButton extends StatelessWidget {
   const _SelectionFieldButton({
     required this.label,

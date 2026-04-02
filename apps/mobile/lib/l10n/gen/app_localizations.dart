@@ -2725,6 +2725,12 @@ abstract class AppLocalizations {
   /// **'Description'**
   String get taskBoardDetailTaskDescriptionLabel;
 
+  /// No description provided for @taskBoardDetailTaskEditDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit description'**
+  String get taskBoardDetailTaskEditDescription;
+
   /// No description provided for @taskBoardDetailTaskDescriptionHint.
   ///
   /// In en, this message translates to:

@@ -563,6 +563,7 @@
     "taskBoardDetailTaskTitleHint": "Untitled task",
     "taskBoardDetailTaskTitleRequired": "Task title is required",
     "taskBoardDetailTaskDescriptionLabel": "Description",
+    "taskBoardDetailTaskEditDescription": "Edit description",
     "taskBoardDetailTaskDescriptionHint": "Add description",
     "taskBoardDetailTaskDescriptionComingSoon": "Description editing is coming soon on mobile.",
     "taskBoardDetailTaskDescriptionDone": "Done",

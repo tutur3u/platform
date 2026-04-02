@@ -94,8 +94,6 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
   }
 
   Widget _buildDescriptionViewer(BuildContext context) {
-    // Use the raw TipTap JSON for the viewer to ensure full feature parity
-    // with the editor (tables, task lists, mentions, subscript/superscript, etc.)
     return TaskDescriptionViewer(
       descriptionJson: description.rawJson ?? '{}',
     );
