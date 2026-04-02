@@ -8,7 +8,7 @@
   },
   "packageManager": "bun@1.3.11",
   "dependencies": {
-    "@react-email/components": "^1.0.10",
+    "@react-email/components": "^1.0.11",
     "@react-email/preview-server": "^5.2.10",
     "react": "^19.2.4",
     "react-email": "^5.2.10"
