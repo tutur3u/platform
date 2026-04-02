@@ -2,7 +2,7 @@
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
-import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/icons';
+import { Eye, EyeOff, Lock, Mail } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
@@ -31,12 +31,36 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import * as z from 'zod';
 import { DEV_MODE, PORT } from '@/constants/common';
+import {
+  type AuthOAuthProvider,
+  getAuthOAuthProviderOptions,
+} from '@/lib/auth/oauth-providers';
 import { passwordLoginAction, sendOtpAction, verifyOtpAction } from './actions';
 
 // Constants
 const COOLDOWN_DURATION = 60;
 const MAX_OTP_LENGTH = 6;
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
+
+function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
+  return (
+    <span
+      aria-label={alt}
+      role="img"
+      className="block size-5 shrink-0 bg-current transition-transform duration-200 group-hover:scale-110"
+      style={{
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskPosition: 'center',
+        maskPosition: 'center',
+        WebkitMaskRepeat: 'no-repeat',
+        maskRepeat: 'no-repeat',
+        WebkitMaskSize: 'contain',
+        maskSize: 'contain',
+      }}
+    />
+  );
+}
 
 export default function LoginForm({
   isExternal,
@@ -632,10 +656,7 @@ export default function LoginForm({
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    const supabase = createClient();
-
+  const buildOAuthRedirectUrl = useCallback(() => {
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
     const multiAccount = searchParams.get('multiAccount');
@@ -652,58 +673,29 @@ export default function LoginForm({
       redirectURL += `?${searchParamsArray.join('&')}`;
     }
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectURL,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
+    return redirectURL;
+  }, [searchParams]);
 
-    if (error) {
-      setLoading(false);
-      console.error('Error signing in with Google:', error);
-      toast.error('Error', {
-        description: 'Failed to sign in with Google.',
-      });
-    }
-  };
-
-  const handleGitHubLogin = async () => {
+  const handleOAuthLogin = async (provider: AuthOAuthProvider) => {
     setLoading(true);
     const supabase = createClient();
-
-    const returnUrl = searchParams.get('returnUrl');
-    const nextUrl = searchParams.get('nextUrl');
-    const multiAccount = searchParams.get('multiAccount');
-    let redirectURL = `${window.location.origin}/login`;
-    const searchParamsArray = [];
-
-    if (returnUrl)
-      searchParamsArray.push(`returnUrl=${encodeURIComponent(returnUrl)}`);
-    if (nextUrl)
-      searchParamsArray.push(`nextUrl=${encodeURIComponent(nextUrl)}`);
-    if (multiAccount === 'true') searchParamsArray.push('multiAccount=true');
-
-    if (searchParamsArray.length > 0) {
-      redirectURL += `?${searchParamsArray.join('&')}`;
-    }
+    const redirectURL = buildOAuthRedirectUrl();
+    const providerOptions = getAuthOAuthProviderOptions(provider);
 
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
+      provider,
       options: {
         redirectTo: redirectURL,
+        queryParams: providerOptions.queryParams,
+        scopes: providerOptions.scopes,
       },
     });
 
     if (error) {
       setLoading(false);
-      console.error('Error signing in with GitHub:', error);
-      toast.error('Error', {
-        description: 'Failed to sign in with GitHub.',
+      console.error(`Error signing in with ${provider}:`, error);
+      toast.error(t('login.failed'), {
+        description: t('login.social_sign_in_failed'),
       });
     }
   };
@@ -909,7 +901,19 @@ export default function LoginForm({
     <div className="space-y-3">
       <Button
         variant="outline"
-        onClick={handleGoogleLogin}
+        onClick={() => handleOAuthLogin('apple')}
+        disabled={_isLoading}
+        className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+      >
+        <div className="absolute left-4">
+          <SocialLogoMask src="/media/logos/apple.svg" alt="Apple" />
+        </div>
+        <span className="font-medium">{t('login.continue_with_apple')}</span>
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={() => handleOAuthLogin('google')}
         disabled={_isLoading}
         className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
       >
@@ -927,12 +931,32 @@ export default function LoginForm({
 
       <Button
         variant="outline"
-        onClick={handleGitHubLogin}
+        onClick={() => handleOAuthLogin('azure')}
         disabled={_isLoading}
         className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
       >
         <div className="absolute left-4">
-          <Github className="size-5 transition-transform duration-200 group-hover:scale-110" />
+          <Image
+            src="/media/logos/microsoft.svg"
+            alt="Microsoft"
+            width={20}
+            height={20}
+            className="object-contain transition-transform duration-200 group-hover:scale-110"
+          />
+        </div>
+        <span className="font-medium">
+          {t('login.continue_with_microsoft')}
+        </span>
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={() => handleOAuthLogin('github')}
+        disabled={_isLoading}
+        className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
+      >
+        <div className="absolute left-4">
+          <SocialLogoMask src="/media/logos/github.svg" alt="GitHub" />
         </div>
         <span className="font-medium">{t('login.continue_with_github')}</span>
       </Button>

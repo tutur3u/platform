@@ -1,8 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  AUTH_OAUTH_PROVIDERS,
+  getAuthOAuthProviderOptions,
+} from '@/lib/auth/oauth-providers';
 
-const ProviderSchema = z.enum(['google', 'github']);
+const ProviderSchema = z.enum(AUTH_OAUTH_PROVIDERS);
 
 function buildReturnUrl(
   request: NextRequest,
@@ -42,10 +46,14 @@ export const GET = withSessionAuth<{ provider: string }>(
         request.nextUrl.searchParams.get('returnTo'),
         parsedProvider.data
       );
+      const providerOptions = getAuthOAuthProviderOptions(parsedProvider.data);
 
       const { data, error } = await supabase.auth.linkIdentity({
         provider: parsedProvider.data,
-        options: { redirectTo },
+        options: {
+          redirectTo,
+          scopes: providerOptions.scopes,
+        },
       });
 
       if (error || !data?.url) {
