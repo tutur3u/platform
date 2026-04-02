@@ -8,17 +8,26 @@ import PlanCard from './plan-card';
 import 'dayjs/locale/vi';
 import { getLocale, getTranslations } from 'next-intl/server';
 
+interface MeetTogetherPageData {
+  data: MeetTogetherPlan[];
+  user: SupabaseUser | null;
+  createdPlanCount: number;
+}
+
 export default async function MeetTogetherPage() {
   const locale = await getLocale();
   const t = await getTranslations('meet-together');
-  const { data: plans, user } = await getData();
+  const { data: plans, user, createdPlanCount } = await getData();
 
   return (
     <div className="flex w-full flex-col items-center">
       <div className="container mx-auto flex max-w-6xl flex-col gap-6 px-3 py-10 lg:gap-14 lg:py-16">
         <NeoMeetHeader />
       </div>
-      <Form />
+      <Form
+        createdPlanCount={createdPlanCount}
+        isLoggedIn={Boolean(user?.id)}
+      />
       <Separator className="mt-8 mb-4 md:mt-16" />
 
       <div className="flex w-full flex-col items-center justify-center p-4 pb-8 text-foreground">
@@ -50,14 +59,14 @@ export default async function MeetTogetherPage() {
   );
 }
 
-async function getData() {
+async function getData(): Promise<MeetTogetherPageData> {
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { data: [], count: 0, user };
+  if (!user) return { data: [], createdPlanCount: 0, user };
 
   const createdPlansQuery = supabase
     .from('meet_together_plans')
@@ -83,11 +92,15 @@ async function getData() {
   if (joinedPlansError) throw joinedPlansError;
 
   const data = [...createdPlanData, ...joinedPlanData]
+    .map((item) => ({
+      ...item,
+      created_at: item.created_at ?? undefined,
+      creator_id: item.creator_id ?? undefined,
+      description: item.description ?? undefined,
+      name: item.name ?? undefined,
+    }))
     // filter out duplicates
     .filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i);
 
-  return { data, user } as {
-    data: MeetTogetherPlan[];
-    user: SupabaseUser;
-  };
+  return { data, user, createdPlanCount: createdPlanData.length };
 }

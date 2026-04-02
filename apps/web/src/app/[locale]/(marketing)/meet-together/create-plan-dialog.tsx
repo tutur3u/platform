@@ -24,12 +24,14 @@ import { toast } from '@ncthub/ui/hooks/use-toast';
 import { Input } from '@ncthub/ui/input';
 import { zodResolver } from '@ncthub/ui/resolvers';
 import { Switch } from '@ncthub/ui/switch';
+import { ToastAction } from '@ncthub/ui/toast';
 import { cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { MAX_MEETING_PLANS } from '@/constants/meet-together';
 
 interface Props {
   plan: {
@@ -38,6 +40,8 @@ interface Props {
     endTime: number | undefined;
     timezone: Timezone | undefined;
   };
+  createdPlanCount: number;
+  isLoggedIn: boolean;
 }
 
 const FormSchema = z.object({
@@ -57,7 +61,11 @@ const convertToTimetz = (
   return `${time}:00${utcOffset < 0 ? '-' : '+'}${Math.abs(utcOffset)}`;
 };
 
-export default function CreatePlanDialog({ plan }: Props) {
+export default function CreatePlanDialog({
+  plan,
+  createdPlanCount,
+  isLoggedIn,
+}: Props) {
   const t = useTranslations('meet-together');
   const router = useRouter();
 
@@ -81,8 +89,35 @@ export default function CreatePlanDialog({ plan }: Props) {
   const isSubmitting = form.formState.isSubmitting;
 
   const disabled = !isValid || isSubmitting;
+  const hasReachedPlanLimit = createdPlanCount >= MAX_MEETING_PLANS;
 
   const handleSubmit = async () => {
+    if (!isLoggedIn) {
+      toast({
+        title: t('login_required_title'),
+        description: t('login_required_desc'),
+        action: (
+          <ToastAction
+            altText={t('login_action')}
+            onClick={() => router.push('/login')}
+          >
+            {t('login_action')}
+          </ToastAction>
+        ),
+      });
+      return;
+    }
+
+    if (hasReachedPlanLimit) {
+      toast({
+        title: t('plan_limit_reached_title'),
+        description: t('plan_limit_reached_desc', {
+          limit: MAX_MEETING_PLANS,
+        }),
+      });
+      return;
+    }
+
     setCreating(true);
 
     const data = form.getValues();
@@ -128,10 +163,38 @@ export default function CreatePlanDialog({ plan }: Props) {
       router.push(`/meet-together/plans/${normalizedId}`);
       router.refresh();
     } else {
+      const payload = await res.json().catch(() => null);
       setCreating(false);
+
+      if (res.status === 401) {
+        toast({
+          title: t('login_required_title'),
+          description: payload?.message || t('login_required_desc'),
+          action: (
+            <ToastAction
+              altText={t('login_action')}
+              onClick={() => router.push('/login')}
+            >
+              {t('login_action')}
+            </ToastAction>
+          ),
+        });
+        return;
+      }
+
+      if (res.status === 409) {
+        toast({
+          title: t('plan_limit_reached_title'),
+          description:
+            payload?.message ||
+            t('plan_limit_reached_desc', { limit: MAX_MEETING_PLANS }),
+        });
+        return;
+      }
+
       toast({
         title: t('something_went_wrong'),
-        description: t('cant_create_plan_right_now'),
+        description: payload?.message || t('cant_create_plan_right_now'),
       });
     }
   };

@@ -4,7 +4,7 @@ import { ShieldCheck } from '@ncthub/ui/icons';
 import { Progress } from '@ncthub/ui/progress';
 import { Separator } from '@ncthub/ui/separator';
 import { useTranslations } from 'next-intl';
-import { GUEST_LIMIT } from '@/constants/common';
+import { GUEST_LIMIT } from '@/constants/meet-together';
 import { useTimeBlocking } from './time-blocking-provider';
 
 export default function PlanUserFilter({

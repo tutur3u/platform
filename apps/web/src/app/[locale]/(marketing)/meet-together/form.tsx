@@ -10,7 +10,12 @@ import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
 
-export default function Form() {
+interface Props {
+  createdPlanCount: number;
+  isLoggedIn: boolean;
+}
+
+export default function Form({ createdPlanCount, isLoggedIn }: Props) {
   const t = useTranslations('meet-together');
 
   const [dates, setDates] = useState<Date[] | undefined>([]);
@@ -74,7 +79,11 @@ export default function Form() {
           <TimezoneSelector value={timezone} onValueChange={setTimezone} />
         </div>
 
-        <CreatePlanDialog plan={plan} />
+        <CreatePlanDialog
+          plan={plan}
+          createdPlanCount={createdPlanCount}
+          isLoggedIn={isLoggedIn}
+        />
       </div>
     </div>
   );
