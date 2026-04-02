@@ -1,6 +1,4 @@
-'use client';
-
-import SponsorsComingSoon from './sponsors-coming-soon';
+import SponsorsList from './sponsors-list';
 
 export default function SponsorsSection() {
   return (
@@ -20,7 +18,7 @@ export default function SponsorsSection() {
           </p>
         </div>
 
-        <SponsorsComingSoon />
+        <SponsorsList />
       </div>
     </section>
   );
