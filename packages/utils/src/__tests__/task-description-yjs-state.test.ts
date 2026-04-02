@@ -1,10 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { deriveTaskDescriptionYjsState } from '../yjs-task-description';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const fullFeaturedDescription = readFileSync(
   join(__dirname, 'fixtures', 'task-description-full-featured.json'),
