@@ -1,5 +1,5 @@
 import { createClient } from '@ncthub/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
@@ -17,19 +17,38 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const supabase = await createClient();
   const { pending, role, role_title } = await req.json();
 
-  const query = supabase
-    .from(
-      pending
-        ? userId
-          ? 'workspace_invites'
-          : 'workspace_email_invites'
-        : 'workspace_members'
-    )
-    .update({ role: role, role_title: role_title })
-    .eq('ws_id', wsId);
+  let query: any;
 
-  if (userId) query.eq('user_id', userId);
-  if (userEmail) query.eq('email', userEmail);
+  if (pending) {
+    if (userId) {
+      query = supabase
+        .from('workspace_invites')
+        .update({ role: role, role_title: role_title })
+        .eq('ws_id', wsId)
+        .eq('user_id', userId);
+    } else if (userEmail) {
+      query = supabase
+        .from('workspace_email_invites')
+        .update({ role: role, role_title: role_title })
+        .eq('ws_id', wsId)
+        .eq('email', userEmail);
+    } else {
+      return NextResponse.json(
+        { message: 'Missing user id or email' },
+        { status: 400 }
+      );
+    }
+  } else {
+    if (userId) {
+      query = supabase
+        .from('workspace_members')
+        .update({ role: role, role_title: role_title })
+        .eq('ws_id', wsId)
+        .eq('user_id', userId);
+    } else {
+      return NextResponse.json({ message: 'Missing user id' }, { status: 400 });
+    }
+  }
 
   const { error } = await query;
 

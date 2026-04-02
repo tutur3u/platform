@@ -29,7 +29,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.1014.0",
+    "@aws-sdk/client-ses": "^3.1022.0",
     "@deepgram/sdk": "^5.0.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -38,7 +38,7 @@
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.8.2",
     "@mantine/hooks": "^8.3.18",
-    "@marsidev/react-turnstile": "^1.4.2",
+    "@marsidev/react-turnstile": "^1.5.0",
     "@ncthub/ai": "workspace:*",
     "@ncthub/auth": "workspace:*",
     "@ncthub/supabase": "workspace:*",
@@ -52,9 +52,9 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@tailwindcss/postcss": "^4.2.2",
-    "@tanstack/react-query": "^5.94.5",
+    "@tanstack/react-query": "^5.96.1",
     "@tanstack/react-table": "^8.21.3",
-    "@tldraw/sync": "^4.5.3",
+    "@tldraw/sync": "^4.5.6",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "canvas-confetti": "^1.9.4",
@@ -66,14 +66,14 @@
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "html2canvas": "^1.4.1",
-    "jotai": "^2.18.1",
+    "jotai": "^2.19.0",
     "juice": "^11.1.1",
-    "lodash": "^4.17.23",
-    "mermaid": "^11.13.0",
+    "lodash": "^4.18.1",
+    "mermaid": "^11.14.0",
     "moment": "^2.30.1",
     "negotiator": "^1.0.0",
     "next": "16.2.1",
-    "next-intl": "^4.8.3",
+    "next-intl": "^4.9.0",
     "next-themes": "^0.4.6",
     "octokit": "^5.0.5",
     "papaparse": "^5.5.3",
@@ -97,8 +97,8 @@
     "swr": "^2.4.1",
     "three": "^0.183.2",
     "three-stdlib": "^2.36.1",
-    "tldraw": "^4.5.3",
-    "use-debounce": "^10.1.0",
+    "tldraw": "^4.5.6",
+    "use-debounce": "^10.1.1",
     "uuid": "^13.0.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "zod": "^3.25.76"
@@ -106,7 +106,7 @@
   "devDependencies": {
     "@ncthub/typescript-config": "workspace:*",
     "@next/bundle-analyzer": "16.2.1",
-    "@tanstack/react-query-devtools": "^5.94.5",
+    "@tanstack/react-query-devtools": "^5.96.1",
     "@testing-library/react": "^16.3.2",
     "@types/canvas-confetti": "^1.9.0",
     "@types/js-cookie": "^3.0.6",
@@ -122,7 +122,7 @@
     "jsdom": "^29.0.1",
     "postcss": "^8.5.8",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.2"
   },
   "packageManager": "bun@1.3.11"
 }
