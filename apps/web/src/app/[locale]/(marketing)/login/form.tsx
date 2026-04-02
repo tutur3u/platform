@@ -24,6 +24,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -38,6 +39,37 @@ import { passwordLoginAction } from './actions';
 import { SocialLoginButton } from './social-login-button';
 
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
+
+const authStepVariants = {
+  enter: (direction: number) => ({
+    opacity: 0,
+    x: direction > 0 ? 28 : -28,
+    filter: 'blur(6px)',
+  }),
+  center: {
+    opacity: 1,
+    x: 0,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.24,
+      ease: [0.22, 1, 0.36, 1] as const,
+    },
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    x: direction > 0 ? -28 : 28,
+    filter: 'blur(6px)',
+    transition: {
+      duration: 0.18,
+      ease: [0.4, 0, 1, 1] as const,
+    },
+  }),
+};
+
+const authContainerTransition = {
+  duration: 0.28,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
 
 type AuthStage = 'identify' | 'password';
 
@@ -132,6 +164,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [authStage, setAuthStage] = useState<AuthStage>('identify');
+  const [transitionDirection, setTransitionDirection] = useState<1 | -1>(1);
   const [showDomainPreview, setShowDomainPreview] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
@@ -475,6 +508,7 @@ export default function LoginForm() {
       email: normalizedEmail,
       password: defaultPassword,
     });
+    setTransitionDirection(1);
     setShowDomainPreview(false);
     setShowPassword(false);
     setCaptchaError(undefined);
@@ -492,6 +526,7 @@ export default function LoginForm() {
     });
 
     setLoading(false);
+    setTransitionDirection(-1);
     setShowPassword(false);
     setShowDomainPreview(false);
     setCaptchaError(undefined);
@@ -596,352 +631,390 @@ export default function LoginForm() {
 
   if (requiresMFA) {
     return (
-      <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
-        <CardContent className="space-y-6 p-6 sm:p-8">
-          <div className="space-y-2 text-center">
-            <h2 className="font-semibold text-2xl tracking-tight">
-              {t('login.two_factor_authentication')}
-            </h2>
-            <p className="text-balance text-muted-foreground text-sm">
-              {t('login.enter_authenticator_code')}
-            </p>
-          </div>
+      <motion.div layout transition={authContainerTransition}>
+        <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
+          <CardContent className="space-y-6 p-6 sm:p-8">
+            <div className="space-y-2 text-center">
+              <h2 className="font-semibold text-2xl tracking-tight">
+                {t('login.two_factor_authentication')}
+              </h2>
+              <p className="text-balance text-muted-foreground text-sm">
+                {t('login.enter_authenticator_code')}
+              </p>
+            </div>
 
-          <Form {...totpForm}>
-            <form
-              onSubmit={totpForm.handleSubmit(verifyTOtp)}
-              className="space-y-6"
-            >
-              <FormField
-                control={totpForm.control}
-                name="totp"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-medium text-sm">
-                      {t('login.verification_code_label')}
-                    </FormLabel>
-                    <FormControl>
-                      <InputOTP
-                        maxLength={6}
-                        {...field}
-                        disabled={loading}
-                        className="justify-center"
-                      >
-                        <InputOTPGroup className="w-full gap-2">
-                          {Array.from({ length: 6 }).map((_, index) => (
-                            <InputOTPSlot
-                              key={`totp-${index + 1}`}
-                              index={index}
-                              className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            />
-                          ))}
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button
-                type="submit"
-                className="h-12 w-full rounded-2xl font-medium shadow-lg"
-                disabled={loading || totpForm.watch('totp').length !== 6}
+            <Form {...totpForm}>
+              <form
+                onSubmit={totpForm.handleSubmit(verifyTOtp)}
+                className="space-y-6"
               >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <LoadingIndicator className="h-4 w-4" />
-                    <span>{t('common.loading')}...</span>
-                  </div>
-                ) : (
-                  t('login.verify_button')
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <FormField
+                  control={totpForm.control}
+                  name="totp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-medium text-sm">
+                        {t('login.verification_code_label')}
+                      </FormLabel>
+                      <FormControl>
+                        <InputOTP
+                          maxLength={6}
+                          {...field}
+                          disabled={loading}
+                          className="justify-center"
+                        >
+                          <InputOTPGroup className="w-full gap-2">
+                            {Array.from({ length: 6 }).map((_, index) => (
+                              <InputOTPSlot
+                                key={`totp-${index + 1}`}
+                                index={index}
+                                className="h-12 w-full rounded-2xl border border-border/60 bg-background/70 font-semibold text-lg shadow-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            ))}
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                  disabled={loading || totpForm.watch('totp').length !== 6}
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <LoadingIndicator className="h-4 w-4" />
+                      <span>{t('common.loading')}...</span>
+                    </div>
+                  ) : (
+                    t('login.verify_button')
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   }
 
   return (
-    <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
-      <CardContent className="space-y-6 p-6 sm:p-8">
-        {authStage === 'identify' ? (
-          <>
-            <Form {...emailForm}>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void advanceToPasswordStage();
-                }}
-                className="space-y-5"
-              >
-                <FormField
-                  control={emailForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-medium text-sm">
-                        {t('login.email')}
-                      </FormLabel>
-                      <FormControl>
-                        <div className="group relative">
-                          <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                          <Input
-                            className={`h-12 rounded-2xl border-border/60 bg-background pl-10 shadow-sm transition-all duration-200 focus:border-primary/40 focus:ring-primary/15 ${
-                              normalizedPreviewEmail ? 'pr-32' : ''
-                            }`}
-                            placeholder={t('login.email_username_placeholder')}
-                            value={field.value}
-                            onChange={(event) => {
-                              setShowDomainPreview(false);
-                              field.onChange(event.target.value);
-                              passwordForm.setValue(
-                                'email',
-                                event.target.value,
-                                { shouldDirty: true }
-                              );
-                            }}
-                            onBlur={() => {
-                              if (
-                                field.value.trim() &&
-                                !field.value.includes('@')
-                              ) {
-                                setShowDomainPreview(true);
-                              }
-                              field.onBlur();
-                            }}
-                            disabled={loading}
-                          />
-                          {normalizedPreviewEmail ? (
-                            <div className="absolute inset-y-0 right-3 flex items-center">
-                              <span className="rounded-full border border-dynamic-blue/25 bg-dynamic-blue/10 px-2.5 py-1 font-medium text-[11px] text-dynamic-blue">
-                                @tuturuuu.com
-                              </span>
-                            </div>
-                          ) : null}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                      {normalizedPreviewEmail ? (
-                        <FormDescription className="text-xs">
-                          {t('login.will_sign_in_as')}{' '}
-                          <span className="font-medium text-foreground">
-                            {normalizedPreviewEmail}
-                          </span>
-                        </FormDescription>
-                      ) : null}
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="h-12 w-full rounded-2xl font-medium shadow-lg"
-                  disabled={loading || !emailIsValid}
+    <motion.div layout transition={authContainerTransition}>
+      <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
+        <CardContent className="p-6 sm:p-8">
+          <motion.div layout transition={{ duration: 0.22, ease: 'easeOut' }}>
+            <AnimatePresence
+              initial={false}
+              mode="wait"
+              custom={transitionDirection}
+            >
+              {authStage === 'identify' ? (
+                <motion.div
+                  key="identify-auth"
+                  custom={transitionDirection}
+                  variants={authStepVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="space-y-6"
                 >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <LoadingIndicator className="h-4 w-4" />
-                      <span>{t('common.loading')}...</span>
-                    </div>
-                  ) : (
-                    t('login.continue')
-                  )}
-                </Button>
-              </form>
-            </Form>
-
-            <div className="relative py-0.5">
-              <Separator className="bg-border/60" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="bg-background px-3 text-muted-foreground text-xs">
-                  {t('login.or')}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <SocialLoginButton
-                disabled={loading}
-                onClick={() => void handleOAuthLogin('google')}
-                icon={
-                  <Image
-                    src="/media/google-logo.png"
-                    alt="Google"
-                    width={20}
-                    height={20}
-                    className="object-contain transition-transform duration-200 group-hover:scale-110"
-                  />
-                }
-              >
-                {t('login.continue_with_google')}
-              </SocialLoginButton>
-
-              <SocialLoginButton
-                disabled={loading}
-                onClick={() => void handleOAuthLogin('azure')}
-                icon={
-                  <Image
-                    src="/media/logos/microsoft.svg"
-                    alt="Microsoft"
-                    width={20}
-                    height={20}
-                    className="object-contain transition-transform duration-200 group-hover:scale-110"
-                  />
-                }
-              >
-                {t('login.continue_with_microsoft')}
-              </SocialLoginButton>
-
-              <SocialLoginButton
-                disabled={loading}
-                onClick={() => void handleOAuthLogin('apple')}
-                icon={
-                  <SocialLogoMask src="/media/logos/apple.svg" alt="Apple" />
-                }
-              >
-                {t('login.continue_with_apple')}
-              </SocialLoginButton>
-
-              <SocialLoginButton
-                disabled={loading}
-                onClick={() => void handleOAuthLogin('github')}
-                icon={
-                  <SocialLogoMask src="/media/logos/github.svg" alt="GitHub" />
-                }
-              >
-                {t('login.continue_with_github')}
-              </SocialLoginButton>
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="-ml-2 w-fit rounded-full px-2.5 text-muted-foreground hover:text-foreground"
-                onClick={returnToIdentifyStage}
-                disabled={loading}
-              >
-                <ArrowLeft className="size-4" />
-                <span>{t('common.back')}</span>
-              </Button>
-            </div>
-
-            <Form {...passwordForm}>
-              <form
-                onSubmit={passwordForm.handleSubmit(loginWithPassword)}
-                className="space-y-5"
-              >
-                <FormItem>
-                  <FormLabel className="font-medium text-sm">
-                    {t('login.email')}
-                  </FormLabel>
-                  <FormControl>
-                    <div className="group relative">
-                      <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        className="h-12 rounded-2xl border-border/60 bg-muted/30 pl-10 font-medium text-foreground shadow-none"
-                        value={passwordForm.getValues('email')}
-                        disabled
+                  <Form {...emailForm}>
+                    <form
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void advanceToPasswordStage();
+                      }}
+                      className="space-y-5"
+                    >
+                      <FormField
+                        control={emailForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-medium text-sm">
+                              {t('login.email')}
+                            </FormLabel>
+                            <FormControl>
+                              <div className="group relative">
+                                <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                                <Input
+                                  className={`h-12 rounded-2xl border-border/60 bg-background pl-10 shadow-sm transition-all duration-200 focus:border-primary/40 focus:ring-primary/15 ${
+                                    normalizedPreviewEmail ? 'pr-32' : ''
+                                  }`}
+                                  placeholder={t(
+                                    'login.email_username_placeholder'
+                                  )}
+                                  value={field.value}
+                                  onChange={(event) => {
+                                    setShowDomainPreview(false);
+                                    field.onChange(event.target.value);
+                                    passwordForm.setValue(
+                                      'email',
+                                      event.target.value,
+                                      { shouldDirty: true }
+                                    );
+                                  }}
+                                  onBlur={() => {
+                                    if (
+                                      field.value.trim() &&
+                                      !field.value.includes('@')
+                                    ) {
+                                      setShowDomainPreview(true);
+                                    }
+                                    field.onBlur();
+                                  }}
+                                  disabled={loading}
+                                />
+                                {normalizedPreviewEmail ? (
+                                  <div className="absolute inset-y-0 right-3 flex items-center">
+                                    <span className="rounded-full border border-dynamic-blue/25 bg-dynamic-blue/10 px-2.5 py-1 font-medium text-[11px] text-dynamic-blue">
+                                      @tuturuuu.com
+                                    </span>
+                                  </div>
+                                ) : null}
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                            {normalizedPreviewEmail ? (
+                              <FormDescription className="text-xs">
+                                {t('login.will_sign_in_as')}{' '}
+                                <span className="font-medium text-foreground">
+                                  {normalizedPreviewEmail}
+                                </span>
+                              </FormDescription>
+                            ) : null}
+                          </FormItem>
+                        )}
                       />
+
+                      <Button
+                        type="submit"
+                        className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                        disabled={loading || !emailIsValid}
+                      >
+                        {loading ? (
+                          <div className="flex items-center gap-2">
+                            <LoadingIndicator className="h-4 w-4" />
+                            <span>{t('common.loading')}...</span>
+                          </div>
+                        ) : (
+                          t('login.continue')
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+
+                  <div className="relative py-0.5">
+                    <Separator className="bg-border/60" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="bg-background px-3 text-muted-foreground text-xs">
+                        {t('login.or')}
+                      </span>
                     </div>
-                  </FormControl>
-                </FormItem>
-
-                <FormField
-                  control={passwordForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-medium text-sm">
-                        {t('login.password')}
-                      </FormLabel>
-                      <FormControl>
-                        <div className="group relative">
-                          <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                          <Input
-                            className="h-12 rounded-2xl border-border/60 bg-background pr-12 pl-10 shadow-sm transition-all duration-200 focus:border-primary/40 focus:ring-primary/15"
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder={t('login.password_placeholder')}
-                            {...field}
-                            disabled={loading}
-                          />
-                          <button
-                            type="button"
-                            className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                            onClick={() => setShowPassword((prev) => !prev)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="size-4" />
-                            ) : (
-                              <Eye className="size-4" />
-                            )}
-                          </button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {turnstileClientState.isRequired ? (
-                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                    {turnstileClientState.canRenderWidget &&
-                    turnstileSiteKey ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <Turnstile
-                          ref={captchaRefPassword}
-                          siteKey={turnstileSiteKey}
-                          onSuccess={(token) => {
-                            setCaptchaToken(token);
-                            setCaptchaError(undefined);
-                          }}
-                          onExpire={() => setCaptchaToken(undefined)}
-                          onError={handleCaptchaError}
-                          onTimeout={handleCaptchaTimeout}
-                        />
-                        {captchaError ? (
-                          <p className="text-destructive text-sm">
-                            {captchaError}
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <p className="text-destructive text-sm">
-                        {t('login.captcha_not_configured')}
-                      </p>
-                    )}
                   </div>
-                ) : null}
 
-                <Button
-                  type="submit"
-                  className="h-12 w-full rounded-2xl font-medium shadow-lg"
-                  disabled={
-                    loading ||
-                    !passwordForm.formState.isValid ||
-                    isCaptchaBlockingPasswordSubmit
-                  }
+                  <div className="space-y-3">
+                    <SocialLoginButton
+                      disabled={loading}
+                      onClick={() => void handleOAuthLogin('google')}
+                      icon={
+                        <Image
+                          src="/media/google-logo.png"
+                          alt="Google"
+                          width={20}
+                          height={20}
+                          className="object-contain transition-transform duration-200 group-hover:scale-110"
+                        />
+                      }
+                    >
+                      {t('login.continue_with_google')}
+                    </SocialLoginButton>
+
+                    <SocialLoginButton
+                      disabled={loading}
+                      onClick={() => void handleOAuthLogin('azure')}
+                      icon={
+                        <Image
+                          src="/media/logos/microsoft.svg"
+                          alt="Microsoft"
+                          width={20}
+                          height={20}
+                          className="object-contain transition-transform duration-200 group-hover:scale-110"
+                        />
+                      }
+                    >
+                      {t('login.continue_with_microsoft')}
+                    </SocialLoginButton>
+
+                    <SocialLoginButton
+                      disabled={loading}
+                      onClick={() => void handleOAuthLogin('apple')}
+                      icon={
+                        <SocialLogoMask
+                          src="/media/logos/apple.svg"
+                          alt="Apple"
+                        />
+                      }
+                    >
+                      {t('login.continue_with_apple')}
+                    </SocialLoginButton>
+
+                    <SocialLoginButton
+                      disabled={loading}
+                      onClick={() => void handleOAuthLogin('github')}
+                      icon={
+                        <SocialLogoMask
+                          src="/media/logos/github.svg"
+                          alt="GitHub"
+                        />
+                      }
+                    >
+                      {t('login.continue_with_github')}
+                    </SocialLoginButton>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="password-auth"
+                  custom={transitionDirection}
+                  variants={authStepVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="space-y-6"
                 >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <LoadingIndicator className="h-4 w-4" />
-                      <span>{t('common.loading')}...</span>
-                    </div>
-                  ) : (
-                    t('login.sign_in')
-                  )}
-                </Button>
-              </form>
-            </Form>
-          </>
-        )}
-      </CardContent>
-    </Card>
+                  <div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="-ml-2 w-fit rounded-full px-2.5 text-muted-foreground hover:text-foreground"
+                      onClick={returnToIdentifyStage}
+                      disabled={loading}
+                    >
+                      <ArrowLeft className="size-4" />
+                      <span>{t('common.back')}</span>
+                    </Button>
+                  </div>
+
+                  <Form {...passwordForm}>
+                    <form
+                      onSubmit={passwordForm.handleSubmit(loginWithPassword)}
+                      className="space-y-5"
+                    >
+                      <FormItem>
+                        <FormLabel className="font-medium text-sm">
+                          {t('login.email')}
+                        </FormLabel>
+                        <FormControl>
+                          <div className="group relative">
+                            <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              className="h-12 rounded-2xl border-border/60 bg-muted/30 pl-10 font-medium text-foreground shadow-none"
+                              value={passwordForm.getValues('email')}
+                              disabled
+                            />
+                          </div>
+                        </FormControl>
+                      </FormItem>
+
+                      <FormField
+                        control={passwordForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-medium text-sm">
+                              {t('login.password')}
+                            </FormLabel>
+                            <FormControl>
+                              <div className="group relative">
+                                <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                                <Input
+                                  className="h-12 rounded-2xl border-border/60 bg-background pr-12 pl-10 shadow-sm transition-all duration-200 focus:border-primary/40 focus:ring-primary/15"
+                                  type={showPassword ? 'text' : 'password'}
+                                  placeholder={t('login.password_placeholder')}
+                                  {...field}
+                                  disabled={loading}
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                                  onClick={() =>
+                                    setShowPassword((prev) => !prev)
+                                  }
+                                >
+                                  {showPassword ? (
+                                    <EyeOff className="size-4" />
+                                  ) : (
+                                    <Eye className="size-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {turnstileClientState.isRequired ? (
+                        <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                          {turnstileClientState.canRenderWidget &&
+                          turnstileSiteKey ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Turnstile
+                                ref={captchaRefPassword}
+                                siteKey={turnstileSiteKey}
+                                onSuccess={(token) => {
+                                  setCaptchaToken(token);
+                                  setCaptchaError(undefined);
+                                }}
+                                onExpire={() => setCaptchaToken(undefined)}
+                                onError={handleCaptchaError}
+                                onTimeout={handleCaptchaTimeout}
+                              />
+                              {captchaError ? (
+                                <p className="text-destructive text-sm">
+                                  {captchaError}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <p className="text-destructive text-sm">
+                              {t('login.captcha_not_configured')}
+                            </p>
+                          )}
+                        </div>
+                      ) : null}
+
+                      <Button
+                        type="submit"
+                        className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                        disabled={
+                          loading ||
+                          !passwordForm.formState.isValid ||
+                          isCaptchaBlockingPasswordSubmit
+                        }
+                      >
+                        {loading ? (
+                          <div className="flex items-center gap-2">
+                            <LoadingIndicator className="h-4 w-4" />
+                            <span>{t('common.loading')}...</span>
+                          </div>
+                        ) : (
+                          t('login.sign_in')
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
