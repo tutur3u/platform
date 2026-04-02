@@ -44,10 +44,18 @@
       "import": "./dist/errors.js",
       "require": "./dist/errors.js",
       "default": "./dist/errors.js"
+    },
+    "./external-projects": {
+      "types": "./src/external-projects.ts",
+      "bun": "./src/external-projects.ts",
+      "import": "./dist/external-projects.js",
+      "require": "./dist/external-projects.js",
+      "default": "./dist/external-projects.js"
     }
   },
   "files": [
     "dist",
+    "src/external-projects.ts",
     "src/index.ts",
     "src/storage.ts",
     "src/types.ts",

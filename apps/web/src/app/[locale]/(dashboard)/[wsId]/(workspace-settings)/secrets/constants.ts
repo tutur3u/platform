@@ -142,6 +142,19 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
     defaultValue: 'true',
   },
   {
+    name: 'EXTERNAL_PROJECT_ENABLED',
+    description:
+      'Enables the external project studio binding for this destination workspace when managed by the root registry.',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
+    name: 'EXTERNAL_PROJECT_CANONICAL_ID',
+    description:
+      'Stores the canonical external project ID assigned by the root-managed registry.',
+    type: 'string',
+  },
+  {
     name: 'ENABLE_X',
     description: 'Enables X (formerly Twitter) integration features.',
     type: 'boolean',

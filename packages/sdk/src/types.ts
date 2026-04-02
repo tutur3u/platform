@@ -25,6 +25,13 @@ export type {
   DeleteResponse,
   Document,
   DocumentResponse,
+  ExternalProjectAdapterKind,
+  ExternalProjectDeliveryAsset,
+  ExternalProjectDeliveryCollection,
+  ExternalProjectDeliveryEntry,
+  ExternalProjectDeliveryPayload,
+  ExternalProjectLoadingData,
+  ExternalProjectStudioData,
   GetDocumentResponse,
   ListDocumentsOptions,
   ListDocumentsResponse,
@@ -41,6 +48,10 @@ export type {
   UpdateDocumentData,
   UploadOptions,
   UploadResponse,
+  YoolaExternalProjectArtworkLoadingItem,
+  YoolaExternalProjectLoadingData,
+  YoolaExternalProjectLoreCapsuleLoadingItem,
+  YoolaExternalProjectSectionLoadingItem,
 } from '@tuturuuu/types';
 
 export type ImageResizeMode = 'cover' | 'contain' | 'fill';
@@ -91,3 +102,11 @@ export const downloadOptionsSchema = z
     transform: imageTransformOptionsSchema,
   })
   .partial();
+
+export const externalProjectDeliveryOptionsSchema = z.object({
+  preview: z.boolean().optional(),
+});
+
+export type ExternalProjectDeliveryOptions = z.infer<
+  typeof externalProjectDeliveryOptionsSchema
+>;

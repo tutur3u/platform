@@ -59,6 +59,28 @@ export {
   unlinkQuizSetModule,
   updateWorkspaceCourseModule,
 } from './education';
+export {
+  createCanonicalExternalProject,
+  createWorkspaceExternalProjectAsset,
+  createWorkspaceExternalProjectAssetUploadUrl,
+  createWorkspaceExternalProjectBlock,
+  createWorkspaceExternalProjectCollection,
+  createWorkspaceExternalProjectEntry,
+  getWorkspaceExternalProjectDelivery,
+  getWorkspaceExternalProjectStudio,
+  importWorkspaceExternalProjectContent,
+  listCanonicalExternalProjects,
+  listWorkspaceExternalProjectCollections,
+  listWorkspaceExternalProjectEntries,
+  publishWorkspaceExternalProjectEntry,
+  updateCanonicalExternalProject,
+  updateWorkspaceExternalProjectAsset,
+  updateWorkspaceExternalProjectBinding,
+  updateWorkspaceExternalProjectBlock,
+  updateWorkspaceExternalProjectCollection,
+  updateWorkspaceExternalProjectEntry,
+  uploadWorkspaceExternalProjectAssetFile,
+} from './external-projects';
 export type { FinanceBudgetUpsertPayload } from './finance';
 export {
   createBudget,

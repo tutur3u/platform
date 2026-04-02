@@ -343,8 +343,177 @@ export type WorkspaceCronExecution = Tables<'workspace_cron_executions'> & {
   href?: string;
 };
 export type AIWhitelistDomain = Tables<'ai_whitelisted_domains'>;
+export type CanonicalExternalProject = Tables<'canonical_external_projects'>;
+export type ExternalProjectCollection =
+  Tables<'workspace_external_project_collections'>;
+export type ExternalProjectEntry = Tables<'workspace_external_project_entries'>;
+export type ExternalProjectBlock = Tables<'workspace_external_project_blocks'>;
+export type ExternalProjectAsset = Tables<'workspace_external_project_assets'>;
+export type ExternalProjectTaxonomy =
+  Tables<'workspace_external_project_taxonomies'>;
+export type ExternalProjectEntryRelation =
+  Tables<'workspace_external_project_entry_relations'>;
+export type ExternalProjectImportJob =
+  Tables<'workspace_external_project_import_jobs'>;
+export type ExternalProjectPublishEvent =
+  Tables<'workspace_external_project_publish_events'>;
+export type WorkspaceExternalProjectBindingAudit =
+  Tables<'workspace_external_project_binding_audits'>;
+export type ExternalProjectAdapterKind =
+  Database['public']['Enums']['external_project_adapter_kind'];
+export type ExternalProjectEntryStatus =
+  Database['public']['Enums']['external_project_entry_status'];
+export type ExternalProjectImportStatus =
+  Database['public']['Enums']['external_project_import_status'];
+export type ExternalProjectPublishEventKind =
+  Database['public']['Enums']['external_project_publish_event_kind'];
 export type PermissionId =
   Database['public']['Enums']['workspace_role_permission'];
+
+export type WorkspaceExternalProjectBinding = {
+  enabled: boolean;
+  canonical_id: string | null;
+  workspace_id: string;
+  canonical_project: CanonicalExternalProject | null;
+  adapter: ExternalProjectAdapterKind | null;
+};
+
+export type ExternalProjectStudioAsset = ExternalProjectAsset & {
+  asset_url: string | null;
+  preview_url: string | null;
+};
+
+export type ExternalProjectDeliveryAsset = Pick<
+  ExternalProjectAsset,
+  | 'id'
+  | 'entry_id'
+  | 'block_id'
+  | 'asset_type'
+  | 'storage_path'
+  | 'source_url'
+  | 'alt_text'
+  | 'sort_order'
+  | 'metadata'
+> & {
+  assetUrl: string | null;
+};
+
+export type ExternalProjectDeliveryEntry = Pick<
+  ExternalProjectEntry,
+  | 'id'
+  | 'slug'
+  | 'title'
+  | 'subtitle'
+  | 'summary'
+  | 'status'
+  | 'published_at'
+  | 'profile_data'
+  | 'metadata'
+> & {
+  blocks: ExternalProjectBlock[];
+  assets: ExternalProjectDeliveryAsset[];
+};
+
+export type ExternalProjectDeliveryCollection = Pick<
+  ExternalProjectCollection,
+  'id' | 'slug' | 'title' | 'collection_type' | 'description' | 'config'
+> & {
+  entries: ExternalProjectDeliveryEntry[];
+};
+
+export type YoolaExternalProjectArtworkLoadingItem = {
+  entryId: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  label: string | null;
+  category: string | null;
+  rarity: string | null;
+  orientation: string | null;
+  year: string | null;
+  note: string | null;
+  width: number | null;
+  height: number | null;
+  assetId: string | null;
+  assetUrl: string | null;
+  altText: string | null;
+};
+
+export type YoolaExternalProjectLoreCapsuleLoadingItem = {
+  entryId: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  teaser: string | null;
+  channel: string | null;
+  status: string | null;
+  date: string | null;
+  tags: string[];
+  excerptMarkdown: string | null;
+  artworkEntryId: string | null;
+  artworkAssetUrl: string | null;
+};
+
+export type YoolaExternalProjectSectionLoadingItem = {
+  entryId: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  bodyMarkdown: string | null;
+};
+
+export type YoolaExternalProjectLoadingData = {
+  adapter: 'yoola';
+  featuredArtwork: YoolaExternalProjectArtworkLoadingItem | null;
+  artworks: YoolaExternalProjectArtworkLoadingItem[];
+  artworkCategories: string[];
+  artworksByCategory: Record<string, YoolaExternalProjectArtworkLoadingItem[]>;
+  loreCapsules: YoolaExternalProjectLoreCapsuleLoadingItem[];
+  singletonSections: Record<string, YoolaExternalProjectSectionLoadingItem>;
+};
+
+export type ExternalProjectLoadingData =
+  | YoolaExternalProjectLoadingData
+  | {
+      adapter: Exclude<ExternalProjectAdapterKind, 'yoola'>;
+      sections: Record<string, unknown>;
+    };
+
+export type ExternalProjectDeliveryPayload = {
+  workspaceId: string;
+  canonicalProjectId: string;
+  adapter: ExternalProjectAdapterKind;
+  generatedAt: string;
+  collections: ExternalProjectDeliveryCollection[];
+  profileData: Record<string, unknown>;
+  loadingData: ExternalProjectLoadingData | null;
+};
+
+export type ExternalProjectStudioData = {
+  collections: ExternalProjectCollection[];
+  entries: ExternalProjectEntry[];
+  blocks: ExternalProjectBlock[];
+  assets: ExternalProjectStudioAsset[];
+  importJobs: ExternalProjectImportJob[];
+  publishEvents: ExternalProjectPublishEvent[];
+  loadingData: ExternalProjectLoadingData | null;
+};
+
+export type ExternalProjectImportReport = {
+  adapter: ExternalProjectAdapterKind;
+  canonicalProjectId: string;
+  createdCollections: number;
+  updatedCollections: number;
+  createdEntries: number;
+  updatedEntries: number;
+  createdBlocks: number;
+  updatedBlocks: number;
+  createdAssets: number;
+  updatedAssets: number;
+  sourceReference: string;
+  warnings: string[];
+};
+
 export type WorkspaceRole = Tables<'workspace_roles'> & {
   permissions: {
     id: PermissionId;

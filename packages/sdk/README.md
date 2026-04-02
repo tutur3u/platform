@@ -44,6 +44,7 @@ const doc = await client.documents.create({
 - ✅ **Signed URLs** - Generate temporary shareable links for files
 - ✅ **Image Resizing** - Request Supabase-powered image transforms on share/download
 - ✅ **Storage Analytics** - Track usage, file counts, and limits
+- ✅ **External Project Delivery** - Load normalized external-project payloads and adapter-specific loading data
 - ✅ **Type-Safe** - Full TypeScript support with type inference
 - ✅ **Error Handling** - Comprehensive error classes for all scenarios
 - ✅ **Validation** - Built-in input validation with Zod schemas
@@ -182,6 +183,20 @@ console.log(`Files: ${analytics.data.fileCount}`);
 console.log(`Usage: ${analytics.data.usagePercentage}%`);
 ```
 
+### External Project Delivery
+
+```typescript
+const delivery = await client.externalProjects.getDelivery('workspace-id');
+
+if (delivery.loadingData?.adapter === 'yoola') {
+  console.log(delivery.loadingData.featuredArtwork?.title);
+}
+
+const loadingData =
+  await client.externalProjects.getYoolaLoadingData('workspace-id');
+console.log(loadingData.artworkCategories);
+```
+
 ### Document Operations
 
 #### List Documents
@@ -230,6 +245,36 @@ await client.documents.delete('document-id-123');
 
 ```typescript
 const results = await client.documents.search('meeting notes');
+```
+
+### External Project Delivery
+
+Load a published external-project payload:
+
+```typescript
+import { ExternalProjectsClient } from 'tuturuuu';
+
+const externalProjects = new ExternalProjectsClient({
+  baseUrl: 'https://tuturuuu.com/api/v1'
+});
+
+const payload = await externalProjects.getDelivery('workspace-id');
+
+if (payload.loadingData?.adapter === 'yoola') {
+  console.log(payload.loadingData.featuredArtwork?.title);
+  console.log(payload.loadingData.loreCapsules.length);
+}
+```
+
+Load preview delivery with a workspace API key:
+
+```typescript
+import { TuturuuuClient } from 'tuturuuu';
+
+const client = new TuturuuuClient('ttr_your_api_key');
+const previewPayload = await client.externalProjects.getDelivery('workspace-id', {
+  preview: true
+});
 ```
 
 ## Error Handling
