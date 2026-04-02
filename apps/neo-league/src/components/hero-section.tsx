@@ -102,7 +102,7 @@ export default function HeroSection() {
             <div className="flex gap-2 font-bold text-lg">
               <p className="flex items-center gap-1">March 2 – May 29, 2026</p>
               <span className="mx-4 text-foreground">|</span>
-              <p className="flex items-center gap-1">Ho Chi Minh City</p>
+              <p className="flex items-center gap-1">Vietnam</p>
             </div>
           </div>
         </div>
