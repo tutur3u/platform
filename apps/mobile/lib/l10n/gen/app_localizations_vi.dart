@@ -1443,6 +1443,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Danh sách công việc';
 
   @override
+  String get taskBoardDetailTaskDescriptionTableAddColumn => 'Thêm cột';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableAddRow => 'Thêm hàng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveColumn => 'Xóa cột';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveRow => 'Xóa hàng';
+
+  @override
   String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Gạch dưới';
 
   @override

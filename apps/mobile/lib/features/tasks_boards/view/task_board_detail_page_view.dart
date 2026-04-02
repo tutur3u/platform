@@ -887,7 +887,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     await showAdaptiveSheet<void>(
       context: context,
       builder: (_) => content,
-      useRootNavigator: true,
     );
   }
 

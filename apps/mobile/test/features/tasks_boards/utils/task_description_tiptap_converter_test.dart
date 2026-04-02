@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dart_quill_delta/dart_quill_delta.dart';
+import 'package:flutter/material.dart' show TextSelection;
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_tiptap_converter.dart';
@@ -476,5 +477,386 @@ void main() {
         isTrue,
       );
     });
+
+    test('preserves rich structure after replacing a table embed', () {
+      final tiptap = jsonEncode({
+        'type': 'doc',
+        'content': [
+          {
+            'type': 'heading',
+            'attrs': {'level': 1},
+            'content': [
+              {'type': 'text', 'text': 'Heading 1'},
+            ],
+          },
+          {
+            'type': 'paragraph',
+            'content': [
+              {
+                'type': 'text',
+                'marks': [
+                  {'type': 'bold'},
+                ],
+                'text': 'Bold Text',
+              },
+            ],
+          },
+          {
+            'type': 'table',
+            'content': [
+              {
+                'type': 'tableRow',
+                'content': [
+                  {
+                    'type': 'tableHeader',
+                    'content': [
+                      {
+                        'type': 'paragraph',
+                        'content': [
+                          {'type': 'text', 'text': 'Header A'},
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    'type': 'tableHeader',
+                    'content': [
+                      {
+                        'type': 'paragraph',
+                        'content': [
+                          {'type': 'text', 'text': 'Header B'},
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                'type': 'tableRow',
+                'content': [
+                  {
+                    'type': 'tableCell',
+                    'content': [
+                      {
+                        'type': 'paragraph',
+                        'content': [
+                          {'type': 'text', 'text': 'Cell A1'},
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    'type': 'tableCell',
+                    'content': [
+                      {
+                        'type': 'paragraph',
+                        'content': [
+                          {'type': 'text', 'text': 'Cell B1'},
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            'type': 'paragraph',
+            'content': [
+              {'type': 'text', 'text': 'After table'},
+            ],
+          },
+        ],
+      });
+
+      final document = tipTapJsonToQuillDocument(tiptap);
+      final ops = document.toDelta().toJson();
+
+      var tableOffset = 0;
+      for (final op in ops) {
+        final insert = op['insert'];
+        if (insert is String) {
+          tableOffset += insert.length;
+          continue;
+        }
+        if (insert is Map && insert.containsKey('table')) {
+          break;
+        }
+        tableOffset += 1;
+      }
+
+      final updatedTable = {
+        'type': 'table',
+        'content': [
+          {
+            'type': 'tableRow',
+            'content': [
+              {
+                'type': 'tableHeader',
+                'content': [
+                  {
+                    'type': 'paragraph',
+                    'content': [
+                      {'type': 'text', 'text': 'Header A'},
+                    ],
+                  },
+                ],
+              },
+              {
+                'type': 'tableHeader',
+                'content': [
+                  {
+                    'type': 'paragraph',
+                    'content': [
+                      {'type': 'text', 'text': 'Header B'},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            'type': 'tableRow',
+            'content': [
+              {
+                'type': 'tableCell',
+                'content': [
+                  {
+                    'type': 'paragraph',
+                    'content': [
+                      {'type': 'text', 'text': 'Cell A1 Edited'},
+                    ],
+                  },
+                ],
+              },
+              {
+                'type': 'tableCell',
+                'content': [
+                  {
+                    'type': 'paragraph',
+                    'content': [
+                      {'type': 'text', 'text': 'Cell B1'},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      document.replace(
+        tableOffset,
+        1,
+        BlockEmbed('table', jsonEncode(updatedTable)),
+      );
+
+      final serialized = quillDocumentToTipTapJson(document);
+      expect(serialized, isNotNull);
+
+      final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+      final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
+
+      expect(content.first['type'], equals('heading'));
+      expect(content.first['content'], isA<List<dynamic>>());
+      final headingText =
+          ((content.first['content'] as List).first
+              as Map<String, dynamic>)['text'];
+      expect(headingText, equals('Heading 1'));
+
+      final tableNode = content.firstWhere(
+        (node) => node['type'] == 'table',
+        orElse: () => <String, dynamic>{},
+      );
+      expect(tableNode['type'], equals('table'));
+
+      final tableRows = (tableNode['content'] as List)
+          .cast<Map<String, dynamic>>();
+      final editedCell =
+          (((tableRows[1]['content'] as List)[0]
+                          as Map<String, dynamic>)['content']
+                      as List)
+                  .first
+              as Map<String, dynamic>;
+      final editedCellText =
+          ((editedCell['content'] as List).first
+              as Map<String, dynamic>)['text'];
+      expect(editedCellText, equals('Cell A1 Edited'));
+
+      expect(
+        content.any((node) => node['type'] == 'paragraph'),
+        isTrue,
+      );
+    });
+
+    test(
+      'preserves rich structure when table embed is updated via controller',
+      () {
+        final tiptap = jsonEncode({
+          'type': 'doc',
+          'content': [
+            {
+              'type': 'heading',
+              'attrs': {'level': 1},
+              'content': [
+                {'type': 'text', 'text': 'Heading 1'},
+              ],
+            },
+            {
+              'type': 'paragraph',
+              'content': [
+                {'type': 'text', 'text': 'Alpha'},
+              ],
+            },
+            {
+              'type': 'table',
+              'content': [
+                {
+                  'type': 'tableRow',
+                  'content': [
+                    {
+                      'type': 'tableHeader',
+                      'content': [
+                        {
+                          'type': 'paragraph',
+                          'content': [
+                            {'type': 'text', 'text': 'H1'},
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  'type': 'tableRow',
+                  'content': [
+                    {
+                      'type': 'tableCell',
+                      'content': [
+                        {
+                          'type': 'paragraph',
+                          'content': [
+                            {'type': 'text', 'text': 'C1'},
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              'type': 'paragraph',
+              'content': [
+                {'type': 'text', 'text': 'Omega'},
+              ],
+            },
+          ],
+        });
+
+        final document = tipTapJsonToQuillDocument(tiptap);
+        final controller = QuillController(
+          document: document,
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+
+        final ops = controller.document.toDelta().toJson();
+        var tableOffset = 0;
+        for (final op in ops) {
+          final insert = op['insert'];
+          if (insert is String) {
+            tableOffset += insert.length;
+            continue;
+          }
+          if (insert is Map && insert.containsKey('table')) {
+            break;
+          }
+          tableOffset += 1;
+        }
+
+        final updatedTable = {
+          'type': 'table',
+          'content': [
+            {
+              'type': 'tableRow',
+              'content': [
+                {
+                  'type': 'tableHeader',
+                  'content': [
+                    {
+                      'type': 'paragraph',
+                      'content': [
+                        {'type': 'text', 'text': 'H1'},
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              'type': 'tableRow',
+              'content': [
+                {
+                  'type': 'tableCell',
+                  'content': [
+                    {
+                      'type': 'paragraph',
+                      'content': [
+                        {'type': 'text', 'text': 'C1 edited'},
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        };
+
+        controller.replaceText(
+          tableOffset,
+          1,
+          BlockEmbed('table', jsonEncode(updatedTable)),
+          null,
+        );
+
+        final serialized = quillDocumentToTipTapJson(controller.document);
+        expect(serialized, isNotNull);
+
+        final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+        final content = (decoded['content'] as List)
+            .cast<Map<String, dynamic>>();
+
+        expect(content.first['type'], equals('heading'));
+        final tableNode = content.firstWhere(
+          (node) => node['type'] == 'table',
+          orElse: () => <String, dynamic>{},
+        );
+        expect(tableNode['type'], equals('table'));
+
+        final rows = (tableNode['content'] as List)
+            .cast<Map<String, dynamic>>();
+        final editedText =
+            (((rows[1]['content'] as List).first
+                            as Map<String, dynamic>)['content']
+                        as List)
+                    .first
+                as Map<String, dynamic>;
+        final value =
+            ((editedText['content'] as List).first
+                as Map<String, dynamic>)['text'];
+        expect(value, equals('C1 edited'));
+
+        expect(
+          content.any(
+            (node) =>
+                node['type'] == 'paragraph' &&
+                (((node['content'] as List?) ?? const []).any(
+                  (c) => (c as Map<String, dynamic>)['text'] == 'Omega',
+                )),
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 }

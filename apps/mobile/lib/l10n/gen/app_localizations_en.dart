@@ -1443,6 +1443,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Task list';
 
   @override
+  String get taskBoardDetailTaskDescriptionTableAddColumn => 'Add column';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableAddRow => 'Add row';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveColumn => 'Remove column';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveRow => 'Remove row';
+
+  @override
   String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Underline';
 
   @override

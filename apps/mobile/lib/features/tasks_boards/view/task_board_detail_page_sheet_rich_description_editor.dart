@@ -145,6 +145,27 @@ class _TaskDescriptionRichEditorState
     _resolvedController.formatSelection(Attribute.fromKeyValue(key, next));
   }
 
+  Future<void> _handleTableUpdated(
+    EmbedContext embedContext,
+    String tableJson,
+  ) async {
+    if (!widget.enabled) {
+      return;
+    }
+
+    final offset = embedContext.node.documentOffset;
+    if (offset < 0) {
+      return;
+    }
+
+    _resolvedController.replaceText(
+      offset,
+      1,
+      BlockEmbed('table', tableJson),
+      null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
@@ -207,11 +228,13 @@ class _TaskDescriptionRichEditorState
                   controller: controller,
                   config: QuillEditorConfig(
                     placeholder: widget.hintText,
-                    embedBuilders: const [
-                      TaskDescriptionImageEmbedBuilder(),
-                      TaskDescriptionVideoEmbedBuilder(),
-                      TaskDescriptionMentionEmbedBuilder(),
-                      TaskDescriptionTableEmbedBuilder(),
+                    embedBuilders: [
+                      const TaskDescriptionImageEmbedBuilder(),
+                      const TaskDescriptionVideoEmbedBuilder(),
+                      const TaskDescriptionMentionEmbedBuilder(),
+                      TaskDescriptionTableEmbedBuilder(
+                        onTableUpdated: _handleTableUpdated,
+                      ),
                     ],
                   ),
                 ),

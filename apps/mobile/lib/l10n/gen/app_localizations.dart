@@ -2863,6 +2863,30 @@ abstract class AppLocalizations {
   /// **'Task list'**
   String get taskBoardDetailTaskDescriptionToolbarTaskList;
 
+  /// No description provided for @taskBoardDetailTaskDescriptionTableAddColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Add column'**
+  String get taskBoardDetailTaskDescriptionTableAddColumn;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionTableAddRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Add row'**
+  String get taskBoardDetailTaskDescriptionTableAddRow;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionTableRemoveColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove column'**
+  String get taskBoardDetailTaskDescriptionTableRemoveColumn;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionTableRemoveRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove row'**
+  String get taskBoardDetailTaskDescriptionTableRemoveRow;
+
   /// No description provided for @taskBoardDetailTaskDescriptionToolbarUnderline.
   ///
   /// In en, this message translates to:
