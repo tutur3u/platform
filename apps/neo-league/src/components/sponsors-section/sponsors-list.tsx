@@ -1,12 +1,45 @@
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@ncthub/ui/carousel';
 import Image from 'next/image';
 import AnimatedSection from '../animated-section';
 
+const partners = Array.from({ length: 10 }, (_, index) => ({
+  id: index,
+  src: '/sponsors/fpt.png',
+  alt: 'FPT',
+}));
+
 export default function SponsorsList() {
   return (
-    <div className="space-y-16">
+    <div className="space-y-12">
+      {/* Diamond Sponsors */}
+      <div className="space-y-8">
+        <h3 className="bg-linear-to-b from-white to-amber-300 bg-clip-text text-center font-black text-2xl text-transparent uppercase shadow-text md:text-3xl">
+          Diamond Sponsors
+        </h3>
+        <div className="grid grid-cols-3 gap-8">
+          <AnimatedSection className="col-start-2">
+            <div className="glass-card card-hover h-25 flex-1 rounded-2xl p-4">
+              <Image
+                src="/sponsors/fpt.png"
+                alt="FPT"
+                width={100}
+                height={100}
+                className="h-full w-full object-contain"
+              />
+            </div>
+          </AnimatedSection>
+        </div>
+      </div>
+
       {/* Gold Sponsors */}
       <div className="space-y-8">
-        <h3 className="text-center font-black text-2xl text-yellow-400 uppercase shadow-text md:text-3xl">
+        <h3 className="bg-linear-to-b from-yellow-300 to-yellow-400 bg-clip-text text-center font-black text-2xl text-transparent uppercase shadow-text md:text-3xl">
           Gold Sponsors
         </h3>
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
@@ -35,10 +68,10 @@ export default function SponsorsList() {
         </div>
       </div>
 
-      {/* Silver Sponsors */}
+      {/* Platform Sponsors */}
       <div className="space-y-8">
-        <h3 className="text-center font-black text-2xl text-gray-300 uppercase shadow-text md:text-3xl">
-          Silver Sponsors
+        <h3 className="text-center font-bold text-2xl text-brand-light-blue uppercase shadow-text">
+          Platform Sponsors
         </h3>
         <div className="grid grid-cols-3 gap-8">
           <AnimatedSection className="col-start-2">
@@ -55,131 +88,101 @@ export default function SponsorsList() {
         </div>
       </div>
 
-      {/* Bronze Sponsors */}
+      {/* Academic Sponsors */}
       <div className="space-y-8">
-        <h3 className="text-center font-black text-2xl text-yellow-800 uppercase shadow-text md:text-3xl">
-          Bronze Sponsors
+        <h3 className="text-center font-bold text-2xl text-brand-light-blue uppercase shadow-text">
+          Academic Sponsors
         </h3>
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <AnimatedSection>
-            <div className="space-y-4">
-              <h4 className="text-center font-bold text-lg text-primary uppercase shadow-text">
-                Media Partners
-              </h4>
-              <div className="flex flex-col gap-4">
-                {[1, 2, 3, 4].map((index) => (
-                  <div
-                    key={index}
-                    className="glass-card card-hover h-25 rounded-xl p-4"
-                  >
-                    <Image
-                      src="/sponsors/fpt.png"
-                      alt={`Media Partner ${index}`}
-                      width={100}
-                      height={100}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                ))}
-              </div>
+            <div className="glass-card card-hover h-25 rounded-xl p-4">
+              <Image
+                src="/sponsors/student-council.png"
+                alt="Student Council"
+                width={100}
+                height={100}
+                className="h-full w-full object-contain"
+              />
             </div>
           </AnimatedSection>
-          <AnimatedSection>
-            <div className="space-y-4">
-              <h4 className="text-center font-bold text-lg text-primary uppercase shadow-text">
-                Technology Partners
-              </h4>
-              <div className="flex flex-col gap-4">
-                <div className="glass-card card-hover h-25 rounded-xl p-4">
-                  <Image
-                    src="/sponsors/aws.png"
-                    alt="AWS"
-                    width={100}
-                    height={100}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-                <div className="glass-card card-hover h-25 rounded-xl p-4">
-                  <Image
-                    src="/sponsors/hshop.webp"
-                    alt="HShop,vn"
-                    width={100}
-                    height={100}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-                <div className="glass-card card-hover h-25 rounded-xl p-4">
-                  <Image
-                    src="/sponsors/maker-lab.png"
-                    alt="MakerLab.vn"
-                    width={100}
-                    height={100}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-              </div>
+          <AnimatedSection delay={0.1}>
+            <div className="glass-card card-hover h-25 rounded-xl p-4">
+              <Image
+                src="/sponsors/aws.png"
+                alt="AWS"
+                width={100}
+                height={100}
+                className="h-full w-full object-contain"
+              />
             </div>
           </AnimatedSection>
-          <AnimatedSection>
-            <div className="space-y-4">
-              <h4 className="text-center font-bold text-lg text-primary uppercase shadow-text">
-                Community Partners
-              </h4>
-              <div className="flex flex-col gap-4">
-                {[1, 2, 3, 4].map((index) => (
-                  <div
-                    key={index}
-                    className="glass-card card-hover h-25 rounded-xl p-4"
-                  >
-                    <Image
-                      src="/sponsors/fpt.png"
-                      alt={`Community Partner ${index}`}
-                      width={100}
-                      height={100}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                ))}
-              </div>
+          <AnimatedSection delay={0.2}>
+            <div className="glass-card card-hover h-25 rounded-xl p-4">
+              <Image
+                src="/sponsors/hshop.webp"
+                alt="HShop,vn"
+                width={100}
+                height={100}
+                className="h-full w-full object-contain"
+              />
             </div>
           </AnimatedSection>
-          <AnimatedSection>
-            <div className="space-y-4">
-              <h4 className="text-center font-bold text-lg text-primary uppercase shadow-text">
-                Academic Partners
-              </h4>
-              <div className="flex flex-col gap-4">
-                <div className="glass-card card-hover h-25 rounded-xl p-4">
-                  <Image
-                    src="/rmit-sset.png"
-                    alt="RMIT School of Science, Engineering and Technology"
-                    width={100}
-                    height={100}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-                <div className="glass-card card-hover h-25 rounded-xl p-4">
-                  <Image
-                    src="/rmit-student-club-program.png"
-                    alt="RMIT Student Club Program"
-                    width={100}
-                    height={100}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-                <div className="glass-card card-hover h-25 rounded-xl p-4">
-                  <Image
-                    src="/sponsors/student-council.png"
-                    alt="Student Council"
-                    width={100}
-                    height={100}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-              </div>
+          <AnimatedSection delay={0.3}>
+            <div className="glass-card card-hover h-25 rounded-xl p-4">
+              <Image
+                src="/sponsors/maker-lab.png"
+                alt="MakerLab.vn"
+                width={100}
+                height={100}
+                className="h-full w-full object-contain"
+              />
             </div>
           </AnimatedSection>
         </div>
+      </div>
+
+      {/* Our Partners */}
+      <div className="mt-16 space-y-8">
+        <h3 className="text-center font-bold text-2xl text-brand-light-blue uppercase shadow-text">
+          Our Partners
+        </h3>
+        <AnimatedSection>
+          <div className="px-12 md:px-16">
+            <Carousel
+              opts={{
+                align: 'start',
+                loop: false,
+              }}
+            >
+              <CarouselContent>
+                {partners.map((partner) => (
+                  <CarouselItem
+                    key={partner.id}
+                    className="basis-1/2 md:basis-1/3 lg:basis-1/5"
+                  >
+                    <div className="flex h-24 items-center justify-center p-4 md:h-28">
+                      <Image
+                        src={partner.src}
+                        alt={partner.alt}
+                        width={160}
+                        height={80}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious
+                variant="link"
+                className="font-bold text-brand-light-blue hover:text-primary"
+              />
+              <CarouselNext
+                variant="link"
+                className="font-bold text-brand-light-blue hover:text-primary"
+              />
+            </Carousel>
+          </div>
+        </AnimatedSection>
       </div>
     </div>
   );
