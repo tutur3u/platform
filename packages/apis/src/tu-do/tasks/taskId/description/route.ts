@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { paramsSchema, updateTaskDescriptionSchema } from './schema';
@@ -148,12 +149,23 @@ export async function PATCH(
 
     const { sbAdmin, taskId, user } = access;
     const body = updateTaskDescriptionSchema.parse(await request.json());
+    const normalizedDescription =
+      body.description !== undefined
+        ? body.description?.trim() || null
+        : undefined;
+    const normalizedYjsState =
+      body.description_yjs_state !== undefined
+        ? body.description_yjs_state
+        : normalizedDescription !== undefined
+          ? deriveTaskDescriptionYjsState(normalizedDescription)
+          : undefined;
+
     const updatePayload = {
-      ...(body.description !== undefined
-        ? { description: body.description?.trim() || null }
+      ...(normalizedDescription !== undefined
+        ? { description: normalizedDescription }
         : {}),
-      ...(body.description_yjs_state !== undefined
-        ? { description_yjs_state: body.description_yjs_state }
+      ...(normalizedYjsState !== undefined
+        ? { description_yjs_state: normalizedYjsState }
         : {}),
     };
 

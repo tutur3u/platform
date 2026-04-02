@@ -1,0 +1,430 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "heading",
+      "attrs": { "textAlign": null, "level": 1 },
+      "content": [{ "type": "text", "text": "Heading 1" }]
+    },
+    {
+      "type": "heading",
+      "attrs": { "textAlign": null, "level": 2 },
+      "content": [{ "type": "text", "text": "Heading 2" }]
+    },
+    {
+      "type": "heading",
+      "attrs": { "textAlign": null, "level": 3 },
+      "content": [{ "type": "text", "text": "Heading 3" }]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [
+        { "type": "text", "marks": [{ "type": "bold" }], "text": "Bold" }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [
+        { "type": "text", "marks": [{ "type": "italic" }], "text": "Italic" }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "strike" }],
+          "text": "Strikethrough"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [
+        { "type": "text", "text": "Text" },
+        {
+          "type": "text",
+          "marks": [{ "type": "superscript" }],
+          "text": "Superscript"
+        },
+        {
+          "type": "text",
+          "marks": [{ "type": "subscript" }],
+          "text": "Subscript"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": "center" },
+      "content": [{ "type": "text", "text": "Align Center" }]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": "right" },
+      "content": [{ "type": "text", "text": "Align Right" }]
+    },
+    {
+      "type": "bulletList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": { "textAlign": "left" },
+              "content": [{ "type": "text", "text": "Bullet List #1" }]
+            },
+            {
+              "type": "bulletList",
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "attrs": { "textAlign": "left" },
+                      "content": [{ "type": "text", "text": "Indented" }]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "orderedList",
+      "attrs": { "start": 1, "type": null },
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": { "textAlign": "left" },
+              "content": [{ "type": "text", "text": "Numbered List" }]
+            },
+            {
+              "type": "orderedList",
+              "attrs": { "start": 1, "type": null },
+              "content": [
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "attrs": { "textAlign": "left" },
+                      "content": [{ "type": "text", "text": "Indented" }]
+                    }
+                  ]
+                },
+                {
+                  "type": "listItem",
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "attrs": { "textAlign": "left" },
+                      "content": [{ "type": "text", "text": "Indented #2" }]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "taskList",
+      "content": [
+        {
+          "type": "taskItem",
+          "attrs": { "checked": false },
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": { "textAlign": "left" },
+              "content": [{ "type": "text", "text": "Task List" }]
+            },
+            {
+              "type": "taskList",
+              "content": [
+                {
+                  "type": "taskItem",
+                  "attrs": { "checked": false },
+                  "content": [
+                    {
+                      "type": "paragraph",
+                      "attrs": { "textAlign": "left" },
+                      "content": [
+                        { "type": "text", "text": "Task List Indented" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "taskItem",
+          "attrs": { "checked": false },
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": { "textAlign": "left" },
+              "content": [{ "type": "text", "text": "Task List #2" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": "left" },
+      "content": [{ "type": "text", "text": "Mention Chips:" }]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": "left" },
+      "content": [
+        {
+          "type": "mention",
+          "attrs": {
+            "userId": "00000000-0000-0000-0000-000000000001",
+            "entityId": "00000000-0000-0000-0000-000000000001",
+            "entityType": "user",
+            "displayName": "Sam",
+            "avatarUrl": "https://hvgmshmjolwfcbsxmyku.supabase.co/storage/v1/object/public/avatars/00000000-0000-0000-0000-000000000001/1770694181366.jpg",
+            "subtitle": "",
+            "priority": null,
+            "listColor": null,
+            "assignees": null
+          }
+        },
+        { "type": "text", "text": " " },
+        {
+          "type": "mention",
+          "attrs": {
+            "userId": "",
+            "entityId": "c5c3d44a-0a2d-4bd8-b0e3-eac23fd4ce67",
+            "entityType": "project",
+            "displayName": "asd",
+            "avatarUrl": "",
+            "subtitle": "active",
+            "priority": null,
+            "listColor": null,
+            "assignees": null
+          }
+        },
+        { "type": "text", "text": " " },
+        {
+          "type": "mention",
+          "attrs": {
+            "userId": "",
+            "entityId": "f69b3fa5-9479-416f-8b48-17ae855f2b8d",
+            "entityType": "task",
+            "displayName": "1",
+            "avatarUrl": "",
+            "subtitle": "New Task",
+            "priority": null,
+            "listColor": null,
+            "assignees": "[]"
+          }
+        },
+        { "type": "text", "text": " " },
+        {
+          "type": "mention",
+          "attrs": {
+            "userId": "",
+            "entityId": "00000000-0000-0000-0000-000000000000",
+            "entityType": "workspace",
+            "displayName": "Workspace",
+            "avatarUrl": "",
+            "subtitle": "00000000",
+            "priority": null,
+            "listColor": null,
+            "assignees": null
+          }
+        },
+        { "type": "text", "text": " " }
+      ]
+    },
+    {
+      "type": "table",
+      "content": [
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableHeader",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "attrs": { "textAlign": null },
+                  "content": [{ "type": "text", "text": "Table Header" }]
+                }
+              ]
+            },
+            {
+              "type": "tableHeader",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "attrs": { "textAlign": null },
+                  "content": [{ "type": "text", "text": "Table Header #2" }]
+                }
+              ]
+            },
+            {
+              "type": "tableHeader",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "attrs": { "textAlign": null },
+                  "content": [{ "type": "text", "text": "Table Header #3" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "attrs": { "textAlign": null },
+                  "content": [{ "type": "text", "text": "Table Cell #1" }]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "attrs": { "textAlign": null },
+                  "content": [{ "type": "text", "text": "Table Cell #2" }]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "attrs": { "textAlign": null },
+                  "content": [{ "type": "text", "text": "Table Cell #3" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                { "type": "paragraph", "attrs": { "textAlign": null } }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                { "type": "paragraph", "attrs": { "textAlign": null } }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                { "type": "paragraph", "attrs": { "textAlign": null } }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "highlight" }],
+          "text": "Highlighted Text"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "http://localhost:7803/internal/tasks/boards/56e311c8-26a6-4500-af51-5618d03110f8",
+                "target": "_blank",
+                "rel": "noopener noreferrer",
+                "class": "text-dynamic-cyan hover:text-dynamic-cyan/80 underline cursor-pointer transition-colors",
+                "title": null
+              }
+            }
+          ],
+          "text": "http://localhost:7803/internal/tasks/boards/56e311c8-26a6-4500-af51-5618d03110f8"
+        },
+        { "type": "text", "text": " " }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [{ "type": "text", "text": "Image:" }]
+    },
+    {
+      "type": "imageResize",
+      "attrs": {
+        "src": "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/storage/share?path=task-images%2F4a9a8415-c1a7-4c58-87d7-cf6c139dce7d%2F1775019342916_ad79b5aa-1c90-4b02-b49a-abcdcbfc8404_HEV85kpWEAASwK8.jpg&taskId=4a9a8415-c1a7-4c58-87d7-cf6c139dce7d",
+        "alt": null,
+        "title": null,
+        "width": 476,
+        "height": null,
+        "containerStyle": "position: relative; width: 321px;",
+        "wrapperStyle": ""
+      }
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [{ "type": "text", "text": "Video:" }]
+    },
+    {
+      "type": "video",
+      "attrs": {
+        "src": "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/storage/share?path=task-images%2F4a9a8415-c1a7-4c58-87d7-cf6c139dce7d%2F1775019404133_897288b0-890e-4568-b11e-1b531d8fdf8c_dt+aftv+triangle.mp4&taskId=4a9a8415-c1a7-4c58-87d7-cf6c139dce7d"
+      }
+    },
+    { "type": "paragraph", "attrs": { "textAlign": null } }
+  ]
+}

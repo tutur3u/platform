@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { calculateTopSortKey } from '@tuturuuu/utils/task-helper';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateTaskEmbedding } from './generate-task-embedding';
@@ -720,10 +721,14 @@ export async function POST(
     const isClosedList = listRow.status === 'closed';
     const shouldArchive = isDoneList || isClosedList;
     const completionTimestamp = isDoneList ? now : null;
+    const normalizedDescription = description?.trim() || null;
+    const normalizedDescriptionYjsState =
+      description_yjs_state ??
+      deriveTaskDescriptionYjsState(normalizedDescription);
 
     const taskInsert: TaskInsert = {
       name: name.trim(),
-      description: description?.trim() || null,
+      description: normalizedDescription,
       creator_id: user.id,
       list_id: listId,
       priority: priority ?? null,
@@ -740,7 +745,7 @@ export async function POST(
       .from('tasks')
       .insert({
         ...taskInsert,
-        description_yjs_state,
+        description_yjs_state: normalizedDescriptionYjsState,
       })
       .select(
         `
