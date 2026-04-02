@@ -59,7 +59,10 @@ interface Props {
     logPeriod?: string;
     logMonth?: string;
     logYear?: string;
-    logStatus?: string;
+    logEventKind?: string;
+    logSource?: string;
+    logAffectedUser?: string;
+    logActor?: string;
     logPage?: string;
     logPageSize?: string;
   }>;
@@ -89,9 +92,18 @@ export default async function WorkspaceUsersPage({
   const canDeleteUsers = containsPermission('delete_users');
   const canCheckUserAttendance = containsPermission('check_user_attendance');
   const canExportUsers = containsPermission('export_users_data');
+  const canViewAuditLog = containsPermission('manage_workspace_audit_logs');
+  const canViewUsers = hasPrivateInfo || hasPublicInfo;
 
-  // User must have at least one permission to view users
-  if (!hasPrivateInfo && !hasPublicInfo) {
+  if (!canViewUsers && !canViewAuditLog) {
+    notFound();
+  }
+
+  if (activeTab === 'users' && !canViewUsers) {
+    notFound();
+  }
+
+  if (activeTab === 'audit-log' && !canViewAuditLog) {
     notFound();
   }
 
@@ -157,34 +169,44 @@ export default async function WorkspaceUsersPage({
         period={sp.logPeriod}
         month={sp.logMonth}
         year={sp.logYear}
-        status={sp.logStatus}
+        eventKind={sp.logEventKind}
+        source={sp.logSource}
+        affectedUserQuery={sp.logAffectedUser}
+        actorQuery={sp.logActor}
         page={parseIntSearchParam(sp.logPage, 1)}
         pageSize={clampPageSize(sp.logPageSize, 10)}
         canExport={canExportUsers}
+        canRepairStatusHistory={canViewAuditLog}
       />
     ) : undefined;
 
   return (
     <>
-      <FeatureSummary
-        pluralTitle={t('ws-users.plural')}
-        singularTitle={t('ws-users.singular')}
-        description={t('ws-users.description')}
-        createTitle={t('ws-users.create')}
-        createDescription={t('ws-users.create_description')}
-        form={
-          canCreateUsers ? (
-            <UserForm
-              wsId={wsId}
-              canCreateUsers={canCreateUsers}
-              canUpdateUsers={canUpdateUsers}
-            />
-          ) : undefined
-        }
-      />
-      <Separator className="my-4" />
+      {canViewUsers ? (
+        <>
+          <FeatureSummary
+            pluralTitle={t('ws-users.plural')}
+            singularTitle={t('ws-users.singular')}
+            description={t('ws-users.description')}
+            createTitle={t('ws-users.create')}
+            createDescription={t('ws-users.create_description')}
+            form={
+              canCreateUsers ? (
+                <UserForm
+                  wsId={wsId}
+                  canCreateUsers={canCreateUsers}
+                  canUpdateUsers={canUpdateUsers}
+                />
+              ) : undefined
+            }
+          />
+          <Separator className="my-4" />
+        </>
+      ) : null}
       <DatabaseTabs
         activeTab={activeTab}
+        canViewUsers={canViewUsers}
+        canViewAuditLog={canViewAuditLog}
         usersContent={usersContent}
         auditLogContent={auditLogContent}
       />

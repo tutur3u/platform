@@ -88,6 +88,7 @@ import { useTasksHref } from '../tasks-route-context';
 import { SaveAsTemplateDialog } from '../templates/save-as-template-dialog';
 import { saveBoardConfig } from './board-config-storage';
 import { BoardLayoutSettings } from './board-layout-settings';
+import { syncBoardTicketPrefixCaches } from './board-query-cache';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
 import type { ViewType } from './board-views';
@@ -242,16 +243,28 @@ export function BoardHeader({
 
       // Validate and clean the prefix
       const cleanedPrefix = ticketPrefix.trim().toUpperCase();
+      const nextTicketPrefix = cleanedPrefix || null;
 
       await updateWorkspaceTaskBoard(workspaceId, board.id, {
-        ticket_prefix: cleanedPrefix || null,
+        ticket_prefix: nextTicketPrefix,
+      });
+
+      syncBoardTicketPrefixCaches({
+        queryClient,
+        workspaceId,
+        board,
+        ticketPrefix: nextTicketPrefix,
       });
 
       setBoardSettingsOpen(false);
 
       // Invalidate relevant caches
-      queryClient.invalidateQueries({ queryKey: ['task-board', board.id] });
-      queryClient.invalidateQueries({ queryKey: ['board-config', board.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['task-board', workspaceId, board.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['board-config', workspaceId, board.id],
+      });
 
       // Trigger parent update
       if (onUpdate) {
@@ -1008,7 +1021,7 @@ export function BoardHeader({
             onFinish={() => {
               setEditBoardOpen(false);
               queryClient.invalidateQueries({
-                queryKey: ['task-board', board.id],
+                queryKey: ['task-board', workspaceId, board.id],
               });
               queryClient.invalidateQueries({
                 queryKey: ['other-boards', workspaceId, board.id],

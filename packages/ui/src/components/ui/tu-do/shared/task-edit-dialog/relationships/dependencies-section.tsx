@@ -13,6 +13,7 @@ import type {
 export function DependenciesSection({
   wsId,
   taskId,
+  initialSubTab = 'blocks',
   blockingTasks,
   blockedByTasks,
   isSaving,
@@ -26,7 +27,7 @@ export function DependenciesSection({
   onAddBlockedByTaskDialog,
   disabled,
 }: DependenciesSectionProps) {
-  const [subTab, setSubTab] = React.useState<DependencySubTab>('blocks');
+  const [subTab, setSubTab] = React.useState<DependencySubTab>(initialSubTab);
   const [searchOpen, setSearchOpen] = React.useState(false);
 
   const allExcludeIds = React.useMemo(() => {

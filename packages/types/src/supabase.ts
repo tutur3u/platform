@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.4';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -20442,33 +20437,77 @@ export type Database = {
       };
       workspace_user_status_changes: {
         Row: {
+          actor_auth_uid: string | null;
           archived: boolean;
           archived_until: string | null;
+          audit_record_version_id: number | null;
           created_at: string;
-          creator_id: string;
+          creator_id: string | null;
           id: string;
+          source: string;
           user_id: string;
           ws_id: string;
         };
         Insert: {
+          actor_auth_uid?: string | null;
           archived: boolean;
           archived_until?: string | null;
+          audit_record_version_id?: number | null;
           created_at?: string;
-          creator_id: string;
+          creator_id?: string | null;
           id?: string;
+          source?: string;
           user_id: string;
           ws_id: string;
         };
         Update: {
+          actor_auth_uid?: string | null;
           archived?: boolean;
           archived_until?: string | null;
+          audit_record_version_id?: number | null;
           created_at?: string;
-          creator_id?: string;
+          creator_id?: string | null;
           id?: string;
+          source?: string;
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_user_status_changes_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_status_changes_audit_record_version_id_fkey';
+            columns: ['audit_record_version_id'];
+            isOneToOne: true;
+            referencedRelation: 'audit_logs';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_user_status_changes_creator_id_fkey';
             columns: ['creator_id'];
@@ -21125,7 +21164,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -22958,6 +23026,72 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      admin_create_workspace_user_with_audit_actor: {
+        Args: { p_actor_auth_uid?: string; p_payload: Json; p_ws_id: string };
+        Returns: {
+          address: string | null;
+          archived: boolean;
+          archived_until: string | null;
+          avatar_url: string | null;
+          balance: number | null;
+          birthday: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          display_name: string | null;
+          email: string | null;
+          ethnicity: string | null;
+          full_name: string | null;
+          gender: string | null;
+          guardian: string | null;
+          id: string;
+          national_id: string | null;
+          note: string | null;
+          phone: string | null;
+          referred_by: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_users';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      admin_delete_workspace_user_with_audit_actor: {
+        Args: { p_actor_auth_uid?: string; p_user_id: string; p_ws_id: string };
+        Returns: {
+          address: string | null;
+          archived: boolean;
+          archived_until: string | null;
+          avatar_url: string | null;
+          balance: number | null;
+          birthday: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          display_name: string | null;
+          email: string | null;
+          ethnicity: string | null;
+          full_name: string | null;
+          gender: string | null;
+          guardian: string | null;
+          id: string;
+          national_id: string | null;
+          note: string | null;
+          phone: string | null;
+          referred_by: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_users';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       admin_get_ai_credit_entity_detail: {
         Args: { p_user_id?: string; p_ws_id?: string };
         Returns: Json;
@@ -23001,6 +23135,44 @@ export type Database = {
         }[];
       };
       admin_reset_rate_limits: { Args: never; Returns: number };
+      admin_update_workspace_user_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_payload: Json;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          address: string | null;
+          archived: boolean;
+          archived_until: string | null;
+          avatar_url: string | null;
+          balance: number | null;
+          birthday: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          display_name: string | null;
+          email: string | null;
+          ethnicity: string | null;
+          full_name: string | null;
+          gender: string | null;
+          guardian: string | null;
+          id: string;
+          national_id: string | null;
+          note: string | null;
+          phone: string | null;
+          referred_by: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_users';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
@@ -23045,6 +23217,21 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      backfill_workspace_user_status_changes: {
+        Args: { p_dry_run?: boolean; p_limit?: number; p_ws_id: string };
+        Returns: {
+          actor_auth_uid: string;
+          archived: boolean;
+          archived_until: string;
+          audit_record_version_id: number;
+          created_at: string;
+          creator_id: string;
+          event_kind: string;
+          source: string;
+          user_id: string;
+          ws_id: string;
+        }[];
       };
       calculate_next_occurrence: {
         Args: {
@@ -25542,6 +25729,21 @@ export type Database = {
         Args: { end_date?: string; start_date?: string; ws_id: string };
         Returns: number;
       };
+      get_workspace_user_audit_view: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_period: string;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_workspace_user_groups: {
         Args: {
           _ws_id: string;
@@ -25828,6 +26030,70 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      list_workspace_user_audit_bucket_counts: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_period: string;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          archive_timing_count: number;
+          archived_count: number;
+          bucket_key: string;
+          profile_update_count: number;
+          reactivated_count: number;
+          total_count: number;
+        }[];
+      };
+      list_workspace_user_audit_feed: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          actor_auth_uid: string;
+          actor_email: string;
+          actor_id: string;
+          actor_name: string;
+          actor_workspace_user_id: string;
+          affected_user_email: string;
+          affected_user_id: string;
+          affected_user_name: string;
+          after: Json;
+          audit_record_id: number;
+          before: Json;
+          changed_fields: string[];
+          event_kind: string;
+          occurred_at: string;
+          source: string;
+          total_count: number;
+        }[];
+      };
+      list_workspace_user_audit_records: {
+        Args: { p_end: string; p_start: string; p_ws_id: string };
+        Returns: {
+          audit_record_id: number;
+          auth_role: string;
+          auth_uid: string;
+          old_record: Json;
+          op: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE';
+          record: Json;
+          ts: string;
+          ws_id: string;
+        }[];
       };
       match_memories: {
         Args: {
@@ -26277,6 +26543,28 @@ export type Database = {
           sum: number;
         }[];
       };
+      summarize_workspace_user_audit_feed: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          affected_users_count: number;
+          archive_related_events: number;
+          archive_timing_events: number;
+          archived_events: number;
+          profile_updates: number;
+          reactivated_events: number;
+          top_actor_count: number;
+          top_actor_name: string;
+          total_events: number;
+        }[];
+      };
       sync_my_notifications: {
         Args: never;
         Returns: {
@@ -26300,6 +26588,7 @@ export type Database = {
             Args: { input_date: string; week_start_day?: number };
             Returns: string;
           };
+      try_parse_uuid: { Args: { value: string }; Returns: string };
       unlink_task_project_with_actor: {
         Args: {
           p_actor_user_id?: string;
@@ -26642,6 +26931,78 @@ export type Database = {
       workspace_has_available_seats: {
         Args: { target_ws_id: string };
         Returns: boolean;
+      };
+      workspace_user_audit_changed_fields: {
+        Args: { next_record: Json; previous_record: Json };
+        Returns: string[];
+      };
+      workspace_user_audit_changed_snapshot: {
+        Args: { next_record: Json; p_use_next: boolean; previous_record: Json };
+        Returns: Json;
+      };
+      workspace_user_audit_event_kind: {
+        Args: {
+          next_record: Json;
+          p_op: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE';
+          previous_record: Json;
+        };
+        Returns: string;
+      };
+      workspace_user_audit_feed: {
+        Args: { p_end: string; p_start: string; p_ws_id: string };
+        Returns: {
+          actor_auth_uid: string;
+          actor_email: string;
+          actor_id: string;
+          actor_name: string;
+          actor_workspace_user_id: string;
+          affected_user_email: string;
+          affected_user_id: string;
+          affected_user_name: string;
+          after: Json;
+          audit_record_id: number;
+          before: Json;
+          changed_fields: string[];
+          event_kind: string;
+          occurred_at: string;
+          source: string;
+        }[];
+      };
+      workspace_user_audit_filtered_feed: {
+        Args: {
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_event_kind?: string;
+          p_source?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          actor_auth_uid: string;
+          actor_email: string;
+          actor_id: string;
+          actor_name: string;
+          actor_workspace_user_id: string;
+          affected_user_email: string;
+          affected_user_id: string;
+          affected_user_name: string;
+          after: Json;
+          audit_record_id: number;
+          before: Json;
+          changed_fields: string[];
+          event_kind: string;
+          occurred_at: string;
+          source: string;
+        }[];
+      };
+      workspace_user_audit_user_id: {
+        Args: { next_record: Json; previous_record: Json };
+        Returns: string;
+      };
+      workspace_user_audit_ws_id: {
+        Args: { next_record: Json; previous_record: Json };
+        Returns: string;
       };
     };
     Enums: {

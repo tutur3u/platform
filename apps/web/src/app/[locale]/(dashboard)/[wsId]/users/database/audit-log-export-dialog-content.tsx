@@ -1,5 +1,7 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
+import { listWorkspaceUserAuditLogs } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -24,9 +26,9 @@ import { useMemo, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import { getAuditLogTimeRange } from './audit-log-time';
 import type {
-  AuditLogEntry,
+  AuditLogEventKindFilter,
   AuditLogPeriod,
-  AuditLogStatusFilter,
+  AuditLogSourceFilter,
 } from './audit-log-types';
 
 interface Props {
@@ -35,7 +37,10 @@ interface Props {
   period: AuditLogPeriod;
   month?: string;
   year?: string;
-  status: AuditLogStatusFilter;
+  eventKind: AuditLogEventKindFilter;
+  source: AuditLogSourceFilter;
+  affectedUserQuery: string;
+  actorQuery: string;
 }
 
 type ExportFileType = 'excel' | 'csv';
@@ -75,7 +80,10 @@ export function AuditLogExportDialogContent({
   period,
   month,
   year,
-  status,
+  eventKind,
+  source,
+  affectedUserQuery,
+  actorQuery,
 }: Props) {
   const commonT = useTranslations();
   const t = useTranslations('audit-log-insights');
@@ -83,7 +91,6 @@ export function AuditLogExportDialogContent({
   const [filename, setFilename] = useState('');
   const [exportFileType, setExportFileType] = useState<ExportFileType>('excel');
   const [progress, setProgress] = useState(0);
-  const [isExporting, setIsExporting] = useState(false);
 
   const timeRange = useMemo(() => {
     return getAuditLogTimeRange({
@@ -101,98 +108,53 @@ export function AuditLogExportDialogContent({
     }).format(timeRange.start);
   }, [locale, period, timeRange.start]);
 
-  const statusLabel =
-    status === 'archived'
-      ? t('status_archived')
-      : status === 'active'
-        ? t('status_active')
-        : t('status_all');
-  const defaultFilename = `audit_log_${timeRange.value}.${getFileExtension(
+  const defaultFilename = `workspace_user_audit_${timeRange.value}.${getFileExtension(
     exportFileType
   )}`;
 
-  const downloadCSV = (
-    data: Record<string, string>[],
-    nextFilename: string
-  ) => {
-    const csv = jsonToCSV(data);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    downloadBlob(blob, nextFilename);
-  };
+  const exportMutation = useMutation({
+    mutationFn: async () => {
+      const allRows = [];
+      const pageSize = 500;
+      let offset = 0;
 
-  const downloadExcel = (
-    data: Record<string, string>[],
-    nextFilename: string
-  ) => {
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Audit Log');
-
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: 'xlsx',
-      type: 'array',
-    });
-
-    const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-
-    downloadBlob(blob, nextFilename);
-  };
-
-  const handleExport = async () => {
-    setIsExporting(true);
-    setProgress(0);
-
-    const allRows: AuditLogEntry[] = [];
-    const pageSize = 500;
-    let page = 1;
-
-    try {
       while (true) {
-        const offset = (page - 1) * pageSize;
-        const searchParams = new URLSearchParams({
+        const response = await listWorkspaceUserAuditLogs(wsId, {
           start: timeRange.start.toISOString(),
           end: timeRange.end.toISOString(),
-          offset: String(offset),
-          limit: String(pageSize),
+          eventKind,
+          source,
+          affectedUserQuery,
+          actorQuery,
+          offset,
+          limit: pageSize,
         });
 
-        if (status !== 'all') {
-          searchParams.set('status', status);
-        }
+        allRows.push(...response.data);
 
-        const res = await fetch(
-          `/api/v1/workspaces/${wsId}/users/audit-logs?${searchParams.toString()}`,
-          { cache: 'no-store' }
-        );
-
-        if (!res.ok) throw new Error('Failed to fetch audit logs');
-        const rows = (await res.json()) as AuditLogEntry[];
-
-        allRows.push(...rows);
-
-        if (rows.length < pageSize) {
+        if (response.data.length < pageSize) {
           break;
         }
 
-        page += 1;
-        setProgress(Math.min(95, page * 12));
+        offset += pageSize;
+        setProgress(Math.min(95, 15 + offset / 20));
       }
 
+      return allRows;
+    },
+    onSuccess: (allRows) => {
       const exportRows = allRows.map((entry) => ({
-        [tableT('id')]: entry.id,
-        [t('columns.user')]: entry.user_full_name || tableT('unknown_user'),
-        [t('columns.status')]: entry.archived
-          ? tableT('archived')
-          : tableT('active'),
-        [t('columns.archived_until')]: formatDateTime(
-          entry.archived_until,
-          locale
-        ),
-        [t('columns.updated_by')]: entry.creator_full_name || tableT('system'),
-        [t('columns.changed_at')]: formatDateTime(entry.created_at, locale),
+        [tableT('action')]: tableT(`event_kind.${entry.eventKind}`),
+        [tableT('summary')]: entry.summary,
+        [tableT('affected_user')]:
+          entry.affectedUser.name ||
+          entry.affectedUser.email ||
+          tableT('unknown_user'),
+        [tableT('actor')]:
+          entry.actor.name || entry.actor.email || tableT('system'),
+        [tableT('changed_fields')]: entry.changedFields.join(', '),
+        [tableT('source')]: tableT(`source_label.${entry.source}`),
+        [tableT('occurred_at')]: formatDateTime(entry.occurredAt, locale),
       }));
 
       const nextFilename =
@@ -200,19 +162,37 @@ export function AuditLogExportDialogContent({
           ? `${(filename || defaultFilename).replace(/\.csv/gi, '')}.csv`
           : `${(filename || defaultFilename).replace(/\.xlsx/gi, '')}.xlsx`;
 
-      setProgress(100);
-
       if (exportFileType === 'csv') {
-        downloadCSV(exportRows, nextFilename);
+        const csv = jsonToCSV(exportRows);
+        downloadBlob(
+          new Blob([csv], { type: 'text/csv;charset=utf-8;' }),
+          nextFilename
+        );
       } else {
-        downloadExcel(exportRows, nextFilename);
+        const worksheet = XLSX.utils.json_to_sheet(exportRows);
+        const workbook = XLSX.utils.book_new();
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'User Audit');
+
+        const excelBuffer = XLSX.write(workbook, {
+          bookType: 'xlsx',
+          type: 'array',
+        });
+
+        downloadBlob(
+          new Blob([excelBuffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          }),
+          nextFilename
+        );
       }
-    } catch (error) {
+
+      setProgress(100);
+    },
+    onError: (error) => {
       console.error('Failed to export audit log:', error);
-    } finally {
-      setIsExporting(false);
-    }
-  };
+    },
+  });
 
   return (
     <>
@@ -221,7 +201,6 @@ export function AuditLogExportDialogContent({
         <DialogDescription>
           {t('export_description', {
             period: periodLabel,
-            filter: statusLabel.toLowerCase(),
           })}
         </DialogDescription>
       </DialogHeader>
@@ -234,7 +213,7 @@ export function AuditLogExportDialogContent({
             value={filename}
             onChange={(event) => setFilename(event.target.value)}
             placeholder={defaultFilename}
-            disabled={isExporting}
+            disabled={exportMutation.isPending}
           />
         </div>
 
@@ -245,7 +224,7 @@ export function AuditLogExportDialogContent({
             onValueChange={(value) =>
               setExportFileType(value as ExportFileType)
             }
-            disabled={isExporting}
+            disabled={exportMutation.isPending}
           >
             <SelectTrigger id="audit-log-file-type" className="w-full">
               <SelectValue />
@@ -257,7 +236,9 @@ export function AuditLogExportDialogContent({
           </Select>
         </div>
 
-        {isExporting && <Progress value={progress} className="h-2 w-full" />}
+        {exportMutation.isPending ? (
+          <Progress value={progress} className="h-2 w-full" />
+        ) : null}
       </div>
 
       <DialogFooter className="justify-between">
@@ -266,8 +247,14 @@ export function AuditLogExportDialogContent({
             {commonT('common.cancel')}
           </Button>
         </DialogClose>
-        <Button onClick={handleExport} disabled={isExporting}>
-          {isExporting
+        <Button
+          onClick={() => {
+            setProgress(0);
+            exportMutation.mutate();
+          }}
+          disabled={exportMutation.isPending}
+        >
+          {exportMutation.isPending
             ? commonT('common.processing')
             : commonT('common.export')}
         </Button>

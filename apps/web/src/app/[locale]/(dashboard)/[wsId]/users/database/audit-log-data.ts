@@ -1,42 +1,546 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  eachDayOfInterval,
-  eachMonthOfInterval,
-  format,
-  subDays,
-} from 'date-fns';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { z } from 'zod';
+import {
+  buildWorkspaceUserAuditSummary,
+  humanizeAuditField,
+  normalizeAuditFieldValue,
+  type WorkspaceUserAuditChartStat,
+  type WorkspaceUserAuditEvent,
+  type WorkspaceUserAuditEventKind,
+  type WorkspaceUserAuditFieldChange,
+  type WorkspaceUserAuditIdentity,
+  type WorkspaceUserAuditSummary,
+} from '@/lib/workspace-user-audit/normalize';
 import {
   getAuditLogTimeOptions,
   getAuditLogTimeRange,
   resolveAuditLogPeriod,
 } from './audit-log-time';
 import type {
-  AuditLogChartStat,
-  AuditLogEntry,
-  AuditLogInsightSummary,
+  AuditLogEventKindFilter,
   AuditLogPeriod,
-  AuditLogStatusFilter,
+  AuditLogSource,
+  AuditLogSourceFilter,
   AuditLogTimeOption,
 } from './audit-log-types';
 
-const AuditLogStatusSchema = z.enum(['all', 'active', 'archived']);
+const AuditLogEventKindSchema = z.enum([
+  'all',
+  'created',
+  'updated',
+  'archived',
+  'reactivated',
+  'archive_until_changed',
+  'deleted',
+]);
+const AuditLogSourceSchema = z.enum(['all', 'live', 'backfilled']);
 const AuditLogPaginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
 });
 
-const AUDIT_LOG_SELECT = `
-  id,
-  user_id,
-  ws_id,
-  archived,
-  archived_until,
-  creator_id,
-  created_at,
-  user:user_id (full_name, display_name),
-  creator:creator_id (full_name, display_name)
-`;
+type AuditFeedRow = {
+  audit_record_id: number;
+  event_kind: WorkspaceUserAuditEventKind;
+  occurred_at: string;
+  source: AuditLogSource;
+  affected_user_id: string;
+  affected_user_name: string | null;
+  affected_user_email: string | null;
+  actor_auth_uid: string | null;
+  actor_workspace_user_id: string | null;
+  actor_id: string | null;
+  actor_name: string | null;
+  actor_email: string | null;
+  changed_fields: string[] | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  total_count?: number | null;
+};
+
+type AuditSummaryRow = {
+  total_events: number | null;
+  archived_events: number | null;
+  reactivated_events: number | null;
+  archive_timing_events: number | null;
+  archive_related_events: number | null;
+  profile_updates: number | null;
+  affected_users_count: number | null;
+  top_actor_name: string | null;
+  top_actor_count: number | null;
+};
+
+type AuditBucketRow = {
+  bucket_key: string;
+  total_count: number | null;
+  archived_count: number | null;
+  reactivated_count: number | null;
+  archive_timing_count: number | null;
+  profile_update_count: number | null;
+};
+
+type AuditViewPayload = {
+  count: number | null;
+  rows: AuditFeedRow[] | null;
+  summary: AuditSummaryRow | null;
+  buckets: AuditBucketRow[] | null;
+};
+
+export type LegacyStatusChangeRow = {
+  user_id: string;
+  archived: boolean;
+  archived_until: string | null;
+  creator_id: string | null;
+  actor_auth_uid: string | null;
+  source: AuditLogSource;
+  audit_record_version_id: number | null;
+  created_at: string;
+};
+
+function resolveEventKindFilter(value?: string): AuditLogEventKindFilter {
+  return AuditLogEventKindSchema.catch('all').parse(value);
+}
+
+function resolveSourceFilter(value?: string): AuditLogSourceFilter {
+  return AuditLogSourceSchema.catch('all').parse(value);
+}
+
+function toCount(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function buildFieldChangesFromSnapshots(
+  changedFields: string[],
+  beforeRecord: Record<string, unknown>,
+  afterRecord: Record<string, unknown>
+) {
+  return changedFields.map<WorkspaceUserAuditFieldChange>((field) => ({
+    field,
+    label: humanizeAuditField(field),
+    before: normalizeAuditFieldValue(beforeRecord[field]),
+    after: normalizeAuditFieldValue(afterRecord[field]),
+  }));
+}
+
+function mapFeedRowToEvent(row: AuditFeedRow): WorkspaceUserAuditEvent {
+  const changedFields = row.changed_fields ?? [];
+  const beforeRecord = asRecord(row.before);
+  const afterRecord = asRecord(row.after);
+
+  return {
+    auditRecordId: row.audit_record_id,
+    eventKind: row.event_kind,
+    summary: buildWorkspaceUserAuditSummary(
+      row.event_kind,
+      row.affected_user_name ?? row.affected_user_email,
+      changedFields
+    ),
+    changedFields,
+    fieldChanges: buildFieldChangesFromSnapshots(
+      changedFields,
+      beforeRecord,
+      afterRecord
+    ),
+    before: Object.fromEntries(
+      Object.entries(beforeRecord).map(([key, value]) => [
+        key,
+        normalizeAuditFieldValue(value),
+      ])
+    ),
+    after: Object.fromEntries(
+      Object.entries(afterRecord).map(([key, value]) => [
+        key,
+        normalizeAuditFieldValue(value),
+      ])
+    ),
+    affectedUser: {
+      id: row.affected_user_id,
+      name: row.affected_user_name,
+      email: row.affected_user_email,
+    },
+    actor: {
+      authUid: row.actor_auth_uid,
+      workspaceUserId: row.actor_workspace_user_id,
+      id: row.actor_id,
+      name: row.actor_name,
+      email: row.actor_email,
+    },
+    occurredAt: row.occurred_at,
+    source: row.source,
+  };
+}
+
+function buildChartStatsFromBuckets({
+  locale,
+  period,
+  start,
+  end,
+  bucketRows,
+}: {
+  locale: string;
+  period: AuditLogPeriod;
+  start: Date;
+  end: Date;
+  bucketRows: AuditBucketRow[];
+}) {
+  const bucketLookup = new Map(
+    bucketRows.map((row) => [
+      row.bucket_key,
+      {
+        totalCount: toCount(row.total_count),
+        archivedCount: toCount(row.archived_count),
+        reactivatedCount: toCount(row.reactivated_count),
+        archiveTimingCount: toCount(row.archive_timing_count),
+        profileUpdateCount: toCount(row.profile_update_count),
+      },
+    ])
+  );
+
+  if (period === 'yearly') {
+    const formatter = new Intl.DateTimeFormat(locale, {
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const stats: WorkspaceUserAuditChartStat[] = [];
+    const current = new Date(start);
+
+    while (current < end) {
+      const key = `${current.getFullYear()}-${`${current.getMonth() + 1}`.padStart(2, '0')}`;
+      const counts = bucketLookup.get(key);
+
+      stats.push({
+        key,
+        label: new Intl.DateTimeFormat(locale, { month: 'short' }).format(
+          current
+        ),
+        tooltipLabel: formatter.format(current),
+        totalCount: counts?.totalCount ?? 0,
+        archivedCount: counts?.archivedCount ?? 0,
+        reactivatedCount: counts?.reactivatedCount ?? 0,
+        archiveTimingCount: counts?.archiveTimingCount ?? 0,
+        profileUpdateCount: counts?.profileUpdateCount ?? 0,
+      });
+
+      current.setMonth(current.getMonth() + 1);
+    }
+
+    return stats;
+  }
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  const stats = [];
+  const current = new Date(start);
+
+  while (current < end) {
+    const yearValue = current.getFullYear();
+    const monthValue = `${current.getMonth() + 1}`.padStart(2, '0');
+    const dayValue = `${current.getDate()}`.padStart(2, '0');
+    const key = `${yearValue}-${monthValue}-${dayValue}`;
+    const counts = bucketLookup.get(key);
+
+    stats.push({
+      key,
+      label: `${current.getDate()}`,
+      tooltipLabel: formatter.format(current),
+      totalCount: counts?.totalCount ?? 0,
+      archivedCount: counts?.archivedCount ?? 0,
+      reactivatedCount: counts?.reactivatedCount ?? 0,
+      archiveTimingCount: counts?.archiveTimingCount ?? 0,
+      profileUpdateCount: counts?.profileUpdateCount ?? 0,
+    });
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return stats;
+}
+
+async function fetchAuditFeedPage(
+  sbAdmin: TypedSupabaseClient,
+  {
+    wsId,
+    start,
+    end,
+    eventKind,
+    source,
+    affectedUserQuery,
+    actorQuery,
+    limit,
+    offset,
+  }: {
+    wsId: string;
+    start: Date;
+    end: Date;
+    eventKind: AuditLogEventKindFilter;
+    source: AuditLogSourceFilter;
+    affectedUserQuery?: string;
+    actorQuery?: string;
+    limit: number;
+    offset: number;
+  }
+) {
+  const { data, error } = await sbAdmin.rpc('list_workspace_user_audit_feed', {
+    p_ws_id: wsId,
+    p_start: start.toISOString(),
+    p_end: end.toISOString(),
+    p_event_kind: eventKind,
+    p_source: source,
+    p_affected_user_query: affectedUserQuery?.trim() || undefined,
+    p_actor_query: actorQuery?.trim() || undefined,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as AuditFeedRow[];
+
+  return {
+    count: toCount(rows[0]?.total_count),
+    data: rows.map(mapFeedRowToEvent),
+  };
+}
+
+async function fetchAuditView(
+  sbAdmin: TypedSupabaseClient,
+  {
+    wsId,
+    start,
+    end,
+    period,
+    eventKind,
+    source,
+    affectedUserQuery,
+    actorQuery,
+    limit,
+    offset,
+  }: {
+    wsId: string;
+    start: Date;
+    end: Date;
+    period: AuditLogPeriod;
+    eventKind: AuditLogEventKindFilter;
+    source: AuditLogSourceFilter;
+    affectedUserQuery?: string;
+    actorQuery?: string;
+    limit: number;
+    offset: number;
+  }
+) {
+  const { data, error } = await sbAdmin.rpc('get_workspace_user_audit_view', {
+    p_ws_id: wsId,
+    p_start: start.toISOString(),
+    p_end: end.toISOString(),
+    p_period: period,
+    p_event_kind: eventKind,
+    p_source: source,
+    p_affected_user_query: affectedUserQuery?.trim() || undefined,
+    p_actor_query: actorQuery?.trim() || undefined,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const payload = asRecord(data) as AuditViewPayload;
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  const bucketRows = Array.isArray(payload.buckets) ? payload.buckets : [];
+  const summaryRow = payload.summary ?? null;
+
+  return {
+    count: toCount(payload.count),
+    data: rows.map(mapFeedRowToEvent),
+    summary: {
+      totalEvents: toCount(summaryRow?.total_events),
+      archivedEvents: toCount(summaryRow?.archived_events),
+      reactivatedEvents: toCount(summaryRow?.reactivated_events),
+      archiveTimingEvents: toCount(summaryRow?.archive_timing_events),
+      archiveRelatedEvents: toCount(summaryRow?.archive_related_events),
+      profileUpdates: toCount(summaryRow?.profile_updates),
+      affectedUsersCount: toCount(summaryRow?.affected_users_count),
+      topActorName: summaryRow?.top_actor_name ?? null,
+      topActorCount: toCount(summaryRow?.top_actor_count),
+    } satisfies Omit<
+      WorkspaceUserAuditSummary,
+      'peakBucketLabel' | 'peakBucketCount'
+    >,
+    bucketRows,
+  };
+}
+
+function createSyntheticAuditRecordId(seed: string, index: number) {
+  let hash = 0;
+
+  for (const char of seed) {
+    hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  }
+
+  return -Math.abs(hash || index + 1);
+}
+
+function buildLegacyStatusFieldChanges({
+  eventKind,
+  current,
+  previous,
+}: {
+  eventKind: WorkspaceUserAuditEventKind;
+  current: LegacyStatusChangeRow;
+  previous?: LegacyStatusChangeRow;
+}) {
+  const changedFields =
+    eventKind === 'archive_until_changed'
+      ? ['archived_until']
+      : current.archived_until !== previous?.archived_until &&
+          current.archived_until
+        ? ['archived', 'archived_until']
+        : ['archived'];
+
+  const before: Record<string, string | null> = {};
+  const after: Record<string, string | null> = {};
+
+  const fieldChanges = changedFields.map<WorkspaceUserAuditFieldChange>(
+    (field) => {
+      const beforeValue =
+        field === 'archived'
+          ? normalizeAuditFieldValue(previous?.archived ?? !current.archived)
+          : normalizeAuditFieldValue(previous?.archived_until ?? null);
+      const afterValue =
+        field === 'archived'
+          ? normalizeAuditFieldValue(current.archived)
+          : normalizeAuditFieldValue(current.archived_until);
+
+      before[field] = beforeValue;
+      after[field] = afterValue;
+
+      return {
+        field,
+        label: humanizeAuditField(field),
+        before: beforeValue,
+        after: afterValue,
+      };
+    }
+  );
+
+  return {
+    changedFields,
+    fieldChanges,
+    before,
+    after,
+  };
+}
+
+export function buildLegacyStatusEvents({
+  rows,
+  affectedUsers,
+  authActors,
+  workspaceUsers,
+}: {
+  rows: LegacyStatusChangeRow[];
+  affectedUsers: Map<string, WorkspaceUserAuditIdentity>;
+  authActors: Map<
+    string,
+    WorkspaceUserAuditIdentity & { workspaceUserId: string | null }
+  >;
+  workspaceUsers: Map<string, WorkspaceUserAuditIdentity>;
+}) {
+  const previousByUser = new Map<string, LegacyStatusChangeRow>();
+
+  return rows.map<WorkspaceUserAuditEvent>((row, index) => {
+    const previous = previousByUser.get(row.user_id);
+    let eventKind: WorkspaceUserAuditEventKind;
+
+    if (!row.archived) {
+      eventKind = 'reactivated';
+    } else if (
+      previous?.archived === true &&
+      previous.archived_until !== row.archived_until
+    ) {
+      eventKind = 'archive_until_changed';
+    } else {
+      eventKind = 'archived';
+    }
+
+    previousByUser.set(row.user_id, row);
+
+    const affectedUser = affectedUsers.get(row.user_id) ?? {
+      id: row.user_id,
+      name: null,
+      email: null,
+    };
+    const actorFromAuth = row.actor_auth_uid
+      ? authActors.get(row.actor_auth_uid)
+      : null;
+    const actorFromWorkspaceUser = row.creator_id
+      ? workspaceUsers.get(row.creator_id)
+      : null;
+    const actor = actorFromAuth
+      ? {
+          authUid: row.actor_auth_uid,
+          workspaceUserId: actorFromAuth.workspaceUserId,
+          id: actorFromAuth.id,
+          name: actorFromAuth.name,
+          email: actorFromAuth.email,
+        }
+      : {
+          authUid: row.actor_auth_uid,
+          workspaceUserId: row.creator_id,
+          id: row.creator_id,
+          name: actorFromWorkspaceUser?.name ?? null,
+          email: actorFromWorkspaceUser?.email ?? null,
+        };
+    const fieldData = buildLegacyStatusFieldChanges({
+      eventKind,
+      current: row,
+      previous,
+    });
+
+    return {
+      auditRecordId:
+        row.audit_record_version_id ??
+        createSyntheticAuditRecordId(
+          `${row.user_id}:${row.created_at}:${row.archived}:${row.archived_until ?? ''}`,
+          index
+        ),
+      eventKind,
+      summary: buildWorkspaceUserAuditSummary(
+        eventKind,
+        affectedUser.name ?? affectedUser.email,
+        fieldData.changedFields
+      ),
+      changedFields: fieldData.changedFields,
+      fieldChanges: fieldData.fieldChanges,
+      before: fieldData.before,
+      after: fieldData.after,
+      affectedUser: {
+        id: row.user_id,
+        name: affectedUser.name,
+        email: affectedUser.email,
+      },
+      actor,
+      occurredAt: row.created_at,
+      source: row.source ?? 'live',
+    };
+  });
+}
 
 export function getRecentAuditLogTimeOptions(
   locale: string,
@@ -49,151 +553,39 @@ export function getRecentAuditLogTimeOptions(
   });
 }
 
-function normalizeStatus(status?: string): AuditLogStatusFilter {
-  return AuditLogStatusSchema.catch('all').parse(status);
-}
-
-function buildAuditLogQuery(
-  supabase: any,
-  wsId: string,
-  {
-    period,
-    month,
-    year,
-    status,
-  }: {
-    period?: string;
-    month?: string;
-    year?: string;
-    status: AuditLogStatusFilter;
-  }
-) {
-  const { start, end } = getAuditLogTimeRange({
-    period,
-    month,
-    year,
-  });
-
-  let query = supabase
-    .from('workspace_user_status_changes')
-    .select(AUDIT_LOG_SELECT, { count: 'exact' })
-    .eq('ws_id', wsId)
-    .gte('created_at', start.toISOString())
-    .lt('created_at', end.toISOString());
-
-  if (status === 'active') {
-    query = query.eq('archived', false);
-  } else if (status === 'archived') {
-    query = query.eq('archived', true);
-  }
-
-  return query;
-}
-
-function mapAuditLogEntry(entry: any): AuditLogEntry {
-  return {
-    id: entry.id,
-    user_id: entry.user_id,
-    ws_id: entry.ws_id,
-    archived: entry.archived,
-    archived_until: entry.archived_until,
-    creator_id: entry.creator_id,
-    created_at: entry.created_at,
-    user_full_name: entry.user?.full_name || entry.user?.display_name,
-    creator_full_name: entry.creator?.full_name || entry.creator?.display_name,
-  };
-}
-
-function buildAuditLogChartStats({
-  locale,
-  period,
-  start,
-  end,
-}: {
-  locale: string;
-  period: AuditLogPeriod;
-  start: Date;
-  end: Date;
-}): AuditLogChartStat[] {
-  if (period === 'yearly') {
-    const shortMonthFormatter = new Intl.DateTimeFormat(locale, {
-      month: 'short',
-    });
-    const longMonthFormatter = new Intl.DateTimeFormat(locale, {
-      month: 'long',
-      year: 'numeric',
-    });
-
-    return eachMonthOfInterval({
-      start,
-      end: subDays(end, 1),
-    }).map<AuditLogChartStat>((date) => ({
-      key: format(date, 'yyyy-MM'),
-      label: shortMonthFormatter.format(date),
-      tooltipLabel: longMonthFormatter.format(date),
-      totalCount: 0,
-      archivedCount: 0,
-      activeCount: 0,
-    }));
-  }
-
-  const dayFormatter = new Intl.DateTimeFormat(locale, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-
-  return eachDayOfInterval({
-    start,
-    end: subDays(end, 1),
-  }).map<AuditLogChartStat>((date) => ({
-    key: format(date, 'yyyy-MM-dd'),
-    label: format(date, 'd'),
-    tooltipLabel: dayFormatter.format(date),
-    totalCount: 0,
-    archivedCount: 0,
-    activeCount: 0,
-  }));
-}
-
-function getEntryBucketKey(period: AuditLogPeriod, createdAt: string) {
-  return format(
-    new Date(createdAt),
-    period === 'yearly' ? 'yyyy-MM' : 'yyyy-MM-dd'
-  );
-}
-
-function getPeakBucket(chartStats: AuditLogChartStat[]) {
-  return chartStats.reduce<AuditLogChartStat | null>((currentPeak, stat) => {
-    if (!currentPeak || stat.totalCount > currentPeak.totalCount) {
-      return stat;
-    }
-
-    return currentPeak;
-  }, null);
-}
-
-export async function getAuditLogPage({
+export async function getAuditLogView({
   wsId,
+  locale,
   period,
   month,
   year,
-  status,
+  eventKind,
+  source,
+  affectedUserQuery,
+  actorQuery,
   page,
   pageSize,
 }: {
   wsId: string;
+  locale: string;
   period?: string;
   month?: string;
   year?: string;
-  status?: string;
+  eventKind?: string;
+  source?: string;
+  affectedUserQuery?: string;
+  actorQuery?: string;
   page?: number;
   pageSize?: number;
 }) {
-  const supabase = await createClient();
   const resolvedPeriod = resolveAuditLogPeriod(period);
-  const resolvedStatus = normalizeStatus(status);
-  const { value: selectedValue } = getAuditLogTimeRange({
+  const resolvedEventKind = resolveEventKindFilter(eventKind);
+  const resolvedSource = resolveSourceFilter(source);
+  const {
+    value: selectedValue,
+    start,
+    end,
+  } = getAuditLogTimeRange({
     period: resolvedPeriod,
     month,
     year,
@@ -204,168 +596,128 @@ export async function getAuditLogPage({
       pageSize,
     });
 
-  const start = (validatedPage - 1) * validatedPageSize;
-  const end = validatedPage * validatedPageSize - 1;
+  try {
+    const sbAdmin = await createAdminClient();
+    const offset = (validatedPage - 1) * validatedPageSize;
+    const view = await fetchAuditView(sbAdmin, {
+      wsId,
+      start,
+      end,
+      period: resolvedPeriod,
+      eventKind: resolvedEventKind,
+      source: resolvedSource,
+      affectedUserQuery,
+      actorQuery,
+      limit: validatedPageSize,
+      offset,
+    });
+    const chartStats = buildChartStatsFromBuckets({
+      locale,
+      period: resolvedPeriod,
+      start,
+      end,
+      bucketRows: view.bucketRows,
+    });
+    const peakBucket =
+      chartStats.reduce<WorkspaceUserAuditChartStat | null>((peak, bucket) => {
+        if (!peak || bucket.totalCount > peak.totalCount) {
+          return bucket;
+        }
 
-  const { data, count, error } = await buildAuditLogQuery(supabase, wsId, {
-    period: resolvedPeriod,
-    month,
-    year,
-    status: resolvedStatus,
-  })
-    .order('created_at', { ascending: false })
-    .range(start, end);
-
-  if (error) {
-    console.error('Error fetching audit log page:', error);
+        return peak;
+      }, null) ?? null;
+    const summary: WorkspaceUserAuditSummary = {
+      ...view.summary,
+      peakBucketLabel: peakBucket?.tooltipLabel ?? null,
+      peakBucketCount: peakBucket?.totalCount ?? 0,
+    };
 
     return {
-      data: [] as AuditLogEntry[],
-      count: 0,
       period: resolvedPeriod,
       selectedValue,
-      status: resolvedStatus,
+      eventKind: resolvedEventKind,
+      source: resolvedSource,
+      affectedUserQuery: affectedUserQuery?.trim() ?? '',
+      actorQuery: actorQuery?.trim() ?? '',
       page: validatedPage,
       pageSize: validatedPageSize,
+      count: view.count,
+      data: view.data,
+      allFilteredEvents: [] as WorkspaceUserAuditEvent[],
+      summary,
+      chartStats,
+    };
+  } catch (error) {
+    console.error('Error fetching workspace user audit view:', error);
+
+    return {
+      period: resolvedPeriod,
+      selectedValue,
+      eventKind: resolvedEventKind,
+      source: resolvedSource,
+      affectedUserQuery: affectedUserQuery?.trim() ?? '',
+      actorQuery: actorQuery?.trim() ?? '',
+      page: validatedPage,
+      pageSize: validatedPageSize,
+      count: 0,
+      data: [] as WorkspaceUserAuditEvent[],
+      allFilteredEvents: [] as WorkspaceUserAuditEvent[],
+      summary: {
+        totalEvents: 0,
+        archivedEvents: 0,
+        reactivatedEvents: 0,
+        archiveTimingEvents: 0,
+        archiveRelatedEvents: 0,
+        profileUpdates: 0,
+        affectedUsersCount: 0,
+        topActorName: null,
+        topActorCount: 0,
+        peakBucketLabel: null,
+        peakBucketCount: 0,
+      },
+      chartStats: [],
     };
   }
-
-  return {
-    data: (data || []).map(mapAuditLogEntry),
-    count: count ?? 0,
-    period: resolvedPeriod,
-    selectedValue,
-    status: resolvedStatus,
-    page: validatedPage,
-    pageSize: validatedPageSize,
-  };
 }
 
-export async function getAuditLogInsights({
+export async function listAuditLogEventsForRange({
   wsId,
-  locale,
-  period,
-  month,
-  year,
+  start,
+  end,
+  eventKind,
+  source,
+  affectedUserQuery,
+  actorQuery,
+  offset = 0,
+  limit = 500,
 }: {
   wsId: string;
-  locale: string;
-  period?: string;
-  month?: string;
-  year?: string;
+  start: string;
+  end: string;
+  eventKind?: string;
+  source?: string;
+  affectedUserQuery?: string;
+  actorQuery?: string;
+  offset?: number;
+  limit?: number;
 }) {
-  const supabase = await createClient();
-  const resolvedPeriod = resolveAuditLogPeriod(period);
-  const { value, start, end } = getAuditLogTimeRange({
-    period: resolvedPeriod,
-    month,
-    year,
+  const sbAdmin = await createAdminClient();
+  const resolvedEventKind = resolveEventKindFilter(eventKind);
+  const resolvedSource = resolveSourceFilter(source);
+  const response = await fetchAuditFeedPage(sbAdmin, {
+    wsId,
+    start: new Date(start),
+    end: new Date(end),
+    eventKind: resolvedEventKind,
+    source: resolvedSource,
+    affectedUserQuery,
+    actorQuery,
+    limit,
+    offset,
   });
-  const allEntries: AuditLogEntry[] = [];
-  const batchSize = 500;
-  let offset = 0;
-
-  while (true) {
-    const { data, error } = await buildAuditLogQuery(supabase, wsId, {
-      period: resolvedPeriod,
-      month,
-      year,
-      status: 'all',
-    })
-      .order('created_at', { ascending: true })
-      .range(offset, offset + batchSize - 1);
-
-    if (error) {
-      console.error('Error fetching audit log insights:', error);
-      break;
-    }
-
-    const rows = (data || []).map(mapAuditLogEntry);
-    allEntries.push(...rows);
-
-    if (rows.length < batchSize) {
-      break;
-    }
-
-    offset += batchSize;
-  }
-
-  const chartStats = buildAuditLogChartStats({
-    locale,
-    period: resolvedPeriod,
-    start,
-    end,
-  });
-  const chartLookup = new Map(
-    chartStats.map((stat) => [stat.key, stat] as const)
-  );
-  const actorCounts = new Map<string, { name: string; count: number }>();
-  const userCounts = new Map<string, { name: string; count: number }>();
-  const affectedUsers = new Set<string>();
-
-  let archivedCount = 0;
-  let activeCount = 0;
-
-  for (const entry of allEntries) {
-    const bucketKey = getEntryBucketKey(resolvedPeriod, entry.created_at);
-    const chartEntry = chartLookup.get(bucketKey);
-
-    if (chartEntry) {
-      chartEntry.totalCount += 1;
-      if (entry.archived) {
-        chartEntry.archivedCount += 1;
-      } else {
-        chartEntry.activeCount += 1;
-      }
-    }
-
-    if (entry.archived) {
-      archivedCount += 1;
-    } else {
-      activeCount += 1;
-    }
-
-    affectedUsers.add(entry.user_id);
-
-    const actorKey = entry.creator_id || 'system';
-    actorCounts.set(actorKey, {
-      name: entry.creator_full_name || 'Unknown',
-      count: (actorCounts.get(actorKey)?.count || 0) + 1,
-    });
-
-    userCounts.set(entry.user_id, {
-      name: entry.user_full_name || 'Unknown User',
-      count: (userCounts.get(entry.user_id)?.count || 0) + 1,
-    });
-  }
-
-  const peakBucket = getPeakBucket(chartStats);
-  const topActor =
-    Array.from(actorCounts.values()).sort((left, right) => {
-      return right.count - left.count;
-    })[0] ?? null;
-  const topUser =
-    Array.from(userCounts.values()).sort((left, right) => {
-      return right.count - left.count;
-    })[0] ?? null;
-
-  const summary: AuditLogInsightSummary = {
-    totalChanges: allEntries.length,
-    archivedCount,
-    activeCount,
-    affectedUsersCount: affectedUsers.size,
-    topActorName: topActor?.name || null,
-    topActorCount: topActor?.count || 0,
-    topUserName: topUser?.name || null,
-    topUserCount: topUser?.count || 0,
-    peakBucketLabel: peakBucket?.tooltipLabel || null,
-    peakBucketCount: peakBucket?.totalCount || 0,
-  };
 
   return {
-    period: resolvedPeriod,
-    timeValue: value,
-    summary,
-    chartStats,
+    count: response.count,
+    data: response.data,
   };
 }

@@ -28,6 +28,8 @@ export function TaskRelationshipsProperties({
   boardId,
   listId,
   isCreateMode,
+  initialActiveTab,
+  initialDependencySubTab,
   parentTask,
   childTasks,
   blockingTasks,
@@ -54,8 +56,10 @@ export function TaskRelationshipsProperties({
   disabled,
 }: TaskRelationshipsPropertiesProps) {
   const t = useTranslations();
-  const [isExpanded, setIsExpanded] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<RelationshipTab>('parent');
+  const [isExpanded, setIsExpanded] = React.useState(isCreateMode);
+  const [activeTab, setActiveTab] = React.useState<RelationshipTab>(
+    initialActiveTab ?? 'parent'
+  );
 
   // Tab configuration
   const tabs = React.useMemo(
@@ -103,18 +107,13 @@ export function TaskRelationshipsProperties({
   const totalCount = tabs.reduce((sum, tab) => sum + tab.count, 0);
   const dependencyCount = blockingTasks.length + blockedByTasks.length;
 
-  // Disable in create mode since relationships require existing task
-  if (isCreateMode) {
-    return null;
-  }
-
   return (
-    <div className="border-b bg-muted/20">
+    <div className="border-b bg-linear-to-b from-muted/30 via-muted/15 to-transparent">
       {/* Header with toggle button */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-muted/50 md:px-8"
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-background/40 md:px-8"
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <ChevronDown
@@ -133,16 +132,19 @@ export function TaskRelationshipsProperties({
               {parentTask && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
+                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
                 >
                   <ArrowUpCircle className="h-2.5 w-2.5" />
                   {t('ws-task-boards.dialog.parent')}
+                  <span className="rounded-full bg-background/80 px-1.5 py-0.5 leading-none">
+                    1
+                  </span>
                 </Badge>
               )}
               {childTasks.length > 0 && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
+                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
                 >
                   <ListTree className="h-2.5 w-2.5" />
                   {childTasks.length}
@@ -151,7 +153,7 @@ export function TaskRelationshipsProperties({
               {dependencyCount > 0 && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-red/30 bg-dynamic-red/10 px-2 font-medium text-[10px] text-dynamic-red"
+                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-red/30 bg-dynamic-red/10 px-2 font-medium text-[10px] text-dynamic-red"
                 >
                   <Ban className="h-2.5 w-2.5" />
                   {dependencyCount}
@@ -160,7 +162,7 @@ export function TaskRelationshipsProperties({
               {relatedTasks.length > 0 && (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 font-medium text-[10px] text-dynamic-blue"
+                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 font-medium text-[10px] text-dynamic-blue"
                 >
                   <Link2 className="h-2.5 w-2.5" />
                   {relatedTasks.length}
@@ -177,9 +179,9 @@ export function TaskRelationshipsProperties({
 
       {/* Expandable content */}
       {isExpanded && (
-        <div className="px-4 pb-4 md:px-8">
+        <div className="space-y-3 px-4 pb-4 md:px-8">
           {/* Tab navigation */}
-          <div className="mb-3 flex gap-1 overflow-x-auto border-b">
+          <div className="flex gap-2 overflow-x-auto rounded-full border border-border/60 bg-muted/15 p-1">
             {tabs.map((tab) => (
               <TabButton
                 key={tab.id}
@@ -194,7 +196,7 @@ export function TaskRelationshipsProperties({
           </div>
 
           {/* Tab content */}
-          <div className="min-h-30">
+          <div className="min-h-30 rounded-2xl border border-border/60 bg-background/70 p-3 md:p-4">
             {activeTab === 'parent' && (
               <ParentSection
                 wsId={wsId}
@@ -217,6 +219,7 @@ export function TaskRelationshipsProperties({
                 taskId={taskId}
                 boardId={boardId}
                 listId={listId}
+                parentTaskId={parentTask?.id ?? null}
                 childTasks={childTasks}
                 onNavigateToTask={onNavigateToTask}
                 onAddSubtask={onAddSubtask}
@@ -230,6 +233,7 @@ export function TaskRelationshipsProperties({
               <DependenciesSection
                 wsId={wsId}
                 taskId={taskId}
+                initialSubTab={initialDependencySubTab}
                 blockingTasks={blockingTasks}
                 blockedByTasks={blockedByTasks}
                 isSaving={isSaving}

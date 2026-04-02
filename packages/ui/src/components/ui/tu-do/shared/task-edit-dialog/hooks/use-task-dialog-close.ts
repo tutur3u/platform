@@ -19,6 +19,7 @@ export interface UseTaskDialogCloseProps {
   onNavigateToTask?: (taskId: string) => Promise<void>;
   flushNameUpdate: () => Promise<void>;
   persistTaskDescription?: () => Promise<boolean>;
+  hasPendingRealtimeDescriptionChanges?: () => boolean;
   onCloseBlocked?: () => void;
 
   // State setters
@@ -53,6 +54,7 @@ export function useTaskDialogClose({
   onNavigateToTask,
   flushNameUpdate,
   persistTaskDescription,
+  hasPendingRealtimeDescriptionChanges,
   onCloseBlocked,
   setShowSyncWarning,
 }: UseTaskDialogCloseProps): UseTaskDialogCloseReturn {
@@ -64,7 +66,12 @@ export function useTaskDialogClose({
     if (isClosingRef.current) return;
 
     // Show warning if not synced in collaboration mode
-    if (collaborationMode && !isCreateMode && (!synced || !connected)) {
+    if (
+      collaborationMode &&
+      !isCreateMode &&
+      (!synced || !connected) &&
+      (hasPendingRealtimeDescriptionChanges?.() ?? false)
+    ) {
       setShowSyncWarning(true);
       return;
     }
@@ -102,6 +109,7 @@ export function useTaskDialogClose({
     flushNameUpdate,
     taskId,
     persistTaskDescription,
+    hasPendingRealtimeDescriptionChanges,
     onCloseBlocked,
     draftStorageKey,
     onClose,

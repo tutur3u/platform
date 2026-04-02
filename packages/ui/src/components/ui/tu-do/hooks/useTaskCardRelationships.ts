@@ -49,6 +49,38 @@ export interface UseTaskCardRelationshipsReturn {
   hasLoadedRelationships: boolean;
 }
 
+const MAX_CONCURRENT_RELATIONSHIP_FETCHES = 3;
+let activeRelationshipFetches = 0;
+const pendingRelationshipFetchQueue: Array<() => void> = [];
+
+export async function enqueueTaskCardRelationshipRequest<T>(
+  task: () => Promise<T>
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const run = () => {
+      activeRelationshipFetches += 1;
+
+      task()
+        .then(resolve, reject)
+        .finally(() => {
+          activeRelationshipFetches = Math.max(
+            0,
+            activeRelationshipFetches - 1
+          );
+          const next = pendingRelationshipFetchQueue.shift();
+          next?.();
+        });
+    };
+
+    if (activeRelationshipFetches < MAX_CONCURRENT_RELATIONSHIP_FETCHES) {
+      run();
+      return;
+    }
+
+    pendingRelationshipFetchQueue.push(run);
+  });
+}
+
 /**
  * Hook for managing task relationships in the kanban task card context.
  * This is a lightweight version for the dropdown menu use case.
@@ -69,7 +101,9 @@ export function useTaskCardRelationships({
         return null;
       }
 
-      return getWorkspaceTaskRelationships(wsId, taskId);
+      return enqueueTaskCardRelationshipRequest(() =>
+        getWorkspaceTaskRelationships(wsId, taskId)
+      );
     },
     enabled: enabled && !!wsId && !!taskId,
     staleTime: 30000,

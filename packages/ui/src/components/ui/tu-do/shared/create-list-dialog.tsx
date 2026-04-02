@@ -41,6 +41,8 @@ interface CreateListDialogProps {
   boardId: string;
   wsId?: string;
   initialName?: string;
+  initialStatus?: TaskBoardStatus;
+  hasClosedList?: boolean;
   onSuccess?: (listId: string) => void;
   translations?: {
     createNewList?: string;
@@ -113,12 +115,31 @@ const statuses: TaskBoardStatus[] = [
   'closed',
 ];
 
+function getDefaultColorForStatus(status: TaskBoardStatus): SupportedColor {
+  switch (status) {
+    case 'documents':
+      return 'CYAN';
+    case 'not_started':
+      return 'GRAY';
+    case 'active':
+      return 'BLUE';
+    case 'done':
+      return 'GREEN';
+    case 'closed':
+      return 'PURPLE';
+    default:
+      return 'BLUE';
+  }
+}
+
 export function CreateListDialog({
   open,
   onOpenChange,
   boardId,
   wsId,
   initialName = '',
+  initialStatus = 'active',
+  hasClosedList = false,
   onSuccess,
   translations,
 }: CreateListDialogProps) {
@@ -156,22 +177,38 @@ export function CreateListDialog({
     documents: t.documents,
   };
   const queryClient = useQueryClient();
+  const resolvedInitialStatus =
+    hasClosedList && initialStatus === 'closed' ? 'active' : initialStatus;
 
   const [newListName, setNewListName] = useState('');
-  const [newListStatus, setNewListStatus] = useState<TaskBoardStatus>('active');
-  const [newListColor, setNewListColor] = useState<SupportedColor>('BLUE');
+  const [newListStatus, setNewListStatus] = useState<TaskBoardStatus>(
+    resolvedInitialStatus
+  );
+  const [newListColor, setNewListColor] = useState<SupportedColor>(
+    getDefaultColorForStatus(resolvedInitialStatus)
+  );
 
-  // Sync initialName when dialog opens
+  // Sync initial fields when dialog opens
   useEffect(() => {
-    if (open && initialName) {
-      setNewListName(initialName);
-    }
-  }, [open, initialName]);
+    if (!open) return;
+
+    setNewListName(initialName);
+    setNewListStatus(resolvedInitialStatus);
+    setNewListColor(getDefaultColorForStatus(resolvedInitialStatus));
+  }, [initialName, open, resolvedInitialStatus]);
+
+  useEffect(() => {
+    if (!open) return;
+    const expectedDefaultColor = getDefaultColorForStatus(newListStatus);
+    setNewListColor((current) =>
+      current === expectedDefaultColor ? current : expectedDefaultColor
+    );
+  }, [newListStatus, open]);
 
   const resetForm = () => {
     setNewListName('');
-    setNewListStatus('active');
-    setNewListColor('BLUE');
+    setNewListStatus(resolvedInitialStatus);
+    setNewListColor(getDefaultColorForStatus(resolvedInitialStatus));
   };
 
   const createListMutation = useMutation({
@@ -235,6 +272,7 @@ export function CreateListDialog({
 
   const handleCreateList = () => {
     if (!newListName.trim()) return;
+    if (hasClosedList && newListStatus === 'closed') return;
     createListMutation.mutate({
       name: newListName.trim(),
       status: newListStatus,
@@ -287,7 +325,11 @@ export function CreateListDialog({
                 {statuses.map((status) => {
                   const Icon = statusConfig[status].icon;
                   return (
-                    <SelectItem key={status} value={status}>
+                    <SelectItem
+                      key={status}
+                      value={status}
+                      disabled={hasClosedList && status === 'closed'}
+                    >
                       <div className="flex items-center gap-2">
                         <Icon
                           className={cn('h-4 w-4', statusConfig[status].color)}
@@ -333,7 +375,11 @@ export function CreateListDialog({
           </Button>
           <Button
             onClick={handleCreateList}
-            disabled={!newListName.trim() || createListMutation.isPending}
+            disabled={
+              !newListName.trim() ||
+              createListMutation.isPending ||
+              (hasClosedList && newListStatus === 'closed')
+            }
           >
             {createListMutation.isPending ? (
               <>

@@ -12056,6 +12056,7 @@
       "backlog": "Chờ xử lý",
       "blue": "Xanh dương",
       "cannot_move_to_closed": "Không thể di chuyển danh sách đến hoặc từ trạng thái đã đóng",
+      "cannot_reorder_across_statuses": "Chỉ có thể sắp xếp lại danh sách trong cùng một nhóm trạng thái",
       "change_color": "Thay đổi màu sắc",
       "closed": "Đã đóng",
       "color_updated": "Cập nhật màu sắc thành công",

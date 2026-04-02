@@ -9,11 +9,13 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { toast } from '@tuturuuu/ui/sonner';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBoardBroadcast } from '../../../../shared/board-broadcast-context';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { useAutoScroll } from './auto-scroll';
+import { getColumnReorderUpdates } from './column-reorder';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 
 interface UseKanbanDndProps {
@@ -25,7 +27,10 @@ interface UseKanbanDndProps {
   selectedTasks: Set<string>;
   isMultiSelectMode: boolean;
   clearSelection: () => void;
-  moveListMutation: any;
+  persistListPositions: (
+    updates: Array<{ listId: string; newPosition: number }>
+  ) => Promise<void>;
+  invalidColumnMoveMessage?: string;
   reorderTaskMutation: any;
   taskHeightsRef: React.RefObject<Map<string, number>>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -40,7 +45,8 @@ export function useKanbanDnd({
   selectedTasks,
   isMultiSelectMode,
   clearSelection,
-  moveListMutation,
+  persistListPositions,
+  invalidColumnMoveMessage,
   reorderTaskMutation,
   taskHeightsRef,
   scrollContainerRef,
@@ -282,83 +288,51 @@ export function useKanbanDnd({
       const overColumn = over.data?.current?.column;
 
       if (activeColumn && overColumn && activeColumn.id !== overColumn.id) {
-        // Find the positions in the sorted array
-        const sortedColumns = columns.sort((a, b) => {
-          const statusOrder = {
-            documents: 0,
-            not_started: 1,
-            active: 2,
-            done: 3,
-            closed: 4,
-          };
-          const statusA =
-            statusOrder[a.status as keyof typeof statusOrder] ?? 999;
-          const statusB =
-            statusOrder[b.status as keyof typeof statusOrder] ?? 999;
-          if (statusA !== statusB) return statusA - statusB;
-          return a.position - b.position;
-        });
+        if (activeColumn.status !== overColumn.status) {
+          toast.warning(
+            invalidColumnMoveMessage ??
+              'Task lists can only be reordered within the same status group'
+          );
+        }
 
-        const activeIndex = sortedColumns.findIndex(
-          (col) => col.id === activeColumn.id
-        );
-        const overIndex = sortedColumns.findIndex(
-          (col) => col.id === overColumn.id
+        const updates = getColumnReorderUpdates(
+          columns,
+          String(activeColumn.id),
+          String(overColumn.id)
         );
 
-        if (activeIndex !== -1 && overIndex !== -1) {
-          // Optimistically reorder in cache
-          const reorderedColumns = [...sortedColumns];
-          const [movedColumn] = reorderedColumns.splice(activeIndex, 1);
-          if (movedColumn) {
-            reorderedColumns.splice(overIndex, 0, movedColumn);
+        if (updates) {
+          const previousLists = queryClient.getQueryData<TaskList[]>([
+            'task_lists',
+            boardId,
+          ]);
 
-            // Store snapshot for rollback
-            const previousLists = queryClient.getQueryData<TaskList[]>([
-              'task_lists',
-              boardId,
-            ]);
+          queryClient.setQueryData(
+            ['task_lists', boardId],
+            (oldData: TaskList[] | undefined) => {
+              if (!oldData) return oldData;
+              return oldData.map((list) => {
+                const update = updates.find((item) => item.listId === list.id);
+                return update
+                  ? { ...list, position: update.newPosition }
+                  : list;
+              });
+            }
+          );
 
-            // Update positions for all affected columns
-            const updates = reorderedColumns.map((col, index) => ({
-              listId: col.id,
-              newPosition: index,
-            }));
+          try {
+            await persistListPositions(updates);
+          } catch (error) {
+            console.error('Failed to reorder list:', error);
+            toast.error('Failed to reorder list');
 
-            // Update cache optimistically (no invalidation)
-            queryClient.setQueryData(
-              ['task_lists', boardId],
-              (oldData: TaskList[] | undefined) => {
-                if (!oldData) return oldData;
-                return oldData.map((list) => {
-                  const update = updates.find((u) => u.listId === list.id);
-                  return update
-                    ? { ...list, position: update.newPosition }
-                    : list;
-                });
-              }
-            );
-
-            // Persist to database in background
-            Promise.allSettled(
-              updates.map((update) => moveListMutation.mutateAsync(update))
-            ).then((results) => {
-              const hasErrors = results.some((r) => r.status === 'rejected');
-              if (hasErrors) {
-                // Rollback on any error
-                console.error('Failed to persist column reordering');
-                if (previousLists) {
-                  queryClient.setQueryData(
-                    ['task_lists', boardId],
-                    previousLists
-                  );
-                } else {
-                  queryClient.invalidateQueries({
-                    queryKey: ['task_lists', boardId],
-                  });
-                }
-              }
-            });
+            if (previousLists) {
+              queryClient.setQueryData(['task_lists', boardId], previousLists);
+            } else {
+              queryClient.invalidateQueries({
+                queryKey: ['task_lists', boardId],
+              });
+            }
           }
         }
       }

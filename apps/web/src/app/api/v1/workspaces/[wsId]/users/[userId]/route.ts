@@ -1,4 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -60,7 +63,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -109,6 +112,10 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const supabase = await createClient(req);
+  const {
+    data: { user: actorUser },
+  } = await supabase.auth.getUser();
 
   // Get current user to check status changes
   const { data: currentUser, error: fetchError } = await sbAdmin
@@ -127,13 +134,17 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   // Update user
-  const { error } = await sbAdmin
-    .from('workspace_users')
-    .update(userPayload)
-    .eq('ws_id', wsId)
-    .eq('id', userId);
+  const { data: updatedUser, error } = await sbAdmin.rpc(
+    'admin_update_workspace_user_with_audit_actor',
+    {
+      p_ws_id: wsId,
+      p_user_id: userId,
+      p_payload: userPayload,
+      p_actor_auth_uid: actorUser?.id ?? undefined,
+    }
+  );
 
-  if (error) {
+  if (error || !updatedUser) {
     console.log(error);
     return NextResponse.json(
       { message: 'Error updating workspace user' },
@@ -141,28 +152,35 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  // Log status changes if archived status changed
-  if (typeof archived === 'boolean' && archived !== currentUser.archived) {
-    const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
-    if (currentWorkspaceUser) {
-      const { error: logError } = await sbAdmin
-        .from('workspace_user_status_changes')
-        .insert({
-          user_id: userId,
-          ws_id: wsId,
-          archived: archived,
-          archived_until: archived === false ? null : archived_until || null,
-          creator_id: currentWorkspaceUser.virtual_user_id,
-        });
+  const nextArchived =
+    typeof archived === 'boolean' ? archived : currentUser.archived;
+  const nextArchivedUntil =
+    archived === false
+      ? null
+      : archived_until !== undefined
+        ? archived_until
+        : currentUser.archived_until;
+  const shouldLogStatusChange =
+    nextArchived !== currentUser.archived ||
+    nextArchivedUntil !== currentUser.archived_until;
 
-      if (logError) {
-        console.log('Failed to log status change:', logError);
-        // Don't fail the request if logging fails, just log it
-      }
-    } else {
-      console.log(
-        'Skipping status change log due to missing current workspace user'
-      );
+  if (shouldLogStatusChange) {
+    const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
+    const { error: logError } = await sbAdmin
+      .from('workspace_user_status_changes')
+      .insert({
+        user_id: updatedUser.id,
+        ws_id: wsId,
+        archived: nextArchived,
+        archived_until: nextArchivedUntil,
+        creator_id: currentWorkspaceUser?.virtual_user_id ?? null,
+        actor_auth_uid: actorUser?.id ?? null,
+        source: 'live',
+      });
+
+    if (logError) {
+      console.log('Failed to log status change:', logError);
+      // Don't fail the request if logging fails, just log it
     }
   }
 
@@ -214,7 +232,7 @@ export async function DELETE(_: Request, { params }: Params) {
   const { wsId, userId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: _ });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -225,12 +243,19 @@ export async function DELETE(_: Request, { params }: Params) {
       { status: 403 }
     );
   }
+  const supabase = await createClient(_);
+  const {
+    data: { user: actorUser },
+  } = await supabase.auth.getUser();
   const sbAdmin = await createAdminClient();
-  const { error } = await sbAdmin
-    .from('workspace_users')
-    .delete()
-    .eq('ws_id', wsId)
-    .eq('id', userId);
+  const { error } = await sbAdmin.rpc(
+    'admin_delete_workspace_user_with_audit_actor',
+    {
+      p_ws_id: wsId,
+      p_user_id: userId,
+      p_actor_auth_uid: actorUser?.id ?? undefined,
+    }
+  );
 
   if (error) {
     console.log(error);

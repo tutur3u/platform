@@ -56,6 +56,12 @@ export interface Task {
   }[];
   relationship_summary?: {
     parent_task_id: string | null;
+    parent_task?: {
+      id: string;
+      name: string;
+      display_number?: number | null;
+      ticket_prefix?: string | null;
+    } | null;
     child_count: number;
     blocked_by_count: number;
     blocking_count: number;

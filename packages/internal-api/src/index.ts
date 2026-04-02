@@ -205,6 +205,7 @@ export {
   getCurrentUserProfile,
   getUserCalendarSettings,
   getUserConfig,
+  updateCurrentUserDefaultWorkspace,
   updateUserConfig,
 } from './users';
 export {
@@ -225,6 +226,15 @@ export {
   parseWorkspaceConfigIdList,
   updateWorkspaceConfig,
 } from './workspace-configs';
+export {
+  type BackfillWorkspaceUserStatusChangesPayload,
+  type BackfillWorkspaceUserStatusChangesResponse,
+  backfillWorkspaceUserStatusChanges,
+  listWorkspaceUserAuditLogs,
+  type WorkspaceUserAuditEventResponse,
+  type WorkspaceUserAuditLogQuery,
+  type WorkspaceUserAuditLogsResponse,
+} from './workspace-user-audit';
 export {
   getWorkspace,
   listWorkspaceMembers,

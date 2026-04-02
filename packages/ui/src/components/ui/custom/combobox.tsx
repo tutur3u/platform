@@ -19,6 +19,7 @@ import { Separator } from '../separator';
 export type ComboboxOption = {
   value: string;
   label: string;
+  searchValue?: string;
   description?: React.ReactNode;
   badge?: React.ReactNode;
   icon?: React.ReactNode;
@@ -349,7 +350,7 @@ export function Combobox({
                 {options.map((option) => (
                   <CommandItem
                     key={option.value}
-                    value={option.label}
+                    value={option.searchValue ?? option.label}
                     className={cn(option.muted && 'bg-muted/30')}
                     onSelect={() => {
                       if (onChange) {

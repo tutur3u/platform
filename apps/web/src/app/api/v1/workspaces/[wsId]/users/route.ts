@@ -1,4 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   MAX_LONG_TEXT_LENGTH,
@@ -146,7 +149,7 @@ async function getDataFromSession(
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -177,20 +180,23 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = validationResult.data;
 
+  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const {
+    data: { user: actorUser },
+  } = await supabase.auth.getUser();
   // Separate control flags from user payload
   // Do NOT allow archived or archived_until during creation
   const { is_guest, ...userPayload } = data ?? {};
 
-  // Create user and get the new id
-  const { data: createdUser, error } = await sbAdmin
-    .from('workspace_users')
-    .insert({
-      ...userPayload,
-      ws_id: wsId,
-    })
-    .select('id')
-    .single();
+  const { data: createdUser, error } = await sbAdmin.rpc(
+    'admin_create_workspace_user_with_audit_actor',
+    {
+      p_ws_id: wsId,
+      p_payload: userPayload,
+      p_actor_auth_uid: actorUser?.id ?? undefined,
+    }
+  );
 
   if (error) {
     console.log(error);

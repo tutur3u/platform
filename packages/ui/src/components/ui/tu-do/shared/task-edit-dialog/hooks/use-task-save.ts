@@ -7,6 +7,7 @@ import type { WorkspaceTaskUpdatePayload } from '@tuturuuu/internal-api/tasks';
 import { createWorkspaceTaskRelationship } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
+import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { createTask } from '@tuturuuu/utils/task-helper';
@@ -19,7 +20,10 @@ import {
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
-import type { PendingRelationship } from '../types/pending-relationship';
+import type {
+  PendingRelationship,
+  PendingTaskRelationships,
+} from '../types/pending-relationship';
 import {
   clearDraft,
   serializeTaskDescriptionContent,
@@ -51,6 +55,7 @@ export interface UseTaskSaveProps {
   sharedPermission?: 'view' | 'edit';
   parentTaskId?: string;
   pendingRelationship?: PendingRelationship;
+  pendingTaskRelationships?: PendingTaskRelationships;
   draftStorageKey: string;
 
   // Form state
@@ -156,6 +161,134 @@ const supabase = createClient();
 const internalApiBaseUrl =
   typeof window !== 'undefined' ? window.location.origin : undefined;
 
+export function dedupeById(tasks: RelatedTaskInfo[]): RelatedTaskInfo[] {
+  const seen = new Set<string>();
+  return tasks.filter((task) => {
+    if (!task.id || seen.has(task.id)) {
+      return false;
+    }
+    seen.add(task.id);
+    return true;
+  });
+}
+
+export function applyPendingRelationshipSummary({
+  boardId,
+  newTaskId,
+  queryClient,
+  pendingTaskRelationships,
+}: {
+  boardId: string;
+  newTaskId: string;
+  queryClient: QueryClient;
+  pendingTaskRelationships: PendingTaskRelationships;
+}) {
+  queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
+    if (!old) return old;
+
+    const parentTaskId = pendingTaskRelationships.parentTask?.id ?? null;
+    const newTaskSummary = old.find((task) => task.id === newTaskId);
+    const childTasks = dedupeById(pendingTaskRelationships.childTasks);
+    const blockingTasks = dedupeById(pendingTaskRelationships.blockingTasks);
+    const blockedByTasks = dedupeById(pendingTaskRelationships.blockedByTasks);
+    const relatedTasks = dedupeById(pendingTaskRelationships.relatedTasks);
+
+    return old.map((task) => {
+      const relationshipSummary = task.relationship_summary ?? {
+        parent_task_id: null,
+        parent_task: null,
+        child_count: 0,
+        blocked_by_count: 0,
+        blocking_count: 0,
+        related_count: 0,
+      };
+
+      if (task.id === newTaskId) {
+        return {
+          ...task,
+          relationship_summary: {
+            parent_task_id: parentTaskId,
+            parent_task: pendingTaskRelationships.parentTask
+              ? {
+                  id: pendingTaskRelationships.parentTask.id,
+                  name: pendingTaskRelationships.parentTask.name,
+                  display_number:
+                    pendingTaskRelationships.parentTask.display_number ?? null,
+                  ticket_prefix:
+                    pendingTaskRelationships.parentTask.ticket_prefix ?? null,
+                }
+              : null,
+            child_count: childTasks.length,
+            blocked_by_count: blockedByTasks.length,
+            blocking_count: blockingTasks.length,
+            related_count: relatedTasks.length,
+          },
+        };
+      }
+
+      if (parentTaskId && task.id === parentTaskId) {
+        return {
+          ...task,
+          relationship_summary: {
+            ...relationshipSummary,
+            child_count: relationshipSummary.child_count + 1,
+          },
+        };
+      }
+
+      if (childTasks.some((childTask) => childTask.id === task.id)) {
+        return {
+          ...task,
+          relationship_summary: {
+            ...relationshipSummary,
+            parent_task_id: newTaskId,
+            parent_task: {
+              id: newTaskId,
+              name: newTaskSummary?.name ?? '',
+              display_number: newTaskSummary?.display_number ?? null,
+              ticket_prefix: null,
+            },
+          },
+        };
+      }
+
+      if (blockingTasks.some((blockingTask) => blockingTask.id === task.id)) {
+        return {
+          ...task,
+          relationship_summary: {
+            ...relationshipSummary,
+            blocked_by_count: relationshipSummary.blocked_by_count + 1,
+          },
+        };
+      }
+
+      if (
+        blockedByTasks.some((blockedByTask) => blockedByTask.id === task.id)
+      ) {
+        return {
+          ...task,
+          relationship_summary: {
+            ...relationshipSummary,
+            blocking_count: relationshipSummary.blocking_count + 1,
+          },
+        };
+      }
+
+      if (relatedTasks.some((relatedTask) => relatedTask.id === task.id)) {
+        return {
+          ...task,
+          relationship_summary: {
+            ...relationshipSummary,
+            related_count: relationshipSummary.related_count + 1,
+          },
+        };
+      }
+
+      return task;
+    });
+  });
+}
+
 export function useTaskSave({
   wsId,
   boardId,
@@ -169,6 +302,7 @@ export function useTaskSave({
   sharedPermission,
   parentTaskId,
   pendingRelationship,
+  pendingTaskRelationships,
   draftStorageKey,
   name,
   description,
@@ -360,6 +494,7 @@ export function useTaskSave({
         autoSchedule,
         parentTaskId,
         pendingRelationship,
+        pendingTaskRelationships,
         isPersonalWorkspace,
         user,
         userTaskSettings,
@@ -454,6 +589,7 @@ export function useTaskSave({
     saveSchedulingSettings,
     parentTaskId,
     pendingRelationship,
+    pendingTaskRelationships,
     isPersonalWorkspace,
     user,
     userTaskSettings,
@@ -662,6 +798,7 @@ async function handleCreateTask({
   autoSchedule,
   parentTaskId,
   pendingRelationship,
+  pendingTaskRelationships,
   isPersonalWorkspace,
   user,
   userTaskSettings,
@@ -714,6 +851,7 @@ async function handleCreateTask({
   autoSchedule: boolean;
   parentTaskId?: string;
   pendingRelationship?: PendingRelationship;
+  pendingTaskRelationships?: PendingTaskRelationships;
   isPersonalWorkspace: boolean;
   user: {
     id: string;
@@ -830,39 +968,16 @@ async function handleCreateTask({
       }
     }
 
-    // Handle parent task relationship
-    if (parentTaskId) {
-      try {
-        await createWorkspaceTaskRelationship(
-          wsId,
-          parentTaskId,
-          {
-            source_task_id: parentTaskId,
-            target_task_id: newTask.id,
-            type: 'parent_child',
-          },
-          internalApiBaseUrl ? { baseUrl: internalApiBaseUrl } : undefined
-        );
-      } catch (relationshipError) {
-        console.error(
-          'Failed to create parent-child relationship:',
-          relationshipError
-        );
-      }
-      await queryClient.invalidateQueries({
-        queryKey: ['task-relationships', parentTaskId],
-      });
-    }
+    const normalizedPendingRelationships =
+      pendingTaskRelationships ??
+      getLegacyPendingTaskRelationships(parentTaskId, pendingRelationship);
 
-    // Handle pending relationships
-    if (pendingRelationship) {
-      await handlePendingRelationship(
-        wsId,
-        newTask.id,
-        pendingRelationship,
-        queryClient
-      );
-    }
+    const affectedRelationshipTaskIds = await persistPendingTaskRelationships(
+      wsId,
+      newTask.id,
+      normalizedPendingRelationships,
+      queryClient
+    );
 
     const nextLabels: Task['labels'] = selectedLabels.flatMap((label) =>
       label.name && label.color && label.created_at
@@ -901,6 +1016,24 @@ async function handleCreateTask({
         avatar_url: assignee.avatar_url ?? undefined,
       })),
       projects: nextProjects,
+      relationship_summary: {
+        parent_task_id: normalizedPendingRelationships.parentTask?.id ?? null,
+        parent_task: normalizedPendingRelationships.parentTask
+          ? {
+              id: normalizedPendingRelationships.parentTask.id,
+              name: normalizedPendingRelationships.parentTask.name,
+              display_number:
+                normalizedPendingRelationships.parentTask.display_number ??
+                null,
+              ticket_prefix:
+                normalizedPendingRelationships.parentTask.ticket_prefix ?? null,
+            }
+          : null,
+        child_count: normalizedPendingRelationships.childTasks.length,
+        blocked_by_count: normalizedPendingRelationships.blockedByTasks.length,
+        blocking_count: normalizedPendingRelationships.blockingTasks.length,
+        related_count: normalizedPendingRelationships.relatedTasks.length,
+      },
     };
 
     const locallyCreatedTask = {
@@ -914,6 +1047,12 @@ async function handleCreateTask({
       if (old.some((t) => t.id === newTask.id)) return old;
       return [...old, locallyCreatedTask];
     });
+    applyPendingRelationshipSummary({
+      boardId,
+      newTaskId: newTask.id,
+      queryClient,
+      pendingTaskRelationships: normalizedPendingRelationships,
+    });
     await queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
 
     // Broadcast the new task to other clients
@@ -925,10 +1064,19 @@ async function handleCreateTask({
     if (hasRelations) {
       broadcast?.('task:relations-changed', { taskId: newTask.id });
     }
+    if (affectedRelationshipTaskIds.length > 0) {
+      broadcast?.('task:deps-changed', {
+        taskIds: affectedRelationshipTaskIds,
+      });
+    }
 
     toast({
-      title: parentTaskId ? 'Sub-task created' : 'Task created',
-      description: parentTaskId ? 'New sub-task added.' : 'New task added.',
+      title: normalizedPendingRelationships.parentTask
+        ? 'Sub-task created'
+        : 'Task created',
+      description: normalizedPendingRelationships.parentTask
+        ? 'New sub-task added.'
+        : 'New task added.',
     });
     onUpdate();
 
@@ -966,71 +1114,176 @@ async function handleCreateTask({
   }
 }
 
-// Helper function for pending relationships
-async function handlePendingRelationship(
+export function getLegacyPendingTaskRelationships(
+  parentTaskId?: string,
+  pendingRelationship?: PendingRelationship
+): PendingTaskRelationships {
+  if (parentTaskId) {
+    return {
+      parentTask: {
+        id: parentTaskId,
+        name: pendingRelationship?.relatedTaskName || parentTaskId,
+      },
+      childTasks: [],
+      blockingTasks: [],
+      blockedByTasks: [],
+      relatedTasks: [],
+    };
+  }
+
+  if (!pendingRelationship?.relatedTaskId) {
+    return {
+      parentTask: null,
+      childTasks: [],
+      blockingTasks: [],
+      blockedByTasks: [],
+      relatedTasks: [],
+    };
+  }
+
+  const relatedTask: RelatedTaskInfo = {
+    id: pendingRelationship.relatedTaskId,
+    name:
+      pendingRelationship.relatedTaskName || pendingRelationship.relatedTaskId,
+  };
+
+  switch (pendingRelationship.type) {
+    case 'subtask':
+      return {
+        parentTask: relatedTask,
+        childTasks: [],
+        blockingTasks: [],
+        blockedByTasks: [],
+        relatedTasks: [],
+      };
+    case 'parent':
+      return {
+        parentTask: null,
+        childTasks: [relatedTask],
+        blockingTasks: [],
+        blockedByTasks: [],
+        relatedTasks: [],
+      };
+    case 'blocking':
+      return {
+        parentTask: null,
+        childTasks: [],
+        blockingTasks: [],
+        blockedByTasks: [relatedTask],
+        relatedTasks: [],
+      };
+    case 'blocked-by':
+      return {
+        parentTask: null,
+        childTasks: [],
+        blockingTasks: [relatedTask],
+        blockedByTasks: [],
+        relatedTasks: [],
+      };
+    case 'related':
+      return {
+        parentTask: null,
+        childTasks: [],
+        blockingTasks: [],
+        blockedByTasks: [],
+        relatedTasks: [relatedTask],
+      };
+  }
+}
+
+export async function persistPendingTaskRelationships(
   wsId: string,
   newTaskId: string,
-  pendingRelationship: PendingRelationship,
+  pendingTaskRelationships: PendingTaskRelationships,
   queryClient: QueryClient
 ) {
-  try {
-    const { type, relatedTaskId } = pendingRelationship;
-    let relationshipData:
-      | {
-          source_task_id: string;
-          target_task_id: string;
-          type: 'parent_child' | 'blocks' | 'related';
-        }
-      | undefined;
+  const affectedTaskIds = new Set<string>([newTaskId]);
 
-    switch (type) {
-      case 'parent':
-        relationshipData = {
-          source_task_id: newTaskId,
-          target_task_id: relatedTaskId,
-          type: 'parent_child',
-        };
-        break;
-      case 'blocking':
-        relationshipData = {
-          source_task_id: relatedTaskId,
-          target_task_id: newTaskId,
-          type: 'blocks',
-        };
-        break;
-      case 'blocked-by':
-        relationshipData = {
-          source_task_id: newTaskId,
-          target_task_id: relatedTaskId,
-          type: 'blocks',
-        };
-        break;
-      case 'related':
-        relationshipData = {
-          source_task_id: relatedTaskId,
-          target_task_id: newTaskId,
-          type: 'related',
-        };
-        break;
+  const createRelationship = async ({
+    sourceTaskId,
+    targetTaskId,
+    type,
+  }: {
+    sourceTaskId: string;
+    targetTaskId: string;
+    type: 'parent_child' | 'blocks' | 'related';
+  }) => {
+    await createWorkspaceTaskRelationship(
+      wsId,
+      sourceTaskId,
+      {
+        source_task_id: sourceTaskId,
+        target_task_id: targetTaskId,
+        type,
+      },
+      internalApiBaseUrl ? { baseUrl: internalApiBaseUrl } : undefined
+    );
+    affectedTaskIds.add(sourceTaskId);
+    affectedTaskIds.add(targetTaskId);
+  };
+
+  try {
+    if (pendingTaskRelationships.parentTask?.id) {
+      await createRelationship({
+        sourceTaskId: pendingTaskRelationships.parentTask.id,
+        targetTaskId: newTaskId,
+        type: 'parent_child',
+      });
     }
 
-    if (relationshipData) {
-      await createWorkspaceTaskRelationship(
-        wsId,
-        relationshipData.source_task_id,
-        relationshipData,
-        internalApiBaseUrl ? { baseUrl: internalApiBaseUrl } : undefined
-      );
-      await queryClient.invalidateQueries({
-        queryKey: ['task-relationships', relatedTaskId],
+    for (const childTask of dedupeById(pendingTaskRelationships.childTasks)) {
+      await createRelationship({
+        sourceTaskId: newTaskId,
+        targetTaskId: childTask.id,
+        type: 'parent_child',
       });
-      await queryClient.invalidateQueries({
-        queryKey: ['task-relationships', newTaskId],
+    }
+
+    for (const blockingTask of dedupeById(
+      pendingTaskRelationships.blockingTasks
+    )) {
+      await createRelationship({
+        sourceTaskId: newTaskId,
+        targetTaskId: blockingTask.id,
+        type: 'blocks',
+      });
+    }
+
+    for (const blockedByTask of dedupeById(
+      pendingTaskRelationships.blockedByTasks
+    )) {
+      await createRelationship({
+        sourceTaskId: blockedByTask.id,
+        targetTaskId: newTaskId,
+        type: 'blocks',
+      });
+    }
+
+    for (const relatedTask of dedupeById(
+      pendingTaskRelationships.relatedTasks
+    )) {
+      await createRelationship({
+        sourceTaskId: relatedTask.id,
+        targetTaskId: newTaskId,
+        type: 'related',
       });
     }
   } catch (relationshipError) {
-    console.error('Failed to create pending relationship:', relationshipError);
+    console.error(
+      'Failed to create pending task relationships:',
+      relationshipError
+    );
   }
+
+  await Promise.all(
+    Array.from(affectedTaskIds).map((taskId) =>
+      queryClient.invalidateQueries({
+        queryKey: ['task-relationships', taskId],
+      })
+    )
+  );
+
+  return Array.from(affectedTaskIds);
 }
 
 // Helper function for updating tasks

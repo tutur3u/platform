@@ -24,40 +24,42 @@ export function ClickableTaskItem({
   const taskIdentifier = formatRelationshipTaskIdentifier(task);
 
   return (
-    <div className="group flex items-center justify-between gap-2 rounded-lg border bg-background p-2.5 transition-colors hover:bg-muted/50">
+    <div className="group flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-linear-to-r from-background via-background to-muted/20 p-3 transition-all hover:border-border hover:shadow-sm">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
               onClick={() => onNavigateToTask(task.id)}
-              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
             >
               <div
                 className={cn(
-                  'h-2 w-2 shrink-0 rounded-full',
+                  'h-2.5 w-2.5 shrink-0 rounded-full ring-4 ring-background',
                   task.completed ? 'bg-dynamic-green' : 'bg-muted-foreground/30'
                 )}
               />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span
                   className={cn(
-                    'truncate text-sm transition-colors group-hover:text-primary',
+                    'truncate font-medium text-sm transition-colors group-hover:text-primary',
                     task.completed && 'text-muted-foreground line-through'
                   )}
                 >
                   {task.name}
                 </span>
-                {taskIdentifier && (
-                  <span className="w-fit rounded border px-1 py-0.5 font-mono text-[10px] uppercase">
-                    {taskIdentifier}
-                  </span>
-                )}
-                <span className="text-muted-foreground text-xs">
-                  {task.board_name}
-                </span>
+                <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
+                  {taskIdentifier && (
+                    <span className="w-fit rounded-full border border-border/70 bg-muted/35 px-1.5 py-0.5 font-mono text-[10px] uppercase leading-none">
+                      {taskIdentifier}
+                    </span>
+                  )}
+                  {task.board_name && (
+                    <span className="truncate">{task.board_name}</span>
+                  )}
+                </div>
               </div>
-              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top">

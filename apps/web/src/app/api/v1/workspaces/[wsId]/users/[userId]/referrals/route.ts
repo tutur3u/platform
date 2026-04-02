@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -9,6 +10,12 @@ import {
   fetchRequireAttentionUserIds,
   withRequireAttentionFlag,
 } from '@/lib/require-attention-users';
+import { matchesWorkspaceUserSearch } from '@/lib/workspace-user-search';
+
+const ReferralQuerySchema = z.object({
+  type: z.enum(['available', 'list']).default('list'),
+  q: z.string().max(MAX_SEARCH_LENGTH).default(''),
+});
 
 interface Params {
   params: Promise<{
@@ -27,7 +34,19 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { searchParams } = new URL(req.url);
-  const type = searchParams.get('type') || 'list';
+  const parsedQuery = ReferralQuerySchema.safeParse({
+    type: searchParams.get('type') ?? undefined,
+    q: searchParams.get('q') ?? undefined,
+  });
+
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { message: 'Invalid query parameters' },
+      { status: 400 }
+    );
+  }
+
+  const { type, q } = parsedQuery.data;
 
   if (type === 'available') {
     const { data, error } = await sbAdmin.rpc('get_available_referral_users', {
@@ -43,11 +62,15 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
 
-    const availableUsers = (data ?? []) as {
-      id: string;
-      full_name?: string | null;
-      display_name?: string | null;
-    }[];
+    const availableUsers = (
+      (data ?? []) as {
+        id: string;
+        full_name?: string | null;
+        display_name?: string | null;
+        email?: string | null;
+        phone?: string | null;
+      }[]
+    ).filter((user) => matchesWorkspaceUserSearch(user, q));
     const requireAttentionUserIds = await fetchRequireAttentionUserIds(
       sbAdmin,
       {

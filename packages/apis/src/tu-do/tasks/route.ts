@@ -482,6 +482,7 @@ export async function GET(
           ? {
               relationship_summary: {
                 parent_task_id: summary?.parentTaskId ?? null,
+                parent_task: summary?.parentTask ?? null,
                 child_count: summary?.childCount ?? 0,
                 blocked_by_count: summary?.blockedByCount ?? 0,
                 blocking_count: summary?.blockingCount ?? 0,

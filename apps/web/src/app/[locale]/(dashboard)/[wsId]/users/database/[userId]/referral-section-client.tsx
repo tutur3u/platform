@@ -14,12 +14,14 @@ import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { RequireAttentionName } from '@/components/users/require-attention-name';
+import { buildWorkspaceUserSearchValue } from '@/lib/workspace-user-search';
 
 interface ReferralSectionClientProps {
   wsId: string;
@@ -47,15 +49,30 @@ export default function ReferralSectionClient({
 }: ReferralSectionClientProps) {
   const t = useTranslations('user-data-table');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
 
   const queryClient = useQueryClient();
+  const trimmedSearchQuery = debouncedSearchQuery.trim();
 
   // Single query: fetch all available users via RPC, hydrate with SSR data
   const availableUsersQuery = useQuery({
-    queryKey: ['ws', wsId, 'users', 'available-for-referral', userId],
+    queryKey: [
+      'ws',
+      wsId,
+      'users',
+      'available-for-referral',
+      userId,
+      trimmedSearchQuery,
+    ],
     queryFn: async (): Promise<{ data: WorkspaceUser[]; count: number }> => {
+      const searchParams = new URLSearchParams({ type: 'available' });
+      if (trimmedSearchQuery) {
+        searchParams.set('q', trimmedSearchQuery);
+      }
+
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/referrals?type=available`,
+        `/api/v1/workspaces/${wsId}/users/${userId}/referrals?${searchParams.toString()}`,
         { cache: 'no-store' }
       );
       if (!response.ok) throw new Error('Failed to fetch available users');
@@ -63,10 +80,12 @@ export default function ReferralSectionClient({
       const users = (Array.isArray(data) ? data : []) as WorkspaceUser[];
       return { data: users, count: users.length };
     },
-    initialData: {
-      data: initialAvailableUsers,
-      count: initialAvailableUsersCount,
-    },
+    initialData: trimmedSearchQuery
+      ? undefined
+      : {
+          data: initialAvailableUsers,
+          count: initialAvailableUsersCount,
+        },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -105,9 +124,9 @@ export default function ReferralSectionClient({
     () =>
       (availableUsersQuery.data?.data || []).map((user) => ({
         value: user.id,
-        label: `${user.full_name || user.display_name || t('common.unknown')} ${
-          user.email || user.phone ? `(${user.email || user.phone})` : ''
-        }`,
+        label: user.full_name || user.display_name || t('common.unknown'),
+        description: user.email || user.phone || undefined,
+        searchValue: buildWorkspaceUserSearchValue(user),
       })),
     [availableUsersQuery.data?.data, t]
   );
@@ -153,8 +172,8 @@ export default function ReferralSectionClient({
       setSelectedUserId('');
 
       // Optimistic cache updates
-      await queryClient.setQueryData(
-        ['ws', wsId, 'users', 'available-for-referral', userId],
+      await queryClient.setQueriesData(
+        { queryKey: ['ws', wsId, 'users', 'available-for-referral', userId] },
         (
           prev: { data: WorkspaceUser[]; count: number } | undefined
         ): { data: WorkspaceUser[]; count: number } | undefined => {
@@ -215,26 +234,15 @@ export default function ReferralSectionClient({
       }
       return referredUserId;
     },
-    onSuccess: async (referredUserId) => {
+    onSuccess: async () => {
       toast.success(t('unrefer_success'));
       setSelectedUserId('');
 
       // Optimistic cache updates
       await queryClient.setQueryData(
-        ['ws', wsId, 'users', 'available-for-referral', userId],
-        (
-          prev: { data: WorkspaceUser[]; count: number } | undefined
-        ): { data: WorkspaceUser[]; count: number } | undefined => {
-          if (!prev) return prev;
-          const data = prev.data.filter((u) => u.id !== referredUserId);
-          return { data, count: data.length };
-        }
-      );
-
-      await queryClient.setQueryData(
         ['ws', wsId, 'user', userId, 'referrals', 'count'],
         (prev: number | undefined) =>
-          typeof prev === 'number' ? prev + 1 : undefined
+          typeof prev === 'number' ? Math.max(prev - 1, 0) : undefined
       );
 
       // Invalidate to reconcile with server
@@ -428,6 +436,7 @@ export default function ReferralSectionClient({
                     selected={selectedUserId}
                     onChange={(value) => setSelectedUserId(value as string)}
                     placeholder={t('search_person_to_refer_placeholder')}
+                    onSearchChange={setSearchQuery}
                   />
                   {/* No pagination */}
                 </div>

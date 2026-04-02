@@ -67,4 +67,102 @@ describe('buildTaskRelationshipSummary', () => {
         .map((call) => call.ids.length)
     ).toEqual([200, 200, 1]);
   });
+
+  it('includes lightweight parent task details in the summary', async () => {
+    const client = {
+      from: vi.fn((table: string) => {
+        if (table === 'task_relationships') {
+          return {
+            select: vi.fn(() => ({
+              in: vi.fn(
+                async (
+                  column: 'source_task_id' | 'target_task_id',
+                  ids: string[]
+                ) => {
+                  if (
+                    column === 'target_task_id' &&
+                    ids.includes('task-child')
+                  ) {
+                    return {
+                      data: [
+                        {
+                          id: 'rel-1',
+                          source_task_id: 'task-parent',
+                          target_task_id: 'task-child',
+                          type: 'parent_child',
+                        },
+                      ],
+                      error: null,
+                    };
+                  }
+
+                  return { data: [], error: null };
+                }
+              ),
+            })),
+          };
+        }
+
+        if (table === 'tasks') {
+          return {
+            select: vi.fn(() => ({
+              in: vi.fn(async () => ({
+                data: [
+                  {
+                    id: 'task-parent',
+                    name: 'Parent title',
+                    display_number: 11,
+                    deleted_at: null,
+                    list: {
+                      board: {
+                        ws_id: 'ws-1',
+                        name: 'Board',
+                        ticket_prefix: 'TTR',
+                      },
+                    },
+                  },
+                  {
+                    id: 'task-child',
+                    name: 'Child title',
+                    display_number: 12,
+                    deleted_at: null,
+                    list: {
+                      board: {
+                        ws_id: 'ws-1',
+                        name: 'Board',
+                        ticket_prefix: 'TTR',
+                      },
+                    },
+                  },
+                ],
+                error: null,
+              })),
+            })),
+          };
+        }
+
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    };
+
+    const summary = await buildTaskRelationshipSummary(
+      client as never,
+      'ws-1',
+      ['task-child']
+    );
+
+    expect(summary.get('task-child')).toEqual({
+      parentTaskId: 'task-parent',
+      parentTask: {
+        id: 'task-parent',
+        name: 'Parent title',
+        display_number: 11,
+        ticket_prefix: 'TTR',
+      },
+      childCount: 0,
+      blockedByCount: 0,
+      blockingCount: 0,
+      relatedCount: 0,
+    });
+  });
 });

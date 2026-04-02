@@ -16,6 +16,11 @@ export type CurrentUserProfileResponse = {
   full_name: string | null;
   new_email: string | null;
   created_at: string;
+  default_workspace_id: string | null;
+};
+
+export type UpdateCurrentUserDefaultWorkspaceResponse = {
+  success: boolean;
 };
 
 export interface CreateSupportInquiryPayload {
@@ -77,6 +82,23 @@ export async function getCurrentUserProfile(
   return client.json<CurrentUserProfileResponse>('/api/v1/users/me/profile', {
     cache: 'no-store',
   });
+}
+
+export async function updateCurrentUserDefaultWorkspace(
+  workspaceId: string | null,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpdateCurrentUserDefaultWorkspaceResponse>(
+    '/api/v1/users/me/default-workspace',
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workspaceId }),
+    }
+  );
 }
 
 export async function getUserCalendarSettings(

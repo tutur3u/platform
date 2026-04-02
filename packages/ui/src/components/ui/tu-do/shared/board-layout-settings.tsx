@@ -592,6 +592,8 @@ export function BoardLayoutSettings({
     null
   );
   const [creatingList, setCreatingList] = useState(false);
+  const [createListStatus, setCreateListStatus] =
+    useState<TaskBoardStatus>('active');
 
   // Broadcast for realtime sync with other clients
   const contextBroadcast = useBoardBroadcast();
@@ -920,6 +922,12 @@ export function BoardLayoutSettings({
     'closed',
   ];
 
+  const openCreateListDialog = useCallback((status: TaskBoardStatus) => {
+    setCreateListStatus(status);
+    setCreatingList(true);
+  }, []);
+  const hasClosedList = (groupedLists.closed?.length ?? 0) > 0;
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -932,16 +940,6 @@ export function BoardLayoutSettings({
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Add New List Button */}
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setCreatingList(true)}
-            >
-              <Plus className="h-4 w-4" />
-              {t.addNewList}
-            </Button>
-
             {/* Lists by Status */}
             <ScrollArea className="h-125 pr-4">
               <DndContext
@@ -955,29 +953,43 @@ export function BoardLayoutSettings({
                     const statusLists = (groupedLists[status] || []).sort(
                       (a, b) => (a?.position || 0) - (b?.position || 0)
                     );
+                    const canCreateInStatus =
+                      status !== 'closed' || statusLists.length === 0;
 
                     return (
                       <div key={status} className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              'flex h-6 w-6 items-center justify-center rounded',
-                              statusConfig[status].bgColor
-                            )}
-                          >
-                            <StatusIcon
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <div
                               className={cn(
-                                'h-3.5 w-3.5',
-                                statusConfig[status].color
+                                'flex h-6 w-6 items-center justify-center rounded',
+                                statusConfig[status].bgColor
                               )}
-                            />
+                            >
+                              <StatusIcon
+                                className={cn(
+                                  'h-3.5 w-3.5',
+                                  statusConfig[status].color
+                                )}
+                              />
+                            </div>
+                            <h3 className="font-semibold text-sm">
+                              {statusLabels[status]}
+                            </h3>
+                            <Badge variant="secondary" className="text-[10px]">
+                              {statusLists.length}
+                            </Badge>
                           </div>
-                          <h3 className="font-semibold text-sm">
-                            {statusLabels[status]}
-                          </h3>
-                          <Badge variant="secondary" className="text-[10px]">
-                            {statusLists.length}
-                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
+                            disabled={!canCreateInStatus}
+                            onClick={() => openCreateListDialog(status)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            {t.addNewList}
+                          </Button>
                         </div>
 
                         {statusLists.length === 0 ? (
@@ -985,6 +997,16 @@ export function BoardLayoutSettings({
                             <p className="text-muted-foreground text-sm">
                               {t.noListsInStatus}
                             </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-3 gap-1.5"
+                              disabled={!canCreateInStatus}
+                              onClick={() => openCreateListDialog(status)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              {t.addNewList}
+                            </Button>
                           </div>
                         ) : (
                           <SortableContext
@@ -1049,6 +1071,8 @@ export function BoardLayoutSettings({
         onOpenChange={setCreatingList}
         boardId={boardId}
         wsId={wsId}
+        initialStatus={createListStatus}
+        hasClosedList={hasClosedList}
         onSuccess={() => {
           onUpdate();
         }}

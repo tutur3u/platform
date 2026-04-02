@@ -19,6 +19,7 @@ import {
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
+import type { PendingTaskRelationships } from '../types/pending-relationship';
 
 export interface UseTaskDependenciesProps {
   taskId?: string;
@@ -26,6 +27,7 @@ export interface UseTaskDependenciesProps {
   wsId: string;
   listId?: string;
   isCreateMode: boolean;
+  initialPendingRelationships?: PendingTaskRelationships;
   onUpdate?: () => void;
 }
 
@@ -64,6 +66,18 @@ export interface UseTaskDependenciesReturn {
 
   // Loading states
   savingRelationship: string | null;
+  pendingRelationships: PendingTaskRelationships;
+}
+
+function dedupeTasksById(tasks: RelatedTaskInfo[]): RelatedTaskInfo[] {
+  const seen = new Set<string>();
+  return tasks.filter((task) => {
+    if (!task.id || seen.has(task.id)) {
+      return false;
+    }
+    seen.add(task.id);
+    return true;
+  });
 }
 
 /**
@@ -76,6 +90,7 @@ export function useTaskDependencies({
   wsId,
   listId,
   isCreateMode,
+  initialPendingRelationships,
   onUpdate,
 }: UseTaskDependenciesProps): UseTaskDependenciesReturn {
   const queryClient = useQueryClient();
@@ -89,14 +104,20 @@ export function useTaskDependencies({
 
   // Pending relationships for create mode (not yet saved to DB)
   const [pendingParent, setPendingParent] = useState<RelatedTaskInfo | null>(
-    null
+    initialPendingRelationships?.parentTask ?? null
   );
-  const [pendingChildren, setPendingChildren] = useState<RelatedTaskInfo[]>([]);
-  const [pendingBlocking, setPendingBlocking] = useState<RelatedTaskInfo[]>([]);
+  const [pendingChildren, setPendingChildren] = useState<RelatedTaskInfo[]>(
+    () => dedupeTasksById(initialPendingRelationships?.childTasks ?? [])
+  );
+  const [pendingBlocking, setPendingBlocking] = useState<RelatedTaskInfo[]>(
+    () => dedupeTasksById(initialPendingRelationships?.blockingTasks ?? [])
+  );
   const [pendingBlockedBy, setPendingBlockedBy] = useState<RelatedTaskInfo[]>(
-    []
+    () => dedupeTasksById(initialPendingRelationships?.blockedByTasks ?? [])
   );
-  const [pendingRelated, setPendingRelated] = useState<RelatedTaskInfo[]>([]);
+  const [pendingRelated, setPendingRelated] = useState<RelatedTaskInfo[]>(() =>
+    dedupeTasksById(initialPendingRelationships?.relatedTasks ?? [])
+  );
 
   // Fetch relationships from server
   const { data: relationships, isLoading } = useQuery({
@@ -287,7 +308,7 @@ export function useTaskDependencies({
   const addChildTask = useCallback(
     async (task: RelatedTaskInfo) => {
       if (isCreateMode) {
-        setPendingChildren((prev) => [...prev, task]);
+        setPendingChildren((prev) => dedupeTasksById([...prev, task]));
         return;
       }
 
@@ -358,7 +379,7 @@ export function useTaskDependencies({
   const addBlockingTask = useCallback(
     async (task: RelatedTaskInfo) => {
       if (isCreateMode) {
-        setPendingBlocking((prev) => [...prev, task]);
+        setPendingBlocking((prev) => dedupeTasksById([...prev, task]));
         return;
       }
 
@@ -469,7 +490,7 @@ export function useTaskDependencies({
   const addBlockedByTask = useCallback(
     async (task: RelatedTaskInfo) => {
       if (isCreateMode) {
-        setPendingBlockedBy((prev) => [...prev, task]);
+        setPendingBlockedBy((prev) => dedupeTasksById([...prev, task]));
         return;
       }
 
@@ -580,7 +601,7 @@ export function useTaskDependencies({
   const addRelatedTask = useCallback(
     async (task: RelatedTaskInfo) => {
       if (isCreateMode) {
-        setPendingRelated((prev) => [...prev, task]);
+        setPendingRelated((prev) => dedupeTasksById([...prev, task]));
         return;
       }
 
@@ -714,6 +735,17 @@ export function useTaskDependencies({
     ? pendingRelated
     : (relationships?.relatedTasks ?? []);
 
+  const pendingRelationships: PendingTaskRelationships = {
+    parentTask: pendingParent,
+    childTasks: pendingChildren,
+    blockingTasks: pendingBlocking,
+    blockedByTasks: pendingBlockedBy,
+    relatedTasks: pendingRelated,
+    initialActiveTab: initialPendingRelationships?.initialActiveTab,
+    initialDependencySubTab:
+      initialPendingRelationships?.initialDependencySubTab,
+  };
+
   return {
     relationships,
     isLoading,
@@ -736,5 +768,6 @@ export function useTaskDependencies({
     removeRelatedTask,
     createRelatedTask,
     savingRelationship,
+    pendingRelationships,
   };
 }

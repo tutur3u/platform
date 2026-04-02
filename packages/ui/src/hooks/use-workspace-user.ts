@@ -23,6 +23,7 @@ export function useWorkspaceUser() {
         full_name: data.full_name,
         created_at: data.created_at,
         new_email: data.new_email,
+        default_workspace_id: data.default_workspace_id,
       } as WorkspaceUser;
     },
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes

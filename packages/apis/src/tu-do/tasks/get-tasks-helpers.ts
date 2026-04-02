@@ -2,11 +2,11 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import type {
   Database,
   TaskAssigneeRelationRow,
-  TaskCounterpartLookupRow,
   TaskLabelRelationRow,
   TaskProjectRelationRow,
   TaskRouteRecordRow,
 } from '@tuturuuu/types';
+import type { Task as TaskPrimitive } from '@tuturuuu/types/primitives/Task';
 
 type TaskRelationshipEdge =
   Database['public']['Tables']['task_relationships']['Row'];
@@ -14,11 +14,25 @@ type TaskRelationshipEdge =
 export type TaskAssigneeRelation = TaskAssigneeRelationRow;
 export type TaskLabelRelation = TaskLabelRelationRow;
 export type TaskProjectRelation = TaskProjectRelationRow;
-type RelationshipCounterpartTask = TaskCounterpartLookupRow;
 export type TaskRecord = TaskRouteRecordRow;
+
+interface RelationshipCounterpartTask {
+  id: string;
+  name: string | null;
+  display_number: number | null;
+  deleted_at: string | null;
+  list: {
+    board: {
+      ws_id: string | null;
+      name: string | null;
+      ticket_prefix: string | null;
+    } | null;
+  } | null;
+}
 
 export interface TaskRelationshipSummary {
   parentTaskId: string | null;
+  parentTask: NonNullable<TaskPrimitive['relationship_summary']>['parent_task'];
   childCount: number;
   blockedByCount: number;
   blockingCount: number;
@@ -28,6 +42,7 @@ export interface TaskRelationshipSummary {
 function createDefaultTaskRelationshipSummary(): TaskRelationshipSummary {
   return {
     parentTaskId: null,
+    parentTask: null,
     childCount: 0,
     blockedByCount: 0,
     blockingCount: 0,
@@ -187,6 +202,10 @@ export async function buildTaskRelationshipSummary(
   );
 
   const validCounterpartTaskIds = new Set<string>();
+  const counterpartTaskSummaryById = new Map<
+    string,
+    NonNullable<TaskPrimitive['relationship_summary']>['parent_task']
+  >();
   const counterpartTaskIdChunks = chunkArray(counterpartTaskIds, 200);
 
   for (const counterpartTaskIdChunk of counterpartTaskIdChunks) {
@@ -196,9 +215,13 @@ export async function buildTaskRelationshipSummary(
         .select(
           `
           id,
+          name,
+          display_number,
           deleted_at,
           list:task_lists(
             board:workspace_boards(
+              name,
+              ticket_prefix,
               ws_id
             )
           )
@@ -216,6 +239,12 @@ export async function buildTaskRelationshipSummary(
         counterpartTask.list?.board?.ws_id === workspaceId
       ) {
         validCounterpartTaskIds.add(counterpartTask.id);
+        counterpartTaskSummaryById.set(counterpartTask.id, {
+          id: counterpartTask.id,
+          name: counterpartTask.name ?? '',
+          display_number: counterpartTask.display_number,
+          ticket_prefix: counterpartTask.list?.board?.ticket_prefix ?? null,
+        });
       }
     }
   }
@@ -254,6 +283,8 @@ export async function buildTaskRelationshipSummary(
           !targetSummary.parentTaskId
         ) {
           targetSummary.parentTaskId = sourceId;
+          targetSummary.parentTask =
+            counterpartTaskSummaryById.get(sourceId) ?? null;
         }
         break;
       }
