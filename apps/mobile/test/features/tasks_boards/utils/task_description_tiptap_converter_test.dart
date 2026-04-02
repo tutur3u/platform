@@ -240,7 +240,7 @@ void main() {
       expect(hasImageEmbed, isTrue);
     });
 
-    test('converts Quill image embed to TipTap image node', () {
+    test('converts Quill image embed to TipTap imageResize node', () {
       final delta = Delta()
         ..insert({'image': 'https://cdn.example.com/photo.jpg'})
         ..insert('\n');
@@ -252,14 +252,18 @@ void main() {
       final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
       final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
       final imageNode = content.firstWhere(
-        (n) => n['type'] == 'image' || n['type'] == 'imageResize',
+        (n) => n['type'] == 'imageResize',
         orElse: () => <String, dynamic>{},
       );
-      expect(imageNode['type'], isNotNull);
-      expect(
-        (imageNode['attrs'] as Map?)?.containsKey('src'),
-        isTrue,
-      );
+      expect(imageNode['type'], 'imageResize');
+      final attrs = imageNode['attrs'] as Map<String, dynamic>;
+      expect(attrs['src'], 'https://cdn.example.com/photo.jpg');
+      expect(attrs['alt'], isNull);
+      expect(attrs['title'], isNull);
+      expect(attrs['width'], isNull);
+      expect(attrs['height'], isNull);
+      expect(attrs['containerStyle'], '');
+      expect(attrs['wrapperStyle'], '');
     });
 
     test('converts indented Quill list to nested TipTap list', () {

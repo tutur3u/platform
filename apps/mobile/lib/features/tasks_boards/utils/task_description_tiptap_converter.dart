@@ -219,8 +219,16 @@ Map<String, dynamic>? _lineToTipTapNode(_QuillLine line) {
     final src = line.segments.first.src ?? '';
     if (src.isNotEmpty) {
       return {
-        'type': 'image',
-        'attrs': {'src': src},
+        'type': 'imageResize',
+        'attrs': {
+          'src': src,
+          'alt': null,
+          'title': null,
+          'width': 500,
+          'height': null,
+          'containerStyle': '',
+          'wrapperStyle': '',
+        },
       };
     }
     return null;

@@ -502,7 +502,7 @@ class TaskRepository {
       '/api/v1/workspaces/$wsId/tasks',
       {
         'name': name,
-        'list_id': listId,
+        'listId': listId,
         'description': description,
         'priority': priority,
         'start_date': startDate?.toUtc().toIso8601String(),

@@ -68,15 +68,6 @@ const taskDescriptionSchema = new Schema({
     horizontalRule: {
       group: 'block',
     },
-    image: {
-      group: 'block',
-      atom: true,
-      attrs: {
-        src: { default: null },
-        alt: { default: null },
-        title: { default: null },
-      },
-    },
     imageResize: {
       group: 'block',
       atom: true,
@@ -160,6 +151,32 @@ const taskDescriptionSchema = new Schema({
   },
 });
 
+/**
+ * Transforms legacy 'image' nodes to 'imageResize' nodes for schema compatibility.
+ * The web app uses tiptap-extension-resize-image which registers 'imageResize' only.
+ */
+function transformImageNodes(content: JSONContent): JSONContent {
+  if (typeof content !== 'object' || content === null) {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content.map(transformImageNodes) as JSONContent;
+  }
+
+  const transformed: JSONContent = { ...content };
+
+  if (transformed.type === 'image') {
+    transformed.type = 'imageResize';
+  }
+
+  if (Array.isArray(transformed.content)) {
+    transformed.content = transformed.content.map(transformImageNodes);
+  }
+
+  return transformed;
+}
+
 function parseDescriptionContent(description: string): JSONContent {
   try {
     const parsed = JSON.parse(description);
@@ -169,7 +186,7 @@ function parseDescriptionContent(description: string): JSONContent {
       !Array.isArray(parsed) &&
       parsed.type === 'doc'
     ) {
-      return parsed as JSONContent;
+      return transformImageNodes(parsed as JSONContent);
     }
   } catch {
     // Fall through to plain-text conversion.
