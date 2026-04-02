@@ -174,11 +174,11 @@ export default function SponsorsList() {
               </CarouselContent>
               <CarouselPrevious
                 variant="link"
-                className="font-bold text-brand-light-blue hover:text-primary"
+                className="font-bold text-primary/50 hover:text-primary"
               />
               <CarouselNext
                 variant="link"
-                className="font-bold text-brand-light-blue hover:text-primary"
+                className="font-bold text-primary/50 hover:text-primary"
               />
             </Carousel>
           </div>
