@@ -1,13 +1,13 @@
+import { useCallback, useRef } from 'react';
 import {
   BOARD_SIZE,
   Fruit,
-  FruitColorName,
-  FruitType,
-  Fruits,
+  type FruitColorName,
+  type Fruits,
+  type FruitType,
   PTS_PER_FRUIT,
 } from './types';
 import { checkForMatches } from './utils';
-import { useCallback, useRef } from 'react';
 
 type EraseFunction = ({
   fruits,
