@@ -36,6 +36,7 @@ import { Pencil } from '@ncthub/ui/icons';
 import { Input } from '@ncthub/ui/input';
 import { zodResolver } from '@ncthub/ui/resolvers';
 import { Separator } from '@ncthub/ui/separator';
+import { Switch } from '@ncthub/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -55,22 +56,26 @@ export default function EditPlanDialog({ plan }: Props) {
   const router = useRouter();
 
   const [isOpened, setIsOpened] = useState(false);
-
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const initialName = plan.name || t('meet-together.untitled_plan');
+  const initialIsPublic = plan.is_public ?? true;
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
-      name: plan.name || t('meet-together.untitled_plan'),
-      is_public: true,
+      name: initialName,
+      is_public: initialIsPublic,
     },
   });
 
-  const isValid = form.formState.isValid;
-  const isSubmitting = form.formState.isSubmitting;
-
-  const disabled = !isValid || isSubmitting;
+  const currentName = form.watch('name');
+  const currentIsPublic = form.watch('is_public') ?? true;
+  const hasNameChanged = currentName.trim() !== initialName.trim();
+  const hasVisibilityChanged = currentIsPublic !== initialIsPublic;
+  const hasChanges = hasNameChanged || hasVisibilityChanged;
+  const disabled = !currentName.trim();
 
   const handleSubmit = async () => {
     setUpdating(true);
@@ -164,17 +169,37 @@ export default function EditPlanDialog({ plan }: Props) {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="is_public"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                    <div className="space-y-1">
+                      <FormLabel>
+                        {t('meet-together-plan-details.public_plan')}
+                      </FormLabel>
+                      <p className="text-muted-foreground text-sm">
+                        {t('meet-together-plan-details.public_plan_desc')}
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </div>
+                </FormItem>
+              )}
+            />
+
             <DialogFooter>
               <div className="grid w-full gap-2">
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={
-                    plan.name === form.getValues('name') ||
-                    disabled ||
-                    updating ||
-                    deleting
-                  }
+                  disabled={!hasChanges || disabled || updating || deleting}
                 >
                   {updating
                     ? t('meet-together-plan-details.updating_plan')

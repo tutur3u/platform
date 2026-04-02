@@ -13,10 +13,11 @@ export async function PUT(req: Request, { params }: Params) {
 
   const data = await req.json();
   const name = data.name;
+  const is_public = data.is_public;
 
   const { error } = await supabase
     .from('meet_together_plans')
-    .update({ name })
+    .update({ name, is_public })
     .eq('id', id);
 
   if (error) {

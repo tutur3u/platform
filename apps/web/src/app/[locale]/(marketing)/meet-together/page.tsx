@@ -2,12 +2,10 @@ import { createClient } from '@ncthub/supabase/next/server';
 import type { SupabaseUser } from '@ncthub/supabase/next/user';
 import type { MeetTogetherPlan } from '@ncthub/types/primitives/MeetTogetherPlan';
 import { Separator } from '@ncthub/ui/separator';
-import dayjs from 'dayjs';
 import Form from './form';
 import NeoMeetHeader from './neo-meet-header';
-import UserTime from './user-time';
+import PlanCard from './plan-card';
 import 'dayjs/locale/vi';
-import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 export default async function MeetTogetherPage() {
@@ -27,73 +25,19 @@ export default async function MeetTogetherPage() {
         <h2 className="text-center font-bold text-2xl">{t('your_plans')}</h2>
 
         {plans?.length > 0 ? (
-          <div className="mt-4 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan: MeetTogetherPlan) => (
-              <Link
-                href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
+              <PlanCard
                 key={plan.id}
-                className="group grid w-full rounded-lg border border-foreground/20 p-4 hover:border-foreground"
-              >
-                <div className="flex w-full items-center justify-between gap-2">
-                  <h3 className="line-clamp-1 w-full flex-1 font-bold">
-                    {plan.name}
-                  </h3>
-                  {plan.start_time && (
-                    <div className="rounded bg-foreground px-2 py-0.5 font-semibold text-background text-sm">
-                      GMT
-                      {Intl.NumberFormat('en-US', {
-                        signDisplay: 'always',
-                      }).format(
-                        parseInt(
-                          plan.start_time?.split(/[+-]/)?.[1] ?? '0',
-                          10
-                        ) * (plan.start_time?.includes('-') ? -1 : 1)
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex grow flex-col justify-between gap-4">
-                  {plan.description && (
-                    <p className="text-sm opacity-80">{plan.description}</p>
-                  )}
-
-                  {plan.start_time && plan.end_time && (
-                    <div className="opacity-60 group-hover:opacity-100">
-                      <span className="font-semibold">
-                        <UserTime time={plan.start_time} /> -{' '}
-                        <UserTime time={plan.end_time} />
-                      </span>{' '}
-                      ({t('local_time')})
-                    </div>
-                  )}
-                </div>
-
-                {plan.dates && plan.dates.length > 0 && (
-                  <>
-                    <Separator className="my-2" />
-                    <div className="flex h-full flex-wrap gap-2 text-center">
-                      {plan.dates?.slice(0, 5).map((date) => (
-                        <div
-                          key={date}
-                          className={`flex items-center justify-center rounded bg-foreground/20 px-2 py-0.5 text-sm ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
-                        >
-                          {dayjs(date)
-                            .locale(locale)
-                            .format(
-                              `${locale === 'vi' ? 'DD/MM (ddd)' : 'MMM D (ddd)'}`
-                            )}
-                        </div>
-                      ))}
-                      {plan.dates.length > 5 && (
-                        <div className="rounded bg-foreground/20 px-2 py-0.5 text-sm">
-                          +{plan.dates.length - 5}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </Link>
+                plan={plan}
+                locale={locale}
+                labels={{
+                  planCardLabel: t('plan_card_label'),
+                  noDescription: t('plan_card_no_description'),
+                  public: t('plan_card_public'),
+                  private: t('plan_card_private'),
+                }}
+              />
             ))}
           </div>
         ) : (

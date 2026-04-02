@@ -23,6 +23,7 @@ import { useForm } from '@ncthub/ui/hooks/use-form';
 import { toast } from '@ncthub/ui/hooks/use-toast';
 import { Input } from '@ncthub/ui/input';
 import { zodResolver } from '@ncthub/ui/resolvers';
+import { Switch } from '@ncthub/ui/switch';
 import { cn } from '@ncthub/utils/format';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
@@ -192,6 +193,29 @@ export default function CreatePlanDialog({ plan }: Props) {
                     <Input placeholder="Name" autoComplete="off" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_public"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                    <div className="space-y-1">
+                      <FormLabel>{t('public_plan')}</FormLabel>
+                      <p className="text-muted-foreground text-sm">
+                        {t('public_plan_desc')}
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </div>
                 </FormItem>
               )}
             />
