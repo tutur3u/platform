@@ -407,6 +407,26 @@ void main() {
       expect(parsed.plainText, raw);
     });
 
+    test(
+      'returns null instead of raw JSON when a TipTap doc throws mid-parse',
+      () {
+        final malformedDoc = jsonEncode({
+          'type': 'doc',
+          'content': [
+            {
+              'type': 'heading',
+              'attrs': {'level': 'bad-level'},
+              'content': [
+                {'type': 'text', 'text': 'Broken heading'},
+              ],
+            },
+          ],
+        });
+
+        expect(parseTipTapTaskDescription(malformedDoc), isNull);
+      },
+    );
+
     testWidgets(
       'renders long parsed description without overflow in detail sheet',
       (

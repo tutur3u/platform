@@ -37,6 +37,7 @@ class TaskDescriptionVideoEmbedBuilder extends EmbedBuilder {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: _TaskDescriptionVideoPlayer(
+        key: ValueKey<String>(resolved),
         url: resolved,
         headers: headers,
       ),
@@ -48,6 +49,7 @@ class _TaskDescriptionVideoPlayer extends StatefulWidget {
   const _TaskDescriptionVideoPlayer({
     required this.url,
     this.headers,
+    super.key,
   });
 
   final String url;
@@ -151,7 +153,10 @@ class _TaskDescriptionVideoPlayerState
 
           final location = response.headers.value(HttpHeaders.locationHeader);
           if (location != null && location.isNotEmpty) {
-            return internalUri.resolve(location).toString();
+            return _sanitizeResolvedVideoUrl(
+                  internalUri.resolve(location).toString(),
+                ) ??
+                url;
           }
         } finally {
           httpClient.close(force: true);
@@ -168,39 +173,36 @@ class _TaskDescriptionVideoPlayerState
             .timeout(const Duration(seconds: 10));
 
         final redirectedHeadUrl = headResponse.request?.url.toString();
-        // 10.0.2.2 maps Android emulator to host localhost; avoid returning
-        // emulator-local redirected URLs that are not reachable externally.
-        if (redirectedHeadUrl != null &&
-            redirectedHeadUrl.isNotEmpty &&
-            !redirectedHeadUrl.contains('10.0.2.2')) {
-          return redirectedHeadUrl;
+        final sanitizedHeadUrl = _sanitizeResolvedVideoUrl(redirectedHeadUrl);
+        if (sanitizedHeadUrl != null) {
+          return sanitizedHeadUrl;
         }
 
         if (headResponse.statusCode == 200) {
-          final getResponse = await http
-              .get(
-                internalUri,
-                headers: {
-                  ...?headers,
-                  'Accept': '*/*',
-                },
-              )
-              .timeout(const Duration(seconds: 30));
+          final client = http.Client();
+          try {
+            final request = http.Request('GET', internalUri)
+              ..headers.addAll({
+                ...?headers,
+                'Accept': '*/*',
+                'Range': 'bytes=0-0',
+              });
+            final getResponse = await client
+                .send(request)
+                .timeout(const Duration(seconds: 30));
 
-          final redirectedGetUrl = getResponse.request?.url.toString();
-          if (redirectedGetUrl != null &&
-              redirectedGetUrl.isNotEmpty &&
-              !redirectedGetUrl.contains('10.0.2.2')) {
-            return redirectedGetUrl;
-          }
+            final redirectedGetUrl = _sanitizeResolvedVideoUrl(
+              getResponse.request?.url.toString(),
+            );
+            if (redirectedGetUrl != null) {
+              return redirectedGetUrl;
+            }
 
-          if (getResponse.statusCode == 200) {
             final contentType = getResponse.headers['content-type'] ?? '';
-
             if (contentType.contains('application/json')) {
               try {
-                final json =
-                    jsonDecode(getResponse.body) as Map<String, dynamic>;
+                final body = await getResponse.stream.bytesToString();
+                final json = jsonDecode(body) as Map<String, dynamic>;
                 final signedUrl =
                     json['signedUrl'] as String? ??
                     json['url'] as String? ??
@@ -212,6 +214,8 @@ class _TaskDescriptionVideoPlayerState
                 // Not valid JSON, fall through.
               }
             }
+          } finally {
+            client.close();
           }
         }
       } on Exception catch (e) {
@@ -220,6 +224,16 @@ class _TaskDescriptionVideoPlayerState
     }
 
     return url;
+  }
+
+  String? _sanitizeResolvedVideoUrl(String? resolvedUrl) {
+    if (resolvedUrl == null || resolvedUrl.isEmpty) {
+      return null;
+    }
+    if (resolvedUrl.contains('10.0.2.2')) {
+      return null;
+    }
+    return resolvedUrl;
   }
 
   @override
@@ -304,6 +318,7 @@ class _TaskDescriptionVideoPlayerState
         final progress = duration.inMilliseconds > 0
             ? position.inMilliseconds / duration.inMilliseconds
             : 0.0;
+        final clampedProgress = progress.clamp(0.0, 1.0);
 
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -399,7 +414,7 @@ class _TaskDescriptionVideoPlayerState
                                               ),
                                         ),
                                         child: Slider(
-                                          value: progress.clamp(0, 1),
+                                          value: clampedProgress,
                                           onChanged: (value) {
                                             final newPosition = Duration(
                                               milliseconds:

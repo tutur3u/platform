@@ -299,6 +299,34 @@ void main() {
       );
     });
 
+    test('keeps indented Quill content when indentation skips a level', () {
+      final delta = Delta()
+        ..insert('Parent')
+        ..insert('\n', {'list': 'bullet'})
+        ..insert('Grandchild')
+        ..insert('\n', {'list': 'bullet', 'indent': 2});
+      final document = Document.fromDelta(delta);
+
+      final serialized = quillDocumentToTipTapJson(document);
+      expect(serialized, isNotNull);
+
+      final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+      final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
+
+      expect(content, hasLength(1));
+      final topLevelList = content.first;
+      final topLevelItems = (topLevelList['content'] as List)
+          .cast<Map<String, dynamic>>();
+      final parentContent = (topLevelItems.first['content'] as List)
+          .cast<Map<String, dynamic>>();
+      final nestedList = parentContent.firstWhere(
+        (node) => node['type'] == 'bulletList',
+        orElse: () => <String, dynamic>{},
+      );
+      expect(nestedList['type'], equals('bulletList'));
+      expect(jsonEncode(nestedList), contains('Grandchild'));
+    });
+
     test('converts nested TipTap list to indented Quill delta ops', () {
       final tiptap = jsonEncode({
         'type': 'doc',
@@ -350,6 +378,60 @@ void main() {
       );
       expect(hasIndentedChild, isTrue);
     });
+
+    test('preserves intentional blank paragraphs between text lines', () {
+      final delta = Delta()
+        ..insert('Alpha')
+        ..insert('\n')
+        ..insert('\n')
+        ..insert('Omega')
+        ..insert('\n');
+      final document = Document.fromDelta(delta);
+
+      final serialized = quillDocumentToTipTapJson(document);
+      expect(serialized, isNotNull);
+
+      final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+      final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
+
+      expect(content, hasLength(3));
+      expect(content[0]['type'], equals('paragraph'));
+      expect(content[1]['type'], equals('paragraph'));
+      expect(content[1]['content'], isNull);
+      expect(content[2]['type'], equals('paragraph'));
+    });
+
+    test(
+      'serializes multi-line TipTap code blocks as Quill code-block lines',
+      () {
+        final tiptap = jsonEncode({
+          'type': 'doc',
+          'content': [
+            {
+              'type': 'codeBlock',
+              'attrs': {'language': 'ts'},
+              'content': [
+                {'type': 'text', 'text': 'const a = 1;\nconst b = 2;'},
+              ],
+            },
+          ],
+        });
+
+        final document = tipTapJsonToQuillDocument(tiptap);
+        final ops = document.toDelta().toJson();
+        final codeBlockLines = ops
+            .where(
+              (op) =>
+                  op['insert'] == '\n' &&
+                  (op['attributes'] as Map?)?['code-block'] == true,
+            )
+            .length;
+
+        expect(codeBlockLines, equals(2));
+        expect(ops.any((op) => op['insert'] == 'const a = 1;'), isTrue);
+        expect(ops.any((op) => op['insert'] == 'const b = 2;'), isTrue);
+      },
+    );
 
     test('preserves underline/script/highlight marks when serializing', () {
       final delta = Delta()

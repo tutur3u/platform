@@ -86,8 +86,9 @@ class TaskDescriptionMentionChip extends StatelessWidget {
             child: ClipOval(
               child: hasAvatar
                   ? (() {
+                      final nonNullAvatarUrl = avatarUrl;
                       final resolvedAvatarUrl = resolveTaskDescriptionUrl(
-                        avatarUrl,
+                        nonNullAvatarUrl,
                       );
                       return Image.network(
                         resolvedAvatarUrl,
@@ -108,17 +109,24 @@ class TaskDescriptionMentionChip extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 5),
-          Text(
-            '@${mention.displayName}',
-            style:
-                preferredStyle?.copyWith(
-                  color: mentionText,
-                  fontWeight: FontWeight.w600,
-                ) ??
-                theme.typography.small.copyWith(
-                  color: mentionText,
-                  fontWeight: FontWeight.w600,
-                ),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width * 0.5,
+            ),
+            child: Text(
+              '@${mention.displayName}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  preferredStyle?.copyWith(
+                    color: mentionText,
+                    fontWeight: FontWeight.w600,
+                  ) ??
+                  theme.typography.small.copyWith(
+                    color: mentionText,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
           ),
         ],
       ),

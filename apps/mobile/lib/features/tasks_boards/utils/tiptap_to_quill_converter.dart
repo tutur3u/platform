@@ -84,10 +84,12 @@ void _appendBlockNodeToDelta(
 
   if (type == 'codeBlock') {
     final text = _flattenTipTapText(node['content']);
-    if (text.isNotEmpty) {
-      delta.insert(text);
+    for (final line in text.split('\n')) {
+      if (line.isNotEmpty) {
+        delta.insert(line);
+      }
+      delta.insert('\n', {'code-block': true});
     }
-    delta.insert('\n', {'code-block': true});
     return;
   }
 

@@ -402,7 +402,10 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
 
   Future<void> _navigateAcrossBoard(GoRouter router, Uri destination) async {
     try {
-      await dismissAdaptiveDrawerOverlay(context);
+      final didPop = await Navigator.of(context).maybePop();
+      if (!didPop && mounted) {
+        await dismissAdaptiveDrawerOverlay(context);
+      }
     } on Exception catch (error) {
       debugPrint('Task relationship overlay close failed: $error');
     }

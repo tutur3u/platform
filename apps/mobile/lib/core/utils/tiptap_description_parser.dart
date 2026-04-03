@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mobile/core/utils/tiptap_document_codec.dart';
 
 class TipTapMention {
@@ -89,11 +90,9 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
       mentions: List.unmodifiable(context.mentions),
       rawJson: decoded.trimmed,
     );
-  } on Object {
-    return ParsedTipTapDescription(
-      markdown: decoded.trimmed,
-      plainText: decoded.trimmed,
-    );
+  } on Object catch (error, stackTrace) {
+    debugPrint('Failed to parse TipTap description: $error\n$stackTrace');
+    return null;
   }
 }
 

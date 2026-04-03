@@ -7,6 +7,20 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+String _extractTextFromContent(Object? content) {
+  if (content is! List) return '';
+  final buffer = StringBuffer();
+  for (final node in content) {
+    if (node is! Map<String, dynamic>) continue;
+    if (node['type'] == 'text') {
+      buffer.write(node['text'] as String? ?? '');
+    } else {
+      buffer.write(_extractTextFromContent(node['content']));
+    }
+  }
+  return buffer.toString();
+}
+
 class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
   const TaskDescriptionTableEmbedBuilder({
     this.onTableUpdated,
@@ -60,7 +74,7 @@ class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
 
       for (final cellRaw in cells) {
         final text = cellRaw is Map<String, dynamic>
-            ? _extractText(cellRaw['content'])
+            ? _extractTextFromContent(cellRaw['content'])
             : '';
         cellWidgets.add(
           Padding(
@@ -145,20 +159,6 @@ class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
     }
 
     await onTableUpdated!(embedContext, jsonEncode(edited));
-  }
-
-  String _extractText(Object? content) {
-    if (content is! List) return '';
-    final buffer = StringBuffer();
-    for (final node in content) {
-      if (node is! Map<String, dynamic>) continue;
-      if (node['type'] == 'text') {
-        buffer.write(node['text'] as String? ?? '');
-      } else {
-        buffer.write(_extractText(node['content']));
-      }
-    }
-    return buffer.toString();
   }
 }
 
@@ -476,7 +476,7 @@ class TaskDescriptionTableEditorSheetState
           values.add('');
           continue;
         }
-        values.add(_extractText(cellRaw['content']));
+        values.add(_extractTextFromContent(cellRaw['content']));
       }
       if (values.isNotEmpty) {
         maxColumns = math.max(maxColumns, values.length);
@@ -498,19 +498,5 @@ class TaskDescriptionTableEditorSheetState
     }
 
     return matrix;
-  }
-
-  String _extractText(Object? content) {
-    if (content is! List) return '';
-    final buffer = StringBuffer();
-    for (final node in content) {
-      if (node is! Map<String, dynamic>) continue;
-      if (node['type'] == 'text') {
-        buffer.write(node['text'] as String? ?? '');
-      } else {
-        buffer.write(_extractText(node['content']));
-      }
-    }
-    return buffer.toString();
   }
 }

@@ -243,14 +243,10 @@ Map<String, dynamic>? _lineToTipTapNode(QuillLine line) {
     return null;
   }
 
-  if (inlineNodes.isEmpty) {
-    return null;
-  }
-
   return {
     'type': 'paragraph',
     if (textAlign != null) 'attrs': {'textAlign': textAlign},
-    'content': inlineNodes,
+    if (inlineNodes.isNotEmpty) 'content': inlineNodes,
   };
 }
 
@@ -423,6 +419,36 @@ void _nestListIntoParent(
     if (lastSubList.isNotEmpty) {
       _nestListIntoParent(lastSubList, child, depth - 1);
       lastItem['content'] = lastItemContent;
+    } else {
+      lastItemContent.add(_wrapListForDepth(child, depth - 1));
+      lastItem['content'] = lastItemContent;
     }
   }
+}
+
+Map<String, dynamic> _wrapListForDepth(
+  Map<String, dynamic> child,
+  int depth,
+) {
+  if (depth <= 1) {
+    return child;
+  }
+
+  final listType = child['type'] as String?;
+  final itemType = listType == 'taskList' ? 'taskItem' : 'listItem';
+  final item = <String, dynamic>{
+    'type': itemType,
+    'content': [
+      <String, dynamic>{'type': 'paragraph'},
+      _wrapListForDepth(child, depth - 1),
+    ],
+  };
+  if (itemType == 'taskItem') {
+    item['attrs'] = {'checked': false};
+  }
+
+  return {
+    'type': listType,
+    'content': [item],
+  };
 }
