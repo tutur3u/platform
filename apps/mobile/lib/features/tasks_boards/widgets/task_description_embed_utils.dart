@@ -94,25 +94,37 @@ bool isTrustedTaskDescriptionUrl(String? value) {
     return false;
   }
 
-  final trustedHosts = trustedTaskDescriptionHosts;
+  final trustedOrigins = trustedTaskDescriptionOrigins;
   if (uri.host.isEmpty) {
     return false;
   }
 
-  return trustedHosts.contains(uri.host.toLowerCase());
+  return trustedOrigins.contains(_normalizedTaskDescriptionOrigin(uri));
 }
 
-Set<String> get trustedTaskDescriptionHosts {
-  final hosts = <String>{};
+Set<String> get trustedTaskDescriptionOrigins {
+  final origins = <String>{};
 
-  void addHostFromUrl(String url) {
+  void addOriginFromUrl(String url) {
     final uri = Uri.tryParse(url.trim());
-    final host = uri?.host;
-    if (host == null || host.isEmpty) return;
-    hosts.add(host.toLowerCase());
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) return;
+    origins.add(_normalizedTaskDescriptionOrigin(uri));
   }
 
-  addHostFromUrl(ApiConfig.baseUrl);
-  addHostFromUrl(Env.supabaseUrl);
-  return hosts;
+  addOriginFromUrl(ApiConfig.baseUrl);
+  addOriginFromUrl(Env.supabaseUrl);
+  return origins;
+}
+
+String _normalizedTaskDescriptionOrigin(Uri uri) {
+  final scheme = uri.scheme.toLowerCase();
+  final host = uri.host.toLowerCase();
+  final port = uri.hasPort
+      ? uri.port
+      : switch (scheme) {
+          'http' => 80,
+          'https' => 443,
+          _ => 0,
+        };
+  return '$scheme://$host:$port';
 }

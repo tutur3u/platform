@@ -3,7 +3,7 @@ import { Schema } from 'prosemirror-model';
 import { getDescriptionText } from './text-helper';
 import { convertJsonContentToYjsState } from './yjs-helper';
 
-const taskDescriptionSchema = new Schema({
+export const taskDescriptionSchema = new Schema({
   nodes: {
     doc: { content: 'block+' },
     paragraph: {

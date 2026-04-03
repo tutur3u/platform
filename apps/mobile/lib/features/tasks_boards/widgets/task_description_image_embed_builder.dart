@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_utils.dart';
@@ -11,7 +13,7 @@ class TaskDescriptionImageEmbedBuilder extends EmbedBuilder {
 
   @override
   Widget build(BuildContext context, EmbedContext embedContext) {
-    final src = embedContext.node.value.data as String? ?? '';
+    final src = _imageSrcFromEmbedData(embedContext.node.value.data);
     if (src.trim().isEmpty) {
       return const SizedBox.shrink();
     }
@@ -53,5 +55,27 @@ class TaskDescriptionImageEmbedBuilder extends EmbedBuilder {
         ),
       ),
     );
+  }
+
+  String _imageSrcFromEmbedData(Object? data) {
+    final raw = data as String? ?? '';
+    final trimmed = raw.trim();
+    if (!trimmed.startsWith('{')) {
+      return trimmed;
+    }
+
+    try {
+      final decoded = jsonDecode(trimmed);
+      if (decoded is Map) {
+        final src = decoded['src'];
+        if (src is String && src.trim().isNotEmpty) {
+          return src.trim();
+        }
+      }
+    } on FormatException {
+      // Fall back to raw string.
+    }
+
+    return trimmed;
   }
 }

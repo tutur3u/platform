@@ -59,7 +59,6 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
             QuillSegment.image(src: image),
           ],
         );
-        pushCurrentLine(const <String, dynamic>{});
         continue;
       }
 
@@ -71,7 +70,6 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
             QuillSegment.video(src: video),
           ],
         );
-        pushCurrentLine(const <String, dynamic>{});
         continue;
       }
 
@@ -94,7 +92,7 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
             QuillSegment.table(data: table),
           ],
         );
-        pushCurrentLine(const <String, dynamic>{});
+        continue;
       }
     }
   }
@@ -104,7 +102,9 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
   }
 
   final nodes = _buildListTree(
-    lines.map(_lineToTipTapNode).whereType<Map<String, dynamic>>().toList(),
+    _coalesceCodeBlockNodes(
+      lines.map(_lineToTipTapNode).whereType<Map<String, dynamic>>().toList(),
+    ),
   );
 
   return <String, dynamic>{
@@ -195,19 +195,11 @@ Map<String, dynamic>? _lineToTipTapNode(QuillLine line) {
   if (inlineNodes.isEmpty &&
       line.segments.length == 1 &&
       line.segments.first.kind == QuillSegmentKind.image) {
-    final src = line.segments.first.src ?? '';
-    if (src.isNotEmpty) {
+    final attrs = _imageResizeAttrsFromEmbed(line.segments.first.src);
+    if (attrs != null) {
       return {
         'type': 'imageResize',
-        'attrs': {
-          'src': src,
-          'alt': null,
-          'title': null,
-          'width': 500,
-          'height': null,
-          'containerStyle': '',
-          'wrapperStyle': '',
-        },
+        'attrs': attrs,
       };
     }
     return null;
@@ -243,14 +235,10 @@ Map<String, dynamic>? _lineToTipTapNode(QuillLine line) {
     return null;
   }
 
-  if (inlineNodes.isEmpty) {
-    return null;
-  }
-
   return {
     'type': 'paragraph',
     if (textAlign != null) 'attrs': {'textAlign': textAlign},
-    'content': inlineNodes,
+    if (inlineNodes.isNotEmpty) 'content': inlineNodes,
   };
 }
 
@@ -423,6 +411,117 @@ void _nestListIntoParent(
     if (lastSubList.isNotEmpty) {
       _nestListIntoParent(lastSubList, child, depth - 1);
       lastItem['content'] = lastItemContent;
+    } else {
+      lastItemContent.add(_wrapListForDepth(child, depth));
+      lastItem['content'] = lastItemContent;
     }
   }
+}
+
+List<Map<String, dynamic>> _coalesceCodeBlockNodes(
+  List<Map<String, dynamic>> nodes,
+) {
+  final merged = <Map<String, dynamic>>[];
+
+  for (final node in nodes) {
+    if (node['type'] == 'codeBlock' &&
+        merged.isNotEmpty &&
+        merged.last['type'] == 'codeBlock') {
+      final previousText = _codeBlockText(merged.last);
+      final currentText = _codeBlockText(node);
+      final mergedText = [previousText, currentText].join('\n');
+      merged.last = {
+        ...merged.last,
+        'content': mergedText.isEmpty
+            ? <Map<String, dynamic>>[]
+            : [
+                {'type': 'text', 'text': mergedText},
+              ],
+      };
+      continue;
+    }
+
+    merged.add(node);
+  }
+
+  return merged;
+}
+
+String _codeBlockText(Map<String, dynamic> node) {
+  final content = (node['content'] as List?)?.cast<Object?>() ?? const [];
+  return content
+      .whereType<Map<String, dynamic>>()
+      .where((child) => child['type'] == 'text')
+      .map((child) => child['text'] as String? ?? '')
+      .join();
+}
+
+Map<String, dynamic>? _imageResizeAttrsFromEmbed(String? rawValue) {
+  final raw = rawValue?.trim() ?? '';
+  if (raw.isEmpty) {
+    return null;
+  }
+
+  if (raw.startsWith('{')) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        final src = _nonEmptyString(decoded['src']);
+        if (src != null) {
+          return {
+            'src': src,
+            'alt': _nonEmptyString(decoded['alt']),
+            'title': _nonEmptyString(decoded['title']),
+            'width': decoded['width'] as num?,
+            'height': decoded['height'] as num?,
+            'containerStyle': _nonEmptyString(decoded['containerStyle']) ?? '',
+            'wrapperStyle': _nonEmptyString(decoded['wrapperStyle']) ?? '',
+          };
+        }
+      }
+    } on FormatException {
+      // Fall through to legacy string handling.
+    }
+  }
+
+  return {
+    'src': raw,
+    'alt': null,
+    'title': null,
+    'width': 500,
+    'height': null,
+    'containerStyle': '',
+    'wrapperStyle': '',
+  };
+}
+
+String? _nonEmptyString(Object? value) {
+  return value is String && value.trim().isNotEmpty ? value.trim() : null;
+}
+
+Map<String, dynamic> _wrapListForDepth(
+  Map<String, dynamic> child,
+  int depth,
+) {
+  if (depth <= 1) {
+    return child;
+  }
+
+  final listType = child['type'] as String?;
+  final itemType = listType == 'taskList' ? 'taskItem' : 'listItem';
+  final item = <String, dynamic>{
+    'type': itemType,
+    'content': [
+      <String, dynamic>{'type': 'paragraph'},
+      _wrapListForDepth(child, depth - 1),
+    ],
+  };
+  if (itemType == 'taskItem') {
+    item['attrs'] = {'checked': false};
+  }
+
+  return {
+    'type': listType,
+    'content': [item],
+  };
 }

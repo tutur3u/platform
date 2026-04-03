@@ -25,7 +25,7 @@ class TaskDescriptionMentionEmbedBuilder extends EmbedBuilder {
       if (attrs is! Map<String, dynamic>) {
         return const Text('@mention');
       }
-      final mention = _mentionFromAttrs(attrs);
+      final mention = tipTapMentionFromAttrs(attrs);
       if (mention == null) {
         return const Text('@mention');
       }
@@ -86,8 +86,9 @@ class TaskDescriptionMentionChip extends StatelessWidget {
             child: ClipOval(
               child: hasAvatar
                   ? (() {
+                      final nonNullAvatarUrl = avatarUrl;
                       final resolvedAvatarUrl = resolveTaskDescriptionUrl(
-                        avatarUrl,
+                        nonNullAvatarUrl,
                       );
                       return Image.network(
                         resolvedAvatarUrl,
@@ -108,17 +109,24 @@ class TaskDescriptionMentionChip extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 5),
-          Text(
-            '@${mention.displayName}',
-            style:
-                preferredStyle?.copyWith(
-                  color: mentionText,
-                  fontWeight: FontWeight.w600,
-                ) ??
-                theme.typography.small.copyWith(
-                  color: mentionText,
-                  fontWeight: FontWeight.w600,
-                ),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width * 0.5,
+            ),
+            child: Text(
+              '@${mention.displayName}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  preferredStyle?.copyWith(
+                    color: mentionText,
+                    fontWeight: FontWeight.w600,
+                  ) ??
+                  theme.typography.small.copyWith(
+                    color: mentionText,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
           ),
         ],
       ),
@@ -130,44 +138,4 @@ class TaskDescriptionMentionChip extends StatelessWidget {
 
     return Tooltip(message: tooltip, child: chip);
   }
-}
-
-TipTapMention? _mentionFromAttrs(Map<String, dynamic> attrs) {
-  String? str(String key) {
-    final v = attrs[key];
-    return v is String && v.trim().isNotEmpty ? v.trim() : null;
-  }
-
-  List<String>? strList(String key) {
-    final v = attrs[key];
-    if (v is! List) return null;
-    final list = v
-        .whereType<String>()
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList(growable: false);
-    return list.isEmpty ? null : list;
-  }
-
-  final displayName =
-      str('displayName') ??
-      str('label') ??
-      str('name') ??
-      str('entityId') ??
-      str('userId') ??
-      str('id');
-
-  if (displayName == null) return null;
-
-  return TipTapMention(
-    displayName: displayName,
-    userId: str('userId'),
-    entityId: str('entityId'),
-    entityType: str('entityType'),
-    avatarUrl: str('avatarUrl'),
-    subtitle: str('subtitle'),
-    priority: str('priority'),
-    listColor: str('listColor'),
-    assignees: strList('assignees'),
-  );
 }

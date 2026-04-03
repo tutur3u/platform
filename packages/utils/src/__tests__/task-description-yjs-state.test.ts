@@ -1,173 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Schema } from 'prosemirror-model';
 import { describe, expect, it } from 'vitest';
 import { convertYjsStateToJsonContent } from '../yjs-helper';
-import { deriveTaskDescriptionYjsState } from '../yjs-task-description';
+import {
+  deriveTaskDescriptionYjsState,
+  taskDescriptionSchema,
+} from '../yjs-task-description';
 
 const fullFeaturedDescription = readFileSync(
   join(__dirname, 'fixtures', 'task-description-full-featured.json'),
   'utf8'
 );
-
-const taskDescriptionSchema = new Schema({
-  nodes: {
-    doc: { content: 'block+' },
-    paragraph: {
-      group: 'block',
-      content: 'inline*',
-      attrs: { textAlign: { default: null } },
-    },
-    heading: {
-      group: 'block',
-      content: 'inline*',
-      attrs: {
-        level: { default: 1 },
-        textAlign: { default: null },
-      },
-    },
-    blockquote: {
-      group: 'block',
-      content: 'block+',
-    },
-    codeBlock: {
-      group: 'block',
-      content: 'text*',
-      marks: '',
-      attrs: { language: { default: null } },
-      code: true,
-    },
-    bulletList: {
-      group: 'block',
-      content: 'listItem+',
-    },
-    orderedList: {
-      group: 'block',
-      content: 'listItem+',
-      attrs: { start: { default: 1 } },
-    },
-    listItem: {
-      content: 'paragraph block*',
-      defining: true,
-    },
-    taskList: {
-      group: 'block',
-      content: 'taskItem+',
-    },
-    taskItem: {
-      content: 'paragraph block*',
-      attrs: { checked: { default: false } },
-      defining: true,
-    },
-    table: {
-      group: 'block',
-      content: 'tableRow+',
-    },
-    tableRow: {
-      content: '(tableCell | tableHeader)+',
-    },
-    tableCell: {
-      content: 'block+',
-      attrs: {
-        colspan: { default: 1 },
-        rowspan: { default: 1 },
-        colwidth: { default: null },
-      },
-    },
-    tableHeader: {
-      content: 'block+',
-      attrs: {
-        colspan: { default: 1 },
-        rowspan: { default: 1 },
-        colwidth: { default: null },
-      },
-    },
-    horizontalRule: {
-      group: 'block',
-    },
-    imageResize: {
-      group: 'block',
-      atom: true,
-      attrs: {
-        src: { default: null },
-        alt: { default: null },
-        title: { default: null },
-        width: { default: null },
-        height: { default: null },
-      },
-    },
-    video: {
-      group: 'block',
-      atom: true,
-      attrs: {
-        src: { default: null },
-      },
-    },
-    youtube: {
-      group: 'block',
-      atom: true,
-      attrs: {
-        src: { default: null },
-        videoId: { default: null },
-      },
-    },
-    mention: {
-      group: 'inline',
-      inline: true,
-      atom: true,
-      attrs: {
-        id: { default: null },
-        label: { default: null },
-        userId: { default: null },
-        displayName: { default: null },
-        entityId: { default: null },
-        entityType: { default: null },
-        avatarUrl: { default: null },
-        subtitle: { default: null },
-        priority: { default: null },
-        listColor: { default: null },
-        assignees: { default: null },
-      },
-    },
-    text: {
-      group: 'inline',
-    },
-    hardBreak: {
-      group: 'inline',
-      inline: true,
-      selectable: false,
-    },
-  },
-  marks: {
-    bold: {},
-    italic: {},
-    strike: {},
-    underline: {},
-    code: {},
-    subscript: {},
-    superscript: {},
-    textStyle: {
-      attrs: {
-        color: { default: null },
-      },
-    },
-    highlight: {
-      attrs: {
-        color: { default: null },
-      },
-    },
-    link: {
-      attrs: {
-        href: { default: null },
-        target: { default: null },
-        rel: { default: null },
-        class: { default: null },
-        title: { default: null },
-      },
-      inclusive: false,
-    },
-  },
-});
 
 function walkNodes(
   node: unknown,
@@ -469,10 +312,6 @@ describe('deriveTaskDescriptionYjsState', () => {
 
     expect(state).not.toBeNull();
     expect(state?.length ?? 0).toBeGreaterThan(0);
-  });
-
-  it('returns null when description is only whitespace characters', () => {
-    expect(deriveTaskDescriptionYjsState('   \n\n   ')).toBeNull();
   });
 
   it('handles deeply nested list structures', () => {

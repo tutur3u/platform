@@ -43,6 +43,8 @@ interface Props {
     canDeleteUsers: boolean;
     canCheckUserAttendance: boolean;
   };
+  canViewFeedbacks?: boolean;
+  canManageFeedbacks?: boolean;
   initialDefaultExcludedGroups?: string[];
   initialDefaultIncludedGroups?: string[];
   initialFeaturedGroupIds?: string[];
@@ -55,6 +57,8 @@ export function WorkspaceUsersTable({
   wsId,
   locale,
   permissions,
+  canViewFeedbacks = false,
+  canManageFeedbacks = false,
   initialDefaultExcludedGroups = [],
   initialDefaultIncludedGroups = [],
   initialFeaturedGroupIds = [],
@@ -295,6 +299,8 @@ export function WorkspaceUsersTable({
     canUpdateUsers: permissions.canUpdateUsers,
     canDeleteUsers: permissions.canDeleteUsers,
     canCheckUserAttendance: permissions.canCheckUserAttendance,
+    canViewFeedbacks,
+    canManageFeedbacks,
   };
 
   // Handler for search - uses nuqs setQ

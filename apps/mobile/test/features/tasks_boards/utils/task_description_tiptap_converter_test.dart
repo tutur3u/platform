@@ -241,6 +241,43 @@ void main() {
       expect(hasImageEmbed, isTrue);
     });
 
+    test('preserves imageResize metadata in Quill embed payloads', () {
+      final tiptap = jsonEncode({
+        'type': 'doc',
+        'content': [
+          {
+            'type': 'imageResize',
+            'attrs': {
+              'src': 'https://cdn.example.com/photo.jpg',
+              'alt': 'Hero',
+              'title': 'Cover',
+              'width': 640,
+              'height': 320,
+              'containerStyle': 'display:block',
+              'wrapperStyle': 'padding:8px',
+            },
+          },
+        ],
+      });
+
+      final document = tipTapJsonToQuillDocument(tiptap);
+      final ops = document.toDelta().toJson();
+      final imageOp = ops.firstWhere(
+        (op) =>
+            op['insert'] is Map && (op['insert'] as Map).containsKey('image'),
+      );
+      final payload = (imageOp['insert'] as Map)['image'] as String;
+      final decoded = jsonDecode(payload) as Map<String, dynamic>;
+
+      expect(decoded['src'], equals('https://cdn.example.com/photo.jpg'));
+      expect(decoded['alt'], equals('Hero'));
+      expect(decoded['title'], equals('Cover'));
+      expect(decoded['width'], equals(640));
+      expect(decoded['height'], equals(320));
+      expect(decoded['containerStyle'], equals('display:block'));
+      expect(decoded['wrapperStyle'], equals('padding:8px'));
+    });
+
     test('converts Quill image embed to TipTap imageResize node', () {
       final delta = Delta()
         ..insert({'image': 'https://cdn.example.com/photo.jpg'})
@@ -265,6 +302,37 @@ void main() {
       expect(attrs['height'], isNull);
       expect(attrs['containerStyle'], '');
       expect(attrs['wrapperStyle'], '');
+    });
+
+    test('rebuilds imageResize metadata from JSON embed payloads', () {
+      final delta = Delta()
+        ..insert({
+          'image': jsonEncode({
+            'src': 'https://cdn.example.com/photo.jpg',
+            'alt': 'Banner',
+            'title': 'Header',
+            'width': 720,
+            'height': 405,
+            'containerStyle': 'margin:auto',
+            'wrapperStyle': 'border:1px solid',
+          }),
+        })
+        ..insert('\n');
+      final document = Document.fromDelta(delta);
+
+      final serialized = quillDocumentToTipTapJson(document);
+      final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+      final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
+      final imageNode = content.first;
+      final attrs = imageNode['attrs'] as Map<String, dynamic>;
+
+      expect(attrs['src'], equals('https://cdn.example.com/photo.jpg'));
+      expect(attrs['alt'], equals('Banner'));
+      expect(attrs['title'], equals('Header'));
+      expect(attrs['width'], equals(720));
+      expect(attrs['height'], equals(405));
+      expect(attrs['containerStyle'], equals('margin:auto'));
+      expect(attrs['wrapperStyle'], equals('border:1px solid'));
     });
 
     test('converts indented Quill list to nested TipTap list', () {
@@ -297,6 +365,42 @@ void main() {
         parentItemContent.any((n) => n['type'] == 'bulletList'),
         isTrue,
       );
+    });
+
+    test('keeps indented Quill content when indentation skips a level', () {
+      final delta = Delta()
+        ..insert('Parent')
+        ..insert('\n', {'list': 'bullet'})
+        ..insert('Grandchild')
+        ..insert('\n', {'list': 'bullet', 'indent': 2});
+      final document = Document.fromDelta(delta);
+
+      final serialized = quillDocumentToTipTapJson(document);
+      expect(serialized, isNotNull);
+
+      final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+      final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
+
+      expect(content, hasLength(1));
+      final topLevelList = content.first;
+      final topLevelItems = (topLevelList['content'] as List)
+          .cast<Map<String, dynamic>>();
+      final parentContent = (topLevelItems.first['content'] as List)
+          .cast<Map<String, dynamic>>();
+      final nestedList = parentContent.firstWhere(
+        (node) => node['type'] == 'bulletList',
+        orElse: () => <String, dynamic>{},
+      );
+      expect(nestedList['type'], equals('bulletList'));
+      final nestedItems = (nestedList['content'] as List)
+          .cast<Map<String, dynamic>>();
+      final intermediateContent = (nestedItems.first['content'] as List)
+          .cast<Map<String, dynamic>>();
+      expect(
+        intermediateContent.any((node) => node['type'] == 'bulletList'),
+        isTrue,
+      );
+      expect(jsonEncode(nestedList), contains('Grandchild'));
     });
 
     test('converts nested TipTap list to indented Quill delta ops', () {
@@ -350,6 +454,150 @@ void main() {
       );
       expect(hasIndentedChild, isTrue);
     });
+
+    test('preserves intentional blank paragraphs between text lines', () {
+      final delta = Delta()
+        ..insert('Alpha')
+        ..insert('\n')
+        ..insert('\n')
+        ..insert('Omega')
+        ..insert('\n');
+      final document = Document.fromDelta(delta);
+
+      final serialized = quillDocumentToTipTapJson(document);
+      expect(serialized, isNotNull);
+
+      final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+      final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
+
+      expect(content, hasLength(3));
+      expect(content[0]['type'], equals('paragraph'));
+      expect(content[1]['type'], equals('paragraph'));
+      expect(content[1]['content'], isNull);
+      expect(content[2]['type'], equals('paragraph'));
+    });
+
+    test(
+      'serializes multi-line TipTap code blocks as Quill code-block lines',
+      () {
+        final tiptap = jsonEncode({
+          'type': 'doc',
+          'content': [
+            {
+              'type': 'codeBlock',
+              'attrs': {'language': 'ts'},
+              'content': [
+                {'type': 'text', 'text': 'const a = 1;\nconst b = 2;'},
+              ],
+            },
+          ],
+        });
+
+        final document = tipTapJsonToQuillDocument(tiptap);
+        final ops = document.toDelta().toJson();
+        final codeBlockLines = ops
+            .where(
+              (op) =>
+                  op['insert'] == '\n' &&
+                  (op['attributes'] as Map?)?['code-block'] == true,
+            )
+            .length;
+
+        expect(codeBlockLines, equals(2));
+        expect(ops.any((op) => op['insert'] == 'const a = 1;'), isTrue);
+        expect(ops.any((op) => op['insert'] == 'const b = 2;'), isTrue);
+      },
+    );
+
+    test(
+      'collapses consecutive Quill code-block lines into one TipTap node',
+      () {
+        final delta = Delta()
+          ..insert('const a = 1;')
+          ..insert('\n', {'code-block': true})
+          ..insert('const b = 2;')
+          ..insert('\n', {'code-block': true});
+        final document = Document.fromDelta(delta);
+
+        final serialized = quillDocumentToTipTapJson(document);
+        final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+        final content = (decoded['content'] as List)
+            .cast<Map<String, dynamic>>();
+
+        expect(content, hasLength(1));
+        expect(content.first['type'], equals('codeBlock'));
+        expect(
+          jsonEncode(content.first),
+          contains(r'const a = 1;\nconst b = 2;'),
+        );
+      },
+    );
+
+    test('does not append blank paragraphs after standalone media blocks', () {
+      final tiptap = jsonEncode({
+        'type': 'doc',
+        'content': [
+          {
+            'type': 'imageResize',
+            'attrs': {'src': 'https://cdn.example.com/photo.jpg'},
+          },
+        ],
+      });
+
+      final document = tipTapJsonToQuillDocument(tiptap);
+      final serialized = quillDocumentToTipTapJson(document);
+      final decoded = jsonDecode(serialized!) as Map<String, dynamic>;
+      final content = (decoded['content'] as List).cast<Map<String, dynamic>>();
+
+      expect(content, hasLength(1));
+      expect(content.first['type'], equals('imageResize'));
+    });
+
+    test(
+      'preserves paragraph and heading alignment when opening TipTap docs',
+      () {
+        final tiptap = jsonEncode({
+          'type': 'doc',
+          'content': [
+            {
+              'type': 'heading',
+              'attrs': {'level': 2, 'textAlign': 'center'},
+              'content': [
+                {'type': 'text', 'text': 'Title'},
+              ],
+            },
+            {
+              'type': 'paragraph',
+              'attrs': {'textAlign': 'right'},
+              'content': [
+                {'type': 'text', 'text': 'Body'},
+              ],
+            },
+          ],
+        });
+
+        final document = tipTapJsonToQuillDocument(tiptap);
+        final ops = document.toDelta().toJson();
+
+        expect(
+          ops.any(
+            (op) =>
+                op['insert'] == '\n' &&
+                (op['attributes'] as Map?)?['header'] == 2 &&
+                (op['attributes'] as Map?)?['align'] == 'center',
+          ),
+          isTrue,
+        );
+        expect(
+          ops.any(
+            (op) =>
+                op['insert'] == '\n' &&
+                (op['attributes'] as Map?)?['align'] == 'right',
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('preserves underline/script/highlight marks when serializing', () {
       final delta = Delta()

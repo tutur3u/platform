@@ -25,6 +25,8 @@ interface UserColumnsExtraData {
   canCheckUserAttendance?: boolean;
   canUpdateUsers?: boolean;
   canDeleteUsers?: boolean;
+  canViewFeedbacks?: boolean;
+  canManageFeedbacks?: boolean;
   locale?: string;
 }
 
@@ -73,7 +75,12 @@ export const getUserColumns = ({
   const shouldIncludeColumn = (columnId: string): boolean => {
     // Show actions column if user has update or delete permissions
     if (columnId === 'actions') {
-      return extraData?.canUpdateUsers || extraData?.canDeleteUsers || false;
+      return (
+        extraData?.canUpdateUsers ||
+        extraData?.canDeleteUsers ||
+        extraData?.canViewFeedbacks ||
+        false
+      );
     }
 
     if (privateColumns.includes(columnId as (typeof privateColumns)[number])) {

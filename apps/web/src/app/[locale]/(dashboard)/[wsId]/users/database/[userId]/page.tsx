@@ -16,6 +16,7 @@ import { getTranslations } from 'next-intl/server';
 import { RequireAttentionName } from '@/components/users/require-attention-name';
 import { fetchRequireAttentionUserIds } from '@/lib/require-attention-users';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
+import { UserFeedbackPanel } from '../user-feedback-panel';
 import EditUserDialog from './edit-user-dialog';
 import LinkedPromotionsClient from './linked-promotions-client';
 import ReferralSectionClient from './referral-section-client';
@@ -51,6 +52,8 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
   const hasPublicInfo = containsPermission('view_users_public_info');
   const canCheckUserAttendance = containsPermission('check_user_attendance');
   const canUpdateUsers = containsPermission('update_users');
+  const canViewFeedbacks = containsPermission('view_user_groups');
+  const canManageFeedbacks = containsPermission('update_user_groups_scores');
 
   // User must have at least one permission to view user details
   if (!hasPrivateInfo && !hasPublicInfo) {
@@ -190,6 +193,19 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
               </div>
             )}
           </div>
+          {canViewFeedbacks ? (
+            <UserFeedbackPanel
+              wsId={wsId}
+              user={{
+                id: data.id,
+                full_name: data.full_name,
+                display_name: data.display_name,
+                has_require_attention_feedback:
+                  !!data.has_require_attention_feedback,
+              }}
+              canManageFeedbacks={canManageFeedbacks}
+            />
+          ) : null}
           <SentEmailsClient
             wsId={wsId}
             userId={userId}
