@@ -36,6 +36,12 @@ void main() {
       when(
         () => authRepository.signInWithApple(),
       ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());
+      when(
+        () => authRepository.signInWithMicrosoft(),
+      ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());
+      when(
+        () => authRepository.signInWithGithub(),
+      ).thenAnswer((_) async => const AuthActionResult.externalFlowStarted());
     });
 
     blocTest<AuthCubit, AuthState>(
@@ -111,6 +117,33 @@ void main() {
     );
 
     blocTest<AuthCubit, AuthState>(
+      'stores a localized error code when Microsoft sign-in fails',
+      build: () {
+        when(
+          () => authRepository.signInWithMicrosoft(),
+        ).thenAnswer(
+          (_) async => const AuthActionResult.failure(
+            AuthErrorCode.microsoftBrowserLaunchFailed,
+          ),
+        );
+        return AuthCubit(authRepository: authRepository);
+      },
+      act: (cubit) => cubit.signInWithMicrosoft(),
+      expect: () => <AuthState>[
+        const AuthState.unauthenticated().copyWith(
+          isLoading: true,
+          error: null,
+          errorCode: null,
+        ),
+        const AuthState.unauthenticated().copyWith(
+          isLoading: false,
+          error: null,
+          errorCode: AuthErrorCode.microsoftBrowserLaunchFailed,
+        ),
+      ],
+    );
+
+    blocTest<AuthCubit, AuthState>(
       'stores a localized error code when Apple sign-in fails',
       build: () {
         when(
@@ -133,6 +166,33 @@ void main() {
           isLoading: false,
           error: null,
           errorCode: AuthErrorCode.appleBrowserLaunchFailed,
+        ),
+      ],
+    );
+
+    blocTest<AuthCubit, AuthState>(
+      'stores a localized error code when GitHub sign-in fails',
+      build: () {
+        when(
+          () => authRepository.signInWithGithub(),
+        ).thenAnswer(
+          (_) async => const AuthActionResult.failure(
+            AuthErrorCode.githubBrowserLaunchFailed,
+          ),
+        );
+        return AuthCubit(authRepository: authRepository);
+      },
+      act: (cubit) => cubit.signInWithGithub(),
+      expect: () => <AuthState>[
+        const AuthState.unauthenticated().copyWith(
+          isLoading: true,
+          error: null,
+          errorCode: null,
+        ),
+        const AuthState.unauthenticated().copyWith(
+          isLoading: false,
+          error: null,
+          errorCode: AuthErrorCode.githubBrowserLaunchFailed,
         ),
       ],
     );

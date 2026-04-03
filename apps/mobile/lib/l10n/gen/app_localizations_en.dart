@@ -33,10 +33,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authContinueWithApple => 'Continue with Apple';
 
   @override
+  String get authContinueWithGithub => 'Continue with GitHub';
+
+  @override
   String get authContinueWithGoogle => 'Continue with Google';
 
   @override
+  String get authContinueWithMicrosoft => 'Continue with Microsoft';
+
+  @override
   String get authContinueWithEmail => 'or continue with email';
+
+  @override
+  String get authContinueWithSocial => 'or use a social account';
 
   @override
   String get authAppleSignInFailed => 'Apple sign-in failed. Please try again.';
@@ -45,10 +54,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authAppleBrowserLaunchFailed => 'Unable to open Apple sign-in right now.';
 
   @override
+  String get authGithubBrowserLaunchFailed => 'Unable to open GitHub sign-in right now.';
+
+  @override
   String get authGoogleSignInFailed => 'Google sign-in failed. Please try again.';
 
   @override
   String get authGoogleBrowserLaunchFailed => 'Unable to open Google sign-in right now.';
+
+  @override
+  String get authMicrosoftBrowserLaunchFailed => 'Unable to open Microsoft sign-in right now.';
 
   @override
   String get authLogOut => 'Log out';
@@ -72,7 +87,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signUpButton => 'Create account';
 
   @override
-  String get signUpSubtitle => 'Create your account faster with Apple, Google, or email.';
+  String get signUpSubtitle => 'Choose a provider to continue.';
 
   @override
   String get signUpConfirmPassword => 'Confirm password';
@@ -108,10 +123,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signUpSignIn => 'Sign in';
 
   @override
-  String get forgotPasswordTitle => 'Reset password';
+  String get forgotPasswordTitle => 'Password help';
 
   @override
-  String get forgotPasswordDescription => 'Enter your email and we\'ll send you a link to reset your password.';
+  String get forgotPasswordDescription => 'Use the web app to update your password.';
+
+  @override
+  String get forgotPasswordInstructions => 'Sign in on the web with a social account already linked to your email, then change your password from account settings.';
+
+  @override
+  String get forgotPasswordNote => 'Email-based password reset is not supported at this time.';
 
   @override
   String get forgotPasswordSendReset => 'Send reset link';

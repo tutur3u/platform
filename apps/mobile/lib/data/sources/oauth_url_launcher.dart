@@ -9,6 +9,7 @@ class OAuthUrlLauncher {
     required OAuthProvider provider,
     required String redirectTo,
     required Map<String, String> queryParams,
+    String? scopes,
   }) {
     throw UnimplementedError();
   }
@@ -28,6 +29,7 @@ class SupabaseOAuthUrlLauncher extends OAuthUrlLauncher {
     required OAuthProvider provider,
     required String redirectTo,
     required Map<String, String> queryParams,
+    String? scopes,
   }) async {
     return authClient.signInWithOAuth(
       provider,
@@ -36,6 +38,7 @@ class SupabaseOAuthUrlLauncher extends OAuthUrlLauncher {
           ? LaunchMode.externalApplication
           : LaunchMode.platformDefault,
       queryParams: queryParams,
+      scopes: scopes,
     );
   }
 }

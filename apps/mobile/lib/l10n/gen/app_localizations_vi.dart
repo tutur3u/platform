@@ -33,10 +33,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authContinueWithApple => 'Tiếp tục với Apple';
 
   @override
+  String get authContinueWithGithub => 'Tiếp tục với GitHub';
+
+  @override
   String get authContinueWithGoogle => 'Tiếp tục với Google';
 
   @override
+  String get authContinueWithMicrosoft => 'Tiếp tục với Microsoft';
+
+  @override
   String get authContinueWithEmail => 'hoặc tiếp tục với email';
+
+  @override
+  String get authContinueWithSocial => 'hoặc dùng tài khoản mạng xã hội';
 
   @override
   String get authAppleSignInFailed => 'Đăng nhập Apple thất bại. Vui lòng thử lại.';
@@ -45,10 +54,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authAppleBrowserLaunchFailed => 'Không thể mở đăng nhập Apple lúc này.';
 
   @override
+  String get authGithubBrowserLaunchFailed => 'Không thể mở đăng nhập GitHub lúc này.';
+
+  @override
   String get authGoogleSignInFailed => 'Đăng nhập Google thất bại. Vui lòng thử lại.';
 
   @override
   String get authGoogleBrowserLaunchFailed => 'Không thể mở đăng nhập Google lúc này.';
+
+  @override
+  String get authMicrosoftBrowserLaunchFailed => 'Không thể mở đăng nhập Microsoft lúc này.';
 
   @override
   String get authLogOut => 'Đăng xuất';
@@ -72,7 +87,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get signUpButton => 'Tạo tài khoản';
 
   @override
-  String get signUpSubtitle => 'Tạo tài khoản nhanh hơn với Apple, Google hoặc email.';
+  String get signUpSubtitle => 'Chọn một phương thức để tiếp tục.';
 
   @override
   String get signUpConfirmPassword => 'Xác nhận mật khẩu';
@@ -108,10 +123,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get signUpSignIn => 'Đăng nhập';
 
   @override
-  String get forgotPasswordTitle => 'Đặt lại mật khẩu';
+  String get forgotPasswordTitle => 'Hỗ trợ mật khẩu';
 
   @override
-  String get forgotPasswordDescription => 'Nhập email và chúng tôi sẽ gửi cho bạn liên kết đặt lại mật khẩu.';
+  String get forgotPasswordDescription => 'Hãy dùng ứng dụng web để cập nhật mật khẩu.';
+
+  @override
+  String get forgotPasswordInstructions => 'Đăng nhập trên web bằng tài khoản mạng xã hội đã liên kết với email của bạn, sau đó đổi mật khẩu trong phần cài đặt tài khoản.';
+
+  @override
+  String get forgotPasswordNote => 'Hiện chưa hỗ trợ đặt lại mật khẩu qua email.';
 
   @override
   String get forgotPasswordSendReset => 'Gửi liên kết đặt lại';

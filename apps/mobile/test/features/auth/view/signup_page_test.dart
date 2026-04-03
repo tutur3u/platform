@@ -6,6 +6,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
 
@@ -19,9 +20,11 @@ void main() {
       authCubit = _MockAuthCubit();
       when(() => authCubit.signInWithApple()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGoogle()).thenAnswer((_) async {});
+      when(() => authCubit.signInWithMicrosoft()).thenAnswer((_) async {});
+      when(() => authCubit.signInWithGithub()).thenAnswer((_) async {});
     });
 
-    testWidgets('renders the Apple and Google buttons', (tester) async {
+    testWidgets('renders all web-parity social buttons', (tester) async {
       const state = AuthState.unauthenticated();
       when(() => authCubit.state).thenReturn(state);
       whenListen(
@@ -35,8 +38,15 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Continue with Apple'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Continue with Microsoft'), findsOneWidget);
+      expect(find.text('Continue with Apple'), findsOneWidget);
+      expect(find.text('Continue with GitHub'), findsOneWidget);
+      expect(find.byType(shad.TextField), findsNothing);
+      expect(
+        find.widgetWithText(shad.PrimaryButton, 'Create account'),
+        findsNothing,
+      );
     });
 
     testWidgets('renders localized Apple auth errors', (tester) async {
@@ -57,6 +67,28 @@ void main() {
 
       expect(
         find.text('Unable to open Apple sign-in right now.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('renders localized GitHub auth errors', (tester) async {
+      final state = const AuthState.unauthenticated().copyWith(
+        errorCode: AuthErrorCode.githubBrowserLaunchFailed,
+      );
+      when(() => authCubit.state).thenReturn(state);
+      whenListen(
+        authCubit,
+        const Stream<AuthState>.empty(),
+        initialState: state,
+      );
+
+      await tester.pumpApp(
+        BlocProvider.value(value: authCubit, child: const SignUpPage()),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('Unable to open GitHub sign-in right now.'),
         findsOneWidget,
       );
     });

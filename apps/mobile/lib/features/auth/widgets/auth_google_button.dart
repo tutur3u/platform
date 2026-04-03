@@ -59,6 +59,27 @@ class AuthGoogleButton extends StatelessWidget {
   }
 }
 
+class AuthMicrosoftButton extends StatelessWidget {
+  const AuthMicrosoftButton({
+    required this.isLoading,
+    required this.onPressed,
+    super.key,
+  });
+
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthSocialButton(
+      label: context.l10n.authContinueWithMicrosoft,
+      logoAssetPath: 'assets/logos/microsoft.svg',
+      isLoading: isLoading,
+      onPressed: onPressed,
+    );
+  }
+}
+
 class AuthAppleButton extends StatelessWidget {
   const AuthAppleButton({
     required this.isLoading,
@@ -83,8 +104,82 @@ class AuthAppleButton extends StatelessWidget {
   }
 }
 
+class AuthGithubButton extends StatelessWidget {
+  const AuthGithubButton({
+    required this.isLoading,
+    required this.onPressed,
+    super.key,
+  });
+
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return AuthSocialButton(
+      label: context.l10n.authContinueWithGithub,
+      logoAssetPath: 'assets/logos/github.svg',
+      isLoading: isLoading,
+      onPressed: onPressed,
+      logoColor: theme.colorScheme.foreground,
+    );
+  }
+}
+
+class AuthSocialButtons extends StatelessWidget {
+  const AuthSocialButtons({
+    required this.isLoading,
+    required this.onGooglePressed,
+    required this.onMicrosoftPressed,
+    required this.onApplePressed,
+    required this.onGithubPressed,
+    super.key,
+  });
+
+  final bool isLoading;
+  final VoidCallback? onGooglePressed;
+  final VoidCallback? onMicrosoftPressed;
+  final VoidCallback? onApplePressed;
+  final VoidCallback? onGithubPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AuthGoogleButton(
+          isLoading: isLoading,
+          onPressed: onGooglePressed,
+        ),
+        const shad.Gap(12),
+        AuthMicrosoftButton(
+          isLoading: isLoading,
+          onPressed: onMicrosoftPressed,
+        ),
+        const shad.Gap(12),
+        AuthAppleButton(
+          isLoading: isLoading,
+          onPressed: onApplePressed,
+        ),
+        const shad.Gap(12),
+        AuthGithubButton(
+          isLoading: isLoading,
+          onPressed: onGithubPressed,
+        ),
+      ],
+    );
+  }
+}
+
 class AuthMethodDivider extends StatelessWidget {
-  const AuthMethodDivider({super.key});
+  const AuthMethodDivider({
+    this.label,
+    super.key,
+  });
+
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +193,7 @@ class AuthMethodDivider extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
-            context.l10n.authContinueWithEmail,
+            label ?? context.l10n.authContinueWithEmail,
             style: theme.typography.small.copyWith(
               color: theme.colorScheme.mutedForeground,
             ),
