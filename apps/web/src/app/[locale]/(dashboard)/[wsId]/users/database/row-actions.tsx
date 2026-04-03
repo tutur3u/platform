@@ -34,6 +34,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import UserForm from './form';
+import { UserFeedbackDialog } from './user-feedback-dialog';
 
 interface UserRowActionsProps {
   row: Row<WorkspaceUser>;
@@ -47,7 +48,11 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const pathname = usePathname();
 
   const user = row.original;
+  const showTrailingActions =
+    (pathname.includes('/users/database') && !!extraData?.canDeleteUsers) ||
+    !!(extraData?.wsId && extraData?.groupId);
   const [open, setOpen] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -161,7 +166,19 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         </DialogContent>
       </Dialog>
 
-      {!extraData?.canUpdateUsers && !extraData?.canDeleteUsers ? null : (
+      {!!extraData?.canViewFeedbacks && (
+        <UserFeedbackDialog
+          open={showFeedbackDialog}
+          onOpenChange={setShowFeedbackDialog}
+          wsId={user.ws_id!}
+          user={user}
+          canManageFeedbacks={!!extraData?.canManageFeedbacks}
+        />
+      )}
+
+      {!extraData?.canUpdateUsers &&
+      !extraData?.canDeleteUsers &&
+      !extraData?.canViewFeedbacks ? null : (
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
@@ -179,7 +196,13 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
               </DropdownMenuItem>
             )}
 
-            <DropdownMenuSeparator />
+            {!!extraData?.canViewFeedbacks && (
+              <DropdownMenuItem onClick={() => setShowFeedbackDialog(true)}>
+                {t('ws-users.feedback_support_action')}
+              </DropdownMenuItem>
+            )}
+
+            {showTrailingActions ? <DropdownMenuSeparator /> : null}
             {pathname.includes('/users/database') &&
               !!extraData?.canDeleteUsers && (
                 <DropdownMenuItem
