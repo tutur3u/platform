@@ -38,7 +38,7 @@
     "check": "node scripts/check.js",
     "check:mobile": "node scripts/check-mobile.js",
     "dev:mobile": "cd apps/mobile && flutter run --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
-    "dev:mobile:prod": "cd apps/mobile && flutter run --dart-define-from-file=.env.production --flavor development --target lib/main_development.dart",
+    "dev:mobile:prod": "cd apps/mobile && flutter run --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "dev:docs": "cd apps/docs && mintlify dev",
     "dev:web": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/web",
     "dev:webns": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase",

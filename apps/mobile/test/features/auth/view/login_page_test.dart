@@ -20,9 +20,11 @@ void main() {
       authCubit = _MockAuthCubit();
       when(() => authCubit.signInWithApple()).thenAnswer((_) async {});
       when(() => authCubit.signInWithGoogle()).thenAnswer((_) async {});
+      when(() => authCubit.signInWithMicrosoft()).thenAnswer((_) async {});
+      when(() => authCubit.signInWithGithub()).thenAnswer((_) async {});
     });
 
-    testWidgets('renders the Apple and Google buttons', (tester) async {
+    testWidgets('renders all web-parity social buttons', (tester) async {
       const state = AuthState.unauthenticated();
       when(() => authCubit.state).thenReturn(state);
       whenListen(
@@ -36,8 +38,11 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Continue with Apple'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Continue with Microsoft'), findsOneWidget);
+      expect(find.text('Continue with Apple'), findsOneWidget);
+      expect(find.text('Continue with GitHub'), findsOneWidget);
+      expect(find.text('Sign in to continue'), findsNothing);
       expect(
         find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
         findsOneWidget,
@@ -62,12 +67,19 @@ void main() {
 
       expect(find.text('Continue with Apple'), findsNothing);
       expect(find.text('Continue with Google'), findsNothing);
-      expect(find.byType(shad.OutlineButton), findsNWidgets(2));
+      expect(find.text('Continue with Microsoft'), findsNothing);
+      expect(find.text('Continue with GitHub'), findsNothing);
+      expect(find.byType(shad.OutlineButton), findsNWidgets(4));
 
-      await tester.tap(find.byType(shad.OutlineButton).first);
-      await tester.tap(find.byType(shad.OutlineButton).last);
+      for (var index = 0; index < 4; index++) {
+        final button = find.byType(shad.OutlineButton).at(index);
+        await tester.ensureVisible(button);
+        await tester.tap(button, warnIfMissed: false);
+      }
       verifyNever(() => authCubit.signInWithApple());
       verifyNever(() => authCubit.signInWithGoogle());
+      verifyNever(() => authCubit.signInWithMicrosoft());
+      verifyNever(() => authCubit.signInWithGithub());
     });
 
     testWidgets('switches to password step after confirming email', (
@@ -90,16 +102,24 @@ void main() {
         find.byType(shad.TextField).first,
         'user@test.com',
       );
+      await tester.ensureVisible(
+        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
+      );
       await tester.tap(
         find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Continue with Apple'), findsNothing);
-      expect(find.text('Continue with Google'), findsNothing);
       expect(find.text('Back'), findsOneWidget);
-      expect(find.text('user@test.com'), findsOneWidget);
       expect(find.byType(shad.TextField), findsOneWidget);
+      expect(
+        find.widgetWithText(shad.PrimaryButton, 'Continue with email'),
+        findsNothing,
+      );
+      expect(find.text('Continue with Google'), findsNothing);
+      expect(find.text('Continue with Microsoft'), findsNothing);
+      expect(find.text('Continue with Apple'), findsNothing);
+      expect(find.text('Continue with GitHub'), findsNothing);
     });
 
     testWidgets('rebuilds to show localized auth errors from errorCode', (
@@ -123,6 +143,31 @@ void main() {
 
       expect(
         find.text('Unable to open Google sign-in right now.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('rebuilds to show localized Microsoft auth errors', (
+      tester,
+    ) async {
+      const initialState = AuthState.unauthenticated();
+      final errorState = const AuthState.unauthenticated().copyWith(
+        errorCode: AuthErrorCode.microsoftBrowserLaunchFailed,
+      );
+      when(() => authCubit.state).thenReturn(initialState);
+      whenListen(
+        authCubit,
+        Stream<AuthState>.fromIterable([errorState]),
+        initialState: initialState,
+      );
+
+      await tester.pumpApp(
+        BlocProvider.value(value: authCubit, child: const LoginPage()),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('Unable to open Microsoft sign-in right now.'),
         findsOneWidget,
       );
     });

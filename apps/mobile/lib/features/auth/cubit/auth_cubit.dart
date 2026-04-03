@@ -106,20 +106,42 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
-    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
-    final result = await _repo.signInWithGoogle();
-    await _handleAuthActionResult(
-      result,
+    await _signInWithExternalProvider(
+      action: _repo.signInWithGoogle,
       fallbackErrorCode: AuthErrorCode.googleSignInFailed,
     );
   }
 
+  Future<void> signInWithMicrosoft() async {
+    await _signInWithExternalProvider(
+      action: _repo.signInWithMicrosoft,
+      fallbackErrorCode: AuthErrorCode.microsoftBrowserLaunchFailed,
+    );
+  }
+
   Future<void> signInWithApple() async {
+    await _signInWithExternalProvider(
+      action: _repo.signInWithApple,
+      fallbackErrorCode: AuthErrorCode.appleSignInFailed,
+    );
+  }
+
+  Future<void> signInWithGithub() async {
+    await _signInWithExternalProvider(
+      action: _repo.signInWithGithub,
+      fallbackErrorCode: AuthErrorCode.githubBrowserLaunchFailed,
+    );
+  }
+
+  Future<void> _signInWithExternalProvider({
+    required Future<AuthActionResult> Function() action,
+    required AuthErrorCode fallbackErrorCode,
+  }) async {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
-    final result = await _repo.signInWithApple();
+    final result = await action();
     await _handleAuthActionResult(
       result,
-      fallbackErrorCode: AuthErrorCode.appleSignInFailed,
+      fallbackErrorCode: fallbackErrorCode,
     );
   }
 

@@ -8,10 +8,12 @@ import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/auth_session.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/apple_identity_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
 import 'package:mobile/data/sources/oauth_url_launcher.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef PackageInfoLoader = Future<PackageInfo> Function();
@@ -24,6 +26,7 @@ class AuthRepository {
     ApiClient? apiClient,
     SupabaseClient? supabaseClient,
     GoogleIdentityClient? googleIdentityClient,
+    AppleIdentityClient? appleIdentityClient,
     OAuthUrlLauncher? oauthUrlLauncher,
     PackageInfoLoader? packageInfoLoader,
     DevicePlatform? devicePlatform,
@@ -33,6 +36,8 @@ class AuthRepository {
        _client = supabaseClient ?? supabase,
        _googleIdentityClient =
            googleIdentityClient ?? GoogleIdentityClientImpl(),
+       _appleIdentityClient =
+           appleIdentityClient ?? const AppleIdentityClientImpl(),
        _devicePlatform = devicePlatform ?? const DefaultDevicePlatform(),
        _oauthUrlLauncher =
            oauthUrlLauncher ??
@@ -46,6 +51,7 @@ class AuthRepository {
   final ApiClient _apiClient;
   final SupabaseClient _client;
   final GoogleIdentityClient _googleIdentityClient;
+  final AppleIdentityClient _appleIdentityClient;
   final OAuthUrlLauncher _oauthUrlLauncher;
   final PackageInfoLoader _packageInfoLoader;
   final DevicePlatform _devicePlatform;
@@ -199,8 +205,36 @@ class AuthRepository {
     return _launchBrowserGoogleSignIn();
   }
 
-  Future<AuthActionResult> signInWithApple() {
-    return _launchBrowserAppleSignIn();
+  Future<AuthActionResult> signInWithMicrosoft() {
+    return _launchBrowserOAuthSignIn(
+      provider: OAuthProvider.azure,
+      queryParams: const {},
+      scopes: 'email',
+      errorCode: AuthErrorCode.microsoftBrowserLaunchFailed,
+    );
+  }
+
+  Future<AuthActionResult> signInWithApple() async {
+    if (_shouldTryNativeAppleSignIn()) {
+      final nativeResult = await _tryNativeAppleSignIn();
+      if (nativeResult != null) {
+        return nativeResult;
+      }
+    }
+
+    return _launchBrowserOAuthSignIn(
+      provider: OAuthProvider.apple,
+      queryParams: const {'prompt': 'consent'},
+      errorCode: AuthErrorCode.appleBrowserLaunchFailed,
+    );
+  }
+
+  Future<AuthActionResult> signInWithGithub() {
+    return _launchBrowserOAuthSignIn(
+      provider: OAuthProvider.github,
+      queryParams: const {},
+      errorCode: AuthErrorCode.githubBrowserLaunchFailed,
+    );
   }
 
   bool _shouldTryNativeGoogleSignIn() {
@@ -214,6 +248,8 @@ class AuthRepository {
 
     return true;
   }
+
+  bool _shouldTryNativeAppleSignIn() => _devicePlatform.isIOS;
 
   Future<AuthActionResult?> _tryNativeGoogleSignIn() async {
     try {
@@ -251,6 +287,38 @@ class AuthRepository {
     }
   }
 
+  Future<AuthActionResult?> _tryNativeAppleSignIn() async {
+    try {
+      if (!await _appleIdentityClient.isAvailable()) {
+        return null;
+      }
+
+      final tokens = await _appleIdentityClient.authenticate();
+      return await _completeNativeAppleSignIn(tokens);
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        return const AuthActionResult.cancelled();
+      }
+
+      return AuthActionResult.failure(
+        AuthErrorCode.appleSignInFailed,
+        errorMessage: e.message,
+      );
+    } on SignInWithAppleNotSupportedException {
+      return null;
+    } on AuthException catch (e) {
+      return AuthActionResult.failure(
+        AuthErrorCode.appleSignInFailed,
+        errorMessage: e.message,
+      );
+    } on Exception catch (e) {
+      return AuthActionResult.failure(
+        AuthErrorCode.appleSignInFailed,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
   Future<AuthActionResult> _completeNativeGoogleSignIn(
     GoogleIdentityTokens tokens,
   ) async {
@@ -275,6 +343,70 @@ class AuthRepository {
     }
   }
 
+  Future<AuthActionResult> _completeNativeAppleSignIn(
+    AppleIdentityTokens tokens,
+  ) async {
+    try {
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: tokens.idToken,
+        nonce: tokens.rawNonce,
+      );
+
+      final metadata = <String, dynamic>{};
+      final fullName = _buildAppleFullName(
+        givenName: tokens.givenName,
+        familyName: tokens.familyName,
+      );
+      if (fullName != null) {
+        metadata['full_name'] = fullName;
+      }
+
+      if (metadata.isNotEmpty) {
+        try {
+          await _client.auth.updateUser(
+            UserAttributes(
+              data: metadata,
+            ),
+          );
+        } on AuthException {
+          // Apple only returns name fields on the first authorization.
+          // Do not fail sign-in if persisting that optional metadata fails.
+        }
+      }
+
+      return const AuthActionResult.success();
+    } on AuthException catch (e) {
+      return AuthActionResult.failure(
+        AuthErrorCode.appleSignInFailed,
+        errorMessage: e.message,
+      );
+    } on Exception catch (e) {
+      return AuthActionResult.failure(
+        AuthErrorCode.appleSignInFailed,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  String? _buildAppleFullName({
+    required String? givenName,
+    required String? familyName,
+  }) {
+    final parts = <String>[
+      if (givenName case final String value when value.trim().isNotEmpty)
+        value.trim(),
+      if (familyName case final String value when value.trim().isNotEmpty)
+        value.trim(),
+    ];
+
+    if (parts.isEmpty) {
+      return null;
+    }
+
+    return parts.join(' ');
+  }
+
   bool _shouldFallbackToBrowserFromNativeError(
     GoogleSignInExceptionCode code,
   ) {
@@ -290,57 +422,39 @@ class AuthRepository {
   }
 
   Future<AuthActionResult> _launchBrowserGoogleSignIn() async {
-    try {
-      final redirectTo = await _buildAuthRedirectUrl();
-      final launched = await _oauthUrlLauncher.launchProviderSignIn(
-        authClient: _client.auth,
-        provider: OAuthProvider.google,
-        redirectTo: redirectTo,
-        queryParams: const {
-          'access_type': 'offline',
-          'prompt': 'consent',
-        },
-      );
-
-      if (!launched) {
-        return const AuthActionResult.failure(
-          AuthErrorCode.googleBrowserLaunchFailed,
-        );
-      }
-
-      return const AuthActionResult.externalFlowStarted();
-    } on Exception catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.googleBrowserLaunchFailed,
-        errorMessage: e.toString(),
-      );
-    }
+    return _launchBrowserOAuthSignIn(
+      provider: OAuthProvider.google,
+      queryParams: const {
+        'access_type': 'offline',
+        'prompt': 'consent',
+      },
+      errorCode: AuthErrorCode.googleBrowserLaunchFailed,
+    );
   }
 
-  Future<AuthActionResult> _launchBrowserAppleSignIn() async {
+  Future<AuthActionResult> _launchBrowserOAuthSignIn({
+    required OAuthProvider provider,
+    required Map<String, String> queryParams,
+    required AuthErrorCode errorCode,
+    String? scopes,
+  }) async {
     try {
       final redirectTo = await _buildAuthRedirectUrl();
       final launched = await _oauthUrlLauncher.launchProviderSignIn(
         authClient: _client.auth,
-        provider: OAuthProvider.apple,
+        provider: provider,
         redirectTo: redirectTo,
-        queryParams: const {
-          'prompt': 'consent',
-        },
+        queryParams: queryParams,
+        scopes: scopes,
       );
 
       if (!launched) {
-        return const AuthActionResult.failure(
-          AuthErrorCode.appleBrowserLaunchFailed,
-        );
+        return AuthActionResult.failure(errorCode);
       }
 
       return const AuthActionResult.externalFlowStarted();
     } on Exception catch (e) {
-      return AuthActionResult.failure(
-        AuthErrorCode.appleBrowserLaunchFailed,
-        errorMessage: e.toString(),
-      );
+      return AuthActionResult.failure(errorCode, errorMessage: e.toString());
     }
   }
 

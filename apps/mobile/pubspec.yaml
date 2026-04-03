@@ -13,6 +13,7 @@ dependencies:
   camera: ^0.12.0+1
   cloudflare_turnstile: ^3.6.2
   connectivity_plus: ^7.0.0
+  crypto: ^3.0.7
   cupertino_icons: ^1.0.9
   device_info_plus: 12.3.0
   equatable: ^2.0.8
@@ -56,6 +57,7 @@ dependencies:
   shadcn_flutter: ^0.0.52
   share_plus: ^12.0.2
   shared_preferences: ^2.5.5
+  sign_in_with_apple: ^7.0.1
   supabase_flutter: ^2.12.2
   url_launcher: ^6.3.2
   web_socket_channel: ^3.0.3
@@ -90,8 +92,10 @@ flutter:
     - assets/logos/nova-transparent.png
     - assets/logos/transparent.png
     - assets/logos/apple.svg
+    - assets/logos/github.svg
     - assets/logos/google-logo.png
     - assets/logos/google.svg
+    - assets/logos/microsoft.svg
   fonts:
     - family: NotoSans
       fonts:

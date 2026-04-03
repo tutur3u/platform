@@ -3,10 +3,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/core/platform/device_platform.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
+import 'package:mobile/data/sources/apple_identity_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
 import 'package:mobile/data/sources/oauth_url_launcher.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
@@ -14,6 +16,8 @@ class _MockSupabaseClient extends Mock implements SupabaseClient {}
 class _MockGoTrueClient extends Mock implements GoTrueClient {}
 
 class _MockGoogleIdentityClient extends Mock implements GoogleIdentityClient {}
+
+class _MockAppleIdentityClient extends Mock implements AppleIdentityClient {}
 
 class _MockOAuthUrlLauncher extends Mock implements OAuthUrlLauncher {}
 
@@ -44,10 +48,19 @@ PackageInfo _packageInfo() => PackageInfo(
   buildNumber: '1',
 );
 
+User _user() => const User(
+  id: 'user-id',
+  appMetadata: <String, dynamic>{},
+  userMetadata: <String, dynamic>{},
+  aud: 'authenticated',
+  createdAt: '2024-01-01T00:00:00.000Z',
+);
+
 void main() {
   late SupabaseClient supabaseClient;
   late GoTrueClient goTrueClient;
   late GoogleIdentityClient googleIdentityClient;
+  late AppleIdentityClient appleIdentityClient;
   late OAuthUrlLauncher oauthUrlLauncher;
   late AuthRepository repository;
 
@@ -55,6 +68,7 @@ void main() {
     supabaseClient = _MockSupabaseClient();
     goTrueClient = _MockGoTrueClient();
     googleIdentityClient = _MockGoogleIdentityClient();
+    appleIdentityClient = _MockAppleIdentityClient();
     oauthUrlLauncher = _MockOAuthUrlLauncher();
 
     when(() => supabaseClient.auth).thenReturn(goTrueClient);
@@ -63,6 +77,7 @@ void main() {
     repository = AuthRepository(
       supabaseClient: supabaseClient,
       googleIdentityClient: googleIdentityClient,
+      appleIdentityClient: appleIdentityClient,
       oauthUrlLauncher: oauthUrlLauncher,
       packageInfoLoader: () async => _packageInfo(),
       devicePlatform: const _AndroidPlatform(),
@@ -104,6 +119,7 @@ void main() {
           provider: OAuthProvider.google,
           redirectTo: any(named: 'redirectTo'),
           queryParams: any(named: 'queryParams'),
+          scopes: any(named: 'scopes'),
         ),
       );
     });
@@ -191,6 +207,7 @@ void main() {
             provider: OAuthProvider.google,
             redirectTo: any(named: 'redirectTo'),
             queryParams: any(named: 'queryParams'),
+            scopes: any(named: 'scopes'),
           ),
         );
       },
@@ -225,6 +242,7 @@ void main() {
             provider: OAuthProvider.google,
             redirectTo: any(named: 'redirectTo'),
             queryParams: any(named: 'queryParams'),
+            scopes: any(named: 'scopes'),
           ),
         );
       },
@@ -236,6 +254,7 @@ void main() {
         repository = AuthRepository(
           supabaseClient: supabaseClient,
           googleIdentityClient: googleIdentityClient,
+          appleIdentityClient: appleIdentityClient,
           oauthUrlLauncher: oauthUrlLauncher,
           packageInfoLoader: () async => _packageInfo(),
           devicePlatform: const _IosPlatform(),
@@ -279,8 +298,175 @@ void main() {
     );
   });
 
+  group('AuthRepository.signInWithMicrosoft', () {
+    test('launches Microsoft OAuth in the browser', () async {
+      when(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.azure,
+          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+          queryParams: const {},
+          scopes: 'email',
+        ),
+      ).thenAnswer((_) async => true);
+
+      final result = await repository.signInWithMicrosoft();
+
+      expect(result.status, AuthActionStatus.externalFlowStarted);
+    });
+
+    test('returns a Microsoft launch error when OAuth cannot start', () async {
+      when(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.azure,
+          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+          queryParams: const {},
+          scopes: 'email',
+        ),
+      ).thenAnswer((_) async => false);
+
+      final result = await repository.signInWithMicrosoft();
+
+      expect(result.status, AuthActionStatus.failure);
+      expect(result.errorCode, AuthErrorCode.microsoftBrowserLaunchFailed);
+    });
+  });
+
   group('AuthRepository.signInWithApple', () {
+    test(
+      'returns success after native Apple sign-in succeeds on iOS',
+      () async {
+        repository = AuthRepository(
+          supabaseClient: supabaseClient,
+          googleIdentityClient: googleIdentityClient,
+          appleIdentityClient: appleIdentityClient,
+          oauthUrlLauncher: oauthUrlLauncher,
+          packageInfoLoader: () async => _packageInfo(),
+          devicePlatform: const _IosPlatform(),
+          googleWebClientId: 'web-client-id',
+          googleIosClientId: 'ios-client-id',
+        );
+
+        when(
+          () => appleIdentityClient.isAvailable(),
+        ).thenAnswer((_) async => true);
+        when(
+          () => appleIdentityClient.authenticate(),
+        ).thenAnswer(
+          (_) async => const AppleIdentityTokens(
+            idToken: 'apple-id-token',
+            rawNonce: 'raw-nonce',
+            givenName: 'Ada',
+            familyName: 'Lovelace',
+          ),
+        );
+        when(
+          () => goTrueClient.signInWithIdToken(
+            provider: OAuthProvider.apple,
+            idToken: 'apple-id-token',
+            nonce: 'raw-nonce',
+          ),
+        ).thenAnswer((_) async => AuthResponse(user: _user()));
+        when(
+          () => goTrueClient.updateUser(
+            UserAttributes(
+              data: <String, dynamic>{
+                'full_name': 'Ada Lovelace',
+              },
+            ),
+          ),
+        ).thenAnswer((_) async => UserResponse.fromJson(_user().toJson()));
+
+        final result = await repository.signInWithApple();
+
+        expect(result.status, AuthActionStatus.success);
+        verifyNever(
+          () => oauthUrlLauncher.launchProviderSignIn(
+            authClient: goTrueClient,
+            provider: OAuthProvider.apple,
+            redirectTo: any(named: 'redirectTo'),
+            queryParams: any(named: 'queryParams'),
+            scopes: any(named: 'scopes'),
+          ),
+        );
+      },
+    );
+
+    test('returns cancelled when native Apple sign-in is cancelled', () async {
+      repository = AuthRepository(
+        supabaseClient: supabaseClient,
+        googleIdentityClient: googleIdentityClient,
+        appleIdentityClient: appleIdentityClient,
+        oauthUrlLauncher: oauthUrlLauncher,
+        packageInfoLoader: () async => _packageInfo(),
+        devicePlatform: const _IosPlatform(),
+        googleWebClientId: 'web-client-id',
+        googleIosClientId: 'ios-client-id',
+      );
+
+      when(
+        () => appleIdentityClient.isAvailable(),
+      ).thenAnswer((_) async => true);
+      when(
+        () => appleIdentityClient.authenticate(),
+      ).thenThrow(
+        const SignInWithAppleAuthorizationException(
+          code: AuthorizationErrorCode.canceled,
+          message: 'user cancelled',
+        ),
+      );
+
+      final result = await repository.signInWithApple();
+
+      expect(result.status, AuthActionStatus.cancelled);
+      verifyNever(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.apple,
+          redirectTo: any(named: 'redirectTo'),
+          queryParams: any(named: 'queryParams'),
+          scopes: any(named: 'scopes'),
+        ),
+      );
+    });
+
+    test(
+      'falls back to browser OAuth when native Apple sign-in is unavailable',
+      () async {
+        repository = AuthRepository(
+          supabaseClient: supabaseClient,
+          googleIdentityClient: googleIdentityClient,
+          appleIdentityClient: appleIdentityClient,
+          oauthUrlLauncher: oauthUrlLauncher,
+          packageInfoLoader: () async => _packageInfo(),
+          devicePlatform: const _IosPlatform(),
+          googleWebClientId: 'web-client-id',
+          googleIosClientId: 'ios-client-id',
+        );
+
+        when(
+          () => appleIdentityClient.isAvailable(),
+        ).thenAnswer((_) async => false);
+        when(
+          () => oauthUrlLauncher.launchProviderSignIn(
+            authClient: goTrueClient,
+            provider: OAuthProvider.apple,
+            redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+            queryParams: const {'prompt': 'consent'},
+          ),
+        ).thenAnswer((_) async => true);
+
+        final result = await repository.signInWithApple();
+
+        expect(result.status, AuthActionStatus.externalFlowStarted);
+      },
+    );
+
     test('launches Apple OAuth in the browser', () async {
+      when(
+        () => appleIdentityClient.isAvailable(),
+      ).thenAnswer((_) async => false);
       when(
         () => oauthUrlLauncher.launchProviderSignIn(
           authClient: goTrueClient,
@@ -297,6 +483,9 @@ void main() {
 
     test('returns an Apple launch error when OAuth cannot start', () async {
       when(
+        () => appleIdentityClient.isAvailable(),
+      ).thenAnswer((_) async => false);
+      when(
         () => oauthUrlLauncher.launchProviderSignIn(
           authClient: goTrueClient,
           provider: OAuthProvider.apple,
@@ -309,6 +498,39 @@ void main() {
 
       expect(result.status, AuthActionStatus.failure);
       expect(result.errorCode, AuthErrorCode.appleBrowserLaunchFailed);
+    });
+  });
+
+  group('AuthRepository.signInWithGithub', () {
+    test('launches GitHub OAuth in the browser', () async {
+      when(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.github,
+          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+          queryParams: const {},
+        ),
+      ).thenAnswer((_) async => true);
+
+      final result = await repository.signInWithGithub();
+
+      expect(result.status, AuthActionStatus.externalFlowStarted);
+    });
+
+    test('returns a GitHub launch error when OAuth cannot start', () async {
+      when(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.github,
+          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+          queryParams: const {},
+        ),
+      ).thenAnswer((_) async => false);
+
+      final result = await repository.signInWithGithub();
+
+      expect(result.status, AuthActionStatus.failure);
+      expect(result.errorCode, AuthErrorCode.githubBrowserLaunchFailed);
     });
   });
 }
