@@ -1395,10 +1395,91 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionLabel => 'Mô tả';
 
   @override
+  String get taskBoardDetailTaskEditDescription => 'Chỉnh sửa mô tả';
+
+  @override
   String get taskBoardDetailTaskDescriptionHint => 'Thêm mô tả';
 
   @override
   String get taskBoardDetailTaskDescriptionComingSoon => 'Tính năng chỉnh sửa mô tả sẽ sớm có trên mobile.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionDone => 'Xong';
+
+  @override
+  String get taskBoardDetailTaskDescriptionPersonalOnly => 'Tính năng chỉnh sửa mô tả hiện chỉ khả dụng trong không gian làm việc cá nhân.';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceTitle => 'Thêm hình ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceCamera => 'Máy ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionImageSourceGallery => 'Thư viện';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBlockquote => 'Trích dẫn';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBold => 'In đậm';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarBulletList => 'Danh sách chấm tròn';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarCodeBlock => 'Khối mã';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading1 => 'Tiêu đề 1';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading2 => 'Tiêu đề 2';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHeading3 => 'Tiêu đề 3';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarHighlight => 'Tô sáng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInlineCode => 'Mã nội tuyến';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarInsertImage => 'Chèn hình ảnh';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarItalic => 'In nghiêng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarOrderedList => 'Danh sách đánh số';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarStrikethrough => 'Gạch ngang';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSubscript => 'Chỉ số dưới';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarSuperscript => 'Chỉ số trên';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarTaskList => 'Danh sách công việc';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableAddColumn => 'Thêm cột';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableAddRow => 'Thêm hàng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveColumn => 'Xóa cột';
+
+  @override
+  String get taskBoardDetailTaskDescriptionTableRemoveRow => 'Xóa hàng';
+
+  @override
+  String get taskBoardDetailTaskDescriptionToolbarUnderline => 'Gạch dưới';
 
   @override
   String get taskBoardDetailTaskListLabel => 'Danh sách';

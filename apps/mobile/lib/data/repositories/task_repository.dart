@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
@@ -18,10 +22,75 @@ import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 
 /// Repository for task operations.
 class TaskRepository {
-  TaskRepository({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  TaskRepository({ApiClient? apiClient, http.Client? httpClient})
+    : _apiClient = apiClient ?? ApiClient(),
+      _httpClient = httpClient ?? http.Client();
 
   final ApiClient _apiClient;
+  final http.Client _httpClient;
+
+  String _filenameFromPath(String path) {
+    final normalized = path.replaceAll(RegExp(r'\\'), '/');
+    final parts = normalized.split('/');
+    final last = parts.isNotEmpty ? parts.last.trim() : '';
+    if (last.isNotEmpty) {
+      return last;
+    }
+
+    return 'task-image-${DateTime.now().millisecondsSinceEpoch}.jpg';
+  }
+
+  Future<String> uploadTaskDescriptionImage({
+    required String wsId,
+    required String localFilePath,
+    String? taskId,
+  }) async {
+    final filename = _filenameFromPath(localFilePath);
+    final uploadResponse = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/tasks/upload-url',
+      {
+        'filename': filename,
+        if (taskId != null && taskId.trim().isNotEmpty) 'taskId': taskId,
+      },
+    );
+
+    final signedUrl = uploadResponse['signedUrl'] as String?;
+    final token = uploadResponse['token'] as String?;
+    final path = uploadResponse['path'] as String?;
+
+    if (signedUrl == null || token == null || path == null) {
+      throw const ApiException(
+        message: 'Invalid task upload URL response',
+        statusCode: 0,
+      );
+    }
+
+    final fileBytes = await File(localFilePath).readAsBytes();
+    final contentType =
+        lookupMimeType(localFilePath) ?? 'application/octet-stream';
+
+    final putResponse = await _httpClient
+        .put(
+          Uri.parse(signedUrl),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': contentType,
+          },
+          body: fileBytes,
+        )
+        .timeout(const Duration(seconds: 60));
+
+    if (putResponse.statusCode < 200 || putResponse.statusCode >= 300) {
+      throw ApiException(
+        message: 'Failed to upload image (${putResponse.statusCode})',
+        statusCode: putResponse.statusCode,
+      );
+    }
+
+    final encodedWsId = Uri.encodeComponent(wsId);
+    final query = Uri(queryParameters: {'path': path}).query;
+    return '/api/v1/workspaces/$encodedWsId/storage/share?$query';
+  }
 
   /// Fetches the current user's task buckets from the shared web API.
   Future<UserTasksPage> getMyTasks({
@@ -159,6 +228,24 @@ class TaskRepository {
     await _apiClient.putJson(
       '/api/v1/workspaces/$wsId/tasks/$taskId',
       _normalizeTaskPayload(data),
+    );
+  }
+
+  Future<void> updateTaskDescription({
+    required String wsId,
+    required String taskId,
+    String? description,
+    List<int>? descriptionYjsState,
+  }) async {
+    final payload = <String, dynamic>{
+      'description': description,
+      if (descriptionYjsState != null)
+        'description_yjs_state': descriptionYjsState,
+    };
+
+    await _apiClient.patchJson(
+      '/api/v1/workspaces/$wsId/tasks/$taskId/description',
+      payload,
     );
   }
 
@@ -415,7 +502,7 @@ class TaskRepository {
       '/api/v1/workspaces/$wsId/tasks',
       {
         'name': name,
-        'list_id': listId,
+        'listId': listId,
         'description': description,
         'priority': priority,
         'start_date': startDate?.toUtc().toIso8601String(),

@@ -407,6 +407,31 @@ void main() {
       expect(parsed.plainText, raw);
     });
 
+    test(
+      'falls back to readable text when malformed TipTap attrs '
+      'break markdown extraction',
+      () {
+        final malformedDoc = jsonEncode({
+          'type': 'doc',
+          'content': [
+            {
+              'type': 'heading',
+              'attrs': {'level': 'bad-level'},
+              'content': [
+                {'type': 'text', 'text': 'Broken heading'},
+              ],
+            },
+          ],
+        });
+
+        final parsed = parseTipTapTaskDescription(malformedDoc);
+
+        expect(parsed, isNotNull);
+        expect(parsed!.plainText, contains('Broken heading'));
+        expect(parsed.markdown, contains('Broken heading'));
+      },
+    );
+
     testWidgets(
       'renders long parsed description without overflow in detail sheet',
       (

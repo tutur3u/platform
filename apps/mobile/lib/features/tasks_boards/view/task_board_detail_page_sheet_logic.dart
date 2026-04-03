@@ -561,7 +561,7 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
 
   final toastContext = Navigator.of(state.context, rootNavigator: true).context;
   final description = state._isTaskDescriptionEditingEnabled
-      ? _normalizeTaskText(state._descriptionController.text)
+      ? normalizeTaskDescriptionPayload(state._descriptionController.text)
       : null;
 
   state._updateState(() => state._isSaving = true);
@@ -582,10 +582,13 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
       );
     } else {
       final currentTask = state.widget.task!;
+      final shouldClearDescription =
+          state._isTaskDescriptionEditingEnabled &&
+          (currentTask.description?.isNotEmpty ?? false) &&
+          description == null;
       await cubit.updateTask(
         taskId: currentTask.id,
         name: title,
-        description: description,
         priority: state._priority,
         startDate: state._startDate,
         endDate: state._endDate,
@@ -593,10 +596,8 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         assigneeIds: state._selectedAssigneeIds.toList(growable: false),
         labelIds: state._selectedLabelIds.toList(growable: false),
         projectIds: state._selectedProjectIds.toList(growable: false),
-        clearDescription:
-            state._isTaskDescriptionEditingEnabled &&
-            description == null &&
-            (currentTask.description?.trim().isNotEmpty ?? false),
+        description: description,
+        clearDescription: shouldClearDescription,
         clearStartDate:
             state._startDate == null && currentTask.startDate != null,
         clearEndDate: state._endDate == null && currentTask.endDate != null,
@@ -759,76 +760,6 @@ Future<void> _pickTaskDate(
   });
 }
 
-Future<void> _pickTaskEstimation(_TaskBoardTaskEditorSheetState state) async {
-  final result = await shad.showDialog<String>(
-    context: state.context,
-    builder: (context) => _TaskEstimationPickerDialog(
-      selectedValue: state._estimationPoints?.toString(),
-      options: _taskEstimationOptions(state.widget.board),
-      mapValueLabel: (value) => _taskEstimationPointLabel(
-        points: value,
-        board: state.widget.board,
-      ),
-    ),
-  );
-
-  if (result == null || !state.mounted) return;
-  state._updateState(() {
-    state._estimationPoints = result == 'none' ? null : int.tryParse(result);
-  });
-}
-
-Future<void> _pickTaskAssignees(_TaskBoardTaskEditorSheetState state) async {
-  final nextValues = await shad.showDialog<Set<String>>(
-    context: state.context,
-    builder: (context) => _TaskMultiSelectDialog(
-      title: state.context.l10n.taskBoardDetailTaskSelectAssignees,
-      options: [
-        for (final member in state.widget.members)
-          _MultiSelectOption(id: member.id, label: member.label),
-      ],
-      selectedIds: state._selectedAssigneeIds,
-    ),
-  );
-
-  if (nextValues == null || !state.mounted) return;
-  state._updateState(() => state._selectedAssigneeIds = nextValues);
-}
-
-Future<void> _pickTaskLabels(_TaskBoardTaskEditorSheetState state) async {
-  final nextValues = await shad.showDialog<Set<String>>(
-    context: state.context,
-    builder: (context) => _TaskMultiSelectDialog(
-      title: state.context.l10n.taskBoardDetailTaskSelectLabels,
-      options: [
-        for (final label in state.widget.labels)
-          _MultiSelectOption(id: label.id, label: label.name),
-      ],
-      selectedIds: state._selectedLabelIds,
-    ),
-  );
-
-  if (nextValues == null || !state.mounted) return;
-  state._updateState(() => state._selectedLabelIds = nextValues);
-}
-
-Future<void> _pickTaskProjects(_TaskBoardTaskEditorSheetState state) async {
-  final nextValues = await shad.showDialog<Set<String>>(
-    context: state.context,
-    builder: (context) => _TaskMultiSelectDialog(
-      title: state.context.l10n.taskBoardDetailTaskSelectProjects,
-      options: [
-        for (final project in state.widget.projects)
-          _MultiSelectOption(id: project.id, label: project.name),
-      ],
-      selectedIds: state._selectedProjectIds,
-    ),
-  );
-
-  if (nextValues == null || !state.mounted) return;
-  state._updateState(() => state._selectedProjectIds = nextValues);
-}
-
 Future<void> _closeTaskEditor(_TaskBoardTaskEditorSheetState state) async {
   try {
     await shad.closeOverlay<void>(state.context);
@@ -881,66 +812,6 @@ String _selectedTaskListLabel(
   }
 
   return context.l10n.taskBoardDetailUntitledList;
-}
-
-String _taskEditorEstimationLabel(
-  _TaskBoardTaskEditorSheetState state,
-  BuildContext context,
-) {
-  return state._estimationPoints == null
-      ? context.l10n.taskBoardDetailTaskEstimationNone
-      : _taskEstimationPointLabel(
-          points: state._estimationPoints!,
-          board: state.widget.board,
-        );
-}
-
-String _selectedTaskAssigneesLabel(
-  _TaskBoardTaskEditorSheetState state,
-  BuildContext context,
-) {
-  return state._selectionSummary(
-    selectedIds: state._selectedAssigneeIds,
-    options: [
-      for (final member in state.widget.members)
-        _MultiSelectOption(id: member.id, label: member.label),
-    ],
-    emptyLabel: context.l10n.taskBoardDetailNone,
-  );
-}
-
-String _selectedTaskLabelsLabel(
-  _TaskBoardTaskEditorSheetState state,
-  BuildContext context,
-) {
-  return state._selectionSummary(
-    selectedIds: state._selectedLabelIds,
-    options: [
-      for (final label in state.widget.labels)
-        _MultiSelectOption(id: label.id, label: label.name),
-    ],
-    emptyLabel: context.l10n.taskBoardDetailNone,
-  );
-}
-
-String _selectedTaskProjectsLabel(
-  _TaskBoardTaskEditorSheetState state,
-  BuildContext context,
-) {
-  return state._selectionSummary(
-    selectedIds: state._selectedProjectIds,
-    options: [
-      for (final project in state.widget.projects)
-        _MultiSelectOption(id: project.id, label: project.name),
-    ],
-    emptyLabel: context.l10n.taskBoardDetailNone,
-  );
-}
-
-String? _normalizeTaskText(String raw) {
-  final trimmed = raw.trim();
-  if (trimmed.isEmpty) return null;
-  return trimmed;
 }
 
 void _showTaskEditorErrorToast(

@@ -9,6 +9,7 @@ import android.window.OnBackInvokedDispatcher
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugins.videoplayer.VideoPlayerPlugin
 
 class MainActivity : FlutterActivity() {
     private var currentRoute: String? = null
@@ -35,6 +36,16 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // Safety-net registration for video_player. Auto-registration should
+        // already handle this, but explicit registration avoids runtime
+        // platform-interface fallback (UnimplementedError init()) when plugin
+        // registration is skipped in certain engine boot paths.
+        runCatching {
+            flutterEngine.plugins.add(VideoPlayerPlugin())
+        }.onFailure { error ->
+            Log.w("MainActivity", "video_player explicit registration skipped: $error")
+        }
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

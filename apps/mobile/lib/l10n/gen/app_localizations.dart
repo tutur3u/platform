@@ -2767,6 +2767,12 @@ abstract class AppLocalizations {
   /// **'Description'**
   String get taskBoardDetailTaskDescriptionLabel;
 
+  /// No description provided for @taskBoardDetailTaskEditDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit description'**
+  String get taskBoardDetailTaskEditDescription;
+
   /// No description provided for @taskBoardDetailTaskDescriptionHint.
   ///
   /// In en, this message translates to:
@@ -2778,6 +2784,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Description editing is coming soon on mobile.'**
   String get taskBoardDetailTaskDescriptionComingSoon;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get taskBoardDetailTaskDescriptionDone;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionPersonalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Description editing is currently available only in personal workspaces.'**
+  String get taskBoardDetailTaskDescriptionPersonalOnly;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionImageSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add image'**
+  String get taskBoardDetailTaskDescriptionImageSourceTitle;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionImageSourceCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get taskBoardDetailTaskDescriptionImageSourceCamera;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionImageSourceGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get taskBoardDetailTaskDescriptionImageSourceGallery;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarBlockquote.
+  ///
+  /// In en, this message translates to:
+  /// **'Block quote'**
+  String get taskBoardDetailTaskDescriptionToolbarBlockquote;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get taskBoardDetailTaskDescriptionToolbarBold;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarBulletList.
+  ///
+  /// In en, this message translates to:
+  /// **'Bullet list'**
+  String get taskBoardDetailTaskDescriptionToolbarBulletList;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarCodeBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Code block'**
+  String get taskBoardDetailTaskDescriptionToolbarCodeBlock;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarHeading1.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 1'**
+  String get taskBoardDetailTaskDescriptionToolbarHeading1;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarHeading2.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 2'**
+  String get taskBoardDetailTaskDescriptionToolbarHeading2;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarHeading3.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 3'**
+  String get taskBoardDetailTaskDescriptionToolbarHeading3;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarHighlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlight'**
+  String get taskBoardDetailTaskDescriptionToolbarHighlight;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarInlineCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Inline code'**
+  String get taskBoardDetailTaskDescriptionToolbarInlineCode;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarInsertImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert image'**
+  String get taskBoardDetailTaskDescriptionToolbarInsertImage;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get taskBoardDetailTaskDescriptionToolbarItalic;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarOrderedList.
+  ///
+  /// In en, this message translates to:
+  /// **'Ordered list'**
+  String get taskBoardDetailTaskDescriptionToolbarOrderedList;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarStrikethrough.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get taskBoardDetailTaskDescriptionToolbarStrikethrough;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarSubscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscript'**
+  String get taskBoardDetailTaskDescriptionToolbarSubscript;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarSuperscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Superscript'**
+  String get taskBoardDetailTaskDescriptionToolbarSuperscript;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarTaskList.
+  ///
+  /// In en, this message translates to:
+  /// **'Task list'**
+  String get taskBoardDetailTaskDescriptionToolbarTaskList;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionTableAddColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Add column'**
+  String get taskBoardDetailTaskDescriptionTableAddColumn;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionTableAddRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Add row'**
+  String get taskBoardDetailTaskDescriptionTableAddRow;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionTableRemoveColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove column'**
+  String get taskBoardDetailTaskDescriptionTableRemoveColumn;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionTableRemoveRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove row'**
+  String get taskBoardDetailTaskDescriptionTableRemoveRow;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionToolbarUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get taskBoardDetailTaskDescriptionToolbarUnderline;
 
   /// No description provided for @taskBoardDetailTaskListLabel.
   ///

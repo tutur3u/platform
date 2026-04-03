@@ -8,6 +8,7 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
     required this.labels,
     required this.members,
     required this.projects,
+    required this.isPersonalWorkspace,
   });
 
   final TaskBoardTask task;
@@ -16,6 +17,7 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
   final List<TaskLabel> labels;
   final List<WorkspaceUserOption> members;
   final List<TaskProjectSummary> projects;
+  final bool isPersonalWorkspace;
 
   @override
   State<_TaskBoardTaskDetailSheet> createState() =>
@@ -24,6 +26,9 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
 
 class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   static const int _detailsTabIndex = 0;
+  static const double _compactSheetMinSize = 0.2;
+  static const double _compactSheetInitialSize = 0.4;
+  static const double _compactSheetMaxSize = 0.95;
 
   late TaskBoardTask _task;
   int _activeTab = _detailsTabIndex;
@@ -60,6 +65,32 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (context.isCompact) {
+      return DraggableScrollableSheet(
+        initialChildSize: _compactSheetInitialSize,
+        minChildSize: _compactSheetMinSize,
+        maxChildSize: _compactSheetMaxSize,
+        snap: true,
+        snapSizes: const [
+          _compactSheetMinSize,
+          _compactSheetInitialSize,
+          _compactSheetMaxSize,
+        ],
+        expand: false,
+        builder: (context, scrollController) => _buildScrollableBody(
+          context,
+          scrollController: scrollController,
+        ),
+      );
+    }
+
+    return _buildScrollableBody(context);
+  }
+
+  Widget _buildScrollableBody(
+    BuildContext context, {
+    ScrollController? scrollController,
+  }) {
     final theme = shad.Theme.of(context);
     final title = _task.name?.trim().isNotEmpty == true
         ? _task.name!.trim()
@@ -76,6 +107,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
+        controller: scrollController,
         padding: EdgeInsets.fromLTRB(
           16,
           12,
@@ -370,7 +402,10 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
 
   Future<void> _navigateAcrossBoard(GoRouter router, Uri destination) async {
     try {
-      await shad.closeOverlay<void>(context);
+      final didPop = await Navigator.of(context).maybePop();
+      if (!didPop && mounted) {
+        await dismissAdaptiveDrawerOverlay(context);
+      }
     } on Exception catch (error) {
       debugPrint('Task relationship overlay close failed: $error');
     }
@@ -389,6 +424,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         labels: widget.labels,
         members: widget.members,
         projects: widget.projects,
+        isPersonalWorkspace: widget.isPersonalWorkspace,
       ),
     );
 

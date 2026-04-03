@@ -9,6 +9,7 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
     required this.labels,
     required this.members,
     required this.projects,
+    required this.isPersonalWorkspace,
   });
 
   final TaskBoardTask? task;
@@ -18,6 +19,7 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
   final List<TaskLabel> labels;
   final List<WorkspaceUserOption> members;
   final List<TaskProjectSummary> projects;
+  final bool isPersonalWorkspace;
 
   @override
   State<_TaskBoardTaskEditorSheet> createState() =>
@@ -67,7 +69,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   bool get _isCreate => widget.task == null;
 
   bool get _isTaskDescriptionEditingEnabled {
-    return Env.isTaskDescriptionEditingEnabled;
+    return Env.isDevelopment ||
+        (Env.isTaskDescriptionEditingEnabled && widget.isPersonalWorkspace);
   }
 
   bool get _isBusy {
@@ -84,7 +87,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     }
 
     if (_isTaskDescriptionEditingEnabled) {
-      final description = FormDirtyUtils.normalizeOptionalText(
+      final description = normalizeTaskDescriptionPayload(
         _descriptionController.text,
       );
       if (description != _initialDescription) {
@@ -158,12 +161,14 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     super.initState();
     final task = widget.task;
     _nameController = TextEditingController(text: task?.name ?? '');
+    final initialDescriptionText =
+        normalizeTaskDescriptionPayload(task?.description ?? '') ?? '';
     _descriptionController = TextEditingController(
-      text: task?.description ?? '',
+      text: initialDescriptionText,
     );
     _initialName = (task?.name ?? '').trim();
-    _initialDescription = FormDirtyUtils.normalizeOptionalText(
-      task?.description ?? '',
+    _initialDescription = normalizeTaskDescriptionPayload(
+      initialDescriptionText,
     );
     _initialPriority = _normalizePriority(task?.priority);
     _initialEstimationPoints = task?.estimationPoints;
@@ -350,15 +355,18 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
               ),
               if (_isTaskDescriptionEditingEnabled) ...[
                 const shad.Gap(10),
-                shad.TextField(
-                  controller: _descriptionController,
-                  maxLines: 3,
-                  hintText: context.l10n.taskBoardDetailTaskDescriptionHint,
+                _EditFieldButton(
+                  label: context.l10n.taskBoardDetailTaskEditDescription,
+                  onPressed: _isBusy
+                      ? null
+                      : () => unawaited(_openDescriptionEditor(context)),
                 ),
               ] else ...[
                 const shad.Gap(10),
                 Text(
-                  context.l10n.taskBoardDetailTaskDescriptionComingSoon,
+                  Env.isTaskDescriptionEditingEnabled
+                      ? context.l10n.taskBoardDetailTaskDescriptionPersonalOnly
+                      : context.l10n.taskBoardDetailTaskDescriptionComingSoon,
                   style: shad.Theme.of(context).typography.small.copyWith(
                     color: shad.Theme.of(context).colorScheme.mutedForeground,
                   ),
@@ -369,30 +377,19 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         ),
         const shad.Gap(10),
         _EditorSectionCard(
-          title: context.l10n.taskBoardDetailPriority,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _priorityOptions
-                    .map((value) {
-                      final selected = _priority == value;
-                      final label = _taskPriorityLabel(context, value);
-                      return selected
-                          ? shad.PrimaryButton(
-                              onPressed: () {},
-                              child: Text(label),
-                            )
-                          : shad.OutlineButton(
-                              onPressed: _isBusy
-                                  ? null
-                                  : () => setState(() => _priority = value),
-                              child: Text(label),
-                            );
-                    })
-                    .toList(growable: false),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailPriority,
+                options: _taskEditorPriorityOptions(context),
+                selectedIds: {_priority},
+                enabled: !_isBusy,
+                singleSelection: true,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  final selectedPriority = nextSelectedIds.firstOrNull;
+                  _priority = _normalizePriority(selectedPriority);
+                }),
               ),
             ],
           ),
@@ -426,32 +423,49 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
         _EditorSectionCard(
           child: Column(
             children: [
-              _SelectionFieldButton(
-                label: context.l10n.taskBoardDetailTaskEstimation,
-                value: _estimationLabel(context),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailTaskEstimation,
+                options: _taskEditorEstimationOptions(),
+                selectedIds: {
+                  if (_estimationPoints != null) '${_estimationPoints!}',
+                },
                 enabled: !_isBusy,
-                onPressed: _pickEstimation,
+                singleSelection: true,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  _estimationPoints = int.tryParse(
+                    nextSelectedIds.firstOrNull ?? '',
+                  );
+                }),
               ),
               const shad.Gap(8),
-              _SelectionFieldButton(
-                label: context.l10n.taskBoardDetailTaskAssignees,
-                value: _selectedAssigneesLabel(context),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailTaskAssignees,
+                options: _taskEditorAssigneeOptions(),
+                selectedIds: _selectedAssigneeIds,
                 enabled: !_isBusy,
-                onPressed: _pickAssignees,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  _selectedAssigneeIds = nextSelectedIds;
+                }),
               ),
               const shad.Gap(8),
-              _SelectionFieldButton(
-                label: context.l10n.taskBoardDetailTaskLabels,
-                value: _selectedLabelsLabel(context),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailTaskLabels,
+                options: _taskEditorLabelOptions(),
+                selectedIds: _selectedLabelIds,
                 enabled: !_isBusy,
-                onPressed: _pickLabels,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  _selectedLabelIds = nextSelectedIds;
+                }),
               ),
               const shad.Gap(8),
-              _SelectionFieldButton(
-                label: context.l10n.taskBoardDetailTaskProjects,
-                value: _selectedProjectsLabel(context),
+              _FilterDropdownSection(
+                title: context.l10n.taskBoardDetailTaskProjects,
+                options: _taskEditorProjectOptions(),
+                selectedIds: _selectedProjectIds,
                 enabled: !_isBusy,
-                onPressed: _pickProjects,
+                onApplySelection: (nextSelectedIds) => setState(() {
+                  _selectedProjectIds = nextSelectedIds;
+                }),
               ),
             ],
           ),
@@ -642,22 +656,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     await _pickTaskDate(this, isStart: isStart);
   }
 
-  Future<void> _pickEstimation() async {
-    await _pickTaskEstimation(this);
-  }
-
-  Future<void> _pickAssignees() async {
-    await _pickTaskAssignees(this);
-  }
-
-  Future<void> _pickLabels() async {
-    await _pickTaskLabels(this);
-  }
-
-  Future<void> _pickProjects() async {
-    await _pickTaskProjects(this);
-  }
-
   Future<void> _pickParentTask() async {
     await _pickTaskRelationship(this, role: _TaskRelationshipRole.parentTask);
   }
@@ -722,6 +720,106 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     await _closeTaskEditor(this);
   }
 
+  Future<void> _openDescriptionEditor(BuildContext context) async {
+    if (!_isTaskDescriptionEditingEnabled || _isBusy) {
+      return;
+    }
+
+    final l10n = context.l10n;
+    await showAdaptiveSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      builder: (sheetContext) {
+        return _TaskDescriptionEditorOverlay(
+          title: l10n.taskBoardDetailTaskDescriptionLabel,
+          initialValue: _descriptionController.text,
+          enabled: !_isBusy,
+          hintText: l10n.taskBoardDetailTaskDescriptionHint,
+          onChanged: (value) {
+            if (_descriptionController.text == value) {
+              return;
+            }
+            _descriptionController.text = value;
+          },
+          onRequestImageUpload: _isBusy
+              ? null
+              : () => _uploadDescriptionInlineImage(sheetContext),
+        );
+      },
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<String?> _uploadDescriptionInlineImage(BuildContext context) async {
+    final providerContext = this.context;
+    final l10n = context.l10n;
+    final taskCubit = providerContext.read<TaskBoardDetailCubit>();
+    final wsId = taskCubit.state.workspaceId;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+
+    final source = await showImageSourcePickerDialog(
+      context: context,
+      title: l10n.taskBoardDetailTaskDescriptionImageSourceTitle,
+      cameraLabel: l10n.taskBoardDetailTaskDescriptionImageSourceCamera,
+      galleryLabel: l10n.taskBoardDetailTaskDescriptionImageSourceGallery,
+    );
+    if (source == null || !mounted) {
+      return null;
+    }
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 92);
+    if (picked == null || !mounted) {
+      return null;
+    }
+
+    final fallbackErrorMessage = l10n.commonSomethingWentWrong;
+
+    try {
+      if (wsId == null || wsId.trim().isEmpty) {
+        throw const ApiException(
+          message: 'Workspace not selected',
+          statusCode: 0,
+        );
+      }
+
+      final uploadedUrl = await taskCubit.uploadTaskDescriptionImage(
+        wsId: wsId,
+        localFilePath: picked.path,
+        taskId: widget.task?.id,
+      );
+      return uploadedUrl;
+    } on ApiException catch (error) {
+      if (!mounted || !toastContext.mounted) {
+        return null;
+      }
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(
+            error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
+          ),
+        ),
+      );
+      return null;
+    } on Object catch (error) {
+      if (!mounted || !toastContext.mounted) {
+        return null;
+      }
+      final message = error.toString().trim();
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(message.isEmpty ? fallbackErrorMessage : message),
+        ),
+      );
+      return null;
+    }
+  }
+
   Future<void> _loadRelationshipsIfNeeded({bool force = false}) async {
     await _loadTaskRelationshipsIfNeeded(this, force: force);
   }
@@ -742,35 +840,141 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     return _selectedTaskListLabel(this, context);
   }
 
-  String _estimationLabel(BuildContext context) {
-    return _taskEditorEstimationLabel(this, context);
-  }
-
-  String _selectedAssigneesLabel(BuildContext context) {
-    return _selectedTaskAssigneesLabel(this, context);
-  }
-
-  String _selectedLabelsLabel(BuildContext context) {
-    return _selectedTaskLabelsLabel(this, context);
-  }
-
-  String _selectedProjectsLabel(BuildContext context) {
-    return _selectedTaskProjectsLabel(this, context);
-  }
-
-  String _selectionSummary({
-    required Set<String> selectedIds,
-    required List<_MultiSelectOption> options,
-    required String emptyLabel,
-  }) {
-    if (selectedIds.isEmpty) return emptyLabel;
-    final labels = options
-        .where((option) => selectedIds.contains(option.id))
-        .map((option) => option.label.trim())
-        .where((label) => label.isNotEmpty)
+  List<_FilterMenuOption> _taskEditorPriorityOptions(BuildContext context) {
+    return _priorityOptions
+        .map((priority) {
+          final style = _taskPriorityStyle(context, priority);
+          return _FilterMenuOption(
+            id: priority,
+            label: style.label,
+            icon: style.icon,
+            kind: _FilterMenuOptionKind.priority,
+            foreground: style.foreground,
+            background: style.background,
+            border: style.border,
+          );
+        })
         .toList(growable: false);
-    if (labels.isEmpty) return '${selectedIds.length}';
-    if (labels.length <= 2) return labels.join(', ');
-    return '${labels.take(2).join(', ')} +${labels.length - 2}';
+  }
+
+  List<_FilterMenuOption> _taskEditorEstimationOptions() {
+    final options = _taskEstimationOptions(widget.board);
+    return options
+        .map(
+          (value) => _FilterMenuOption(
+            id: '$value',
+            label: _taskEstimationPointLabel(
+              points: value,
+              board: widget.board,
+            ),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<_FilterMenuOption> _taskEditorAssigneeOptions() {
+    return widget.members
+        .map(
+          (member) => _FilterMenuOption(
+            id: member.id,
+            label: member.label,
+            avatarUrl: member.avatarUrl,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<_FilterMenuOption> _taskEditorLabelOptions() {
+    return widget.labels
+        .map(
+          (label) => _FilterMenuOption(
+            id: label.id,
+            label: label.name.trim().isEmpty ? label.id : label.name,
+            kind: _FilterMenuOptionKind.label,
+            color: parseTaskLabelColor(label.color),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  List<_FilterMenuOption> _taskEditorProjectOptions() {
+    return widget.projects
+        .map(
+          (project) => _FilterMenuOption(
+            id: project.id,
+            label: project.name.trim().isEmpty ? project.id : project.name,
+          ),
+        )
+        .toList(growable: false);
+  }
+}
+
+class _TaskDescriptionEditorOverlay extends StatelessWidget {
+  const _TaskDescriptionEditorOverlay({
+    required this.title,
+    required this.initialValue,
+    required this.enabled,
+    required this.hintText,
+    required this.onChanged,
+    required this.onRequestImageUpload,
+  });
+
+  final String title;
+  final String initialValue;
+  final bool enabled;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+  final Future<String?> Function()? onRequestImageUpload;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final overlayHeight = context.isCompact
+        ? screenHeight * 0.9
+        : math.min(screenHeight * 0.85, 760).toDouble();
+
+    return Container(
+      height: overlayHeight,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.typography.large,
+                ),
+              ),
+              shad.IconButton.ghost(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.maybePop(context),
+              ),
+            ],
+          ),
+          const shad.Gap(10),
+          Expanded(
+            child: _TaskDescriptionRichEditor(
+              initialValue: initialValue,
+              enabled: enabled,
+              hintText: hintText,
+              onChanged: onChanged,
+              onRequestImageUpload: onRequestImageUpload,
+            ),
+          ),
+          const shad.Gap(12),
+          shad.PrimaryButton(
+            onPressed: () => Navigator.maybePop(context),
+            child: Text(context.l10n.taskBoardDetailTaskDescriptionDone),
+          ),
+        ],
+      ),
+    );
   }
 }

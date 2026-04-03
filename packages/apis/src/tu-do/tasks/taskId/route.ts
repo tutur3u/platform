@@ -5,6 +5,7 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import {
@@ -517,10 +518,20 @@ export async function PUT(
       }
     }
 
+    const normalizedDescription =
+      body.description !== undefined
+        ? body.description?.trim() || null
+        : undefined;
+
     const baseUpdatePayload = {
       ...(body.name != null ? { name: body.name.trim() } : {}),
-      ...(body.description !== undefined
-        ? { description: body.description?.trim() || null }
+      ...(normalizedDescription !== undefined
+        ? {
+            description: normalizedDescription,
+            description_yjs_state: deriveTaskDescriptionYjsState(
+              normalizedDescription
+            ),
+          }
         : {}),
       ...(body.priority !== undefined
         ? { priority: body.priority as TaskPriority | null }
