@@ -3349,6 +3349,12 @@ abstract class AppLocalizations {
   /// **'Only one closed list is allowed per board.'**
   String get taskBoardDetailCannotCreateMoreClosedLists;
 
+  /// No description provided for @taskBoardDetailClosedListCapacityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'1 closed list max'**
+  String get taskBoardDetailClosedListCapacityHint;
+
   /// No description provided for @taskBoardDetailAddNewList.
   ///
   /// In en, this message translates to:
@@ -3366,6 +3372,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lists reordered.'**
   String get taskBoardDetailListsReordered;
+
+  /// No description provided for @taskBoardDetailMoveListDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move list down'**
+  String get taskBoardDetailMoveListDown;
+
+  /// No description provided for @taskBoardDetailMoveListUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move list up'**
+  String get taskBoardDetailMoveListUp;
 
   /// No description provided for @taskBoardDetailMovedToStatus.
   ///

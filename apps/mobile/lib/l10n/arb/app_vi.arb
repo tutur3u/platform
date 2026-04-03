@@ -695,9 +695,12 @@
     "taskBoardDetailMoveListToStatus": "Di chuyển danh sách sang trạng thái",
     "taskBoardDetailCannotMoveToClosedStatus": "Không thể di chuyển danh sách đến hoặc khỏi trạng thái đã đóng",
     "taskBoardDetailCannotCreateMoreClosedLists": "Mỗi bảng chỉ được phép có một danh sách đã đóng.",
+    "taskBoardDetailClosedListCapacityHint": "Tối đa 1 danh sách đã đóng",
     "taskBoardDetailAddNewList": "Thêm danh sách mới",
     "taskBoardDetailNoListsInStatus": "Không có danh sách nào trong trạng thái này",
     "taskBoardDetailListsReordered": "Đã sắp xếp lại danh sách.",
+    "taskBoardDetailMoveListDown": "Di chuyển danh sách xuống",
+    "taskBoardDetailMoveListUp": "Di chuyển danh sách lên",
     "taskBoardDetailMovedToStatus": "Đã chuyển sang {status}",
     "@taskBoardDetailMovedToStatus": {
         "placeholders": {

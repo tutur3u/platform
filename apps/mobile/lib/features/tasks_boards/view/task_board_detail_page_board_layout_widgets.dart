@@ -35,81 +35,73 @@ class _TaskBoardBoardLayoutSheet extends StatelessWidget {
       'closed',
     );
 
-    return Padding(
+    return ListView(
+      shrinkWrap: true,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header section with better spacing
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.taskBoardDetailManageBoardLayout,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+      children: [
+        // Header section with better spacing
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.taskBoardDetailManageBoardLayout,
+                    style: theme.typography.large.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
-                    const shad.Gap(4),
-                    Text(
-                      context.l10n.taskBoardDetailManageBoardLayoutDescription,
-                      style: theme.typography.small.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
+                  ),
+                  const shad.Gap(4),
+                  Text(
+                    context.l10n.taskBoardDetailManageBoardLayoutDescription,
+                    style: theme.typography.small.copyWith(
+                      color: theme.colorScheme.mutedForeground,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              // Close button moved to header for better accessibility
-              shad.GhostButton(
-                onPressed: onClose,
-                density: shad.ButtonDensity.icon,
-                child: const Icon(Icons.close_rounded, size: 20),
-              ),
-            ],
-          ),
-          const shad.Gap(20),
-          // Status sections
-          Flexible(
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: statuses.length,
-              separatorBuilder: (_, _) => const Divider(height: 32),
-              itemBuilder: (context, index) {
-                final status = statuses[index];
-                final statusLists = _sortedLists(
-                  board.lists
-                      .where(
-                        (list) =>
-                            TaskBoardList.normalizeSupportedStatus(
-                              list.status,
-                            ) ==
-                            status,
-                      )
-                      .toList(growable: false),
-                );
-
-                return _TaskBoardBoardLayoutStatusSection(
-                  context: context,
-                  status: status,
-                  listCount: statusLists.length,
-                  lists: statusLists,
-                  hasClosedList: hasClosedList,
-                  isMutating: isMutating,
-                  onCreateListForStatus: onCreateListForStatus,
-                  onMoveListUp: onMoveListUp,
-                  onMoveListDown: onMoveListDown,
-                  onListActions: onListActions,
-                );
-              },
             ),
+            // Close button moved to header for better accessibility
+            shad.GhostButton(
+              onPressed: onClose,
+              density: shad.ButtonDensity.icon,
+              child: const Icon(Icons.close_rounded, size: 20),
+            ),
+          ],
+        ),
+        const shad.Gap(20),
+        for (var index = 0; index < statuses.length; index++) ...[
+          if (index > 0) const Divider(height: 32),
+          Builder(
+            builder: (context) {
+              final status = statuses[index];
+              final statusLists = _sortedLists(
+                board.lists
+                    .where(
+                      (list) =>
+                          TaskBoardList.normalizeSupportedStatus(list.status) ==
+                          status,
+                    )
+                    .toList(growable: false),
+              );
+
+              return _TaskBoardBoardLayoutStatusSection(
+                context: context,
+                status: status,
+                listCount: statusLists.length,
+                lists: statusLists,
+                hasClosedList: hasClosedList,
+                isMutating: isMutating,
+                onCreateListForStatus: onCreateListForStatus,
+                onMoveListUp: onMoveListUp,
+                onMoveListDown: onMoveListDown,
+                onListActions: onListActions,
+              );
+            },
           ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -295,14 +287,14 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
               canMove: canMoveUp,
               onPressed: canMoveUp ? onMoveUp : null,
               icon: Icons.arrow_upward_rounded,
-              tooltip: 'Move up',
+              tooltip: this.context.l10n.taskBoardDetailMoveListUp,
             ),
             _BoardLayoutMoveButton(
               context: this.context,
               canMove: canMoveDown,
               onPressed: canMoveDown ? onMoveDown : null,
               icon: Icons.arrow_downward_rounded,
-              tooltip: 'Move down',
+              tooltip: this.context.l10n.taskBoardDetailMoveListDown,
             ),
             _BoardLayoutActionButton(
               context: this.context,

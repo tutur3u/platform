@@ -1706,6 +1706,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailCannotCreateMoreClosedLists => 'Only one closed list is allowed per board.';
 
   @override
+  String get taskBoardDetailClosedListCapacityHint => '1 closed list max';
+
+  @override
   String get taskBoardDetailAddNewList => 'Add new list';
 
   @override
@@ -1713,6 +1716,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailListsReordered => 'Lists reordered.';
+
+  @override
+  String get taskBoardDetailMoveListDown => 'Move list down';
+
+  @override
+  String get taskBoardDetailMoveListUp => 'Move list up';
 
   @override
   String taskBoardDetailMovedToStatus(String status) {

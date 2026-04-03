@@ -59,13 +59,16 @@ List<TaskBoardList> _sortedListsByStatusOrder(List<TaskBoardList> lists) {
 
 bool _taskBoardCanCreateListInStatus(
   List<TaskBoardList> lists,
-  String? status,
-) {
+  String? status, {
+  String? excludingListId,
+}) {
   final normalizedStatus = TaskBoardList.normalizeSupportedStatus(status);
   if (normalizedStatus == null) return true;
   if (normalizedStatus != 'closed') return true;
   return !lists.any(
-    (list) => TaskBoardList.normalizeSupportedStatus(list.status) == 'closed',
+    (list) =>
+        list.id != excludingListId &&
+        TaskBoardList.normalizeSupportedStatus(list.status) == 'closed',
   );
 }
 

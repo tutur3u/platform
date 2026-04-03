@@ -126,7 +126,7 @@ extension on _TaskBoardDetailPageViewState {
                   context,
                   rootNavigator: true,
                 ).context;
-                if (!toastContext.mounted) return;
+                if (!toastContext.mounted) return false;
                 shad.showToast(
                   context: toastContext,
                   builder: (context, overlay) => shad.Alert.destructive(
@@ -135,13 +135,14 @@ extension on _TaskBoardDetailPageViewState {
                     ),
                   ),
                 );
-                return;
+                return false;
               }
               await context.read<TaskBoardDetailCubit>().createList(
                 name: name,
                 status: status,
                 color: color,
               );
+              return true;
             },
       ),
     );

@@ -608,18 +608,24 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     await _runMutation(() async {
-      await Future.wait(
-        updates.entries.map(
-          (entry) => _taskRepository.updateBoardList(
-            wsId: wsId,
-            boardId: boardId,
-            listId: entry.key,
-            position: entry.value,
+      try {
+        await Future.wait(
+          updates.entries.map(
+            (entry) => _taskRepository.updateBoardList(
+              wsId: wsId,
+              boardId: boardId,
+              listId: entry.key,
+              position: entry.value,
+            ),
           ),
-        ),
-      );
+        );
+      } finally {
+        if (state.workspaceId == wsId && state.boardId == boardId) {
+          await loadBoardDetail(wsId: wsId, boardId: boardId);
+        }
+      }
       return null;
-    });
+    }, reloadBoard: false);
   }
 
   Future<void> renameBoard({

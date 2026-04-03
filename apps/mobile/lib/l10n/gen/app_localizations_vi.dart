@@ -1706,6 +1706,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailCannotCreateMoreClosedLists => 'Mỗi bảng chỉ được phép có một danh sách đã đóng.';
 
   @override
+  String get taskBoardDetailClosedListCapacityHint => 'Tối đa 1 danh sách đã đóng';
+
+  @override
   String get taskBoardDetailAddNewList => 'Thêm danh sách mới';
 
   @override
@@ -1713,6 +1716,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailListsReordered => 'Đã sắp xếp lại danh sách.';
+
+  @override
+  String get taskBoardDetailMoveListDown => 'Di chuyển danh sách xuống';
+
+  @override
+  String get taskBoardDetailMoveListUp => 'Di chuyển danh sách lên';
 
   @override
   String taskBoardDetailMovedToStatus(String status) {

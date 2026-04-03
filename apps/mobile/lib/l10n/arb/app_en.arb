@@ -695,9 +695,12 @@
     "taskBoardDetailMoveListToStatus": "Move list to status",
     "taskBoardDetailCannotMoveToClosedStatus": "Cannot move lists to or from closed status",
     "taskBoardDetailCannotCreateMoreClosedLists": "Only one closed list is allowed per board.",
+    "taskBoardDetailClosedListCapacityHint": "1 closed list max",
     "taskBoardDetailAddNewList": "Add new list",
     "taskBoardDetailNoListsInStatus": "No lists in this status",
     "taskBoardDetailListsReordered": "Lists reordered.",
+    "taskBoardDetailMoveListDown": "Move list down",
+    "taskBoardDetailMoveListUp": "Move list up",
     "taskBoardDetailMovedToStatus": "Moved to {status}",
     "@taskBoardDetailMovedToStatus": {
         "placeholders": {
