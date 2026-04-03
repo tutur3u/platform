@@ -724,8 +724,9 @@ export async function POST(
     const completionTimestamp = isDoneList ? now : null;
     const normalizedDescription = description?.trim() || null;
     const normalizedDescriptionYjsState =
-      description_yjs_state ??
-      deriveTaskDescriptionYjsState(normalizedDescription);
+      description_yjs_state === undefined
+        ? deriveTaskDescriptionYjsState(normalizedDescription)
+        : description_yjs_state;
 
     const taskInsert: TaskInsert = {
       name: name.trim(),

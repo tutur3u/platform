@@ -76,6 +76,7 @@ void main() {
             wsId: 'ws-1',
             taskId: 'task-1',
             description: tiptapDescription,
+            descriptionYjsState: any(named: 'descriptionYjsState'),
           ),
         ).called(1);
       },
@@ -94,6 +95,8 @@ void main() {
           () => repository.updateTaskDescription(
             wsId: 'ws-1',
             taskId: 'task-1',
+            description: any(named: 'description'),
+            descriptionYjsState: any(named: 'descriptionYjsState'),
           ),
         ).called(1);
       },

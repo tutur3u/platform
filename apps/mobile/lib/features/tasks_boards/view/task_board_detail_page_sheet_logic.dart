@@ -582,6 +582,10 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
       );
     } else {
       final currentTask = state.widget.task!;
+      final shouldClearDescription =
+          state._isTaskDescriptionEditingEnabled &&
+          (currentTask.description?.isNotEmpty ?? false) &&
+          description == null;
       await cubit.updateTask(
         taskId: currentTask.id,
         name: title,
@@ -593,8 +597,7 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         labelIds: state._selectedLabelIds.toList(growable: false),
         projectIds: state._selectedProjectIds.toList(growable: false),
         description: description,
-        clearDescription:
-            state._isTaskDescriptionEditingEnabled && description == null,
+        clearDescription: shouldClearDescription,
         clearStartDate:
             state._startDate == null && currentTask.startDate != null,
         clearEndDate: state._endDate == null && currentTask.endDate != null,

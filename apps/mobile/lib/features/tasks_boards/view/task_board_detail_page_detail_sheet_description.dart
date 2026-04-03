@@ -94,8 +94,14 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
   }
 
   Widget _buildDescriptionViewer(BuildContext context) {
+    final normalizedRawJson = description.rawJson?.trim();
+    final descriptionPayload =
+        (normalizedRawJson != null && normalizedRawJson.isNotEmpty)
+        ? normalizedRawJson
+        : description.markdown;
+
     return TaskDescriptionViewer(
-      descriptionJson: description.rawJson ?? '{}',
+      descriptionJson: descriptionPayload,
     );
   }
 }

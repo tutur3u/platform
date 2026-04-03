@@ -337,6 +337,23 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   bool _didHandleInitialTaskNavigation = false;
   bool _isHandlingInitialTaskNavigation = false;
 
+  bool _isPersonalWorkspaceForBoard(
+    BuildContext context,
+    TaskBoardDetail board,
+  ) {
+    final workspaceState = context.read<WorkspaceCubit>().state;
+    for (final workspace in workspaceState.workspaces) {
+      if (workspace.id == board.wsId) {
+        return workspace.personal;
+      }
+    }
+    final currentWorkspace = workspaceState.currentWorkspace;
+    if (currentWorkspace?.id == board.wsId) {
+      return currentWorkspace?.personal ?? false;
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -878,9 +895,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         labels: board.labels,
         members: board.members,
         projects: board.projects,
-        isPersonalWorkspace:
-            context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
-            false,
+        isPersonalWorkspace: _isPersonalWorkspaceForBoard(context, board),
       ),
     );
 
@@ -914,9 +929,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         labels: board.labels,
         members: board.members,
         projects: board.projects,
-        isPersonalWorkspace:
-            context.read<WorkspaceCubit>().state.currentWorkspace?.personal ??
-            false,
+        isPersonalWorkspace: _isPersonalWorkspaceForBoard(context, board),
       ),
     );
 

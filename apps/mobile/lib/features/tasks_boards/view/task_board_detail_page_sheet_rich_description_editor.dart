@@ -113,24 +113,57 @@ class _TaskDescriptionRichEditorState
       return;
     }
 
+    final controller = _resolvedController;
+    final baseOffset = controller.selection.baseOffset;
+    final extentOffset = controller.selection.extentOffset;
+    final initialStart = math.min(baseOffset, extentOffset);
+    final initialEnd = math.max(baseOffset, extentOffset);
+    final initialReplaceLength = math.max(0, initialEnd - initialStart);
+
     final uploadedUrl = await imageUploader();
     if (!mounted || uploadedUrl == null || uploadedUrl.trim().isEmpty) {
       return;
     }
 
-    final controller = _resolvedController;
-    final baseOffset = controller.selection.baseOffset;
-    final extentOffset = controller.selection.extentOffset;
-    final start = math.min(baseOffset, extentOffset);
-    final end = math.max(baseOffset, extentOffset);
-    final replaceLength = math.max(0, end - start);
+    final documentLength = controller.document.length;
+    final clampedStart = initialStart.clamp(0, documentLength);
+    final maxReplaceLength = math.max(0, documentLength - clampedStart);
+    final clampedReplaceLength = initialReplaceLength.clamp(
+      0,
+      maxReplaceLength,
+    );
 
-    // Insert as a Quill block embed so the image renders inline in the editor.
     controller.replaceText(
-      start,
-      replaceLength,
+      clampedStart,
+      clampedReplaceLength,
       BlockEmbed.image(uploadedUrl.trim()),
-      TextSelection.collapsed(offset: start + 1),
+      TextSelection.collapsed(offset: clampedStart + 1),
+    );
+  }
+
+  void _toggleTaskListAttribute() {
+    if (!widget.enabled) {
+      return;
+    }
+
+    final current = _resolvedController
+        .getSelectionStyle()
+        .attributes['list']
+        ?.value;
+
+    if (current == 'checked') {
+      _resolvedController.formatSelection(Attribute.fromKeyValue('list', null));
+      return;
+    }
+    if (current == 'unchecked') {
+      _resolvedController.formatSelection(
+        Attribute.fromKeyValue('list', 'checked'),
+      );
+      return;
+    }
+
+    _resolvedController.formatSelection(
+      Attribute.fromKeyValue('list', 'unchecked'),
     );
   }
 
@@ -209,7 +242,7 @@ class _TaskDescriptionRichEditorState
               isBulletListActive: _isAttributeActive('list', 'bullet'),
               onOrderedList: () => _toggleAttributeValue('list', 'ordered'),
               isOrderedListActive: _isAttributeActive('list', 'ordered'),
-              onTaskList: () => _toggleAttributeValue('list', 'checked'),
+              onTaskList: _toggleTaskListAttribute,
               isTaskListActive: _isTaskListActive,
               onQuote: () => _toggleAttributeValue('blockquote', true),
               isQuoteActive: _isAttributeActive('blockquote', true),

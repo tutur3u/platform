@@ -66,7 +66,6 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   @override
   Widget build(BuildContext context) {
     if (context.isCompact) {
-      final theme = shad.Theme.of(context);
       return DraggableScrollableSheet(
         initialChildSize: _compactSheetInitialSize,
         minChildSize: _compactSheetMinSize,
@@ -78,20 +77,10 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           _compactSheetMaxSize,
         ],
         expand: false,
-        builder: (context, scrollController) {
-          return Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.background,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-            ),
-            child: _buildScrollableBody(
-              context,
-              scrollController: scrollController,
-            ),
-          );
-        },
+        builder: (context, scrollController) => _buildScrollableBody(
+          context,
+          scrollController: scrollController,
+        ),
       );
     }
 
@@ -128,21 +117,6 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (context.isCompact) ...[
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.mutedForeground.withValues(
-                      alpha: 0.45,
-                    ),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-              const shad.Gap(10),
-            ],
             Row(
               children: [
                 Expanded(
@@ -428,7 +402,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
 
   Future<void> _navigateAcrossBoard(GoRouter router, Uri destination) async {
     try {
-      await Navigator.maybePop(context);
+      await dismissAdaptiveDrawerOverlay(context);
     } on Exception catch (error) {
       debugPrint('Task relationship overlay close failed: $error');
     }

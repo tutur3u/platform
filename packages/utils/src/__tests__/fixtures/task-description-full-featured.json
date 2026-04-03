@@ -145,7 +145,7 @@
       "content": [
         {
           "type": "taskItem",
-          "attrs": { "checked": false },
+          "attrs": { "checked": true },
           "content": [
             {
               "type": "paragraph",
@@ -182,6 +182,32 @@
               "content": [{ "type": "text", "text": "Task List #2" }]
             }
           ]
+        }
+      ]
+    },
+    {
+      "type": "blockquote",
+      "content": [
+        {
+          "type": "paragraph",
+          "attrs": { "textAlign": null },
+          "content": [{ "type": "text", "text": "Quoted line" }]
+        }
+      ]
+    },
+    {
+      "type": "codeBlock",
+      "attrs": { "language": "javascript" },
+      "content": [{ "type": "text", "text": "const x = 1;" }]
+    },
+    {
+      "type": "paragraph",
+      "attrs": { "textAlign": null },
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "code" }],
+          "text": "inline_code_sample"
         }
       ]
     },

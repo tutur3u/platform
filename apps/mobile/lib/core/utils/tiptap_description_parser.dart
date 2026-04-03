@@ -61,7 +61,6 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
     return ParsedTipTapDescription(
       markdown: decoded.trimmed,
       plainText: decoded.trimmed,
-      rawJson: rawDescription,
     );
   }
 
@@ -88,13 +87,12 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
       markdown: resolvedMarkdown,
       plainText: resolvedPlainText,
       mentions: List.unmodifiable(context.mentions),
-      rawJson: rawDescription,
+      rawJson: decoded.trimmed,
     );
   } on Object {
     return ParsedTipTapDescription(
       markdown: decoded.trimmed,
       plainText: decoded.trimmed,
-      rawJson: rawDescription,
     );
   }
 }

@@ -61,9 +61,19 @@ const taskDescriptionSchema = new Schema({
     },
     tableCell: {
       content: 'block+',
+      attrs: {
+        colspan: { default: 1 },
+        rowspan: { default: 1 },
+        colwidth: { default: null },
+      },
     },
     tableHeader: {
       content: 'block+',
+      attrs: {
+        colspan: { default: 1 },
+        rowspan: { default: 1 },
+        colwidth: { default: null },
+      },
     },
     horizontalRule: {
       group: 'block',
@@ -145,6 +155,7 @@ const taskDescriptionSchema = new Schema({
         target: { default: null },
         rel: { default: null },
         class: { default: null },
+        title: { default: null },
       },
       inclusive: false,
     },
