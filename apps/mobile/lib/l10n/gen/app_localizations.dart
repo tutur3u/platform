@@ -139,17 +139,35 @@ abstract class AppLocalizations {
   /// **'Continue with Apple'**
   String get authContinueWithApple;
 
+  /// No description provided for @authContinueWithGithub.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with GitHub'**
+  String get authContinueWithGithub;
+
   /// No description provided for @authContinueWithGoogle.
   ///
   /// In en, this message translates to:
   /// **'Continue with Google'**
   String get authContinueWithGoogle;
 
+  /// No description provided for @authContinueWithMicrosoft.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Microsoft'**
+  String get authContinueWithMicrosoft;
+
   /// No description provided for @authContinueWithEmail.
   ///
   /// In en, this message translates to:
   /// **'or continue with email'**
   String get authContinueWithEmail;
+
+  /// No description provided for @authContinueWithSocial.
+  ///
+  /// In en, this message translates to:
+  /// **'or use a social account'**
+  String get authContinueWithSocial;
 
   /// No description provided for @authAppleSignInFailed.
   ///
@@ -163,6 +181,12 @@ abstract class AppLocalizations {
   /// **'Unable to open Apple sign-in right now.'**
   String get authAppleBrowserLaunchFailed;
 
+  /// No description provided for @authGithubBrowserLaunchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open GitHub sign-in right now.'**
+  String get authGithubBrowserLaunchFailed;
+
   /// No description provided for @authGoogleSignInFailed.
   ///
   /// In en, this message translates to:
@@ -174,6 +198,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to open Google sign-in right now.'**
   String get authGoogleBrowserLaunchFailed;
+
+  /// No description provided for @authMicrosoftBrowserLaunchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open Microsoft sign-in right now.'**
+  String get authMicrosoftBrowserLaunchFailed;
 
   /// No description provided for @authLogOut.
   ///
@@ -220,7 +250,7 @@ abstract class AppLocalizations {
   /// No description provided for @signUpSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Create your account faster with Apple, Google, or email.'**
+  /// **'Choose a provider to continue.'**
   String get signUpSubtitle;
 
   /// No description provided for @signUpConfirmPassword.
@@ -292,14 +322,26 @@ abstract class AppLocalizations {
   /// No description provided for @forgotPasswordTitle.
   ///
   /// In en, this message translates to:
-  /// **'Reset password'**
+  /// **'Password help'**
   String get forgotPasswordTitle;
 
   /// No description provided for @forgotPasswordDescription.
   ///
   /// In en, this message translates to:
-  /// **'Enter your email and we\'ll send you a link to reset your password.'**
+  /// **'Use the web app to update your password.'**
   String get forgotPasswordDescription;
+
+  /// No description provided for @forgotPasswordInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in on the web with a social account already linked to your email, then change your password from account settings.'**
+  String get forgotPasswordInstructions;
+
+  /// No description provided for @forgotPasswordNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Email-based password reset is not supported at this time.'**
+  String get forgotPasswordNote;
 
   /// No description provided for @forgotPasswordSendReset.
   ///
