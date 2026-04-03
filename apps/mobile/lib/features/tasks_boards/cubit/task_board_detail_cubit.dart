@@ -570,9 +570,11 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
   Future<void> updateList({
     required String listId,
-    required String name,
-    required String status,
-    required String color,
+    String? name,
+    String? status,
+    String? color,
+    int? position,
+    bool? deleted,
   }) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
@@ -588,8 +590,36 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         name: name,
         status: status,
         color: color,
+        position: position,
+        deleted: deleted,
       ),
     );
+  }
+
+  Future<void> reorderListsPositions({
+    required Map<String, int> updates,
+  }) async {
+    if (updates.isEmpty) return;
+
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+    if (wsId == null || boardId == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    await _runMutation(() async {
+      await Future.wait(
+        updates.entries.map(
+          (entry) => _taskRepository.updateBoardList(
+            wsId: wsId,
+            boardId: boardId,
+            listId: entry.key,
+            position: entry.value,
+          ),
+        ),
+      );
+      return null;
+    });
   }
 
   Future<void> renameBoard({

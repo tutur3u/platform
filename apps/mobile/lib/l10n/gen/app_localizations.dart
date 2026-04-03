@@ -3193,6 +3193,18 @@ abstract class AppLocalizations {
   /// **'Board actions'**
   String get taskBoardDetailBoardActions;
 
+  /// No description provided for @taskBoardDetailManageBoardLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage board layout'**
+  String get taskBoardDetailManageBoardLayout;
+
+  /// No description provided for @taskBoardDetailManageBoardLayoutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage board columns by status and reorder lists within each status.'**
+  String get taskBoardDetailManageBoardLayoutDescription;
+
   /// No description provided for @taskBoardDetailRefresh.
   ///
   /// In en, this message translates to:
@@ -3252,6 +3264,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'List updated.'**
   String get taskBoardDetailListUpdated;
+
+  /// No description provided for @taskBoardDetailListDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'List deleted.'**
+  String get taskBoardDetailListDeleted;
+
+  /// No description provided for @taskBoardDetailDeleteList.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete list'**
+  String get taskBoardDetailDeleteList;
+
+  /// No description provided for @taskBoardDetailDeleteListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete list?'**
+  String get taskBoardDetailDeleteListTitle;
+
+  /// No description provided for @taskBoardDetailDeleteListDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.'**
+  String get taskBoardDetailDeleteListDescription;
+
+  /// No description provided for @taskBoardDetailMoveListToStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Move list to status'**
+  String get taskBoardDetailMoveListToStatus;
+
+  /// No description provided for @taskBoardDetailCannotMoveToClosedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot move lists to or from closed status'**
+  String get taskBoardDetailCannotMoveToClosedStatus;
+
+  /// No description provided for @taskBoardDetailCannotCreateMoreClosedLists.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one closed list is allowed per board.'**
+  String get taskBoardDetailCannotCreateMoreClosedLists;
+
+  /// No description provided for @taskBoardDetailAddNewList.
+  ///
+  /// In en, this message translates to:
+  /// **'Add new list'**
+  String get taskBoardDetailAddNewList;
+
+  /// No description provided for @taskBoardDetailNoListsInStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'No lists in this status'**
+  String get taskBoardDetailNoListsInStatus;
+
+  /// No description provided for @taskBoardDetailListsReordered.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists reordered.'**
+  String get taskBoardDetailListsReordered;
+
+  /// No description provided for @taskBoardDetailMovedToStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to {status}'**
+  String taskBoardDetailMovedToStatus(String status);
 
   /// No description provided for @taskBoardDetailNameRequired.
   ///

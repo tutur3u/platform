@@ -1,6 +1,6 @@
 part of 'task_board_detail_page.dart';
 
-enum _BoardAction { renameBoard, refresh }
+enum _BoardAction { manageLayout, renameBoard, refresh }
 
 extension on _TaskBoardDetailPageViewState {
   Future<void> _showBoardActionsSheet(BuildContext context) async {
@@ -15,6 +15,17 @@ extension on _TaskBoardDetailPageViewState {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ListTile(
+                  leading: const Icon(Icons.view_kanban_outlined),
+                  title: Text(context.l10n.taskBoardDetailManageBoardLayout),
+                  subtitle: Text(
+                    context.l10n.taskBoardDetailManageBoardLayoutDescription,
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _handleBoardAction(context, _BoardAction.manageLayout);
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.edit_outlined),
                   title: Text(context.l10n.taskBoardDetailRenameBoard),
@@ -41,6 +52,9 @@ extension on _TaskBoardDetailPageViewState {
 
   void _handleBoardAction(BuildContext context, _BoardAction action) {
     switch (action) {
+      case _BoardAction.manageLayout:
+        unawaited(_openBoardLayoutSheet(context));
+        return;
       case _BoardAction.renameBoard:
         unawaited(_openRenameBoardDialog(context));
         return;

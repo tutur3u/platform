@@ -1628,6 +1628,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailBoardActions => 'Board actions';
 
   @override
+  String get taskBoardDetailManageBoardLayout => 'Manage board layout';
+
+  @override
+  String get taskBoardDetailManageBoardLayoutDescription => 'Manage board columns by status and reorder lists within each status.';
+
+  @override
   String get taskBoardDetailRefresh => 'Refresh board';
 
   @override
@@ -1656,6 +1662,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailListUpdated => 'List updated.';
+
+  @override
+  String get taskBoardDetailListDeleted => 'List deleted.';
+
+  @override
+  String get taskBoardDetailDeleteList => 'Delete list';
+
+  @override
+  String get taskBoardDetailDeleteListTitle => 'Delete list?';
+
+  @override
+  String get taskBoardDetailDeleteListDescription => 'Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.';
+
+  @override
+  String get taskBoardDetailMoveListToStatus => 'Move list to status';
+
+  @override
+  String get taskBoardDetailCannotMoveToClosedStatus => 'Cannot move lists to or from closed status';
+
+  @override
+  String get taskBoardDetailCannotCreateMoreClosedLists => 'Only one closed list is allowed per board.';
+
+  @override
+  String get taskBoardDetailAddNewList => 'Add new list';
+
+  @override
+  String get taskBoardDetailNoListsInStatus => 'No lists in this status';
+
+  @override
+  String get taskBoardDetailListsReordered => 'Lists reordered.';
+
+  @override
+  String taskBoardDetailMovedToStatus(String status) {
+    return 'Moved to $status';
+  }
 
   @override
   String get taskBoardDetailNameRequired => 'Name is required';

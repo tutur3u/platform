@@ -669,6 +669,8 @@
     "taskBoardDetailTaskCreated": "Đã tạo công việc.",
     "taskBoardDetailNoMoveTargets": "Không có danh sách khác để di chuyển công việc này.",
     "taskBoardDetailBoardActions": "Thao tác bảng",
+    "taskBoardDetailManageBoardLayout": "Quản lý bố cục bảng",
+    "taskBoardDetailManageBoardLayoutDescription": "Quản lý các cột theo trạng thái và sắp xếp lại danh sách trong từng trạng thái.",
     "taskBoardDetailRefresh": "Làm mới bảng",
     "taskBoardDetailRenameBoard": "Đổi tên bảng",
     "taskBoardDetailBoardRenamed": "Đã đổi tên bảng.",
@@ -679,6 +681,24 @@
     "taskBoardDetailListCreated": "Đã tạo danh sách.",
     "taskBoardDetailListRenamed": "Đã đổi tên danh sách.",
     "taskBoardDetailListUpdated": "Đã cập nhật danh sách.",
+    "taskBoardDetailListDeleted": "Đã xóa danh sách.",
+    "taskBoardDetailDeleteList": "Xóa danh sách",
+    "taskBoardDetailDeleteListTitle": "Xóa danh sách?",
+    "taskBoardDetailDeleteListDescription": "Bạn có chắc chắn muốn xóa danh sách này không? Tất cả công việc trong danh sách này cũng sẽ bị xóa. Hành động này không thể hoàn tác.",
+    "taskBoardDetailMoveListToStatus": "Di chuyển danh sách sang trạng thái",
+    "taskBoardDetailCannotMoveToClosedStatus": "Không thể di chuyển danh sách đến hoặc khỏi trạng thái đã đóng",
+    "taskBoardDetailCannotCreateMoreClosedLists": "Mỗi bảng chỉ được phép có một danh sách đã đóng.",
+    "taskBoardDetailAddNewList": "Thêm danh sách mới",
+    "taskBoardDetailNoListsInStatus": "Không có danh sách nào trong trạng thái này",
+    "taskBoardDetailListsReordered": "Đã sắp xếp lại danh sách.",
+    "taskBoardDetailMovedToStatus": "Đã chuyển sang {status}",
+    "@taskBoardDetailMovedToStatus": {
+        "placeholders": {
+            "status": {
+                "type": "String"
+            }
+        }
+    },
     "taskBoardDetailNameRequired": "Tên là bắt buộc",
     "taskBoardDetailListNameLabel": "Tên danh sách",
     "taskBoardDetailStatusCategoryLabel": "Nhóm trạng thái",
