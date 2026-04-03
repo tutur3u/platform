@@ -15,7 +15,15 @@
  *   1 - One or more checks failed
  */
 
+const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const ROOT_DIR = path.resolve(__dirname, '..');
+const CHECK_QUEUE_ROOT = path.join(os.tmpdir(), 'tuturuuu-bun-check');
+const CHECK_QUEUE_POLL_MS = 250;
 
 const useTable = process.argv.includes('--table');
 const showTiming = process.argv.includes('--timing');
@@ -27,7 +35,7 @@ const failFastRequiredChecks = new Set(['tests', 'type-check']);
 /**
  * Strip ANSI escape codes from a string
  */
-const ESC = String.fromCharCode(27); // ESC character (0x1B)
+const ESC = String.fromCharCode(27);
 const ANSI_REGEX = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 function stripAnsi(str) {
   return str.replace(ANSI_REGEX, '');
@@ -254,6 +262,265 @@ const checks = [
   },
 ];
 
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function realpathOrFallback(targetPath, fsImpl = fs) {
+  try {
+    if (typeof fsImpl.realpathSync?.native === 'function') {
+      return fsImpl.realpathSync.native(targetPath);
+    }
+    return fsImpl.realpathSync(targetPath);
+  } catch {
+    return path.resolve(targetPath);
+  }
+}
+
+function removeFileIfExists(filePath, fsImpl = fs) {
+  try {
+    fsImpl.unlinkSync(filePath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
+
+function removeDirIfExists(dirPath, fsImpl = fs) {
+  try {
+    fsImpl.rmSync(dirPath, { recursive: true, force: true });
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
+
+function readJsonFile(filePath, fsImpl = fs) {
+  try {
+    return JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function isProcessActive(pid, killImpl = process.kill) {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return false;
+  }
+
+  try {
+    killImpl(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+}
+
+function getCheckQueuePaths(rootDir = ROOT_DIR, options = {}) {
+  const fsImpl = options.fsImpl ?? fs;
+  const queueRoot = options.queueRoot ?? CHECK_QUEUE_ROOT;
+  const resolvedRoot = realpathOrFallback(rootDir, fsImpl);
+  const queueKey = crypto
+    .createHash('sha1')
+    .update(resolvedRoot)
+    .digest('hex')
+    .slice(0, 16);
+  const queueDir = path.join(queueRoot, queueKey);
+
+  return {
+    queueDir,
+    ticketsDir: path.join(queueDir, 'tickets'),
+    lockDir: path.join(queueDir, 'lock'),
+    lockMetaPath: path.join(queueDir, 'lock', 'owner.json'),
+  };
+}
+
+function createQueueTicket(paths, options = {}) {
+  const fsImpl = options.fsImpl ?? fs;
+  const now = options.now ?? Date.now;
+  const pid = options.pid ?? process.pid;
+  const argv = options.argv ?? process.argv.slice(2);
+  const createdAt = now();
+  const ticketId = [
+    String(createdAt).padStart(13, '0'),
+    String(pid).padStart(8, '0'),
+    crypto.randomBytes(4).toString('hex'),
+  ].join('-');
+  const ticketPath = path.join(paths.ticketsDir, `${ticketId}.json`);
+
+  fsImpl.mkdirSync(paths.ticketsDir, { recursive: true });
+  fsImpl.writeFileSync(
+    ticketPath,
+    JSON.stringify({ argv, createdAt, pid, ticketId }, null, 2)
+  );
+
+  return {
+    argv,
+    createdAt,
+    pid,
+    ticketId,
+    ticketPath,
+  };
+}
+
+function listActiveTickets(paths, options = {}) {
+  const fsImpl = options.fsImpl ?? fs;
+  const isPidActive = options.isPidActive ?? isProcessActive;
+  const entries = [];
+
+  fsImpl.mkdirSync(paths.ticketsDir, { recursive: true });
+
+  for (const fileName of fsImpl.readdirSync(paths.ticketsDir)) {
+    if (!fileName.endsWith('.json')) {
+      continue;
+    }
+
+    const ticketPath = path.join(paths.ticketsDir, fileName);
+    const ticket = readJsonFile(ticketPath, fsImpl);
+    const ticketPid = Number(ticket?.pid);
+
+    if (!ticket || !isPidActive(ticketPid)) {
+      removeFileIfExists(ticketPath, fsImpl);
+      continue;
+    }
+
+    entries.push({
+      createdAt: Number(ticket.createdAt) || 0,
+      pid: ticketPid,
+      ticketId: ticket.ticketId || fileName.replace(/\.json$/, ''),
+      ticketPath,
+    });
+  }
+
+  entries.sort((left, right) => {
+    if (left.createdAt !== right.createdAt) {
+      return left.createdAt - right.createdAt;
+    }
+
+    return left.ticketId.localeCompare(right.ticketId);
+  });
+
+  return entries;
+}
+
+function pruneStaleLock(paths, options = {}) {
+  const fsImpl = options.fsImpl ?? fs;
+  const isPidActive = options.isPidActive ?? isProcessActive;
+
+  if (!fsImpl.existsSync(paths.lockDir)) {
+    return;
+  }
+
+  const owner = readJsonFile(paths.lockMetaPath, fsImpl);
+  const ownerPid = Number(owner?.pid);
+
+  if (!owner || !isPidActive(ownerPid)) {
+    removeDirIfExists(paths.lockDir, fsImpl);
+  }
+}
+
+function releaseCheckQueueLock(handle, options = {}) {
+  if (!handle || handle.released) {
+    return;
+  }
+
+  const fsImpl = options.fsImpl ?? handle.fsImpl ?? fs;
+
+  handle.released = true;
+  removeFileIfExists(handle.ticket.ticketPath, fsImpl);
+
+  const owner = readJsonFile(handle.paths.lockMetaPath, fsImpl);
+  if (!owner || owner.ticketId === handle.ticket.ticketId) {
+    removeDirIfExists(handle.paths.lockDir, fsImpl);
+  }
+}
+
+async function acquireCheckQueueLock(options = {}) {
+  const fsImpl = options.fsImpl ?? fs;
+  const stdoutWriter =
+    options.stdoutWriter ?? ((str) => process.stdout.write(str));
+  const pollMs = options.pollMs ?? CHECK_QUEUE_POLL_MS;
+  const paths = getCheckQueuePaths(options.rootDir ?? ROOT_DIR, {
+    fsImpl,
+    queueRoot: options.queueRoot,
+  });
+  const ticket = createQueueTicket(paths, {
+    argv: options.argv,
+    fsImpl,
+    now: options.now,
+    pid: options.pid,
+  });
+  const isPidActive = options.isPidActive ?? isProcessActive;
+  const sleepImpl = options.sleepImpl ?? sleep;
+  let lastAnnouncedBlockers = -1;
+
+  try {
+    while (true) {
+      pruneStaleLock(paths, { fsImpl, isPidActive });
+
+      const activeTickets = listActiveTickets(paths, { fsImpl, isPidActive });
+      const position = activeTickets.findIndex(
+        (entry) => entry.ticketId === ticket.ticketId
+      );
+
+      if (position === -1) {
+        throw new Error('Lost bun check queue ticket before lock acquisition');
+      }
+
+      if (position === 0) {
+        try {
+          fsImpl.mkdirSync(paths.lockDir);
+          fsImpl.writeFileSync(
+            paths.lockMetaPath,
+            JSON.stringify(
+              {
+                argv: ticket.argv,
+                createdAt: ticket.createdAt,
+                pid: ticket.pid,
+                ticketId: ticket.ticketId,
+              },
+              null,
+              2
+            )
+          );
+          removeFileIfExists(ticket.ticketPath, fsImpl);
+
+          const handle = {
+            fsImpl,
+            paths,
+            release: () => releaseCheckQueueLock(handle),
+            released: false,
+            ticket,
+          };
+
+          return handle;
+        } catch (error) {
+          if (error.code !== 'EEXIST') {
+            throw error;
+          }
+        }
+      }
+
+      const blockers = position + (fsImpl.existsSync(paths.lockDir) ? 1 : 0);
+      if (blockers > 0 && blockers !== lastAnnouncedBlockers) {
+        stdoutWriter(
+          `${colors.dim}Queued behind ${blockers} earlier bun check invocation${blockers === 1 ? '' : 's'}...${colors.reset}\n`
+        );
+        lastAnnouncedBlockers = blockers;
+      }
+
+      await sleepImpl(pollMs);
+    }
+  } catch (error) {
+    removeFileIfExists(ticket.ticketPath, fsImpl);
+    throw error;
+  }
+}
+
 /**
  * Run a single check and capture output
  */
@@ -309,23 +576,23 @@ function runCheck(check, options = {}) {
         console.log(check.quietSuccessMessage);
       }
       resolve({
-        name: check.name,
-        success: code === 0,
-        stdout,
-        stderr,
         duration,
+        name: check.name,
         status: code === 0 ? check.parseOutput(stdout + stderr) : 'Failed',
+        stderr,
+        stdout,
+        success: code === 0,
       });
     });
 
     proc.on('error', (err) => {
       resolve({
-        name: check.name,
-        success: false,
-        stdout,
-        stderr: err.message,
         duration: Date.now() - startTime,
+        name: check.name,
         status: 'Error',
+        stderr: err.message,
+        stdout,
+        success: false,
       });
     });
   });
@@ -476,66 +743,94 @@ function printSummary(results, options = {}) {
 /**
  * Main function
  */
-async function main() {
-  console.log(
-    `${colors.cyan}${colors.bold}Running all checks...${colors.reset}\n`
-  );
+async function main(options = {}) {
+  const queueHandle = await acquireCheckQueueLock(options);
 
-  const results = [];
-  let failureSeen = false;
-  let failingCheckName = null;
+  try {
+    console.log(
+      `${colors.cyan}${colors.bold}Running all checks...${colors.reset}\n`
+    );
 
-  for (const check of checks) {
-    const hasVisibleOutput = showDetails || false;
-    if (hasVisibleOutput) {
-      console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
-    } else {
-      console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}`);
-    }
-    const result = await runCheck(check);
-    results.push(result);
-    if (hasVisibleOutput || !result.success) {
-      console.log('');
-    }
+    const results = [];
+    let failureSeen = false;
+    let failingCheckName = null;
 
-    if (failFast && !result.success && failFastRequiredChecks.has(check.name)) {
-      failureSeen = true;
-      failingCheckName = check.name;
-    }
+    for (const check of checks) {
+      const hasVisibleOutput = showDetails || false;
+      if (hasVisibleOutput) {
+        console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
+      } else {
+        console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}`);
+      }
+      const result = await runCheck(check);
+      results.push(result);
+      if (hasVisibleOutput || !result.success) {
+        console.log('');
+      }
 
-    if (failFast && failureSeen) {
-      const pendingRequiredChecks = checks
-        .slice(results.length)
-        .some((pendingCheck) => failFastRequiredChecks.has(pendingCheck.name));
+      if (
+        failFast &&
+        !result.success &&
+        failFastRequiredChecks.has(check.name)
+      ) {
+        failureSeen = true;
+        failingCheckName = check.name;
+      }
 
-      if (!pendingRequiredChecks) {
-        for (let i = results.length; i < checks.length; i += 1) {
-          results.push({
-            name: checks[i].name,
-            success: false,
-            cancelled: true,
-            stdout: '',
-            stderr: '',
-            duration: 0,
-            status: `Skipped (fail-fast after ${failingCheckName})`,
-          });
+      if (failFast && failureSeen) {
+        const pendingRequiredChecks = checks
+          .slice(results.length)
+          .some((pendingCheck) =>
+            failFastRequiredChecks.has(pendingCheck.name)
+          );
+
+        if (!pendingRequiredChecks) {
+          for (let i = results.length; i < checks.length; i += 1) {
+            results.push({
+              cancelled: true,
+              duration: 0,
+              name: checks[i].name,
+              status: `Skipped (fail-fast after ${failingCheckName})`,
+              stderr: '',
+              stdout: '',
+              success: false,
+            });
+          }
+
+          console.log(
+            `${colors.yellow}${colors.bold}${failingCheckName} failed; skipping remaining checks.${colors.reset}`
+          );
+          break;
         }
-
-        console.log(
-          `${colors.yellow}${colors.bold}${failingCheckName} failed; skipping remaining checks.${colors.reset}`
-        );
-        break;
       }
     }
+
+    printSummary(results, { hideSkipped: failFast });
+
+    const allPassed = results.every((r) => r.success);
+    return allPassed ? 0 : 1;
+  } finally {
+    queueHandle.release();
   }
-
-  printSummary(results, { hideSkipped: failFast });
-
-  const allPassed = results.every((r) => r.success);
-  process.exit(allPassed ? 0 : 1);
 }
 
-main().catch((err) => {
-  console.error('Unexpected error:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main()
+    .then((exitCode) => {
+      process.exit(exitCode);
+    })
+    .catch((err) => {
+      console.error('Unexpected error:', err);
+      process.exit(1);
+    });
+}
+
+module.exports = {
+  acquireCheckQueueLock,
+  checks,
+  getCheckQueuePaths,
+  isProcessActive,
+  main,
+  releaseCheckQueueLock,
+  runCheck,
+};

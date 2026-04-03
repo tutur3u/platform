@@ -22,6 +22,11 @@ export {
   TuturuuuError,
   ValidationError,
 } from './errors';
+export type { ExternalProjectsClientConfig } from './external-projects';
+export {
+  ExternalProjectsClient,
+  isYoolaExternalProjectLoadingData,
+} from './external-projects';
 export type { RetryConfig, TuturuuuClientConfig } from './storage';
 // Main client
 /**
@@ -58,6 +63,14 @@ export type {
   Document,
   DocumentResponse,
   DownloadOptions,
+  ExternalProjectAdapterKind,
+  ExternalProjectDeliveryAsset,
+  ExternalProjectDeliveryCollection,
+  ExternalProjectDeliveryEntry,
+  ExternalProjectDeliveryOptions,
+  ExternalProjectDeliveryPayload,
+  ExternalProjectLoadingData,
+  ExternalProjectStudioData,
   GetDocumentResponse,
   ImageResizeMode,
   ImageTransformOptions,
@@ -75,12 +88,17 @@ export type {
   UpdateDocumentData,
   UploadOptions,
   UploadResponse,
+  YoolaExternalProjectArtworkLoadingItem,
+  YoolaExternalProjectLoadingData,
+  YoolaExternalProjectLoreCapsuleLoadingItem,
+  YoolaExternalProjectSectionLoadingItem,
 } from './types';
 // Zod schemas (for external validation if needed)
 export {
   createDocumentDataSchema,
   createSignedUploadUrlOptionsSchema,
   downloadOptionsSchema,
+  externalProjectDeliveryOptionsSchema,
   imageTransformOptionsSchema,
   listDocumentsOptionsSchema,
   listStorageOptionsSchema,

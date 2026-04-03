@@ -13,7 +13,7 @@
   "dependencies": {
     "@serwist/next": "^10.0.0-preview.14",
     "@serwist/turbopack": "^10.0.0-preview.14",
-    "esbuild-wasm": "^0.27.4",
+    "esbuild-wasm": "0.25.9",
     "serwist": "^10.0.0-preview.14"
   },
   "peerDependencies": {

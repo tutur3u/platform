@@ -33,6 +33,7 @@ import {
   RateLimitError,
   ValidationError,
 } from './errors';
+import { ExternalProjectsClient } from './external-projects';
 import type {
   AnalyticsResponse,
   BatchShareResponse,
@@ -795,6 +796,7 @@ export class TuturuuuClient {
 
   public readonly storage: StorageClient;
   public readonly documents: DocumentsClient;
+  public readonly externalProjects: ExternalProjectsClient;
 
   /**
    * Creates a new Tuturuuu client instance
@@ -851,6 +853,12 @@ export class TuturuuuClient {
     // Initialize sub-clients
     this.storage = new StorageClient(this);
     this.documents = new DocumentsClient(this);
+    this.externalProjects = new ExternalProjectsClient({
+      apiKey: this.apiKey,
+      baseUrl: this.baseUrl,
+      fetch: this.fetch,
+      timeout: this.timeout,
+    });
   }
 
   /**

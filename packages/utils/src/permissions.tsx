@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowUp,
   Banknote,
+  BriefcaseBusiness,
   Calendar,
   CalendarCheck,
   CalendarCog,
@@ -147,6 +148,22 @@ export const permissionGroups = ({
                 },
               ]
             : []),
+          {
+            id: 'manage_external_projects',
+            icon: <BriefcaseBusiness />,
+            title: t('ws-roles.manage_external_projects'),
+            description: t('ws-roles.manage_external_projects_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'publish_external_projects',
+            icon: <Send />,
+            title: t('ws-roles.publish_external_projects'),
+            description: t('ws-roles.publish_external_projects_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
           {
             id: 'admin',
             icon: <ShieldCheck />,

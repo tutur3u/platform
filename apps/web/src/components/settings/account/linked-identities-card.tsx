@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   ExternalLink,
-  Github,
   Globe,
   Link as LinkIcon,
   Shield,
@@ -36,6 +35,10 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '@/lib/api-fetch';
+import {
+  AUTH_OAUTH_PROVIDER_OPTIONS,
+  type AuthOAuthProvider,
+} from '@/lib/auth/oauth-providers';
 
 interface LinkedIdentitiesCardProps {
   className?: string;
@@ -47,16 +50,53 @@ type LinkedIdentitiesResponse = {
   canUnlink: boolean;
 };
 
-const AVAILABLE_PROVIDERS = [
-  {
-    id: 'google',
-    name: 'Google',
-  },
-  {
-    id: 'github',
-    name: 'GitHub',
-  },
-] as const;
+function SocialLogoMask({
+  src,
+  alt,
+  size = 'sm',
+}: {
+  src: string;
+  alt: string;
+  size?: 'sm' | 'md' | 'lg';
+}) {
+  const sizeClasses = {
+    sm: 'size-5',
+    md: 'size-6',
+    lg: 'size-8',
+  }[size];
+
+  return (
+    <span
+      aria-label={alt}
+      role="img"
+      className={`block shrink-0 bg-current ${sizeClasses}`}
+      style={{
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskPosition: 'center',
+        maskPosition: 'center',
+        WebkitMaskRepeat: 'no-repeat',
+        maskRepeat: 'no-repeat',
+        WebkitMaskSize: 'contain',
+        maskSize: 'contain',
+      }}
+    />
+  );
+}
+
+const AVAILABLE_PROVIDERS = Object.entries(AUTH_OAUTH_PROVIDER_OPTIONS).map(
+  ([id, provider]) => ({
+    id: id as AuthOAuthProvider,
+    name: provider.name,
+  })
+);
+
+function getLinkedIdentityProviderDisplayName(provider: string) {
+  return (
+    AUTH_OAUTH_PROVIDER_OPTIONS[provider as AuthOAuthProvider]?.name ??
+    getProviderDisplayName(provider)
+  );
+}
 
 export default function LinkedIdentitiesCard({
   className,
@@ -88,7 +128,7 @@ export default function LinkedIdentitiesCard({
       toast({
         title: t('success'),
         description: t('account-unlinked-success', {
-          provider: getProviderDisplayName(identity.provider),
+          provider: getLinkedIdentityProviderDisplayName(identity.provider),
         }),
       });
       void queryClient.invalidateQueries({ queryKey: ['linked-identities'] });
@@ -97,7 +137,7 @@ export default function LinkedIdentitiesCard({
       toast({
         title: t('error-occurred'),
         description: t('error-unlinking-account', {
-          provider: getProviderDisplayName(identity.provider),
+          provider: getLinkedIdentityProviderDisplayName(identity.provider),
         }),
         variant: 'destructive',
       });
@@ -110,7 +150,7 @@ export default function LinkedIdentitiesCard({
     toast({
       title: t('success'),
       description: t('account-linked-success', {
-        provider: getProviderDisplayName(linkedProvider),
+        provider: getLinkedIdentityProviderDisplayName(linkedProvider),
       }),
     });
 
@@ -154,7 +194,7 @@ export default function LinkedIdentitiesCard({
       toast({
         title: t('error-occurred'),
         description: t('error-linking-account', {
-          provider: getProviderDisplayName(provider),
+          provider: getLinkedIdentityProviderDisplayName(provider),
         }),
         variant: 'destructive',
       });
@@ -190,6 +230,24 @@ export default function LinkedIdentitiesCard({
     }[size];
 
     switch (provider) {
+      case 'apple':
+        return (
+          <SocialLogoMask
+            src="/media/logos/apple.svg"
+            alt="Apple"
+            size={size}
+          />
+        );
+      case 'azure':
+        return (
+          <Image
+            src="/media/logos/microsoft.svg"
+            alt="Microsoft"
+            width={imageSize}
+            height={imageSize}
+            className="object-contain"
+          />
+        );
       case 'google':
         return (
           <Image
@@ -201,7 +259,13 @@ export default function LinkedIdentitiesCard({
           />
         );
       case 'github':
-        return <Github className={sizeClasses} />;
+        return (
+          <SocialLogoMask
+            src="/media/logos/github.svg"
+            alt="GitHub"
+            size={size}
+          />
+        );
       default:
         return <Globe className={sizeClasses} />;
     }
@@ -377,7 +441,9 @@ export default function LinkedIdentitiesCard({
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">
-                            {getProviderDisplayName(identity.provider)}
+                            {getLinkedIdentityProviderDisplayName(
+                              identity.provider
+                            )}
                           </span>
                           <Badge
                             variant="outline"
@@ -427,7 +493,7 @@ export default function LinkedIdentitiesCard({
                           </AlertDialogTitle>
                           <AlertDialogDescription className="text-left">
                             {t('unlink-confirmation', {
-                              provider: getProviderDisplayName(
+                              provider: getLinkedIdentityProviderDisplayName(
                                 identity.provider
                               ),
                             })}

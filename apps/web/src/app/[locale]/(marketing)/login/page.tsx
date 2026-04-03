@@ -1,7 +1,6 @@
 'use client';
 
 import { XIcon } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
 import { TUTURUUU_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -10,7 +9,6 @@ import { useTranslations } from 'next-intl';
 import { Suspense, use } from 'react';
 import { DEV_MODE, PORT } from '@/constants/common';
 import LoginForm from './form';
-import './login.css';
 
 const DOMAINS = {
   TUTURUUU: {
@@ -58,144 +56,44 @@ export default function Login({ searchParams }: LoginProps) {
     : DOMAINS.TUTURUUU;
 
   const renderLogo = (domain: (typeof DOMAINS)[keyof typeof DOMAINS]) => (
-    <Link
-      href={domain.href}
-      className="group flex items-center justify-center transition-all duration-300 hover:scale-105"
-    >
-      <div className="relative">
-        <Image
-          src={domain.logo}
-          width={80}
-          height={80}
-          alt={`${domain.name} Logo`}
-          className="transition-all duration-300 group-hover:brightness-125"
-        />
-      </div>
+    <Link href={domain.href} className="flex items-center justify-center">
+      <Image
+        src={domain.logo}
+        width={80}
+        height={80}
+        alt={`${domain.name} Logo`}
+      />
     </Link>
   );
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 bg-linear-to-br from-background via-dynamic-indigo/5 to-dynamic-purple/10" />
-
-      {/* Grid Pattern Overlay */}
-      <div className="mask-[radial-gradient(ellipse_at_center,black_20%,transparent_80%)] fixed inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-size-[72px_72px]" />
-
-      {/* Floating Orbs with Framer Motion */}
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.4, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: 'easeInOut',
-        }}
-        className="fixed top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl"
-      />
-      <motion.div
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.2, 0.35, 0.2],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: 'easeInOut',
-          delay: 1,
-        }}
-        className="fixed top-1/4 -right-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl"
-      />
-      <motion.div
-        animate={{
-          scale: [1, 1.25, 1],
-          opacity: [0.25, 0.35, 0.25],
-        }}
-        transition={{
-          duration: 9,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: 'easeInOut',
-          delay: 2,
-        }}
-        className="fixed bottom-0 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-linear-to-br from-dynamic-pink/30 via-dynamic-purple/30 to-transparent blur-3xl"
-      />
-
-      {/* Main Content */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center p-6 py-16 sm:p-8">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(148,163,184,0.08),transparent_55%)]">
+      <div className="mx-auto flex min-h-screen max-w-[36rem] items-center justify-center px-6 py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-md"
+          transition={{ duration: 0.35 }}
+          className="w-full"
         >
-          {/* Logo Section */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-8 text-center"
-          >
+          <div className="mb-8 text-center">
             {currentDomain && currentDomain !== DOMAINS.TUTURUUU ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-4">
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                    className="relative"
-                  >
-                    {renderLogo(DOMAINS.TUTURUUU)}
-                  </motion.div>
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
-                    className="flex items-center justify-center"
-                  >
+                  <div className="relative">{renderLogo(DOMAINS.TUTURUUU)}</div>
+                  <div className="flex items-center justify-center">
                     <XIcon className="size-8 text-muted-foreground/60" />
-                  </motion.div>
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                    className="relative"
-                  >
-                    {renderLogo(currentDomain)}
-                  </motion.div>
+                  </div>
+                  <div className="relative">{renderLogo(currentDomain)}</div>
                 </div>
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                >
-                  <Badge
-                    variant="secondary"
-                    className="text-balance border border-foreground/20 bg-linear-to-br from-foreground/5 via-dynamic-blue/20 to-dynamic-pink/20 px-4 py-2 font-medium text-sm leading-relaxed shadow-lg backdrop-blur-sm"
-                  >
-                    <span className="whitespace-normal">
-                      {t('login.powered-by', { domain: currentDomain.name })}
-                    </span>
-                  </Badge>
-                </motion.div>
+                <p className="text-muted-foreground text-sm">
+                  {t('login.powered-by', { domain: currentDomain.name })}
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                  {renderLogo(DOMAINS.TUTURUUU)}
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  className="space-y-2"
-                >
-                  <h1 className="bg-linear-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-3xl text-transparent">
+                <div>{renderLogo(DOMAINS.TUTURUUU)}</div>
+                <div className="space-y-2">
+                  <h1 className="font-bold text-4xl tracking-tight">
                     {multiAccount
                       ? t('account_switcher.add_account')
                       : t('login.welcome')}
@@ -205,46 +103,38 @@ export default function Login({ searchParams }: LoginProps) {
                       ? t('account_switcher.add_account_description')
                       : t('login.sign_in_to_your_account')}
                   </p>
-                </motion.div>
+                </div>
               </div>
             )}
-          </motion.div>
+          </div>
 
-          {/* Login Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
           >
             <Suspense
               fallback={
-                <div className="animate-pulse rounded-2xl border border-border/50 bg-card/80 p-8 shadow-2xl backdrop-blur-xl">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="h-8 w-32 rounded-lg bg-muted" />
-                    <div className="h-10 w-full rounded-lg bg-muted" />
-                    <div className="h-10 w-full rounded-lg bg-muted" />
-                    <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      <span className="text-muted-foreground text-sm">
-                        {t('common.loading')}...
-                      </span>
-                    </div>
+                <div className="animate-pulse rounded-3xl border bg-background/95 p-8 shadow-xl">
+                  <div className="space-y-3">
+                    <div className="h-5 w-16 rounded bg-muted" />
+                    <div className="h-12 w-full rounded-2xl bg-muted" />
+                    <div className="h-12 w-full rounded-2xl bg-muted" />
+                    <div className="h-12 w-full rounded-2xl bg-muted" />
+                    <div className="h-12 w-full rounded-2xl bg-muted" />
+                    <div className="h-12 w-full rounded-2xl bg-muted" />
                   </div>
                 </div>
               }
             >
-              <LoginForm
-                isExternal={currentDomain !== DOMAINS.TUTURUUU}
-                allowOtp={DEV_MODE}
-              />
+              <LoginForm />
             </Suspense>
           </motion.div>
 
-          {/* Footer */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            transition={{ duration: 0.35, delay: 0.1 }}
             className="mt-8 text-center"
           >
             <div className="text-balance text-muted-foreground text-xs leading-relaxed">

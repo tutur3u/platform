@@ -2020,6 +2020,108 @@ export type Database = {
           },
         ];
       };
+      canonical_external_projects: {
+        Row: {
+          adapter: Database['public']['Enums']['external_project_adapter_kind'];
+          allowed_collections: string[];
+          allowed_features: string[];
+          created_at: string;
+          created_by: string | null;
+          delivery_profile: Json;
+          display_name: string;
+          id: string;
+          is_active: boolean;
+          metadata: Json;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          adapter: Database['public']['Enums']['external_project_adapter_kind'];
+          allowed_collections?: string[];
+          allowed_features?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          delivery_profile?: Json;
+          display_name: string;
+          id: string;
+          is_active?: boolean;
+          metadata?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          adapter?: Database['public']['Enums']['external_project_adapter_kind'];
+          allowed_collections?: string[];
+          allowed_features?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          delivery_profile?: Json;
+          display_name?: string;
+          id?: string;
+          is_active?: boolean;
+          metadata?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'canonical_external_projects_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'canonical_external_projects_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'canonical_external_projects_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'canonical_external_projects_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'canonical_external_projects_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'canonical_external_projects_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'canonical_external_projects_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'canonical_external_projects_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       changelog_entries: {
         Row: {
           category: string;
@@ -17441,6 +17543,1121 @@ export type Database = {
           },
         ];
       };
+      workspace_external_project_assets: {
+        Row: {
+          alt_text: string | null;
+          asset_type: string;
+          block_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          entry_id: string | null;
+          id: string;
+          metadata: Json;
+          sort_order: number;
+          source_url: string | null;
+          stable_source_id: string | null;
+          storage_path: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          alt_text?: string | null;
+          asset_type: string;
+          block_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          entry_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          sort_order?: number;
+          source_url?: string | null;
+          stable_source_id?: string | null;
+          storage_path?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          alt_text?: string | null;
+          asset_type?: string;
+          block_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          entry_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          sort_order?: number;
+          source_url?: string | null;
+          stable_source_id?: string | null;
+          storage_path?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_assets_block_id_fkey';
+            columns: ['block_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_blocks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_assets_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_binding_audits: {
+        Row: {
+          actor_user_id: string | null;
+          changed_at: string;
+          destination_ws_id: string;
+          id: string;
+          next_canonical_id: string | null;
+          previous_canonical_id: string | null;
+          source_ws_id: string;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          changed_at?: string;
+          destination_ws_id: string;
+          id?: string;
+          next_canonical_id?: string | null;
+          previous_canonical_id?: string | null;
+          source_ws_id: string;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          changed_at?: string;
+          destination_ws_id?: string;
+          id?: string;
+          next_canonical_id?: string | null;
+          previous_canonical_id?: string | null;
+          source_ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_binding_audit_destination_ws_id_fkey';
+            columns: ['destination_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audit_destination_ws_id_fkey';
+            columns: ['destination_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audit_destination_ws_id_fkey';
+            columns: ['destination_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audit_destination_ws_id_fkey';
+            columns: ['destination_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audits_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audits_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audits_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audits_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audits_source_ws_id_fkey';
+            columns: ['source_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audits_source_ws_id_fkey';
+            columns: ['source_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audits_source_ws_id_fkey';
+            columns: ['source_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_binding_audits_source_ws_id_fkey';
+            columns: ['source_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_blocks: {
+        Row: {
+          block_type: string;
+          content: Json;
+          created_at: string;
+          created_by: string | null;
+          entry_id: string;
+          id: string;
+          sort_order: number;
+          stable_source_id: string | null;
+          title: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          block_type: string;
+          content?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          entry_id: string;
+          id?: string;
+          sort_order?: number;
+          stable_source_id?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          block_type?: string;
+          content?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          entry_id?: string;
+          id?: string;
+          sort_order?: number;
+          stable_source_id?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_blocks_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_blocks_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_collections: {
+        Row: {
+          collection_type: string;
+          config: Json;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          is_enabled: boolean;
+          slug: string;
+          title: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          collection_type: string;
+          config?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          slug: string;
+          title: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          collection_type?: string;
+          config?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          slug?: string;
+          title?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_collections_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_collections_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_entries: {
+        Row: {
+          collection_id: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          metadata: Json;
+          profile_data: Json;
+          published_at: string | null;
+          scheduled_for: string | null;
+          slug: string;
+          sort_order: number;
+          source_adapter:
+            | Database['public']['Enums']['external_project_adapter_kind']
+            | null;
+          stable_source_id: string | null;
+          status: Database['public']['Enums']['external_project_entry_status'];
+          subtitle: string | null;
+          summary: string | null;
+          title: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          collection_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          metadata?: Json;
+          profile_data?: Json;
+          published_at?: string | null;
+          scheduled_for?: string | null;
+          slug: string;
+          sort_order?: number;
+          source_adapter?:
+            | Database['public']['Enums']['external_project_adapter_kind']
+            | null;
+          stable_source_id?: string | null;
+          status?: Database['public']['Enums']['external_project_entry_status'];
+          subtitle?: string | null;
+          summary?: string | null;
+          title: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          collection_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          metadata?: Json;
+          profile_data?: Json;
+          published_at?: string | null;
+          scheduled_for?: string | null;
+          slug?: string;
+          sort_order?: number;
+          source_adapter?:
+            | Database['public']['Enums']['external_project_adapter_kind']
+            | null;
+          stable_source_id?: string | null;
+          status?: Database['public']['Enums']['external_project_entry_status'];
+          subtitle?: string | null;
+          summary?: string | null;
+          title?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_entries_collection_id_fkey';
+            columns: ['collection_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_collections';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_entry_relations: {
+        Row: {
+          created_at: string;
+          from_entry_id: string;
+          id: string;
+          metadata: Json;
+          relation_type: string;
+          to_entry_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          from_entry_id: string;
+          id?: string;
+          metadata?: Json;
+          relation_type: string;
+          to_entry_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          from_entry_id?: string;
+          id?: string;
+          metadata?: Json;
+          relation_type?: string;
+          to_entry_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_entry_relations_from_entry_id_fkey';
+            columns: ['from_entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_relations_to_entry_id_fkey';
+            columns: ['to_entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_relations_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_relations_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_relations_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_relations_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_import_jobs: {
+        Row: {
+          adapter: Database['public']['Enums']['external_project_adapter_kind'];
+          canonical_external_project_id: string;
+          completed_at: string | null;
+          created_at: string;
+          id: string;
+          report: Json;
+          requested_by: string | null;
+          source_reference: string | null;
+          started_at: string | null;
+          status: Database['public']['Enums']['external_project_import_status'];
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          adapter: Database['public']['Enums']['external_project_adapter_kind'];
+          canonical_external_project_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          report?: Json;
+          requested_by?: string | null;
+          source_reference?: string | null;
+          started_at?: string | null;
+          status?: Database['public']['Enums']['external_project_import_status'];
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          adapter?: Database['public']['Enums']['external_project_adapter_kind'];
+          canonical_external_project_id?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          report?: Json;
+          requested_by?: string | null;
+          source_reference?: string | null;
+          started_at?: string | null;
+          status?: Database['public']['Enums']['external_project_import_status'];
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_im_canonical_external_project_i_fkey';
+            columns: ['canonical_external_project_id'];
+            isOneToOne: false;
+            referencedRelation: 'canonical_external_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_import_jobs_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_import_jobs_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_import_jobs_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_import_jobs_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_import_jobs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_import_jobs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_import_jobs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_import_jobs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_publish_events: {
+        Row: {
+          canonical_external_project_id: string;
+          created_at: string;
+          entry_id: string | null;
+          event_kind: Database['public']['Enums']['external_project_publish_event_kind'];
+          id: string;
+          payload: Json;
+          profile_data: Json;
+          triggered_by: string | null;
+          visibility_scope: string;
+          ws_id: string;
+        };
+        Insert: {
+          canonical_external_project_id: string;
+          created_at?: string;
+          entry_id?: string | null;
+          event_kind?: Database['public']['Enums']['external_project_publish_event_kind'];
+          id?: string;
+          payload?: Json;
+          profile_data?: Json;
+          triggered_by?: string | null;
+          visibility_scope?: string;
+          ws_id: string;
+        };
+        Update: {
+          canonical_external_project_id?: string;
+          created_at?: string;
+          entry_id?: string | null;
+          event_kind?: Database['public']['Enums']['external_project_publish_event_kind'];
+          id?: string;
+          payload?: Json;
+          profile_data?: Json;
+          triggered_by?: string | null;
+          visibility_scope?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_pu_canonical_external_project_i_fkey';
+            columns: ['canonical_external_project_id'];
+            isOneToOne: false;
+            referencedRelation: 'canonical_external_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_triggered_by_fkey';
+            columns: ['triggered_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_triggered_by_fkey';
+            columns: ['triggered_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_triggered_by_fkey';
+            columns: ['triggered_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_triggered_by_fkey';
+            columns: ['triggered_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_publish_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_taxonomies: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          label: string;
+          metadata: Json;
+          slug: string;
+          taxonomy_type: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          label: string;
+          metadata?: Json;
+          slug: string;
+          taxonomy_type: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          label?: string;
+          metadata?: Json;
+          slug?: string;
+          taxonomy_type?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_taxonomies_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_flashcards: {
         Row: {
           back: string;
@@ -23254,6 +24471,14 @@ export type Database = {
         Args: { p_indicator_id: string };
         Returns: boolean;
       };
+      can_manage_workspace_external_projects: {
+        Args: { p_user_id?: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      can_publish_workspace_external_projects: {
+        Args: { p_user_id?: string; p_ws_id: string };
+        Returns: boolean;
+      };
       can_view_form_analytics: {
         Args: { p_form_id: string };
         Returns: boolean;
@@ -25985,6 +27210,10 @@ export type Database = {
       };
       is_personal_workspace: { Args: { p_ws_id: string }; Returns: boolean };
       is_project_member: { Args: { _project_id: string }; Returns: boolean };
+      is_root_external_project_admin: {
+        Args: { p_user_id?: string };
+        Returns: boolean;
+      };
       is_task_accessible: { Args: { _task_id: string }; Returns: boolean };
       is_task_board_member: {
         Args: { _board_id: string; _user_id: string };
@@ -26512,6 +27741,10 @@ export type Database = {
           name: string;
           ws_id: string;
         }[];
+      };
+      set_workspace_external_project_binding: {
+        Args: { p_destination_ws_id: string; p_next_canonical_id?: string };
+        Returns: Json;
       };
       should_send_notification: {
         Args: {
@@ -27045,6 +28278,22 @@ export type Database = {
       debt_loan_status: 'active' | 'paid' | 'defaulted' | 'cancelled';
       debt_loan_type: 'debt' | 'loan';
       estimation_type: 'exponential' | 'fibonacci' | 'linear' | 't-shirt';
+      external_project_adapter_kind:
+        | 'junly'
+        | 'yoola'
+        | 'theguyser'
+        | 'exocorpse';
+      external_project_entry_status:
+        | 'draft'
+        | 'scheduled'
+        | 'published'
+        | 'archived';
+      external_project_import_status:
+        | 'queued'
+        | 'running'
+        | 'completed'
+        | 'failed';
+      external_project_publish_event_kind: 'publish' | 'preview' | 'unpublish';
       feature_flag:
         | 'ENABLE_AI'
         | 'ENABLE_EDUCATION'
@@ -28960,7 +30209,9 @@ export type Database = {
         | 'manage_forms'
         | 'view_form_analytics'
         | 'manage_drive_tasks_directory'
-        | 'view_drive';
+        | 'view_drive'
+        | 'manage_external_projects'
+        | 'publish_external_projects';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -29138,6 +30389,25 @@ export const Constants = {
       debt_loan_status: ['active', 'paid', 'defaulted', 'cancelled'],
       debt_loan_type: ['debt', 'loan'],
       estimation_type: ['exponential', 'fibonacci', 'linear', 't-shirt'],
+      external_project_adapter_kind: [
+        'junly',
+        'yoola',
+        'theguyser',
+        'exocorpse',
+      ],
+      external_project_entry_status: [
+        'draft',
+        'scheduled',
+        'published',
+        'archived',
+      ],
+      external_project_import_status: [
+        'queued',
+        'running',
+        'completed',
+        'failed',
+      ],
+      external_project_publish_event_kind: ['publish', 'preview', 'unpublish'],
       feature_flag: [
         'ENABLE_AI',
         'ENABLE_EDUCATION',
@@ -31068,6 +32338,8 @@ export const Constants = {
         'view_form_analytics',
         'manage_drive_tasks_directory',
         'view_drive',
+        'manage_external_projects',
+        'publish_external_projects',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

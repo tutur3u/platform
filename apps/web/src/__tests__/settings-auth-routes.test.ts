@@ -93,6 +93,67 @@ describe('settings auth routes', () => {
     );
   });
 
+  it('allows apple as a supported identity linking provider', async () => {
+    mocks.linkIdentity.mockResolvedValue({
+      data: { url: 'https://oauth.example/apple' },
+      error: null,
+    });
+
+    const route = await import(
+      '@/app/api/v1/users/me/identities/link/[provider]/route'
+    );
+    const response = await (route.GET as any)(
+      new NextRequest(
+        'http://localhost/api/v1/users/me/identities/link/apple?returnTo=%2Fen%2Fsettings'
+      ),
+      { supabase: mocks.supabase },
+      { provider: 'apple' }
+    );
+
+    expect(mocks.linkIdentity).toHaveBeenCalledWith({
+      provider: 'apple',
+      options: {
+        redirectTo:
+          'http://localhost/en/settings?settingsDialog=open&settingsTab=security&settingsLinkedProvider=apple',
+      },
+    });
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://oauth.example/apple'
+    );
+  });
+
+  it('allows microsoft as a supported identity linking provider', async () => {
+    mocks.linkIdentity.mockResolvedValue({
+      data: { url: 'https://oauth.example/microsoft' },
+      error: null,
+    });
+
+    const route = await import(
+      '@/app/api/v1/users/me/identities/link/[provider]/route'
+    );
+    const response = await (route.GET as any)(
+      new NextRequest(
+        'http://localhost/api/v1/users/me/identities/link/azure?returnTo=%2Fen%2Fsettings'
+      ),
+      { supabase: mocks.supabase },
+      { provider: 'azure' }
+    );
+
+    expect(mocks.linkIdentity).toHaveBeenCalledWith({
+      provider: 'azure',
+      options: {
+        redirectTo:
+          'http://localhost/en/settings?settingsDialog=open&settingsTab=security&settingsLinkedProvider=azure',
+        scopes: 'email',
+      },
+    });
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://oauth.example/microsoft'
+    );
+  });
+
   it('surfaces password reauthentication as a 409 backend response', async () => {
     mocks.updateUser.mockResolvedValue({
       error: {

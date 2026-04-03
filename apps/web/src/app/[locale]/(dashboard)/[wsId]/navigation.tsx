@@ -112,6 +112,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
+import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
 import { createTierRequirement } from '@/lib/feature-tiers';
 
 export async function WorkspaceNavigationLinks({
@@ -134,10 +135,12 @@ export async function WorkspaceNavigationLinks({
       data: { user },
     },
     secrets,
+    externalProjectBinding,
   ] = await Promise.all([
     getTranslations(),
     supabase.auth.getUser(),
     getSecrets({ wsId: resolvedWorkspaceId, forceAdmin: true }),
+    resolveWorkspaceExternalProjectBinding(resolvedWorkspaceId),
   ]);
   if (!secrets) notFound();
 
@@ -200,6 +203,17 @@ export async function WorkspaceNavigationLinks({
 
   const allowDiscordIntegrations =
     platformUserRole.data?.allow_discord_integrations ?? false;
+  const canManageRootExternalProjects =
+    resolvedWorkspaceId === ROOT_WORKSPACE_ID
+      ? !withoutPermission('manage_external_projects') ||
+        !withoutPermission('manage_workspace_roles')
+      : !withoutRootPermission('manage_external_projects') ||
+        !withoutRootPermission('manage_workspace_roles');
+  const canAccessExternalProjects =
+    externalProjectBinding.enabled &&
+    (!withoutPermission('manage_external_projects') ||
+      !withoutPermission('publish_external_projects') ||
+      canManageRootExternalProjects);
 
   // Compute effective invoice visibility
   // Default: disabled for personal, enabled for non-personal
@@ -484,6 +498,14 @@ export async function WorkspaceNavigationLinks({
       disabled: withoutPermission('manage_drive'),
       experimental: 'beta',
     },
+    externalProjectBinding.enabled
+      ? {
+          title: t('sidebar_tabs.external_projects'),
+          href: `/${personalOrWsId}/external-projects`,
+          icon: <BriefcaseBusiness className="h-5 w-5" />,
+          disabled: ENABLE_AI_ONLY || !canAccessExternalProjects,
+        }
+      : null,
     null,
     {
       title: t('sidebar_tabs.forms'),
@@ -1287,6 +1309,14 @@ export async function WorkspaceNavigationLinks({
           icon: <ShieldUser className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
+          requireRootWorkspace: true,
+          requireRootMember: true,
+        },
+        {
+          title: t('workspace-settings-layout.external_projects_registry'),
+          href: `/${personalOrWsId}/platform/external-projects`,
+          icon: <BriefcaseBusiness className="h-5 w-5" />,
+          disabled: ENABLE_AI_ONLY || !canManageRootExternalProjects,
           requireRootWorkspace: true,
           requireRootMember: true,
         },

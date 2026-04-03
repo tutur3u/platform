@@ -76,3 +76,4 @@ apps/database/supabase/.temp/project-names.json
 
 # Private research context
 /research/
+/credentials/
