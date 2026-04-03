@@ -1,10 +1,10 @@
 'use client';
 
 import { Card, CardContent } from '@ncthub/ui/card';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getTimeLeft, type TimeUnit } from '@/utils/time-helper';
 
-const importantDates = [
+const importantDates: ImportantDate[] = [
   {
     announcement: 'Our opening ceremony will start in:',
     timeLabel: '04-04-2026 10:00:00 GMT+7',
@@ -13,29 +13,35 @@ const importantDates = [
   {
     announcement: 'Remaining time to Round 1 deadline:',
     timeLabel: '17-04-2026 00:00:00 GMT+7',
-    timestamp: new Date('2026-17-04T00:00:00+07:00'),
+    timestamp: new Date('2026-04-17T00:00:00+07:00'),
   },
   {
     announcement: 'Round 2 will start in:',
     timeLabel: '24-04-2026 00:00:00 GMT+7',
-    timestamp: new Date('2026-24-04T00:00:00+07:00'),
+    timestamp: new Date('2026-04-24T00:00:00+07:00'),
   },
   {
     announcement: 'Remaining time to Round 2 deadline:',
-    timeLabel: '07-05-2026 00:00:00 GMT+7',
-    timestamp: new Date('2026-16-05T00:00:00+07:00'),
+    timeLabel: '16-05-2026 00:00:00 GMT+7',
+    timestamp: new Date('2026-05-16T00:00:00+07:00'),
   },
   {
     announcement: 'The Top 5 teams will be announced in:',
     timeLabel: '23-05-2026 00:00:00 GMT+7',
-    timestamp: new Date('2026-23-05T00:00:00+07:00'),
+    timestamp: new Date('2026-05-23T00:00:00+07:00'),
   },
   {
     announcement: 'Our Final Day will start in:',
     timeLabel: '29-05-2026 00:00:00 GMT+7',
-    timestamp: new Date('2026-29-05T00:00:00+07:00'),
+    timestamp: new Date('2026-05-29T00:00:00+07:00'),
   },
 ];
+
+interface ImportantDate {
+  announcement: string;
+  timeLabel: string;
+  timestamp: Date;
+}
 
 function CountdownUnit({ label, value }: TimeUnit) {
   return (
@@ -50,36 +56,47 @@ function CountdownUnit({ label, value }: TimeUnit) {
   );
 }
 
+function getNextImportantDate(from: Date) {
+  for (const importantDate of importantDates) {
+    if (importantDate.timestamp >= from) return importantDate;
+  }
+
+  return null;
+}
+
 export default function CountdownTimer() {
-  const resolvedDate = useMemo(() => {
-    const now = new Date();
+  const [resolvedDate, setResolvedDate] = useState<ImportantDate | null>(null);
+  const displayDate =
+    resolvedDate ?? importantDates[importantDates.length - 1]!;
 
-    for (const importantDate of importantDates) {
-      if (importantDate.timestamp > now) return importantDate;
-    }
-
-    return importantDates[0];
-  }, []);
-
-  const [timeUnits, setTimeUnits] = useState<TimeUnit[]>(() =>
-    getTimeLeft(new Date(), resolvedDate ? resolvedDate.timestamp : new Date())
-  );
+  const [timeUnits, setTimeUnits] = useState<TimeUnit[]>([
+    { label: 'Days', value: '00' },
+    { label: 'Hours', value: '00' },
+    { label: 'Minutes', value: '00' },
+    { label: 'Seconds', value: '00' },
+  ]);
 
   useEffect(() => {
-    if (!resolvedDate) return;
+    const updateCountdown = () => {
+      const now = new Date();
+      const nextImportantDate = getNextImportantDate(now);
 
-    setTimeUnits(getTimeLeft(new Date(), resolvedDate.timestamp));
+      if (!nextImportantDate) return;
+
+      setResolvedDate(nextImportantDate);
+      setTimeUnits(getTimeLeft(now, nextImportantDate.timestamp));
+    };
+
+    updateCountdown();
 
     const interval = window.setInterval(() => {
-      setTimeUnits(getTimeLeft(new Date(), resolvedDate.timestamp));
+      updateCountdown();
     }, 1000);
 
     return () => {
       window.clearInterval(interval);
     };
-  }, [resolvedDate]);
-
-  if (!resolvedDate) return null;
+  }, []);
 
   return (
     <div
@@ -91,11 +108,11 @@ export default function CountdownTimer() {
           <div className="flex flex-col gap-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="font-semibold text-muted-foreground text-sm uppercase tracking-[0.24em] sm:text-base">
-                {resolvedDate.announcement}
+                {displayDate.announcement}
               </p>
 
               <div className="btn-primary self-start rounded-full border border-border/70 py-2! font-medium text-xs sm:text-sm">
-                {resolvedDate.timeLabel}
+                {displayDate.timeLabel}
               </div>
             </div>
 
