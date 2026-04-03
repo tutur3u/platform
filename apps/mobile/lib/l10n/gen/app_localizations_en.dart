@@ -2303,6 +2303,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarMonthView => 'Month';
 
   @override
+  String get calendarYearView => 'Year';
+
+  @override
   String get calendarAllDay => 'All day';
 
   @override
@@ -2644,10 +2647,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeExpense => 'Expense';
 
   @override
+  String get financeHideAmounts => 'Hide amounts';
+
+  @override
   String get financeViewAll => 'View all';
 
   @override
   String get financeSearchTransactions => 'Search transactions';
+
+  @override
+  String get financeShowAmounts => 'Show amounts';
 
   @override
   String get financeNoSearchResults => 'No matching transactions';
@@ -2738,6 +2747,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeTransferMode => 'Transfer mode';
+
+  @override
+  String get financeTransferModeEditHint => 'Transfer mode can only be edited for existing transfers.';
 
   @override
   String get financeDestinationAmountOptional => 'Destination amount';
@@ -3764,6 +3776,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsThemeSystemDescription => 'Match your device appearance automatically.';
+
+  @override
+  String get settingsFinanceAmounts => 'Finance amounts';
+
+  @override
+  String get settingsFinanceAmountsDescription => 'Show or hide balances and transaction amounts across finance screens.';
 
   @override
   String get settingsSwitchWorkspace => 'Switch workspace';

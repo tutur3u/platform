@@ -82,8 +82,12 @@ class CalendarCubit extends Cubit<CalendarState> {
     bool forceRefresh = false,
   }) async {
     final center = DateTime.now();
-    final start = DateTime(center.year, center.month - 1);
-    final end = DateTime(center.year, center.month + 2);
+    final targetRange = _targetRangeFor(
+      center,
+      CalendarViewMode.threeDays,
+    );
+    final start = targetRange.start;
+    final end = targetRange.end;
     await CacheStore.instance.prefetch<Map<String, dynamic>>(
       key: _cacheKey(wsId),
       policy: _cachePolicy,
@@ -99,7 +103,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         return {
           'selectedDate': center.toIso8601String(),
           'focusedMonth': DateTime(center.year, center.month).toIso8601String(),
-          'viewMode': CalendarViewMode.agenda.name,
+          'viewMode': CalendarViewMode.threeDays.name,
           'events': events
               .map((event) => event.toJson())
               .toList(growable: false),
@@ -206,9 +210,12 @@ class CalendarCubit extends Cubit<CalendarState> {
     }
 
     try {
-      final center = state.effectiveSelectedDate;
-      final start = DateTime(center.year, center.month - 1);
-      final end = DateTime(center.year, center.month + 2);
+      final center = state.viewMode == CalendarViewMode.year
+          ? state.effectiveFocusedMonth
+          : state.effectiveSelectedDate;
+      final targetRange = _targetRangeFor(center, state.viewMode);
+      final start = targetRange.start;
+      final end = targetRange.end;
 
       final events = await _repo.getEvents(wsId, start: start, end: end);
 
@@ -248,9 +255,10 @@ class CalendarCubit extends Cubit<CalendarState> {
   /// Extends the fetched range if the given date is outside it.
   Future<void> ensureRangeLoaded(String wsId, DateTime date) async {
     final range = state.fetchedRange;
+    final targetRange = _targetRangeFor(date, state.viewMode);
     if (range != null &&
-        !date.isBefore(range.start) &&
-        !date.isAfter(range.end)) {
+        !targetRange.start.isBefore(range.start) &&
+        !targetRange.end.isAfter(range.end)) {
       return;
     }
     await loadEvents(wsId);
@@ -459,7 +467,7 @@ class CalendarCubit extends Cubit<CalendarState> {
 
     final viewMode = CalendarViewMode.values.firstWhere(
       (value) => value.name == json['viewMode'],
-      orElse: () => CalendarViewMode.agenda,
+      orElse: () => CalendarViewMode.threeDays,
     );
 
     return CalendarState(
@@ -491,6 +499,28 @@ class CalendarCubit extends Cubit<CalendarState> {
     }
 
     _rememberCachedState(wsId, nextState);
+  }
+
+  static DateTimeRange _targetRangeFor(
+    DateTime center,
+    CalendarViewMode mode,
+  ) {
+    switch (mode) {
+      case CalendarViewMode.year:
+        return DateTimeRange(
+          start: DateTime(center.year),
+          end: DateTime(center.year + 1),
+        );
+      case CalendarViewMode.day:
+      case CalendarViewMode.threeDays:
+      case CalendarViewMode.week:
+      case CalendarViewMode.month:
+      case CalendarViewMode.agenda:
+        return DateTimeRange(
+          start: DateTime(center.year, center.month - 1),
+          end: DateTime(center.year, center.month + 2),
+        );
+    }
   }
 }
 

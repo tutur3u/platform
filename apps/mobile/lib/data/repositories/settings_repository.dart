@@ -7,6 +7,7 @@ class SettingsRepository {
   static const _themeModeKey = 'theme-mode';
   static const _calendarViewKey = 'calendar-view';
   static const _taskViewModeKey = 'task-view-mode';
+  static const _financeAmountsVisibleKey = 'finance-amounts-visible';
   static const _localeKey = 'locale';
   static const _lastTabRouteKey = 'last-tab-route';
   static const _lastAppRouteKey = 'last-app-route';
@@ -44,6 +45,16 @@ class SettingsRepository {
   Future<void> setTaskViewMode(String mode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_taskViewModeKey, mode);
+  }
+
+  Future<bool> getFinanceAmountsVisible() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_financeAmountsVisibleKey) ?? false;
+  }
+
+  Future<void> setFinanceAmountsVisible({required bool value}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_financeAmountsVisibleKey, value);
   }
 
   /// Returns the last visited shell tab route, or `null` if none saved.

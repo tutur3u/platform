@@ -2,7 +2,7 @@ part of 'calendar_cubit.dart';
 
 enum CalendarStatus { initial, loading, loaded, error }
 
-enum CalendarViewMode { day, threeDays, week, month, agenda }
+enum CalendarViewMode { day, threeDays, week, month, agenda, year }
 
 class CalendarState extends Equatable {
   const CalendarState({
@@ -11,7 +11,7 @@ class CalendarState extends Equatable {
     this.isFromCache = false,
     this.isRefreshing = false,
     this.lastUpdatedAt,
-    this.viewMode = CalendarViewMode.agenda,
+    this.viewMode = CalendarViewMode.threeDays,
     this.selectedDate,
     this.focusedMonth,
     this.events = const [],

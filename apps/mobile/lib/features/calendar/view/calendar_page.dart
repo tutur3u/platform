@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -16,9 +17,11 @@ import 'package:mobile/features/calendar/widgets/month_strip.dart';
 import 'package:mobile/features/calendar/widgets/month_view.dart';
 import 'package:mobile/features/calendar/widgets/three_day_view.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
+import 'package:mobile/features/calendar/widgets/year_view.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -63,6 +66,49 @@ class _CalendarView extends StatelessWidget {
       child: Stack(
         children: [
           BlocBuilder<CalendarCubit, CalendarState>(
+            buildWhen: (prev, curr) => prev.viewMode != curr.viewMode,
+            builder: (context, state) {
+              return ShellMiniNav(
+                ownerId: 'calendar-view-modes',
+                locations: const {Routes.calendar},
+                deepLinkBackRoute: Routes.apps,
+                items: [
+                  ShellMiniNavItemSpec(
+                    id: 'back',
+                    icon: Icons.chevron_left,
+                    label: l10n.navBack,
+                    callbackToken: 'back',
+                    onPressed: () => context.go(Routes.apps),
+                  ),
+                  _buildMiniNavItem(
+                    context,
+                    id: 'agenda',
+                    label: l10n.calendarAgendaView,
+                    icon: Icons.view_agenda_outlined,
+                    selected: state.viewMode == CalendarViewMode.agenda,
+                    mode: CalendarViewMode.agenda,
+                  ),
+                  _buildMiniNavItem(
+                    context,
+                    id: 'calendar',
+                    label: l10n.calendarTitle,
+                    icon: Icons.calendar_view_month,
+                    selected: _isCalendarTabSelected(state.viewMode),
+                    mode: _calendarTabModeFor(state.viewMode),
+                  ),
+                  _buildMiniNavItem(
+                    context,
+                    id: 'year',
+                    label: l10n.calendarYearView,
+                    icon: Icons.calendar_month_outlined,
+                    selected: state.viewMode == CalendarViewMode.year,
+                    mode: CalendarViewMode.year,
+                  ),
+                ],
+              );
+            },
+          ),
+          BlocBuilder<CalendarCubit, CalendarState>(
             buildWhen: (prev, curr) =>
                 prev.viewMode != curr.viewMode ||
                 prev.status != curr.status ||
@@ -77,6 +123,15 @@ class _CalendarView extends StatelessWidget {
                 ownerId: 'calendar-root',
                 locations: const {Routes.calendar},
                 actions: [
+                  if (_isCalendarTabSelected(state.viewMode))
+                    ShellActionSpec(
+                      id: 'calendar-view-selector',
+                      icon: Icons.arrow_drop_down_circle_outlined,
+                      tooltip: _calendarModeLabel(context, state.viewMode),
+                      callbackToken: 'calendar-view-${state.viewMode.name}',
+                      onPressed: () => _showCalendarModeMenu(context, state),
+                      highlighted: true,
+                    ),
                   if (Env.isCalendarIntegrationsEnabled)
                     ShellActionSpec(
                       id: 'calendar-connections',
@@ -105,12 +160,6 @@ class _CalendarView extends StatelessWidget {
                         );
                       }
                     },
-                  ),
-                  ShellActionSpec(
-                    id: 'calendar-view-mode',
-                    icon: _viewModeIcon(state.viewMode),
-                    tooltip: _viewModeLabel(l10n, state.viewMode),
-                    onPressed: () => _showViewModeMenu(context, state.viewMode),
                   ),
                 ],
               );
@@ -141,9 +190,10 @@ class _CalendarView extends StatelessWidget {
                   onRefresh: () async => _reload(context),
                   child: Column(
                     children: [
-                      // Month strip (day, 3-day, and agenda views).
+                      // Month strip for agenda and schedule-style views.
                       if (state.viewMode == CalendarViewMode.day ||
                           state.viewMode == CalendarViewMode.threeDays ||
+                          state.viewMode == CalendarViewMode.week ||
                           state.viewMode == CalendarViewMode.agenda)
                         MonthStrip(
                           selectedDate: state.effectiveSelectedDate,
@@ -225,11 +275,14 @@ class _CalendarView extends StatelessWidget {
           selectedDate: state.effectiveSelectedDate,
           events: state.events,
           firstDayOfWeek: firstDayOfWeek,
+          onEventTap: (event) => _showEventDetail(context, event),
+          onCreateAtTime: (time) => _createEvent(context, startTime: time),
           onDaySelected: (date) {
             context.read<CalendarCubit>()
               ..selectDate(date)
               ..setViewMode(CalendarViewMode.day);
           },
+          onSwipe: (delta) => _navigateDays(context, delta),
         );
       case CalendarViewMode.month:
         return MonthView(
@@ -267,6 +320,37 @@ class _CalendarView extends StatelessWidget {
             }
           },
         );
+      case CalendarViewMode.year:
+        return YearView(
+          selectedDate: state.effectiveSelectedDate,
+          focusedMonth: state.effectiveFocusedMonth,
+          events: state.events,
+          firstDayOfWeek: firstDayOfWeek,
+          onDaySelected: (date) {
+            final cubit = context.read<CalendarCubit>()
+              ..selectDate(date)
+              ..setViewMode(CalendarViewMode.month);
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            if (wsId != null) {
+              unawaited(cubit.ensureRangeLoaded(wsId, date));
+            }
+          },
+          onYearChanged: (month) {
+            final cubit = context.read<CalendarCubit>()..setFocusedMonth(month);
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            if (wsId != null) {
+              unawaited(cubit.ensureRangeLoaded(wsId, month));
+            }
+          },
+        );
     }
   }
 
@@ -280,55 +364,123 @@ class _CalendarView extends StatelessWidget {
     }
   }
 
-  String _viewModeLabel(AppLocalizations l10n, CalendarViewMode mode) {
-    switch (mode) {
-      case CalendarViewMode.day:
-        return l10n.calendarDayView;
-      case CalendarViewMode.threeDays:
-        return l10n.calendarThreeDayView;
-      case CalendarViewMode.week:
-        return l10n.calendarWeekView;
-      case CalendarViewMode.month:
-        return l10n.calendarMonthView;
-      case CalendarViewMode.agenda:
-        return l10n.calendarAgendaView;
-    }
+  ShellMiniNavItemSpec _buildMiniNavItem(
+    BuildContext context, {
+    required String id,
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required CalendarViewMode mode,
+  }) {
+    return ShellMiniNavItemSpec(
+      id: id,
+      icon: icon,
+      label: label,
+      selected: selected,
+      callbackToken: '$id-${selected ? 'selected-' : ''}${mode.name}',
+      onPressed: () {
+        final cubit = context.read<CalendarCubit>()..setViewMode(mode);
+        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+        if (wsId != null) {
+          unawaited(
+            cubit.ensureRangeLoaded(wsId, cubit.state.effectiveSelectedDate),
+          );
+        }
+      },
+    );
   }
 
-  IconData _viewModeIcon(CalendarViewMode mode) {
-    switch (mode) {
-      case CalendarViewMode.day:
-        return Icons.calendar_view_day;
-      case CalendarViewMode.threeDays:
-        return Icons.view_week_outlined;
-      case CalendarViewMode.week:
-        return Icons.calendar_view_week;
-      case CalendarViewMode.month:
-        return Icons.calendar_view_month;
-      case CalendarViewMode.agenda:
-        return Icons.view_agenda_outlined;
-    }
-  }
-
-  void _showViewModeMenu(BuildContext context, CalendarViewMode selected) {
-    final l10n = context.l10n;
-    final cubit = context.read<CalendarCubit>();
+  void _showCalendarModeMenu(
+    BuildContext context,
+    CalendarState state,
+  ) {
+    final currentMode = _calendarTabModeFor(state.viewMode);
     shad.showDropdown<void>(
       context: context,
-      builder: (context) {
+      builder: (builderContext) {
         return shad.DropdownMenu(
-          children: CalendarViewMode.values.map((mode) {
-            return shad.MenuButton(
-              leading: selected == mode
-                  ? const Icon(Icons.check, size: 16)
-                  : const SizedBox(width: 16, height: 16),
-              onPressed: (_) => cubit.setViewMode(mode),
-              child: Text(_viewModeLabel(l10n, mode)),
-            );
-          }).toList(),
+          children: [
+            _buildCalendarModeButton(
+              context,
+              currentMode: currentMode,
+              mode: CalendarViewMode.day,
+              label: builderContext.l10n.calendarDayView,
+            ),
+            _buildCalendarModeButton(
+              context,
+              currentMode: currentMode,
+              mode: CalendarViewMode.threeDays,
+              label: builderContext.l10n.calendarThreeDayView,
+            ),
+            _buildCalendarModeButton(
+              context,
+              currentMode: currentMode,
+              mode: CalendarViewMode.week,
+              label: builderContext.l10n.calendarWeekView,
+            ),
+            _buildCalendarModeButton(
+              context,
+              currentMode: currentMode,
+              mode: CalendarViewMode.month,
+              label: builderContext.l10n.calendarMonthView,
+            ),
+          ],
         );
       },
     );
+  }
+
+  shad.MenuButton _buildCalendarModeButton(
+    BuildContext rootContext, {
+    required CalendarViewMode currentMode,
+    required CalendarViewMode mode,
+    required String label,
+  }) {
+    return shad.MenuButton(
+      leading: currentMode == mode
+          ? const Icon(Icons.check, size: 16)
+          : const SizedBox(width: 16, height: 16),
+      onPressed: (menuContext) {
+        final cubit = rootContext.read<CalendarCubit>()..setViewMode(mode);
+        final wsId = rootContext
+            .read<WorkspaceCubit>()
+            .state
+            .currentWorkspace
+            ?.id;
+        if (wsId != null) {
+          unawaited(
+            cubit.ensureRangeLoaded(wsId, cubit.state.effectiveSelectedDate),
+          );
+        }
+      },
+      child: Text(label),
+    );
+  }
+
+  bool _isCalendarTabSelected(CalendarViewMode mode) {
+    return mode == CalendarViewMode.day ||
+        mode == CalendarViewMode.threeDays ||
+        mode == CalendarViewMode.week ||
+        mode == CalendarViewMode.month;
+  }
+
+  CalendarViewMode _calendarTabModeFor(CalendarViewMode mode) {
+    if (_isCalendarTabSelected(mode)) {
+      return mode;
+    }
+    return CalendarViewMode.threeDays;
+  }
+
+  String _calendarModeLabel(BuildContext context, CalendarViewMode mode) {
+    final l10n = context.l10n;
+    return switch (_calendarTabModeFor(mode)) {
+      CalendarViewMode.day => l10n.calendarDayView,
+      CalendarViewMode.threeDays => l10n.calendarThreeDayView,
+      CalendarViewMode.week => l10n.calendarWeekView,
+      CalendarViewMode.month => l10n.calendarMonthView,
+      CalendarViewMode.agenda ||
+      CalendarViewMode.year => l10n.calendarThreeDayView,
+    };
   }
 
   Future<void> _createEvent(

@@ -2,10 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/edit_session_dialog.dart';
@@ -79,186 +84,273 @@ class _HistoryTabState extends State<HistoryTab> {
         final grouped = _groupByDay(sessions, l10n);
         final firstDayOfWeek = _firstDayOfWeek(context);
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            await cubit.refreshHistory(
-              wsId,
-              _currentUserId(),
-              firstDayOfWeek: firstDayOfWeek,
-            );
-          },
-          child: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: HistoryPeriodControls(
-                    viewMode: state.historyViewMode,
-                    anchorDate: anchorDate,
-                    onViewModeChanged: (mode) {
-                      unawaited(
-                        cubit.setHistoryViewMode(
-                          wsId,
-                          _currentUserId(),
-                          mode,
-                          firstDayOfWeek: firstDayOfWeek,
-                        ),
-                      );
-                    },
-                    onPrevious: () {
-                      unawaited(
-                        cubit.goToPreviousPeriod(
-                          wsId,
-                          _currentUserId(),
-                          firstDayOfWeek: firstDayOfWeek,
-                        ),
-                      );
-                    },
-                    onNext: () {
-                      unawaited(
-                        cubit.goToNextPeriod(
-                          wsId,
-                          _currentUserId(),
-                          firstDayOfWeek: firstDayOfWeek,
-                        ),
-                      );
-                    },
-                    onGoToCurrent: () {
-                      unawaited(
-                        cubit.goToCurrentPeriod(
-                          wsId,
-                          _currentUserId(),
-                          firstDayOfWeek: firstDayOfWeek,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: HistoryStatsAccordion(
-                    isOpen: state.isHistoryStatsAccordionOpen,
-                    onToggle: () {
-                      unawaited(cubit.toggleHistoryStatsAccordion());
-                    },
-                    stats: state.historyPeriodStats,
-                    isLoading: state.isHistoryLoading,
-                  ),
-                ),
-              ),
-              if (state.isHistoryLoading && sessions.isEmpty)
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
-                    child: Center(child: NovaLoadingIndicator()),
-                  ),
-                )
-              else ...[
-                if (state.isHistoryLoading)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: LinearProgressIndicator(minHeight: 2),
-                    ),
-                  ),
-                if (sessions.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.history,
-                            size: 40,
-                            color: theme.colorScheme.mutedForeground,
-                          ),
-                          const shad.Gap(12),
-                          Text(
-                            l10n.timerHistoryNoSessionsForPeriod,
-                            style: theme.typography.textMuted,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+        return Stack(
+          children: [
+            ShellChromeActions(
+              ownerId: 'time-tracker-history-current',
+              locations: const {Routes.timerHistory},
+              actions: [
+                ShellActionSpec(
+                  id: 'time-tracker-history-current',
+                  icon: Icons.today_outlined,
+                  tooltip: _currentPeriodLabel(l10n, state.historyViewMode),
+                  callbackToken:
+                      '${state.historyViewMode.name}-'
+                      '${anchorDate.toIso8601String()}',
+                  onPressed: () {
+                    unawaited(
+                      cubit.goToCurrentPeriod(
+                        wsId,
+                        _currentUserId(),
+                        firstDayOfWeek: firstDayOfWeek,
                       ),
-                    ),
-                  ),
-                for (final entry in grouped) ...[
+                    );
+                  },
+                ),
+              ],
+            ),
+            ShellMiniNav(
+              ownerId: 'time-tracker-history-mini-nav',
+              locations: const {Routes.timerHistory},
+              deepLinkBackRoute: Routes.timer,
+              items: [
+                ShellMiniNavItemSpec(
+                  id: 'back',
+                  icon: Icons.chevron_left,
+                  label: l10n.navBack,
+                  callbackToken: 'back',
+                  onPressed: () => context.go(Routes.timer),
+                ),
+                _buildHistoryModeItem(
+                  context,
+                  label: l10n.calendarDayView,
+                  icon: Icons.calendar_view_day,
+                  mode: HistoryViewMode.day,
+                  state: state,
+                  firstDayOfWeek: firstDayOfWeek,
+                ),
+                _buildHistoryModeItem(
+                  context,
+                  label: l10n.calendarWeekView,
+                  icon: Icons.calendar_view_week,
+                  mode: HistoryViewMode.week,
+                  state: state,
+                  firstDayOfWeek: firstDayOfWeek,
+                ),
+                _buildHistoryModeItem(
+                  context,
+                  label: l10n.calendarMonthView,
+                  icon: Icons.calendar_view_month,
+                  mode: HistoryViewMode.month,
+                  state: state,
+                  firstDayOfWeek: firstDayOfWeek,
+                ),
+              ],
+            ),
+            RefreshIndicator(
+              onRefresh: () async {
+                await cubit.refreshHistory(
+                  wsId,
+                  _currentUserId(),
+                  firstDayOfWeek: firstDayOfWeek,
+                );
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                      child: Text(
-                        entry.label,
-                        style: theme.typography.small.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SliverList.builder(
-                    itemCount: entry.sessions.length,
-                    itemBuilder: (context, index) {
-                      final session = entry.sessions[index];
-                      return SessionTile(
-                        session: session,
-                        categoryColor: categoryColorById[session.categoryId],
-                        onTap: () => _showDetailSheet(context, session),
-                        onEdit: () => _showEditDialog(context, session),
-                        onDelete: () => _deleteSession(context, session.id),
-                      );
-                    },
-                  ),
-                ],
-                if (state.isHistoryLoadingMore)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: NovaLoadingIndicator()),
-                    ),
-                  ),
-                if (state.historyHasMore && !state.isHistoryLoadingMore)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: shad.OutlineButton(
-                        onPressed: () {
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: HistoryPeriodControls(
+                        viewMode: state.historyViewMode,
+                        anchorDate: anchorDate,
+                        onPrevious: () {
                           unawaited(
-                            cubit.loadHistoryMore(
+                            cubit.goToPreviousPeriod(
                               wsId,
                               _currentUserId(),
                               firstDayOfWeek: firstDayOfWeek,
                             ),
                           );
                         },
-                        child: Text(l10n.timerHistoryLoadMore),
+                        onNext: () {
+                          unawaited(
+                            cubit.goToNextPeriod(
+                              wsId,
+                              _currentUserId(),
+                              firstDayOfWeek: firstDayOfWeek,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
-                if (!state.historyHasMore && sessions.length > 10)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                      child: Text(
-                        l10n.timerHistoryEndOfList,
-                        style: theme.typography.small.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                        textAlign: TextAlign.center,
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: HistoryStatsAccordion(
+                        isOpen: state.isHistoryStatsAccordionOpen,
+                        onToggle: () {
+                          unawaited(cubit.toggleHistoryStatsAccordion());
+                        },
+                        stats: state.historyPeriodStats,
+                        isLoading: state.isHistoryLoading,
                       ),
                     ),
                   ),
-              ],
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 96),
+                  if (state.isHistoryLoading && sessions.isEmpty)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
+                        child: Center(child: NovaLoadingIndicator()),
+                      ),
+                    )
+                  else ...[
+                    if (state.isHistoryLoading)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          child: LinearProgressIndicator(minHeight: 2),
+                        ),
+                      ),
+                    if (sessions.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.history,
+                                size: 40,
+                                color: theme.colorScheme.mutedForeground,
+                              ),
+                              const shad.Gap(12),
+                              Text(
+                                l10n.timerHistoryNoSessionsForPeriod,
+                                style: theme.typography.textMuted,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    for (final entry in grouped) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                          child: Text(
+                            entry.label,
+                            style: theme.typography.small.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SliverList.builder(
+                        itemCount: entry.sessions.length,
+                        itemBuilder: (context, index) {
+                          final session = entry.sessions[index];
+                          return SessionTile(
+                            session: session,
+                            categoryColor:
+                                categoryColorById[session.categoryId],
+                            onTap: () => _showDetailSheet(context, session),
+                            onEdit: () => _showEditDialog(context, session),
+                            onDelete: () => _deleteSession(context, session.id),
+                          );
+                        },
+                      ),
+                    ],
+                    if (state.isHistoryLoadingMore)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: NovaLoadingIndicator()),
+                        ),
+                      ),
+                    if (state.historyHasMore && !state.isHistoryLoadingMore)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: shad.OutlineButton(
+                            onPressed: () {
+                              unawaited(
+                                cubit.loadHistoryMore(
+                                  wsId,
+                                  _currentUserId(),
+                                  firstDayOfWeek: firstDayOfWeek,
+                                ),
+                              );
+                            },
+                            child: Text(l10n.timerHistoryLoadMore),
+                          ),
+                        ),
+                      ),
+                    if (!state.historyHasMore && sessions.length > 10)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          child: Text(
+                            l10n.timerHistoryEndOfList,
+                            style: theme.typography.small.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 96),
+                  ),
+                ],
               ),
-            ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  ShellMiniNavItemSpec _buildHistoryModeItem(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required HistoryViewMode mode,
+    required TimeTrackerState state,
+    required int firstDayOfWeek,
+  }) {
+    return ShellMiniNavItemSpec(
+      id: mode.name,
+      icon: icon,
+      label: label,
+      selected: state.historyViewMode == mode,
+      callbackToken: '${mode.name}-${state.historyViewMode.name}',
+      onPressed: () {
+        final wsId =
+            context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
+        unawaited(
+          context.read<TimeTrackerCubit>().setHistoryViewMode(
+            wsId,
+            _currentUserId(),
+            mode,
+            firstDayOfWeek: firstDayOfWeek,
           ),
         );
       },
     );
+  }
+
+  String _currentPeriodLabel(
+    AppLocalizations l10n,
+    HistoryViewMode mode,
+  ) {
+    return switch (mode) {
+      HistoryViewMode.day => l10n.timerToday,
+      HistoryViewMode.week => l10n.timerThisWeek,
+      HistoryViewMode.month => l10n.timerThisMonth,
+    };
   }
 
   List<_DayGroup> _groupByDay(

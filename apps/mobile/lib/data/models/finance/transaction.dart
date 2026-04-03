@@ -90,6 +90,51 @@ class InfiniteTransactionResponse extends Equatable {
   List<Object?> get props => [data, hasMore, nextCursor];
 }
 
+List<Transaction> collapseTransferTransactions(
+  Iterable<Transaction> transactions,
+) {
+  final orderedKeys = <String>[];
+  final byKey = <String, Transaction>{};
+
+  for (final transaction in transactions) {
+    final key = _displayGroupingKey(transaction);
+    final existing = byKey[key];
+    if (existing == null) {
+      orderedKeys.add(key);
+      byKey[key] = transaction;
+      continue;
+    }
+
+    byKey[key] = _preferTransactionForDisplay(existing, transaction);
+  }
+
+  return orderedKeys.map((key) => byKey[key]!).toList(growable: false);
+}
+
+String _displayGroupingKey(Transaction transaction) {
+  final transfer = transaction.transfer;
+  if (transfer == null) {
+    return transaction.id;
+  }
+
+  final ids = [transaction.id, transfer.linkedTransactionId]..sort();
+  return 'transfer:${ids.join('::')}';
+}
+
+Transaction _preferTransactionForDisplay(
+  Transaction existing,
+  Transaction candidate,
+) {
+  final existingIsOrigin = existing.transfer?.isOrigin ?? false;
+  final candidateIsOrigin = candidate.transfer?.isOrigin ?? false;
+
+  if (candidateIsOrigin && !existingIsOrigin) {
+    return candidate;
+  }
+
+  return existing;
+}
+
 // ── Transaction ────────────────────────────────────────────────────────────
 
 class Transaction extends Equatable {
@@ -246,6 +291,33 @@ class Transaction extends Equatable {
     'is_amount_confidential': isAmountConfidential,
     'is_description_confidential': isDescriptionConfidential,
     'is_category_confidential': isCategoryConfidential,
+    'category_name': categoryName,
+    'category_icon': categoryIcon,
+    'category_color': categoryColor,
+    'wallet_name': walletName,
+    'wallet_currency': walletCurrency,
+    'wallet_icon': walletIcon,
+    'wallet_image_src': walletImageSrc,
+    'creator_full_name': creatorFullName,
+    'tags': tags
+        .map(
+          (tag) => {
+            'id': tag.id,
+            'name': tag.name,
+            'color': tag.color,
+          },
+        )
+        .toList(),
+    'transfer': transfer == null
+        ? null
+        : {
+            'linked_transaction_id': transfer!.linkedTransactionId,
+            'linked_wallet_id': transfer!.linkedWalletId,
+            'linked_wallet_name': transfer!.linkedWalletName,
+            'linked_wallet_currency': transfer!.linkedWalletCurrency,
+            'linked_amount': transfer!.linkedAmount,
+            'is_origin': transfer!.isOrigin,
+          },
   };
 
   @override

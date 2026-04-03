@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_goals/goal_card.dart';
@@ -33,7 +36,6 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
 
     return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
       builder: (context, state) {
@@ -41,95 +43,67 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
         final goals = state.goalsWorkspaceId == widget.wsId
             ? state.goals
             : const <TimeTrackingGoal>[];
-        final activeGoals = goals.where((goal) => goal.isActive).toList();
         final shouldShowLoading =
             state.isGoalsLoadingFor(widget.wsId) &&
             !state.hasLoadedGoalsFor(widget.wsId);
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: shad.Card(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.timerGoalsTitle,
-                              style: theme.typography.p.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              l10n.timerGoalsSubtitle,
-                              style: theme.typography.textSmall.copyWith(
-                                color: theme.colorScheme.mutedForeground,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      shad.OutlineButton(
-                        onPressed: _isSubmitting
-                            ? null
-                            : () => _openCreateGoalSheet(state),
-                        child: Text(l10n.timerGoalsAdd),
-                      ),
-                    ],
-                  ),
-                  const shad.Gap(12),
-                  if (shouldShowLoading)
-                    const Padding(
+        return Stack(
+          children: [
+            ShellChromeActions(
+              ownerId: 'time-tracker-goals-actions',
+              locations: const {Routes.timerStats, Routes.timerManagement},
+              actions: [
+                ShellActionSpec(
+                  id: 'time-tracker-goals-add',
+                  icon: Icons.add,
+                  tooltip: l10n.timerGoalsAdd,
+                  enabled: !_isSubmitting,
+                  callbackToken: '${widget.wsId}-${goals.length}',
+                  onPressed: _isSubmitting
+                      ? null
+                      : () => _openCreateGoalSheet(state),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: shouldShowLoading
+                  ? const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: Center(child: NovaLoadingIndicator()),
                     )
-                  else if (goals.isEmpty)
-                    GoalsEmptyState(
+                  : goals.isEmpty
+                  ? GoalsEmptyState(
                       onCreatePressed: _isSubmitting
                           ? null
                           : () => _openCreateGoalSheet(state),
                     )
-                  else
-                    ...goals.map(
-                      (goal) {
-                        final progressSeconds = _resolveGoalProgressSeconds(
-                          state,
-                          goal,
-                        );
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var index = 0; index < goals.length; index++) ...[
+                          Builder(
+                            builder: (context) {
+                              final goal = goals[index];
+                              final progressSeconds =
+                                  _resolveGoalProgressSeconds(state, goal);
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: GoalCard(
-                            goal: goal,
-                            categoryTodaySeconds: progressSeconds.$1,
-                            categoryWeekSeconds: progressSeconds.$2,
-                            onTap: _isSubmitting
-                                ? null
-                                : () => _openGoalDetailSheet(state, goal),
+                              return GoalCard(
+                                goal: goal,
+                                categoryTodaySeconds: progressSeconds.$1,
+                                categoryWeekSeconds: progressSeconds.$2,
+                                onTap: _isSubmitting
+                                    ? null
+                                    : () => _openGoalDetailSheet(state, goal),
+                              );
+                            },
                           ),
-                        );
-                      },
+                          if (index < goals.length - 1) const shad.Gap(8),
+                        ],
+                      ],
                     ),
-                  if (activeGoals.isNotEmpty && goals.length > 1)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        l10n.timerGoalsActiveCount(activeGoals.length),
-                        style: theme.typography.textSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
             ),
-          ),
+          ],
         );
       },
     );

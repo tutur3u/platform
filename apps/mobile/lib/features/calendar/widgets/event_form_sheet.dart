@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -156,136 +157,165 @@ class _EventFormContentState extends State<_EventFormContent> {
     final l10n = context.l10n;
     final colorScheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat.yMMMd();
+    final verticalInset = MediaQuery.of(context).viewInsets.bottom;
+    final radius = context.isCompact ? 24.0 : 16.0;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header.
-            Row(
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(bottom: verticalInset),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(radius),
+            bottom: Radius.circular(context.isCompact ? 0 : radius),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          bottom: context.isCompact,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(l10n.calendarEventCancel),
-                ),
-                const Spacer(),
-                Text(
-                  _isEditing ? l10n.calendarEditEvent : l10n.calendarNewEvent,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                if (context.isCompact)
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
                   ),
+                // Header.
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(l10n.calendarEventCancel),
+                    ),
+                    const Spacer(),
+                    Text(
+                      _isEditing
+                          ? l10n.calendarEditEvent
+                          : l10n.calendarNewEvent,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    FilledButton(
+                      onPressed: _titleController.text.trim().isNotEmpty
+                          ? _save
+                          : null,
+                      child: Text(l10n.calendarEventSave),
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                FilledButton(
-                  onPressed: _titleController.text.trim().isNotEmpty
-                      ? _save
-                      : null,
-                  child: Text(l10n.calendarEventSave),
+                const SizedBox(height: 16),
+
+                // Title.
+                TextField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    labelText: l10n.calendarEventTitle,
+                    hintText: l10n.calendarEventTitleHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                  autofocus: !_isEditing,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+
+                // Description.
+                TextField(
+                  controller: _descriptionController,
+                  decoration: InputDecoration(
+                    labelText: l10n.calendarEventDescription,
+                    hintText: l10n.calendarEventDescriptionHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+                const SizedBox(height: 12),
+
+                // All-day toggle.
+                SwitchListTile(
+                  title: Text(l10n.calendarEventAllDay),
+                  value: _isAllDay,
+                  onChanged: (v) => setState(() => _isAllDay = v),
+                  contentPadding: EdgeInsets.zero,
+                ),
+
+                // Start date/time.
+                _DateTimeRow(
+                  label: l10n.calendarEventStartDate,
+                  dateText: dateFormat.format(_startDate),
+                  timeText: _isAllDay ? null : _startTime.format(context),
+                  onDateTap: () => _pickDate(true),
+                  onTimeTap: _isAllDay ? null : () => _pickTime(true),
+                ),
+                const SizedBox(height: 8),
+
+                // End date/time.
+                _DateTimeRow(
+                  label: l10n.calendarEventEndDate,
+                  dateText: dateFormat.format(_endDate),
+                  timeText: _isAllDay ? null : _endTime.format(context),
+                  onDateTap: () => _pickDate(false),
+                  onTimeTap: _isAllDay ? null : () => _pickTime(false),
+                ),
+                const SizedBox(height: 16),
+
+                // Color picker.
+                Text(
+                  l10n.calendarEventColor,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: EventColors.allColors.map((name) {
+                    final c = EventColors.fromString(name);
+                    final selected = _color == name;
+                    return GestureDetector(
+                      onTap: () => setState(() => _color = name),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: c,
+                          shape: BoxShape.circle,
+                          border: selected
+                              ? Border.all(
+                                  color: colorScheme.onSurface,
+                                  width: 2,
+                                )
+                              : null,
+                        ),
+                        child: selected
+                            ? Icon(
+                                Icons.check,
+                                size: 16,
+                                color: colorScheme.surface,
+                              )
+                            : null,
+                      ),
+                    );
+                  }).toList(),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-
-            // Title.
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: l10n.calendarEventTitle,
-                hintText: l10n.calendarEventTitleHint,
-                border: const OutlineInputBorder(),
-              ),
-              textCapitalization: TextCapitalization.sentences,
-              autofocus: !_isEditing,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 12),
-
-            // Description.
-            TextField(
-              controller: _descriptionController,
-              decoration: InputDecoration(
-                labelText: l10n.calendarEventDescription,
-                hintText: l10n.calendarEventDescriptionHint,
-                border: const OutlineInputBorder(),
-              ),
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 12),
-
-            // All-day toggle.
-            SwitchListTile(
-              title: Text(l10n.calendarEventAllDay),
-              value: _isAllDay,
-              onChanged: (v) => setState(() => _isAllDay = v),
-              contentPadding: EdgeInsets.zero,
-            ),
-
-            // Start date/time.
-            _DateTimeRow(
-              label: l10n.calendarEventStartDate,
-              dateText: dateFormat.format(_startDate),
-              timeText: _isAllDay ? null : _startTime.format(context),
-              onDateTap: () => _pickDate(true),
-              onTimeTap: _isAllDay ? null : () => _pickTime(true),
-            ),
-            const SizedBox(height: 8),
-
-            // End date/time.
-            _DateTimeRow(
-              label: l10n.calendarEventEndDate,
-              dateText: dateFormat.format(_endDate),
-              timeText: _isAllDay ? null : _endTime.format(context),
-              onDateTap: () => _pickDate(false),
-              onTimeTap: _isAllDay ? null : () => _pickTime(false),
-            ),
-            const SizedBox(height: 16),
-
-            // Color picker.
-            Text(
-              l10n.calendarEventColor,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: EventColors.allColors.map((name) {
-                final c = EventColors.fromString(name);
-                final selected = _color == name;
-                return GestureDetector(
-                  onTap: () => setState(() => _color = name),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: c,
-                      shape: BoxShape.circle,
-                      border: selected
-                          ? Border.all(
-                              color: colorScheme.onSurface,
-                              width: 2,
-                            )
-                          : null,
-                    ),
-                    child: selected
-                        ? Icon(
-                            Icons.check,
-                            size: 16,
-                            color: colorScheme.surface,
-                          )
-                        : null,
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
+          ),
         ),
       ),
     );
