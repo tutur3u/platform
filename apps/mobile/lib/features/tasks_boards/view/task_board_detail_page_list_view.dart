@@ -105,6 +105,7 @@ class _TaskBoardEnhancedListViewState
     unawaited(
       showAdaptiveSheet<void>(
         context: context,
+        backgroundColor: shad.Theme.of(context).colorScheme.background,
         builder: (context) => _SortBottomSheet(
           currentField: _sort.field,
           ascending: _sort.ascending,
@@ -642,6 +643,7 @@ class _TaskMoreButton extends StatelessWidget {
           unawaited(
             showAdaptiveSheet<void>(
               context: context,
+              backgroundColor: shad.Theme.of(context).colorScheme.background,
               builder: (context) => SafeArea(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
