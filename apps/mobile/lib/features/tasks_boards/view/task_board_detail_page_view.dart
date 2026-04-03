@@ -901,6 +901,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
 
     await showAdaptiveSheet<void>(
       context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (_) => content,
     );
   }

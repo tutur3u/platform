@@ -6,6 +6,7 @@ extension on _TaskBoardDetailPageViewState {
   Future<void> _showBoardActionsSheet(BuildContext context) async {
     await showAdaptiveSheet<void>(
       context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (sheetContext) {
         return SafeArea(
           top: false,

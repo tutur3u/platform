@@ -7,6 +7,11 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 ///
 /// The dialog variant is constrained to [maxDialogWidth] (default 560).
 ///
+/// [backgroundColor] defaults to `Colors.transparent` so callers that already
+/// provide their own surface Container keep full control.  Pass an opaque
+/// colour explicitly when the sheet content should not show the barrier
+/// behind it.
+///
 /// Wraps overlay content with a [BackButtonListener] so the Android hardware
 /// back button dismisses the overlay instead of triggering shell navigation.
 /// Child back-button dispatchers have higher priority than the shell's
@@ -22,12 +27,13 @@ Future<T?> showAdaptiveSheet<T>({
   bool barrierDismissible = true,
   Color barrierColor = const Color(0x7A000000),
   bool useRootNavigator = false,
+  Color backgroundColor = Colors.transparent,
 }) {
   if (context.isCompact) {
     return showModalBottomSheet<T>(
       context: context,
       useRootNavigator: useRootNavigator,
-      backgroundColor: Colors.transparent,
+      backgroundColor: backgroundColor,
       barrierColor: barrierColor,
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
@@ -71,7 +77,7 @@ Future<T?> showAdaptiveSheet<T>({
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxDialogWidth),
             child: Material(
-              color: Colors.transparent,
+              color: backgroundColor,
               borderRadius: BorderRadius.circular(12),
               clipBehavior: Clip.antiAlias,
               child: builder(dialogContext),
