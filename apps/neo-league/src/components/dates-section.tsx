@@ -6,49 +6,31 @@ export default function DatesSection() {
   const importantDates = [
     {
       round: '01',
-      date: '04 April 2026',
-      event: 'Opening Ceremony + Requirement Release',
+      date: 'April 04',
+      event: 'OPENING CEREMONY',
       type: 'Virtual',
-      description:
-        'Kickoff event with the official opening ceremony and release of competition requirements.',
+      description: 'Kickoff event introducing the competition and guidelines',
     },
     {
       round: '02',
-      date: '17 April 2026',
-      event: 'Registration & Round 1 Deadline',
+      date: 'April 24',
+      event: 'TOP 20 SELECTION',
       type: 'Virtual',
-      description:
-        'Final deadline for team registration and Round 1 submission.',
+      description: 'Announcement of top 20 teams advancing to prototype phase',
     },
     {
       round: '03',
-      date: '24 April 2026',
-      event: 'Top 20 Announcement + Release Round 2 Instruction',
+      date: 'May 16',
+      event: 'TOP 5 SELECTION',
       type: 'Virtual',
-      description:
-        'Announcement of the top 20 teams and release of instructions for Round 2.',
+      description: 'Announcement of top 5 finalists for the grand finale',
     },
     {
       round: '04',
-      date: '16 May 2026',
-      event: 'Round 2 Deadline',
-      type: 'Virtual',
-      description: 'Final deadline for Round 2 submission.',
-    },
-    {
-      round: '05',
-      date: '23 May 2026',
-      event: 'Top 5 Announcement',
-      type: 'Virtual',
-      description:
-        'Announcement of the top 5 teams advancing to the final exhibition.',
-    },
-    {
-      round: '06',
-      date: '29 May 2026',
-      event: 'Final - Exhibition',
+      date: 'May 29',
+      event: 'FINALE - EXHIBITION',
       type: 'RMIT Auditorium',
-      description: 'Final exhibition, live pitching, and award ceremony.',
+      description: 'Live pitch, product demonstration, and award ceremony',
     },
   ];
 
@@ -56,13 +38,13 @@ export default function DatesSection() {
     <section id="dates" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-4xl">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 text-3xl tracking-wide md:text-4xl">
+          <h2 className="mb-4 text-3xl md:text-4xl tracking-wide">
             <span className="font-medium text-brand-teal italic">
               IMPORTANT{' '}
             </span>
             <span className="relative inline-block font-black text-brand-teal">
               DATES
-              <span className="absolute -bottom-1 left-0 h-1 w-full bg-yellow-400"></span>
+              <span className="absolute left-0 -bottom-1 h-1 w-full bg-yellow-400"></span>
             </span>
           </h2>
         </div>
@@ -90,7 +72,7 @@ export default function DatesSection() {
                   {/* Content Card */}
                   <div
                     className={`ml-16 w-full md:ml-0 md:w-[calc(50%-3rem)] ${
-                      index % 2 === 0 ? 'md:mr-8' : 'md:ml-8'
+                      index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'
                     }`}
                   >
                     <div className="glass-card card-hover rounded-2xl p-6">
@@ -98,7 +80,7 @@ export default function DatesSection() {
                         <span className="rounded-full bg-primary/20 px-3 py-1 font-bold text-primary text-xs">
                           {item.type}
                         </span>
-                        <span className="gradient-text font-bold text-md">
+                        <span className="gradient-text font-black text-lg">
                           {item.date}
                         </span>
                       </div>
@@ -108,6 +90,9 @@ export default function DatesSection() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Spacer for alternating layout on desktop */}
+                  <div className="hidden md:block md:w-[calc(50%-3rem)]" />
                 </div>
               </AnimatedSection>
             ))}
