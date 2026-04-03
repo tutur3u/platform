@@ -33,28 +33,49 @@ class _TaskBoardBoardLayoutSheet extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            context.l10n.taskBoardDetailManageBoardLayout,
-            style: theme.typography.large.copyWith(fontWeight: FontWeight.w700),
+          // Header section with better spacing
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.taskBoardDetailManageBoardLayout,
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const shad.Gap(4),
+                    Text(
+                      context.l10n.taskBoardDetailManageBoardLayoutDescription,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Close button moved to header for better accessibility
+              shad.GhostButton(
+                onPressed: onClose,
+                density: shad.ButtonDensity.icon,
+                child: const Icon(Icons.close_rounded, size: 20),
+              ),
+            ],
           ),
-          const shad.Gap(6),
-          Text(
-            context.l10n.taskBoardDetailManageBoardLayoutDescription,
-            style: theme.typography.small.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
-          const shad.Gap(12),
+          const shad.Gap(20),
+          // Status sections
           Flexible(
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: statuses.length,
-              separatorBuilder: (_, _) => const shad.Gap(14),
+              separatorBuilder: (_, _) => const Divider(height: 32),
               itemBuilder: (context, index) {
                 final status = statuses[index];
                 final statusLists = _sortedLists(
@@ -81,14 +102,6 @@ class _TaskBoardBoardLayoutSheet extends StatelessWidget {
                   onListActions: onListActions,
                 );
               },
-            ),
-          ),
-          const shad.Gap(10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: shad.PrimaryButton(
-              onPressed: onClose,
-              child: Text(context.l10n.taskBoardDetailSearchDone),
             ),
           ),
         ],
@@ -124,75 +137,74 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(this.context);
     final canCreateInStatus = status != 'closed' || !hasClosedList;
+    final statusColors = _taskBoardListStatusBadgeColors(this.context, status);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Improved header: more compact and better visual hierarchy
         Row(
           children: [
-            Icon(
-              _taskBoardListStatusIcon(status),
-              size: 16,
-              color: _taskBoardListStatusBadgeColors(
-                this.context,
-                status,
-              ).textColor,
-            ),
-            const shad.Gap(8),
-            Text(
-              _taskBoardListStatusLabel(this.context, status),
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w700,
+            // Status icon with colored background
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: statusColors.backgroundColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                _taskBoardListStatusIcon(status),
+                size: 14,
+                color: statusColors.textColor,
               ),
             ),
-            const shad.Gap(8),
+            const shad.Gap(10),
+            // Status name
+            Expanded(
+              child: Text(
+                _taskBoardListStatusLabel(this.context, status),
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            // Compact count badge
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: theme.colorScheme.muted,
-                borderRadius: BorderRadius.circular(999),
+                color: theme.colorScheme.muted.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 '$listCount',
                 style: theme.typography.small.copyWith(
                   color: theme.colorScheme.mutedForeground,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            const Spacer(),
-            shad.OutlineButton(
+            const shad.Gap(8),
+            // Icon-only add button to save space
+            shad.GhostButton(
               onPressed: canCreateInStatus
                   ? () => unawaited(onCreateListForStatus(status))
                   : null,
-              density: shad.ButtonDensity.compact,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add, size: 14),
-                  const shad.Gap(6),
-                  Text(this.context.l10n.taskBoardDetailAddNewList),
-                ],
+              density: shad.ButtonDensity.icon,
+              child: Icon(
+                Icons.add_rounded,
+                size: 18,
+                color: canCreateInStatus
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.mutedForeground,
               ),
             ),
           ],
         ),
-        const shad.Gap(8),
+        const shad.Gap(10),
+        // Lists or empty state
         if (lists.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.muted,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.border),
-            ),
-            child: Text(
-              this.context.l10n.taskBoardDetailNoListsInStatus,
-              style: theme.typography.small.copyWith(
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ),
-          )
+          _TaskBoardBoardLayoutEmptyState(context: this.context)
         else
           Column(
             children: lists
@@ -283,6 +295,48 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Compact empty state for status sections without lists
+class _TaskBoardBoardLayoutEmptyState extends StatelessWidget {
+  const _TaskBoardBoardLayoutEmptyState({required this.context});
+
+  final BuildContext context;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(this.context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.muted.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.inbox_outlined,
+            size: 16,
+            color: theme.colorScheme.mutedForeground,
+          ),
+          const shad.Gap(8),
+          Expanded(
+            child: Text(
+              this.context.l10n.taskBoardDetailNoListsInStatus,
+              style: theme.typography.small.copyWith(
+                color: theme.colorScheme.mutedForeground,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
