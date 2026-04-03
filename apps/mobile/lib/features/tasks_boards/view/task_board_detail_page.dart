@@ -66,6 +66,7 @@ part 'task_board_detail_page_states.dart';
 part 'task_board_detail_page_timeline.dart';
 part 'task_board_detail_page_utils.dart';
 part 'task_board_detail_page_view.dart';
+part 'task_board_detail_page_list_view.dart';
 
 class TaskBoardDetailPage extends StatelessWidget {
   const TaskBoardDetailPage({
