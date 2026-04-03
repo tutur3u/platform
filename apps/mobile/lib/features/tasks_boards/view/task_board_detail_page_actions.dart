@@ -18,9 +18,6 @@ extension on _TaskBoardDetailPageViewState {
                 ListTile(
                   leading: const Icon(Icons.view_kanban_outlined),
                   title: Text(context.l10n.taskBoardDetailManageBoardLayout),
-                  subtitle: Text(
-                    context.l10n.taskBoardDetailManageBoardLayoutDescription,
-                  ),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     _handleBoardAction(context, _BoardAction.manageLayout);
@@ -91,23 +88,46 @@ extension on _TaskBoardDetailPageViewState {
   }
 
   Future<void> _openCreateListDialog(BuildContext context) async {
-    final result = await shad.showDialog<_TaskBoardListFormValue>(
+    final board = context.read<TaskBoardDetailCubit>().state.board;
+    if (board == null) return;
+
+    await showAdaptiveSheet<void>(
       context: context,
-      builder: (_) => _TaskBoardListFormDialog(
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailCreateList,
         confirmLabel: context.l10n.taskBoardDetailCreateList,
+        successMessage: context.l10n.taskBoardDetailListCreated,
+        existingLists: board.lists,
+        onSubmit:
+            ({
+              required name,
+              required status,
+              required color,
+            }) async {
+              if (!_taskBoardCanCreateListInStatus(board.lists, status)) {
+                final toastContext = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).context;
+                if (!toastContext.mounted) return;
+                shad.showToast(
+                  context: toastContext,
+                  builder: (context, overlay) => shad.Alert.destructive(
+                    content: Text(
+                      context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
+                    ),
+                  ),
+                );
+                return;
+              }
+              await context.read<TaskBoardDetailCubit>().createList(
+                name: name,
+                status: status,
+                color: color,
+              );
+            },
       ),
-    );
-    if (result == null || !context.mounted) return;
-
-    await _runBoardAction(
-      context,
-      () => context.read<TaskBoardDetailCubit>().createList(
-        name: result.name,
-        status: result.status,
-        color: result.color,
-      ),
-      successMessage: context.l10n.taskBoardDetailListCreated,
     );
   }
 
@@ -115,29 +135,52 @@ extension on _TaskBoardDetailPageViewState {
     BuildContext context,
     TaskBoardList list,
   ) async {
-    final result = await shad.showDialog<_TaskBoardListFormValue>(
+    final board = context.read<TaskBoardDetailCubit>().state.board;
+    if (board == null) return;
+
+    await showAdaptiveSheet<void>(
       context: context,
-      builder: (_) => _TaskBoardListFormDialog(
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailEditList,
         confirmLabel: context.l10n.timerSave,
+        successMessage: context.l10n.taskBoardDetailListUpdated,
         initialName: list.name?.trim() ?? '',
         initialStatus:
             TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active',
         initialColor:
             TaskBoardList.normalizeSupportedColor(list.color) ?? 'GRAY',
+        existingLists: board.lists,
+        onSubmit:
+            ({
+              required name,
+              required status,
+              required color,
+            }) async {
+              if (!_taskBoardCanCreateListInStatus(board.lists, status)) {
+                final toastContext = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).context;
+                if (!toastContext.mounted) return;
+                shad.showToast(
+                  context: toastContext,
+                  builder: (context, overlay) => shad.Alert.destructive(
+                    content: Text(
+                      context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
+                    ),
+                  ),
+                );
+                return;
+              }
+              await context.read<TaskBoardDetailCubit>().updateList(
+                listId: list.id,
+                name: name,
+                status: status,
+                color: color,
+              );
+            },
       ),
-    );
-    if (result == null || !context.mounted) return;
-
-    await _runBoardAction(
-      context,
-      () => context.read<TaskBoardDetailCubit>().updateList(
-        listId: list.id,
-        name: result.name,
-        status: result.status,
-        color: result.color,
-      ),
-      successMessage: context.l10n.taskBoardDetailListUpdated,
     );
   }
 

@@ -57,6 +57,18 @@ List<TaskBoardList> _sortedListsByStatusOrder(List<TaskBoardList> lists) {
   return sorted;
 }
 
+bool _taskBoardCanCreateListInStatus(
+  List<TaskBoardList> lists,
+  String? status,
+) {
+  final normalizedStatus = TaskBoardList.normalizeSupportedStatus(status);
+  if (normalizedStatus == null) return true;
+  if (normalizedStatus != 'closed') return true;
+  return !lists.any(
+    (list) => TaskBoardList.normalizeSupportedStatus(list.status) == 'closed',
+  );
+}
+
 class _TaskBoardListColorOption {
   const _TaskBoardListColorOption({
     required this.value,

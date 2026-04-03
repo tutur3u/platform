@@ -92,10 +92,7 @@ extension on _TaskBoardDetailPageViewState {
 
     final normalizedStatus =
         TaskBoardList.normalizeSupportedStatus(status) ?? 'active';
-    final hasClosedList = board.lists.any(
-      (list) => TaskBoardList.normalizeSupportedStatus(list.status) == 'closed',
-    );
-    if (normalizedStatus == 'closed' && hasClosedList) {
+    if (!_taskBoardCanCreateListInStatus(board.lists, normalizedStatus)) {
       final toastContext = Navigator.of(context, rootNavigator: true).context;
       if (!toastContext.mounted) return;
       shad.showToast(
@@ -109,40 +106,44 @@ extension on _TaskBoardDetailPageViewState {
       return;
     }
 
-    final result = await shad.showDialog<_TaskBoardListFormValue>(
+    await showAdaptiveSheet<void>(
       context: context,
-      builder: (_) => _TaskBoardListFormDialog(
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailCreateList,
         confirmLabel: context.l10n.taskBoardDetailCreateList,
+        successMessage: context.l10n.taskBoardDetailListCreated,
         initialStatus: normalizedStatus,
+        existingLists: board.lists,
+        onSubmit:
+            ({
+              required name,
+              required status,
+              required color,
+            }) async {
+              if (!_taskBoardCanCreateListInStatus(board.lists, status)) {
+                final toastContext = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).context;
+                if (!toastContext.mounted) return;
+                shad.showToast(
+                  context: toastContext,
+                  builder: (context, overlay) => shad.Alert.destructive(
+                    content: Text(
+                      context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
+                    ),
+                  ),
+                );
+                return;
+              }
+              await context.read<TaskBoardDetailCubit>().createList(
+                name: name,
+                status: status,
+                color: color,
+              );
+            },
       ),
-    );
-    if (result == null || !context.mounted) return;
-
-    final resultStatus =
-        TaskBoardList.normalizeSupportedStatus(result.status) ?? 'active';
-    if (resultStatus == 'closed' && hasClosedList) {
-      final toastContext = Navigator.of(context, rootNavigator: true).context;
-      if (!toastContext.mounted) return;
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert.destructive(
-          content: Text(
-            context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
-          ),
-        ),
-      );
-      return;
-    }
-
-    await _runBoardAction(
-      context,
-      () => context.read<TaskBoardDetailCubit>().createList(
-        name: result.name,
-        status: result.status,
-        color: result.color,
-      ),
-      successMessage: context.l10n.taskBoardDetailListCreated,
     );
   }
 

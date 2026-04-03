@@ -30,8 +30,9 @@ class _TaskBoardBoardLayoutSheet extends StatelessWidget {
       'closed',
     ];
 
-    final hasClosedList = board.lists.any(
-      (list) => TaskBoardList.normalizeSupportedStatus(list.status) == 'closed',
+    final hasClosedList = !_taskBoardCanCreateListInStatus(
+      board.lists,
+      'closed',
     );
 
     return Padding(
