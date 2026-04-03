@@ -29,15 +29,6 @@ function getTimeLeft(): TimeUnit[] {
   ];
 }
 
-function getInitialTimeLeft(): TimeUnit[] {
-  return [
-    { label: 'Days', value: '00' },
-    { label: 'Hours', value: '00' },
-    { label: 'Minutes', value: '00' },
-    { label: 'Seconds', value: '00' },
-  ];
-}
-
 function CountdownUnit({ label, value }: TimeUnit) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-2 text-center">
@@ -52,13 +43,9 @@ function CountdownUnit({ label, value }: TimeUnit) {
 }
 
 export default function CountdownTimer() {
-  const [timeUnits, setTimeUnits] = useState<TimeUnit[]>(() =>
-    getInitialTimeLeft()
-  );
+  const [timeUnits, setTimeUnits] = useState<TimeUnit[]>(() => getTimeLeft());
 
   useEffect(() => {
-    setTimeUnits(getTimeLeft());
-
     const interval = window.setInterval(() => {
       setTimeUnits(getTimeLeft());
     }, 1000);
