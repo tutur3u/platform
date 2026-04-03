@@ -38,7 +38,7 @@ dependencies:
   flutter_secure_storage: ^10.0.0
   flutter_svg: ^2.2.4
   flutter_timezone: ^5.0.2
-  go_router: ^17.1.0
+  go_router: ^17.2.0
   google_sign_in: ^7.2.0
   hive: ^2.2.3
   http: ^1.6.0
