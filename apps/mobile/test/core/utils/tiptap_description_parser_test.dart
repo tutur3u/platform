@@ -408,7 +408,8 @@ void main() {
     });
 
     test(
-      'returns null instead of raw JSON when a TipTap doc throws mid-parse',
+      'falls back to readable text when malformed TipTap attrs '
+      'break markdown extraction',
       () {
         final malformedDoc = jsonEncode({
           'type': 'doc',
@@ -423,7 +424,11 @@ void main() {
           ],
         });
 
-        expect(parseTipTapTaskDescription(malformedDoc), isNull);
+        final parsed = parseTipTapTaskDescription(malformedDoc);
+
+        expect(parsed, isNotNull);
+        expect(parsed!.plainText, contains('Broken heading'));
+        expect(parsed.markdown, contains('Broken heading'));
       },
     );
 

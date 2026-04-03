@@ -44,21 +44,26 @@ void _appendBlockNodeToDelta(
   }
 
   final type = node['type'];
+  final attrs = node['attrs'] as Map?;
 
   if (type == 'paragraph') {
     _appendInlineContentToDelta(node['content'], delta);
-    delta.insert('\n');
+    final lineAttrs = _lineAttrsWithTextAlign(attrs);
+    delta.insert('\n', lineAttrs.isEmpty ? null : lineAttrs);
     return;
   }
 
   if (type == 'heading') {
     _appendInlineContentToDelta(node['content'], delta);
-    final level = (node['attrs'] as Map?)?['level'];
+    final level = attrs?['level'];
     final normalizedLevel = switch (level) {
       final num value => value.toInt().clamp(1, 6),
       _ => 1,
     };
-    delta.insert('\n', {'header': normalizedLevel});
+    delta.insert(
+      '\n',
+      _lineAttrsWithTextAlign(attrs, {'header': normalizedLevel}),
+    );
     return;
   }
 
@@ -121,7 +126,10 @@ void _appendBlockNodeToDelta(
         if (paragraph is Map<String, dynamic> &&
             paragraph['type'] == 'paragraph') {
           _appendInlineContentToDelta(paragraph['content'], delta);
-          final lineAttrs = <String, dynamic>{'list': listKind};
+          final lineAttrs = _lineAttrsWithTextAlign(
+            paragraph['attrs'] as Map?,
+            {'list': listKind},
+          );
           if (indent > 0) lineAttrs['indent'] = indent;
           delta.insert('\n', lineAttrs);
         } else {
@@ -154,7 +162,10 @@ void _appendBlockNodeToDelta(
         if (paragraph is Map<String, dynamic> &&
             paragraph['type'] == 'paragraph') {
           _appendInlineContentToDelta(paragraph['content'], delta);
-          final lineAttrs = <String, dynamic>{'list': listKind};
+          final lineAttrs = _lineAttrsWithTextAlign(
+            paragraph['attrs'] as Map?,
+            {'list': listKind},
+          );
           if (indent > 0) lineAttrs['indent'] = indent;
           delta.insert('\n', lineAttrs);
         } else {
@@ -166,10 +177,10 @@ void _appendBlockNodeToDelta(
   }
 
   if (type == 'image' || type == 'imageResize') {
-    final src = ((node['attrs'] as Map?)?['src'] as String?)?.trim() ?? '';
-    if (src.isNotEmpty) {
+    final payload = _quillImageEmbedValue(attrs);
+    if (payload != null) {
       delta
-        ..insert({'image': src})
+        ..insert({'image': payload})
         ..insert('\n');
     }
     return;
@@ -197,7 +208,8 @@ void _appendBlockNodeToDelta(
   }
 
   _appendInlineContentToDelta(node['content'], delta);
-  delta.insert('\n');
+  final lineAttrs = _lineAttrsWithTextAlign(attrs);
+  delta.insert('\n', lineAttrs.isEmpty ? null : lineAttrs);
 }
 
 void _appendInlineContentToDelta(Object? content, Delta delta) {
@@ -228,9 +240,9 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
     }
 
     if (type == 'image' || type == 'imageResize') {
-      final src = ((child['attrs'] as Map?)?['src'] as String?)?.trim() ?? '';
-      if (src.isNotEmpty) {
-        delta.insert({'image': src});
+      final payload = _quillImageEmbedValue(child['attrs'] as Map?);
+      if (payload != null) {
+        delta.insert({'image': payload});
       }
       continue;
     }
@@ -300,6 +312,54 @@ Map<String, dynamic> _quillAttrsFromTipTapMarks(Object? marksValue) {
   }
 
   return attrs;
+}
+
+Map<String, dynamic> _lineAttrsWithTextAlign(
+  Map<Object?, Object?>? attrs, [
+  Map<String, dynamic> base = const <String, dynamic>{},
+]) {
+  final lineAttrs = <String, dynamic>{...base};
+  final textAlign = (attrs?['textAlign'] as String?)?.trim();
+  if (textAlign != null && textAlign.isNotEmpty) {
+    lineAttrs['align'] = textAlign;
+  }
+  return lineAttrs;
+}
+
+String? _quillImageEmbedValue(Map<Object?, Object?>? attrs) {
+  final src = (attrs?['src'] as String?)?.trim() ?? '';
+  if (src.isEmpty) {
+    return null;
+  }
+
+  final alt = (attrs?['alt'] as String?)?.trim();
+  final title = (attrs?['title'] as String?)?.trim();
+  final width = attrs?['width'];
+  final height = attrs?['height'];
+  final containerStyle = (attrs?['containerStyle'] as String?)?.trim();
+  final wrapperStyle = (attrs?['wrapperStyle'] as String?)?.trim();
+
+  final hasExtraAttrs =
+      (alt != null && alt.isNotEmpty) ||
+      (title != null && title.isNotEmpty) ||
+      width != null ||
+      height != null ||
+      (containerStyle != null && containerStyle.isNotEmpty) ||
+      (wrapperStyle != null && wrapperStyle.isNotEmpty);
+
+  if (!hasExtraAttrs) {
+    return src;
+  }
+
+  return jsonEncode({
+    'src': src,
+    'alt': alt,
+    'title': title,
+    'width': width,
+    'height': height,
+    'containerStyle': containerStyle ?? '',
+    'wrapperStyle': wrapperStyle ?? '',
+  });
 }
 
 String _flattenTipTapText(Object? nodesValue) {

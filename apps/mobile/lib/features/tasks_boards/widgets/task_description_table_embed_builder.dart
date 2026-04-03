@@ -210,6 +210,7 @@ class TaskDescriptionTableEditorSheetState
     final l10n = context.l10n;
     final rows = rowCount;
     final cols = columnCount;
+    final tableMaxHeight = MediaQuery.sizeOf(context).height * 0.45;
 
     return Material(
       color: theme.colorScheme.background,
@@ -262,7 +263,8 @@ class TaskDescriptionTableEditorSheetState
                 ],
               ),
               const SizedBox(height: 12),
-              Expanded(
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: tableMaxHeight),
                 child: SingleChildScrollView(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,

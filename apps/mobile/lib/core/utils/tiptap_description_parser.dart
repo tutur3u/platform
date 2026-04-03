@@ -72,10 +72,20 @@ ParsedTipTapDescription? parseTipTapTaskDescription(String? rawDescription) {
     }
 
     final context = _ParseContext();
-    final markdown = _collapseWhitespace(
-      _extractMarkdown(doc, context).trim(),
-    );
-    final plainText = _collapseWhitespace(_extractPlainText(doc).trim());
+    var markdown = '';
+    var plainText = '';
+
+    try {
+      markdown = _collapseWhitespace(_extractMarkdown(doc, context).trim());
+    } on Object catch (error, stackTrace) {
+      debugPrint('Failed to extract TipTap markdown: $error\n$stackTrace');
+    }
+
+    try {
+      plainText = _collapseWhitespace(_extractPlainText(doc).trim());
+    } on Object catch (error, stackTrace) {
+      debugPrint('Failed to extract TipTap plain text: $error\n$stackTrace');
+    }
 
     if (markdown.isEmpty && plainText.isEmpty) {
       return null;
@@ -127,7 +137,7 @@ String _extractMarkdown(Object? node, _ParseContext context) {
     case 'paragraph':
       return '${_extractInlineMarkdown(content, context)}\n\n';
     case 'heading':
-      final level = (attrs is Map ? attrs['level'] : null) as int? ?? 1;
+      final level = _intAttr(attrs, 'level') ?? 1;
       final safeLevel = level < 1
           ? 1
           : level > 6
@@ -144,12 +154,12 @@ String _extractMarkdown(Object? node, _ParseContext context) {
           .join('\n');
       return '$lines\n\n';
     case 'codeBlock':
-      final language = attrs is Map ? (attrs['language'] as String? ?? '') : '';
+      final language = _stringAttr(attrs, 'language') ?? '';
       return '```$language\n${_extractCodeText(content)}\n```\n\n';
     case 'bulletList':
       return '${_extractListMarkdown(content, context, ordered: false)}\n';
     case 'orderedList':
-      final start = (attrs is Map ? attrs['start'] as int? : null) ?? 1;
+      final start = _intAttr(attrs, 'start') ?? 1;
       return '${_extractListMarkdown(
         content,
         context,
@@ -181,7 +191,7 @@ String _extractMarkdown(Object? node, _ParseContext context) {
           ? '[YouTube](${src!.trim()})'
           : '[YouTube Video]';
     case 'mention':
-      final mention = _buildMention(attrs);
+      final mention = tipTapMentionFromAttrs(attrs);
       if (mention != null) {
         return context.addMention(mention);
       }
@@ -472,7 +482,7 @@ String _extractPlainText(
     case 'youtube':
       return '[YouTube Video]';
     case 'mention':
-      final mention = _buildMention(attrs);
+      final mention = tipTapMentionFromAttrs(attrs);
       return '@${mention?.displayName ?? 'mention'}';
     default:
       return _extractPlainText(content, depth: depth);
@@ -487,7 +497,7 @@ String _extractTablePlainText(Object? content) {
       .join('\n');
 }
 
-TipTapMention? _buildMention(Object? attrs) {
+TipTapMention? tipTapMentionFromAttrs(Object? attrs) {
   if (attrs is! Map) return null;
 
   String? stringValue(String key) {
@@ -527,4 +537,20 @@ TipTapMention? _buildMention(Object? attrs) {
     listColor: stringValue('listColor'),
     assignees: stringList('assignees'),
   );
+}
+
+String? _stringAttr(Object? attrs, String key) {
+  if (attrs is! Map) return null;
+  final value = attrs[key];
+  return value is String && value.trim().isNotEmpty ? value.trim() : null;
+}
+
+int? _intAttr(Object? attrs, String key) {
+  if (attrs is! Map) return null;
+  final value = attrs[key];
+  return switch (value) {
+    final num number => number.toInt(),
+    final String text => int.tryParse(text.trim()),
+    _ => null,
+  };
 }
