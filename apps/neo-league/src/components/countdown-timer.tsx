@@ -1,42 +1,41 @@
 'use client';
 
 import { Card, CardContent } from '@ncthub/ui/card';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { getTimeLeft, type TimeUnit } from '@/utils/time-helper';
 
-const OPENING_CEREMONY_TIMESTAMP = new Date('2026-04-04T10:00:00+07:00');
-
-type TimeUnit = {
-  label: 'Days' | 'Hours' | 'Minutes' | 'Seconds';
-  value: string;
-};
-
-function getTimeLeft(): TimeUnit[] {
-  const remainingTime = Math.max(
-    0,
-    OPENING_CEREMONY_TIMESTAMP.getTime() - Date.now()
-  );
-  const totalSeconds = Math.floor(remainingTime / 1000);
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return [
-    { label: 'Days', value: String(days).padStart(2, '0') },
-    { label: 'Hours', value: String(hours).padStart(2, '0') },
-    { label: 'Minutes', value: String(minutes).padStart(2, '0') },
-    { label: 'Seconds', value: String(seconds).padStart(2, '0') },
-  ];
-}
-
-function getInitialTimeLeft(): TimeUnit[] {
-  return [
-    { label: 'Days', value: '00' },
-    { label: 'Hours', value: '00' },
-    { label: 'Minutes', value: '00' },
-    { label: 'Seconds', value: '00' },
-  ];
-}
+const importantDates = [
+  {
+    announcement: 'Our opening ceremony will start in:',
+    timeLabel: '04-04-2026 10:00:00 GMT+7',
+    timestamp: new Date('2026-04-04T10:00:00+07:00'),
+  },
+  {
+    announcement: 'Remaining time to Round 1 deadline:',
+    timeLabel: '17-04-2026 00:00:00 GMT+7',
+    timestamp: new Date('2026-17-04T00:00:00+07:00'),
+  },
+  {
+    announcement: 'Round 2 will start in:',
+    timeLabel: '24-04-2026 00:00:00 GMT+7',
+    timestamp: new Date('2026-24-04T00:00:00+07:00'),
+  },
+  {
+    announcement: 'Remaining time to Round 2 deadline:',
+    timeLabel: '07-05-2026 00:00:00 GMT+7',
+    timestamp: new Date('2026-16-05T00:00:00+07:00'),
+  },
+  {
+    announcement: 'The Top 5 teams will be announced in:',
+    timeLabel: '23-05-2026 00:00:00 GMT+7',
+    timestamp: new Date('2026-23-05T00:00:00+07:00'),
+  },
+  {
+    announcement: 'Our Final Day will start in:',
+    timeLabel: '29-05-2026 00:00:00 GMT+7',
+    timestamp: new Date('2026-29-05T00:00:00+07:00'),
+  },
+];
 
 function CountdownUnit({ label, value }: TimeUnit) {
   return (
@@ -52,21 +51,35 @@ function CountdownUnit({ label, value }: TimeUnit) {
 }
 
 export default function CountdownTimer() {
+  const resolvedDate = useMemo(() => {
+    const now = new Date();
+
+    for (const importantDate of importantDates) {
+      if (importantDate.timestamp > now) return importantDate;
+    }
+
+    return importantDates[0];
+  }, []);
+
   const [timeUnits, setTimeUnits] = useState<TimeUnit[]>(() =>
-    getInitialTimeLeft()
+    getTimeLeft(new Date(), resolvedDate ? resolvedDate.timestamp : new Date())
   );
 
   useEffect(() => {
-    setTimeUnits(getTimeLeft());
+    if (!resolvedDate) return;
+
+    setTimeUnits(getTimeLeft(new Date(), resolvedDate.timestamp));
 
     const interval = window.setInterval(() => {
-      setTimeUnits(getTimeLeft());
+      setTimeUnits(getTimeLeft(new Date(), resolvedDate.timestamp));
     }, 1000);
 
     return () => {
       window.clearInterval(interval);
     };
-  }, []);
+  }, [resolvedDate]);
+
+  if (!resolvedDate) return null;
 
   return (
     <div
@@ -78,18 +91,11 @@ export default function CountdownTimer() {
           <div className="flex flex-col gap-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="font-semibold text-muted-foreground text-sm uppercase tracking-[0.24em] sm:text-base">
-                Our opening ceremony will start in:
+                {resolvedDate.announcement}
               </p>
 
               <div className="btn-primary self-start rounded-full border border-border/70 py-2! font-medium text-xs sm:text-sm">
-                {OPENING_CEREMONY_TIMESTAMP.toLocaleString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  timeZoneName: 'short',
-                })}
+                {resolvedDate.timeLabel}
               </div>
             </div>
 
