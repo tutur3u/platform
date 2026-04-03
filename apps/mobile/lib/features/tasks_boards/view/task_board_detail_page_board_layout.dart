@@ -12,33 +12,68 @@ extension on _TaskBoardDetailPageViewState {
           value: cubit,
           child: SafeArea(
             top: false,
-            child: BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
-              buildWhen: (previous, current) => previous.board != current.board,
+            child: BlocConsumer<TaskBoardDetailCubit, TaskBoardDetailState>(
+              listenWhen: (previous, current) =>
+                  previous.isMutating != current.isMutating ||
+                  previous.mutationError != current.mutationError,
+              listener: (context, state) {
+                if (state.mutationError != null && !state.isMutating) {
+                  final toastContext = Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).context;
+                  if (!toastContext.mounted) return;
+                  shad.showToast(
+                    context: toastContext,
+                    builder: (context, overlay) => shad.Alert.destructive(
+                      content: Text(state.mutationError!),
+                    ),
+                  );
+                }
+              },
+              buildWhen: (previous, current) =>
+                  previous.board != current.board ||
+                  previous.isMutating != current.isMutating,
               builder: (context, state) {
                 final board = state.board;
                 if (board == null) {
                   return const SizedBox.shrink();
                 }
 
-                return _TaskBoardBoardLayoutSheet(
-                  board: board,
-                  onClose: () => dismissAdaptiveDrawerOverlay(drawerContext),
-                  onCreateListForStatus: (status) =>
-                      _openCreateListDialogForStatus(context, status),
-                  onMoveListUp: (list) => _moveListWithinStatus(
-                    context,
-                    list: list,
-                    delta: -1,
-                  ),
-                  onMoveListDown: (list) => _moveListWithinStatus(
-                    context,
-                    list: list,
-                    delta: 1,
-                  ),
-                  onListActions: (list) => _showListLayoutActionsMenu(
-                    context,
-                    list,
-                  ),
+                return Stack(
+                  children: [
+                    _TaskBoardBoardLayoutSheet(
+                      board: board,
+                      isMutating: state.isMutating,
+                      onClose: () =>
+                          dismissAdaptiveDrawerOverlay(drawerContext),
+                      onCreateListForStatus: (status) =>
+                          _openCreateListDialogForStatus(context, status),
+                      onMoveListUp: (list) => _moveListWithinStatus(
+                        context,
+                        list: list,
+                        delta: -1,
+                      ),
+                      onMoveListDown: (list) => _moveListWithinStatus(
+                        context,
+                        list: list,
+                        delta: 1,
+                      ),
+                      onListActions: (list) => _showListLayoutActionsMenu(
+                        context,
+                        list,
+                      ),
+                    ),
+                    if (state.isMutating)
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          child: const Center(
+                            child: NovaLoadingIndicator(),
+                          ),
+                        ),
+                      ),
+                  ],
                 );
               },
             ),

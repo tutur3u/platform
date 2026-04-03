@@ -3,6 +3,7 @@ part of 'task_board_detail_page.dart';
 class _TaskBoardBoardLayoutSheet extends StatelessWidget {
   const _TaskBoardBoardLayoutSheet({
     required this.board,
+    required this.isMutating,
     required this.onClose,
     required this.onCreateListForStatus,
     required this.onMoveListUp,
@@ -11,6 +12,7 @@ class _TaskBoardBoardLayoutSheet extends StatelessWidget {
   });
 
   final TaskBoardDetail board;
+  final bool isMutating;
   final VoidCallback onClose;
   final Future<void> Function(String status) onCreateListForStatus;
   final Future<void> Function(TaskBoardList list) onMoveListUp;
@@ -96,6 +98,7 @@ class _TaskBoardBoardLayoutSheet extends StatelessWidget {
                   listCount: statusLists.length,
                   lists: statusLists,
                   hasClosedList: hasClosedList,
+                  isMutating: isMutating,
                   onCreateListForStatus: onCreateListForStatus,
                   onMoveListUp: onMoveListUp,
                   onMoveListDown: onMoveListDown,
@@ -117,6 +120,7 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
     required this.listCount,
     required this.lists,
     required this.hasClosedList,
+    required this.isMutating,
     required this.onCreateListForStatus,
     required this.onMoveListUp,
     required this.onMoveListDown,
@@ -128,6 +132,7 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
   final int listCount;
   final List<TaskBoardList> lists;
   final bool hasClosedList;
+  final bool isMutating;
   final Future<void> Function(String status) onCreateListForStatus;
   final Future<void> Function(TaskBoardList list) onMoveListUp;
   final Future<void> Function(TaskBoardList list) onMoveListDown;
@@ -187,14 +192,14 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
             const shad.Gap(8),
             // Icon-only add button to save space
             shad.GhostButton(
-              onPressed: canCreateInStatus
+              onPressed: (!isMutating && canCreateInStatus)
                   ? () => unawaited(onCreateListForStatus(status))
                   : null,
               density: shad.ButtonDensity.icon,
               child: Icon(
                 Icons.add_rounded,
                 size: 18,
-                color: canCreateInStatus
+                color: (!isMutating && canCreateInStatus)
                     ? theme.colorScheme.primary
                     : theme.colorScheme.mutedForeground,
               ),
@@ -208,15 +213,23 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
         else
           Column(
             children: lists
-                .map(
-                  (list) => _TaskBoardBoardLayoutListCard(
+                .asMap()
+                .entries
+                .map((entry) {
+                  final index = entry.key;
+                  final list = entry.value;
+                  final canMoveUp = !isMutating && index > 0;
+                  final canMoveDown = !isMutating && index < lists.length - 1;
+                  return _TaskBoardBoardLayoutListCard(
                     context: this.context,
                     list: list,
+                    canMoveUp: canMoveUp,
+                    canMoveDown: canMoveDown,
                     onMoveUp: () => unawaited(onMoveListUp(list)),
                     onMoveDown: () => unawaited(onMoveListDown(list)),
                     onMore: () => unawaited(onListActions(list)),
-                  ),
-                )
+                  );
+                })
                 .toList(growable: false),
           ),
       ],
@@ -228,6 +241,8 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
   const _TaskBoardBoardLayoutListCard({
     required this.context,
     required this.list,
+    required this.canMoveUp,
+    required this.canMoveDown,
     required this.onMoveUp,
     required this.onMoveDown,
     required this.onMore,
@@ -235,6 +250,8 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
 
   final BuildContext context;
   final TaskBoardList list;
+  final bool canMoveUp;
+  final bool canMoveDown;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
   final VoidCallback onMore;
@@ -269,32 +286,93 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
           listName,
           style: theme.typography.small.copyWith(fontWeight: FontWeight.w700),
         ),
-        subtitle: Text(
-          listStyle.statusLabel,
-          style: theme.typography.small.copyWith(
-            color: theme.colorScheme.mutedForeground,
-          ),
-        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            shad.GhostButton(
-              onPressed: onMoveUp,
-              density: shad.ButtonDensity.icon,
-              child: const Icon(Icons.arrow_upward_rounded, size: 16),
+            _BoardLayoutMoveButton(
+              context: this.context,
+              canMove: canMoveUp,
+              onPressed: canMoveUp ? onMoveUp : null,
+              icon: Icons.arrow_upward_rounded,
+              tooltip: 'Move up',
             ),
-            shad.GhostButton(
-              onPressed: onMoveDown,
-              density: shad.ButtonDensity.icon,
-              child: const Icon(Icons.arrow_downward_rounded, size: 16),
+            _BoardLayoutMoveButton(
+              context: this.context,
+              canMove: canMoveDown,
+              onPressed: canMoveDown ? onMoveDown : null,
+              icon: Icons.arrow_downward_rounded,
+              tooltip: 'Move down',
             ),
-            shad.GhostButton(
+            _BoardLayoutActionButton(
+              context: this.context,
               onPressed: onMore,
-              density: shad.ButtonDensity.icon,
-              child: const Icon(Icons.more_horiz_rounded, size: 16),
+              icon: Icons.more_horiz_rounded,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BoardLayoutMoveButton extends StatelessWidget {
+  const _BoardLayoutMoveButton({
+    required this.context,
+    required this.canMove,
+    required this.onPressed,
+    required this.icon,
+    required this.tooltip,
+  });
+
+  final BuildContext context;
+  final bool canMove;
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(this.context);
+
+    return Tooltip(
+      message: tooltip,
+      child: shad.GhostButton(
+        onPressed: onPressed,
+        density: shad.ButtonDensity.icon,
+        child: Icon(
+          icon,
+          size: 16,
+          color: canMove
+              ? theme.colorScheme.foreground
+              : theme.colorScheme.mutedForeground.withValues(alpha: 0.4),
+        ),
+      ),
+    );
+  }
+}
+
+class _BoardLayoutActionButton extends StatelessWidget {
+  const _BoardLayoutActionButton({
+    required this.context,
+    required this.onPressed,
+    required this.icon,
+  });
+
+  final BuildContext context;
+  final VoidCallback onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(this.context);
+
+    return shad.GhostButton(
+      onPressed: onPressed,
+      density: shad.ButtonDensity.icon,
+      child: Icon(
+        icon,
+        size: 16,
+        color: theme.colorScheme.foreground,
       ),
     );
   }
