@@ -93,6 +93,9 @@ extension on _TaskBoardDetailPageViewState {
 
     await showAdaptiveSheet<void>(
       context: context,
+      isDismissible: false,
+      enableDrag: false,
+      barrierDismissible: false,
       backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailCreateList,
@@ -141,6 +144,9 @@ extension on _TaskBoardDetailPageViewState {
 
     await showAdaptiveSheet<void>(
       context: context,
+      isDismissible: false,
+      enableDrag: false,
+      barrierDismissible: false,
       backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailEditList,

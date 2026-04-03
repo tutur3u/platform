@@ -63,132 +63,135 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
     final statusOptions = _taskBoardListStatusOptions(context);
     final colorOptions = _taskBoardListColorOptions(context);
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Sheet handle indicator
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.mutedForeground.withValues(
-                    alpha: 0.3,
+    return PopScope(
+      canPop: !_isSubmitting,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Sheet handle indicator
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.mutedForeground.withValues(
+                      alpha: 0.3,
+                    ),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            const shad.Gap(16),
-            // Title
-            Text(
-              widget.title,
-              style: theme.typography.h4,
-            ),
-            const shad.Gap(24),
-            // List name field
-            Text(
-              context.l10n.taskBoardDetailListNameLabel,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w600,
+              const shad.Gap(16),
+              // Title
+              Text(
+                widget.title,
+                style: theme.typography.h4,
               ),
-            ),
-            const shad.Gap(8),
-            shad.TextField(
-              controller: _nameController,
-              hintText: context.l10n.taskBoardDetailUntitledList,
-              autofocus: true,
-              enabled: !_isSubmitting,
-              onSubmitted: (_) => _submit(),
-            ),
-            const shad.Gap(16),
-            // Status category dropdown
-            Text(
-              context.l10n.taskBoardDetailStatusCategoryLabel,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w600,
+              const shad.Gap(24),
+              // List name field
+              Text(
+                context.l10n.taskBoardDetailListNameLabel,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const shad.Gap(8),
-            IgnorePointer(
-              ignoring: _isSubmitting,
-              child: _StatusCategoryDropdown(
-                selectedStatus: _selectedStatus,
-                statusOptions: statusOptions,
-                excludingListId: widget.currentListId,
-                existingLists: widget.existingLists,
-                onChanged: (status) {
-                  if (status != null) {
-                    setState(() => _selectedStatus = status);
-                  }
-                },
+              const shad.Gap(8),
+              shad.TextField(
+                controller: _nameController,
+                hintText: context.l10n.taskBoardDetailUntitledList,
+                autofocus: true,
+                enabled: !_isSubmitting,
+                onSubmitted: (_) => _submit(),
               ),
-            ),
-            const shad.Gap(16),
-            // Color dropdown
-            Text(
-              context.l10n.taskBoardDetailColorLabel,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w600,
+              const shad.Gap(16),
+              // Status category dropdown
+              Text(
+                context.l10n.taskBoardDetailStatusCategoryLabel,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const shad.Gap(8),
-            IgnorePointer(
-              ignoring: _isSubmitting,
-              child: _ColorDropdown(
-                selectedColor: _selectedColor,
-                colorOptions: colorOptions,
-                onChanged: (color) {
-                  if (color != null) {
-                    setState(() => _selectedColor = color);
-                  }
-                },
+              const shad.Gap(8),
+              IgnorePointer(
+                ignoring: _isSubmitting,
+                child: _StatusCategoryDropdown(
+                  selectedStatus: _selectedStatus,
+                  statusOptions: statusOptions,
+                  excludingListId: widget.currentListId,
+                  existingLists: widget.existingLists,
+                  onChanged: (status) {
+                    if (status != null) {
+                      setState(() => _selectedStatus = status);
+                    }
+                  },
+                ),
               ),
-            ),
-            const shad.Gap(24),
-            // Action buttons row
-            Row(
-              children: [
-                Expanded(
-                  child: shad.OutlineButton(
-                    onPressed: _isSubmitting
-                        ? null
-                        : () => Navigator.of(context).pop(),
-                    child: Text(
-                      context.l10n.commonCancel,
-                      textAlign: TextAlign.center,
+              const shad.Gap(16),
+              // Color dropdown
+              Text(
+                context.l10n.taskBoardDetailColorLabel,
+                style: theme.typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const shad.Gap(8),
+              IgnorePointer(
+                ignoring: _isSubmitting,
+                child: _ColorDropdown(
+                  selectedColor: _selectedColor,
+                  colorOptions: colorOptions,
+                  onChanged: (color) {
+                    if (color != null) {
+                      setState(() => _selectedColor = color);
+                    }
+                  },
+                ),
+              ),
+              const shad.Gap(24),
+              // Action buttons row
+              Row(
+                children: [
+                  Expanded(
+                    child: shad.OutlineButton(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      child: Text(
+                        context.l10n.commonCancel,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
-                ),
-                const shad.Gap(12),
-                Expanded(
-                  child: shad.PrimaryButton(
-                    onPressed: _isSubmitting ? null : _submit,
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                  const shad.Gap(12),
+                  Expanded(
+                    child: shad.PrimaryButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
+                            )
+                          : Text(
+                              widget.confirmLabel,
+                              textAlign: TextAlign.center,
                             ),
-                          )
-                        : Text(
-                            widget.confirmLabel,
-                            textAlign: TextAlign.center,
-                          ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

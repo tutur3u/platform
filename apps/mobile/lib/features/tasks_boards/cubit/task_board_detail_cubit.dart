@@ -620,7 +620,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           ),
         );
       } finally {
-        if (state.workspaceId == wsId && state.boardId == boardId) {
+        if (!isClosed &&
+            state.workspaceId == wsId &&
+            state.boardId == boardId) {
           await loadBoardDetail(wsId: wsId, boardId: boardId);
         }
       }
