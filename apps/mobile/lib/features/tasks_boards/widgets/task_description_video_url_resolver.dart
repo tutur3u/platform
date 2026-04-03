@@ -63,7 +63,8 @@ Future<String> resolveTaskDescriptionVideoUrl(
       final sanitizedHeadUrl = sanitizeResolvedTaskDescriptionVideoUrl(
         headResponse.request?.url.toString(),
       );
-      if (sanitizedHeadUrl != null) {
+      if (sanitizedHeadUrl != null &&
+          sanitizedHeadUrl != internalUri.toString()) {
         return sanitizedHeadUrl;
       }
 
@@ -96,7 +97,11 @@ Future<String> resolveTaskDescriptionVideoUrl(
                 for (final key in const ['signedUrl', 'url', 'downloadUrl']) {
                   final candidate = decoded[key];
                   if (candidate is String && candidate.isNotEmpty) {
-                    return candidate;
+                    final sanitizedCandidate =
+                        sanitizeResolvedTaskDescriptionVideoUrl(candidate);
+                    if (sanitizedCandidate != null) {
+                      return sanitizedCandidate;
+                    }
                   }
                 }
               }

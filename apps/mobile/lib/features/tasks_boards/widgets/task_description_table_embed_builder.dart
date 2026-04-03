@@ -210,7 +210,6 @@ class TaskDescriptionTableEditorSheetState
     final l10n = context.l10n;
     final rows = rowCount;
     final cols = columnCount;
-    final tableMaxHeight = MediaQuery.sizeOf(context).height * 0.45;
 
     return Material(
       color: theme.colorScheme.background,
@@ -263,42 +262,58 @@ class TaskDescriptionTableEditorSheetState
                 ],
               ),
               const SizedBox(height: 12),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: tableMaxHeight),
-                child: SingleChildScrollView(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Table(
-                      border: TableBorder.all(color: theme.colorScheme.border),
-                      defaultColumnWidth: const FixedColumnWidth(180),
-                      children: [
-                        for (var rowIndex = 0; rowIndex < rows; rowIndex++)
-                          TableRow(
-                            decoration: rowIndex == 0
-                                ? BoxDecoration(
-                                    color: theme.colorScheme.secondary
-                                        .withValues(alpha: 0.35),
-                                  )
-                                : null,
-                            children: [
-                              for (
-                                var columnIndex = 0;
-                                columnIndex < cols;
-                                columnIndex++
-                              )
-                                Padding(
-                                  padding: const EdgeInsets.all(6),
-                                  child: shad.TextField(
-                                    controller:
-                                        _controllers[rowIndex][columnIndex],
-                                  ),
-                                ),
-                            ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final screenHeight = MediaQuery.sizeOf(context).height;
+                  final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+                  final boundedMaxHeight = constraints.hasBoundedHeight
+                      ? constraints.maxHeight
+                      : screenHeight - keyboardInset - 220;
+                  final tableMaxHeight = boundedMaxHeight.clamp(
+                    160.0,
+                    screenHeight * 0.45,
+                  );
+
+                  return ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: tableMaxHeight),
+                    child: SingleChildScrollView(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Table(
+                          border: TableBorder.all(
+                            color: theme.colorScheme.border,
                           ),
-                      ],
+                          defaultColumnWidth: const FixedColumnWidth(180),
+                          children: [
+                            for (var rowIndex = 0; rowIndex < rows; rowIndex++)
+                              TableRow(
+                                decoration: rowIndex == 0
+                                    ? BoxDecoration(
+                                        color: theme.colorScheme.secondary
+                                            .withValues(alpha: 0.35),
+                                      )
+                                    : null,
+                                children: [
+                                  for (
+                                    var columnIndex = 0;
+                                    columnIndex < cols;
+                                    columnIndex++
+                                  )
+                                    Padding(
+                                      padding: const EdgeInsets.all(6),
+                                      child: shad.TextField(
+                                        controller:
+                                            _controllers[rowIndex][columnIndex],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               Row(
