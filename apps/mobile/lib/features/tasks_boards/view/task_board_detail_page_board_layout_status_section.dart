@@ -2,7 +2,6 @@ part of 'task_board_detail_page.dart';
 
 class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
   const _TaskBoardBoardLayoutStatusSection({
-    required this.context,
     required this.status,
     required this.listCount,
     required this.lists,
@@ -14,7 +13,6 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
     required this.onListActions,
   });
 
-  final BuildContext context;
   final String status;
   final int listCount;
   final List<TaskBoardList> lists;
@@ -27,9 +25,9 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(this.context);
+    final theme = shad.Theme.of(context);
     final canCreateInStatus = status != 'closed' || !hasClosedList;
-    final statusColors = _taskBoardListStatusBadgeColors(this.context, status);
+    final statusColors = _taskBoardListStatusBadgeColors(context, status);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +49,7 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
             const shad.Gap(10),
             Expanded(
               child: Text(
-                _taskBoardListStatusLabel(this.context, status),
+                _taskBoardListStatusLabel(context, status),
                 style: theme.typography.small.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -90,7 +88,7 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
         ),
         const shad.Gap(10),
         if (lists.isEmpty)
-          _TaskBoardBoardLayoutEmptyState(context: this.context)
+          const _TaskBoardBoardLayoutEmptyState()
         else
           Column(
             children: lists
@@ -102,7 +100,6 @@ class _TaskBoardBoardLayoutStatusSection extends StatelessWidget {
                   final canMoveUp = !isMutating && index > 0;
                   final canMoveDown = !isMutating && index < lists.length - 1;
                   return _TaskBoardBoardLayoutListCard(
-                    context: this.context,
                     list: list,
                     canMoveUp: canMoveUp,
                     canMoveDown: canMoveDown,

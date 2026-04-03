@@ -93,9 +93,6 @@ extension on _TaskBoardDetailPageViewState {
 
     await showAdaptiveSheet<void>(
       context: context,
-      isDismissible: false,
-      enableDrag: false,
-      barrierDismissible: false,
       backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailCreateList,
@@ -108,7 +105,15 @@ extension on _TaskBoardDetailPageViewState {
               required status,
               required color,
             }) async {
-              if (!_taskBoardCanCreateListInStatus(board.lists, status)) {
+              final currentBoard = context
+                  .read<TaskBoardDetailCubit>()
+                  .state
+                  .board;
+              if (currentBoard == null) return false;
+              if (!_taskBoardCanCreateListInStatus(
+                currentBoard.lists,
+                status,
+              )) {
                 final toastContext = Navigator.of(
                   context,
                   rootNavigator: true,
@@ -144,9 +149,6 @@ extension on _TaskBoardDetailPageViewState {
 
     await showAdaptiveSheet<void>(
       context: context,
-      isDismissible: false,
-      enableDrag: false,
-      barrierDismissible: false,
       backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailEditList,
@@ -165,8 +167,13 @@ extension on _TaskBoardDetailPageViewState {
               required status,
               required color,
             }) async {
+              final currentBoard = context
+                  .read<TaskBoardDetailCubit>()
+                  .state
+                  .board;
+              if (currentBoard == null) return false;
               if (!_taskBoardCanCreateListInStatus(
-                board.lists,
+                currentBoard.lists,
                 status,
                 excludingListId: list.id,
               )) {

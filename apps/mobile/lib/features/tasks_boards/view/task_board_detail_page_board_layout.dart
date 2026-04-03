@@ -108,9 +108,6 @@ extension on _TaskBoardDetailPageViewState {
 
     await showAdaptiveSheet<void>(
       context: context,
-      isDismissible: false,
-      enableDrag: false,
-      barrierDismissible: false,
       backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailCreateList,
@@ -124,7 +121,15 @@ extension on _TaskBoardDetailPageViewState {
               required status,
               required color,
             }) async {
-              if (!_taskBoardCanCreateListInStatus(board.lists, status)) {
+              final currentBoard = context
+                  .read<TaskBoardDetailCubit>()
+                  .state
+                  .board;
+              if (currentBoard == null) return false;
+              if (!_taskBoardCanCreateListInStatus(
+                currentBoard.lists,
+                status,
+              )) {
                 final toastContext = Navigator.of(
                   context,
                   rootNavigator: true,
@@ -288,8 +293,7 @@ extension on _TaskBoardDetailPageViewState {
     final updates = <String, int>{};
     for (var i = 0; i < reordered.length; i++) {
       final item = reordered[i];
-      final currentPosition = item.position ?? i;
-      if (currentPosition != i) {
+      if (item.position != i) {
         updates[item.id] = i;
       }
     }

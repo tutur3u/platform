@@ -2,7 +2,6 @@ part of 'task_board_detail_page.dart';
 
 class _TaskBoardBoardLayoutListCard extends StatelessWidget {
   const _TaskBoardBoardLayoutListCard({
-    required this.context,
     required this.list,
     required this.canMoveUp,
     required this.canMoveDown,
@@ -11,7 +10,6 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
     required this.onMore,
   });
 
-  final BuildContext context;
   final TaskBoardList list;
   final bool canMoveUp;
   final bool canMoveDown;
@@ -21,12 +19,12 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(this.context);
+    final theme = shad.Theme.of(context);
     final rawListName = list.name?.trim();
     final listName = rawListName != null && rawListName.isNotEmpty
         ? rawListName
-        : this.context.l10n.taskBoardDetailUntitledList;
-    final listStyle = _taskBoardListVisualStyle(this.context, list);
+        : context.l10n.taskBoardDetailUntitledList;
+    final listStyle = _taskBoardListVisualStyle(context, list);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -53,21 +51,18 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _BoardLayoutMoveButton(
-              context: this.context,
               canMove: canMoveUp,
               onPressed: canMoveUp ? onMoveUp : null,
               icon: Icons.arrow_upward_rounded,
-              tooltip: this.context.l10n.taskBoardDetailMoveListUp,
+              tooltip: context.l10n.taskBoardDetailMoveListUp,
             ),
             _BoardLayoutMoveButton(
-              context: this.context,
               canMove: canMoveDown,
               onPressed: canMoveDown ? onMoveDown : null,
               icon: Icons.arrow_downward_rounded,
-              tooltip: this.context.l10n.taskBoardDetailMoveListDown,
+              tooltip: context.l10n.taskBoardDetailMoveListDown,
             ),
             _BoardLayoutActionButton(
-              context: this.context,
               onPressed: onMore,
               icon: Icons.more_horiz_rounded,
             ),
@@ -80,14 +75,12 @@ class _TaskBoardBoardLayoutListCard extends StatelessWidget {
 
 class _BoardLayoutMoveButton extends StatelessWidget {
   const _BoardLayoutMoveButton({
-    required this.context,
     required this.canMove,
     required this.onPressed,
     required this.icon,
     required this.tooltip,
   });
 
-  final BuildContext context;
   final bool canMove;
   final VoidCallback? onPressed;
   final IconData icon;
@@ -95,7 +88,7 @@ class _BoardLayoutMoveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(this.context);
+    final theme = shad.Theme.of(context);
 
     return Tooltip(
       message: tooltip,
@@ -116,18 +109,16 @@ class _BoardLayoutMoveButton extends StatelessWidget {
 
 class _BoardLayoutActionButton extends StatelessWidget {
   const _BoardLayoutActionButton({
-    required this.context,
     required this.onPressed,
     required this.icon,
   });
 
-  final BuildContext context;
   final VoidCallback onPressed;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(this.context);
+    final theme = shad.Theme.of(context);
 
     return shad.GhostButton(
       onPressed: onPressed,

@@ -88,7 +88,6 @@ class _TaskBoardBoardLayoutSheet extends StatelessWidget {
               );
 
               return _TaskBoardBoardLayoutStatusSection(
-                context: context,
                 status: status,
                 listCount: statusLists.length,
                 lists: statusLists,

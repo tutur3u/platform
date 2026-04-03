@@ -1,13 +1,11 @@
 part of 'task_board_detail_page.dart';
 
 class _TaskBoardBoardLayoutEmptyState extends StatelessWidget {
-  const _TaskBoardBoardLayoutEmptyState({required this.context});
-
-  final BuildContext context;
+  const _TaskBoardBoardLayoutEmptyState();
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(this.context);
+    final theme = shad.Theme.of(context);
 
     return Container(
       width: double.infinity,
@@ -29,7 +27,7 @@ class _TaskBoardBoardLayoutEmptyState extends StatelessWidget {
           const shad.Gap(8),
           Expanded(
             child: Text(
-              this.context.l10n.taskBoardDetailNoListsInStatus,
+              context.l10n.taskBoardDetailNoListsInStatus,
               style: theme.typography.small.copyWith(
                 color: theme.colorScheme.mutedForeground,
               ),
