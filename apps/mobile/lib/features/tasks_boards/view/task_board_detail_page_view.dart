@@ -790,9 +790,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     final paginationStateReset =
         state.listTasksByListId.isEmpty &&
         state.loadedListIds.isEmpty &&
-        state.loadingListIds.isEmpty &&
         state.listHasMoreById.isEmpty &&
-        state.listOffsetsById.isEmpty;
+        state.listOffsetsById.isEmpty &&
+        state.listPageSizeById.isEmpty &&
+        state.listLoadErrorById.isEmpty;
     if (paginationStateReset && _initialListLoadRequested.isNotEmpty) {
       _initialListLoadRequested.clear();
       _initialListLoadBoardKey = null;
