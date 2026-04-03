@@ -31,7 +31,7 @@ export type AssetType = 'library' | 'normal';
 const ASSET_TYPE = 'library';
 
 const ASSET_DIR =
-  ASSET_TYPE === 'library' ? '/neo-crush/library' : '/neo-crush';
+  ASSET_TYPE === 'library' ? '/neo-crush/library2' : '/neo-crush';
 
 const FRUIT_COLOR_SOURCES = {
   red: `${ASSET_DIR}/red.png` as const,
