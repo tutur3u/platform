@@ -11,6 +11,7 @@ import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/colors.dart';
+import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -478,7 +479,9 @@ class _AppState extends State<App> {
                   routerConfig: _router,
                   builder: (context, child) {
                     return _ShadcnMaterialBridge(
-                      child: AppVersionGate(child: child!),
+                      child: DismissKeyboardOnPointerDown(
+                        child: AppVersionGate(child: child!),
+                      ),
                     );
                   },
                 );
