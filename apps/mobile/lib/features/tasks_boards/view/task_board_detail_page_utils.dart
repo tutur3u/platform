@@ -14,6 +14,49 @@ List<TaskBoardList> _sortedLists(List<TaskBoardList> lists) {
   return sorted;
 }
 
+const List<String> _taskBoardListStatusOrder = <String>[
+  'documents',
+  'not_started',
+  'active',
+  'done',
+  'closed',
+];
+
+List<TaskBoardList> _sortedListsByStatusOrder(List<TaskBoardList> lists) {
+  if (lists.length <= 1) {
+    return lists;
+  }
+
+  final byStatus = <String, List<TaskBoardList>>{};
+  for (final list in lists) {
+    final normalizedStatus =
+        TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active';
+    byStatus.putIfAbsent(normalizedStatus, () => <TaskBoardList>[]).add(list);
+  }
+
+  final sorted = <TaskBoardList>[];
+  for (final status in _taskBoardListStatusOrder) {
+    final statusLists = byStatus.remove(status);
+    if (statusLists == null || statusLists.isEmpty) {
+      continue;
+    }
+    sorted.addAll(_sortedLists(statusLists));
+  }
+
+  if (byStatus.isNotEmpty) {
+    final remainingStatuses = byStatus.keys.toList(growable: false)..sort();
+    for (final status in remainingStatuses) {
+      final statusLists = byStatus[status];
+      if (statusLists == null || statusLists.isEmpty) {
+        continue;
+      }
+      sorted.addAll(_sortedLists(statusLists));
+    }
+  }
+
+  return sorted;
+}
+
 class _TaskBoardListColorOption {
   const _TaskBoardListColorOption({
     required this.value,

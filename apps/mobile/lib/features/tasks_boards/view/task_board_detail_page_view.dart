@@ -604,7 +604,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               );
             }
 
-            final sortedLists = _sortedLists(detail.lists);
+            final sortedLists = _sortedListsByStatusOrder(detail.lists);
             final filteredByList = state.filteredTasksByListId;
             final bottomPadding =
                 _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
