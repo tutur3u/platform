@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import type { MouseEvent } from 'react';
-import CountdownTimer from '@/components/countdown-timer';
 
 export default function HeroSection() {
   const handleScrollClick = () => {
@@ -44,8 +43,6 @@ export default function HeroSection() {
               <source src="/intro.webm" type="video/webm" />
             </video>
           </div>
-
-          <CountdownTimer />
 
           <h1 className="sr-only">
             NEO League 2026 — RMIT IoT Competition & Innovation Humanity
