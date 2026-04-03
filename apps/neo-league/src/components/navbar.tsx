@@ -61,7 +61,7 @@ function MobileActions() {
     <div className="flex items-center gap-2 md:hidden">
       <Button asChild className="btn-primary">
         <Link
-          href="https://forms.office.com/r/GdkwnUbty6?origin=lprLink"
+          href="https://forms.gle/yGpdUDxdeFYnuWMV9"
           target="_blank"
           rel="noopener noreferrer"
           prefetch={false}
