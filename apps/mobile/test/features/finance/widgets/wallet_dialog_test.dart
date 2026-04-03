@@ -26,7 +26,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Create wallet'), findsWidgets);
-    expect(find.byType(SingleChildScrollView), findsWidgets);
+    expect(find.byType(ListView), findsWidgets);
 
     await tester.tap(find.text('Credit'));
     await tester.pumpAndSettle();

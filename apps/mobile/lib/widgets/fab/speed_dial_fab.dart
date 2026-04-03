@@ -17,6 +17,7 @@ class SpeedDialFab extends StatefulWidget {
     required this.actions,
     this.bottom = 16,
     this.right = 16,
+    this.includeBottomSafeArea = true,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class SpeedDialFab extends StatefulWidget {
   final List<FabAction> actions;
   final double bottom;
   final double right;
+  final bool includeBottomSafeArea;
 
   @override
   State<SpeedDialFab> createState() => _SpeedDialFabState();
@@ -48,7 +50,9 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
   Widget build(BuildContext context) {
     final safeAreaPadding = MediaQuery.paddingOf(context);
     final adjustedRight = widget.right + safeAreaPadding.right;
-    final adjustedBottom = widget.bottom + safeAreaPadding.bottom;
+    final adjustedBottom =
+        widget.bottom +
+        (widget.includeBottomSafeArea ? safeAreaPadding.bottom : 0);
 
     return Positioned(
       right: adjustedRight,

@@ -4609,6 +4609,12 @@ abstract class AppLocalizations {
   /// **'Month'**
   String get calendarMonthView;
 
+  /// No description provided for @calendarYearView.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get calendarYearView;
+
   /// No description provided for @calendarAllDay.
   ///
   /// In en, this message translates to:
@@ -5257,6 +5263,12 @@ abstract class AppLocalizations {
   /// **'Expense'**
   String get financeExpense;
 
+  /// No description provided for @financeHideAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide amounts'**
+  String get financeHideAmounts;
+
   /// No description provided for @financeViewAll.
   ///
   /// In en, this message translates to:
@@ -5268,6 +5280,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search transactions'**
   String get financeSearchTransactions;
+
+  /// No description provided for @financeShowAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Show amounts'**
+  String get financeShowAmounts;
 
   /// No description provided for @financeNoSearchResults.
   ///
@@ -5430,6 +5448,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transfer mode'**
   String get financeTransferMode;
+
+  /// No description provided for @financeTransferModeEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer mode can only be edited for existing transfers.'**
+  String get financeTransferModeEditHint;
 
   /// No description provided for @financeDestinationAmountOptional.
   ///
@@ -7278,6 +7302,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Match your device appearance automatically.'**
   String get settingsThemeSystemDescription;
+
+  /// No description provided for @settingsFinanceAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance amounts'**
+  String get settingsFinanceAmounts;
+
+  /// No description provided for @settingsFinanceAmountsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show or hide balances and transaction amounts across finance screens.'**
+  String get settingsFinanceAmountsDescription;
 
   /// No description provided for @settingsSwitchWorkspace.
   ///

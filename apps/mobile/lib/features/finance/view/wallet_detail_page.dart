@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
@@ -11,8 +12,10 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
+import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -77,6 +80,9 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final showAmounts = context.select<FinancePreferencesCubit, bool>(
+      (cubit) => cubit.state.showAmounts,
+    );
     final listBottomPadding =
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
     final wallet = _wallet;
@@ -88,6 +94,10 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         listener: (context, _) => unawaited(_loadInitial()),
         child: Stack(
           children: [
+            FinanceAmountVisibilityShellAction(
+              ownerId: 'finance-wallet-detail-amount-visibility',
+              locations: {Routes.walletDetailPath(widget.walletId)},
+            ),
             Column(
               children: [
                 Expanded(
@@ -132,6 +142,8 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                             workspaceCurrency: _workspaceCurrency,
                             exchangeRates: _exchangeRates,
                             showLoadingMore: _isLoadingMore,
+                            showAmounts: showAmounts,
+                            compactHorizontalPadding: 0,
                             lazy: true,
                             scrollController: _scrollController,
                             listPadding: EdgeInsets.fromLTRB(
@@ -145,6 +157,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                                 wallet: wallet,
                                 workspaceCurrency: _workspaceCurrency,
                                 exchangeRates: _exchangeRates,
+                                showAmounts: showAmounts,
                                 onEdit: _isLoadingInitial
                                     ? null
                                     : _onEditWallet,
@@ -155,6 +168,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                                 walletCurrency: wallet.currency,
                                 workspaceCurrency: _workspaceCurrency,
                                 exchangeRates: _exchangeRates,
+                                showAmounts: showAmounts,
                               ),
                               const shad.Gap(16),
                               Text(
@@ -187,6 +201,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
               ExtendedFab(
                 icon: Icons.add,
                 label: context.l10n.financeCreateTransaction,
+                includeBottomSafeArea: false,
                 onPressed: _onCreateTransaction,
               ),
           ],
@@ -272,7 +287,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         _workspaceCurrency = workspaceCurrency;
         _exchangeRates = exchangeRates;
         _stats = _normalizeStatsCurrency(stats, wallet.currency);
-        _transactions = firstPage.data;
+        _transactions = collapseTransferTransactions(firstPage.data);
         _hasMore = firstPage.hasMore;
         _nextCursor = firstPage.nextCursor;
         _error = null;
@@ -321,7 +336,10 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         return;
       }
       setState(() {
-        _transactions = [..._transactions, ...page.data];
+        _transactions = collapseTransferTransactions([
+          ..._transactions,
+          ...page.data,
+        ]);
         _hasMore = page.hasMore;
         _nextCursor = page.nextCursor;
       });
@@ -345,7 +363,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wallet == null || wsId == null) return;
 
-    final changed = await showFinanceModal<bool>(
+    final changed = await showFinanceFullscreenModal<bool>(
       context: context,
       builder: (_) => WalletDialog(
         wsId: wsId,

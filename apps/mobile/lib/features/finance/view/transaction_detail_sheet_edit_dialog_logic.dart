@@ -10,6 +10,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   List<Wallet> _wallets = const [];
   List<TransactionCategory> _categories = const [];
   List<FinanceTag> _tags = const [];
+  String _workspaceCurrency = 'USD';
   String? _walletId;
   String? _destinationWalletId;
   String? _categoryId;
@@ -19,7 +20,6 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   bool _isAmountConfidential = false;
   bool _isDescriptionConfidential = false;
   bool _isCategoryConfidential = false;
-  int _tabIndex = 0;
 
   bool _isLoadingOptions = false;
   String? _optionsError;
@@ -70,12 +70,17 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     });
 
     try {
+      final workspaceCurrencyFuture = widget.repository
+          .getWorkspaceDefaultCurrency(widget.wsId)
+          .catchError((_) => 'USD');
       final wallets = await widget.repository.getWallets(widget.wsId);
       final categories = await widget.repository.getCategories(widget.wsId);
       final tags = await widget.repository.getTags(widget.wsId);
+      final workspaceCurrency = await workspaceCurrencyFuture;
 
       if (!mounted) return;
       setState(() {
+        _workspaceCurrency = workspaceCurrency;
         _wallets = wallets;
         _categories = categories;
         _tags = tags;
@@ -402,16 +407,15 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     return _tags.where((tag) => tag.id == _tagId).firstOrNull;
   }
 
-  String get _selectedCurrency => _selectedWallet?.currency ?? 'USD';
+  String get _selectedCurrency =>
+      _selectedWallet?.currency?.trim().isNotEmpty == true
+      ? _selectedWallet!.currency!.trim().toUpperCase()
+      : _workspaceCurrency;
 
   String get _selectedDestinationCurrency =>
-      _selectedDestinationWallet?.currency ?? _selectedCurrency;
-
-  bool get _canEditAmountFields {
-    if (_walletId == null) return false;
-    if (_isTransfer) return _destinationWalletId != null;
-    return _categoryId != null;
-  }
+      _selectedDestinationWallet?.currency?.trim().isNotEmpty == true
+      ? _selectedDestinationWallet!.currency!.trim().toUpperCase()
+      : _selectedCurrency;
 
   IconData get _selectedCategoryIcon {
     final category = _selectedCategory;
@@ -445,12 +449,13 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       currencyCode: _selectedCurrency,
     );
     if (parsed == null) {
-      return '${context.l10n.financeAmount}: --';
+      return '--';
     }
-    final isExpense = _selectedCategory?.isExpense != false;
-    final signed = isExpense ? -parsed.abs() : parsed.abs();
-    final formatted = formatCurrency(signed, _selectedCurrency);
-    return '${context.l10n.financeAmount}: $formatted';
+    final isExpense = _selectedCategory?.isExpense;
+    final signed = isExpense == null
+        ? parsed.abs()
+        : (isExpense ? -parsed.abs() : parsed.abs());
+    return formatCurrency(signed, _selectedCurrency);
   }
 
   bool get _isCrossCurrency {
@@ -514,11 +519,10 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     );
 
     if (parsed == null) {
-      return '${context.l10n.financeDestinationAmountOptional}: --';
+      return '--';
     }
 
-    return '${context.l10n.financeDestinationAmountOptional}: '
-        '${formatCurrency(parsed.abs(), _selectedDestinationCurrency)}';
+    return formatCurrency(parsed.abs(), _selectedDestinationCurrency);
   }
 
   void _reconcileSelectedIds() {

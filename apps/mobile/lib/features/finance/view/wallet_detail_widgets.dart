@@ -15,6 +15,7 @@ class WalletDetailMetadataCard extends StatelessWidget {
     required this.wallet,
     required this.workspaceCurrency,
     required this.exchangeRates,
+    required this.showAmounts,
     this.onEdit,
     super.key,
   });
@@ -22,6 +23,7 @@ class WalletDetailMetadataCard extends StatelessWidget {
   final Wallet wallet;
   final String workspaceCurrency;
   final List<ExchangeRate> exchangeRates;
+  final bool showAmounts;
   final VoidCallback? onEdit;
 
   @override
@@ -114,6 +116,7 @@ class WalletDetailMetadataCard extends StatelessWidget {
           FinanceAmountText(
             amount: balance,
             currency: walletCurrency,
+            isVisible: showAmounts,
             showPlus: false,
             alignment: CrossAxisAlignment.start,
             forceColor: theme.colorScheme.foreground,
@@ -122,7 +125,10 @@ class WalletDetailMetadataCard extends StatelessWidget {
           if (showConverted) ...[
             const shad.Gap(6),
             Text(
-              '≈ ${formatCurrency(convertedBalance, workspaceCurrency)}',
+              maskFinanceValue(
+                '≈ ${formatCurrency(convertedBalance, workspaceCurrency)}',
+                showAmounts: showAmounts,
+              ),
               style: theme.typography.textSmall.copyWith(
                 color: colorScheme.mutedForeground,
               ),
@@ -131,9 +137,11 @@ class WalletDetailMetadataCard extends StatelessWidget {
           const shad.Gap(16),
           FinanceKeyValueRow(
             label: context.l10n.financeWalletBalance,
-            value:
-                '${formatCurrency(balance, walletCurrency)}'
-                '$convertedBalanceText',
+            value: maskFinanceValue(
+              '${formatCurrency(balance, walletCurrency)}'
+              '$convertedBalanceText',
+              showAmounts: showAmounts,
+            ),
           ),
           const shad.Gap(8),
           FinanceKeyValueRow(
@@ -158,6 +166,7 @@ class WalletDetailStatsCard extends StatelessWidget {
     required this.stats,
     required this.workspaceCurrency,
     required this.exchangeRates,
+    required this.showAmounts,
     this.walletCurrency,
     super.key,
   });
@@ -166,6 +175,7 @@ class WalletDetailStatsCard extends StatelessWidget {
   final String workspaceCurrency;
   final String? walletCurrency;
   final List<ExchangeRate> exchangeRates;
+  final bool showAmounts;
 
   @override
   Widget build(BuildContext context) {
@@ -264,13 +274,19 @@ class WalletDetailStatsCard extends StatelessWidget {
               FinanceStatChip(
                 icon: Icons.arrow_upward_rounded,
                 label: l10n.financeIncome,
-                value: incomeText,
+                value: maskFinanceValue(
+                  incomeText,
+                  showAmounts: showAmounts,
+                ),
                 tint: incomeColor,
               ),
               FinanceStatChip(
                 icon: Icons.arrow_downward_rounded,
                 label: l10n.financeExpense,
-                value: expenseText,
+                value: maskFinanceValue(
+                  expenseText,
+                  showAmounts: showAmounts,
+                ),
                 tint: theme.colorScheme.destructive,
               ),
             ],
@@ -278,22 +294,46 @@ class WalletDetailStatsCard extends StatelessWidget {
           const shad.Gap(16),
           _StatRow(
             label: l10n.financeIncome,
-            value: incomeText,
-            secondaryValue: convertedIncomeText,
+            value: maskFinanceValue(
+              incomeText,
+              showAmounts: showAmounts,
+            ),
+            secondaryValue: convertedIncomeText == null
+                ? null
+                : maskFinanceValue(
+                    convertedIncomeText,
+                    showAmounts: showAmounts,
+                  ),
             valueColor: incomeColor,
           ),
           const shad.Gap(8),
           _StatRow(
             label: l10n.financeExpense,
-            value: expenseText,
-            secondaryValue: convertedExpenseText,
+            value: maskFinanceValue(
+              expenseText,
+              showAmounts: showAmounts,
+            ),
+            secondaryValue: convertedExpenseText == null
+                ? null
+                : maskFinanceValue(
+                    convertedExpenseText,
+                    showAmounts: showAmounts,
+                  ),
             valueColor: theme.colorScheme.destructive,
           ),
           const shad.Gap(8),
           _StatRow(
             label: l10n.financeNet,
-            value: netText,
-            secondaryValue: convertedNetText,
+            value: maskFinanceValue(
+              netText,
+              showAmounts: showAmounts,
+            ),
+            secondaryValue: convertedNetText == null
+                ? null
+                : maskFinanceValue(
+                    convertedNetText,
+                    showAmounts: showAmounts,
+                  ),
             valueColor: currentStats.netTotal >= 0
                 ? theme.colorScheme.primary
                 : theme.colorScheme.destructive,

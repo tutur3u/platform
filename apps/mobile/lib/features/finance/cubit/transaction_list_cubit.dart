@@ -204,9 +204,12 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       final allTransactions = replaceExisting
           ? result.data
           : [...state.transactions, ...result.data];
+      final normalizedTransactions = collapseTransferTransactions(
+        allTransactions,
+      );
       final nextState = state.copyWith(
         status: TransactionListStatus.loaded,
-        transactions: allTransactions,
+        transactions: normalizedTransactions,
         hasMore: result.hasMore,
         cursor: result.nextCursor,
         clearError: true,

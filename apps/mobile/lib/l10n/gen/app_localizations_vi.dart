@@ -2344,6 +2344,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get calendarMonthView => 'Tháng';
 
   @override
+  String get calendarYearView => 'Năm';
+
+  @override
   String get calendarAllDay => 'Cả ngày';
 
   @override
@@ -2685,10 +2688,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeExpense => 'Chi tiêu';
 
   @override
+  String get financeHideAmounts => 'Ẩn số tiền';
+
+  @override
   String get financeViewAll => 'Xem tất cả';
 
   @override
   String get financeSearchTransactions => 'Tìm kiếm giao dịch';
+
+  @override
+  String get financeShowAmounts => 'Hiện số tiền';
 
   @override
   String get financeNoSearchResults => 'Không tìm thấy giao dịch';
@@ -2779,6 +2788,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeTransferMode => 'Chế độ chuyển khoản';
+
+  @override
+  String get financeTransferModeEditHint => 'Chỉ có thể đổi chế độ chuyển khoản khi đang sửa một giao dịch chuyển khoản.';
 
   @override
   String get financeDestinationAmountOptional => 'Số tiền đích';
@@ -3799,6 +3811,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsThemeSystemDescription => 'Tự động theo giao diện của thiết bị.';
+
+  @override
+  String get settingsFinanceAmounts => 'Số tiền tài chính';
+
+  @override
+  String get settingsFinanceAmountsDescription => 'Hiện hoặc ẩn số dư và số tiền giao dịch trên toàn bộ màn hình tài chính.';
 
   @override
   String get settingsSwitchWorkspace => 'Chuyển không gian làm việc';

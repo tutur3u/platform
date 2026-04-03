@@ -13,9 +13,11 @@ import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
+import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -118,6 +120,9 @@ class _WalletsViewState extends State<_WalletsView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final showAmounts = context.select<FinancePreferencesCubit, bool>(
+      (cubit) => cubit.state.showAmounts,
+    );
     final listBottomPadding =
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
@@ -133,13 +138,21 @@ class _WalletsViewState extends State<_WalletsView> {
         },
         child: Stack(
           children: [
+            const FinanceAmountVisibilityShellAction(
+              ownerId: 'finance-wallets-amount-visibility',
+              locations: {Routes.wallets},
+            ),
             RefreshIndicator(
               onRefresh: () => _loadWallets(forceRefresh: true),
-              child: _buildBody(listBottomPadding),
+              child: _buildBody(
+                listBottomPadding,
+                showAmounts: showAmounts,
+              ),
             ),
             ExtendedFab(
               icon: Icons.add,
               label: l10n.financeCreateWallet,
+              includeBottomSafeArea: false,
               onPressed: _onCreate,
             ),
           ],
@@ -148,7 +161,10 @@ class _WalletsViewState extends State<_WalletsView> {
     );
   }
 
-  Widget _buildBody(double listBottomPadding) {
+  Widget _buildBody(
+    double listBottomPadding, {
+    required bool showAmounts,
+  }) {
     final l10n = context.l10n;
 
     if (_isLoading) {
@@ -178,8 +194,6 @@ class _WalletsViewState extends State<_WalletsView> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
         children: [
-          _WalletSummaryCard(walletCount: 0, onCreate: _onCreate),
-          const shad.Gap(16),
           FinanceEmptyState(
             icon: Icons.account_balance_wallet_outlined,
             title: l10n.financeNoWallets,
@@ -196,19 +210,13 @@ class _WalletsViewState extends State<_WalletsView> {
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),
-      itemCount: _wallets.length + 1,
+      itemCount: _wallets.length,
       separatorBuilder: (context, index) => const shad.Gap(12),
       itemBuilder: (context, index) {
-        if (index == 0) {
-          return _WalletSummaryCard(
-            walletCount: _wallets.length,
-            onCreate: _onCreate,
-          );
-        }
-
-        final wallet = _wallets[index - 1];
+        final wallet = _wallets[index];
         return _WalletCard(
           wallet: wallet,
+          showAmounts: showAmounts,
           onTap: () => _openWallet(wallet),
           onEdit: () => _onEdit(wallet),
           onDelete: () => _onDelete(wallet),
@@ -377,7 +385,7 @@ class _WalletsViewState extends State<_WalletsView> {
     required String wsId,
     Wallet? wallet,
   }) async {
-    final result = await showFinanceModal<bool>(
+    final result = await showFinanceFullscreenModal<bool>(
       context: context,
       builder: (_) => WalletDialog(
         wsId: wsId,
@@ -400,74 +408,17 @@ class _WalletsCacheEntry {
   final DateTime fetchedAt;
 }
 
-class _WalletSummaryCard extends StatelessWidget {
-  const _WalletSummaryCard({
-    required this.walletCount,
-    required this.onCreate,
-  });
-
-  final int walletCount;
-  final VoidCallback onCreate;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final palette = FinancePalette.of(context);
-
-    return FinancePanel(
-      padding: const EdgeInsets.all(20),
-      backgroundColor: palette.elevatedPanel,
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: palette.accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.account_balance_wallet_outlined,
-              color: palette.accent,
-            ),
-          ),
-          const shad.Gap(14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FinanceSectionHeader(
-                  title: l10n.financeOverviewWalletSectionTitle,
-                  subtitle: l10n.financeWalletSummaryHint(walletCount),
-                  action: shad.GhostButton(
-                    density: shad.ButtonDensity.icon,
-                    onPressed: onCreate,
-                    child: const Icon(Icons.add_card_rounded, size: 18),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          FinanceStatChip(
-            icon: Icons.layers_outlined,
-            label: l10n.financeWallets,
-            value: '$walletCount',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _WalletCard extends StatelessWidget {
   const _WalletCard({
     required this.wallet,
+    required this.showAmounts,
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
 
   final Wallet wallet;
+  final bool showAmounts;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -542,6 +493,7 @@ class _WalletCard extends StatelessWidget {
           FinanceAmountText(
             amount: balance,
             currency: currency,
+            isVisible: showAmounts,
             showPlus: false,
             alignment: CrossAxisAlignment.start,
             forceColor: theme.colorScheme.foreground,

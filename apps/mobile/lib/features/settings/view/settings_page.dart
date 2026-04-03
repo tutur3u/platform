@@ -13,6 +13,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
+import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
@@ -120,6 +121,8 @@ class _SettingsViewState extends State<_SettingsView> {
           future: _packageInfoFuture,
           builder: (context, snapshot) {
             final packageInfo = snapshot.data;
+            final financePreferencesCubit = context
+                .watch<FinancePreferencesCubit?>();
 
             return RefreshIndicator.adaptive(
               onRefresh: () => _refresh(context),
@@ -158,6 +161,8 @@ class _SettingsViewState extends State<_SettingsView> {
                           context.watch<ThemeCubit>().state.themeMode,
                           context.l10n,
                         ),
+                        showFinanceAmounts:
+                            financePreferencesCubit?.state.showAmounts ?? false,
                         languageLabel: _localeDisplayName(
                           Localizations.localeOf(context),
                           context.read<LocaleCubit>().state.locale,
@@ -169,6 +174,14 @@ class _SettingsViewState extends State<_SettingsView> {
                         ),
                         onChangeLanguage: () =>
                             unawaited(_showLanguageDialog()),
+                        onToggleFinanceAmounts: () {
+                          if (financePreferencesCubit == null) {
+                            return;
+                          }
+                          unawaited(
+                            financePreferencesCubit.toggleShowAmounts(),
+                          );
+                        },
                         onChangeTheme: () => unawaited(_showThemeDialog()),
                         onChangeFirstDayOfWeek: () =>
                             unawaited(_showCalendarDialog()),
@@ -510,17 +523,21 @@ class _AboutSection extends StatelessWidget {
 class _PreferencesSection extends StatelessWidget {
   const _PreferencesSection({
     required this.themeLabel,
+    required this.showFinanceAmounts,
     required this.languageLabel,
     required this.calendarLabel,
     required this.onChangeLanguage,
+    required this.onToggleFinanceAmounts,
     required this.onChangeTheme,
     required this.onChangeFirstDayOfWeek,
   });
 
   final String themeLabel;
+  final bool showFinanceAmounts;
   final String languageLabel;
   final String calendarLabel;
   final VoidCallback onChangeLanguage;
+  final VoidCallback onToggleFinanceAmounts;
   final VoidCallback onChangeTheme;
   final VoidCallback onChangeFirstDayOfWeek;
 
@@ -545,6 +562,22 @@ class _PreferencesSection extends StatelessWidget {
           subtitle: l10n.settingsLanguageDescription,
           value: languageLabel,
           onTap: onChangeLanguage,
+        ),
+        SettingsTile(
+          icon: Icons.visibility_outlined,
+          title: l10n.settingsFinanceAmounts,
+          subtitle: l10n.settingsFinanceAmountsDescription,
+          value: showFinanceAmounts
+              ? l10n.financeShowAmounts
+              : l10n.financeHideAmounts,
+          onTap: onToggleFinanceAmounts,
+          showChevron: false,
+          trailing: IgnorePointer(
+            child: shad.Switch(
+              value: showFinanceAmounts,
+              onChanged: (_) {},
+            ),
+          ),
         ),
         SettingsTile(
           icon: Icons.calendar_today_outlined,

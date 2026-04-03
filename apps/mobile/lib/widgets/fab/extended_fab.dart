@@ -15,6 +15,7 @@ class ExtendedFab extends StatelessWidget {
     this.loading = false,
     this.bottom = 16,
     this.right = 16,
+    this.includeBottomSafeArea = true,
     super.key,
   });
 
@@ -25,16 +26,18 @@ class ExtendedFab extends StatelessWidget {
   final bool loading;
   final double bottom;
   final double right;
+  final bool includeBottomSafeArea;
 
   static const double _fabSize = 56;
 
   @override
   Widget build(BuildContext context) {
     final safeAreaPadding = MediaQuery.paddingOf(context);
+    final bottomInset = includeBottomSafeArea ? safeAreaPadding.bottom : 0.0;
 
     return Positioned(
       right: right + safeAreaPadding.right,
-      bottom: bottom + safeAreaPadding.bottom,
+      bottom: bottom + bottomInset,
       child: Semantics(
         label: label,
         button: true,

@@ -191,6 +191,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         Routes.timer,
         Routes.timerHistory,
         Routes.timerStats,
+        Routes.timerManagement,
       },
       actions: [
         ShellActionSpec(
@@ -250,19 +251,12 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                   maxWidth: ResponsivePadding.maxContentWidth(
                     context.deviceClass,
                   ),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: IndexedStack(
-                          index: _index,
-                          children: [
-                            const TimerTab(),
-                            const HistoryTab(),
-                            StatsTab(initialScope: widget.initialStatsScope),
-                          ],
-                        ),
-                      ),
-                    ],
+                  child: KeyedSubtree(
+                    key: ValueKey<String>(
+                      '${widget.initialSection.name}-'
+                      '${widget.initialStatsScope.name}',
+                    ),
+                    child: _buildActiveSection(),
                   ),
                 ),
                 TimeTrackerAddEntryFab(
@@ -275,6 +269,18 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         ),
       ),
     );
+  }
+
+  Widget _buildActiveSection() {
+    switch (_index) {
+      case 0:
+        return const TimerTab();
+      case 1:
+        return const HistoryTab();
+      case 2:
+        return StatsTab(initialScope: widget.initialStatsScope);
+    }
+    throw StateError('Unsupported time tracker section index: $_index');
   }
 
   Future<void> _openMissedEntryDialog(BuildContext context) async {
