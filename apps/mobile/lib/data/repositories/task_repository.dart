@@ -661,22 +661,32 @@ class TaskRepository {
     required String wsId,
     required String boardId,
     required String listId,
-    required String name,
-    required String status,
-    required String color,
+    String? name,
+    String? status,
+    String? color,
+    int? position,
+    bool? deleted,
   }) async {
-    final normalizedStatus =
-        TaskBoardList.normalizeSupportedStatus(status) ?? 'active';
-    final normalizedColor =
-        TaskBoardList.normalizeSupportedColor(color) ?? 'BLUE';
+    final updatePayload = <String, dynamic>{
+      if (name != null) 'name': name,
+      if (status != null)
+        'status': TaskBoardList.normalizeSupportedStatus(status) ?? 'active',
+      if (color != null)
+        'color': TaskBoardList.normalizeSupportedColor(color) ?? 'BLUE',
+      if (position != null) 'position': position,
+      if (deleted != null) 'deleted': deleted,
+    };
+
+    if (updatePayload.isEmpty) {
+      throw const ApiException(
+        message: 'No task list fields provided for update',
+        statusCode: 400,
+      );
+    }
 
     final response = await _apiClient.patchJson(
       '/api/v1/workspaces/$wsId/task-boards/$boardId/lists/$listId',
-      {
-        'name': name,
-        'status': normalizedStatus,
-        'color': normalizedColor,
-      },
+      updatePayload,
     );
     final list = response['list'];
     if (list is! Map<String, dynamic>) {

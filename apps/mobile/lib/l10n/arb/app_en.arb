@@ -676,6 +676,8 @@
     "taskBoardDetailTaskCreated": "Task created.",
     "taskBoardDetailNoMoveTargets": "No other lists available for moving this task.",
     "taskBoardDetailBoardActions": "Board actions",
+    "taskBoardDetailManageBoardLayout": "Manage board layout",
+    "taskBoardDetailManageBoardLayoutDescription": "Manage board columns by status and reorder lists within each status.",
     "taskBoardDetailRefresh": "Refresh board",
     "taskBoardDetailRenameBoard": "Rename board",
     "taskBoardDetailBoardRenamed": "Board renamed.",
@@ -686,6 +688,27 @@
     "taskBoardDetailListCreated": "List created.",
     "taskBoardDetailListRenamed": "List renamed.",
     "taskBoardDetailListUpdated": "List updated.",
+    "taskBoardDetailListDeleted": "List deleted.",
+    "taskBoardDetailDeleteList": "Delete list",
+    "taskBoardDetailDeleteListTitle": "Delete list?",
+    "taskBoardDetailDeleteListDescription": "Are you sure you want to delete this list? All tasks in this list will also be deleted. This action cannot be undone.",
+    "taskBoardDetailMoveListToStatus": "Move list to status",
+    "taskBoardDetailCannotMoveToClosedStatus": "Cannot move lists to or from closed status",
+    "taskBoardDetailCannotCreateMoreClosedLists": "Only one closed list is allowed per board.",
+    "taskBoardDetailClosedListCapacityHint": "1 closed list max",
+    "taskBoardDetailAddNewList": "Add new list",
+    "taskBoardDetailNoListsInStatus": "No lists in this status",
+    "taskBoardDetailListsReordered": "Lists reordered.",
+    "taskBoardDetailMoveListDown": "Move list down",
+    "taskBoardDetailMoveListUp": "Move list up",
+    "taskBoardDetailMovedToStatus": "Moved to {status}",
+    "@taskBoardDetailMovedToStatus": {
+        "placeholders": {
+            "status": {
+                "type": "String"
+            }
+        }
+    },
     "taskBoardDetailNameRequired": "Name is required",
     "taskBoardDetailListNameLabel": "List name",
     "taskBoardDetailStatusCategoryLabel": "Status category",

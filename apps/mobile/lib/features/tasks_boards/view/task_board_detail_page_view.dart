@@ -604,7 +604,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               );
             }
 
-            final sortedLists = _sortedLists(detail.lists);
+            final sortedLists = _sortedListsByStatusOrder(detail.lists);
             final filteredByList = state.filteredTasksByListId;
             final bottomPadding =
                 _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
@@ -790,9 +790,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     final paginationStateReset =
         state.listTasksByListId.isEmpty &&
         state.loadedListIds.isEmpty &&
-        state.loadingListIds.isEmpty &&
         state.listHasMoreById.isEmpty &&
-        state.listOffsetsById.isEmpty;
+        state.listOffsetsById.isEmpty &&
+        state.listPageSizeById.isEmpty &&
+        state.listLoadErrorById.isEmpty;
     if (paginationStateReset && _initialListLoadRequested.isNotEmpty) {
       _initialListLoadRequested.clear();
       _initialListLoadBoardKey = null;

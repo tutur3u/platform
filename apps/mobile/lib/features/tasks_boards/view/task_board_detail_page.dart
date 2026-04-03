@@ -49,6 +49,14 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'task_board_detail_page_cards.dart';
 part 'task_board_detail_page_actions.dart';
+part 'task_board_detail_page_board_layout.dart';
+part 'task_board_detail_page_board_layout_actions_dialog.dart';
+part 'task_board_detail_page_board_layout_delete_dialog.dart';
+part 'task_board_detail_page_board_layout_empty_state.dart';
+part 'task_board_detail_page_board_layout_list_card.dart';
+part 'task_board_detail_page_board_layout_move_status_dialog.dart';
+part 'task_board_detail_page_board_layout_status_section.dart';
+part 'task_board_detail_page_board_layout_widgets.dart';
 part 'task_board_detail_page_actions_filter_sheet.dart';
 part 'task_board_detail_page_actions_filter_widgets.dart';
 part 'task_board_detail_page_detail_sheet.dart';

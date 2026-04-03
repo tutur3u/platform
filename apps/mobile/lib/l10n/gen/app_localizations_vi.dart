@@ -1649,6 +1649,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailBoardActions => 'Thao tác bảng';
 
   @override
+  String get taskBoardDetailManageBoardLayout => 'Quản lý bố cục bảng';
+
+  @override
+  String get taskBoardDetailManageBoardLayoutDescription => 'Quản lý các cột theo trạng thái và sắp xếp lại danh sách trong từng trạng thái.';
+
+  @override
   String get taskBoardDetailRefresh => 'Làm mới bảng';
 
   @override
@@ -1677,6 +1683,50 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailListUpdated => 'Đã cập nhật danh sách.';
+
+  @override
+  String get taskBoardDetailListDeleted => 'Đã xóa danh sách.';
+
+  @override
+  String get taskBoardDetailDeleteList => 'Xóa danh sách';
+
+  @override
+  String get taskBoardDetailDeleteListTitle => 'Xóa danh sách?';
+
+  @override
+  String get taskBoardDetailDeleteListDescription => 'Bạn có chắc chắn muốn xóa danh sách này không? Tất cả công việc trong danh sách này cũng sẽ bị xóa. Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskBoardDetailMoveListToStatus => 'Di chuyển danh sách sang trạng thái';
+
+  @override
+  String get taskBoardDetailCannotMoveToClosedStatus => 'Không thể di chuyển danh sách đến hoặc khỏi trạng thái đã đóng';
+
+  @override
+  String get taskBoardDetailCannotCreateMoreClosedLists => 'Mỗi bảng chỉ được phép có một danh sách đã đóng.';
+
+  @override
+  String get taskBoardDetailClosedListCapacityHint => 'Tối đa 1 danh sách đã đóng';
+
+  @override
+  String get taskBoardDetailAddNewList => 'Thêm danh sách mới';
+
+  @override
+  String get taskBoardDetailNoListsInStatus => 'Không có danh sách nào trong trạng thái này';
+
+  @override
+  String get taskBoardDetailListsReordered => 'Đã sắp xếp lại danh sách.';
+
+  @override
+  String get taskBoardDetailMoveListDown => 'Di chuyển danh sách xuống';
+
+  @override
+  String get taskBoardDetailMoveListUp => 'Di chuyển danh sách lên';
+
+  @override
+  String taskBoardDetailMovedToStatus(String status) {
+    return 'Đã chuyển sang $status';
+  }
 
   @override
   String get taskBoardDetailNameRequired => 'Tên là bắt buộc';

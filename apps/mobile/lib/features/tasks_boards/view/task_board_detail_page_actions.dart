@@ -1,6 +1,6 @@
 part of 'task_board_detail_page.dart';
 
-enum _BoardAction { renameBoard, refresh }
+enum _BoardAction { manageLayout, renameBoard, refresh }
 
 extension on _TaskBoardDetailPageViewState {
   Future<void> _showBoardActionsSheet(BuildContext context) async {
@@ -15,6 +15,14 @@ extension on _TaskBoardDetailPageViewState {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ListTile(
+                  leading: const Icon(Icons.view_kanban_outlined),
+                  title: Text(context.l10n.taskBoardDetailManageBoardLayout),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _handleBoardAction(context, _BoardAction.manageLayout);
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.edit_outlined),
                   title: Text(context.l10n.taskBoardDetailRenameBoard),
@@ -41,6 +49,9 @@ extension on _TaskBoardDetailPageViewState {
 
   void _handleBoardAction(BuildContext context, _BoardAction action) {
     switch (action) {
+      case _BoardAction.manageLayout:
+        unawaited(_openBoardLayoutSheet(context));
+        return;
       case _BoardAction.renameBoard:
         unawaited(_openRenameBoardDialog(context));
         return;
@@ -77,23 +88,55 @@ extension on _TaskBoardDetailPageViewState {
   }
 
   Future<void> _openCreateListDialog(BuildContext context) async {
-    final result = await shad.showDialog<_TaskBoardListFormValue>(
+    final board = context.read<TaskBoardDetailCubit>().state.board;
+    if (board == null) return;
+
+    await showAdaptiveSheet<void>(
       context: context,
-      builder: (_) => _TaskBoardListFormDialog(
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailCreateList,
         confirmLabel: context.l10n.taskBoardDetailCreateList,
+        successMessage: context.l10n.taskBoardDetailListCreated,
+        existingLists: board.lists,
+        onSubmit:
+            ({
+              required name,
+              required status,
+              required color,
+            }) async {
+              final currentBoard = context
+                  .read<TaskBoardDetailCubit>()
+                  .state
+                  .board;
+              if (currentBoard == null) return false;
+              if (!_taskBoardCanCreateListInStatus(
+                currentBoard.lists,
+                status,
+              )) {
+                final toastContext = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).context;
+                if (!toastContext.mounted) return false;
+                shad.showToast(
+                  context: toastContext,
+                  builder: (context, overlay) => shad.Alert.destructive(
+                    content: Text(
+                      context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
+                    ),
+                  ),
+                );
+                return false;
+              }
+              await context.read<TaskBoardDetailCubit>().createList(
+                name: name,
+                status: status,
+                color: color,
+              );
+              return true;
+            },
       ),
-    );
-    if (result == null || !context.mounted) return;
-
-    await _runBoardAction(
-      context,
-      () => context.read<TaskBoardDetailCubit>().createList(
-        name: result.name,
-        status: result.status,
-        color: result.color,
-      ),
-      successMessage: context.l10n.taskBoardDetailListCreated,
     );
   }
 
@@ -101,29 +144,63 @@ extension on _TaskBoardDetailPageViewState {
     BuildContext context,
     TaskBoardList list,
   ) async {
-    final result = await shad.showDialog<_TaskBoardListFormValue>(
+    final board = context.read<TaskBoardDetailCubit>().state.board;
+    if (board == null) return;
+
+    await showAdaptiveSheet<void>(
       context: context,
-      builder: (_) => _TaskBoardListFormDialog(
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (_) => _TaskBoardListFormSheet(
         title: context.l10n.taskBoardDetailEditList,
         confirmLabel: context.l10n.timerSave,
+        successMessage: context.l10n.taskBoardDetailListUpdated,
         initialName: list.name?.trim() ?? '',
         initialStatus:
             TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active',
         initialColor:
             TaskBoardList.normalizeSupportedColor(list.color) ?? 'GRAY',
+        currentListId: list.id,
+        existingLists: board.lists,
+        onSubmit:
+            ({
+              required name,
+              required status,
+              required color,
+            }) async {
+              final currentBoard = context
+                  .read<TaskBoardDetailCubit>()
+                  .state
+                  .board;
+              if (currentBoard == null) return false;
+              if (!_taskBoardCanCreateListInStatus(
+                currentBoard.lists,
+                status,
+                excludingListId: list.id,
+              )) {
+                final toastContext = Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).context;
+                if (!toastContext.mounted) return false;
+                shad.showToast(
+                  context: toastContext,
+                  builder: (context, overlay) => shad.Alert.destructive(
+                    content: Text(
+                      context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
+                    ),
+                  ),
+                );
+                return false;
+              }
+              await context.read<TaskBoardDetailCubit>().updateList(
+                listId: list.id,
+                name: name,
+                status: status,
+                color: color,
+              );
+              return true;
+            },
       ),
-    );
-    if (result == null || !context.mounted) return;
-
-    await _runBoardAction(
-      context,
-      () => context.read<TaskBoardDetailCubit>().updateList(
-        listId: list.id,
-        name: result.name,
-        status: result.status,
-        color: result.color,
-      ),
-      successMessage: context.l10n.taskBoardDetailListUpdated,
     );
   }
 
