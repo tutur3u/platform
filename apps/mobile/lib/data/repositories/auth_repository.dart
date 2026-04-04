@@ -295,12 +295,12 @@ class AuthRepository {
       final tokens = await _googleIdentityClient.authenticate();
       return await _completeNativeGoogleSignIn(tokens);
     } on GoogleSignInException catch (e) {
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        return const AuthActionResult.cancelled();
-      }
-
       if (_shouldFallbackToBrowserFromNativeError(e.code)) {
         return null;
+      }
+
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return const AuthActionResult.cancelled();
       }
 
       return AuthActionResult.failure(
@@ -442,10 +442,13 @@ class AuthRepository {
       GoogleSignInExceptionCode.clientConfigurationError ||
       GoogleSignInExceptionCode.providerConfigurationError ||
       GoogleSignInExceptionCode.uiUnavailable => true,
+      // google_sign_in on Android can surface Credential Manager
+      // configuration failures as "canceled" after the user picks an account.
+      // Fall back to browser OAuth there instead of silently doing nothing.
+      GoogleSignInExceptionCode.canceled => _devicePlatform.isAndroid,
       GoogleSignInExceptionCode.unknownError ||
       GoogleSignInExceptionCode.interrupted ||
-      GoogleSignInExceptionCode.userMismatch ||
-      GoogleSignInExceptionCode.canceled => false,
+      GoogleSignInExceptionCode.userMismatch => false,
     };
   }
 

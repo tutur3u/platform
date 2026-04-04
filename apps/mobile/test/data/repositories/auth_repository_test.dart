@@ -214,7 +214,8 @@ void main() {
     );
 
     test(
-      'does not fall back when native sign-in is explicitly cancelled',
+      'falls back to browser OAuth when Android native sign-in reports '
+      'canceled',
       () async {
         when(
           () => googleIdentityClient.initialize(
@@ -229,20 +230,29 @@ void main() {
         ).thenThrow(
           const GoogleSignInException(
             code: GoogleSignInExceptionCode.canceled,
-            description: 'user cancelled',
+            description: 'credential manager returned canceled',
           ),
         );
-
-        final result = await repository.signInWithGoogle();
-
-        expect(result.status, AuthActionStatus.cancelled);
-        verifyNever(
+        when(
           () => oauthUrlLauncher.launchProviderSignIn(
             authClient: goTrueClient,
             provider: OAuthProvider.google,
-            redirectTo: any(named: 'redirectTo'),
-            queryParams: any(named: 'queryParams'),
-            scopes: any(named: 'scopes'),
+            redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+            queryParams: const {
+              'access_type': 'offline',
+              'prompt': 'consent',
+            },
+          ),
+        ).thenAnswer((_) async => true);
+
+        final result = await repository.signInWithGoogle();
+
+        expect(result.status, AuthActionStatus.externalFlowStarted);
+        verifyNever(
+          () => goTrueClient.signInWithIdToken(
+            provider: OAuthProvider.google,
+            idToken: any(named: 'idToken'),
+            accessToken: any(named: 'accessToken'),
           ),
         );
       },
@@ -294,6 +304,53 @@ void main() {
             serverClientId: 'web-client-id',
           ),
         ).called(1);
+      },
+    );
+
+    test(
+      'still returns cancelled when iOS native sign-in is explicitly cancelled',
+      () async {
+        repository = AuthRepository(
+          supabaseClient: supabaseClient,
+          googleIdentityClient: googleIdentityClient,
+          appleIdentityClient: appleIdentityClient,
+          oauthUrlLauncher: oauthUrlLauncher,
+          packageInfoLoader: () async => _packageInfo(),
+          devicePlatform: const _IosPlatform(),
+          googleWebClientId: 'web-client-id',
+          googleIosClientId: 'ios-client-id',
+        );
+
+        when(
+          () => googleIdentityClient.initialize(
+            clientId: 'ios-client-id',
+            serverClientId: 'web-client-id',
+          ),
+        ).thenAnswer((_) async {});
+        when(
+          () => googleIdentityClient.supportsAuthenticate(),
+        ).thenReturn(true);
+        when(
+          () => googleIdentityClient.authenticate(),
+        ).thenThrow(
+          const GoogleSignInException(
+            code: GoogleSignInExceptionCode.canceled,
+            description: 'user cancelled',
+          ),
+        );
+
+        final result = await repository.signInWithGoogle();
+
+        expect(result.status, AuthActionStatus.cancelled);
+        verifyNever(
+          () => oauthUrlLauncher.launchProviderSignIn(
+            authClient: goTrueClient,
+            provider: OAuthProvider.google,
+            redirectTo: any(named: 'redirectTo'),
+            queryParams: any(named: 'queryParams'),
+            scopes: any(named: 'scopes'),
+          ),
+        );
       },
     );
   });
