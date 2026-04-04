@@ -12,6 +12,12 @@ class SettingsRepository {
   static const _lastTabRouteKey = 'last-tab-route';
   static const _lastAppRouteKey = 'last-app-route';
   static const _lastIncomeCategoryPrefix = 'last-income-category';
+  static const _lastInventoryProductOwnerPrefix =
+      'last-inventory-product-owner';
+  static const _lastInventoryProductCategoryPrefix =
+      'last-inventory-product-category';
+  static const _lastInventoryProductFinanceCategoryPrefix =
+      'last-inventory-product-finance-category';
   static const _hasSeenOnboardingKey = 'has_seen_onboarding';
   static const _dismissedRecommendedVersionPrefix =
       'dismissed-recommended-version';
@@ -96,6 +102,50 @@ class SettingsRepository {
   Future<void> setLastIncomeCategory(String wsId, String categoryId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('$_lastIncomeCategoryPrefix-$wsId', categoryId);
+  }
+
+  Future<String?> getLastInventoryProductOwner(String wsId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('$_lastInventoryProductOwnerPrefix-$wsId');
+  }
+
+  Future<void> setLastInventoryProductOwner(String wsId, String ownerId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('$_lastInventoryProductOwnerPrefix-$wsId', ownerId);
+  }
+
+  Future<String?> getLastInventoryProductCategory(String wsId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('$_lastInventoryProductCategoryPrefix-$wsId');
+  }
+
+  Future<void> setLastInventoryProductCategory(
+    String wsId,
+    String categoryId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      '$_lastInventoryProductCategoryPrefix-$wsId',
+      categoryId,
+    );
+  }
+
+  Future<String?> getLastInventoryProductFinanceCategory(String wsId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('$_lastInventoryProductFinanceCategoryPrefix-$wsId');
+  }
+
+  Future<void> setLastInventoryProductFinanceCategory(
+    String wsId,
+    String? financeCategoryId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '$_lastInventoryProductFinanceCategoryPrefix-$wsId';
+    if (financeCategoryId == null) {
+      await prefs.remove(key);
+      return;
+    }
+    await prefs.setString(key, financeCategoryId);
   }
 
   /// Returns the persisted locale code (e.g. 'en', 'vi'), or `null` for system

@@ -8,6 +8,7 @@ import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
@@ -31,9 +32,15 @@ class InventoryProductEditorPage extends StatefulWidget {
   const InventoryProductEditorPage({
     super.key,
     this.productId,
+    this.inventoryRepository,
+    this.financeRepository,
+    this.settingsRepository,
   });
 
   final String? productId;
+  final InventoryRepository? inventoryRepository;
+  final FinanceRepository? financeRepository;
+  final SettingsRepository? settingsRepository;
 
   @override
   State<InventoryProductEditorPage> createState() =>
@@ -44,6 +51,7 @@ class _InventoryProductEditorPageState
     extends State<InventoryProductEditorPage> {
   late final InventoryRepository _inventoryRepository;
   late final FinanceRepository _financeRepository;
+  late final SettingsRepository _settingsRepository;
   late final TextEditingController _nameController;
   late final TextEditingController _manufacturerController;
   late final TextEditingController _descriptionController;
@@ -74,8 +82,9 @@ class _InventoryProductEditorPageState
   @override
   void initState() {
     super.initState();
-    _inventoryRepository = InventoryRepository();
-    _financeRepository = FinanceRepository();
+    _inventoryRepository = widget.inventoryRepository ?? InventoryRepository();
+    _financeRepository = widget.financeRepository ?? FinanceRepository();
+    _settingsRepository = widget.settingsRepository ?? SettingsRepository();
     _nameController = TextEditingController();
     _manufacturerController = TextEditingController();
     _descriptionController = TextEditingController();
@@ -137,12 +146,19 @@ class _InventoryProductEditorPageState
               (row) => _InventoryRowDraft(
                 unitId: row.unitId,
                 warehouseId: row.warehouseId,
-                amount: row.amount?.toString() ?? '',
+                amount: row.amount?.toString() ?? '0',
                 minAmount: row.minAmount.toString(),
                 price: row.price.toString(),
               ),
             )
             .toList(growable: false);
+      } else {
+        await _restoreDraftSelections(
+          wsId,
+          categories: categories,
+          owners: owners,
+          financeCategories: financeCategories,
+        );
       }
 
       if (_rows.isEmpty) {
@@ -175,6 +191,40 @@ class _InventoryProductEditorPageState
         _InventoryRowDraft.empty(units: _units, warehouses: _warehouses),
       );
     });
+  }
+
+  Future<void> _restoreDraftSelections(
+    String wsId, {
+    required List<InventoryLookupItem> categories,
+    required List<InventoryOwner> owners,
+    required List<TransactionCategory> financeCategories,
+  }) async {
+    final results = await Future.wait<String?>([
+      _settingsRepository.getLastInventoryProductOwner(wsId),
+      _settingsRepository.getLastInventoryProductCategory(wsId),
+      _settingsRepository.getLastInventoryProductFinanceCategory(wsId),
+    ]);
+
+    final rememberedOwnerId = results[0];
+    final rememberedCategoryId = results[1];
+    final rememberedFinanceCategoryId = results[2];
+
+    if (rememberedOwnerId != null &&
+        owners.any((item) => item.id == rememberedOwnerId)) {
+      _ownerId = rememberedOwnerId;
+    }
+
+    if (rememberedCategoryId != null &&
+        categories.any((item) => item.id == rememberedCategoryId)) {
+      _categoryId = rememberedCategoryId;
+    }
+
+    if (rememberedFinanceCategoryId != null &&
+        financeCategories.any(
+          (item) => item.id == rememberedFinanceCategoryId,
+        )) {
+      _financeCategoryId = rememberedFinanceCategoryId;
+    }
   }
 
   Future<void> _pickCategory() async {
@@ -328,9 +378,20 @@ class _InventoryProductEditorPageState
       final minAmountText = row.minAmountController.text.trim();
       final priceText = row.priceController.text.trim();
 
-      final amount = double.tryParse(amountText);
-      final minAmount = double.tryParse(minAmountText);
+      final normalizedAmountText = amountText.isEmpty ? '0' : amountText;
+      final normalizedMinAmountText = minAmountText.isEmpty
+          ? '0'
+          : minAmountText;
+      final amount = double.tryParse(normalizedAmountText);
+      final minAmount = double.tryParse(normalizedMinAmountText);
       final price = double.tryParse(priceText);
+
+      if (amountText.isEmpty) {
+        row.amountController.text = normalizedAmountText;
+      }
+      if (minAmountText.isEmpty) {
+        row.minAmountController.text = normalizedMinAmountText;
+      }
 
       row
         ..unitError = row.unitId == null
@@ -339,14 +400,10 @@ class _InventoryProductEditorPageState
         ..warehouseError = row.warehouseId == null
             ? l10n.inventoryProductWarehouseRequired
             : null
-        ..amountError = amountText.isEmpty
-            ? l10n.inventoryProductAmountRequired
-            : amount == null
+        ..amountError = amount == null
             ? l10n.inventoryProductNumberInvalid
             : null
-        ..minAmountError = minAmountText.isEmpty
-            ? l10n.inventoryProductMinAmountRequired
-            : minAmount == null
+        ..minAmountError = minAmount == null
             ? l10n.inventoryProductNumberInvalid
             : null
         ..priceError = priceText.isEmpty
@@ -428,6 +485,15 @@ class _InventoryProductEditorPageState
         );
       }
 
+      await Future.wait<void>([
+        _settingsRepository.setLastInventoryProductOwner(wsId, _ownerId!),
+        _settingsRepository.setLastInventoryProductCategory(wsId, _categoryId!),
+        _settingsRepository.setLastInventoryProductFinanceCategory(
+          wsId,
+          _financeCategoryId,
+        ),
+      ]);
+
       if (!mounted) return;
       showInventoryToast(context, context.l10n.inventoryProductSaved);
       context.pop(true);
@@ -501,6 +567,7 @@ class _InventoryProductEditorPageState
                     children: [
                       _InventoryTextInputCard(
                         label: l10n.inventoryProductName,
+                        fieldKey: const ValueKey('inventory-product-name'),
                         controller: _nameController,
                         placeholder: l10n.inventoryProductName,
                         errorText: _nameError,
@@ -1010,11 +1077,13 @@ class _InventoryTextInputCard extends StatelessWidget {
     required this.controller,
     required this.placeholder,
     required this.onChanged,
+    this.fieldKey,
     this.errorText,
     this.keyboardType,
   });
 
   final String label;
+  final Key? fieldKey;
   final TextEditingController controller;
   final String placeholder;
   final ValueChanged<String> onChanged;
@@ -1028,6 +1097,7 @@ class _InventoryTextInputCard extends StatelessWidget {
       icon: Icons.edit_note_rounded,
       errorText: errorText,
       child: shad.TextField(
+        key: fieldKey,
         controller: controller,
         keyboardType: keyboardType,
         placeholder: Text(placeholder),
@@ -1315,6 +1385,7 @@ class _InventoryStockRowCard extends StatelessWidget {
           const shad.Gap(12),
           _InventoryTextInputCard(
             label: context.l10n.inventoryProductPrice,
+            fieldKey: ValueKey('inventory-stock-price-$index'),
             controller: row.priceController,
             placeholder: context.l10n.inventoryProductPrice,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -1347,8 +1418,8 @@ class _InventoryRowDraft {
   }) => _InventoryRowDraft(
     unitId: units.isEmpty ? null : units.first.id,
     warehouseId: warehouses.isEmpty ? null : warehouses.first.id,
-    amount: '',
-    minAmount: '',
+    amount: '0',
+    minAmount: '0',
     price: '',
   );
 
