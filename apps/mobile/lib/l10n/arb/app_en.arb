@@ -1005,12 +1005,16 @@
     "inventoryCheckoutAvailableProductsSubtitle": "Adjust quantities directly from the available booth inventory.",
     "inventoryCheckoutAvailableProductsTitle": "Available products",
     "inventoryCheckoutAutoCategory": "Auto-linked category",
+    "inventoryCheckoutBrowseTab": "Browse",
+    "inventoryCheckoutCartEmpty": "Add products from the browse tab to review and submit the sale.",
+    "inventoryCheckoutCartTab": "Cart",
     "inventoryCheckoutCartTotal": "Cart total",
     "inventoryCheckoutCheckoutDetailsSubtitle": "Choose where the sale lands before submitting the invoice.",
     "inventoryCheckoutCheckoutDetailsTitle": "Checkout details",
     "inventoryCheckoutCategoryOverride": "Category override",
     "inventoryCheckoutEmpty": "No sellable inventory is available yet.",
     "inventoryCheckoutManualCategoryRequired": "Choose an income category when the cart mixes linked categories or has no linked category.",
+    "inventoryCheckoutNoSearchResults": "No products match the current search.",
     "inventoryCheckoutSelectedItems": "Selected lines",
     "inventoryCheckoutSubtitle": "Build a quick booth sale and send it through invoices.",
     "inventoryCheckoutSubmit": "Create sale",
@@ -1049,7 +1053,9 @@
     "inventoryOwnerArchived": "Archived",
     "inventoryProductAddInventoryRow": "Add stock row",
     "inventoryProductAmount": "Amount",
+    "inventoryProductAmountRequired": "Enter an amount.",
     "inventoryProductCategory": "Product category",
+    "inventoryProductCategoryRequired": "Choose a product category.",
     "inventoryProductDescription": "Description",
     "inventoryProductDetailsSubtitle": "Name the product, assign ownership, and link finance defaults.",
     "inventoryProductDetailsTitle": "Product details",
@@ -1059,14 +1065,21 @@
     "inventoryProductInventorySubtitle": "Each row represents a unit, warehouse, quantity, threshold, and price.",
     "inventoryProductManufacturer": "Manufacturer",
     "inventoryProductMinAmount": "Minimum amount",
+    "inventoryProductMinAmountRequired": "Enter a minimum amount.",
     "inventoryProductName": "Product name",
+    "inventoryProductNameRequired": "Enter a product name.",
+    "inventoryProductNumberInvalid": "Enter a valid number.",
     "inventoryProductOwner": "Owner",
+    "inventoryProductOwnerRequired": "Choose an owner.",
     "inventoryProductPrice": "Price",
+    "inventoryProductPriceRequired": "Enter a price.",
     "inventoryProductSaved": "Product saved.",
     "inventoryProductUnit": "Unit",
+    "inventoryProductUnitRequired": "Choose a unit.",
     "inventoryProductUsage": "Usage",
     "inventoryProductValidationError": "Complete the required product, owner, category, and stock fields.",
     "inventoryProductWarehouse": "Warehouse",
+    "inventoryProductWarehouseRequired": "Choose a warehouse.",
     "inventoryProductsEmpty": "Create products to start tracking stock and selling from the booth.",
     "inventoryProductsLabel": "Products",
     "inventoryProductsListSubtitle": "Tap a product to edit details, pricing, or stock rows.",
@@ -1923,5 +1936,82 @@
     "onboardingSlide2Subtitle": "Tasks, Calendar, and Track - all unified. No more switching between apps.",
     "onboardingSlide3Title": "Intelligence That Grows",
     "onboardingSlide3Subtitle": "Mira remembers your preferences and gets smarter the more you use her.",
-    "onboardingGetStarted": "Get Started"
+    "onboardingGetStarted": "Get Started",
+
+    "settingsWorkspaceMembersTitle": "Members",
+    "settingsWorkspaceMembersSubtitle": "Invite people, review access, and manage links.",
+    "settingsWorkspaceMembersAccessDenied": "You need member access to manage this workspace.",
+    "settingsWorkspaceMembersActiveSection": "Members ({count})",
+    "@settingsWorkspaceMembersActiveSection": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "settingsWorkspaceMembersEmpty": "No members yet.",
+    "settingsWorkspaceMembersPendingSection": "Pending ({count})",
+    "@settingsWorkspaceMembersPendingSection": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "settingsWorkspaceMembersPendingEmpty": "No pending invites.",
+    "settingsWorkspaceMembersLinksSection": "Invite links",
+    "settingsWorkspaceMembersLinksEmpty": "No invite links yet.",
+    "settingsWorkspaceMembersInviteAction": "Invite",
+    "settingsWorkspaceMembersLinkAction": "New link",
+    "settingsWorkspaceMembersLinkCopied": "Invite link copied.",
+    "settingsWorkspaceMembersRemoveTitle": "Remove",
+    "settingsWorkspaceMembersRemoveMessage": "Remove {name} from this workspace?",
+    "@settingsWorkspaceMembersRemoveMessage": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
+    "settingsWorkspaceMembersLinkDeleteTitle": "Delete link",
+    "settingsWorkspaceMembersLinkDeleteMessage": "Delete this invite link?",
+    "settingsWorkspaceMembersEmailField": "Email",
+    "settingsWorkspaceMembersEmailPlaceholder": "name@example.com",
+    "settingsWorkspaceMembersEmailInvalid": "Enter a valid email address.",
+    "settingsWorkspaceMembersInviteSent": "Invite sent.",
+    "settingsWorkspaceMembersLinkLimitField": "Max uses",
+    "settingsWorkspaceMembersLinkLimitPlaceholder": "Leave empty for unlimited",
+    "settingsWorkspaceMembersLinkLimitInvalid": "Enter a positive whole number.",
+    "settingsWorkspaceMembersLinkCreated": "Invite link created.",
+    "settingsWorkspaceMembersCreatorChip": "Creator",
+    "settingsWorkspaceMembersPendingChip": "Pending",
+    "settingsWorkspaceMembersLinkNever": "No expiry",
+    "settingsWorkspaceMembersLinkExpired": "Expired",
+    "settingsWorkspaceMembersLinkFull": "Full",
+    "settingsWorkspaceMembersLinkActive": "Active",
+    "settingsWorkspaceMembersLinkCopy": "Copy",
+
+    "settingsWorkspaceRolesTitle": "Roles",
+    "settingsWorkspaceRolesSubtitle": "Control default access and workspace roles.",
+    "settingsWorkspaceRolesAccessDenied": "You need role access to manage permissions.",
+    "settingsWorkspaceRolesCreate": "Create role",
+    "settingsWorkspaceRolesDefaultTitle": "Default access",
+    "settingsWorkspaceRolesListTitle": "Roles",
+    "settingsWorkspaceRolesEmpty": "No custom roles yet.",
+    "settingsWorkspaceRolesDeleteTitle": "Delete role",
+    "settingsWorkspaceRolesDeleteMessage": "Delete {name}?",
+    "@settingsWorkspaceRolesDeleteMessage": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
+    "settingsWorkspaceRolesPermissionCount": "{count} permissions enabled",
+    "@settingsWorkspaceRolesPermissionCount": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "settingsWorkspaceRolesEdit": "Edit role",
+    "settingsWorkspaceRolesSave": "Save",
+    "settingsWorkspaceRolesNameField": "Name",
+    "settingsWorkspaceRolesNamePlaceholder": "Role name",
+    "settingsWorkspaceRolesNameRequired": "Enter a role name.",
+    "settingsWorkspaceRolesPermissionsSection": "Permissions",
+    "settingsWorkspaceRolesMembersSection": "Assigned members",
+    "settingsWorkspaceRolesMembersEmpty": "No active members available.",
+    "settingsWorkspaceRolesSaved": "Role saved."
 }

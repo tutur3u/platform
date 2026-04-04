@@ -30,6 +30,8 @@ abstract final class Routes {
   static const timer = '/timer';
   static const settings = '/settings';
   static const settingsWorkspace = '/settings/workspace';
+  static const settingsWorkspaceMembers = '/settings/workspace/members';
+  static const settingsWorkspaceRoles = '/settings/workspace/roles';
   static const settingsMobileVersions = '/settings/mobile-versions';
 
   // Detail pages

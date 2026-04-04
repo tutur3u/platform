@@ -25,11 +25,15 @@ class InventoryCheckoutPage extends StatefulWidget {
 }
 
 class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
+  static const int _tabBrowse = 0;
+  static const int _tabCart = 1;
+
   late final InventoryRepository _inventoryRepository;
   late final FinanceRepository _financeRepository;
   late final TextEditingController _searchController;
   bool _loading = true;
   bool _saving = false;
+  int _activeTab = _tabBrowse;
   List<InventoryProduct> _products = const [];
   List<Wallet> _wallets = const [];
   List<TransactionCategory> _categories = const [];
@@ -80,22 +84,29 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     }
   }
 
-  List<_SellableRow> get _rows {
-    final query = _searchController.text.trim().toLowerCase();
+  List<_SellableRow> get _allRows {
     final rows = <_SellableRow>[];
     for (final product in _products) {
       for (final inventory in product.inventory) {
-        final row = _SellableRow(product: product, inventory: inventory);
-        final haystack = [
-          product.name,
-          product.owner?.name,
-          product.category,
-          inventory.unitName,
-          inventory.warehouseName,
-        ].whereType<String>().join(' ').toLowerCase();
-        if (query.isEmpty || haystack.contains(query)) {
-          rows.add(row);
-        }
+        rows.add(_SellableRow(product: product, inventory: inventory));
+      }
+    }
+    return rows;
+  }
+
+  List<_SellableRow> get _visibleRows {
+    final query = _searchController.text.trim().toLowerCase();
+    final rows = <_SellableRow>[];
+    for (final row in _allRows) {
+      final haystack = [
+        row.product.name,
+        row.product.owner?.name,
+        row.product.category,
+        row.inventory.unitName,
+        row.inventory.warehouseName,
+      ].whereType<String>().join(' ').toLowerCase();
+      if (query.isEmpty || haystack.contains(query)) {
+        rows.add(row);
       }
     }
     return rows;
@@ -107,7 +118,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   int _quantityFor(_SellableRow row) => _quantities[_rowKey(row)] ?? 0;
 
   List<_SellableRow> get _selectedRows =>
-      _rows.where((row) => _quantityFor(row) > 0).toList(growable: false);
+      _allRows.where((row) => _quantityFor(row) > 0).toList(growable: false);
 
   Set<String> get _linkedCategoryIds => _selectedRows
       .map((row) => row.product.financeCategoryId)
@@ -124,6 +135,12 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     0,
     (sum, row) => sum + (_quantityFor(row) * row.inventory.price),
   );
+
+  void _switchTab(int tab) {
+    setState(() {
+      _activeTab = tab;
+    });
+  }
 
   void _changeQuantity(_SellableRow row, int next) {
     setState(() {
@@ -226,185 +243,195 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
               ),
               InventoryMetricTile(
                 label: l10n.inventoryCheckoutSelectedItems,
-                value: _selectedRows.length.toString(),
+                value: _quantities.values
+                    .fold<int>(0, (sum, qty) => sum + qty)
+                    .toString(),
                 icon: Icons.shopping_cart_checkout_rounded,
               ),
             ],
           ),
           const shad.Gap(16),
-          FinancePanel(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FinanceSectionHeader(
-                  title: l10n.inventoryCheckoutCheckoutDetailsTitle,
-                ),
-                const shad.Gap(12),
-                DropdownButtonFormField<String>(
-                  initialValue: _walletId,
-                  items: _wallets
-                      .map(
-                        (wallet) => DropdownMenuItem<String>(
-                          value: wallet.id,
-                          child: Text(wallet.name ?? ''),
+          _CheckoutTabSelector(
+            browseLabel: l10n.inventoryCheckoutBrowseTab,
+            cartLabel: l10n.inventoryCheckoutCartTab,
+            cartCount: _selectedRows.length,
+            activeTab: _activeTab,
+            onChanged: _switchTab,
+          ),
+          const shad.Gap(16),
+          if (_activeTab == _tabBrowse) ...[
+            FinancePanel(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: l10n.inventorySearchProducts,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.close_rounded),
                         ),
-                      )
-                      .toList(growable: false),
-                  onChanged: (value) => setState(() => _walletId = value),
-                  decoration: InputDecoration(
-                    labelText: l10n.inventoryCheckoutWallet,
+                ),
+              ),
+            ),
+            const shad.Gap(16),
+            if (_visibleRows.isEmpty)
+              FinanceEmptyState(
+                icon: Icons.shopping_basket_outlined,
+                title: l10n.inventoryCheckoutTitle,
+                body: _allRows.isEmpty
+                    ? l10n.inventoryCheckoutEmpty
+                    : l10n.inventoryCheckoutNoSearchResults,
+              )
+            else
+              FinanceSectionHeader(
+                title: l10n.inventoryCheckoutAvailableProductsTitle,
+              ),
+            if (_visibleRows.isNotEmpty) const shad.Gap(12),
+            if (_visibleRows.isNotEmpty)
+              ..._visibleRows.map(
+                (row) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _CheckoutProductCard(
+                    row: row,
+                    quantity: _quantityFor(row),
+                    onDecrement: () =>
+                        _changeQuantity(row, _quantityFor(row) - 1),
+                    onIncrement: () =>
+                        _changeQuantity(row, _quantityFor(row) + 1),
                   ),
                 ),
-                const shad.Gap(12),
-                if (_requiresManualCategory)
+              ),
+          ] else ...[
+            FinancePanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FinanceSectionHeader(
+                    title: l10n.inventoryCheckoutCheckoutDetailsTitle,
+                  ),
+                  const shad.Gap(12),
                   DropdownButtonFormField<String>(
-                    initialValue: _manualCategoryId,
-                    items: _categories
+                    initialValue: _walletId,
+                    items: _wallets
                         .map(
-                          (category) => DropdownMenuItem<String>(
-                            value: category.id,
-                            child: Text(category.name ?? ''),
+                          (wallet) => DropdownMenuItem<String>(
+                            value: wallet.id,
+                            child: Text(wallet.name ?? ''),
                           ),
                         )
                         .toList(growable: false),
-                    onChanged: (value) =>
-                        setState(() => _manualCategoryId = value),
+                    onChanged: (value) => setState(() => _walletId = value),
                     decoration: InputDecoration(
-                      labelText: l10n.inventoryCheckoutCategoryOverride,
-                      helperText: l10n.inventoryCheckoutManualCategoryRequired,
+                      labelText: l10n.inventoryCheckoutWallet,
                     ),
-                  )
-                else
-                  Text(
-                    '${l10n.inventoryCheckoutAutoCategory}: '
-                    '${_categories.firstWhere(
-                          (item) => item.id == _resolvedCategoryId,
-                          orElse: () => const TransactionCategory(
-                            id: '',
-                            name: '',
-                          ),
-                        ).name ?? ''}',
                   ),
-              ],
-            ),
-          ),
-          const shad.Gap(16),
-          FinancePanel(
-            child: TextField(
-              controller: _searchController,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: l10n.inventorySearchProducts,
-                prefixIcon: const Icon(Icons.search_rounded),
+                  const shad.Gap(12),
+                  if (_requiresManualCategory)
+                    DropdownButtonFormField<String>(
+                      initialValue: _manualCategoryId,
+                      items: _categories
+                          .map(
+                            (category) => DropdownMenuItem<String>(
+                              value: category.id,
+                              child: Text(category.name ?? ''),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: (value) =>
+                          setState(() => _manualCategoryId = value),
+                      decoration: InputDecoration(
+                        labelText: l10n.inventoryCheckoutCategoryOverride,
+                        helperText:
+                            l10n.inventoryCheckoutManualCategoryRequired,
+                      ),
+                    )
+                  else
+                    _CheckoutInfoRow(
+                      label: l10n.inventoryCheckoutAutoCategory,
+                      value:
+                          _categories
+                              .firstWhere(
+                                (item) => item.id == _resolvedCategoryId,
+                                orElse: () => const TransactionCategory(
+                                  id: '',
+                                  name: '',
+                                ),
+                              )
+                              .name ??
+                          '',
+                    ),
+                ],
               ),
             ),
-          ),
-          const shad.Gap(16),
-          if (_rows.isEmpty)
-            FinanceEmptyState(
-              icon: Icons.shopping_basket_outlined,
-              title: l10n.inventoryCheckoutTitle,
-              body: l10n.inventoryCheckoutEmpty,
-            )
-          else
-            FinanceSectionHeader(
-              title: l10n.inventoryCheckoutAvailableProductsTitle,
-            ),
-          if (_rows.isNotEmpty) const shad.Gap(12),
-          if (_rows.isNotEmpty)
-            ..._rows.map(
-              (row) {
-                final quantity = _quantityFor(row);
-                return Padding(
+            const shad.Gap(16),
+            if (_selectedRows.isEmpty)
+              FinanceEmptyState(
+                icon: Icons.shopping_cart_outlined,
+                title: l10n.inventoryCheckoutCartTab,
+                body: l10n.inventoryCheckoutCartEmpty,
+              )
+            else ...[
+              FinanceSectionHeader(
+                title: l10n.inventoryCheckoutSelectedItems,
+              ),
+              const shad.Gap(12),
+              ..._selectedRows.map(
+                (row) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: FinancePanel(
+                  child: _CheckoutCartRowCard(
+                    row: row,
+                    quantity: _quantityFor(row),
+                    onRemove: () => _changeQuantity(row, 0),
+                    onDecrement: () =>
+                        _changeQuantity(row, _quantityFor(row) - 1),
+                    onIncrement: () =>
+                        _changeQuantity(row, _quantityFor(row) + 1),
+                  ),
+                ),
+              ),
+            ],
+            const shad.Gap(16),
+            FinancePanel(
+              child: Row(
+                children: [
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          row.product.name ?? 'Untitled product',
-                          style: shad.Theme.of(context).typography.large
-                              .copyWith(fontWeight: FontWeight.w700),
+                          l10n.inventoryCheckoutCartTotal,
+                          style: shad.Theme.of(context).typography.small,
                         ),
-                        const shad.Gap(6),
+                        const shad.Gap(4),
                         Text(
-                          [
-                            if (row.product.owner?.name.isNotEmpty ?? false)
-                              row.product.owner!.name,
-                            if (row.inventory.unitName?.isNotEmpty ?? false)
-                              row.inventory.unitName!,
-                            if (row.inventory.warehouseName?.isNotEmpty ??
-                                false)
-                              row.inventory.warehouseName!,
-                          ].join(' • '),
-                        ),
-                        const shad.Gap(10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                formatCurrency(row.inventory.price, 'VND'),
-                                style: shad.Theme.of(context).typography.large
-                                    .copyWith(fontWeight: FontWeight.w800),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: quantity == 0
-                                  ? null
-                                  : () => _changeQuantity(row, quantity - 1),
-                              icon: const Icon(
-                                Icons.remove_circle_outline_rounded,
-                              ),
-                            ),
-                            Text(
-                              '$quantity',
-                              style: shad.Theme.of(context).typography.large
-                                  .copyWith(fontWeight: FontWeight.w700),
-                            ),
-                            IconButton(
-                              onPressed: () =>
-                                  _changeQuantity(row, quantity + 1),
-                              icon: const Icon(
-                                Icons.add_circle_outline_rounded,
-                              ),
-                            ),
-                          ],
+                          formatCurrency(_cartTotal, 'VND'),
+                          style: shad.Theme.of(
+                            context,
+                          ).typography.h3.copyWith(fontWeight: FontWeight.w800),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
-            ),
-          const shad.Gap(16),
-          FinancePanel(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.inventoryCheckoutCartTotal,
-                        style: shad.Theme.of(context).typography.small,
-                      ),
-                      const shad.Gap(4),
-                      Text(
-                        formatCurrency(_cartTotal, 'VND'),
-                        style: shad.Theme.of(
-                          context,
-                        ).typography.h3.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ],
+                  shad.PrimaryButton(
+                    onPressed: _saving ? null : _submit,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: shad.CircularProgressIndicator(),
+                          )
+                        : Text(l10n.inventoryCheckoutSubmit),
                   ),
-                ),
-                shad.PrimaryButton(
-                  onPressed: _saving ? null : _submit,
-                  child: Text(l10n.inventoryCheckoutSubmit),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -419,4 +446,409 @@ class _SellableRow {
 
   final InventoryProduct product;
   final InventoryStockEntry inventory;
+}
+
+class _CheckoutTabSelector extends StatelessWidget {
+  const _CheckoutTabSelector({
+    required this.browseLabel,
+    required this.cartLabel,
+    required this.cartCount,
+    required this.activeTab,
+    required this.onChanged,
+  });
+
+  final String browseLabel;
+  final String cartLabel;
+  final int cartCount;
+  final int activeTab;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = FinancePalette.of(context).accent;
+    final theme = shad.Theme.of(context);
+
+    Widget buildTab({
+      required int tab,
+      required String label,
+      required IconData icon,
+      String? badge,
+    }) {
+      final selected = activeTab == tab;
+      return Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => onChanged(tab),
+            borderRadius: BorderRadius.circular(16),
+            child: Ink(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: selected
+                    ? accent.withValues(alpha: 0.14)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: selected
+                        ? accent
+                        : theme.colorScheme.mutedForeground,
+                  ),
+                  const shad.Gap(8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: selected
+                            ? accent
+                            : theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ),
+                  if (badge != null) ...[
+                    const shad.Gap(8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? accent.withValues(alpha: 0.18)
+                            : theme.colorScheme.muted.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        badge,
+                        style: theme.typography.xSmall.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: selected
+                              ? accent
+                              : theme.colorScheme.mutedForeground,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Row(
+        children: [
+          buildTab(
+            tab: _InventoryCheckoutPageState._tabBrowse,
+            label: browseLabel,
+            icon: Icons.storefront_outlined,
+          ),
+          const shad.Gap(4),
+          buildTab(
+            tab: _InventoryCheckoutPageState._tabCart,
+            label: cartLabel,
+            icon: Icons.shopping_cart_checkout_rounded,
+            badge: cartCount == 0 ? null : '$cartCount',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckoutProductCard extends StatelessWidget {
+  const _CheckoutProductCard({
+    required this.row,
+    required this.quantity,
+    required this.onDecrement,
+    required this.onIncrement,
+  });
+
+  final _SellableRow row;
+  final int quantity;
+  final VoidCallback onDecrement;
+  final VoidCallback onIncrement;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final accent = FinancePalette.of(context).accent;
+    final amountLabel = row.inventory.amount == null
+        ? null
+        : [
+            row.inventory.amount!.toStringAsFixed(0),
+            row.inventory.unitName ?? '',
+          ].join(' ').trim();
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      row.product.name ?? 'Untitled product',
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const shad.Gap(6),
+                    Text(
+                      [
+                        if (row.product.owner?.name.isNotEmpty ?? false)
+                          row.product.owner!.name,
+                        if (row.inventory.unitName?.isNotEmpty ?? false)
+                          row.inventory.unitName!,
+                        if (row.inventory.warehouseName?.isNotEmpty ?? false)
+                          row.inventory.warehouseName!,
+                      ].join(' • '),
+                    ),
+                  ],
+                ),
+              ),
+              const shad.Gap(12),
+              Text(
+                formatCurrency(row.inventory.price, 'VND'),
+                style: theme.typography.large.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: accent,
+                ),
+              ),
+            ],
+          ),
+          const shad.Gap(12),
+          Row(
+            children: [
+              if (amountLabel != null)
+                FinanceStatChip(
+                  label: context.l10n.inventoryProductAmount,
+                  value: amountLabel,
+                  icon: Icons.inventory_2_outlined,
+                ),
+              const Spacer(),
+              _CheckoutStepper(
+                quantity: quantity,
+                onDecrement: quantity == 0 ? null : onDecrement,
+                onIncrement: onIncrement,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckoutCartRowCard extends StatelessWidget {
+  const _CheckoutCartRowCard({
+    required this.row,
+    required this.quantity,
+    required this.onRemove,
+    required this.onDecrement,
+    required this.onIncrement,
+  });
+
+  final _SellableRow row;
+  final int quantity;
+  final VoidCallback onRemove;
+  final VoidCallback onDecrement;
+  final VoidCallback onIncrement;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final subtotal = quantity * row.inventory.price;
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      row.product.name ?? 'Untitled product',
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const shad.Gap(6),
+                    Text(
+                      [
+                        if (row.product.owner?.name.isNotEmpty ?? false)
+                          row.product.owner!.name,
+                        if (row.inventory.unitName?.isNotEmpty ?? false)
+                          row.inventory.unitName!,
+                        if (row.inventory.warehouseName?.isNotEmpty ?? false)
+                          row.inventory.warehouseName!,
+                      ].join(' • '),
+                    ),
+                  ],
+                ),
+              ),
+              shad.GhostButton(
+                density: shad.ButtonDensity.compact,
+                onPressed: onRemove,
+                child: const Icon(Icons.close_rounded, size: 18),
+              ),
+            ],
+          ),
+          const shad.Gap(12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      formatCurrency(subtotal, 'VND'),
+                      style: theme.typography.large.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const shad.Gap(2),
+                    Text(
+                      '${formatCurrency(row.inventory.price, 'VND')} '
+                      '× $quantity',
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _CheckoutStepper(
+                quantity: quantity,
+                onDecrement: quantity == 0 ? null : onDecrement,
+                onIncrement: onIncrement,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckoutStepper extends StatelessWidget {
+  const _CheckoutStepper({
+    required this.quantity,
+    required this.onDecrement,
+    required this.onIncrement,
+  });
+
+  final int quantity;
+  final VoidCallback? onDecrement;
+  final VoidCallback onIncrement;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            onPressed: onDecrement,
+            icon: const Icon(Icons.remove_circle_outline_rounded),
+          ),
+          SizedBox(
+            width: 28,
+            child: Text(
+              '$quantity',
+              textAlign: TextAlign.center,
+              style: theme.typography.large.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: onIncrement,
+            icon: const Icon(Icons.add_circle_outline_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckoutInfoRow extends StatelessWidget {
+  const _CheckoutInfoRow({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.typography.xSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const shad.Gap(6),
+          Text(
+            value.isEmpty ? '-' : value,
+            style: theme.typography.small.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

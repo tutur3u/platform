@@ -30,7 +30,9 @@ import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
+import 'package:mobile/features/settings/view/settings_workspace_members_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
+import 'package:mobile/features/settings/view/settings_workspace_roles_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
@@ -329,6 +331,14 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.settingsWorkspace,
             builder: (context, state) => const SettingsWorkspacePage(),
+          ),
+          GoRoute(
+            path: Routes.settingsWorkspaceMembers,
+            builder: (context, state) => const SettingsWorkspaceMembersPage(),
+          ),
+          GoRoute(
+            path: Routes.settingsWorkspaceRoles,
+            builder: (context, state) => const SettingsWorkspaceRolesPage(),
           ),
           GoRoute(
             path: Routes.settingsMobileVersions,

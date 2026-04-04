@@ -12,6 +12,7 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -134,9 +135,10 @@ class _InventoryPageState extends State<InventoryPage> {
                         ),
                         shad.SecondaryButton(
                           onPressed: () async {
-                            final result = await context.push<bool>(
-                              Routes.inventoryProductCreate,
-                            );
+                            final result =
+                                await showInventoryProductEditorPage<bool>(
+                                  context,
+                                );
                             if (result == true && mounted) {
                               _reload();
                             }

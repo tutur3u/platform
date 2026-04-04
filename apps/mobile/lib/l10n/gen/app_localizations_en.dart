@@ -2531,6 +2531,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryCheckoutAutoCategory => 'Auto-linked category';
 
   @override
+  String get inventoryCheckoutBrowseTab => 'Browse';
+
+  @override
+  String get inventoryCheckoutCartEmpty => 'Add products from the browse tab to review and submit the sale.';
+
+  @override
+  String get inventoryCheckoutCartTab => 'Cart';
+
+  @override
   String get inventoryCheckoutCartTotal => 'Cart total';
 
   @override
@@ -2547,6 +2556,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutManualCategoryRequired => 'Choose an income category when the cart mixes linked categories or has no linked category.';
+
+  @override
+  String get inventoryCheckoutNoSearchResults => 'No products match the current search.';
 
   @override
   String get inventoryCheckoutSelectedItems => 'Selected lines';
@@ -2663,7 +2675,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductAmount => 'Amount';
 
   @override
+  String get inventoryProductAmountRequired => 'Enter an amount.';
+
+  @override
   String get inventoryProductCategory => 'Product category';
+
+  @override
+  String get inventoryProductCategoryRequired => 'Choose a product category.';
 
   @override
   String get inventoryProductDescription => 'Description';
@@ -2693,19 +2711,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductMinAmount => 'Minimum amount';
 
   @override
+  String get inventoryProductMinAmountRequired => 'Enter a minimum amount.';
+
+  @override
   String get inventoryProductName => 'Product name';
+
+  @override
+  String get inventoryProductNameRequired => 'Enter a product name.';
+
+  @override
+  String get inventoryProductNumberInvalid => 'Enter a valid number.';
 
   @override
   String get inventoryProductOwner => 'Owner';
 
   @override
+  String get inventoryProductOwnerRequired => 'Choose an owner.';
+
+  @override
   String get inventoryProductPrice => 'Price';
+
+  @override
+  String get inventoryProductPriceRequired => 'Enter a price.';
 
   @override
   String get inventoryProductSaved => 'Product saved.';
 
   @override
   String get inventoryProductUnit => 'Unit';
+
+  @override
+  String get inventoryProductUnitRequired => 'Choose a unit.';
 
   @override
   String get inventoryProductUsage => 'Usage';
@@ -2715,6 +2751,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryProductWarehouse => 'Warehouse';
+
+  @override
+  String get inventoryProductWarehouseRequired => 'Choose a warehouse.';
 
   @override
   String get inventoryProductsEmpty => 'Create products to start tracking stock and selling from the booth.';
@@ -4780,4 +4819,164 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingGetStarted => 'Get Started';
+
+  @override
+  String get settingsWorkspaceMembersTitle => 'Members';
+
+  @override
+  String get settingsWorkspaceMembersSubtitle => 'Invite people, review access, and manage links.';
+
+  @override
+  String get settingsWorkspaceMembersAccessDenied => 'You need member access to manage this workspace.';
+
+  @override
+  String settingsWorkspaceMembersActiveSection(int count) {
+    return 'Members ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersEmpty => 'No members yet.';
+
+  @override
+  String settingsWorkspaceMembersPendingSection(int count) {
+    return 'Pending ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersPendingEmpty => 'No pending invites.';
+
+  @override
+  String get settingsWorkspaceMembersLinksSection => 'Invite links';
+
+  @override
+  String get settingsWorkspaceMembersLinksEmpty => 'No invite links yet.';
+
+  @override
+  String get settingsWorkspaceMembersInviteAction => 'Invite';
+
+  @override
+  String get settingsWorkspaceMembersLinkAction => 'New link';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopied => 'Invite link copied.';
+
+  @override
+  String get settingsWorkspaceMembersRemoveTitle => 'Remove';
+
+  @override
+  String settingsWorkspaceMembersRemoveMessage(String name) {
+    return 'Remove $name from this workspace?';
+  }
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteTitle => 'Delete link';
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteMessage => 'Delete this invite link?';
+
+  @override
+  String get settingsWorkspaceMembersEmailField => 'Email';
+
+  @override
+  String get settingsWorkspaceMembersEmailPlaceholder => 'name@example.com';
+
+  @override
+  String get settingsWorkspaceMembersEmailInvalid => 'Enter a valid email address.';
+
+  @override
+  String get settingsWorkspaceMembersInviteSent => 'Invite sent.';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitField => 'Max uses';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitPlaceholder => 'Leave empty for unlimited';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitInvalid => 'Enter a positive whole number.';
+
+  @override
+  String get settingsWorkspaceMembersLinkCreated => 'Invite link created.';
+
+  @override
+  String get settingsWorkspaceMembersCreatorChip => 'Creator';
+
+  @override
+  String get settingsWorkspaceMembersPendingChip => 'Pending';
+
+  @override
+  String get settingsWorkspaceMembersLinkNever => 'No expiry';
+
+  @override
+  String get settingsWorkspaceMembersLinkExpired => 'Expired';
+
+  @override
+  String get settingsWorkspaceMembersLinkFull => 'Full';
+
+  @override
+  String get settingsWorkspaceMembersLinkActive => 'Active';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopy => 'Copy';
+
+  @override
+  String get settingsWorkspaceRolesTitle => 'Roles';
+
+  @override
+  String get settingsWorkspaceRolesSubtitle => 'Control default access and workspace roles.';
+
+  @override
+  String get settingsWorkspaceRolesAccessDenied => 'You need role access to manage permissions.';
+
+  @override
+  String get settingsWorkspaceRolesCreate => 'Create role';
+
+  @override
+  String get settingsWorkspaceRolesDefaultTitle => 'Default access';
+
+  @override
+  String get settingsWorkspaceRolesListTitle => 'Roles';
+
+  @override
+  String get settingsWorkspaceRolesEmpty => 'No custom roles yet.';
+
+  @override
+  String get settingsWorkspaceRolesDeleteTitle => 'Delete role';
+
+  @override
+  String settingsWorkspaceRolesDeleteMessage(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String settingsWorkspaceRolesPermissionCount(int count) {
+    return '$count permissions enabled';
+  }
+
+  @override
+  String get settingsWorkspaceRolesEdit => 'Edit role';
+
+  @override
+  String get settingsWorkspaceRolesSave => 'Save';
+
+  @override
+  String get settingsWorkspaceRolesNameField => 'Name';
+
+  @override
+  String get settingsWorkspaceRolesNamePlaceholder => 'Role name';
+
+  @override
+  String get settingsWorkspaceRolesNameRequired => 'Enter a role name.';
+
+  @override
+  String get settingsWorkspaceRolesPermissionsSection => 'Permissions';
+
+  @override
+  String get settingsWorkspaceRolesMembersSection => 'Assigned members';
+
+  @override
+  String get settingsWorkspaceRolesMembersEmpty => 'No active members available.';
+
+  @override
+  String get settingsWorkspaceRolesSaved => 'Role saved.';
 }

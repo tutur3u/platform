@@ -11,6 +11,7 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -105,9 +106,10 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                       actions: [
                         shad.PrimaryButton(
                           onPressed: () async {
-                            final result = await context.push<bool>(
-                              Routes.inventoryProductCreate,
-                            );
+                            final result =
+                                await showInventoryProductEditorPage<bool>(
+                                  context,
+                                );
                             if (result == true && mounted) {
                               _reload();
                             }
@@ -145,9 +147,10 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                         body: l10n.inventoryProductsEmpty,
                         action: shad.SecondaryButton(
                           onPressed: () async {
-                            final created = await context.push<bool>(
-                              Routes.inventoryProductCreate,
-                            );
+                            final created =
+                                await showInventoryProductEditorPage<bool>(
+                                  context,
+                                );
                             if (created == true && mounted) {
                               _reload();
                             }
@@ -166,9 +169,11 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                           padding: const EdgeInsets.only(bottom: 12),
                           child: FinancePanel(
                             onTap: () async {
-                              final saved = await context.push<bool>(
-                                Routes.inventoryProductDetailPath(product.id),
-                              );
+                              final saved =
+                                  await showInventoryProductEditorPage<bool>(
+                                    context,
+                                    productId: product.id,
+                                  );
                               if (saved == true && mounted) {
                                 _reload();
                               }

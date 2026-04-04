@@ -344,6 +344,17 @@ class ApiClient {
           parsed?['error'] as String? ??
           parsed?['message'] as String? ??
           'Request failed';
+      final validationErrors =
+          (parsed?['errors'] as List<dynamic>? ?? const <dynamic>[])
+              .whereType<Map<String, dynamic>>()
+              .map((error) => error['message']?.toString().trim() ?? '')
+              .where((message) => message.isNotEmpty)
+              .toList(growable: false);
+      final effectiveMessage =
+          validationErrors.isNotEmpty &&
+              validationErrors.first.toLowerCase() != errorMessage.toLowerCase()
+          ? '$errorMessage: ${validationErrors.first}'
+          : errorMessage;
       // Log the full response for debugging
       final truncatedBody = response.body.length > 500
           ? response.body.substring(0, 500)
@@ -351,10 +362,10 @@ class ApiClient {
       // ignore: avoid_print, debug logging for API errors
       print(
         '[ApiClient] HTTP ${response.statusCode} '
-        '| $errorMessage | body: $truncatedBody',
+        '| $effectiveMessage | body: $truncatedBody',
       );
       throw ApiException(
-        message: errorMessage,
+        message: effectiveMessage,
         statusCode: response.statusCode,
         retryAfter: parsed?['retryAfter'] as int?,
       );

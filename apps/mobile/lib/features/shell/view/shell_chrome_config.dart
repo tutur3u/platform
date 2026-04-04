@@ -43,6 +43,8 @@ class ShellChromeConfig {
       Routes.profileRoot => l10n.profileTitle,
       Routes.settings => l10n.settingsTitle,
       Routes.settingsWorkspace => l10n.settingsWorkspaceSectionTitle,
+      Routes.settingsWorkspaceMembers => l10n.settingsWorkspaceMembersTitle,
+      Routes.settingsWorkspaceRoles => l10n.settingsWorkspaceRolesTitle,
       _ => null,
     };
 

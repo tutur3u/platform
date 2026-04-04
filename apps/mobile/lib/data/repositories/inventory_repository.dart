@@ -7,6 +7,38 @@ class InventoryRepository {
 
   final ApiClient _api;
 
+  Map<String, dynamic> _buildProductPayload({
+    required String name,
+    required String categoryId,
+    required String ownerId,
+    required List<InventoryStockEntry> inventory,
+    String? manufacturer,
+    String? description,
+    String? usage,
+    String? financeCategoryId,
+  }) {
+    return {
+      'name': name,
+      'category_id': categoryId,
+      'owner_id': ownerId,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (description != null) 'description': description,
+      if (usage != null) 'usage': usage,
+      if (financeCategoryId != null) 'finance_category_id': financeCategoryId,
+      'inventory': inventory
+          .map(
+            (row) => {
+              'unit_id': row.unitId,
+              'warehouse_id': row.warehouseId,
+              'amount': row.amount,
+              'min_amount': row.minAmount,
+              'price': row.price,
+            },
+          )
+          .toList(growable: false),
+    };
+  }
+
   Map<String, dynamic> _normalizeOptionProduct(Map<String, dynamic> json) {
     final owner = json['inventory_owners'] is Map<String, dynamic>
         ? Map<String, dynamic>.from(
@@ -102,26 +134,19 @@ class InventoryRepository {
     String? usage,
     String? financeCategoryId,
   }) async {
-    await _api.postJson(InventoryEndpoints.createProduct(wsId), {
-      'name': name,
-      'manufacturer': manufacturer,
-      'description': description,
-      'usage': usage,
-      'category_id': categoryId,
-      'owner_id': ownerId,
-      'finance_category_id': financeCategoryId,
-      'inventory': inventory
-          .map(
-            (row) => {
-              'unit_id': row.unitId,
-              'warehouse_id': row.warehouseId,
-              'amount': row.amount,
-              'min_amount': row.minAmount,
-              'price': row.price,
-            },
-          )
-          .toList(growable: false),
-    });
+    await _api.postJson(
+      InventoryEndpoints.createProduct(wsId),
+      _buildProductPayload(
+        name: name,
+        categoryId: categoryId,
+        ownerId: ownerId,
+        inventory: inventory,
+        manufacturer: manufacturer,
+        description: description,
+        usage: usage,
+        financeCategoryId: financeCategoryId,
+      ),
+    );
   }
 
   Future<void> updateProduct({
@@ -136,26 +161,19 @@ class InventoryRepository {
     String? usage,
     String? financeCategoryId,
   }) async {
-    await _api.patchJson(InventoryEndpoints.product(wsId, productId), {
-      'name': name,
-      'manufacturer': manufacturer,
-      'description': description,
-      'usage': usage,
-      'category_id': categoryId,
-      'owner_id': ownerId,
-      'finance_category_id': financeCategoryId,
-      'inventory': inventory
-          .map(
-            (row) => {
-              'unit_id': row.unitId,
-              'warehouse_id': row.warehouseId,
-              'amount': row.amount,
-              'min_amount': row.minAmount,
-              'price': row.price,
-            },
-          )
-          .toList(growable: false),
-    });
+    await _api.patchJson(
+      InventoryEndpoints.product(wsId, productId),
+      _buildProductPayload(
+        name: name,
+        categoryId: categoryId,
+        ownerId: ownerId,
+        inventory: inventory,
+        manufacturer: manufacturer,
+        description: description,
+        usage: usage,
+        financeCategoryId: financeCategoryId,
+      ),
+    );
   }
 
   Future<List<InventoryProduct>> getProductOptions(String wsId) async {

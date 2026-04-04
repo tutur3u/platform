@@ -2,12 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart'
-    show WorkspacePermissionsRepository, manageWorkspaceSettingsPermission;
+    show
+        WorkspacePermissionsRepository,
+        manageWorkspaceRolesPermission,
+        manageWorkspaceSettingsPermission;
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -26,6 +31,8 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
   late final WorkspacePermissionsRepository _workspacePermissionsRepository;
   int _workspacePermissionLoadToken = 0;
   bool _canManageWorkspaceSettings = false;
+  bool _canManageWorkspaceMembers = false;
+  bool _canManageWorkspaceRoles = false;
   bool _isWorkspacePermissionLoading = false;
 
   @override
@@ -82,6 +89,19 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
                   onEditWorkspaceProperties: (workspace) => unawaited(
                     _showWorkspacePropertiesDialog(workspace),
                   ),
+                  canManageWorkspaceMembers: _canManageWorkspaceMembers,
+                  canManageWorkspaceRoles: _canManageWorkspaceRoles,
+                  onOpenWorkspaceMembers: () =>
+                      context.push(Routes.settingsWorkspaceMembers),
+                  onOpenWorkspaceRoles: () =>
+                      context.push(Routes.settingsWorkspaceRoles),
+                  showWorkspaceAccess:
+                      !(context
+                              .read<WorkspaceCubit>()
+                              .state
+                              .currentWorkspace
+                              ?.personal ??
+                          false),
                 ),
               ],
             ),
@@ -113,6 +133,8 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
       }
       setState(() {
         _canManageWorkspaceSettings = false;
+        _canManageWorkspaceMembers = false;
+        _canManageWorkspaceRoles = false;
         _isWorkspacePermissionLoading = false;
       });
       return;
@@ -124,6 +146,8 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
       }
       setState(() {
         _canManageWorkspaceSettings = true;
+        _canManageWorkspaceMembers = false;
+        _canManageWorkspaceRoles = true;
         _isWorkspacePermissionLoading = false;
       });
       return;
@@ -144,6 +168,12 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
     setState(() {
       _canManageWorkspaceSettings = permissions.containsPermission(
         manageWorkspaceSettingsPermission,
+      );
+      _canManageWorkspaceMembers = permissions.containsPermission(
+        'manage_workspace_members',
+      );
+      _canManageWorkspaceRoles = permissions.containsPermission(
+        manageWorkspaceRolesPermission,
       );
       _isWorkspacePermissionLoading = false;
     });

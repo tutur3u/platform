@@ -82,6 +82,52 @@ abstract final class WorkspaceEndpoints {
   static String avatar(String wsId) => '/api/v1/workspaces/$wsId/avatar';
 }
 
+abstract final class WorkspaceSettingsEndpoints {
+  static String roles(String wsId) => '/api/v1/workspaces/$wsId/roles';
+
+  static String role(String wsId, String roleId) =>
+      '/api/v1/workspaces/$wsId/roles/$roleId';
+
+  static String defaultRole(String wsId) =>
+      '/api/v1/workspaces/$wsId/roles/default';
+
+  static String roleMembers(String wsId, String roleId) =>
+      '/api/v1/workspaces/$wsId/roles/$roleId/members';
+
+  static String roleMember(String wsId, String roleId, String userId) =>
+      '/api/v1/workspaces/$wsId/roles/$roleId/members/$userId';
+
+  static String membersEnhanced(String wsId) =>
+      '/api/workspaces/$wsId/members/enhanced';
+
+  static String inviteMember(String wsId) =>
+      '/api/workspaces/$wsId/members/invite';
+
+  static String members(
+    String wsId, {
+    String? userId,
+    String? email,
+  }) {
+    final params = <String, String>{};
+    if (userId != null && userId.isNotEmpty) {
+      params['id'] = userId;
+    }
+    if (email != null && email.isNotEmpty) {
+      params['email'] = email;
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/members$suffix';
+  }
+
+  static String inviteLinks(String wsId) =>
+      '/api/workspaces/$wsId/invite-links';
+
+  static String inviteLink(String wsId, String linkId) =>
+      '/api/workspaces/$wsId/invite-links/$linkId';
+}
+
 /// Finance endpoint paths.
 abstract final class FinanceEndpoints {
   static String wallets(String wsId) => '/api/workspaces/$wsId/wallets';

@@ -203,6 +203,11 @@ class SettingsWorkspaceSection extends StatelessWidget {
     required this.canEditWorkspaceProperties,
     required this.isWorkspacePermissionLoading,
     required this.onEditWorkspaceProperties,
+    required this.canManageWorkspaceMembers,
+    required this.canManageWorkspaceRoles,
+    required this.onOpenWorkspaceMembers,
+    required this.onOpenWorkspaceRoles,
+    required this.showWorkspaceAccess,
     super.key,
   });
 
@@ -211,6 +216,11 @@ class SettingsWorkspaceSection extends StatelessWidget {
   final bool canEditWorkspaceProperties;
   final bool isWorkspacePermissionLoading;
   final ValueChanged<Workspace> onEditWorkspaceProperties;
+  final bool canManageWorkspaceMembers;
+  final bool canManageWorkspaceRoles;
+  final VoidCallback onOpenWorkspaceMembers;
+  final VoidCallback onOpenWorkspaceRoles;
+  final bool showWorkspaceAccess;
 
   @override
   Widget build(BuildContext context) {
@@ -268,6 +278,32 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 : null,
           ),
         ),
+        if (showWorkspaceAccess)
+          StaggeredEntry(
+            index: 3,
+            playOnceKey: 'settings-workspace-members',
+            child: SettingsTile(
+              icon: Icons.group_outlined,
+              title: l10n.settingsWorkspaceMembersTitle,
+              subtitle: canManageWorkspaceMembers
+                  ? l10n.settingsWorkspaceMembersSubtitle
+                  : l10n.settingsWorkspaceMembersAccessDenied,
+              onTap: canManageWorkspaceMembers ? onOpenWorkspaceMembers : null,
+            ),
+          ),
+        if (showWorkspaceAccess)
+          StaggeredEntry(
+            index: 4,
+            playOnceKey: 'settings-workspace-roles',
+            child: SettingsTile(
+              icon: Icons.admin_panel_settings_outlined,
+              title: l10n.settingsWorkspaceRolesTitle,
+              subtitle: canManageWorkspaceRoles
+                  ? l10n.settingsWorkspaceRolesSubtitle
+                  : l10n.settingsWorkspaceRolesAccessDenied,
+              onTap: canManageWorkspaceRoles ? onOpenWorkspaceRoles : null,
+            ),
+          ),
       ],
     );
   }

@@ -4975,6 +4975,24 @@ abstract class AppLocalizations {
   /// **'Auto-linked category'**
   String get inventoryCheckoutAutoCategory;
 
+  /// No description provided for @inventoryCheckoutBrowseTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse'**
+  String get inventoryCheckoutBrowseTab;
+
+  /// No description provided for @inventoryCheckoutCartEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add products from the browse tab to review and submit the sale.'**
+  String get inventoryCheckoutCartEmpty;
+
+  /// No description provided for @inventoryCheckoutCartTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart'**
+  String get inventoryCheckoutCartTab;
+
   /// No description provided for @inventoryCheckoutCartTotal.
   ///
   /// In en, this message translates to:
@@ -5010,6 +5028,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose an income category when the cart mixes linked categories or has no linked category.'**
   String get inventoryCheckoutManualCategoryRequired;
+
+  /// No description provided for @inventoryCheckoutNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match the current search.'**
+  String get inventoryCheckoutNoSearchResults;
 
   /// No description provided for @inventoryCheckoutSelectedItems.
   ///
@@ -5239,11 +5263,23 @@ abstract class AppLocalizations {
   /// **'Amount'**
   String get inventoryProductAmount;
 
+  /// No description provided for @inventoryProductAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount.'**
+  String get inventoryProductAmountRequired;
+
   /// No description provided for @inventoryProductCategory.
   ///
   /// In en, this message translates to:
   /// **'Product category'**
   String get inventoryProductCategory;
+
+  /// No description provided for @inventoryProductCategoryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a product category.'**
+  String get inventoryProductCategoryRequired;
 
   /// No description provided for @inventoryProductDescription.
   ///
@@ -5299,11 +5335,29 @@ abstract class AppLocalizations {
   /// **'Minimum amount'**
   String get inventoryProductMinAmount;
 
+  /// No description provided for @inventoryProductMinAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a minimum amount.'**
+  String get inventoryProductMinAmountRequired;
+
   /// No description provided for @inventoryProductName.
   ///
   /// In en, this message translates to:
   /// **'Product name'**
   String get inventoryProductName;
+
+  /// No description provided for @inventoryProductNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a product name.'**
+  String get inventoryProductNameRequired;
+
+  /// No description provided for @inventoryProductNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number.'**
+  String get inventoryProductNumberInvalid;
 
   /// No description provided for @inventoryProductOwner.
   ///
@@ -5311,11 +5365,23 @@ abstract class AppLocalizations {
   /// **'Owner'**
   String get inventoryProductOwner;
 
+  /// No description provided for @inventoryProductOwnerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an owner.'**
+  String get inventoryProductOwnerRequired;
+
   /// No description provided for @inventoryProductPrice.
   ///
   /// In en, this message translates to:
   /// **'Price'**
   String get inventoryProductPrice;
+
+  /// No description provided for @inventoryProductPriceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a price.'**
+  String get inventoryProductPriceRequired;
 
   /// No description provided for @inventoryProductSaved.
   ///
@@ -5328,6 +5394,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unit'**
   String get inventoryProductUnit;
+
+  /// No description provided for @inventoryProductUnitRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a unit.'**
+  String get inventoryProductUnitRequired;
 
   /// No description provided for @inventoryProductUsage.
   ///
@@ -5346,6 +5418,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Warehouse'**
   String get inventoryProductWarehouse;
+
+  /// No description provided for @inventoryProductWarehouseRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a warehouse.'**
+  String get inventoryProductWarehouseRequired;
 
   /// No description provided for @inventoryProductsEmpty.
   ///
@@ -9204,6 +9282,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Get Started'**
   String get onboardingGetStarted;
+
+  /// No description provided for @settingsWorkspaceMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get settingsWorkspaceMembersTitle;
+
+  /// No description provided for @settingsWorkspaceMembersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite people, review access, and manage links.'**
+  String get settingsWorkspaceMembersSubtitle;
+
+  /// No description provided for @settingsWorkspaceMembersAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You need member access to manage this workspace.'**
+  String get settingsWorkspaceMembersAccessDenied;
+
+  /// No description provided for @settingsWorkspaceMembersActiveSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Members ({count})'**
+  String settingsWorkspaceMembersActiveSection(int count);
+
+  /// No description provided for @settingsWorkspaceMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet.'**
+  String get settingsWorkspaceMembersEmpty;
+
+  /// No description provided for @settingsWorkspaceMembersPendingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending ({count})'**
+  String settingsWorkspaceMembersPendingSection(int count);
+
+  /// No description provided for @settingsWorkspaceMembersPendingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending invites.'**
+  String get settingsWorkspaceMembersPendingEmpty;
+
+  /// No description provided for @settingsWorkspaceMembersLinksSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite links'**
+  String get settingsWorkspaceMembersLinksSection;
+
+  /// No description provided for @settingsWorkspaceMembersLinksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No invite links yet.'**
+  String get settingsWorkspaceMembersLinksEmpty;
+
+  /// No description provided for @settingsWorkspaceMembersInviteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get settingsWorkspaceMembersInviteAction;
+
+  /// No description provided for @settingsWorkspaceMembersLinkAction.
+  ///
+  /// In en, this message translates to:
+  /// **'New link'**
+  String get settingsWorkspaceMembersLinkAction;
+
+  /// No description provided for @settingsWorkspaceMembersLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link copied.'**
+  String get settingsWorkspaceMembersLinkCopied;
+
+  /// No description provided for @settingsWorkspaceMembersRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get settingsWorkspaceMembersRemoveTitle;
+
+  /// No description provided for @settingsWorkspaceMembersRemoveMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from this workspace?'**
+  String settingsWorkspaceMembersRemoveMessage(String name);
+
+  /// No description provided for @settingsWorkspaceMembersLinkDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete link'**
+  String get settingsWorkspaceMembersLinkDeleteTitle;
+
+  /// No description provided for @settingsWorkspaceMembersLinkDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this invite link?'**
+  String get settingsWorkspaceMembersLinkDeleteMessage;
+
+  /// No description provided for @settingsWorkspaceMembersEmailField.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get settingsWorkspaceMembersEmailField;
+
+  /// No description provided for @settingsWorkspaceMembersEmailPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'name@example.com'**
+  String get settingsWorkspaceMembersEmailPlaceholder;
+
+  /// No description provided for @settingsWorkspaceMembersEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get settingsWorkspaceMembersEmailInvalid;
+
+  /// No description provided for @settingsWorkspaceMembersInviteSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite sent.'**
+  String get settingsWorkspaceMembersInviteSent;
+
+  /// No description provided for @settingsWorkspaceMembersLinkLimitField.
+  ///
+  /// In en, this message translates to:
+  /// **'Max uses'**
+  String get settingsWorkspaceMembersLinkLimitField;
+
+  /// No description provided for @settingsWorkspaceMembersLinkLimitPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for unlimited'**
+  String get settingsWorkspaceMembersLinkLimitPlaceholder;
+
+  /// No description provided for @settingsWorkspaceMembersLinkLimitInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive whole number.'**
+  String get settingsWorkspaceMembersLinkLimitInvalid;
+
+  /// No description provided for @settingsWorkspaceMembersLinkCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link created.'**
+  String get settingsWorkspaceMembersLinkCreated;
+
+  /// No description provided for @settingsWorkspaceMembersCreatorChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get settingsWorkspaceMembersCreatorChip;
+
+  /// No description provided for @settingsWorkspaceMembersPendingChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get settingsWorkspaceMembersPendingChip;
+
+  /// No description provided for @settingsWorkspaceMembersLinkNever.
+  ///
+  /// In en, this message translates to:
+  /// **'No expiry'**
+  String get settingsWorkspaceMembersLinkNever;
+
+  /// No description provided for @settingsWorkspaceMembersLinkExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get settingsWorkspaceMembersLinkExpired;
+
+  /// No description provided for @settingsWorkspaceMembersLinkFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get settingsWorkspaceMembersLinkFull;
+
+  /// No description provided for @settingsWorkspaceMembersLinkActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get settingsWorkspaceMembersLinkActive;
+
+  /// No description provided for @settingsWorkspaceMembersLinkCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get settingsWorkspaceMembersLinkCopy;
+
+  /// No description provided for @settingsWorkspaceRolesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles'**
+  String get settingsWorkspaceRolesTitle;
+
+  /// No description provided for @settingsWorkspaceRolesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Control default access and workspace roles.'**
+  String get settingsWorkspaceRolesSubtitle;
+
+  /// No description provided for @settingsWorkspaceRolesAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You need role access to manage permissions.'**
+  String get settingsWorkspaceRolesAccessDenied;
+
+  /// No description provided for @settingsWorkspaceRolesCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create role'**
+  String get settingsWorkspaceRolesCreate;
+
+  /// No description provided for @settingsWorkspaceRolesDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default access'**
+  String get settingsWorkspaceRolesDefaultTitle;
+
+  /// No description provided for @settingsWorkspaceRolesListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles'**
+  String get settingsWorkspaceRolesListTitle;
+
+  /// No description provided for @settingsWorkspaceRolesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom roles yet.'**
+  String get settingsWorkspaceRolesEmpty;
+
+  /// No description provided for @settingsWorkspaceRolesDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete role'**
+  String get settingsWorkspaceRolesDeleteTitle;
+
+  /// No description provided for @settingsWorkspaceRolesDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String settingsWorkspaceRolesDeleteMessage(String name);
+
+  /// No description provided for @settingsWorkspaceRolesPermissionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} permissions enabled'**
+  String settingsWorkspaceRolesPermissionCount(int count);
+
+  /// No description provided for @settingsWorkspaceRolesEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit role'**
+  String get settingsWorkspaceRolesEdit;
+
+  /// No description provided for @settingsWorkspaceRolesSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get settingsWorkspaceRolesSave;
+
+  /// No description provided for @settingsWorkspaceRolesNameField.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get settingsWorkspaceRolesNameField;
+
+  /// No description provided for @settingsWorkspaceRolesNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Role name'**
+  String get settingsWorkspaceRolesNamePlaceholder;
+
+  /// No description provided for @settingsWorkspaceRolesNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a role name.'**
+  String get settingsWorkspaceRolesNameRequired;
+
+  /// No description provided for @settingsWorkspaceRolesPermissionsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions'**
+  String get settingsWorkspaceRolesPermissionsSection;
+
+  /// No description provided for @settingsWorkspaceRolesMembersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned members'**
+  String get settingsWorkspaceRolesMembersSection;
+
+  /// No description provided for @settingsWorkspaceRolesMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active members available.'**
+  String get settingsWorkspaceRolesMembersEmpty;
+
+  /// No description provided for @settingsWorkspaceRolesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Role saved.'**
+  String get settingsWorkspaceRolesSaved;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

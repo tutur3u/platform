@@ -2531,6 +2531,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryCheckoutAutoCategory => 'Danh mục tự liên kết';
 
   @override
+  String get inventoryCheckoutBrowseTab => 'Chọn hàng';
+
+  @override
+  String get inventoryCheckoutCartEmpty => 'Thêm sản phẩm từ tab chọn hàng để xem lại và tạo giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutCartTab => 'Giỏ hàng';
+
+  @override
   String get inventoryCheckoutCartTotal => 'Tổng giỏ hàng';
 
   @override
@@ -2547,6 +2556,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutManualCategoryRequired => 'Hãy chọn danh mục thu nhập khi giỏ hàng trộn nhiều danh mục liên kết hoặc chưa có danh mục liên kết.';
+
+  @override
+  String get inventoryCheckoutNoSearchResults => 'Không có sản phẩm nào khớp với tìm kiếm hiện tại.';
 
   @override
   String get inventoryCheckoutSelectedItems => 'Dòng đã chọn';
@@ -2663,7 +2675,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductAmount => 'Số lượng';
 
   @override
+  String get inventoryProductAmountRequired => 'Nhập số lượng.';
+
+  @override
   String get inventoryProductCategory => 'Danh mục sản phẩm';
+
+  @override
+  String get inventoryProductCategoryRequired => 'Chọn danh mục sản phẩm.';
 
   @override
   String get inventoryProductDescription => 'Mô tả';
@@ -2693,19 +2711,37 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductMinAmount => 'Mức tối thiểu';
 
   @override
+  String get inventoryProductMinAmountRequired => 'Nhập mức tối thiểu.';
+
+  @override
   String get inventoryProductName => 'Tên sản phẩm';
+
+  @override
+  String get inventoryProductNameRequired => 'Nhập tên sản phẩm.';
+
+  @override
+  String get inventoryProductNumberInvalid => 'Nhập số hợp lệ.';
 
   @override
   String get inventoryProductOwner => 'Chủ sở hữu';
 
   @override
+  String get inventoryProductOwnerRequired => 'Chọn chủ sở hữu.';
+
+  @override
   String get inventoryProductPrice => 'Giá';
+
+  @override
+  String get inventoryProductPriceRequired => 'Nhập giá.';
 
   @override
   String get inventoryProductSaved => 'Đã lưu sản phẩm.';
 
   @override
   String get inventoryProductUnit => 'Đơn vị';
+
+  @override
+  String get inventoryProductUnitRequired => 'Chọn đơn vị.';
 
   @override
   String get inventoryProductUsage => 'Công dụng';
@@ -2715,6 +2751,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryProductWarehouse => 'Kho';
+
+  @override
+  String get inventoryProductWarehouseRequired => 'Chọn kho.';
 
   @override
   String get inventoryProductsEmpty => 'Tạo sản phẩm để bắt đầu theo dõi tồn kho và bán hàng tại quầy.';
@@ -4774,4 +4813,164 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get onboardingGetStarted => 'Bắt đầu ngay';
+
+  @override
+  String get settingsWorkspaceMembersTitle => 'Thành viên';
+
+  @override
+  String get settingsWorkspaceMembersSubtitle => 'Mời người mới, xem quyền truy cập và quản lý liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersAccessDenied => 'Bạn cần quyền quản lý thành viên để dùng mục này.';
+
+  @override
+  String settingsWorkspaceMembersActiveSection(int count) {
+    return 'Thành viên ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersEmpty => 'Chưa có thành viên.';
+
+  @override
+  String settingsWorkspaceMembersPendingSection(int count) {
+    return 'Đang chờ ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersPendingEmpty => 'Không có lời mời nào đang chờ.';
+
+  @override
+  String get settingsWorkspaceMembersLinksSection => 'Liên kết mời';
+
+  @override
+  String get settingsWorkspaceMembersLinksEmpty => 'Chưa có liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersInviteAction => 'Mời';
+
+  @override
+  String get settingsWorkspaceMembersLinkAction => 'Tạo link';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopied => 'Đã sao chép liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersRemoveTitle => 'Xóa';
+
+  @override
+  String settingsWorkspaceMembersRemoveMessage(String name) {
+    return 'Xóa $name khỏi không gian làm việc này?';
+  }
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteTitle => 'Xóa link';
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteMessage => 'Xóa liên kết mời này?';
+
+  @override
+  String get settingsWorkspaceMembersEmailField => 'Email';
+
+  @override
+  String get settingsWorkspaceMembersEmailPlaceholder => 'name@example.com';
+
+  @override
+  String get settingsWorkspaceMembersEmailInvalid => 'Hãy nhập email hợp lệ.';
+
+  @override
+  String get settingsWorkspaceMembersInviteSent => 'Đã gửi lời mời.';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitField => 'Số lượt dùng tối đa';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitPlaceholder => 'Để trống nếu không giới hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitInvalid => 'Hãy nhập số nguyên dương.';
+
+  @override
+  String get settingsWorkspaceMembersLinkCreated => 'Đã tạo liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersCreatorChip => 'Chủ sở hữu';
+
+  @override
+  String get settingsWorkspaceMembersPendingChip => 'Đang chờ';
+
+  @override
+  String get settingsWorkspaceMembersLinkNever => 'Không hết hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinkExpired => 'Hết hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinkFull => 'Đầy';
+
+  @override
+  String get settingsWorkspaceMembersLinkActive => 'Đang hoạt động';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopy => 'Sao chép';
+
+  @override
+  String get settingsWorkspaceRolesTitle => 'Vai trò';
+
+  @override
+  String get settingsWorkspaceRolesSubtitle => 'Quản lý quyền mặc định và các vai trò trong không gian làm việc.';
+
+  @override
+  String get settingsWorkspaceRolesAccessDenied => 'Bạn cần quyền quản lý vai trò để dùng mục này.';
+
+  @override
+  String get settingsWorkspaceRolesCreate => 'Tạo vai trò';
+
+  @override
+  String get settingsWorkspaceRolesDefaultTitle => 'Quyền mặc định';
+
+  @override
+  String get settingsWorkspaceRolesListTitle => 'Vai trò';
+
+  @override
+  String get settingsWorkspaceRolesEmpty => 'Chưa có vai trò tùy chỉnh.';
+
+  @override
+  String get settingsWorkspaceRolesDeleteTitle => 'Xóa vai trò';
+
+  @override
+  String settingsWorkspaceRolesDeleteMessage(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String settingsWorkspaceRolesPermissionCount(int count) {
+    return 'Đã bật $count quyền';
+  }
+
+  @override
+  String get settingsWorkspaceRolesEdit => 'Sửa vai trò';
+
+  @override
+  String get settingsWorkspaceRolesSave => 'Lưu';
+
+  @override
+  String get settingsWorkspaceRolesNameField => 'Tên';
+
+  @override
+  String get settingsWorkspaceRolesNamePlaceholder => 'Tên vai trò';
+
+  @override
+  String get settingsWorkspaceRolesNameRequired => 'Hãy nhập tên vai trò.';
+
+  @override
+  String get settingsWorkspaceRolesPermissionsSection => 'Quyền';
+
+  @override
+  String get settingsWorkspaceRolesMembersSection => 'Thành viên được gán';
+
+  @override
+  String get settingsWorkspaceRolesMembersEmpty => 'Không có thành viên đang hoạt động.';
+
+  @override
+  String get settingsWorkspaceRolesSaved => 'Đã lưu vai trò.';
 }

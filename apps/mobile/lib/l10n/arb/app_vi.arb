@@ -1006,12 +1006,16 @@
     "inventoryCheckoutAvailableProductsSubtitle": "Điều chỉnh số lượng trực tiếp từ tồn kho khả dụng tại quầy.",
     "inventoryCheckoutAvailableProductsTitle": "Sản phẩm khả dụng",
     "inventoryCheckoutAutoCategory": "Danh mục tự liên kết",
+    "inventoryCheckoutBrowseTab": "Chọn hàng",
+    "inventoryCheckoutCartEmpty": "Thêm sản phẩm từ tab chọn hàng để xem lại và tạo giao dịch bán.",
+    "inventoryCheckoutCartTab": "Giỏ hàng",
     "inventoryCheckoutCartTotal": "Tổng giỏ hàng",
     "inventoryCheckoutCheckoutDetailsSubtitle": "Chọn nơi ghi nhận giao dịch trước khi tạo hóa đơn.",
     "inventoryCheckoutCheckoutDetailsTitle": "Thông tin thanh toán",
     "inventoryCheckoutCategoryOverride": "Ghi đè danh mục",
     "inventoryCheckoutEmpty": "Chưa có tồn kho khả dụng để bán.",
     "inventoryCheckoutManualCategoryRequired": "Hãy chọn danh mục thu nhập khi giỏ hàng trộn nhiều danh mục liên kết hoặc chưa có danh mục liên kết.",
+    "inventoryCheckoutNoSearchResults": "Không có sản phẩm nào khớp với tìm kiếm hiện tại.",
     "inventoryCheckoutSelectedItems": "Dòng đã chọn",
     "inventoryCheckoutSubtitle": "Tạo nhanh một giao dịch bán tại quầy và ghi nhận qua hóa đơn.",
     "inventoryCheckoutSubmit": "Tạo giao dịch bán",
@@ -1050,7 +1054,9 @@
     "inventoryOwnerArchived": "Đã lưu trữ",
     "inventoryProductAddInventoryRow": "Thêm dòng tồn kho",
     "inventoryProductAmount": "Số lượng",
+    "inventoryProductAmountRequired": "Nhập số lượng.",
     "inventoryProductCategory": "Danh mục sản phẩm",
+    "inventoryProductCategoryRequired": "Chọn danh mục sản phẩm.",
     "inventoryProductDescription": "Mô tả",
     "inventoryProductDetailsSubtitle": "Đặt tên sản phẩm, gán chủ sở hữu và liên kết mặc định tài chính.",
     "inventoryProductDetailsTitle": "Thông tin sản phẩm",
@@ -1060,14 +1066,21 @@
     "inventoryProductInventorySubtitle": "Mỗi dòng đại diện cho đơn vị, kho, số lượng, ngưỡng và giá bán.",
     "inventoryProductManufacturer": "Nhà sản xuất",
     "inventoryProductMinAmount": "Mức tối thiểu",
+    "inventoryProductMinAmountRequired": "Nhập mức tối thiểu.",
     "inventoryProductName": "Tên sản phẩm",
+    "inventoryProductNameRequired": "Nhập tên sản phẩm.",
+    "inventoryProductNumberInvalid": "Nhập số hợp lệ.",
     "inventoryProductOwner": "Chủ sở hữu",
+    "inventoryProductOwnerRequired": "Chọn chủ sở hữu.",
     "inventoryProductPrice": "Giá",
+    "inventoryProductPriceRequired": "Nhập giá.",
     "inventoryProductSaved": "Đã lưu sản phẩm.",
     "inventoryProductUnit": "Đơn vị",
+    "inventoryProductUnitRequired": "Chọn đơn vị.",
     "inventoryProductUsage": "Công dụng",
     "inventoryProductValidationError": "Hãy điền đủ sản phẩm, chủ sở hữu, danh mục và thông tin tồn kho bắt buộc.",
     "inventoryProductWarehouse": "Kho",
+    "inventoryProductWarehouseRequired": "Chọn kho.",
     "inventoryProductsEmpty": "Tạo sản phẩm để bắt đầu theo dõi tồn kho và bán hàng tại quầy.",
     "inventoryProductsLabel": "Sản phẩm",
     "inventoryProductsListSubtitle": "Chạm vào sản phẩm để sửa thông tin, giá hoặc các dòng tồn kho.",
@@ -1927,5 +1940,82 @@
     "onboardingSlide2Subtitle": "Công việc, Lịch và Theo dõi - tất cả đều được thống nhất. Không còn phải chuyển đổi giữa các ứng dụng.",
     "onboardingSlide3Title": "Trí tuệ phát triển cùng bạn",
     "onboardingSlide3Subtitle": "Mira ghi nhớ sở thích của bạn và trở nên thông minh hơn khi bạn sử dụng nhiều hơn.",
-    "onboardingGetStarted": "Bắt đầu ngay"
+    "onboardingGetStarted": "Bắt đầu ngay",
+
+    "settingsWorkspaceMembersTitle": "Thành viên",
+    "settingsWorkspaceMembersSubtitle": "Mời người mới, xem quyền truy cập và quản lý liên kết mời.",
+    "settingsWorkspaceMembersAccessDenied": "Bạn cần quyền quản lý thành viên để dùng mục này.",
+    "settingsWorkspaceMembersActiveSection": "Thành viên ({count})",
+    "@settingsWorkspaceMembersActiveSection": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "settingsWorkspaceMembersEmpty": "Chưa có thành viên.",
+    "settingsWorkspaceMembersPendingSection": "Đang chờ ({count})",
+    "@settingsWorkspaceMembersPendingSection": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "settingsWorkspaceMembersPendingEmpty": "Không có lời mời nào đang chờ.",
+    "settingsWorkspaceMembersLinksSection": "Liên kết mời",
+    "settingsWorkspaceMembersLinksEmpty": "Chưa có liên kết mời.",
+    "settingsWorkspaceMembersInviteAction": "Mời",
+    "settingsWorkspaceMembersLinkAction": "Tạo link",
+    "settingsWorkspaceMembersLinkCopied": "Đã sao chép liên kết mời.",
+    "settingsWorkspaceMembersRemoveTitle": "Xóa",
+    "settingsWorkspaceMembersRemoveMessage": "Xóa {name} khỏi không gian làm việc này?",
+    "@settingsWorkspaceMembersRemoveMessage": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
+    "settingsWorkspaceMembersLinkDeleteTitle": "Xóa link",
+    "settingsWorkspaceMembersLinkDeleteMessage": "Xóa liên kết mời này?",
+    "settingsWorkspaceMembersEmailField": "Email",
+    "settingsWorkspaceMembersEmailPlaceholder": "name@example.com",
+    "settingsWorkspaceMembersEmailInvalid": "Hãy nhập email hợp lệ.",
+    "settingsWorkspaceMembersInviteSent": "Đã gửi lời mời.",
+    "settingsWorkspaceMembersLinkLimitField": "Số lượt dùng tối đa",
+    "settingsWorkspaceMembersLinkLimitPlaceholder": "Để trống nếu không giới hạn",
+    "settingsWorkspaceMembersLinkLimitInvalid": "Hãy nhập số nguyên dương.",
+    "settingsWorkspaceMembersLinkCreated": "Đã tạo liên kết mời.",
+    "settingsWorkspaceMembersCreatorChip": "Chủ sở hữu",
+    "settingsWorkspaceMembersPendingChip": "Đang chờ",
+    "settingsWorkspaceMembersLinkNever": "Không hết hạn",
+    "settingsWorkspaceMembersLinkExpired": "Hết hạn",
+    "settingsWorkspaceMembersLinkFull": "Đầy",
+    "settingsWorkspaceMembersLinkActive": "Đang hoạt động",
+    "settingsWorkspaceMembersLinkCopy": "Sao chép",
+
+    "settingsWorkspaceRolesTitle": "Vai trò",
+    "settingsWorkspaceRolesSubtitle": "Quản lý quyền mặc định và các vai trò trong không gian làm việc.",
+    "settingsWorkspaceRolesAccessDenied": "Bạn cần quyền quản lý vai trò để dùng mục này.",
+    "settingsWorkspaceRolesCreate": "Tạo vai trò",
+    "settingsWorkspaceRolesDefaultTitle": "Quyền mặc định",
+    "settingsWorkspaceRolesListTitle": "Vai trò",
+    "settingsWorkspaceRolesEmpty": "Chưa có vai trò tùy chỉnh.",
+    "settingsWorkspaceRolesDeleteTitle": "Xóa vai trò",
+    "settingsWorkspaceRolesDeleteMessage": "Xóa {name}?",
+    "@settingsWorkspaceRolesDeleteMessage": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
+    "settingsWorkspaceRolesPermissionCount": "Đã bật {count} quyền",
+    "@settingsWorkspaceRolesPermissionCount": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "settingsWorkspaceRolesEdit": "Sửa vai trò",
+    "settingsWorkspaceRolesSave": "Lưu",
+    "settingsWorkspaceRolesNameField": "Tên",
+    "settingsWorkspaceRolesNamePlaceholder": "Tên vai trò",
+    "settingsWorkspaceRolesNameRequired": "Hãy nhập tên vai trò.",
+    "settingsWorkspaceRolesPermissionsSection": "Quyền",
+    "settingsWorkspaceRolesMembersSection": "Thành viên được gán",
+    "settingsWorkspaceRolesMembersEmpty": "Không có thành viên đang hoạt động.",
+    "settingsWorkspaceRolesSaved": "Đã lưu vai trò."
 }
