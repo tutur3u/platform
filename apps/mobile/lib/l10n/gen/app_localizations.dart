@@ -556,31 +556,49 @@ abstract class AppLocalizations {
   /// No description provided for @appsHubTasksDescription.
   ///
   /// In en, this message translates to:
-  /// **'Assigned work, planning, and portfolio.'**
+  /// **'Assignments, boards, estimates, and portfolio planning.'**
   String get appsHubTasksDescription;
 
   /// No description provided for @appsHubHabitsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Shared habits, streaks, and recurring progress.'**
+  /// **'Track shared routines, streaks, and recurring progress.'**
   String get appsHubHabitsDescription;
 
   /// No description provided for @appsHubCalendarDescription.
   ///
   /// In en, this message translates to:
-  /// **'Agenda, upcoming events, and schedule views.'**
+  /// **'See your agenda, upcoming events, and calendar views.'**
   String get appsHubCalendarDescription;
 
   /// No description provided for @appsHubFinanceDescription.
   ///
   /// In en, this message translates to:
-  /// **'Wallets, categories, and transaction history.'**
+  /// **'Manage wallets, categories, tags, and transaction history.'**
   String get appsHubFinanceDescription;
+
+  /// No description provided for @appsHubInventoryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Run products, stock, sales, and booth operations in one place.'**
+  String get appsHubInventoryDescription;
+
+  /// No description provided for @appsHubNotificationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Review inbox activity, alerts, and archived updates.'**
+  String get appsHubNotificationsDescription;
+
+  /// No description provided for @appsHubSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust app, workspace, and personal preferences.'**
+  String get appsHubSettingsDescription;
 
   /// No description provided for @appsHubTimerDescription.
   ///
   /// In en, this message translates to:
-  /// **'Tracking sessions, stats, and requests.'**
+  /// **'Track sessions, review stats, and handle time requests.'**
   String get appsHubTimerDescription;
 
   /// No description provided for @habitsTitle.

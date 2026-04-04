@@ -240,19 +240,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubOpenApp => 'Mở';
 
   @override
-  String get appsHubTasksDescription => 'Công việc được giao, lập kế hoạch và portfolio.';
+  String get appsHubTasksDescription => 'Theo dõi việc được giao, bảng việc, ước lượng và kế hoạch portfolio.';
 
   @override
-  String get appsHubHabitsDescription => 'Thói quen chung, chuỗi ngày và tiến độ lặp lại.';
+  String get appsHubHabitsDescription => 'Theo dõi thói quen chung, chuỗi ngày và tiến độ lặp lại.';
 
   @override
-  String get appsHubCalendarDescription => 'Lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
+  String get appsHubCalendarDescription => 'Xem lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
 
   @override
-  String get appsHubFinanceDescription => 'Ví, danh mục và lịch sử giao dịch.';
+  String get appsHubFinanceDescription => 'Quản lý ví, danh mục, thẻ và lịch sử giao dịch.';
 
   @override
-  String get appsHubTimerDescription => 'Theo dõi phiên, thống kê và yêu cầu.';
+  String get appsHubInventoryDescription => 'Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.';
+
+  @override
+  String get appsHubNotificationsDescription => 'Xem hộp thư thông báo, cảnh báo và các cập nhật đã lưu trữ.';
+
+  @override
+  String get appsHubSettingsDescription => 'Điều chỉnh cài đặt ứng dụng, không gian làm việc và cá nhân.';
+
+  @override
+  String get appsHubTimerDescription => 'Theo dõi phiên, xem thống kê và xử lý yêu cầu chấm công.';
 
   @override
   String get habitsTitle => 'Thói quen';

@@ -89,7 +89,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     // Check permissions
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId, request });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }

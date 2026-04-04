@@ -240,19 +240,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubOpenApp => 'Open';
 
   @override
-  String get appsHubTasksDescription => 'Assigned work, planning, and portfolio.';
+  String get appsHubTasksDescription => 'Assignments, boards, estimates, and portfolio planning.';
 
   @override
-  String get appsHubHabitsDescription => 'Shared habits, streaks, and recurring progress.';
+  String get appsHubHabitsDescription => 'Track shared routines, streaks, and recurring progress.';
 
   @override
-  String get appsHubCalendarDescription => 'Agenda, upcoming events, and schedule views.';
+  String get appsHubCalendarDescription => 'See your agenda, upcoming events, and calendar views.';
 
   @override
-  String get appsHubFinanceDescription => 'Wallets, categories, and transaction history.';
+  String get appsHubFinanceDescription => 'Manage wallets, categories, tags, and transaction history.';
 
   @override
-  String get appsHubTimerDescription => 'Tracking sessions, stats, and requests.';
+  String get appsHubInventoryDescription => 'Run products, stock, sales, and booth operations in one place.';
+
+  @override
+  String get appsHubNotificationsDescription => 'Review inbox activity, alerts, and archived updates.';
+
+  @override
+  String get appsHubSettingsDescription => 'Adjust app, workspace, and personal preferences.';
+
+  @override
+  String get appsHubTimerDescription => 'Track sessions, review stats, and handle time requests.';
 
   @override
   String get habitsTitle => 'Habits';
