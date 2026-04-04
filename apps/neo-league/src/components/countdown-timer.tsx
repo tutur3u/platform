@@ -12,8 +12,8 @@ const importantDates: ImportantDate[] = [
   },
   {
     announcement: 'Remaining time to Round 1 deadline:',
-    timeLabel: '17-04-2026 00:00:00 GMT+7',
-    timestamp: new Date('2026-04-17T00:00:00+07:00'),
+    timeLabel: '17-04-2026 23:59:59 GMT+7',
+    timestamp: new Date('2026-04-17T23:59:59+07:00'),
   },
   {
     announcement: 'Round 2 will start in:',
