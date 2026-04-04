@@ -44,7 +44,7 @@
     "WARP.md": true,
     "SECURITY.md": true,
     "LICENSE": true,
-    "**/node_modules": true,
+    // "**/node_modules": true,
     "**/coverage": true,
     "**/.turbo": true
   },
