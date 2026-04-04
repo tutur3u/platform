@@ -999,9 +999,22 @@
     "inventoryAuditEventSaleCreated": "Sale created",
     "inventoryAuditEventUpdated": "Updated",
     "inventoryAuditLabel": "Audit",
+    "inventoryAuditActorLabel": "Actor",
+    "inventoryAuditAfter": "After",
+    "inventoryAuditBefore": "Before",
+    "inventoryAuditChangedFields": "Changed fields",
+    "inventoryAuditChanges": "{count} changes",
+    "@inventoryAuditChanges": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
     "inventoryAuditRecentSubtitle": "Follow product, stock, setup, and sale changes across the workspace.",
     "inventoryAuditRecentTitle": "Recent activity",
+    "inventoryAuditNoChanges": "No field changes",
+    "inventoryAuditOccurredAt": "Occurred at",
     "inventoryAuditSubtitle": "Track who changed products, stock, setup, and sales.",
+    "inventoryAuditSubject": "Subject",
     "inventoryCheckoutAvailableProductsSubtitle": "Adjust quantities directly from the available booth inventory.",
     "inventoryCheckoutAvailableProductsTitle": "Available products",
     "inventoryCheckoutAutoCategory": "Auto-linked category",
@@ -1030,6 +1043,7 @@
     "inventoryManageCategoriesSubtitle": "Group products into clear shelves, menus, or collections.",
     "inventoryManageEmpty": "Nothing configured yet.",
     "inventoryManageLabel": "Manage",
+    "inventoryManageNameRequired": "Enter a name.",
     "inventoryManageOwners": "Owners",
     "inventoryManageOwnersSubtitle": "Keep attribution separate from the staff member operating the booth.",
     "inventoryManageSubtitle": "Configure the owners and lookup data the booth depends on.",
@@ -1100,7 +1114,12 @@
     "inventoryRealtimeDisabled": "Realtime is disabled for this workspace.",
     "inventoryRealtimeEnabled": "Realtime enabled",
     "inventorySaleCreated": "Inventory sale created.",
+    "inventorySaleDeleted": "Sale deleted.",
+    "inventorySaleUpdated": "Sale updated.",
     "inventorySalesEmpty": "Sales created from invoices will appear here.",
+    "inventorySalesDelete": "Delete sale",
+    "inventorySalesDeleteConfirm": "Delete this sale and restore its stock?",
+    "inventorySalesEdit": "Edit sale",
     "inventorySalesFallbackTitle": "Inventory sale",
     "inventorySalesItemsCount": "{count} items",
     "@inventorySalesItemsCount": {
@@ -1115,9 +1134,13 @@
             "name": { "type": "String" }
         }
     },
+    "inventorySalesLineItems": "Line items",
+    "inventorySalesNote": "Note",
     "inventorySalesRecentSubtitle": "Review the latest invoice-backed inventory sales.",
     "inventorySalesRecentTitle": "Sale history",
+    "inventorySalesSave": "Save sale",
     "inventorySalesSubtitle": "Monitor completed inventory sales and payment destinations.",
+    "inventorySalesTitle": "Title",
     "inventorySaveProduct": "Save product",
     "inventorySearchProducts": "Search products",
     "inventoryTitle": "Inventory",

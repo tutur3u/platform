@@ -206,6 +206,9 @@ abstract final class InventoryEndpoints {
   static String sales(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/sales';
 
+  static String sale(String wsId, String saleId) =>
+      '/api/v1/workspaces/$wsId/inventory/sales/$saleId';
+
   static String auditLogs(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/audit-logs';
 

@@ -262,6 +262,36 @@ class InventoryRepository {
     );
   }
 
+  Future<InventorySaleDetail> getSaleDetail(String wsId, String saleId) async {
+    final response = await _api.getJson(InventoryEndpoints.sale(wsId, saleId));
+    return InventorySaleDetail.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<InventorySaleDetail> updateSale({
+    required String wsId,
+    required String saleId,
+    String? notice,
+    String? note,
+    String? walletId,
+    String? categoryId,
+  }) async {
+    final response = await _api.putJson(InventoryEndpoints.sale(wsId, saleId), {
+      'notice': notice,
+      'note': note,
+      'wallet_id': walletId,
+      'category_id': categoryId,
+    });
+    return InventorySaleDetail.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<void> deleteSale(String wsId, String saleId) async {
+    await _api.deleteJson(InventoryEndpoints.sale(wsId, saleId));
+  }
+
   Future<({List<InventoryAuditLogEntry> data, int count})> getAuditLogs(
     String wsId,
   ) async {

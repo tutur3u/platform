@@ -4939,6 +4939,36 @@ abstract class AppLocalizations {
   /// **'Audit'**
   String get inventoryAuditLabel;
 
+  /// No description provided for @inventoryAuditActorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Actor'**
+  String get inventoryAuditActorLabel;
+
+  /// No description provided for @inventoryAuditAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get inventoryAuditAfter;
+
+  /// No description provided for @inventoryAuditBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get inventoryAuditBefore;
+
+  /// No description provided for @inventoryAuditChangedFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed fields'**
+  String get inventoryAuditChangedFields;
+
+  /// No description provided for @inventoryAuditChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} changes'**
+  String inventoryAuditChanges(int count);
+
   /// No description provided for @inventoryAuditRecentSubtitle.
   ///
   /// In en, this message translates to:
@@ -4951,11 +4981,29 @@ abstract class AppLocalizations {
   /// **'Recent activity'**
   String get inventoryAuditRecentTitle;
 
+  /// No description provided for @inventoryAuditNoChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'No field changes'**
+  String get inventoryAuditNoChanges;
+
+  /// No description provided for @inventoryAuditOccurredAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Occurred at'**
+  String get inventoryAuditOccurredAt;
+
   /// No description provided for @inventoryAuditSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Track who changed products, stock, setup, and sales.'**
   String get inventoryAuditSubtitle;
+
+  /// No description provided for @inventoryAuditSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get inventoryAuditSubject;
 
   /// No description provided for @inventoryCheckoutAvailableProductsSubtitle.
   ///
@@ -5124,6 +5172,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage'**
   String get inventoryManageLabel;
+
+  /// No description provided for @inventoryManageNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name.'**
+  String get inventoryManageNameRequired;
 
   /// No description provided for @inventoryManageOwners.
   ///
@@ -5509,11 +5563,41 @@ abstract class AppLocalizations {
   /// **'Inventory sale created.'**
   String get inventorySaleCreated;
 
+  /// No description provided for @inventorySaleDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale deleted.'**
+  String get inventorySaleDeleted;
+
+  /// No description provided for @inventorySaleUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale updated.'**
+  String get inventorySaleUpdated;
+
   /// No description provided for @inventorySalesEmpty.
   ///
   /// In en, this message translates to:
   /// **'Sales created from invoices will appear here.'**
   String get inventorySalesEmpty;
+
+  /// No description provided for @inventorySalesDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete sale'**
+  String get inventorySalesDelete;
+
+  /// No description provided for @inventorySalesDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this sale and restore its stock?'**
+  String get inventorySalesDeleteConfirm;
+
+  /// No description provided for @inventorySalesEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit sale'**
+  String get inventorySalesEdit;
 
   /// No description provided for @inventorySalesFallbackTitle.
   ///
@@ -5539,6 +5623,18 @@ abstract class AppLocalizations {
   /// **'By {name}'**
   String inventorySalesCreatorBadge(String name);
 
+  /// No description provided for @inventorySalesLineItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Line items'**
+  String get inventorySalesLineItems;
+
+  /// No description provided for @inventorySalesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get inventorySalesNote;
+
   /// No description provided for @inventorySalesRecentSubtitle.
   ///
   /// In en, this message translates to:
@@ -5551,11 +5647,23 @@ abstract class AppLocalizations {
   /// **'Sale history'**
   String get inventorySalesRecentTitle;
 
+  /// No description provided for @inventorySalesSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save sale'**
+  String get inventorySalesSave;
+
   /// No description provided for @inventorySalesSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Monitor completed inventory sales and payment destinations.'**
   String get inventorySalesSubtitle;
+
+  /// No description provided for @inventorySalesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get inventorySalesTitle;
 
   /// No description provided for @inventorySaveProduct.
   ///

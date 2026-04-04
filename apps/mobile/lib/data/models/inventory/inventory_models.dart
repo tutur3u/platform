@@ -523,6 +523,148 @@ class InventorySaleSummary extends Equatable {
   ];
 }
 
+class InventorySaleLine extends Equatable {
+  const InventorySaleLine({
+    required this.productId,
+    required this.productName,
+    required this.quantity,
+    required this.price,
+    required this.unitId,
+    required this.warehouseId,
+    this.ownerId,
+    this.ownerName,
+    this.unitName,
+    this.warehouseName,
+  });
+
+  factory InventorySaleLine.fromJson(Map<String, dynamic> json) =>
+      InventorySaleLine(
+        productId: _asString(json['product_id']),
+        productName: _asString(json['product_name']),
+        quantity: _asDouble(json['quantity']),
+        price: _asDouble(json['price']),
+        unitId: _asString(json['unit_id']),
+        warehouseId: _asString(json['warehouse_id']),
+        ownerId: json['owner_id']?.toString(),
+        ownerName: json['owner_name'] as String?,
+        unitName: json['unit_name'] as String?,
+        warehouseName: json['warehouse_name'] as String?,
+      );
+
+  final String productId;
+  final String productName;
+  final double quantity;
+  final double price;
+  final String unitId;
+  final String warehouseId;
+  final String? ownerId;
+  final String? ownerName;
+  final String? unitName;
+  final String? warehouseName;
+
+  @override
+  List<Object?> get props => [
+    productId,
+    productName,
+    quantity,
+    price,
+    unitId,
+    warehouseId,
+    ownerId,
+    ownerName,
+    unitName,
+    warehouseName,
+  ];
+}
+
+class InventorySaleDetail extends Equatable {
+  const InventorySaleDetail({
+    required this.id,
+    required this.paidAmount,
+    required this.itemsCount,
+    required this.totalQuantity,
+    required this.owners,
+    required this.lines,
+    this.notice,
+    this.note,
+    this.createdAt,
+    this.completedAt,
+    this.walletId,
+    this.walletName,
+    this.categoryId,
+    this.categoryName,
+    this.customerId,
+    this.customerName,
+    this.creatorName,
+  });
+
+  factory InventorySaleDetail.fromJson(Map<String, dynamic> json) =>
+      InventorySaleDetail(
+        id: _asString(json['id']),
+        notice: json['notice'] as String?,
+        note: json['note'] as String?,
+        paidAmount: _asDouble(json['paid_amount']),
+        itemsCount: (json['items_count'] as num?)?.toInt() ?? 0,
+        totalQuantity: _asDouble(json['total_quantity']),
+        owners: (json['owners'] as List<dynamic>? ?? const <dynamic>[])
+            .map(_asString)
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false),
+        lines: (json['lines'] as List<dynamic>? ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(InventorySaleLine.fromJson)
+            .toList(growable: false),
+        createdAt: _asDateTime(json['created_at']),
+        completedAt: _asDateTime(json['completed_at']),
+        walletId: json['wallet_id'] as String?,
+        walletName: json['wallet_name'] as String?,
+        categoryId: json['category_id'] as String?,
+        categoryName: json['category_name'] as String?,
+        customerId: json['customer_id'] as String?,
+        customerName: json['customer_name'] as String?,
+        creatorName: json['creator_name'] as String?,
+      );
+
+  final String id;
+  final String? notice;
+  final String? note;
+  final double paidAmount;
+  final int itemsCount;
+  final double totalQuantity;
+  final List<String> owners;
+  final List<InventorySaleLine> lines;
+  final DateTime? createdAt;
+  final DateTime? completedAt;
+  final String? walletId;
+  final String? walletName;
+  final String? categoryId;
+  final String? categoryName;
+  final String? customerId;
+  final String? customerName;
+  final String? creatorName;
+
+  @override
+  List<Object?> get props => [
+    id,
+    notice,
+    note,
+    paidAmount,
+    itemsCount,
+    totalQuantity,
+    owners,
+    lines,
+    createdAt,
+    completedAt,
+    walletId,
+    walletName,
+    categoryId,
+    categoryName,
+    customerId,
+    customerName,
+    creatorName,
+  ];
+}
+
 class InventoryAuditFieldChange extends Equatable {
   const InventoryAuditFieldChange({
     required this.field,
@@ -558,48 +700,55 @@ class InventoryAuditLogEntry extends Equatable {
     required this.changedFields,
     required this.fieldChanges,
     required this.occurredAt,
+    this.entityLabel,
     this.actorAuthUid,
     this.actorWorkspaceUserId,
+    this.actorDisplayName,
     this.source,
   });
 
-  factory InventoryAuditLogEntry.fromJson(Map<String, dynamic> json) =>
-      InventoryAuditLogEntry(
-        auditRecordId: _asString(json['auditRecordId']),
-        eventKind: json['eventKind'] as String? ?? '',
-        entityKind: json['entityKind'] as String? ?? '',
-        entityId: _asString(json['entityId']),
-        summary: json['summary'] as String? ?? '',
-        changedFields:
-            (json['changedFields'] as List<dynamic>? ?? const <dynamic>[])
-                .map(_asString)
-                .where((value) => value.isNotEmpty)
-                .toList(growable: false),
-        fieldChanges:
-            (json['fieldChanges'] as List<dynamic>? ?? const <dynamic>[])
-                .whereType<Map<String, dynamic>>()
-                .map(InventoryAuditFieldChange.fromJson)
-                .toList(growable: false),
-        occurredAt: _asDateTime(json['occurredAt']) ?? DateTime.now(),
-        actorAuthUid: _asString(
-          (json['actor'] as Map<String, dynamic>?)?['authUid'],
-        ),
-        actorWorkspaceUserId: _asString(
-          (json['actor'] as Map<String, dynamic>?)?['workspaceUserId'],
-        ),
-        source: json['source'] as String?,
-      );
+  factory InventoryAuditLogEntry.fromJson(
+    Map<String, dynamic> json,
+  ) => InventoryAuditLogEntry(
+    auditRecordId: _asString(json['auditRecordId']),
+    eventKind: json['eventKind'] as String? ?? '',
+    entityKind: json['entityKind'] as String? ?? '',
+    entityId: _asString(json['entityId']),
+    entityLabel: json['entityLabel']?.toString(),
+    summary: json['summary'] as String? ?? '',
+    changedFields:
+        (json['changedFields'] as List<dynamic>? ?? const <dynamic>[])
+            .map(_asString)
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false),
+    fieldChanges: (json['fieldChanges'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(InventoryAuditFieldChange.fromJson)
+        .toList(growable: false),
+    occurredAt: _asDateTime(json['occurredAt']) ?? DateTime.now(),
+    actorAuthUid: _asString(
+      (json['actor'] as Map<String, dynamic>?)?['authUid'],
+    ),
+    actorWorkspaceUserId: _asString(
+      (json['actor'] as Map<String, dynamic>?)?['workspaceUserId'],
+    ),
+    actorDisplayName: ((json['actor'] as Map<String, dynamic>?)?['displayName'])
+        ?.toString(),
+    source: json['source'] as String?,
+  );
 
   final String auditRecordId;
   final String eventKind;
   final String entityKind;
   final String entityId;
+  final String? entityLabel;
   final String summary;
   final List<String> changedFields;
   final List<InventoryAuditFieldChange> fieldChanges;
   final DateTime occurredAt;
   final String? actorAuthUid;
   final String? actorWorkspaceUserId;
+  final String? actorDisplayName;
   final String? source;
 
   @override
@@ -608,12 +757,14 @@ class InventoryAuditLogEntry extends Equatable {
     eventKind,
     entityKind,
     entityId,
+    entityLabel,
     summary,
     changedFields,
     fieldChanges,
     occurredAt,
     actorAuthUid,
     actorWorkspaceUserId,
+    actorDisplayName,
     source,
   ];
 }

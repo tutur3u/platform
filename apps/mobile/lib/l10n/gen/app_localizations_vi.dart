@@ -2513,13 +2513,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryAuditLabel => 'Nhật ký';
 
   @override
+  String get inventoryAuditActorLabel => 'Người thực hiện';
+
+  @override
+  String get inventoryAuditAfter => 'Sau';
+
+  @override
+  String get inventoryAuditBefore => 'Trước';
+
+  @override
+  String get inventoryAuditChangedFields => 'Trường đã thay đổi';
+
+  @override
+  String inventoryAuditChanges(int count) {
+    return '$count thay đổi';
+  }
+
+  @override
   String get inventoryAuditRecentSubtitle => 'Theo dõi thay đổi về sản phẩm, tồn kho, cấu hình và giao dịch bán trong không gian làm việc.';
 
   @override
   String get inventoryAuditRecentTitle => 'Hoạt động gần đây';
 
   @override
+  String get inventoryAuditNoChanges => 'Không có thay đổi trường';
+
+  @override
+  String get inventoryAuditOccurredAt => 'Thời điểm';
+
+  @override
   String get inventoryAuditSubtitle => 'Biết ai đã thay đổi sản phẩm, tồn kho, cấu hình và giao dịch bán.';
+
+  @override
+  String get inventoryAuditSubject => 'Đối tượng';
 
   @override
   String get inventoryCheckoutAvailableProductsSubtitle => 'Điều chỉnh số lượng trực tiếp từ tồn kho khả dụng tại quầy.';
@@ -2604,6 +2630,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryManageLabel => 'Quản lý';
+
+  @override
+  String get inventoryManageNameRequired => 'Hãy nhập tên.';
 
   @override
   String get inventoryManageOwners => 'Chủ sở hữu';
@@ -2800,7 +2829,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySaleCreated => 'Đã tạo giao dịch bán từ tồn kho.';
 
   @override
+  String get inventorySaleDeleted => 'Đã xóa giao dịch bán.';
+
+  @override
+  String get inventorySaleUpdated => 'Đã cập nhật giao dịch bán.';
+
+  @override
   String get inventorySalesEmpty => 'Các giao dịch bán tạo từ hóa đơn sẽ xuất hiện ở đây.';
+
+  @override
+  String get inventorySalesDelete => 'Xóa giao dịch bán';
+
+  @override
+  String get inventorySalesDeleteConfirm => 'Xóa giao dịch bán này và hoàn lại tồn kho?';
+
+  @override
+  String get inventorySalesEdit => 'Sửa giao dịch bán';
 
   @override
   String get inventorySalesFallbackTitle => 'Giao dịch bán tồn kho';
@@ -2819,13 +2863,25 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get inventorySalesLineItems => 'Dòng hàng';
+
+  @override
+  String get inventorySalesNote => 'Ghi chú';
+
+  @override
   String get inventorySalesRecentSubtitle => 'Xem lại các giao dịch bán tồn kho gần nhất đã ghi qua hóa đơn.';
 
   @override
   String get inventorySalesRecentTitle => 'Lịch sử bán hàng';
 
   @override
+  String get inventorySalesSave => 'Lưu giao dịch bán';
+
+  @override
   String get inventorySalesSubtitle => 'Theo dõi các giao dịch bán đã hoàn tất và nơi tiền được ghi nhận.';
+
+  @override
+  String get inventorySalesTitle => 'Tiêu đề';
 
   @override
   String get inventorySaveProduct => 'Lưu sản phẩm';

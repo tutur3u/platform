@@ -1000,9 +1000,22 @@
     "inventoryAuditEventSaleCreated": "Tạo giao dịch bán",
     "inventoryAuditEventUpdated": "Cập nhật",
     "inventoryAuditLabel": "Nhật ký",
+    "inventoryAuditActorLabel": "Người thực hiện",
+    "inventoryAuditAfter": "Sau",
+    "inventoryAuditBefore": "Trước",
+    "inventoryAuditChangedFields": "Trường đã thay đổi",
+    "inventoryAuditChanges": "{count} thay đổi",
+    "@inventoryAuditChanges": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
     "inventoryAuditRecentSubtitle": "Theo dõi thay đổi về sản phẩm, tồn kho, cấu hình và giao dịch bán trong không gian làm việc.",
     "inventoryAuditRecentTitle": "Hoạt động gần đây",
+    "inventoryAuditNoChanges": "Không có thay đổi trường",
+    "inventoryAuditOccurredAt": "Thời điểm",
     "inventoryAuditSubtitle": "Biết ai đã thay đổi sản phẩm, tồn kho, cấu hình và giao dịch bán.",
+    "inventoryAuditSubject": "Đối tượng",
     "inventoryCheckoutAvailableProductsSubtitle": "Điều chỉnh số lượng trực tiếp từ tồn kho khả dụng tại quầy.",
     "inventoryCheckoutAvailableProductsTitle": "Sản phẩm khả dụng",
     "inventoryCheckoutAutoCategory": "Danh mục tự liên kết",
@@ -1031,6 +1044,7 @@
     "inventoryManageCategoriesSubtitle": "Nhóm sản phẩm theo quầy, kệ, menu hoặc bộ sưu tập.",
     "inventoryManageEmpty": "Chưa có cấu hình nào.",
     "inventoryManageLabel": "Quản lý",
+    "inventoryManageNameRequired": "Hãy nhập tên.",
     "inventoryManageOwners": "Chủ sở hữu",
     "inventoryManageOwnersSubtitle": "Giữ phần gán chủ sở hữu tách biệt với nhân viên đang thao tác tại quầy.",
     "inventoryManageSubtitle": "Thiết lập chủ sở hữu và dữ liệu tra cứu mà quầy hàng cần dùng.",
@@ -1101,7 +1115,12 @@
     "inventoryRealtimeDisabled": "Realtime đang tắt cho không gian làm việc này.",
     "inventoryRealtimeEnabled": "Đã bật realtime",
     "inventorySaleCreated": "Đã tạo giao dịch bán từ tồn kho.",
+    "inventorySaleDeleted": "Đã xóa giao dịch bán.",
+    "inventorySaleUpdated": "Đã cập nhật giao dịch bán.",
     "inventorySalesEmpty": "Các giao dịch bán tạo từ hóa đơn sẽ xuất hiện ở đây.",
+    "inventorySalesDelete": "Xóa giao dịch bán",
+    "inventorySalesDeleteConfirm": "Xóa giao dịch bán này và hoàn lại tồn kho?",
+    "inventorySalesEdit": "Sửa giao dịch bán",
     "inventorySalesFallbackTitle": "Giao dịch bán tồn kho",
     "inventorySalesItemsCount": "{count} mặt hàng",
     "@inventorySalesItemsCount": {
@@ -1116,9 +1135,13 @@
             "name": { "type": "String" }
         }
     },
+    "inventorySalesLineItems": "Dòng hàng",
+    "inventorySalesNote": "Ghi chú",
     "inventorySalesRecentSubtitle": "Xem lại các giao dịch bán tồn kho gần nhất đã ghi qua hóa đơn.",
     "inventorySalesRecentTitle": "Lịch sử bán hàng",
+    "inventorySalesSave": "Lưu giao dịch bán",
     "inventorySalesSubtitle": "Theo dõi các giao dịch bán đã hoàn tất và nơi tiền được ghi nhận.",
+    "inventorySalesTitle": "Tiêu đề",
     "inventorySaveProduct": "Lưu sản phẩm",
     "inventorySearchProducts": "Tìm sản phẩm",
     "inventoryTitle": "Tồn kho",

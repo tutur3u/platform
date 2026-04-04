@@ -29,6 +29,60 @@ function normalizeAuditValue(value: unknown) {
   return JSON.stringify(value);
 }
 
+function formatAmount(value: unknown) {
+  const amount = Number(value ?? 0);
+  if (!Number.isFinite(amount)) {
+    return null;
+  }
+
+  return new Intl.NumberFormat('en-US').format(amount);
+}
+
+function buildSummary(row: {
+  summary: string | null;
+  event_kind: string;
+  entity_kind: string;
+  entity_label: string | null;
+  after: unknown;
+}) {
+  const trimmed = row.summary?.trim();
+  if (
+    trimmed &&
+    !(row.entity_kind === 'sale' && row.event_kind === 'sale_created')
+  ) {
+    return trimmed;
+  }
+
+  if (row.entity_kind === 'sale' && row.event_kind === 'sale_created') {
+    const after =
+      row.after && typeof row.after === 'object'
+        ? (row.after as Record<string, unknown>)
+        : {};
+    const products = Array.isArray(after.products) ? after.products : [];
+    const paidAmount = formatAmount(after.paid_amount);
+    const segments = ['Created sale'];
+
+    if (products.length > 0) {
+      segments.push(`${products.length} line${products.length === 1 ? '' : 's'}`);
+    }
+
+    if (paidAmount != null) {
+      segments.push(paidAmount);
+    }
+
+    return segments.join(' • ');
+  }
+
+  if (row.entity_label?.trim().isNotEmpty ?? false) {
+    return `${row.event_kind.replaceAll('_', ' ')} ${row.entity_label!.trim()}`;
+  }
+
+  return [
+    row.event_kind.replaceAll('_', ' '),
+    row.entity_kind.replaceAll('_', ' '),
+  ].join(' ');
+}
+
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(req);
@@ -79,6 +133,27 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
+  const actorIds = [...new Set((data ?? []).map((row) => row.actor_workspace_user_id).filter(Boolean))] as string[];
+  const actorNameById = new Map<string, string>();
+
+  if (actorIds.length > 0) {
+    const { data: actorRows, error: actorError } = await sbAdmin
+      .from('workspace_users')
+      .select('id, full_name, display_name')
+      .in('id', actorIds);
+
+    if (actorError) {
+      console.error('Error fetching inventory audit actors', actorError);
+    } else {
+      for (const actor of actorRows ?? []) {
+        actorNameById.set(
+          actor.id,
+          actor.full_name ?? actor.display_name ?? actor.id
+        );
+      }
+    }
+  }
+
   return NextResponse.json({
     data: (data ?? []).map((row) => {
       const before = (row.before ?? {}) as Record<string, unknown>;
@@ -89,7 +164,8 @@ export async function GET(req: Request, { params }: Params) {
         eventKind: row.event_kind,
         entityKind: row.entity_kind,
         entityId: row.entity_id,
-        summary: row.summary,
+        entityLabel: row.entity_label,
+        summary: buildSummary(row),
         changedFields,
         fieldChanges: changedFields.map((field) => ({
           field,
@@ -102,6 +178,9 @@ export async function GET(req: Request, { params }: Params) {
         actor: {
           authUid: row.actor_auth_uid,
           workspaceUserId: row.actor_workspace_user_id,
+          displayName: row.actor_workspace_user_id
+            ? (actorNameById.get(row.actor_workspace_user_id) ?? null)
+            : null,
         },
         occurredAt: row.occurred_at,
         source: row.source,

@@ -2,20 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -29,8 +30,17 @@ class InventoryProductsPage extends StatefulWidget {
 class _InventoryProductsPageState extends State<InventoryProductsPage> {
   late final InventoryRepository _inventoryRepository;
   late final FinanceRepository _financeRepository;
+  late final WorkspacePermissionsRepository _permissionsRepository;
   late final TextEditingController _searchController;
-  Future<({List<InventoryProduct> data, int count, String currency})>? _future;
+  Future<
+    ({
+      List<InventoryProduct> data,
+      int count,
+      String currency,
+      bool canManageCatalog,
+    })
+  >?
+  _future;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -40,6 +50,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
     super.initState();
     _inventoryRepository = InventoryRepository();
     _financeRepository = FinanceRepository();
+    _permissionsRepository = WorkspacePermissionsRepository();
     _searchController = TextEditingController();
     unawaited(Future<void>.delayed(Duration.zero, _reload));
   }
@@ -61,7 +72,14 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
     });
   }
 
-  Future<({List<InventoryProduct> data, int count, String currency})>
+  Future<
+    ({
+      List<InventoryProduct> data,
+      int count,
+      String currency,
+      bool canManageCatalog,
+    })
+  >
   _loadProducts(String wsId) async {
     final results = await Future.wait<dynamic>([
       _inventoryRepository.getProducts(
@@ -69,15 +87,18 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
         query: _searchController.text,
       ),
       _financeRepository.getWorkspaceDefaultCurrency(wsId),
+      _permissionsRepository.getPermissions(wsId: wsId),
     ]);
 
     final products = results[0] as ({List<InventoryProduct> data, int count});
     final currency = results[1] as String;
+    final permissions = results[2] as WorkspacePermissions;
 
     return (
       data: products.data,
       count: products.count,
       currency: currency,
+      canManageCatalog: canManageInventoryCatalog(permissions),
     );
   }
 
@@ -100,7 +121,12 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
         listener: (context, state) => _reload(),
         child:
             FutureBuilder<
-              ({List<InventoryProduct> data, int count, String currency})
+              ({
+                List<InventoryProduct> data,
+                int count,
+                String currency,
+                bool canManageCatalog,
+              })
             >(
               future: _future,
               builder: (context, snapshot) {
@@ -126,105 +152,115 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                   maxWidth: ResponsivePadding.maxContentWidth(
                     context.deviceClass,
                   ),
-                  child: RefreshIndicator(
-                    onRefresh: () async => _reload(),
-                    child: ListView(
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        8,
-                        16,
-                        32 + MediaQuery.paddingOf(context).bottom,
-                      ),
-                      children: [
-                        FinancePanel(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
+                  child: Stack(
+                    children: [
+                      RefreshIndicator(
+                        onRefresh: () async => _reload(),
+                        child: ListView(
+                          padding: EdgeInsets.fromLTRB(
+                            16,
+                            8,
+                            16,
+                            108 + MediaQuery.paddingOf(context).bottom,
+                          ),
+                          children: [
+                            FinancePanel(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  FinanceStatChip(
-                                    label: l10n.inventoryProductsLabel,
-                                    value: '${result.count}',
-                                    icon: Icons.inventory_2_outlined,
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      FinanceStatChip(
+                                        label: l10n.inventoryProductsLabel,
+                                        value: '${result.count}',
+                                        icon: Icons.inventory_2_outlined,
+                                      ),
+                                      FinanceStatChip(
+                                        label: l10n.inventoryOverviewLowStock,
+                                        value: '$lowStockCount',
+                                        icon: Icons.warning_amber_rounded,
+                                        tint: lowStockCount > 0
+                                            ? FinancePalette.of(
+                                                context,
+                                              ).negative
+                                            : FinancePalette.of(context).accent,
+                                      ),
+                                    ],
                                   ),
-                                  FinanceStatChip(
-                                    label: l10n.inventoryOverviewLowStock,
-                                    value: '$lowStockCount',
-                                    icon: Icons.warning_amber_rounded,
-                                    tint: lowStockCount > 0
-                                        ? FinancePalette.of(context).negative
-                                        : FinancePalette.of(context).accent,
+                                  const shad.Gap(14),
+                                  TextField(
+                                    controller: _searchController,
+                                    onSubmitted: (_) => _reload(),
+                                    onChanged: (_) => setState(() {}),
+                                    decoration: InputDecoration(
+                                      hintText: l10n.inventorySearchProducts,
+                                      prefixIcon: const Icon(
+                                        Icons.search_rounded,
+                                      ),
+                                      suffixIcon: _searchController.text.isEmpty
+                                          ? null
+                                          : IconButton(
+                                              onPressed: () {
+                                                _searchController.clear();
+                                                _reload();
+                                              },
+                                              icon: const Icon(
+                                                Icons.close_rounded,
+                                              ),
+                                            ),
+                                    ),
                                   ),
                                 ],
                               ),
-                              const shad.Gap(14),
-                              TextField(
-                                controller: _searchController,
-                                onSubmitted: (_) => _reload(),
-                                decoration: InputDecoration(
-                                  hintText: l10n.inventorySearchProducts,
-                                  prefixIcon: const Icon(Icons.search_rounded),
-                                  suffixIcon: _searchController.text.isEmpty
-                                      ? null
-                                      : IconButton(
-                                          onPressed: () {
-                                            _searchController.clear();
-                                            _reload();
-                                          },
-                                          icon: const Icon(Icons.close_rounded),
+                            ),
+                            const shad.Gap(18),
+                            if (result.data.isEmpty)
+                              FinanceEmptyState(
+                                icon: Icons.inventory_2_outlined,
+                                title: l10n.inventoryProductsLabel,
+                                body: l10n.inventoryProductsEmpty,
+                                action: result.canManageCatalog
+                                    ? shad.SecondaryButton(
+                                        onPressed: _openEditor,
+                                        child: Text(
+                                          l10n.inventoryCreateProduct,
                                         ),
+                                      )
+                                    : null,
+                              )
+                            else ...[
+                              FinanceSectionHeader(
+                                title: l10n.inventoryProductsListTitle,
+                              ),
+                              const shad.Gap(12),
+                              ...result.data.map(
+                                (product) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _InventoryProductCard(
+                                    product: product,
+                                    currency: result.currency,
+                                    onTap: result.canManageCatalog
+                                        ? () => _openEditor(
+                                            productId: product.id,
+                                          )
+                                        : null,
+                                  ),
                                 ),
                               ),
-                              const shad.Gap(14),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: [
-                                  shad.PrimaryButton(
-                                    onPressed: _openEditor,
-                                    child: Text(l10n.inventoryCreateProduct),
-                                  ),
-                                  shad.SecondaryButton(
-                                    onPressed: () =>
-                                        context.go(Routes.inventoryManage),
-                                    child: Text(l10n.inventoryManageLabel),
-                                  ),
-                                ],
-                              ),
                             ],
-                          ),
+                          ],
                         ),
-                        const shad.Gap(18),
-                        if (result.data.isEmpty)
-                          FinanceEmptyState(
-                            icon: Icons.inventory_2_outlined,
-                            title: l10n.inventoryProductsLabel,
-                            body: l10n.inventoryProductsEmpty,
-                            action: shad.SecondaryButton(
-                              onPressed: _openEditor,
-                              child: Text(l10n.inventoryCreateProduct),
-                            ),
-                          )
-                        else ...[
-                          FinanceSectionHeader(
-                            title: l10n.inventoryProductsListTitle,
-                          ),
-                          const shad.Gap(12),
-                          ...result.data.map(
-                            (product) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _InventoryProductCard(
-                                product: product,
-                                currency: result.currency,
-                                onTap: () => _openEditor(productId: product.id),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                      ),
+                      if (result.canManageCatalog)
+                        ExtendedFab(
+                          icon: Icons.add_rounded,
+                          label: l10n.inventoryCreateProduct,
+                          includeBottomSafeArea: false,
+                          onPressed: _openEditor,
+                        ),
+                    ],
                   ),
                 );
               },
@@ -255,12 +291,12 @@ class _InventoryProductCard extends StatelessWidget {
   const _InventoryProductCard({
     required this.product,
     required this.currency,
-    required this.onTap,
+    this.onTap,
   });
 
   final InventoryProduct product;
   final String currency;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

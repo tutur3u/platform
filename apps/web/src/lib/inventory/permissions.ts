@@ -88,6 +88,18 @@ export function canCreateInventorySales(
   ]);
 }
 
+export function canUpdateInventorySales(
+  permissions: Pick<PermissionsResult, 'containsPermission'>
+) {
+  return hasAnyPermission(permissions, ['update_invoices']);
+}
+
+export function canDeleteInventorySales(
+  permissions: Pick<PermissionsResult, 'containsPermission'>
+) {
+  return hasAnyPermission(permissions, ['delete_invoices']);
+}
+
 export function canViewInventoryAnalytics(
   permissions: Pick<PermissionsResult, 'containsPermission'>
 ) {

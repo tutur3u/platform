@@ -2513,13 +2513,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryAuditLabel => 'Audit';
 
   @override
+  String get inventoryAuditActorLabel => 'Actor';
+
+  @override
+  String get inventoryAuditAfter => 'After';
+
+  @override
+  String get inventoryAuditBefore => 'Before';
+
+  @override
+  String get inventoryAuditChangedFields => 'Changed fields';
+
+  @override
+  String inventoryAuditChanges(int count) {
+    return '$count changes';
+  }
+
+  @override
   String get inventoryAuditRecentSubtitle => 'Follow product, stock, setup, and sale changes across the workspace.';
 
   @override
   String get inventoryAuditRecentTitle => 'Recent activity';
 
   @override
+  String get inventoryAuditNoChanges => 'No field changes';
+
+  @override
+  String get inventoryAuditOccurredAt => 'Occurred at';
+
+  @override
   String get inventoryAuditSubtitle => 'Track who changed products, stock, setup, and sales.';
+
+  @override
+  String get inventoryAuditSubject => 'Subject';
 
   @override
   String get inventoryCheckoutAvailableProductsSubtitle => 'Adjust quantities directly from the available booth inventory.';
@@ -2604,6 +2630,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryManageLabel => 'Manage';
+
+  @override
+  String get inventoryManageNameRequired => 'Enter a name.';
 
   @override
   String get inventoryManageOwners => 'Owners';
@@ -2800,7 +2829,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySaleCreated => 'Inventory sale created.';
 
   @override
+  String get inventorySaleDeleted => 'Sale deleted.';
+
+  @override
+  String get inventorySaleUpdated => 'Sale updated.';
+
+  @override
   String get inventorySalesEmpty => 'Sales created from invoices will appear here.';
+
+  @override
+  String get inventorySalesDelete => 'Delete sale';
+
+  @override
+  String get inventorySalesDeleteConfirm => 'Delete this sale and restore its stock?';
+
+  @override
+  String get inventorySalesEdit => 'Edit sale';
 
   @override
   String get inventorySalesFallbackTitle => 'Inventory sale';
@@ -2819,13 +2863,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get inventorySalesLineItems => 'Line items';
+
+  @override
+  String get inventorySalesNote => 'Note';
+
+  @override
   String get inventorySalesRecentSubtitle => 'Review the latest invoice-backed inventory sales.';
 
   @override
   String get inventorySalesRecentTitle => 'Sale history';
 
   @override
+  String get inventorySalesSave => 'Save sale';
+
+  @override
   String get inventorySalesSubtitle => 'Monitor completed inventory sales and payment destinations.';
+
+  @override
+  String get inventorySalesTitle => 'Title';
 
   @override
   String get inventorySaveProduct => 'Save product';

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/utils/supported_currencies.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -236,9 +235,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
     final l10n = context.l10n;
     final workspaceState = context.watch<WorkspaceCubit>().state;
     final currentWorkspace = workspaceState.currentWorkspace;
-    final theme = shad.Theme.of(context);
-    final defaultCurrencyLabel =
-        getSupportedCurrency(defaultCurrency)?.name ?? defaultCurrency;
 
     final workspacePropertiesSubtitle = isWorkspacePermissionLoading
         ? l10n.settingsWorkspacePropertiesPermissionLoading
