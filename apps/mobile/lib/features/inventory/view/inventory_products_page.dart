@@ -10,6 +10,7 @@ import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
@@ -28,19 +29,25 @@ class InventoryProductsPage extends StatefulWidget {
 }
 
 class _InventoryProductsPageState extends State<InventoryProductsPage> {
+  static const int _pageSize = 24;
+
   late final InventoryRepository _inventoryRepository;
   late final FinanceRepository _financeRepository;
   late final WorkspacePermissionsRepository _permissionsRepository;
   late final TextEditingController _searchController;
-  Future<
-    ({
-      List<InventoryProduct> data,
-      int count,
-      String currency,
-      bool canManageCatalog,
-    })
-  >?
-  _future;
+  final ScrollController _scrollController = ScrollController();
+  Timer? _searchDebounce;
+
+  List<InventoryProduct> _products = const [];
+  int _count = 0;
+  String _currency = 'USD';
+  bool _canManageCatalog = false;
+  bool _isLoadingInitial = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  String? _error;
+  int _page = 1;
+  int _requestToken = 0;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -52,54 +59,146 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
     _financeRepository = FinanceRepository();
     _permissionsRepository = WorkspacePermissionsRepository();
     _searchController = TextEditingController();
-    unawaited(Future<void>.delayed(Duration.zero, _reload));
+    _scrollController.addListener(_onScroll);
+    unawaited(Future<void>.delayed(Duration.zero, _loadInitial));
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _reload() {
+  Future<void> _loadInitial() async {
     final wsId = _wsId;
     if (wsId == null) {
       return;
     }
+    final requestToken = ++_requestToken;
 
     setState(() {
-      _future = _loadProducts(wsId);
+      _isLoadingInitial = true;
+      _isLoadingMore = false;
+      _error = null;
+      _page = 1;
     });
+
+    try {
+      final results = await Future.wait<dynamic>([
+        _inventoryRepository.getProducts(
+          wsId,
+          query: _searchController.text,
+          pageSize: _pageSize,
+        ),
+        _financeRepository.getWorkspaceDefaultCurrency(wsId),
+        _permissionsRepository.getPermissions(wsId: wsId),
+      ]);
+
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+
+      final products = results[0] as ({List<InventoryProduct> data, int count});
+      final currency = results[1] as String;
+      final permissions = results[2] as WorkspacePermissions;
+
+      setState(() {
+        _products = products.data;
+        _count = products.count;
+        _currency = currency;
+        _canManageCatalog = canManageInventoryCatalog(permissions);
+        _hasMore = _products.length < _count;
+        _error = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _error = error.message.isNotEmpty
+            ? error.message
+            : context.l10n.commonSomethingWentWrong;
+      });
+    } on Exception {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _error = context.l10n.commonSomethingWentWrong;
+      });
+    } finally {
+      if (mounted && requestToken == _requestToken) {
+        setState(() {
+          _isLoadingInitial = false;
+        });
+      }
+    }
   }
 
-  Future<
-    ({
-      List<InventoryProduct> data,
-      int count,
-      String currency,
-      bool canManageCatalog,
-    })
-  >
-  _loadProducts(String wsId) async {
-    final results = await Future.wait<dynamic>([
-      _inventoryRepository.getProducts(
+  Future<void> _loadMore() async {
+    final wsId = _wsId;
+    final requestToken = _requestToken;
+    if (wsId == null || _isLoadingInitial || _isLoadingMore || !_hasMore) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final nextPage = _page + 1;
+      final result = await _inventoryRepository.getProducts(
         wsId,
         query: _searchController.text,
-      ),
-      _financeRepository.getWorkspaceDefaultCurrency(wsId),
-      _permissionsRepository.getPermissions(wsId: wsId),
-    ]);
+        page: nextPage,
+        pageSize: _pageSize,
+      );
 
-    final products = results[0] as ({List<InventoryProduct> data, int count});
-    final currency = results[1] as String;
-    final permissions = results[2] as WorkspacePermissions;
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
 
-    return (
-      data: products.data,
-      count: products.count,
-      currency: currency,
-      canManageCatalog: canManageInventoryCatalog(permissions),
-    );
+      setState(() {
+        _products = [..._products, ...result.data];
+        _count = result.count;
+        _page = nextPage;
+        _hasMore = _products.length < _count;
+      });
+    } on Exception {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _hasMore = _products.length < _count;
+      });
+    } finally {
+      if (mounted && requestToken == _requestToken) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final position = _scrollController.position;
+    if (position.maxScrollExtent - position.pixels <= 200) {
+      unawaited(_loadMore());
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    setState(() {});
+    _searchDebounce = Timer(const Duration(milliseconds: 300), _loadInitial);
   }
 
   Future<void> _openEditor({String? productId}) async {
@@ -108,7 +207,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
       productId: productId,
     );
     if (saved == true && mounted) {
-      _reload();
+      await _loadInitial();
     }
   }
 
@@ -118,153 +217,140 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => _reload(),
-        child:
-            FutureBuilder<
-              ({
-                List<InventoryProduct> data,
-                int count,
-                String currency,
-                bool canManageCatalog,
-              })
-            >(
-              future: _future,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData &&
-                    snapshot.connectionState != ConnectionState.done) {
-                  return const Center(child: NovaLoadingIndicator());
-                }
+        listener: (context, state) => unawaited(_loadInitial()),
+        child: Builder(
+          builder: (context) {
+            if (_isLoadingInitial && _products.isEmpty) {
+              return const Center(child: NovaLoadingIndicator());
+            }
 
-                if (snapshot.hasError || !snapshot.hasData) {
-                  return _InventoryProductsError(onRetry: _reload);
-                }
+            if (_error != null && _products.isEmpty) {
+              return _InventoryProductsError(
+                onRetry: () => unawaited(_loadInitial()),
+              );
+            }
 
-                final result = snapshot.data!;
-                final l10n = context.l10n;
-                final lowStockCount = result.data
-                    .where(
-                      (product) =>
-                          _productStatus(product) != _ProductStockState.ok,
-                    )
-                    .length;
+            final l10n = context.l10n;
+            final lowStockCount = _products
+                .where(
+                  (product) => _productStatus(product) != _ProductStockState.ok,
+                )
+                .length;
 
-                return ResponsiveWrapper(
-                  maxWidth: ResponsivePadding.maxContentWidth(
-                    context.deviceClass,
-                  ),
-                  child: Stack(
-                    children: [
-                      RefreshIndicator(
-                        onRefresh: () async => _reload(),
-                        child: ListView(
-                          padding: EdgeInsets.fromLTRB(
-                            16,
-                            8,
-                            16,
-                            108 + MediaQuery.paddingOf(context).bottom,
-                          ),
-                          children: [
-                            FinancePanel(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+            return ResponsiveWrapper(
+              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+              child: Stack(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: _loadInitial,
+                    child: ListView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        108 + MediaQuery.paddingOf(context).bottom,
+                      ),
+                      children: [
+                        FinancePanel(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      FinanceStatChip(
-                                        label: l10n.inventoryProductsLabel,
-                                        value: '${result.count}',
-                                        icon: Icons.inventory_2_outlined,
-                                      ),
-                                      FinanceStatChip(
-                                        label: l10n.inventoryOverviewLowStock,
-                                        value: '$lowStockCount',
-                                        icon: Icons.warning_amber_rounded,
-                                        tint: lowStockCount > 0
-                                            ? FinancePalette.of(
-                                                context,
-                                              ).negative
-                                            : FinancePalette.of(context).accent,
-                                      ),
-                                    ],
+                                  FinanceStatChip(
+                                    label: l10n.inventoryProductsLabel,
+                                    value: '$_count',
+                                    icon: Icons.inventory_2_outlined,
                                   ),
-                                  const shad.Gap(14),
-                                  TextField(
-                                    controller: _searchController,
-                                    onSubmitted: (_) => _reload(),
-                                    onChanged: (_) => setState(() {}),
-                                    decoration: InputDecoration(
-                                      hintText: l10n.inventorySearchProducts,
-                                      prefixIcon: const Icon(
-                                        Icons.search_rounded,
-                                      ),
-                                      suffixIcon: _searchController.text.isEmpty
-                                          ? null
-                                          : IconButton(
-                                              onPressed: () {
-                                                _searchController.clear();
-                                                _reload();
-                                              },
-                                              icon: const Icon(
-                                                Icons.close_rounded,
-                                              ),
-                                            ),
-                                    ),
+                                  FinanceStatChip(
+                                    label: l10n.inventoryOverviewLowStock,
+                                    value: '$lowStockCount',
+                                    icon: Icons.warning_amber_rounded,
+                                    tint: lowStockCount > 0
+                                        ? FinancePalette.of(context).negative
+                                        : FinancePalette.of(context).accent,
                                   ),
                                 ],
                               ),
-                            ),
-                            const shad.Gap(18),
-                            if (result.data.isEmpty)
-                              FinanceEmptyState(
-                                icon: Icons.inventory_2_outlined,
-                                title: l10n.inventoryProductsLabel,
-                                body: l10n.inventoryProductsEmpty,
-                                action: result.canManageCatalog
-                                    ? shad.SecondaryButton(
-                                        onPressed: _openEditor,
-                                        child: Text(
-                                          l10n.inventoryCreateProduct,
+                              const shad.Gap(14),
+                              TextField(
+                                controller: _searchController,
+                                onSubmitted: (_) => _loadInitial(),
+                                onChanged: _onSearchChanged,
+                                decoration: InputDecoration(
+                                  hintText: l10n.inventorySearchProducts,
+                                  prefixIcon: const Icon(Icons.search_rounded),
+                                  suffixIcon: _searchController.text.isEmpty
+                                      ? null
+                                      : IconButton(
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            _onSearchChanged('');
+                                          },
+                                          icon: const Icon(Icons.close_rounded),
                                         ),
-                                      )
-                                    : null,
-                              )
-                            else ...[
-                              FinanceSectionHeader(
-                                title: l10n.inventoryProductsListTitle,
-                              ),
-                              const shad.Gap(12),
-                              ...result.data.map(
-                                (product) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _InventoryProductCard(
-                                    product: product,
-                                    currency: result.currency,
-                                    onTap: result.canManageCatalog
-                                        ? () => _openEditor(
-                                            productId: product.id,
-                                          )
-                                        : null,
-                                  ),
                                 ),
                               ),
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                      if (result.canManageCatalog)
-                        ExtendedFab(
-                          icon: Icons.add_rounded,
-                          label: l10n.inventoryCreateProduct,
-                          includeBottomSafeArea: false,
-                          onPressed: _openEditor,
-                        ),
-                    ],
+                        const shad.Gap(18),
+                        if (_products.isEmpty)
+                          FinanceEmptyState(
+                            icon: Icons.inventory_2_outlined,
+                            title: l10n.inventoryProductsLabel,
+                            body: l10n.inventoryProductsEmpty,
+                            action: _canManageCatalog
+                                ? shad.SecondaryButton(
+                                    onPressed: _openEditor,
+                                    child: Text(l10n.inventoryCreateProduct),
+                                  )
+                                : null,
+                          )
+                        else ...[
+                          FinanceSectionHeader(
+                            title: l10n.inventoryProductsListTitle,
+                          ),
+                          const shad.Gap(12),
+                          ..._products.map(
+                            (product) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _InventoryProductCard(
+                                product: product,
+                                currency: _currency,
+                                onTap: _canManageCatalog
+                                    ? () => _openEditor(productId: product.id)
+                                    : null,
+                              ),
+                            ),
+                          ),
+                          if (_isLoadingMore)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: shad.CircularProgressIndicator(),
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
+                  if (_canManageCatalog)
+                    ExtendedFab(
+                      icon: Icons.add_rounded,
+                      label: l10n.inventoryCreateProduct,
+                      includeBottomSafeArea: false,
+                      onPressed: _openEditor,
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

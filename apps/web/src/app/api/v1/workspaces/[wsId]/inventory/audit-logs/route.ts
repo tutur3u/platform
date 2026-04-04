@@ -63,7 +63,9 @@ function buildSummary(row: {
     const segments = ['Created sale'];
 
     if (products.length > 0) {
-      segments.push(`${products.length} line${products.length === 1 ? '' : 's'}`);
+      segments.push(
+        `${products.length} line${products.length === 1 ? '' : 's'}`
+      );
     }
 
     if (paidAmount != null) {
@@ -73,7 +75,7 @@ function buildSummary(row: {
     return segments.join(' • ');
   }
 
-  if (row.entity_label?.trim().isNotEmpty ?? false) {
+  if ((row.entity_label?.trim().length ?? 0) > 0) {
     return `${row.event_kind.replaceAll('_', ' ')} ${row.entity_label!.trim()}`;
   }
 
@@ -133,7 +135,11 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const actorIds = [...new Set((data ?? []).map((row) => row.actor_workspace_user_id).filter(Boolean))] as string[];
+  const actorIds = [
+    ...new Set(
+      (data ?? []).map((row) => row.actor_workspace_user_id).filter(Boolean)
+    ),
+  ] as string[];
   const actorNameById = new Map<string, string>();
 
   if (actorIds.length > 0) {

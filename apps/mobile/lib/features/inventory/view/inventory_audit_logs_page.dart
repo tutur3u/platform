@@ -9,6 +9,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -25,8 +26,17 @@ class InventoryAuditLogsPage extends StatefulWidget {
 }
 
 class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
+  static const int _pageSize = 24;
+
   late final InventoryRepository _repository;
-  Future<({List<InventoryAuditLogEntry> data, int count})>? _future;
+  final ScrollController _scrollController = ScrollController();
+  List<InventoryAuditLogEntry> _entries = const [];
+  int _count = 0;
+  bool _isLoadingInitial = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  String? _error;
+  int _requestToken = 0;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -35,17 +45,123 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
   void initState() {
     super.initState();
     _repository = InventoryRepository();
-    unawaited(Future<void>.delayed(Duration.zero, _reload));
+    _scrollController.addListener(_onScroll);
+    unawaited(Future<void>.delayed(Duration.zero, _loadInitial));
   }
 
-  void _reload() {
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadInitial() async {
     final wsId = _wsId;
     if (wsId == null) {
       return;
     }
+    final requestToken = ++_requestToken;
+
     setState(() {
-      _future = _repository.getAuditLogs(wsId);
+      _isLoadingInitial = true;
+      _isLoadingMore = false;
+      _error = null;
     });
+
+    try {
+      final result = await _repository.getAuditLogs(
+        wsId,
+        limit: _pageSize,
+      );
+
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+
+      setState(() {
+        _entries = result.data;
+        _count = result.count;
+        _hasMore = _entries.length < _count;
+        _error = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _error = error.message.isNotEmpty
+            ? error.message
+            : context.l10n.commonSomethingWentWrong;
+      });
+    } on Exception {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _error = context.l10n.commonSomethingWentWrong;
+      });
+    } finally {
+      if (mounted && requestToken == _requestToken) {
+        setState(() {
+          _isLoadingInitial = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    final wsId = _wsId;
+    final requestToken = _requestToken;
+    if (wsId == null || _isLoadingInitial || _isLoadingMore || !_hasMore) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final result = await _repository.getAuditLogs(
+        wsId,
+        limit: _pageSize,
+        offset: _entries.length,
+      );
+
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+
+      setState(() {
+        _entries = [..._entries, ...result.data];
+        _count = result.count;
+        _hasMore = _entries.length < _count;
+      });
+    } on Exception {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _hasMore = _entries.length < _count;
+      });
+    } finally {
+      if (mounted && requestToken == _requestToken) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final position = _scrollController.position;
+    if (position.maxScrollExtent - position.pixels <= 200) {
+      unawaited(_loadMore());
+    }
   }
 
   Future<void> _openDetails(InventoryAuditLogEntry entry) async {
@@ -62,27 +178,23 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => _reload(),
-        child: FutureBuilder<({List<InventoryAuditLogEntry> data, int count})>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData &&
-                snapshot.connectionState != ConnectionState.done) {
+        listener: (context, state) => unawaited(_loadInitial()),
+        child: Builder(
+          builder: (context) {
+            if (_isLoadingInitial && _entries.isEmpty) {
               return const Center(child: NovaLoadingIndicator());
             }
 
-            if (snapshot.hasError || !snapshot.hasData) {
+            if (_error != null && _entries.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.all(16),
                 child: Center(
                   child: FinanceEmptyState(
                     icon: Icons.error_outline,
                     title: context.l10n.commonSomethingWentWrong,
-                    body:
-                        snapshot.error?.toString() ??
-                        context.l10n.inventoryAuditLabel,
+                    body: _error ?? context.l10n.inventoryAuditLabel,
                     action: shad.SecondaryButton(
-                      onPressed: _reload,
+                      onPressed: () => unawaited(_loadInitial()),
                       child: Text(context.l10n.commonRetry),
                     ),
                   ),
@@ -90,13 +202,13 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
               );
             }
 
-            final result = snapshot.data!;
-
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: RefreshIndicator(
-                onRefresh: () async => _reload(),
+                onRefresh: _loadInitial,
                 child: ListView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
                     16,
                     8,
@@ -111,14 +223,14 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                         children: [
                           FinanceStatChip(
                             label: context.l10n.inventoryAuditLabel,
-                            value: '${result.count}',
+                            value: '$_count',
                             icon: Icons.history_rounded,
                           ),
                         ],
                       ),
                     ),
                     const shad.Gap(18),
-                    if (result.data.isEmpty)
+                    if (_entries.isEmpty)
                       FinanceEmptyState(
                         icon: Icons.history_toggle_off_outlined,
                         title: context.l10n.inventoryAuditLabel,
@@ -129,7 +241,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                         title: context.l10n.inventoryAuditRecentTitle,
                       ),
                       const shad.Gap(12),
-                      ...result.data.map(
+                      ..._entries.map(
                         (entry) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: _AuditEntryCard(
@@ -138,6 +250,13 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                           ),
                         ),
                       ),
+                      if (_isLoadingMore)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: shad.CircularProgressIndicator(),
+                          ),
+                        ),
                     ],
                   ],
                 ),

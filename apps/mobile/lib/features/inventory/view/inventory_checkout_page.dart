@@ -9,6 +9,7 @@ import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
@@ -38,6 +39,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
 
   late final InventoryRepository _inventoryRepository;
   late final FinanceRepository _financeRepository;
+  late final SettingsRepository _settingsRepository;
   late final TextEditingController _searchController;
   bool _loading = true;
   bool _saving = false;
@@ -57,6 +59,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     super.initState();
     _inventoryRepository = InventoryRepository();
     _financeRepository = FinanceRepository();
+    _settingsRepository = SettingsRepository();
     _searchController = TextEditingController();
     unawaited(_load());
   }
@@ -72,6 +75,9 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     if (wsId == null) return;
     setState(() => _loading = true);
     try {
+      final lastCategoryId = await _settingsRepository.getLastIncomeCategory(
+        wsId,
+      );
       final results = await Future.wait<dynamic>([
         _inventoryRepository.getProductOptions(wsId),
         _financeRepository.getWallets(wsId),
@@ -84,6 +90,14 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             .where((item) => !(item.isExpense ?? false))
             .toList(growable: false);
         _walletId = _walletId ?? (_wallets.isEmpty ? null : _wallets.first.id);
+        final availableCategoryIds = _categories
+            .map((category) => category.id)
+            .whereType<String>()
+            .where((id) => id.isNotEmpty)
+            .toSet();
+        _manualCategoryId = availableCategoryIds.contains(lastCategoryId)
+            ? lastCategoryId
+            : (_categories.isEmpty ? null : _categories.first.id);
       });
     } finally {
       if (mounted) {
@@ -206,6 +220,10 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
               },
             )
             .toList(growable: false),
+      );
+      await _settingsRepository.setLastIncomeCategory(
+        wsId,
+        _resolvedCategoryId!,
       );
 
       if (!mounted) return;

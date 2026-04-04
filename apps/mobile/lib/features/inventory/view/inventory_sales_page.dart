@@ -36,21 +36,24 @@ class InventorySalesPage extends StatefulWidget {
 }
 
 class _InventorySalesPageState extends State<InventorySalesPage> {
+  static const int _pageSize = 24;
+
   late final InventoryRepository _inventoryRepository;
   late final FinanceRepository _financeRepository;
   late final WorkspacePermissionsRepository _permissionsRepository;
-  Future<
-    ({
-      List<InventorySaleSummary> data,
-      int count,
-      bool realtimeEnabled,
-      String currency,
-      bool canCreateSales,
-      bool canUpdateSales,
-      bool canDeleteSales,
-    })
-  >?
-  _future;
+  final ScrollController _scrollController = ScrollController();
+
+  List<InventorySaleSummary> _sales = const [];
+  int _count = 0;
+  String _currency = 'USD';
+  bool _canCreateSales = false;
+  bool _canUpdateSales = false;
+  bool _canDeleteSales = false;
+  bool _isLoadingInitial = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  String? _error;
+  int _requestToken = 0;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -61,62 +64,144 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     _inventoryRepository = InventoryRepository();
     _financeRepository = FinanceRepository();
     _permissionsRepository = WorkspacePermissionsRepository();
-    unawaited(Future<void>.delayed(Duration.zero, _reload));
+    _scrollController.addListener(_onScroll);
+    unawaited(Future<void>.delayed(Duration.zero, _loadInitial));
   }
 
-  void _reload() {
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadInitial() async {
     final wsId = _wsId;
     if (wsId == null) {
       return;
     }
+    final requestToken = ++_requestToken;
+
     setState(() {
-      _future = _loadSales(wsId);
+      _isLoadingInitial = true;
+      _isLoadingMore = false;
+      _error = null;
     });
+
+    try {
+      final results = await Future.wait<dynamic>([
+        _inventoryRepository.getSales(wsId, limit: _pageSize),
+        _financeRepository.getWorkspaceDefaultCurrency(wsId),
+        _permissionsRepository.getPermissions(wsId: wsId),
+      ]);
+
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+
+      final sales =
+          results[0]
+              as ({
+                List<InventorySaleSummary> data,
+                int count,
+                bool realtimeEnabled,
+              });
+      final currency = results[1] as String;
+      final permissions = results[2] as WorkspacePermissions;
+
+      setState(() {
+        _sales = sales.data;
+        _count = sales.count;
+        _currency = currency;
+        _canCreateSales = canCreateInventorySales(permissions);
+        _canUpdateSales = canUpdateInventorySales(permissions);
+        _canDeleteSales = canDeleteInventorySales(permissions);
+        _hasMore = _sales.length < _count;
+        _error = null;
+      });
+    } on ApiException catch (error) {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _error = error.message.isNotEmpty
+            ? error.message
+            : context.l10n.commonSomethingWentWrong;
+      });
+    } on Exception {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _error = context.l10n.commonSomethingWentWrong;
+      });
+    } finally {
+      if (mounted && requestToken == _requestToken) {
+        setState(() {
+          _isLoadingInitial = false;
+        });
+      }
+    }
   }
 
-  Future<
-    ({
-      List<InventorySaleSummary> data,
-      int count,
-      bool realtimeEnabled,
-      String currency,
-      bool canCreateSales,
-      bool canUpdateSales,
-      bool canDeleteSales,
-    })
-  >
-  _loadSales(String wsId) async {
-    final results = await Future.wait<dynamic>([
-      _inventoryRepository.getSales(wsId),
-      _financeRepository.getWorkspaceDefaultCurrency(wsId),
-      _permissionsRepository.getPermissions(wsId: wsId),
-    ]);
+  Future<void> _loadMore() async {
+    final wsId = _wsId;
+    final requestToken = _requestToken;
+    if (wsId == null || _isLoadingInitial || _isLoadingMore || !_hasMore) {
+      return;
+    }
 
-    final sales =
-        results[0]
-            as ({
-              List<InventorySaleSummary> data,
-              int count,
-              bool realtimeEnabled,
-            });
-    final currency = results[1] as String;
-    final permissions = results[2] as WorkspacePermissions;
+    setState(() {
+      _isLoadingMore = true;
+    });
 
-    return (
-      data: sales.data,
-      count: sales.count,
-      realtimeEnabled: sales.realtimeEnabled,
-      currency: currency,
-      canCreateSales: canCreateInventorySales(permissions),
-      canUpdateSales: canUpdateInventorySales(permissions),
-      canDeleteSales: canDeleteInventorySales(permissions),
-    );
+    try {
+      final result = await _inventoryRepository.getSales(
+        wsId,
+        limit: _pageSize,
+        offset: _sales.length,
+      );
+
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+
+      setState(() {
+        _sales = [..._sales, ...result.data];
+        _count = result.count;
+        _hasMore = _sales.length < _count;
+      });
+    } on Exception {
+      if (!mounted || requestToken != _requestToken) {
+        return;
+      }
+      setState(() {
+        _hasMore = _sales.length < _count;
+      });
+    } finally {
+      if (mounted && requestToken == _requestToken) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final position = _scrollController.position;
+    if (position.maxScrollExtent - position.pixels <= 200) {
+      unawaited(_loadMore());
+    }
   }
 
   Future<void> _openCheckout() async {
     final created = await showInventoryCheckoutPage<bool>(context);
     if (created == true && mounted) {
-      _reload();
+      await _loadInitial();
     }
   }
 
@@ -141,7 +226,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     );
 
     if (changed == true && mounted) {
-      _reload();
+      await _loadInitial();
     }
   }
 
@@ -151,125 +236,117 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => _reload(),
-        child:
-            FutureBuilder<
-              ({
-                List<InventorySaleSummary> data,
-                int count,
-                bool realtimeEnabled,
-                String currency,
-                bool canCreateSales,
-                bool canUpdateSales,
-                bool canDeleteSales,
-              })
-            >(
-              future: _future,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData &&
-                    snapshot.connectionState != ConnectionState.done) {
-                  return const Center(child: NovaLoadingIndicator());
-                }
+        listener: (context, state) => unawaited(_loadInitial()),
+        child: Builder(
+          builder: (context) {
+            if (_isLoadingInitial && _sales.isEmpty) {
+              return const Center(child: NovaLoadingIndicator());
+            }
 
-                if (snapshot.hasError || !snapshot.hasData) {
-                  return _InventorySalesError(onRetry: _reload);
-                }
+            if (_error != null && _sales.isEmpty) {
+              return _InventorySalesError(
+                onRetry: () => unawaited(_loadInitial()),
+              );
+            }
 
-                final result = snapshot.data!;
-                final l10n = context.l10n;
-                final revenue = result.data.fold<double>(
-                  0,
-                  (sum, sale) => sum + sale.paidAmount,
-                );
+            final l10n = context.l10n;
+            final revenue = _sales.fold<double>(
+              0,
+              (sum, sale) => sum + sale.paidAmount,
+            );
 
-                return ResponsiveWrapper(
-                  maxWidth: ResponsivePadding.maxContentWidth(
-                    context.deviceClass,
-                  ),
-                  child: Stack(
-                    children: [
-                      RefreshIndicator(
-                        onRefresh: () async => _reload(),
-                        child: ListView(
-                          padding: EdgeInsets.fromLTRB(
-                            16,
-                            8,
-                            16,
-                            108 + MediaQuery.paddingOf(context).bottom,
-                          ),
-                          children: [
-                            FinancePanel(
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  FinanceStatChip(
-                                    label: l10n.inventorySalesLabel,
-                                    value: '${result.count}',
-                                    icon: Icons.receipt_long_outlined,
-                                  ),
-                                  FinanceStatChip(
-                                    label: l10n.inventoryOverviewSalesRevenue,
-                                    value: formatCurrency(
-                                      revenue,
-                                      result.currency,
-                                    ),
-                                    icon: Icons.payments_outlined,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const shad.Gap(18),
-                            if (result.data.isEmpty)
-                              FinanceEmptyState(
+            return ResponsiveWrapper(
+              maxWidth: ResponsivePadding.maxContentWidth(
+                context.deviceClass,
+              ),
+              child: Stack(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: _loadInitial,
+                    child: ListView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        108 + MediaQuery.paddingOf(context).bottom,
+                      ),
+                      children: [
+                        FinancePanel(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              FinanceStatChip(
+                                label: l10n.inventorySalesLabel,
+                                value: '$_count',
                                 icon: Icons.receipt_long_outlined,
-                                title: l10n.inventorySalesLabel,
-                                body: l10n.inventorySalesEmpty,
-                                action: result.canCreateSales
-                                    ? shad.SecondaryButton(
-                                        onPressed: _openCheckout,
-                                        child: Text(
-                                          l10n.inventoryCheckoutTitle,
-                                        ),
-                                      )
-                                    : null,
-                              )
-                            else ...[
-                              FinanceSectionHeader(
-                                title: l10n.inventorySalesRecentTitle,
                               ),
-                              const shad.Gap(12),
-                              ...result.data.map(
-                                (sale) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _InventorySaleCard(
-                                    sale: sale,
-                                    currency: result.currency,
-                                    onTap: () => _openSaleDetail(
-                                      saleId: sale.id,
-                                      currency: result.currency,
-                                      canUpdateSales: result.canUpdateSales,
-                                      canDeleteSales: result.canDeleteSales,
-                                    ),
-                                  ),
-                                ),
+                              FinanceStatChip(
+                                label: l10n.inventoryOverviewSalesRevenue,
+                                value: formatCurrency(revenue, _currency),
+                                icon: Icons.payments_outlined,
                               ),
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                      if (result.canCreateSales)
-                        ExtendedFab(
-                          icon: Icons.point_of_sale_rounded,
-                          label: l10n.inventoryCheckoutTitle,
-                          includeBottomSafeArea: false,
-                          onPressed: _openCheckout,
-                        ),
-                    ],
+                        const shad.Gap(18),
+                        if (_sales.isEmpty)
+                          FinanceEmptyState(
+                            icon: Icons.receipt_long_outlined,
+                            title: l10n.inventorySalesLabel,
+                            body: l10n.inventorySalesEmpty,
+                            action: _canCreateSales
+                                ? shad.SecondaryButton(
+                                    onPressed: _openCheckout,
+                                    child: Text(l10n.inventoryCheckoutTitle),
+                                  )
+                                : null,
+                          )
+                        else ...[
+                          FinanceSectionHeader(
+                            title: l10n.inventorySalesRecentTitle,
+                          ),
+                          const shad.Gap(12),
+                          ..._sales.map(
+                            (sale) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _InventorySaleCard(
+                                sale: sale,
+                                currency: _currency,
+                                onTap: () => _openSaleDetail(
+                                  saleId: sale.id,
+                                  currency: _currency,
+                                  canUpdateSales: _canUpdateSales,
+                                  canDeleteSales: _canDeleteSales,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_isLoadingMore)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: shad.CircularProgressIndicator(),
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
+                  if (_canCreateSales)
+                    ExtendedFab(
+                      icon: Icons.point_of_sale_rounded,
+                      label: l10n.inventoryCheckoutTitle,
+                      includeBottomSafeArea: false,
+                      onPressed: _openCheckout,
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

@@ -98,12 +98,16 @@ class InventoryRepository {
     String wsId, {
     String? query,
     String status = 'active',
+    int page = 1,
+    int pageSize = 20,
   }) async {
     final response = await _api.getJson(
       InventoryEndpoints.products(
         wsId,
         query: query,
         status: status,
+        page: page,
+        pageSize: pageSize,
       ),
     );
 
@@ -250,8 +254,14 @@ class InventoryRepository {
   }
 
   Future<({List<InventorySaleSummary> data, int count, bool realtimeEnabled})>
-  getSales(String wsId) async {
-    final response = await _api.getJson(InventoryEndpoints.sales(wsId));
+  getSales(
+    String wsId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final response = await _api.getJson(
+      InventoryEndpoints.sales(wsId, limit: limit, offset: offset),
+    );
     return (
       data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
           .whereType<Map<String, dynamic>>()
@@ -293,9 +303,13 @@ class InventoryRepository {
   }
 
   Future<({List<InventoryAuditLogEntry> data, int count})> getAuditLogs(
-    String wsId,
-  ) async {
-    final response = await _api.getJson(InventoryEndpoints.auditLogs(wsId));
+    String wsId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final response = await _api.getJson(
+      InventoryEndpoints.auditLogs(wsId, limit: limit, offset: offset),
+    );
     return (
       data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
           .whereType<Map<String, dynamic>>()

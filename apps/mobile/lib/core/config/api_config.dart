@@ -176,6 +176,8 @@ abstract final class InventoryEndpoints {
     String wsId, {
     String? query,
     String? status,
+    int? page,
+    int? pageSize,
   }) {
     final params = <String, String>{};
     if (query != null && query.trim().isNotEmpty) {
@@ -183,6 +185,12 @@ abstract final class InventoryEndpoints {
     }
     if (status != null && status.trim().isNotEmpty) {
       params['status'] = status.trim();
+    }
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
     }
 
     final suffix = params.isEmpty
@@ -203,14 +211,40 @@ abstract final class InventoryEndpoints {
   static String owners(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/owners';
 
-  static String sales(String wsId) =>
-      '/api/v1/workspaces/$wsId/inventory/sales';
+  static String sales(String wsId, {int? limit, int? offset}) {
+    final params = <String, String>{};
+    if (limit != null) {
+      params['limit'] = '$limit';
+    }
+    if (offset != null) {
+      params['offset'] = '$offset';
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/inventory/sales$suffix';
+  }
 
   static String sale(String wsId, String saleId) =>
       '/api/v1/workspaces/$wsId/inventory/sales/$saleId';
 
-  static String auditLogs(String wsId) =>
-      '/api/v1/workspaces/$wsId/inventory/audit-logs';
+  static String auditLogs(
+    String wsId, {
+    int? limit,
+    int? offset,
+  }) {
+    final params = <String, String>{};
+    if (limit != null) {
+      params['limit'] = '$limit';
+    }
+    if (offset != null) {
+      params['offset'] = '$offset';
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/inventory/audit-logs$suffix';
+  }
 
   static String realtime(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/realtime';

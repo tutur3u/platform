@@ -11,6 +11,7 @@ class SettingsRepository {
   static const _localeKey = 'locale';
   static const _lastTabRouteKey = 'last-tab-route';
   static const _lastAppRouteKey = 'last-app-route';
+  static const _lastIncomeCategoryPrefix = 'last-income-category';
   static const _hasSeenOnboardingKey = 'has_seen_onboarding';
   static const _dismissedRecommendedVersionPrefix =
       'dismissed-recommended-version';
@@ -85,6 +86,16 @@ class SettingsRepository {
   Future<void> clearLastAppRoute() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_lastAppRouteKey);
+  }
+
+  Future<String?> getLastIncomeCategory(String wsId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('$_lastIncomeCategoryPrefix-$wsId');
+  }
+
+  Future<void> setLastIncomeCategory(String wsId, String categoryId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('$_lastIncomeCategoryPrefix-$wsId', categoryId);
   }
 
   /// Returns the persisted locale code (e.g. 'en', 'vi'), or `null` for system

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -26,6 +27,52 @@ interface Params {
   }>;
 }
 
+interface NamedRelation {
+  name: string | null;
+}
+
+interface WorkspaceUserRelation {
+  id: string;
+  full_name: string | null;
+  display_name: string | null;
+}
+
+interface PlatformUserRelation {
+  id: string;
+  display_name: string | null;
+}
+
+interface SaleInvoiceProductRow {
+  amount: number | null;
+  price: number | null;
+  owner_id: string | null;
+  owner_name: string | null;
+  product_id: string | null;
+  product_name: string | null;
+  product_unit: string | null;
+  unit_id: string;
+  warehouse_id: string;
+  warehouse: string | null;
+}
+
+interface SaleInvoiceRow {
+  id: string;
+  notice: string | null;
+  note: string | null;
+  paid_amount: number;
+  created_at: string | null;
+  completed_at: string | null;
+  wallet_id: string | null;
+  category_id: string | null;
+  customer_id: string | null;
+  wallet: NamedRelation | NamedRelation[] | null;
+  category: NamedRelation | NamedRelation[] | null;
+  customer: WorkspaceUserRelation | WorkspaceUserRelation[] | null;
+  creator: WorkspaceUserRelation | WorkspaceUserRelation[] | null;
+  platform_creator: PlatformUserRelation | PlatformUserRelation[] | null;
+  finance_invoice_products: SaleInvoiceProductRow[] | null;
+}
+
 const UpdateSaleSchema = z.object({
   notice: z.string().trim().nullable().optional(),
   note: z.string().trim().nullable().optional(),
@@ -34,7 +81,7 @@ const UpdateSaleSchema = z.object({
 });
 
 async function loadSale(
-  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>,
+  sbAdmin: TypedSupabaseClient,
   wsId: string,
   saleId: string
 ) {
@@ -50,9 +97,7 @@ async function loadSale(
   return { data, error };
 }
 
-function normalizeSaleDetail(
-  data: NonNullable<Awaited<ReturnType<typeof loadSale>>['data']>
-) {
+function normalizeSaleDetail(data: SaleInvoiceRow) {
   const wallet = Array.isArray(data.wallet) ? data.wallet[0] : data.wallet;
   const category = Array.isArray(data.category)
     ? data.category[0]
@@ -88,19 +133,26 @@ function normalizeSaleDetail(
       null,
     items_count: lines.length,
     total_quantity: lines.reduce(
-      (sum, line) => sum + Number(line.amount ?? 0),
+      (sum: number, line: SaleInvoiceProductRow) =>
+        sum + Number(line.amount ?? 0),
       0
     ),
-    owners: [...new Set(lines.map((line) => line.owner_name ?? 'Unassigned'))],
-    lines: lines.map((line) => ({
-      product_id: line.product_id,
-      product_name: line.product_name,
+    owners: [
+      ...new Set(
+        lines.map(
+          (line: SaleInvoiceProductRow) => line.owner_name ?? 'Unassigned'
+        )
+      ),
+    ],
+    lines: lines.map((line: SaleInvoiceProductRow) => ({
+      product_id: line.product_id ?? '',
+      product_name: line.product_name ?? '',
       owner_id: line.owner_id,
-      owner_name: line.owner_name,
+      owner_name: line.owner_name ?? '',
       unit_id: line.unit_id,
-      unit_name: line.product_unit,
+      unit_name: line.product_unit ?? '',
       warehouse_id: line.warehouse_id,
-      warehouse_name: line.warehouse,
+      warehouse_name: line.warehouse ?? '',
       quantity: Number(line.amount ?? 0),
       price: Number(line.price ?? 0),
     })),
@@ -276,10 +328,9 @@ export async function PUT(req: Request, { params }: Params) {
     eventKind: 'updated',
     entityKind: 'sale',
     entityId: saleId,
-    entityLabel:
-      after.notice?.trim().isNotEmpty == true ? after.notice : saleId,
+    entityLabel: (after.notice?.trim().length ?? 0) > 0 ? after.notice : saleId,
     summary:
-      after.notice?.trim().isNotEmpty == true
+      (after.notice?.trim().length ?? 0) > 0
         ? `Updated sale ${after.notice!.trim()}`
         : `Updated sale ${saleId}`,
     changedFields: diffInventoryAuditFields(before, after),
@@ -326,17 +377,25 @@ export async function DELETE(req: Request, { params }: Params) {
 
   const before = normalizeSaleDetail(existing);
   const actor = await getInventoryActorContext(req, wsId);
+  const actorWorkspaceUserId = actor.workspaceUserId;
+
+  if (!actorWorkspaceUserId) {
+    return NextResponse.json(
+      { message: 'Failed to resolve inventory actor' },
+      { status: 500 }
+    );
+  }
 
   const stockRestores = before.lines.map((line) => ({
     product_id: line.product_id,
     unit_id: line.unit_id,
     warehouse_id: line.warehouse_id,
     amount: line.quantity,
-    creator_id: actor.workspaceUserId,
+    creator_id: actorWorkspaceUserId,
     beneficiary_id: null,
   }));
 
-  if (stockRestores.isNotEmpty) {
+  if (stockRestores.length > 0) {
     const { error: stockError } = await sbAdmin
       .from('product_stock_changes')
       .insert(stockRestores);
@@ -399,9 +458,9 @@ export async function DELETE(req: Request, { params }: Params) {
     entityKind: 'sale',
     entityId: saleId,
     entityLabel:
-      before.notice?.trim().isNotEmpty == true ? before.notice : saleId,
+      (before.notice?.trim().length ?? 0) > 0 ? before.notice : saleId,
     summary:
-      before.notice?.trim().isNotEmpty == true
+      (before.notice?.trim().length ?? 0) > 0
         ? `Deleted sale ${before.notice!.trim()}`
         : `Deleted sale ${saleId}`,
     changedFields: ['products', 'wallet_id', 'category_id', 'paid_amount'],
