@@ -9,6 +9,7 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -60,11 +61,20 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
             }
 
             if (snapshot.hasError || !snapshot.hasData) {
-              return Center(
-                child: FinanceEmptyState(
-                  icon: Icons.error_outline,
-                  title: context.l10n.commonSomethingWentWrong,
-                  body: context.l10n.inventoryAuditLabel,
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Center(
+                  child: FinanceEmptyState(
+                    icon: Icons.error_outline,
+                    title: context.l10n.commonSomethingWentWrong,
+                    body:
+                        snapshot.error?.toString() ??
+                        context.l10n.inventoryAuditLabel,
+                    action: shad.SecondaryButton(
+                      onPressed: _reload,
+                      child: Text(context.l10n.commonRetry),
+                    ),
+                  ),
                 ),
               );
             }
@@ -83,6 +93,18 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                     32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
+                    InventoryHeroCard(
+                      title: context.l10n.inventoryAuditLabel,
+                      icon: Icons.history_rounded,
+                      metrics: [
+                        InventoryMetricTile(
+                          label: context.l10n.inventoryAuditLabel,
+                          value: '${result.count}',
+                          icon: Icons.fact_check_outlined,
+                        ),
+                      ],
+                    ),
+                    const shad.Gap(16),
                     if (result.data.isEmpty)
                       FinanceEmptyState(
                         icon: Icons.history_toggle_off_outlined,
@@ -90,6 +112,11 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                         body: context.l10n.inventoryAuditEmpty,
                       )
                     else
+                      FinanceSectionHeader(
+                        title: context.l10n.inventoryAuditRecentTitle,
+                      ),
+                    if (result.data.isNotEmpty) const shad.Gap(12),
+                    if (result.data.isNotEmpty)
                       ...result.data.map(
                         (entry) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -105,8 +132,14 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                                 const shad.Gap(8),
                                 Text(
                                   [
-                                    entry.entityKind,
-                                    entry.eventKind,
+                                    _labelForEntityKind(
+                                      context,
+                                      entry.entityKind,
+                                    ),
+                                    _labelForEventKind(
+                                      context,
+                                      entry.eventKind,
+                                    ),
                                     DateFormat.yMMMd().add_jm().format(
                                       entry.occurredAt.toLocal(),
                                     ),
@@ -137,5 +170,30 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
         ),
       ),
     );
+  }
+
+  String _labelForEntityKind(BuildContext context, String value) {
+    return switch (value) {
+      'owner' => context.l10n.inventoryManageOwners,
+      'product' => context.l10n.inventoryProductsLabel,
+      'stock' => context.l10n.inventoryProductInventory,
+      'category' => context.l10n.inventoryManageCategories,
+      'unit' => context.l10n.inventoryManageUnits,
+      'warehouse' => context.l10n.inventoryManageWarehouses,
+      'sale' => context.l10n.inventorySalesLabel,
+      _ => value,
+    };
+  }
+
+  String _labelForEventKind(BuildContext context, String value) {
+    return switch (value) {
+      'created' => context.l10n.inventoryAuditEventCreated,
+      'updated' => context.l10n.inventoryAuditEventUpdated,
+      'archived' => context.l10n.inventoryAuditEventArchived,
+      'reactivated' => context.l10n.inventoryAuditEventReactivated,
+      'deleted' => context.l10n.inventoryAuditEventDeleted,
+      'sale_created' => context.l10n.inventoryAuditEventSaleCreated,
+      _ => value,
+    };
   }
 }

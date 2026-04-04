@@ -4,6 +4,8 @@ double? _asDoubleOrNull(dynamic value) => (value as num?)?.toDouble();
 
 double _asDouble(dynamic value) => _asDoubleOrNull(value) ?? 0;
 
+String _asString(dynamic value) => value?.toString() ?? '';
+
 DateTime? _asDateTime(dynamic value) {
   if (value is! String || value.isEmpty) return null;
   return DateTime.tryParse(value);
@@ -535,10 +537,10 @@ class InventoryAuditLogEntry extends Equatable {
 
   factory InventoryAuditLogEntry.fromJson(Map<String, dynamic> json) =>
       InventoryAuditLogEntry(
-        auditRecordId: json['auditRecordId'] as String,
+        auditRecordId: _asString(json['auditRecordId']),
         eventKind: json['eventKind'] as String? ?? '',
         entityKind: json['entityKind'] as String? ?? '',
-        entityId: json['entityId'] as String? ?? '',
+        entityId: _asString(json['entityId']),
         summary: json['summary'] as String? ?? '',
         changedFields:
             (json['changedFields'] as List<dynamic>? ?? const <dynamic>[])

@@ -103,7 +103,14 @@ export function canViewInventoryAuditLogs(
   permissions: Pick<PermissionsResult, 'containsPermission'>
 ) {
   return hasAnyPermission(permissions, [
+    'admin',
     'view_inventory_audit_logs',
+    'manage_inventory_setup',
+    'manage_inventory_catalog',
+    'view_inventory',
+    'create_inventory',
+    'update_inventory',
+    'delete_inventory',
     'manage_workspace_audit_logs',
   ]);
 }

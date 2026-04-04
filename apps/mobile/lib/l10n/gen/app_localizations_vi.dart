@@ -2492,10 +2492,52 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryAuditEmpty => 'Nhật ký sẽ xuất hiện ở đây sau khi sản phẩm, tồn kho hoặc giao dịch bán được cập nhật.';
 
   @override
+  String get inventoryAuditEventArchived => 'Lưu trữ';
+
+  @override
+  String get inventoryAuditEventCreated => 'Tạo mới';
+
+  @override
+  String get inventoryAuditEventDeleted => 'Xóa';
+
+  @override
+  String get inventoryAuditEventReactivated => 'Kích hoạt lại';
+
+  @override
+  String get inventoryAuditEventSaleCreated => 'Tạo giao dịch bán';
+
+  @override
+  String get inventoryAuditEventUpdated => 'Cập nhật';
+
+  @override
   String get inventoryAuditLabel => 'Nhật ký';
 
   @override
+  String get inventoryAuditRecentSubtitle => 'Theo dõi thay đổi về sản phẩm, tồn kho, cấu hình và giao dịch bán trong không gian làm việc.';
+
+  @override
+  String get inventoryAuditRecentTitle => 'Hoạt động gần đây';
+
+  @override
+  String get inventoryAuditSubtitle => 'Biết ai đã thay đổi sản phẩm, tồn kho, cấu hình và giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutAvailableProductsSubtitle => 'Điều chỉnh số lượng trực tiếp từ tồn kho khả dụng tại quầy.';
+
+  @override
+  String get inventoryCheckoutAvailableProductsTitle => 'Sản phẩm khả dụng';
+
+  @override
   String get inventoryCheckoutAutoCategory => 'Danh mục tự liên kết';
+
+  @override
+  String get inventoryCheckoutCartTotal => 'Tổng giỏ hàng';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsSubtitle => 'Chọn nơi ghi nhận giao dịch trước khi tạo hóa đơn.';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsTitle => 'Thông tin thanh toán';
 
   @override
   String get inventoryCheckoutCategoryOverride => 'Ghi đè danh mục';
@@ -2505,6 +2547,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutManualCategoryRequired => 'Hãy chọn danh mục thu nhập khi giỏ hàng trộn nhiều danh mục liên kết hoặc chưa có danh mục liên kết.';
+
+  @override
+  String get inventoryCheckoutSelectedItems => 'Dòng đã chọn';
+
+  @override
+  String get inventoryCheckoutSubtitle => 'Tạo nhanh một giao dịch bán tại quầy và ghi nhận qua hóa đơn.';
 
   @override
   String get inventoryCheckoutSubmit => 'Tạo giao dịch bán';
@@ -2528,6 +2576,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryManageCategories => 'Danh mục sản phẩm';
 
   @override
+  String get inventoryManageCategoriesSubtitle => 'Nhóm sản phẩm theo quầy, kệ, menu hoặc bộ sưu tập.';
+
+  @override
   String get inventoryManageEmpty => 'Chưa có cấu hình nào.';
 
   @override
@@ -2537,10 +2588,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryManageOwners => 'Chủ sở hữu';
 
   @override
+  String get inventoryManageOwnersSubtitle => 'Giữ phần gán chủ sở hữu tách biệt với nhân viên đang thao tác tại quầy.';
+
+  @override
+  String get inventoryManageSubtitle => 'Thiết lập chủ sở hữu và dữ liệu tra cứu mà quầy hàng cần dùng.';
+
+  @override
   String get inventoryManageUnits => 'Đơn vị';
 
   @override
+  String get inventoryManageUnitsSubtitle => 'Xác định cách đếm, bán và hiển thị tồn kho.';
+
+  @override
   String get inventoryManageWarehouses => 'Kho';
+
+  @override
+  String get inventoryManageWarehousesSubtitle => 'Tách các vị trí tồn kho để cảnh báo sắp hết hàng chính xác hơn.';
 
   @override
   String get inventoryNoBreakdownData => 'Chưa có dữ liệu phân tích.';
@@ -2555,6 +2618,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryOverviewCategories => 'Theo danh mục';
 
   @override
+  String get inventoryOverviewCategoriesSubtitle => 'Xem nhóm sản phẩm nào đang mang về doanh thu.';
+
+  @override
   String get inventoryOverviewExpense => 'Chi tiêu';
 
   @override
@@ -2567,13 +2633,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryOverviewLowStock => 'Sắp hết hàng';
 
   @override
+  String get inventoryOverviewLowStockSubtitle => 'Những sản phẩm cần được chú ý trước đợt bán tiếp theo.';
+
+  @override
   String get inventoryOverviewOwners => 'Theo chủ sở hữu';
+
+  @override
+  String get inventoryOverviewOwnersSubtitle => 'Phân tách doanh thu theo chủ sở hữu của từng sản phẩm.';
 
   @override
   String get inventoryOverviewRecentSales => 'Bán hàng gần đây';
 
   @override
+  String get inventoryOverviewRecentSalesSubtitle => 'Các giao dịch bán gần nhất được ghi nhận từ hóa đơn tồn kho.';
+
+  @override
   String get inventoryOverviewSalesRevenue => 'Doanh thu tồn kho';
+
+  @override
+  String get inventoryOverviewSubtitle => 'Theo dõi doanh thu, áp lực tồn kho và hiệu suất theo chủ sở hữu.';
 
   @override
   String get inventoryOwnerArchived => 'Đã lưu trữ';
@@ -2591,10 +2669,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductDescription => 'Mô tả';
 
   @override
+  String get inventoryProductDetailsSubtitle => 'Đặt tên sản phẩm, gán chủ sở hữu và liên kết mặc định tài chính.';
+
+  @override
+  String get inventoryProductDetailsTitle => 'Thông tin sản phẩm';
+
+  @override
+  String get inventoryProductEditorSubtitle => 'Tạo sản phẩm sẵn sàng bán tại quầy với giá cố định và các dòng tồn kho.';
+
+  @override
   String get inventoryProductFinanceCategory => 'Danh mục tài chính liên kết';
 
   @override
   String get inventoryProductInventory => 'Các dòng tồn kho';
+
+  @override
+  String get inventoryProductInventorySubtitle => 'Mỗi dòng đại diện cho đơn vị, kho, số lượng, ngưỡng và giá bán.';
 
   @override
   String get inventoryProductManufacturer => 'Nhà sản xuất';
@@ -2633,6 +2723,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductsLabel => 'Sản phẩm';
 
   @override
+  String get inventoryProductsListSubtitle => 'Chạm vào sản phẩm để sửa thông tin, giá hoặc các dòng tồn kho.';
+
+  @override
+  String get inventoryProductsListTitle => 'Danh mục sản phẩm';
+
+  @override
+  String get inventoryProductsSubtitle => 'Tìm kiếm, xem nhanh và chỉnh sửa các sản phẩm đã chuẩn bị cho quầy.';
+
+  @override
   String get inventoryRealtimeDisabled => 'Realtime đang tắt cho không gian làm việc này.';
 
   @override
@@ -2646,6 +2745,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySalesLabel => 'Bán hàng';
+
+  @override
+  String get inventorySalesRecentSubtitle => 'Xem lại các giao dịch bán tồn kho gần nhất đã ghi qua hóa đơn.';
+
+  @override
+  String get inventorySalesRecentTitle => 'Lịch sử bán hàng';
+
+  @override
+  String get inventorySalesSubtitle => 'Theo dõi các giao dịch bán đã hoàn tất và nơi tiền được ghi nhận.';
 
   @override
   String get inventorySaveProduct => 'Lưu sản phẩm';
@@ -4615,6 +4723,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get captchaError => 'Kiểm tra bảo mật thất bại. Vui lòng thử lại.';
+
+  @override
+  String get commonOff => 'Tắt';
 
   @override
   String get commonSomethingWentWrong => 'Đã xảy ra lỗi';

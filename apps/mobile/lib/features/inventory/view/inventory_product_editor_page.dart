@@ -7,7 +7,9 @@ import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -156,8 +158,10 @@ class _InventoryProductEditorPageState
         _categoryId == null ||
         _ownerId == null ||
         _rows.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.inventoryProductValidationError)),
+      showInventoryToast(
+        context,
+        context.l10n.inventoryProductValidationError,
+        destructive: true,
       );
       return;
     }
@@ -175,8 +179,10 @@ class _InventoryProductEditorPageState
           minAmount == null ||
           price == null ||
           (amountText.isNotEmpty && amount == null)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.inventoryProductValidationError)),
+        showInventoryToast(
+          context,
+          context.l10n.inventoryProductValidationError,
+          destructive: true,
         );
         return;
       }
@@ -233,10 +239,25 @@ class _InventoryProductEditorPageState
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.inventoryProductSaved)),
+      showInventoryToast(
+        context,
+        context.l10n.inventoryProductSaved,
       );
       context.pop(true);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showInventoryToast(
+        context,
+        error.message,
+        destructive: true,
+      );
+    } on Exception catch (error) {
+      if (!mounted) return;
+      showInventoryToast(
+        context,
+        error.toString(),
+        destructive: true,
+      );
     } finally {
       if (mounted) {
         setState(() => _saving = false);
@@ -263,17 +284,31 @@ class _InventoryProductEditorPageState
           32 + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
+          InventoryHeroCard(
+            title: widget.productId == null
+                ? l10n.inventoryCreateProduct
+                : l10n.inventoryEditProduct,
+            icon: Icons.inventory_2_outlined,
+            metrics: [
+              InventoryMetricTile(
+                label: l10n.inventoryManageOwners,
+                value: _owners.length.toString(),
+                icon: Icons.people_outline_rounded,
+              ),
+              InventoryMetricTile(
+                label: l10n.inventoryManageCategories,
+                value: _categories.length.toString(),
+                icon: Icons.category_outlined,
+              ),
+            ],
+          ),
+          const shad.Gap(16),
           FinancePanel(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.productId == null
-                      ? l10n.inventoryCreateProduct
-                      : l10n.inventoryEditProduct,
-                  style: shad.Theme.of(
-                    context,
-                  ).typography.h3.copyWith(fontWeight: FontWeight.w800),
+                FinanceSectionHeader(
+                  title: l10n.inventoryProductDetailsTitle,
                 ),
                 const shad.Gap(16),
                 TextField(
@@ -361,11 +396,8 @@ class _InventoryProductEditorPageState
             ),
           ),
           const shad.Gap(16),
-          Text(
-            l10n.inventoryProductInventory,
-            style: shad.Theme.of(
-              context,
-            ).typography.large.copyWith(fontWeight: FontWeight.w700),
+          FinanceSectionHeader(
+            title: l10n.inventoryProductInventory,
           ),
           const shad.Gap(12),
           ..._rows.asMap().entries.map((entry) {
@@ -465,18 +497,23 @@ class _InventoryProductEditorPageState
               ),
             );
           }),
-          shad.SecondaryButton(
-            onPressed: _addRow,
-            child: Text(l10n.inventoryProductAddInventoryRow),
-          ),
-          const shad.Gap(16),
-          shad.PrimaryButton(
-            onPressed: _saving ? null : _save,
-            child: Text(
-              widget.productId == null
-                  ? l10n.inventoryCreateProduct
-                  : l10n.inventorySaveProduct,
-            ),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              shad.SecondaryButton(
+                onPressed: _addRow,
+                child: Text(l10n.inventoryProductAddInventoryRow),
+              ),
+              shad.PrimaryButton(
+                onPressed: _saving ? null : _save,
+                child: Text(
+                  widget.productId == null
+                      ? l10n.inventoryCreateProduct
+                      : l10n.inventorySaveProduct,
+                ),
+              ),
+            ],
           ),
         ],
       ),

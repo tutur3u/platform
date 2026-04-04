@@ -12,6 +12,7 @@ import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -196,12 +197,33 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                     32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: shad.SecondaryButton(
-                        onPressed: () => context.go(Routes.inventoryAuditLogs),
-                        child: Text(l10n.inventoryAuditLabel),
-                      ),
+                    InventoryHeroCard(
+                      title: l10n.inventoryManageLabel,
+                      icon: Icons.tune_rounded,
+                      metrics: [
+                        InventoryMetricTile(
+                          label: l10n.inventoryManageOwners,
+                          value: '${data.owners.length}',
+                          icon: Icons.people_outline_rounded,
+                        ),
+                        InventoryMetricTile(
+                          label: l10n.inventoryManageCategories,
+                          value: '${data.productCategories.length}',
+                          icon: Icons.category_outlined,
+                        ),
+                        InventoryMetricTile(
+                          label: l10n.inventoryManageWarehouses,
+                          value: '${data.warehouses.length}',
+                          icon: Icons.warehouse_outlined,
+                        ),
+                      ],
+                      actions: [
+                        shad.SecondaryButton(
+                          onPressed: () =>
+                              context.go(Routes.inventoryAuditLogs),
+                          child: Text(l10n.inventoryAuditLabel),
+                        ),
+                      ],
                     ),
                     const shad.Gap(16),
                     _ManageSection(
@@ -331,11 +353,8 @@ class _ManageSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: shad.Theme.of(
-              context,
-            ).typography.large.copyWith(fontWeight: FontWeight.w700),
+          FinanceSectionHeader(
+            title: title,
           ),
           const shad.Gap(12),
           Row(

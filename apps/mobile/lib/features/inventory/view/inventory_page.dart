@@ -12,6 +12,7 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -88,97 +89,65 @@ class _InventoryPageState extends State<InventoryPage> {
                     32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    FinancePanel(
-                      padding: const EdgeInsets.all(22),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  l10n.inventoryTitle,
-                                  style: shad.Theme.of(context).typography.h3
-                                      .copyWith(fontWeight: FontWeight.w800),
-                                ),
-                              ),
-                              if (overview.realtimeEnabled)
-                                FinanceStatChip(
-                                  label: l10n.inventoryRealtimeEnabled,
-                                  value: 'Broadcast',
-                                  icon: Icons.wifi_tethering_rounded,
-                                ),
-                            ],
+                    InventoryHeroCard(
+                      title: l10n.inventoryTitle,
+                      icon: Icons.inventory_2_outlined,
+                      metrics: [
+                        InventoryMetricTile(
+                          label: l10n.inventoryOverviewIncome,
+                          value: formatCurrency(
+                            overview.totals.totalIncome,
+                            'VND',
                           ),
-                          const shad.Gap(18),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              _MetricCard(
-                                label: l10n.inventoryOverviewIncome,
-                                value: formatCurrency(
-                                  overview.totals.totalIncome,
-                                  'VND',
-                                ),
-                                icon: Icons.south_west_rounded,
-                                tint: FinancePalette.of(context).positive,
-                              ),
-                              _MetricCard(
-                                label: l10n.inventoryOverviewExpense,
-                                value: formatCurrency(
-                                  overview.totals.totalExpense,
-                                  'VND',
-                                ),
-                                icon: Icons.north_east_rounded,
-                                tint: FinancePalette.of(context).negative,
-                              ),
-                              _MetricCard(
-                                label: l10n.inventoryOverviewSalesRevenue,
-                                value: formatCurrency(
-                                  overview.totals.inventorySalesRevenue,
-                                  'VND',
-                                ),
-                                icon: Icons.point_of_sale_outlined,
-                              ),
-                            ],
+                          icon: Icons.south_west_rounded,
+                          tint: FinancePalette.of(context).positive,
+                        ),
+                        InventoryMetricTile(
+                          label: l10n.inventoryOverviewExpense,
+                          value: formatCurrency(
+                            overview.totals.totalExpense,
+                            'VND',
                           ),
-                          const shad.Gap(18),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              shad.PrimaryButton(
-                                onPressed: () async {
-                                  final result = await context.push<bool>(
-                                    Routes.inventoryCheckout,
-                                  );
-                                  if (result == true && mounted) {
-                                    _reload();
-                                  }
-                                },
-                                child: Text(l10n.inventoryCheckoutTitle),
-                              ),
-                              shad.SecondaryButton(
-                                onPressed: () async {
-                                  final result = await context.push<bool>(
-                                    Routes.inventoryProductCreate,
-                                  );
-                                  if (result == true && mounted) {
-                                    _reload();
-                                  }
-                                },
-                                child: Text(l10n.inventoryCreateProduct),
-                              ),
-                              shad.SecondaryButton(
-                                onPressed: () =>
-                                    context.go(Routes.inventoryManage),
-                                child: Text(l10n.inventoryManageLabel),
-                              ),
-                            ],
+                          icon: Icons.north_east_rounded,
+                          tint: FinancePalette.of(context).negative,
+                        ),
+                        InventoryMetricTile(
+                          label: l10n.inventorySalesLabel,
+                          value: formatCurrency(
+                            overview.totals.inventorySalesRevenue,
+                            'VND',
                           ),
-                        ],
-                      ),
+                          icon: Icons.point_of_sale_outlined,
+                        ),
+                      ],
+                      actions: [
+                        shad.PrimaryButton(
+                          onPressed: () async {
+                            final result = await context.push<bool>(
+                              Routes.inventoryCheckout,
+                            );
+                            if (result == true && mounted) {
+                              _reload();
+                            }
+                          },
+                          child: Text(l10n.inventoryCheckoutTitle),
+                        ),
+                        shad.SecondaryButton(
+                          onPressed: () async {
+                            final result = await context.push<bool>(
+                              Routes.inventoryProductCreate,
+                            );
+                            if (result == true && mounted) {
+                              _reload();
+                            }
+                          },
+                          child: Text(l10n.inventoryCreateProduct),
+                        ),
+                        shad.SecondaryButton(
+                          onPressed: () => context.go(Routes.inventoryManage),
+                          child: Text(l10n.inventoryManageLabel),
+                        ),
+                      ],
                     ),
                     const shad.Gap(24),
                     FinanceSectionHeader(
@@ -250,6 +219,10 @@ class _InventoryPageState extends State<InventoryPage> {
                     const shad.Gap(16),
                     FinanceSectionHeader(
                       title: l10n.inventoryOverviewRecentSales,
+                      action: shad.GhostButton(
+                        onPressed: () => context.go(Routes.inventorySales),
+                        child: Text(l10n.financeViewAll),
+                      ),
                     ),
                     const shad.Gap(12),
                     if (overview.recentSales.isEmpty)
@@ -312,7 +285,9 @@ class _InventoryPageState extends State<InventoryPage> {
                             ),
                           ),
                     const shad.Gap(16),
-                    FinanceSectionHeader(title: l10n.inventoryOverviewOwners),
+                    FinanceSectionHeader(
+                      title: l10n.inventoryOverviewOwners,
+                    ),
                     const shad.Gap(12),
                     _BreakdownList(entries: overview.ownerBreakdown),
                     const shad.Gap(16),
@@ -328,30 +303,6 @@ class _InventoryPageState extends State<InventoryPage> {
           },
         ),
       ),
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.tint,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color? tint;
-
-  @override
-  Widget build(BuildContext context) {
-    return FinanceStatChip(
-      label: label,
-      value: value,
-      icon: icon,
-      tint: tint,
     );
   }
 }

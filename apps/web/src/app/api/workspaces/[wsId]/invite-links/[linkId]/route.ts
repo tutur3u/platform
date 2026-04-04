@@ -15,9 +15,9 @@ const UpdateInviteLinkSchema = z.object({
 });
 
 // GET - Get invite link details including users who joined via this link
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const { wsId, linkId } = await params;
 
     const {
@@ -100,7 +100,7 @@ export async function GET(_: Request, { params }: Params) {
 // PATCH - Update invite link settings (max_uses, expires_at)
 export async function PATCH(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const { wsId, linkId } = await params;
 
     const {
@@ -218,9 +218,9 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 // DELETE - Delete/revoke an invite link
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const { wsId, linkId } = await params;
 
     const {

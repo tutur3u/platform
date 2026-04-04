@@ -41,7 +41,7 @@ async function triggerImmediateNotification() {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const { wsId } = await params;
 

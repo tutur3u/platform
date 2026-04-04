@@ -9,7 +9,9 @@ import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -139,8 +141,10 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     if (_selectedRows.isEmpty ||
         _walletId == null ||
         _resolvedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.inventoryCheckoutValidationError)),
+      showInventoryToast(
+        context,
+        context.l10n.inventoryCheckoutValidationError,
+        destructive: true,
       );
       return;
     }
@@ -166,10 +170,25 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.inventorySaleCreated)),
+      showInventoryToast(
+        context,
+        context.l10n.inventorySaleCreated,
       );
       context.pop(true);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showInventoryToast(
+        context,
+        error.message,
+        destructive: true,
+      );
+    } on Exception catch (error) {
+      if (!mounted) return;
+      showInventoryToast(
+        context,
+        error.toString(),
+        destructive: true,
+      );
     } finally {
       if (mounted) {
         setState(() => _saving = false);
@@ -196,15 +215,29 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
           32 + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
+          InventoryHeroCard(
+            title: l10n.inventoryCheckoutTitle,
+            icon: Icons.shopping_basket_outlined,
+            metrics: [
+              InventoryMetricTile(
+                label: l10n.inventoryCheckoutCartTotal,
+                value: formatCurrency(_cartTotal, 'VND'),
+                icon: Icons.payments_outlined,
+              ),
+              InventoryMetricTile(
+                label: l10n.inventoryCheckoutSelectedItems,
+                value: _selectedRows.length.toString(),
+                icon: Icons.shopping_cart_checkout_rounded,
+              ),
+            ],
+          ),
+          const shad.Gap(16),
           FinancePanel(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.inventoryCheckoutTitle,
-                  style: shad.Theme.of(
-                    context,
-                  ).typography.h3.copyWith(fontWeight: FontWeight.w800),
+                FinanceSectionHeader(
+                  title: l10n.inventoryCheckoutCheckoutDetailsTitle,
                 ),
                 const shad.Gap(12),
                 DropdownButtonFormField<String>(
@@ -256,12 +289,14 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             ),
           ),
           const shad.Gap(16),
-          TextField(
-            controller: _searchController,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: l10n.inventorySearchProducts,
-              prefixIcon: const Icon(Icons.search_rounded),
+          FinancePanel(
+            child: TextField(
+              controller: _searchController,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: l10n.inventorySearchProducts,
+                prefixIcon: const Icon(Icons.search_rounded),
+              ),
             ),
           ),
           const shad.Gap(16),
@@ -272,6 +307,11 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
               body: l10n.inventoryCheckoutEmpty,
             )
           else
+            FinanceSectionHeader(
+              title: l10n.inventoryCheckoutAvailableProductsTitle,
+            ),
+          if (_rows.isNotEmpty) const shad.Gap(12),
+          if (_rows.isNotEmpty)
             ..._rows.map(
               (row) {
                 final quantity = _quantityFor(row);
@@ -341,11 +381,21 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    formatCurrency(_cartTotal, 'VND'),
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.h3.copyWith(fontWeight: FontWeight.w800),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.inventoryCheckoutCartTotal,
+                        style: shad.Theme.of(context).typography.small,
+                      ),
+                      const shad.Gap(4),
+                      Text(
+                        formatCurrency(_cartTotal, 'VND'),
+                        style: shad.Theme.of(
+                          context,
+                        ).typography.h3.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ],
                   ),
                 ),
                 shad.PrimaryButton(

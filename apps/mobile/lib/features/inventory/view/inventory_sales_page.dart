@@ -12,6 +12,7 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -91,15 +92,28 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                         32 + MediaQuery.paddingOf(context).bottom,
                       ),
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                result.realtimeEnabled
-                                    ? l10n.inventoryRealtimeEnabled
-                                    : l10n.inventoryRealtimeDisabled,
-                              ),
+                        InventoryHeroCard(
+                          title: l10n.inventorySalesLabel,
+                          icon: Icons.point_of_sale_outlined,
+                          metrics: [
+                            InventoryMetricTile(
+                              label: l10n.inventorySalesLabel,
+                              value: '${result.count}',
+                              icon: Icons.receipt_long_outlined,
                             ),
+                            InventoryMetricTile(
+                              label: l10n.inventoryOverviewSalesRevenue,
+                              value: formatCurrency(
+                                result.data.fold<double>(
+                                  0,
+                                  (sum, sale) => sum + sale.paidAmount,
+                                ),
+                                'VND',
+                              ),
+                              icon: Icons.payments_outlined,
+                            ),
+                          ],
+                          actions: [
                             shad.PrimaryButton(
                               onPressed: () async {
                                 final created = await context.push<bool>(
@@ -121,6 +135,11 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                             body: l10n.inventorySalesEmpty,
                           )
                         else
+                          FinanceSectionHeader(
+                            title: l10n.inventorySalesRecentTitle,
+                          ),
+                        if (result.data.isNotEmpty) const shad.Gap(12),
+                        if (result.data.isNotEmpty)
                           ...result.data.map(
                             (sale) {
                               final metadata = [

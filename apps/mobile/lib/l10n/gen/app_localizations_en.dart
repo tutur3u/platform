@@ -2492,10 +2492,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryAuditEmpty => 'Inventory activity will appear here after products, stock, and sales are updated.';
 
   @override
+  String get inventoryAuditEventArchived => 'Archived';
+
+  @override
+  String get inventoryAuditEventCreated => 'Created';
+
+  @override
+  String get inventoryAuditEventDeleted => 'Deleted';
+
+  @override
+  String get inventoryAuditEventReactivated => 'Reactivated';
+
+  @override
+  String get inventoryAuditEventSaleCreated => 'Sale created';
+
+  @override
+  String get inventoryAuditEventUpdated => 'Updated';
+
+  @override
   String get inventoryAuditLabel => 'Audit';
 
   @override
+  String get inventoryAuditRecentSubtitle => 'Follow product, stock, setup, and sale changes across the workspace.';
+
+  @override
+  String get inventoryAuditRecentTitle => 'Recent activity';
+
+  @override
+  String get inventoryAuditSubtitle => 'Track who changed products, stock, setup, and sales.';
+
+  @override
+  String get inventoryCheckoutAvailableProductsSubtitle => 'Adjust quantities directly from the available booth inventory.';
+
+  @override
+  String get inventoryCheckoutAvailableProductsTitle => 'Available products';
+
+  @override
   String get inventoryCheckoutAutoCategory => 'Auto-linked category';
+
+  @override
+  String get inventoryCheckoutCartTotal => 'Cart total';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsSubtitle => 'Choose where the sale lands before submitting the invoice.';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsTitle => 'Checkout details';
 
   @override
   String get inventoryCheckoutCategoryOverride => 'Category override';
@@ -2505,6 +2547,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutManualCategoryRequired => 'Choose an income category when the cart mixes linked categories or has no linked category.';
+
+  @override
+  String get inventoryCheckoutSelectedItems => 'Selected lines';
+
+  @override
+  String get inventoryCheckoutSubtitle => 'Build a quick booth sale and send it through invoices.';
 
   @override
   String get inventoryCheckoutSubmit => 'Create sale';
@@ -2528,6 +2576,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryManageCategories => 'Product categories';
 
   @override
+  String get inventoryManageCategoriesSubtitle => 'Group products into clear shelves, menus, or collections.';
+
+  @override
   String get inventoryManageEmpty => 'Nothing configured yet.';
 
   @override
@@ -2537,10 +2588,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryManageOwners => 'Owners';
 
   @override
+  String get inventoryManageOwnersSubtitle => 'Keep attribution separate from the staff member operating the booth.';
+
+  @override
+  String get inventoryManageSubtitle => 'Configure the owners and lookup data the booth depends on.';
+
+  @override
   String get inventoryManageUnits => 'Units';
 
   @override
+  String get inventoryManageUnitsSubtitle => 'Define how stock is counted, sold, and displayed.';
+
+  @override
   String get inventoryManageWarehouses => 'Warehouses';
+
+  @override
+  String get inventoryManageWarehousesSubtitle => 'Separate stock locations so low-stock checks stay accurate.';
 
   @override
   String get inventoryNoBreakdownData => 'No breakdown data yet.';
@@ -2555,6 +2618,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryOverviewCategories => 'By category';
 
   @override
+  String get inventoryOverviewCategoriesSubtitle => 'See which product groups are bringing in revenue.';
+
+  @override
   String get inventoryOverviewExpense => 'Expense';
 
   @override
@@ -2567,13 +2633,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryOverviewLowStock => 'Low stock';
 
   @override
+  String get inventoryOverviewLowStockSubtitle => 'Products that need attention before the next sale.';
+
+  @override
   String get inventoryOverviewOwners => 'By owner';
+
+  @override
+  String get inventoryOverviewOwnersSubtitle => 'Break down sales by the owner assigned to each product.';
 
   @override
   String get inventoryOverviewRecentSales => 'Recent sales';
 
   @override
+  String get inventoryOverviewRecentSalesSubtitle => 'Latest invoice-backed booth sales from inventory.';
+
+  @override
   String get inventoryOverviewSalesRevenue => 'Inventory revenue';
+
+  @override
+  String get inventoryOverviewSubtitle => 'Watch revenue, inventory pressure, and owner performance together.';
 
   @override
   String get inventoryOwnerArchived => 'Archived';
@@ -2591,10 +2669,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductDescription => 'Description';
 
   @override
+  String get inventoryProductDetailsSubtitle => 'Name the product, assign ownership, and link finance defaults.';
+
+  @override
+  String get inventoryProductDetailsTitle => 'Product details';
+
+  @override
+  String get inventoryProductEditorSubtitle => 'Create booth-ready products with fixed prices and stock rows.';
+
+  @override
   String get inventoryProductFinanceCategory => 'Linked finance category';
 
   @override
   String get inventoryProductInventory => 'Inventory rows';
+
+  @override
+  String get inventoryProductInventorySubtitle => 'Each row represents a unit, warehouse, quantity, threshold, and price.';
 
   @override
   String get inventoryProductManufacturer => 'Manufacturer';
@@ -2633,6 +2723,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductsLabel => 'Products';
 
   @override
+  String get inventoryProductsListSubtitle => 'Tap a product to edit details, pricing, or stock rows.';
+
+  @override
+  String get inventoryProductsListTitle => 'Product catalog';
+
+  @override
+  String get inventoryProductsSubtitle => 'Search, review, and edit products prepared for the booth.';
+
+  @override
   String get inventoryRealtimeDisabled => 'Realtime is disabled for this workspace.';
 
   @override
@@ -2646,6 +2745,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySalesLabel => 'Sales';
+
+  @override
+  String get inventorySalesRecentSubtitle => 'Review the latest invoice-backed inventory sales.';
+
+  @override
+  String get inventorySalesRecentTitle => 'Sale history';
+
+  @override
+  String get inventorySalesSubtitle => 'Monitor completed inventory sales and payment destinations.';
 
   @override
   String get inventorySaveProduct => 'Save product';
@@ -4621,6 +4729,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captchaError => 'Security check failed. Please try again.';
+
+  @override
+  String get commonOff => 'Off';
 
   @override
   String get commonSomethingWentWrong => 'Something went wrong';

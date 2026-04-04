@@ -4897,17 +4897,101 @@ abstract class AppLocalizations {
   /// **'Inventory activity will appear here after products, stock, and sales are updated.'**
   String get inventoryAuditEmpty;
 
+  /// No description provided for @inventoryAuditEventArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get inventoryAuditEventArchived;
+
+  /// No description provided for @inventoryAuditEventCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get inventoryAuditEventCreated;
+
+  /// No description provided for @inventoryAuditEventDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get inventoryAuditEventDeleted;
+
+  /// No description provided for @inventoryAuditEventReactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactivated'**
+  String get inventoryAuditEventReactivated;
+
+  /// No description provided for @inventoryAuditEventSaleCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale created'**
+  String get inventoryAuditEventSaleCreated;
+
+  /// No description provided for @inventoryAuditEventUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get inventoryAuditEventUpdated;
+
   /// No description provided for @inventoryAuditLabel.
   ///
   /// In en, this message translates to:
   /// **'Audit'**
   String get inventoryAuditLabel;
 
+  /// No description provided for @inventoryAuditRecentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow product, stock, setup, and sale changes across the workspace.'**
+  String get inventoryAuditRecentSubtitle;
+
+  /// No description provided for @inventoryAuditRecentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get inventoryAuditRecentTitle;
+
+  /// No description provided for @inventoryAuditSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track who changed products, stock, setup, and sales.'**
+  String get inventoryAuditSubtitle;
+
+  /// No description provided for @inventoryCheckoutAvailableProductsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust quantities directly from the available booth inventory.'**
+  String get inventoryCheckoutAvailableProductsSubtitle;
+
+  /// No description provided for @inventoryCheckoutAvailableProductsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Available products'**
+  String get inventoryCheckoutAvailableProductsTitle;
+
   /// No description provided for @inventoryCheckoutAutoCategory.
   ///
   /// In en, this message translates to:
   /// **'Auto-linked category'**
   String get inventoryCheckoutAutoCategory;
+
+  /// No description provided for @inventoryCheckoutCartTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart total'**
+  String get inventoryCheckoutCartTotal;
+
+  /// No description provided for @inventoryCheckoutCheckoutDetailsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where the sale lands before submitting the invoice.'**
+  String get inventoryCheckoutCheckoutDetailsSubtitle;
+
+  /// No description provided for @inventoryCheckoutCheckoutDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout details'**
+  String get inventoryCheckoutCheckoutDetailsTitle;
 
   /// No description provided for @inventoryCheckoutCategoryOverride.
   ///
@@ -4926,6 +5010,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose an income category when the cart mixes linked categories or has no linked category.'**
   String get inventoryCheckoutManualCategoryRequired;
+
+  /// No description provided for @inventoryCheckoutSelectedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected lines'**
+  String get inventoryCheckoutSelectedItems;
+
+  /// No description provided for @inventoryCheckoutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a quick booth sale and send it through invoices.'**
+  String get inventoryCheckoutSubtitle;
 
   /// No description provided for @inventoryCheckoutSubmit.
   ///
@@ -4969,6 +5065,12 @@ abstract class AppLocalizations {
   /// **'Product categories'**
   String get inventoryManageCategories;
 
+  /// No description provided for @inventoryManageCategoriesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group products into clear shelves, menus, or collections.'**
+  String get inventoryManageCategoriesSubtitle;
+
   /// No description provided for @inventoryManageEmpty.
   ///
   /// In en, this message translates to:
@@ -4987,17 +5089,41 @@ abstract class AppLocalizations {
   /// **'Owners'**
   String get inventoryManageOwners;
 
+  /// No description provided for @inventoryManageOwnersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep attribution separate from the staff member operating the booth.'**
+  String get inventoryManageOwnersSubtitle;
+
+  /// No description provided for @inventoryManageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure the owners and lookup data the booth depends on.'**
+  String get inventoryManageSubtitle;
+
   /// No description provided for @inventoryManageUnits.
   ///
   /// In en, this message translates to:
   /// **'Units'**
   String get inventoryManageUnits;
 
+  /// No description provided for @inventoryManageUnitsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Define how stock is counted, sold, and displayed.'**
+  String get inventoryManageUnitsSubtitle;
+
   /// No description provided for @inventoryManageWarehouses.
   ///
   /// In en, this message translates to:
   /// **'Warehouses'**
   String get inventoryManageWarehouses;
+
+  /// No description provided for @inventoryManageWarehousesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate stock locations so low-stock checks stay accurate.'**
+  String get inventoryManageWarehousesSubtitle;
 
   /// No description provided for @inventoryNoBreakdownData.
   ///
@@ -5023,6 +5149,12 @@ abstract class AppLocalizations {
   /// **'By category'**
   String get inventoryOverviewCategories;
 
+  /// No description provided for @inventoryOverviewCategoriesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See which product groups are bringing in revenue.'**
+  String get inventoryOverviewCategoriesSubtitle;
+
   /// No description provided for @inventoryOverviewExpense.
   ///
   /// In en, this message translates to:
@@ -5047,11 +5179,23 @@ abstract class AppLocalizations {
   /// **'Low stock'**
   String get inventoryOverviewLowStock;
 
+  /// No description provided for @inventoryOverviewLowStockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Products that need attention before the next sale.'**
+  String get inventoryOverviewLowStockSubtitle;
+
   /// No description provided for @inventoryOverviewOwners.
   ///
   /// In en, this message translates to:
   /// **'By owner'**
   String get inventoryOverviewOwners;
+
+  /// No description provided for @inventoryOverviewOwnersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Break down sales by the owner assigned to each product.'**
+  String get inventoryOverviewOwnersSubtitle;
 
   /// No description provided for @inventoryOverviewRecentSales.
   ///
@@ -5059,11 +5203,23 @@ abstract class AppLocalizations {
   /// **'Recent sales'**
   String get inventoryOverviewRecentSales;
 
+  /// No description provided for @inventoryOverviewRecentSalesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest invoice-backed booth sales from inventory.'**
+  String get inventoryOverviewRecentSalesSubtitle;
+
   /// No description provided for @inventoryOverviewSalesRevenue.
   ///
   /// In en, this message translates to:
   /// **'Inventory revenue'**
   String get inventoryOverviewSalesRevenue;
+
+  /// No description provided for @inventoryOverviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch revenue, inventory pressure, and owner performance together.'**
+  String get inventoryOverviewSubtitle;
 
   /// No description provided for @inventoryOwnerArchived.
   ///
@@ -5095,6 +5251,24 @@ abstract class AppLocalizations {
   /// **'Description'**
   String get inventoryProductDescription;
 
+  /// No description provided for @inventoryProductDetailsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the product, assign ownership, and link finance defaults.'**
+  String get inventoryProductDetailsSubtitle;
+
+  /// No description provided for @inventoryProductDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Product details'**
+  String get inventoryProductDetailsTitle;
+
+  /// No description provided for @inventoryProductEditorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create booth-ready products with fixed prices and stock rows.'**
+  String get inventoryProductEditorSubtitle;
+
   /// No description provided for @inventoryProductFinanceCategory.
   ///
   /// In en, this message translates to:
@@ -5106,6 +5280,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Inventory rows'**
   String get inventoryProductInventory;
+
+  /// No description provided for @inventoryProductInventorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Each row represents a unit, warehouse, quantity, threshold, and price.'**
+  String get inventoryProductInventorySubtitle;
 
   /// No description provided for @inventoryProductManufacturer.
   ///
@@ -5179,6 +5359,24 @@ abstract class AppLocalizations {
   /// **'Products'**
   String get inventoryProductsLabel;
 
+  /// No description provided for @inventoryProductsListSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a product to edit details, pricing, or stock rows.'**
+  String get inventoryProductsListSubtitle;
+
+  /// No description provided for @inventoryProductsListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Product catalog'**
+  String get inventoryProductsListTitle;
+
+  /// No description provided for @inventoryProductsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search, review, and edit products prepared for the booth.'**
+  String get inventoryProductsSubtitle;
+
   /// No description provided for @inventoryRealtimeDisabled.
   ///
   /// In en, this message translates to:
@@ -5208,6 +5406,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sales'**
   String get inventorySalesLabel;
+
+  /// No description provided for @inventorySalesRecentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the latest invoice-backed inventory sales.'**
+  String get inventorySalesRecentSubtitle;
+
+  /// No description provided for @inventorySalesRecentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sale history'**
+  String get inventorySalesRecentTitle;
+
+  /// No description provided for @inventorySalesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Monitor completed inventory sales and payment destinations.'**
+  String get inventorySalesSubtitle;
 
   /// No description provided for @inventorySaveProduct.
   ///
@@ -8886,6 +9102,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Security check failed. Please try again.'**
   String get captchaError;
+
+  /// No description provided for @commonOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get commonOff;
 
   /// No description provided for @commonSomethingWentWrong.
   ///

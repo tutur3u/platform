@@ -7,9 +7,11 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -90,28 +92,17 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                     32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            onSubmitted: (_) => _reload(),
-                            decoration: InputDecoration(
-                              hintText: l10n.inventorySearchProducts,
-                              prefixIcon: const Icon(Icons.search_rounded),
-                              suffixIcon: _searchController.text.isEmpty
-                                  ? null
-                                  : IconButton(
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        _reload();
-                                      },
-                                      icon: const Icon(Icons.close_rounded),
-                                    ),
-                            ),
-                          ),
+                    InventoryHeroCard(
+                      title: l10n.inventoryProductsLabel,
+                      icon: Icons.inventory_2_outlined,
+                      metrics: [
+                        InventoryMetricTile(
+                          label: l10n.inventoryProductsLabel,
+                          value: '${result.count}',
+                          icon: Icons.category_outlined,
                         ),
-                        const shad.Gap(12),
+                      ],
+                      actions: [
                         shad.PrimaryButton(
                           onPressed: () async {
                             final result = await context.push<bool>(
@@ -123,7 +114,28 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                           },
                           child: Text(l10n.inventoryCreateProduct),
                         ),
+                        shad.SecondaryButton(
+                          onPressed: () => context.go(Routes.inventoryManage),
+                          child: Text(l10n.inventoryManageLabel),
+                        ),
                       ],
+                      child: TextField(
+                        controller: _searchController,
+                        onSubmitted: (_) => _reload(),
+                        decoration: InputDecoration(
+                          hintText: l10n.inventorySearchProducts,
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          suffixIcon: _searchController.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _reload();
+                                  },
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                        ),
+                      ),
                     ),
                     const shad.Gap(16),
                     if (result.data.isEmpty)
@@ -144,6 +156,11 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                         ),
                       )
                     else
+                      FinanceSectionHeader(
+                        title: l10n.inventoryProductsListTitle,
+                      ),
+                    if (result.data.isNotEmpty) const shad.Gap(12),
+                    if (result.data.isNotEmpty)
                       ...result.data.map(
                         (product) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -193,6 +210,27 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                                         false)
                                       product.financeCategory!.name,
                                   ].join(' • '),
+                                ),
+                                const shad.Gap(10),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    if (product.inventory.isNotEmpty)
+                                      FinanceStatChip(
+                                        label: l10n.inventoryProductPrice,
+                                        value: formatCurrency(
+                                          product.inventory.first.price,
+                                          'VND',
+                                        ),
+                                        icon: Icons.sell_outlined,
+                                      ),
+                                    FinanceStatChip(
+                                      label: l10n.inventoryProductInventory,
+                                      value: '${product.inventory.length}',
+                                      icon: Icons.warehouse_outlined,
+                                    ),
+                                  ],
                                 ),
                                 if (product.inventory.isNotEmpty) ...[
                                   const shad.Gap(10),
