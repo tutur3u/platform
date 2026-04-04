@@ -19,6 +19,9 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getInventoryActorContext } from '@/lib/inventory/actor';
+import { createInventoryAuditLog } from '@/lib/inventory/audit';
+import { canCreateInventorySales } from '@/lib/inventory/permissions';
 import { isPromotionAllowedForWorkspace } from '@/utils/workspace-config';
 
 const SearchParamsSchema = z.object({
@@ -62,13 +65,13 @@ interface InvoiceProduct {
 }
 
 interface CreateInvoiceRequest {
-  customer_id: string;
+  customer_id?: string | null;
   content: string;
   notes?: string;
   wallet_id: string;
   promotion_id?: string;
   products: InvoiceProduct[];
-  category_id: string;
+  category_id?: string;
   // Optional frontend calculated values for comparison
   frontend_subtotal?: number;
   frontend_discount_amount?: number;
@@ -401,18 +404,19 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const permissions = await getPermissions({
-    wsId,
+    wsId: id,
+    request: req,
   });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
-  const { withoutPermission } = permissions;
-  if (withoutPermission('create_invoices')) {
+  if (!canCreateInventorySales(permissions)) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -431,17 +435,10 @@ export async function POST(req: Request, { params }: Params) {
     }: CreateInvoiceRequest = await req.json();
 
     // Validate required fields
-    if (
-      !customer_id ||
-      !products ||
-      products.length === 0 ||
-      !wallet_id ||
-      !category_id
-    ) {
+    if (!products || products.length === 0 || !wallet_id) {
       return NextResponse.json(
         {
-          message:
-            'Missing required fields: customer_id, products, wallet_id, and category_id',
+          message: 'Missing required fields: products and wallet_id',
         },
         { status: 400 }
       );
@@ -466,6 +463,84 @@ export async function POST(req: Request, { params }: Params) {
 
     const workspaceUserId = workspaceUser?.virtual_user_id || null;
     const isSubscriptionInvoice = false;
+
+    if (!workspaceUserId) {
+      return NextResponse.json(
+        {
+          message:
+            'Inventory sales require the signed-in operator to be linked to a workspace user',
+        },
+        { status: 400 }
+      );
+    }
+
+    const uniqueProductIds = [
+      ...new Set(products.map((product) => product.product_id)),
+    ];
+    const { data: productRows, error: productRowsError } = await sbAdmin
+      .from('workspace_products')
+      .select('id, name, owner_id, finance_category_id, inventory_owners(name)')
+      .in('id', uniqueProductIds)
+      .eq('ws_id', wsId)
+      .filter('archived', 'eq', 'false');
+
+    if (productRowsError) {
+      return NextResponse.json(
+        { message: 'Failed to validate sold products' },
+        { status: 500 }
+      );
+    }
+
+    if ((productRows ?? []).length !== uniqueProductIds.length) {
+      return NextResponse.json(
+        { message: 'One or more sold products are invalid' },
+        { status: 400 }
+      );
+    }
+
+    const linkedCategoryIds = [
+      ...new Set(
+        (productRows ?? [])
+          .map((row) => row.finance_category_id)
+          .filter((value): value is string => !!value)
+      ),
+    ];
+
+    let resolvedCategoryId = category_id?.trim() || null;
+    if (!resolvedCategoryId && linkedCategoryIds.length === 1) {
+      resolvedCategoryId = linkedCategoryIds[0] ?? null;
+    }
+
+    if (!resolvedCategoryId && linkedCategoryIds.length > 1) {
+      return NextResponse.json(
+        {
+          message:
+            'This cart contains products with different linked finance categories. Please choose a category override.',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!resolvedCategoryId) {
+      return NextResponse.json(
+        { message: 'Missing required field: category_id' },
+        { status: 400 }
+      );
+    }
+
+    const { data: categoryCheck, error: categoryCheckError } = await sbAdmin
+      .from('transaction_categories')
+      .select('id')
+      .eq('id', resolvedCategoryId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (categoryCheckError || !categoryCheck) {
+      return NextResponse.json(
+        { message: 'Invalid invoice category' },
+        { status: 400 }
+      );
+    }
 
     // Calculate values using backend logic
     let calculatedValues: CalculatedValues;
@@ -508,13 +583,13 @@ export async function POST(req: Request, { params }: Params) {
 
     const invoiceData: any = {
       ws_id: wsId,
-      customer_id,
+      customer_id: customer_id ?? null,
       price: roundedPrice, // Calculate from rounded values for consistency
       total_diff: roundedRounding, // Store the rounding applied
       note: notes,
       notice: content,
       wallet_id,
-      category_id,
+      category_id: resolvedCategoryId,
       completed_at: new Date().toISOString(),
       valid_until: new Date(
         Date.now() + 1000 * 60 * 60 * 24 * 30
@@ -565,7 +640,7 @@ export async function POST(req: Request, { params }: Params) {
     const productValues = Array.from(productMap.values());
     const { data: productsData, error: productsError } = await sbAdmin
       .from('workspace_products')
-      .select('name, id')
+      .select('name, id, owner_id, inventory_owners(name)')
       .in(
         'id',
         productValues.map((product) => product.product_id)
@@ -604,18 +679,37 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const invoiceProducts = productValues.map((product) => ({
-      invoice_id: invoiceId,
-      product_name:
-        productsData.find((p) => p.id === product.product_id)?.name || '',
-      product_unit:
-        unitsData.find((unit) => unit.id === product.unit_id)?.name || '',
-      product_id: product.product_id,
-      unit_id: product.unit_id,
-      warehouse_id: product.warehouse_id,
-      amount: product.quantity,
-      price: Math.round(product.price), // Convert to integer
-    }));
+    const productInfoById = new Map(
+      (productsData ?? []).map((row) => [
+        row.id,
+        {
+          name: row.name ?? '',
+          ownerId: row.owner_id ?? null,
+          ownerName: Array.isArray(row.inventory_owners)
+            ? (row.inventory_owners[0]?.name ?? '')
+            : (row.inventory_owners?.name ?? ''),
+        },
+      ])
+    );
+    const unitNameById = new Map(
+      (unitsData ?? []).map((unit) => [unit.id, unit.name ?? ''])
+    );
+
+    const invoiceProducts = productValues.map((product) => {
+      const productInfo = productInfoById.get(product.product_id);
+      return {
+        invoice_id: invoiceId,
+        product_name: productInfo?.name ?? '',
+        product_unit: unitNameById.get(product.unit_id) ?? '',
+        product_id: product.product_id,
+        unit_id: product.unit_id,
+        warehouse_id: product.warehouse_id,
+        amount: product.quantity,
+        price: Math.round(product.price),
+        owner_id: productInfo?.ownerId ?? null,
+        owner_name: productInfo?.ownerName ?? '',
+      };
+    });
 
     const { error: invoiceProductsError } = await sbAdmin
       .from('finance_invoice_products')
@@ -694,8 +788,8 @@ export async function POST(req: Request, { params }: Params) {
       unit_id: product.unit_id,
       warehouse_id: product.warehouse_id,
       amount: -product.quantity, // Negative because it's being sold
-      creator_id: workspaceUserId || customer_id,
-      beneficiary_id: customer_id,
+      creator_id: workspaceUserId,
+      beneficiary_id: customer_id ?? null,
     }));
 
     const { error: stockError } = await sbAdmin
@@ -725,12 +819,39 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
+    await createInventoryAuditLog(sbAdmin, {
+      wsId,
+      eventKind: 'sale_created',
+      entityKind: 'sale',
+      entityId: invoiceId,
+      entityLabel: invoiceId,
+      summary: `Created inventory sale ${invoiceId}`,
+      changedFields: ['products', 'wallet_id', 'category_id', 'paid_amount'],
+      after: {
+        invoice_id: invoiceId,
+        customer_id: customer_id ?? null,
+        wallet_id,
+        category_id: resolvedCategoryId,
+        paid_amount: roundedTotal,
+        products: invoiceProducts.map((product) => ({
+          product_id: product.product_id,
+          product_name: product.product_name,
+          amount: product.amount,
+          price: product.price,
+          owner_id: product.owner_id,
+          owner_name: product.owner_name,
+        })),
+      },
+      actor: await getInventoryActorContext(req, wsId),
+    });
+
     return NextResponse.json({
       message: 'Invoice created successfully',
       invoice_id: invoiceId,
       data: {
         id: invoiceId,
-        customer_id,
+        customer_id: customer_id ?? null,
+        category_id: resolvedCategoryId,
         total,
         subtotal,
         discount_amount,

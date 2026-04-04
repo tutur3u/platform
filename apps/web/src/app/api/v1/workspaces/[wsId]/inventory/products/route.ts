@@ -16,6 +16,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  canViewInventoryCatalog,
+  canViewInventoryStock,
+} from '@/lib/inventory/permissions';
 
 const SearchParamsSchema = z.object({
   categoryId: z.guid().optional(),
@@ -89,9 +93,8 @@ export async function GET(request: Request, { params }: Params) {
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
-    const { containsPermission } = permissions;
-    const canViewInventory = containsPermission('view_inventory');
-    const canViewStockQuantity = containsPermission('view_stock_quantity');
+    const canViewInventory = canViewInventoryCatalog(permissions);
+    const canViewStockQuantity = canViewInventoryStock(permissions);
 
     if (!canViewInventory) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
@@ -126,7 +129,7 @@ export async function GET(request: Request, { params }: Params) {
       let query = sbAdmin
         .from('workspace_products')
         .select(
-          'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
+          'id, name, manufacturer, description, usage, category_id, owner_id, finance_category_id, created_at, ws_id, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
           {
             count: 'exact',
           }
@@ -158,7 +161,7 @@ export async function GET(request: Request, { params }: Params) {
       let query = sbAdmin
         .from('workspace_products')
         .select(
-          'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name)',
+          'id, name, manufacturer, description, usage, category_id, owner_id, finance_category_id, created_at, ws_id, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)',
           {
             count: 'exact',
           }
@@ -251,6 +254,25 @@ export async function GET(request: Request, { params }: Params) {
           : null,
         category: item.product_categories?.name,
         category_id: item.category_id,
+        owner_id: item.owner_id,
+        owner: item.inventory_owners
+          ? {
+              id: item.inventory_owners.id,
+              name: item.inventory_owners.name,
+              avatar_url: item.inventory_owners.avatar_url,
+              linked_workspace_user_id:
+                item.inventory_owners.linked_workspace_user_id,
+            }
+          : null,
+        finance_category_id: item.finance_category_id,
+        finance_category: item.transaction_categories
+          ? {
+              id: item.transaction_categories.id,
+              name: item.transaction_categories.name,
+              color: item.transaction_categories.color,
+              icon: item.transaction_categories.icon,
+            }
+          : null,
         ws_id: item.ws_id,
         created_at: item.created_at,
       };

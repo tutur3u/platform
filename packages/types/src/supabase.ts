@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.4';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -3569,6 +3574,8 @@ export type Database = {
           amount: number;
           created_at: string | null;
           invoice_id: string;
+          owner_id: string | null;
+          owner_name: string;
           price: number;
           product_id: string | null;
           product_name: string;
@@ -3582,6 +3589,8 @@ export type Database = {
           amount: number;
           created_at?: string | null;
           invoice_id: string;
+          owner_id?: string | null;
+          owner_name?: string;
           price: number;
           product_id?: string | null;
           product_name?: string;
@@ -3595,6 +3604,8 @@ export type Database = {
           amount?: number;
           created_at?: string | null;
           invoice_id?: string;
+          owner_id?: string | null;
+          owner_name?: string;
           price?: number;
           product_id?: string | null;
           product_name?: string;
@@ -5539,6 +5550,121 @@ export type Database = {
           },
         ];
       };
+      inventory_audit_logs: {
+        Row: {
+          actor_auth_uid: string | null;
+          actor_workspace_user_id: string | null;
+          after: Json | null;
+          before: Json | null;
+          changed_fields: string[];
+          entity_id: string | null;
+          entity_kind: string;
+          entity_label: string | null;
+          event_kind: string;
+          id: number;
+          occurred_at: string;
+          source: string;
+          summary: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_auth_uid?: string | null;
+          actor_workspace_user_id?: string | null;
+          after?: Json | null;
+          before?: Json | null;
+          changed_fields?: string[];
+          entity_id?: string | null;
+          entity_kind: string;
+          entity_label?: string | null;
+          event_kind: string;
+          id?: number;
+          occurred_at?: string;
+          source?: string;
+          summary: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_auth_uid?: string | null;
+          actor_workspace_user_id?: string | null;
+          after?: Json | null;
+          before?: Json | null;
+          changed_fields?: string[];
+          entity_id?: string | null;
+          entity_kind?: string;
+          entity_label?: string | null;
+          event_kind?: string;
+          id?: number;
+          occurred_at?: string;
+          source?: string;
+          summary?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_audit_logs_actor_workspace_user_id_fkey';
+            columns: ['actor_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_audit_logs_actor_workspace_user_id_fkey';
+            columns: ['actor_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_audit_logs_actor_workspace_user_id_fkey';
+            columns: ['actor_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'inventory_audit_logs_actor_workspace_user_id_fkey';
+            columns: ['actor_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_audit_logs_actor_workspace_user_id_fkey';
+            columns: ['actor_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_audit_logs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_audit_logs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'inventory_audit_logs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_audit_logs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_batch_products: {
         Row: {
           amount: number;
@@ -5626,6 +5752,103 @@ export type Database = {
             columns: ['warehouse_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_warehouses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_owners: {
+        Row: {
+          archived: boolean;
+          avatar_url: string | null;
+          created_at: string;
+          id: string;
+          linked_workspace_user_id: string | null;
+          name: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          archived?: boolean;
+          avatar_url?: string | null;
+          created_at?: string;
+          id?: string;
+          linked_workspace_user_id?: string | null;
+          name: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          archived?: boolean;
+          avatar_url?: string | null;
+          created_at?: string;
+          id?: string;
+          linked_workspace_user_id?: string | null;
+          name?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_owners_linked_workspace_user_id_fkey';
+            columns: ['linked_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_owners_linked_workspace_user_id_fkey';
+            columns: ['linked_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_owners_linked_workspace_user_id_fkey';
+            columns: ['linked_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'inventory_owners_linked_workspace_user_id_fkey';
+            columns: ['linked_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_owners_linked_workspace_user_id_fkey';
+            columns: ['linked_workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_owners_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_owners_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'inventory_owners_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_owners_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -19835,9 +20058,11 @@ export type Database = {
           created_at: string | null;
           creator_id: string | null;
           description: string | null;
+          finance_category_id: string | null;
           id: string;
           manufacturer: string | null;
           name: string | null;
+          owner_id: string;
           usage: string | null;
           ws_id: string;
         };
@@ -19848,9 +20073,11 @@ export type Database = {
           created_at?: string | null;
           creator_id?: string | null;
           description?: string | null;
+          finance_category_id?: string | null;
           id?: string;
           manufacturer?: string | null;
           name?: string | null;
+          owner_id: string;
           usage?: string | null;
           ws_id: string;
         };
@@ -19861,9 +20088,11 @@ export type Database = {
           created_at?: string | null;
           creator_id?: string | null;
           description?: string | null;
+          finance_category_id?: string | null;
           id?: string;
           manufacturer?: string | null;
           name?: string | null;
+          owner_id?: string;
           usage?: string | null;
           ws_id?: string;
         };
@@ -19908,6 +20137,20 @@ export type Database = {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'product_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_products_finance_category_id_fkey';
+            columns: ['finance_category_id'];
+            isOneToOne: false;
+            referencedRelation: 'transaction_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_products_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_owners';
             referencedColumns: ['id'];
           },
           {
@@ -22381,36 +22624,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -30211,7 +30425,17 @@ export type Database = {
         | 'manage_drive_tasks_directory'
         | 'view_drive'
         | 'manage_external_projects'
-        | 'publish_external_projects';
+        | 'publish_external_projects'
+        | 'view_inventory_dashboard'
+        | 'view_inventory_catalog'
+        | 'manage_inventory_catalog'
+        | 'view_inventory_stock'
+        | 'adjust_inventory_stock'
+        | 'manage_inventory_setup'
+        | 'view_inventory_sales'
+        | 'create_inventory_sales'
+        | 'view_inventory_analytics'
+        | 'view_inventory_audit_logs';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -32340,6 +32564,16 @@ export const Constants = {
         'view_drive',
         'manage_external_projects',
         'publish_external_projects',
+        'view_inventory_dashboard',
+        'view_inventory_catalog',
+        'manage_inventory_catalog',
+        'view_inventory_stock',
+        'adjust_inventory_stock',
+        'manage_inventory_setup',
+        'view_inventory_sales',
+        'create_inventory_sales',
+        'view_inventory_analytics',
+        'view_inventory_audit_logs',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

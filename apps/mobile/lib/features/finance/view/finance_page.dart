@@ -16,6 +16,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
+import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
@@ -342,91 +343,99 @@ class _WalletHighlightCard extends StatelessWidget {
     final showConverted =
         currency.toUpperCase() != workspaceCurrency.toUpperCase() &&
         converted != null;
+    final isZeroNet = isWalletDisplayNetZero(
+      wallet: wallet,
+      workspaceCurrency: workspaceCurrency,
+      exchangeRates: exchangeRates,
+    );
 
     return SizedBox(
       width: 224,
-      child: FinancePanel(
-        onTap: () => context.push(Routes.walletDetailPath(wallet.id)),
-        backgroundColor: palette.panel,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                WalletVisualAvatar(
-                  icon: wallet.icon,
-                  imageSrc: wallet.imageSrc,
-                  fallbackIcon: isCredit
-                      ? Icons.credit_card_outlined
-                      : Icons.account_balance_wallet_outlined,
-                  backgroundColor: accent.withValues(alpha: 0.12),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+      child: Opacity(
+        opacity: isZeroNet ? 0.58 : 1,
+        child: FinancePanel(
+          onTap: () => context.push(Routes.walletDetailPath(wallet.id)),
+          backgroundColor: palette.panel,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  WalletVisualAvatar(
+                    icon: wallet.icon,
+                    imageSrc: wallet.imageSrc,
+                    fallbackIcon: isCredit
+                        ? Icons.credit_card_outlined
+                        : Icons.account_balance_wallet_outlined,
+                    backgroundColor: accent.withValues(alpha: 0.12),
                   ),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    isCredit
-                        ? context.l10n.financeWalletTypeCredit
-                        : context.l10n.financeWalletTypeStandard,
-                    style: theme.typography.xSmall.copyWith(
-                      color: accent,
-                      fontWeight: FontWeight.w700,
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
                     ),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      isCredit
+                          ? context.l10n.financeWalletTypeCredit
+                          : context.l10n.financeWalletTypeStandard,
+                      style: theme.typography.xSmall.copyWith(
+                        color: accent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                wallet.name ?? '-',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.large.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (wallet.description?.trim().isNotEmpty ?? false) ...[
+                const shad.Gap(6),
+                Text(
+                  wallet.description!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.textSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+              ] else
+                const shad.Gap(16),
+              const shad.Gap(16),
+              FinanceAmountText(
+                amount: balance,
+                currency: currency,
+                isVisible: showAmounts,
+                showPlus: false,
+                alignment: CrossAxisAlignment.start,
+                forceColor: theme.colorScheme.foreground,
+                style: theme.typography.h4,
+              ),
+              if (showConverted) ...[
+                const shad.Gap(8),
+                Text(
+                  maskFinanceValue(
+                    '≈ ${formatCurrency(converted, workspaceCurrency)}',
+                    showAmounts: showAmounts,
+                  ),
+                  style: theme.typography.textSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
                   ),
                 ),
               ],
-            ),
-            const Spacer(),
-            Text(
-              wallet.name ?? '-',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.large.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            if (wallet.description?.trim().isNotEmpty ?? false) ...[
-              const shad.Gap(6),
-              Text(
-                wallet.description!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.textSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ),
-            ] else
-              const shad.Gap(16),
-            const shad.Gap(16),
-            FinanceAmountText(
-              amount: balance,
-              currency: currency,
-              isVisible: showAmounts,
-              showPlus: false,
-              alignment: CrossAxisAlignment.start,
-              forceColor: theme.colorScheme.foreground,
-              style: theme.typography.h4,
-            ),
-            if (showConverted) ...[
-              const shad.Gap(8),
-              Text(
-                maskFinanceValue(
-                  '≈ ${formatCurrency(converted, workspaceCurrency)}',
-                  showAmounts: showAmounts,
-                ),
-                style: theme.typography.textSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );

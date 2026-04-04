@@ -2468,6 +2468,186 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeTitle => 'Tài chính';
 
   @override
+  String get inventoryAddCategory => 'Thêm danh mục';
+
+  @override
+  String get inventoryAddOwner => 'Thêm chủ sở hữu';
+
+  @override
+  String get inventoryAddUnit => 'Thêm đơn vị';
+
+  @override
+  String get inventoryAddWarehouse => 'Thêm kho';
+
+  @override
+  String get inventoryAuditEmpty => 'Nhật ký sẽ xuất hiện ở đây sau khi sản phẩm, tồn kho hoặc giao dịch bán được cập nhật.';
+
+  @override
+  String get inventoryAuditLabel => 'Nhật ký';
+
+  @override
+  String get inventoryCheckoutAutoCategory => 'Danh mục tự liên kết';
+
+  @override
+  String get inventoryCheckoutCategoryOverride => 'Ghi đè danh mục';
+
+  @override
+  String get inventoryCheckoutEmpty => 'Chưa có tồn kho khả dụng để bán.';
+
+  @override
+  String get inventoryCheckoutManualCategoryRequired => 'Hãy chọn danh mục thu nhập khi giỏ hàng trộn nhiều danh mục liên kết hoặc chưa có danh mục liên kết.';
+
+  @override
+  String get inventoryCheckoutSubmit => 'Tạo giao dịch bán';
+
+  @override
+  String get inventoryCheckoutTitle => 'Bán hàng';
+
+  @override
+  String get inventoryCheckoutValidationError => 'Hãy chọn ví, xử lý danh mục và thêm ít nhất một sản phẩm.';
+
+  @override
+  String get inventoryCheckoutWallet => 'Ví';
+
+  @override
+  String get inventoryCreateProduct => 'Tạo sản phẩm';
+
+  @override
+  String get inventoryEditProduct => 'Sửa sản phẩm';
+
+  @override
+  String get inventoryManageCategories => 'Danh mục sản phẩm';
+
+  @override
+  String get inventoryManageEmpty => 'Chưa có cấu hình nào.';
+
+  @override
+  String get inventoryManageLabel => 'Quản lý';
+
+  @override
+  String get inventoryManageOwners => 'Chủ sở hữu';
+
+  @override
+  String get inventoryManageUnits => 'Đơn vị';
+
+  @override
+  String get inventoryManageWarehouses => 'Kho';
+
+  @override
+  String get inventoryNoBreakdownData => 'Chưa có dữ liệu phân tích.';
+
+  @override
+  String get inventoryNoLinkedFinanceCategory => 'Chưa liên kết danh mục tài chính';
+
+  @override
+  String get inventoryNoLowStockProducts => 'Hiện chưa có sản phẩm sắp hết hàng.';
+
+  @override
+  String get inventoryOverviewCategories => 'Theo danh mục';
+
+  @override
+  String get inventoryOverviewExpense => 'Chi tiêu';
+
+  @override
+  String get inventoryOverviewIncome => 'Thu nhập';
+
+  @override
+  String get inventoryOverviewLabel => 'Tổng quan';
+
+  @override
+  String get inventoryOverviewLowStock => 'Sắp hết hàng';
+
+  @override
+  String get inventoryOverviewOwners => 'Theo chủ sở hữu';
+
+  @override
+  String get inventoryOverviewRecentSales => 'Bán hàng gần đây';
+
+  @override
+  String get inventoryOverviewSalesRevenue => 'Doanh thu tồn kho';
+
+  @override
+  String get inventoryOwnerArchived => 'Đã lưu trữ';
+
+  @override
+  String get inventoryProductAddInventoryRow => 'Thêm dòng tồn kho';
+
+  @override
+  String get inventoryProductAmount => 'Số lượng';
+
+  @override
+  String get inventoryProductCategory => 'Danh mục sản phẩm';
+
+  @override
+  String get inventoryProductDescription => 'Mô tả';
+
+  @override
+  String get inventoryProductFinanceCategory => 'Danh mục tài chính liên kết';
+
+  @override
+  String get inventoryProductInventory => 'Các dòng tồn kho';
+
+  @override
+  String get inventoryProductManufacturer => 'Nhà sản xuất';
+
+  @override
+  String get inventoryProductMinAmount => 'Mức tối thiểu';
+
+  @override
+  String get inventoryProductName => 'Tên sản phẩm';
+
+  @override
+  String get inventoryProductOwner => 'Chủ sở hữu';
+
+  @override
+  String get inventoryProductPrice => 'Giá';
+
+  @override
+  String get inventoryProductSaved => 'Đã lưu sản phẩm.';
+
+  @override
+  String get inventoryProductUnit => 'Đơn vị';
+
+  @override
+  String get inventoryProductUsage => 'Công dụng';
+
+  @override
+  String get inventoryProductValidationError => 'Hãy điền đủ sản phẩm, chủ sở hữu, danh mục và thông tin tồn kho bắt buộc.';
+
+  @override
+  String get inventoryProductWarehouse => 'Kho';
+
+  @override
+  String get inventoryProductsEmpty => 'Tạo sản phẩm để bắt đầu theo dõi tồn kho và bán hàng tại quầy.';
+
+  @override
+  String get inventoryProductsLabel => 'Sản phẩm';
+
+  @override
+  String get inventoryRealtimeDisabled => 'Realtime đang tắt cho không gian làm việc này.';
+
+  @override
+  String get inventoryRealtimeEnabled => 'Đã bật realtime';
+
+  @override
+  String get inventorySaleCreated => 'Đã tạo giao dịch bán từ tồn kho.';
+
+  @override
+  String get inventorySalesEmpty => 'Các giao dịch bán tạo từ hóa đơn sẽ xuất hiện ở đây.';
+
+  @override
+  String get inventorySalesLabel => 'Bán hàng';
+
+  @override
+  String get inventorySaveProduct => 'Lưu sản phẩm';
+
+  @override
+  String get inventorySearchProducts => 'Tìm sản phẩm';
+
+  @override
+  String get inventoryTitle => 'Tồn kho';
+
+  @override
   String get financeOverviewLabel => 'Tổng quan';
 
   @override

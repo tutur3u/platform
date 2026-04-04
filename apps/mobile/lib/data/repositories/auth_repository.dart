@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/core/config/api_config.dart';
@@ -93,7 +94,34 @@ class AuthRepository {
       }
 
       final payload = AuthSessionPayload.fromJson(sessionJson);
-      await _client.auth.setSession(payload.refreshToken);
+      try {
+        final authResponse = await _client.auth.setSession(
+          payload.refreshToken,
+        );
+        developer.log(
+          'Password login session hydrated',
+          name: 'AuthRepository',
+          error: {
+            'supabaseUrl': Env.supabaseUrl,
+            'apiBaseUrl': Env.apiBaseUrl,
+            'hasSession': authResponse.session != null,
+            'userId': authResponse.user?.id,
+          },
+        );
+      } on AuthException catch (e, stackTrace) {
+        developer.log(
+          'Failed to hydrate mobile auth session after password login',
+          name: 'AuthRepository',
+          error: {
+            'supabaseUrl': Env.supabaseUrl,
+            'apiBaseUrl': Env.apiBaseUrl,
+            'message': e.message,
+          },
+          stackTrace: stackTrace,
+          level: 1000,
+        );
+        rethrow;
+      }
 
       return (success: true, error: null, retryAfter: null);
     } on ApiException catch (e) {

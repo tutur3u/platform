@@ -2468,6 +2468,186 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTitle => 'Finance';
 
   @override
+  String get inventoryAddCategory => 'Add category';
+
+  @override
+  String get inventoryAddOwner => 'Add owner';
+
+  @override
+  String get inventoryAddUnit => 'Add unit';
+
+  @override
+  String get inventoryAddWarehouse => 'Add warehouse';
+
+  @override
+  String get inventoryAuditEmpty => 'Inventory activity will appear here after products, stock, and sales are updated.';
+
+  @override
+  String get inventoryAuditLabel => 'Audit';
+
+  @override
+  String get inventoryCheckoutAutoCategory => 'Auto-linked category';
+
+  @override
+  String get inventoryCheckoutCategoryOverride => 'Category override';
+
+  @override
+  String get inventoryCheckoutEmpty => 'No sellable inventory is available yet.';
+
+  @override
+  String get inventoryCheckoutManualCategoryRequired => 'Choose an income category when the cart mixes linked categories or has no linked category.';
+
+  @override
+  String get inventoryCheckoutSubmit => 'Create sale';
+
+  @override
+  String get inventoryCheckoutTitle => 'Sell';
+
+  @override
+  String get inventoryCheckoutValidationError => 'Select a wallet, resolve the category, and add at least one product.';
+
+  @override
+  String get inventoryCheckoutWallet => 'Wallet';
+
+  @override
+  String get inventoryCreateProduct => 'Create product';
+
+  @override
+  String get inventoryEditProduct => 'Edit product';
+
+  @override
+  String get inventoryManageCategories => 'Product categories';
+
+  @override
+  String get inventoryManageEmpty => 'Nothing configured yet.';
+
+  @override
+  String get inventoryManageLabel => 'Manage';
+
+  @override
+  String get inventoryManageOwners => 'Owners';
+
+  @override
+  String get inventoryManageUnits => 'Units';
+
+  @override
+  String get inventoryManageWarehouses => 'Warehouses';
+
+  @override
+  String get inventoryNoBreakdownData => 'No breakdown data yet.';
+
+  @override
+  String get inventoryNoLinkedFinanceCategory => 'No linked finance category';
+
+  @override
+  String get inventoryNoLowStockProducts => 'No low-stock products right now.';
+
+  @override
+  String get inventoryOverviewCategories => 'By category';
+
+  @override
+  String get inventoryOverviewExpense => 'Expense';
+
+  @override
+  String get inventoryOverviewIncome => 'Income';
+
+  @override
+  String get inventoryOverviewLabel => 'Overview';
+
+  @override
+  String get inventoryOverviewLowStock => 'Low stock';
+
+  @override
+  String get inventoryOverviewOwners => 'By owner';
+
+  @override
+  String get inventoryOverviewRecentSales => 'Recent sales';
+
+  @override
+  String get inventoryOverviewSalesRevenue => 'Inventory revenue';
+
+  @override
+  String get inventoryOwnerArchived => 'Archived';
+
+  @override
+  String get inventoryProductAddInventoryRow => 'Add stock row';
+
+  @override
+  String get inventoryProductAmount => 'Amount';
+
+  @override
+  String get inventoryProductCategory => 'Product category';
+
+  @override
+  String get inventoryProductDescription => 'Description';
+
+  @override
+  String get inventoryProductFinanceCategory => 'Linked finance category';
+
+  @override
+  String get inventoryProductInventory => 'Inventory rows';
+
+  @override
+  String get inventoryProductManufacturer => 'Manufacturer';
+
+  @override
+  String get inventoryProductMinAmount => 'Minimum amount';
+
+  @override
+  String get inventoryProductName => 'Product name';
+
+  @override
+  String get inventoryProductOwner => 'Owner';
+
+  @override
+  String get inventoryProductPrice => 'Price';
+
+  @override
+  String get inventoryProductSaved => 'Product saved.';
+
+  @override
+  String get inventoryProductUnit => 'Unit';
+
+  @override
+  String get inventoryProductUsage => 'Usage';
+
+  @override
+  String get inventoryProductValidationError => 'Complete the required product, owner, category, and stock fields.';
+
+  @override
+  String get inventoryProductWarehouse => 'Warehouse';
+
+  @override
+  String get inventoryProductsEmpty => 'Create products to start tracking stock and selling from the booth.';
+
+  @override
+  String get inventoryProductsLabel => 'Products';
+
+  @override
+  String get inventoryRealtimeDisabled => 'Realtime is disabled for this workspace.';
+
+  @override
+  String get inventoryRealtimeEnabled => 'Realtime enabled';
+
+  @override
+  String get inventorySaleCreated => 'Inventory sale created.';
+
+  @override
+  String get inventorySalesEmpty => 'Sales created from invoices will appear here.';
+
+  @override
+  String get inventorySalesLabel => 'Sales';
+
+  @override
+  String get inventorySaveProduct => 'Save product';
+
+  @override
+  String get inventorySearchProducts => 'Search products';
+
+  @override
+  String get inventoryTitle => 'Inventory';
+
+  @override
   String get financeOverviewLabel => 'Overview';
 
   @override

@@ -2,10 +2,12 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { InventoryOwner } from '@tuturuuu/types/primitives/InventoryOwner';
 import type { RawInventoryProduct } from '@tuturuuu/types/primitives/InventoryProductRelations';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -73,6 +75,8 @@ export default async function WorkspaceProductsPage({ params }: Props) {
                 canViewStockQuantity,
               });
         const categories = await getCategories(wsId);
+        const owners = await getOwners(wsId);
+        const financeCategories = await getFinanceCategories(wsId);
         const warehouses = await getWarehouses(wsId);
         const units = await getUnits(wsId);
 
@@ -90,6 +94,8 @@ export default async function WorkspaceProductsPage({ params }: Props) {
               wsId={wsId}
               data={data}
               categories={categories}
+              owners={owners}
+              financeCategories={financeCategories}
               warehouses={warehouses}
               units={units}
               canCreateInventory={canCreateInventory}
@@ -121,7 +127,9 @@ async function getData(
   if (canViewStockQuantity) {
     const { data, error } = await supabase
       .from('workspace_products')
-      .select('*, inventory_products(*)')
+      .select(
+        '*, inventory_products(*), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)'
+      )
       .eq('ws_id', wsId)
       .eq('id', productId)
       .single()
@@ -132,7 +140,9 @@ async function getData(
   } else {
     const { data, error } = await supabase
       .from('workspace_products')
-      .select('*')
+      .select(
+        '*, inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)'
+      )
       .eq('ws_id', wsId)
       .eq('id', productId)
       .single()
@@ -151,6 +161,8 @@ async function getData(
     description: rawProduct.description ?? undefined,
     usage: rawProduct.usage ?? undefined,
     category_id: rawProduct.category_id ?? '',
+    owner_id: rawProduct.owner_id,
+    finance_category_id: rawProduct.finance_category_id ?? undefined,
     inventory: canViewStockQuantity
       ? (rawProduct.inventory_products || []).map((inv) => ({
           unit_id: inv.unit_id,
@@ -175,6 +187,31 @@ async function getCategories(wsId: string) {
   if (error) throw error;
 
   return data as ProductCategory[];
+}
+
+async function getOwners(wsId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('inventory_owners')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('archived')
+    .order('name');
+
+  if (error) throw error;
+  return (data ?? []) as InventoryOwner[];
+}
+
+async function getFinanceCategories(wsId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('transaction_categories')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('name');
+
+  if (error) throw error;
+  return (data ?? []) as TransactionCategory[];
 }
 
 async function getWarehouses(wsId: string) {

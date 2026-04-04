@@ -120,3 +120,61 @@ abstract final class FinanceEndpoints {
 
   static const exchangeRates = '/api/v1/exchange-rates';
 }
+
+/// Inventory endpoint paths.
+abstract final class InventoryEndpoints {
+  static String overview(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/overview';
+
+  static String products(
+    String wsId, {
+    String? query,
+    String? status,
+  }) {
+    final params = <String, String>{};
+    if (query != null && query.trim().isNotEmpty) {
+      params['q'] = query.trim();
+    }
+    if (status != null && status.trim().isNotEmpty) {
+      params['status'] = status.trim();
+    }
+
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/inventory/products$suffix';
+  }
+
+  static String product(String wsId, String productId) =>
+      '/api/v1/workspaces/$wsId/products/$productId';
+
+  static String createProduct(String wsId) =>
+      '/api/v1/workspaces/$wsId/products';
+
+  static String productOptions(String wsId) =>
+      '/api/v1/workspaces/$wsId/products/options';
+
+  static String owners(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/owners';
+
+  static String sales(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/sales';
+
+  static String auditLogs(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/audit-logs';
+
+  static String realtime(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/realtime';
+
+  static String productCategories(String wsId) =>
+      '/api/v1/workspaces/$wsId/product-categories';
+
+  static String productUnits(String wsId) =>
+      '/api/v1/workspaces/$wsId/product-units';
+
+  static String productWarehouses(String wsId) =>
+      '/api/v1/workspaces/$wsId/product-warehouses';
+
+  static String invoices(String wsId) =>
+      '/api/v1/workspaces/$wsId/finance/invoices';
+}

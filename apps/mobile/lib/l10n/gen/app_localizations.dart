@@ -4849,6 +4849,366 @@ abstract class AppLocalizations {
   /// **'Finance'**
   String get financeTitle;
 
+  /// No description provided for @inventoryAddCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add category'**
+  String get inventoryAddCategory;
+
+  /// No description provided for @inventoryAddOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Add owner'**
+  String get inventoryAddOwner;
+
+  /// No description provided for @inventoryAddUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Add unit'**
+  String get inventoryAddUnit;
+
+  /// No description provided for @inventoryAddWarehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Add warehouse'**
+  String get inventoryAddWarehouse;
+
+  /// No description provided for @inventoryAuditEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory activity will appear here after products, stock, and sales are updated.'**
+  String get inventoryAuditEmpty;
+
+  /// No description provided for @inventoryAuditLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit'**
+  String get inventoryAuditLabel;
+
+  /// No description provided for @inventoryCheckoutAutoCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-linked category'**
+  String get inventoryCheckoutAutoCategory;
+
+  /// No description provided for @inventoryCheckoutCategoryOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Category override'**
+  String get inventoryCheckoutCategoryOverride;
+
+  /// No description provided for @inventoryCheckoutEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No sellable inventory is available yet.'**
+  String get inventoryCheckoutEmpty;
+
+  /// No description provided for @inventoryCheckoutManualCategoryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an income category when the cart mixes linked categories or has no linked category.'**
+  String get inventoryCheckoutManualCategoryRequired;
+
+  /// No description provided for @inventoryCheckoutSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Create sale'**
+  String get inventoryCheckoutSubmit;
+
+  /// No description provided for @inventoryCheckoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell'**
+  String get inventoryCheckoutTitle;
+
+  /// No description provided for @inventoryCheckoutValidationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a wallet, resolve the category, and add at least one product.'**
+  String get inventoryCheckoutValidationError;
+
+  /// No description provided for @inventoryCheckoutWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get inventoryCheckoutWallet;
+
+  /// No description provided for @inventoryCreateProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Create product'**
+  String get inventoryCreateProduct;
+
+  /// No description provided for @inventoryEditProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit product'**
+  String get inventoryEditProduct;
+
+  /// No description provided for @inventoryManageCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Product categories'**
+  String get inventoryManageCategories;
+
+  /// No description provided for @inventoryManageEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing configured yet.'**
+  String get inventoryManageEmpty;
+
+  /// No description provided for @inventoryManageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get inventoryManageLabel;
+
+  /// No description provided for @inventoryManageOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'Owners'**
+  String get inventoryManageOwners;
+
+  /// No description provided for @inventoryManageUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get inventoryManageUnits;
+
+  /// No description provided for @inventoryManageWarehouses.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouses'**
+  String get inventoryManageWarehouses;
+
+  /// No description provided for @inventoryNoBreakdownData.
+  ///
+  /// In en, this message translates to:
+  /// **'No breakdown data yet.'**
+  String get inventoryNoBreakdownData;
+
+  /// No description provided for @inventoryNoLinkedFinanceCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked finance category'**
+  String get inventoryNoLinkedFinanceCategory;
+
+  /// No description provided for @inventoryNoLowStockProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'No low-stock products right now.'**
+  String get inventoryNoLowStockProducts;
+
+  /// No description provided for @inventoryOverviewCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'By category'**
+  String get inventoryOverviewCategories;
+
+  /// No description provided for @inventoryOverviewExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get inventoryOverviewExpense;
+
+  /// No description provided for @inventoryOverviewIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get inventoryOverviewIncome;
+
+  /// No description provided for @inventoryOverviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get inventoryOverviewLabel;
+
+  /// No description provided for @inventoryOverviewLowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Low stock'**
+  String get inventoryOverviewLowStock;
+
+  /// No description provided for @inventoryOverviewOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'By owner'**
+  String get inventoryOverviewOwners;
+
+  /// No description provided for @inventoryOverviewRecentSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent sales'**
+  String get inventoryOverviewRecentSales;
+
+  /// No description provided for @inventoryOverviewSalesRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory revenue'**
+  String get inventoryOverviewSalesRevenue;
+
+  /// No description provided for @inventoryOwnerArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get inventoryOwnerArchived;
+
+  /// No description provided for @inventoryProductAddInventoryRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Add stock row'**
+  String get inventoryProductAddInventoryRow;
+
+  /// No description provided for @inventoryProductAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get inventoryProductAmount;
+
+  /// No description provided for @inventoryProductCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Product category'**
+  String get inventoryProductCategory;
+
+  /// No description provided for @inventoryProductDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get inventoryProductDescription;
+
+  /// No description provided for @inventoryProductFinanceCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked finance category'**
+  String get inventoryProductFinanceCategory;
+
+  /// No description provided for @inventoryProductInventory.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory rows'**
+  String get inventoryProductInventory;
+
+  /// No description provided for @inventoryProductManufacturer.
+  ///
+  /// In en, this message translates to:
+  /// **'Manufacturer'**
+  String get inventoryProductManufacturer;
+
+  /// No description provided for @inventoryProductMinAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum amount'**
+  String get inventoryProductMinAmount;
+
+  /// No description provided for @inventoryProductName.
+  ///
+  /// In en, this message translates to:
+  /// **'Product name'**
+  String get inventoryProductName;
+
+  /// No description provided for @inventoryProductOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get inventoryProductOwner;
+
+  /// No description provided for @inventoryProductPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get inventoryProductPrice;
+
+  /// No description provided for @inventoryProductSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Product saved.'**
+  String get inventoryProductSaved;
+
+  /// No description provided for @inventoryProductUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get inventoryProductUnit;
+
+  /// No description provided for @inventoryProductUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get inventoryProductUsage;
+
+  /// No description provided for @inventoryProductValidationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the required product, owner, category, and stock fields.'**
+  String get inventoryProductValidationError;
+
+  /// No description provided for @inventoryProductWarehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouse'**
+  String get inventoryProductWarehouse;
+
+  /// No description provided for @inventoryProductsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Create products to start tracking stock and selling from the booth.'**
+  String get inventoryProductsEmpty;
+
+  /// No description provided for @inventoryProductsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Products'**
+  String get inventoryProductsLabel;
+
+  /// No description provided for @inventoryRealtimeDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime is disabled for this workspace.'**
+  String get inventoryRealtimeDisabled;
+
+  /// No description provided for @inventoryRealtimeEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime enabled'**
+  String get inventoryRealtimeEnabled;
+
+  /// No description provided for @inventorySaleCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory sale created.'**
+  String get inventorySaleCreated;
+
+  /// No description provided for @inventorySalesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales created from invoices will appear here.'**
+  String get inventorySalesEmpty;
+
+  /// No description provided for @inventorySalesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales'**
+  String get inventorySalesLabel;
+
+  /// No description provided for @inventorySaveProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Save product'**
+  String get inventorySaveProduct;
+
+  /// No description provided for @inventorySearchProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search products'**
+  String get inventorySearchProducts;
+
+  /// No description provided for @inventoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory'**
+  String get inventoryTitle;
+
   /// No description provided for @financeOverviewLabel.
   ///
   /// In en, this message translates to:
