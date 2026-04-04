@@ -14,7 +14,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   String? _walletId;
   String? _destinationWalletId;
   String? _categoryId;
-  String? _tagId;
+  List<String> _tagIds = const [];
   bool _isTransfer = false;
   bool _reportOptIn = true;
   bool _isAmountConfidential = false;
@@ -196,7 +196,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           takenAt: _takenAt,
           walletId: _walletId,
           categoryId: _categoryId,
-          tagIds: _tagId == null ? null : [_tagId!],
+          tagIds: _tagIds.isEmpty ? null : _tagIds,
           reportOptIn: _reportOptIn,
           isAmountConfidential: _isAmountConfidential,
           isDescriptionConfidential: _isDescriptionConfidential,
@@ -262,7 +262,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         takenAt: _takenAt,
         walletId: _walletId,
         categoryId: _categoryId,
-        tagIds: _tagId == null ? const <String>[] : [_tagId!],
+        tagIds: _tagIds,
         reportOptIn: _reportOptIn,
         isAmountConfidential: _isAmountConfidential,
         isDescriptionConfidential: _isDescriptionConfidential,
@@ -351,17 +351,17 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<void> _pickTag() async {
-    final selectedTagId = await showFinanceModal<String?>(
+    final selectedTagIds = await showFinanceModal<List<String>?>(
       context: context,
       builder: (_) => _TagPickerDialog(
         tags: _tags,
-        selectedTagId: _tagId,
+        selectedTagIds: _tagIds,
         tagColor: _tagColor,
       ),
     );
 
-    if (selectedTagId == null || !mounted) return;
-    setState(() => _tagId = selectedTagId.isEmpty ? null : selectedTagId);
+    if (selectedTagIds == null || !mounted) return;
+    setState(() => _tagIds = selectedTagIds);
   }
 
   Future<void> _pickDateTime(BuildContext context) async {
@@ -403,8 +403,14 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     return _categories.where((c) => c.id == _categoryId).firstOrNull;
   }
 
-  FinanceTag? get _selectedTag {
-    return _tags.where((tag) => tag.id == _tagId).firstOrNull;
+  List<FinanceTag> get _selectedTags {
+    if (_tagIds.isEmpty) {
+      return const [];
+    }
+    final selected = _tagIds.toSet();
+    return _tags
+        .where((tag) => selected.contains(tag.id))
+        .toList(growable: false);
   }
 
   String get _selectedCurrency =>
@@ -436,7 +442,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Color get _selectedTagColor {
-    final tag = _selectedTag;
+    final tag = _selectedTags.firstOrNull;
     if (tag == null) {
       return shad.Theme.of(context).colorScheme.mutedForeground;
     }
@@ -534,7 +540,9 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     final hasCategory =
         _categoryId != null &&
         _categories.any((category) => category.id == _categoryId);
-    final hasTag = _tagId != null && _tags.any((tag) => tag.id == _tagId);
+    final validTagIds = _tagIds
+        .where((tagId) => _tags.any((tag) => tag.id == tagId))
+        .toList(growable: false);
 
     _walletId = hasWallet
         ? _walletId
@@ -545,7 +553,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         _destinationWalletId = null;
       }
       _categoryId = null;
-      _tagId = null;
+      _tagIds = const [];
       return;
     }
 
@@ -555,7 +563,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         : (_isCreate
               ? null
               : (_categories.isNotEmpty ? _categories.first.id : null));
-    _tagId = hasTag ? _tagId : null;
+    _tagIds = validTagIds;
   }
 
   NumberSymbols get _localeNumberSymbols {

@@ -155,7 +155,7 @@ class _DraftPreviewCard extends StatelessWidget {
     this.walletName,
     this.categoryName,
     this.destinationWalletName,
-    this.tagName,
+    this.tagLabel,
   });
 
   final String title;
@@ -166,7 +166,7 @@ class _DraftPreviewCard extends StatelessWidget {
   final String? walletName;
   final String? categoryName;
   final String? destinationWalletName;
-  final String? tagName;
+  final String? tagLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +177,7 @@ class _DraftPreviewCard extends StatelessWidget {
     final hasDestinationWalletName =
         destinationWalletName != null &&
         destinationWalletName!.trim().isNotEmpty;
-    final hasTagName = tagName != null && tagName!.trim().isNotEmpty;
+    final hasTagName = tagLabel != null && tagLabel!.trim().isNotEmpty;
     final chips = <Widget>[
       if (hasWalletName)
         _PreviewChip(
@@ -200,7 +200,7 @@ class _DraftPreviewCard extends StatelessWidget {
       if (hasTagName)
         _PreviewChip(
           icon: Icons.sell_outlined,
-          label: tagName!.trim(),
+          label: tagLabel!.trim(),
           color: theme.colorScheme.mutedForeground,
         ),
     ];
@@ -758,16 +758,29 @@ class _CategoryPickerDialog extends StatelessWidget {
 }
 
 /// Tag picker dialog with a clear option.
-class _TagPickerDialog extends StatelessWidget {
+class _TagPickerDialog extends StatefulWidget {
   const _TagPickerDialog({
     required this.tags,
     required this.tagColor,
-    this.selectedTagId,
+    required this.selectedTagIds,
   });
 
   final List<FinanceTag> tags;
-  final String? selectedTagId;
+  final List<String> selectedTagIds;
   final Color Function(FinanceTag) tagColor;
+
+  @override
+  State<_TagPickerDialog> createState() => _TagPickerDialogState();
+}
+
+class _TagPickerDialogState extends State<_TagPickerDialog> {
+  late final Set<String> _selectedIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIds = widget.selectedTagIds.toSet();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -775,6 +788,10 @@ class _TagPickerDialog extends StatelessWidget {
       title: context.l10n.financeTags,
       subtitle: context.l10n.financePickerTagSubtitle,
       actions: [
+        shad.PrimaryButton(
+          onPressed: () => Navigator.of(context).pop(_selectedIds.toList()),
+          child: Text(context.l10n.profileSave),
+        ),
         shad.OutlineButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
@@ -782,35 +799,51 @@ class _TagPickerDialog extends StatelessWidget {
       ],
       child: ListView.separated(
         shrinkWrap: true,
-        itemCount: tags.length + 1,
+        itemCount: widget.tags.length + 1,
         separatorBuilder: (_, _) => const shad.Gap(8),
         itemBuilder: (context, index) {
           if (index == 0) {
             return FinancePickerTile(
               title: context.l10n.financeNoTag,
-              isSelected: selectedTagId == null,
+              isSelected: _selectedIds.isEmpty,
               leading: Icon(
                 Icons.block_outlined,
                 size: 18,
                 color: shad.Theme.of(context).colorScheme.mutedForeground,
               ),
-              onTap: () => Navigator.of(context).pop(''),
+              onTap: () => setState(_selectedIds.clear),
             );
           }
 
-          final tag = tags[index - 1];
+          final tag = widget.tags[index - 1];
+          final isSelected = _selectedIds.contains(tag.id);
           return FinancePickerTile(
             title: tag.name,
-            isSelected: tag.id == selectedTagId,
+            isSelected: isSelected,
             leading: Container(
               width: 18,
               height: 18,
               decoration: BoxDecoration(
-                color: tagColor(tag),
+                color: widget.tagColor(tag),
                 shape: BoxShape.circle,
               ),
             ),
-            onTap: () => Navigator.of(context).pop(tag.id),
+            trailing: Icon(
+              isSelected
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              size: 18,
+              color: isSelected
+                  ? widget.tagColor(tag)
+                  : shad.Theme.of(context).colorScheme.mutedForeground,
+            ),
+            onTap: () {
+              setState(() {
+                if (!_selectedIds.add(tag.id)) {
+                  _selectedIds.remove(tag.id);
+                }
+              });
+            },
           );
         },
       ),

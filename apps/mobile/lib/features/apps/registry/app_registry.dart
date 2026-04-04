@@ -5,6 +5,7 @@ import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/inventory/view/inventory_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
@@ -51,6 +52,15 @@ class AppRegistry {
       labelBuilder: _labelFinance,
       pageBuilder: _pageFinance,
       miniAppNavItems: _financeMiniNav,
+      isPinned: true,
+    ),
+    AppModule(
+      id: 'inventory',
+      route: Routes.inventory,
+      icon: Icons.inventory_2_outlined,
+      labelBuilder: _labelInventory,
+      pageBuilder: _pageInventory,
+      miniAppNavItems: _inventoryMiniNav,
       isPinned: true,
     ),
     AppModule(
@@ -181,6 +191,39 @@ class AppRegistry {
     ),
   ];
 
+  static const List<MiniAppNavItem> _inventoryMiniNav = [
+    MiniAppNavItem(
+      id: 'inventory_home',
+      route: Routes.inventory,
+      icon: Icons.home_outlined,
+      labelBuilder: _labelInventoryOverview,
+    ),
+    MiniAppNavItem(
+      id: 'inventory_products',
+      route: Routes.inventoryProducts,
+      icon: Icons.inventory_2_outlined,
+      labelBuilder: _labelInventoryProducts,
+    ),
+    MiniAppNavItem(
+      id: 'inventory_sales',
+      route: Routes.inventorySales,
+      icon: Icons.point_of_sale_outlined,
+      labelBuilder: _labelInventorySales,
+    ),
+    MiniAppNavItem(
+      id: 'inventory_manage',
+      route: Routes.inventoryManage,
+      icon: Icons.tune_rounded,
+      labelBuilder: _labelInventoryManage,
+    ),
+    MiniAppNavItem(
+      id: 'inventory_audit',
+      route: Routes.inventoryAuditLogs,
+      icon: Icons.history_rounded,
+      labelBuilder: _labelInventoryAudit,
+    ),
+  ];
+
   static const List<MiniAppNavItem> _timerMiniNav = [
     MiniAppNavItem(
       id: 'timer_home',
@@ -291,6 +334,17 @@ class AppRegistry {
       l10n.taskPortfolioTitle;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
+  static String _labelInventory(AppLocalizations l10n) => l10n.inventoryTitle;
+  static String _labelInventoryOverview(AppLocalizations l10n) =>
+      l10n.inventoryOverviewLabel;
+  static String _labelInventoryProducts(AppLocalizations l10n) =>
+      l10n.inventoryProductsLabel;
+  static String _labelInventorySales(AppLocalizations l10n) =>
+      l10n.inventorySalesLabel;
+  static String _labelInventoryManage(AppLocalizations l10n) =>
+      l10n.inventoryManageLabel;
+  static String _labelInventoryAudit(AppLocalizations l10n) =>
+      l10n.inventoryAuditLabel;
   static String _labelFinanceOverview(AppLocalizations l10n) =>
       l10n.financeOverviewLabel;
   static String _labelFinanceActivity(AppLocalizations l10n) =>
@@ -314,6 +368,7 @@ class AppRegistry {
   static Widget _pageHabits(BuildContext context) => const HabitsPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageFinance(BuildContext context) => const FinancePage();
+  static Widget _pageInventory(BuildContext context) => const InventoryPage();
   static Widget _pageNotifications(BuildContext context) =>
       const NotificationsPage();
   static Widget _pageTimer(BuildContext context) => const TimeTrackerPage();

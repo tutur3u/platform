@@ -78,6 +78,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const userId = searchParams.get('id');
   const userEmail = searchParams.get('email');
+  const normalizedUserEmail = userEmail?.trim() || null;
 
   const supabase = await createClient(req);
   const resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
@@ -93,20 +94,48 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     await revokeSeatFromMember(polar, sbAdmin, resolvedWsId, userId);
   }
 
+  let inviteUserIds: string[] = [];
+  if (normalizedUserEmail) {
+    const { data: matchingInvites, error: matchingInvitesError } =
+      await supabase
+        .from('workspace_members_and_invites')
+        .select('id')
+        .eq('ws_id', resolvedWsId)
+        .eq('email', normalizedUserEmail);
+
+    if (matchingInvitesError) {
+      console.error('Error resolving invite identities:', matchingInvitesError);
+      return NextResponse.json(
+        { message: 'Error deleting workspace member' },
+        { status: 500 }
+      );
+    }
+
+    inviteUserIds = (matchingInvites ?? [])
+      .map((row) => row.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+  }
+
   const inviteQuery = userId
     ? supabase
         .from('workspace_invites')
         .delete()
         .eq('ws_id', resolvedWsId)
         .eq('user_id', userId)
-    : { error: undefined };
+    : inviteUserIds.length > 0
+      ? supabase
+          .from('workspace_invites')
+          .delete()
+          .eq('ws_id', resolvedWsId)
+          .in('user_id', inviteUserIds)
+      : { error: undefined };
 
-  const emailInviteQuery = userEmail
+  const emailInviteQuery = normalizedUserEmail
     ? supabase
         .from('workspace_email_invites')
         .delete()
         .eq('ws_id', resolvedWsId)
-        .eq('email', userEmail)
+        .eq('email', normalizedUserEmail)
     : { error: undefined };
 
   const memberQuery = userId

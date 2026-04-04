@@ -21,10 +21,18 @@ import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
 import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
+import 'package:mobile/features/inventory/view/inventory_audit_logs_page.dart';
+import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
+import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
+import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
+import 'package:mobile/features/inventory/view/inventory_products_page.dart';
+import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
+import 'package:mobile/features/settings/view/settings_workspace_members_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_page.dart';
+import 'package:mobile/features/settings/view/settings_workspace_roles_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
@@ -265,6 +273,40 @@ GoRouter createAppRouter(
             },
           ),
           GoRoute(
+            path: Routes.inventoryProducts,
+            builder: (context, state) => const InventoryProductsPage(),
+          ),
+          GoRoute(
+            path: Routes.inventoryProductCreate,
+            builder: (context, state) => const InventoryProductEditorPage(),
+          ),
+          GoRoute(
+            path: Routes.inventoryProductDetail,
+            builder: (context, state) {
+              final productId = state.pathParameters['productId'];
+              if (productId == null || productId.isEmpty) {
+                return const InventoryProductsPage();
+              }
+              return InventoryProductEditorPage(productId: productId);
+            },
+          ),
+          GoRoute(
+            path: Routes.inventorySales,
+            builder: (context, state) => const InventorySalesPage(),
+          ),
+          GoRoute(
+            path: Routes.inventoryManage,
+            builder: (context, state) => const InventoryManagePage(),
+          ),
+          GoRoute(
+            path: Routes.inventoryAuditLogs,
+            builder: (context, state) => const InventoryAuditLogsPage(),
+          ),
+          GoRoute(
+            path: Routes.inventoryCheckout,
+            builder: (context, state) => const InventoryCheckoutPage(),
+          ),
+          GoRoute(
             path: Routes.transactions,
             builder: (context, state) => const TransactionListPage(),
           ),
@@ -289,6 +331,14 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.settingsWorkspace,
             builder: (context, state) => const SettingsWorkspacePage(),
+          ),
+          GoRoute(
+            path: Routes.settingsWorkspaceMembers,
+            builder: (context, state) => const SettingsWorkspaceMembersPage(),
+          ),
+          GoRoute(
+            path: Routes.settingsWorkspaceRoles,
+            builder: (context, state) => const SettingsWorkspaceRolesPage(),
           ),
           GoRoute(
             path: Routes.settingsMobileVersions,

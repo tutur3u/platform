@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { RawInventoryProductWithChanges } from '@tuturuuu/types/primitives/InventoryProductRelations';
 import type { Product2 } from '@tuturuuu/types/primitives/Product';
 import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
@@ -12,6 +13,17 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getInventoryActorContext } from '@/lib/inventory/actor';
+import {
+  createInventoryAuditLog,
+  diffInventoryAuditFields,
+} from '@/lib/inventory/audit';
+import {
+  canAdjustInventoryStock,
+  canManageInventoryCatalog,
+  canViewInventoryCatalog,
+  canViewInventoryStock,
+} from '@/lib/inventory/permissions';
 
 const RouteParamsSchema = z.object({
   wsId: z.string().max(MAX_NAME_LENGTH).min(1),
@@ -24,6 +36,61 @@ interface Params {
     productId: string;
   }>;
 }
+
+const validateProductRelations = async ({
+  sbAdmin,
+  wsId,
+  categoryId,
+  ownerId,
+  financeCategoryId,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+  categoryId?: string | null;
+  ownerId?: string | null;
+  financeCategoryId?: string | null;
+}) => {
+  if (categoryId) {
+    const { data, error } = await sbAdmin
+      .from('product_categories')
+      .select('id')
+      .eq('id', categoryId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return 'Invalid product category';
+    }
+  }
+
+  if (ownerId) {
+    const { data, error } = await sbAdmin
+      .from('inventory_owners')
+      .select('id')
+      .eq('id', ownerId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return 'Invalid inventory owner';
+    }
+  }
+
+  if (financeCategoryId) {
+    const { data, error } = await sbAdmin
+      .from('transaction_categories')
+      .select('id')
+      .eq('id', financeCategoryId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return 'Invalid finance transaction category';
+    }
+  }
+
+  return null;
+};
 
 export async function GET(req: Request, { params }: Params) {
   const parsedParams = RouteParamsSchema.safeParse(await params);
@@ -46,16 +113,15 @@ export async function GET(req: Request, { params }: Params) {
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
-  const { containsPermission } = permissions;
-  if (!containsPermission('view_inventory')) {
+  if (!canViewInventoryCatalog(permissions)) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
-  const canViewStockQuantity = containsPermission('view_stock_quantity');
+  const canViewStockQuantity = canViewInventoryStock(permissions);
 
   const selectFields = canViewStockQuantity
-    ? '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email), warehouse:inventory_warehouses!product_stock_changes_warehouse_id_fkey(id, name))'
-    : '*, product_categories(name)';
+    ? '*, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email), warehouse:inventory_warehouses!product_stock_changes_warehouse_id_fkey(id, name))'
+    : '*, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)';
 
   const { data, error } = await sbAdmin
     .from('workspace_products')
@@ -118,6 +184,25 @@ export async function GET(req: Request, { params }: Params) {
       : null,
     category: item.product_categories?.name,
     category_id: item.category_id,
+    owner_id: item.owner_id,
+    owner: item.inventory_owners
+      ? {
+          id: item.inventory_owners.id,
+          name: item.inventory_owners.name,
+          avatar_url: item.inventory_owners.avatar_url,
+          linked_workspace_user_id:
+            item.inventory_owners.linked_workspace_user_id,
+        }
+      : null,
+    finance_category_id: item.finance_category_id,
+    finance_category: item.transaction_categories
+      ? {
+          id: item.transaction_categories.id,
+          name: item.transaction_categories.name,
+          color: item.transaction_categories.color,
+          icon: item.transaction_categories.icon,
+        }
+      : null,
     ws_id: item.ws_id,
     created_at: item.created_at,
     stock_changes: canViewStockQuantity
@@ -153,18 +238,47 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
-  const { containsPermission } = permissions;
-  if (!containsPermission('update_inventory')) {
+  if (!canManageInventoryCatalog(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update products' },
       { status: 403 }
     );
   }
 
-  const canUpdateStockQuantity = containsPermission('update_stock_quantity');
+  const canUpdateStockQuantity = canAdjustInventoryStock(permissions);
   const { inventory, ...data } = (await req.json()) as Product2 & {
     inventory?: ProductInventory[];
   };
+  const relationError = await validateProductRelations({
+    sbAdmin,
+    wsId,
+    categoryId: data.category_id,
+    ownerId: data.owner_id,
+    financeCategoryId: data.finance_category_id,
+  });
+  if (relationError) {
+    return NextResponse.json({ message: relationError }, { status: 400 });
+  }
+
+  const { data: existingProduct, error: existingProductError } = await sbAdmin
+    .from('workspace_products')
+    .select(
+      'id, name, category_id, owner_id, finance_category_id, manufacturer, description, usage'
+    )
+    .eq('id', productId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (existingProductError) {
+    return NextResponse.json(
+      { message: 'Error loading product for update' },
+      { status: 500 }
+    );
+  }
+
+  if (!existingProduct) {
+    return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+  }
 
   // Update product details
   const product = await sbAdmin
@@ -190,7 +304,7 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   // Update inventory if provided
-  if (inventory && Array.isArray(inventory) && inventory.length > 0) {
+  if (inventory && Array.isArray(inventory)) {
     if (!canUpdateStockQuantity) {
       return NextResponse.json(
         { message: 'Insufficient permissions to update stock quantities' },
@@ -198,7 +312,7 @@ export async function PATCH(req: Request, { params }: Params) {
       );
     }
     // First, delete existing inventory for this product
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await sbAdmin
       .from('inventory_products')
       .delete()
       .eq('product_id', productId);
@@ -212,7 +326,7 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
     // Then insert the new inventory
-    const { error: insertError } = await supabase
+    const { error: insertError } = await sbAdmin
       .from('inventory_products')
       .insert(
         inventory.map((item) => ({
@@ -229,6 +343,39 @@ export async function PATCH(req: Request, { params }: Params) {
       );
     }
   }
+
+  const actor = await getInventoryActorContext(req, wsId);
+  const before = {
+    name: existingProduct.name,
+    manufacturer: existingProduct.manufacturer,
+    description: existingProduct.description,
+    usage: existingProduct.usage,
+    category_id: existingProduct.category_id,
+    owner_id: existingProduct.owner_id,
+    finance_category_id: existingProduct.finance_category_id,
+  };
+  const after = {
+    name: data.name,
+    manufacturer: data.manufacturer,
+    description: data.description,
+    usage: data.usage,
+    category_id: data.category_id,
+    owner_id: data.owner_id,
+    finance_category_id: data.finance_category_id ?? null,
+    ...(inventory ? { inventory } : {}),
+  };
+  await createInventoryAuditLog(sbAdmin, {
+    wsId,
+    eventKind: 'updated',
+    entityKind: 'product',
+    entityId: productId,
+    entityLabel: data.name ?? existingProduct.name,
+    summary: `Updated product ${data.name ?? existingProduct.name ?? productId}`,
+    changedFields: diffInventoryAuditFields(before, after),
+    before,
+    after,
+    actor,
+  });
 
   return NextResponse.json({ message: 'success' });
 }
@@ -252,7 +399,7 @@ export async function DELETE(req: Request, { params }: Params) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
 
-  if (!permissions.containsPermission('delete_inventory')) {
+  if (!canManageInventoryCatalog(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to delete products' },
       { status: 403 }
@@ -261,7 +408,7 @@ export async function DELETE(req: Request, { params }: Params) {
 
   const { data: product, error: productError } = await sbAdmin
     .from('workspace_products')
-    .select('id, ws_id')
+    .select('id, ws_id, name')
     .eq('id', productId)
     .eq('ws_id', wsId)
     .maybeSingle();
@@ -297,6 +444,17 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!deletedProduct) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
+
+  const actor = await getInventoryActorContext(req, wsId);
+  await createInventoryAuditLog(sbAdmin, {
+    wsId,
+    eventKind: 'deleted',
+    entityKind: 'product',
+    entityId: productId,
+    entityLabel: product.name ?? productId,
+    summary: `Deleted product ${product.name ?? productId}`,
+    actor,
+  });
 
   return NextResponse.json({ message: 'success' });
 }

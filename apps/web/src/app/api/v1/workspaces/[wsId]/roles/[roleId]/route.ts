@@ -9,8 +9,31 @@ interface Params {
   }>;
 }
 
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
+  const { roleId: id } = await params;
+
+  const { data, error } = await supabase
+    .from('workspace_roles')
+    .select(
+      'id, name, permissions:workspace_role_permissions(id:permission, enabled), created_at'
+    )
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.log(error);
+    return NextResponse.json(
+      { message: 'Error fetching workspace role' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(data);
+}
+
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const { wsId, roleId: id } = await params;
 
   const data = (await req.json()) as WorkspaceRole;
@@ -53,8 +76,8 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { roleId: id } = await params;
 
   const { error } = await supabase

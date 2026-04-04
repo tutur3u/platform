@@ -240,19 +240,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubOpenApp => 'Mở';
 
   @override
-  String get appsHubTasksDescription => 'Công việc được giao, lập kế hoạch và portfolio.';
+  String get appsHubTasksDescription => 'Theo dõi việc được giao, bảng việc, ước lượng và kế hoạch portfolio.';
 
   @override
-  String get appsHubHabitsDescription => 'Thói quen chung, chuỗi ngày và tiến độ lặp lại.';
+  String get appsHubHabitsDescription => 'Theo dõi thói quen chung, chuỗi ngày và tiến độ lặp lại.';
 
   @override
-  String get appsHubCalendarDescription => 'Lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
+  String get appsHubCalendarDescription => 'Xem lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
 
   @override
-  String get appsHubFinanceDescription => 'Ví, danh mục và lịch sử giao dịch.';
+  String get appsHubFinanceDescription => 'Quản lý ví, danh mục, thẻ và lịch sử giao dịch.';
 
   @override
-  String get appsHubTimerDescription => 'Theo dõi phiên, thống kê và yêu cầu.';
+  String get appsHubInventoryDescription => 'Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.';
+
+  @override
+  String get appsHubNotificationsDescription => 'Xem hộp thư thông báo, cảnh báo và các cập nhật đã lưu trữ.';
+
+  @override
+  String get appsHubSettingsDescription => 'Điều chỉnh cài đặt ứng dụng, không gian làm việc và cá nhân.';
+
+  @override
+  String get appsHubTimerDescription => 'Theo dõi phiên, xem thống kê và xử lý yêu cầu chấm công.';
 
   @override
   String get habitsTitle => 'Thói quen';
@@ -2468,6 +2477,422 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeTitle => 'Tài chính';
 
   @override
+  String get inventoryAddCategory => 'Thêm danh mục';
+
+  @override
+  String get inventoryAddOwner => 'Thêm chủ sở hữu';
+
+  @override
+  String get inventoryAddUnit => 'Thêm đơn vị';
+
+  @override
+  String get inventoryAddWarehouse => 'Thêm kho';
+
+  @override
+  String get inventoryAuditEmpty => 'Nhật ký sẽ xuất hiện ở đây sau khi sản phẩm, tồn kho hoặc giao dịch bán được cập nhật.';
+
+  @override
+  String get inventoryAuditEventArchived => 'Lưu trữ';
+
+  @override
+  String get inventoryAuditEventCreated => 'Tạo mới';
+
+  @override
+  String get inventoryAuditEventDeleted => 'Xóa';
+
+  @override
+  String get inventoryAuditEventReactivated => 'Kích hoạt lại';
+
+  @override
+  String get inventoryAuditEventSaleCreated => 'Tạo giao dịch bán';
+
+  @override
+  String get inventoryAuditEventUpdated => 'Cập nhật';
+
+  @override
+  String get inventoryAuditLabel => 'Nhật ký';
+
+  @override
+  String get inventoryAuditActorLabel => 'Người thực hiện';
+
+  @override
+  String get inventoryAuditAfter => 'Sau';
+
+  @override
+  String get inventoryAuditBefore => 'Trước';
+
+  @override
+  String get inventoryAuditChangedFields => 'Trường đã thay đổi';
+
+  @override
+  String inventoryAuditChanges(int count) {
+    return '$count thay đổi';
+  }
+
+  @override
+  String get inventoryAuditRecentSubtitle => 'Theo dõi thay đổi về sản phẩm, tồn kho, cấu hình và giao dịch bán trong không gian làm việc.';
+
+  @override
+  String get inventoryAuditRecentTitle => 'Hoạt động gần đây';
+
+  @override
+  String get inventoryAuditNoChanges => 'Không có thay đổi trường';
+
+  @override
+  String get inventoryAuditOccurredAt => 'Thời điểm';
+
+  @override
+  String get inventoryAuditSubtitle => 'Biết ai đã thay đổi sản phẩm, tồn kho, cấu hình và giao dịch bán.';
+
+  @override
+  String get inventoryAuditSubject => 'Đối tượng';
+
+  @override
+  String get inventoryCheckoutAvailableProductsSubtitle => 'Điều chỉnh số lượng trực tiếp từ tồn kho khả dụng tại quầy.';
+
+  @override
+  String get inventoryCheckoutAvailableProductsTitle => 'Sản phẩm khả dụng';
+
+  @override
+  String get inventoryCheckoutAutoCategory => 'Danh mục tự liên kết';
+
+  @override
+  String get inventoryCheckoutBrowseTab => 'Chọn hàng';
+
+  @override
+  String get inventoryCheckoutCartEmpty => 'Thêm sản phẩm từ tab chọn hàng để xem lại và tạo giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutCartTab => 'Giỏ hàng';
+
+  @override
+  String get inventoryCheckoutCartTotal => 'Tổng giỏ hàng';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsSubtitle => 'Chọn nơi ghi nhận giao dịch trước khi tạo hóa đơn.';
+
+  @override
+  String get inventoryCheckoutCheckoutDetailsTitle => 'Thông tin thanh toán';
+
+  @override
+  String get inventoryCheckoutCategoryOverride => 'Ghi đè danh mục';
+
+  @override
+  String get inventoryCheckoutCategoryRequired => 'Chọn danh mục thu nhập trước khi tạo giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutEmpty => 'Chưa có tồn kho khả dụng để bán.';
+
+  @override
+  String get inventoryCheckoutManualCategoryRequired => 'Hãy chọn danh mục thu nhập khi giỏ hàng trộn nhiều danh mục liên kết hoặc chưa có danh mục liên kết.';
+
+  @override
+  String get inventoryCheckoutNoSearchResults => 'Không có sản phẩm nào khớp với tìm kiếm hiện tại.';
+
+  @override
+  String get inventoryCheckoutProductsRequired => 'Thêm ít nhất một sản phẩm trước khi tạo giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutSelectedItems => 'Dòng đã chọn';
+
+  @override
+  String get inventoryCheckoutSubtitle => 'Tạo nhanh một giao dịch bán tại quầy và ghi nhận qua hóa đơn.';
+
+  @override
+  String get inventoryCheckoutSubmit => 'Tạo giao dịch bán';
+
+  @override
+  String get inventoryCheckoutTitle => 'Bán hàng';
+
+  @override
+  String get inventoryCheckoutValidationError => 'Hãy chọn ví, xử lý danh mục và thêm ít nhất một sản phẩm.';
+
+  @override
+  String get inventoryCheckoutWalletRequired => 'Chọn ví trước khi tạo giao dịch bán.';
+
+  @override
+  String get inventoryCheckoutWallet => 'Ví';
+
+  @override
+  String get inventoryCreateProduct => 'Tạo sản phẩm';
+
+  @override
+  String get inventoryEditProduct => 'Sửa sản phẩm';
+
+  @override
+  String get inventoryManageCategories => 'Danh mục sản phẩm';
+
+  @override
+  String get inventoryManageCategoriesSubtitle => 'Nhóm sản phẩm theo quầy, kệ, menu hoặc bộ sưu tập.';
+
+  @override
+  String get inventoryManageEmpty => 'Chưa có cấu hình nào.';
+
+  @override
+  String get inventoryManageLabel => 'Quản lý';
+
+  @override
+  String get inventoryManageNameRequired => 'Hãy nhập tên.';
+
+  @override
+  String get inventoryManageOwners => 'Chủ sở hữu';
+
+  @override
+  String get inventoryManageOwnersSubtitle => 'Giữ phần gán chủ sở hữu tách biệt với nhân viên đang thao tác tại quầy.';
+
+  @override
+  String get inventoryManageSubtitle => 'Thiết lập chủ sở hữu và dữ liệu tra cứu mà quầy hàng cần dùng.';
+
+  @override
+  String get inventoryManageUnits => 'Đơn vị';
+
+  @override
+  String get inventoryManageUnitsSubtitle => 'Xác định cách đếm, bán và hiển thị tồn kho.';
+
+  @override
+  String get inventoryManageWarehouses => 'Kho';
+
+  @override
+  String get inventoryManageWarehousesSubtitle => 'Tách các vị trí tồn kho để cảnh báo sắp hết hàng chính xác hơn.';
+
+  @override
+  String get inventoryNoBreakdownData => 'Chưa có dữ liệu phân tích.';
+
+  @override
+  String get inventoryNoLinkedFinanceCategory => 'Chưa liên kết danh mục tài chính';
+
+  @override
+  String get inventoryNoLowStockProducts => 'Hiện chưa có sản phẩm sắp hết hàng.';
+
+  @override
+  String get inventoryOverviewCategories => 'Theo danh mục';
+
+  @override
+  String get inventoryOverviewCategoriesSubtitle => 'Xem nhóm sản phẩm nào đang mang về doanh thu.';
+
+  @override
+  String get inventoryOverviewExpense => 'Chi tiêu';
+
+  @override
+  String get inventoryOverviewIncome => 'Thu nhập';
+
+  @override
+  String get inventoryOverviewLabel => 'Tổng quan';
+
+  @override
+  String get inventoryOverviewLowStock => 'Sắp hết hàng';
+
+  @override
+  String get inventoryOverviewLowStockSubtitle => 'Những sản phẩm cần được chú ý trước đợt bán tiếp theo.';
+
+  @override
+  String get inventoryOverviewOwners => 'Theo chủ sở hữu';
+
+  @override
+  String get inventoryOverviewOwnersSubtitle => 'Phân tách doanh thu theo chủ sở hữu của từng sản phẩm.';
+
+  @override
+  String get inventoryOverviewRecentSales => 'Bán hàng gần đây';
+
+  @override
+  String get inventoryOverviewRecentSalesSubtitle => 'Các giao dịch bán gần nhất được ghi nhận từ hóa đơn tồn kho.';
+
+  @override
+  String get inventoryOverviewSalesRevenue => 'Doanh thu tồn kho';
+
+  @override
+  String get inventoryOverviewSubtitle => 'Theo dõi doanh thu, áp lực tồn kho và hiệu suất theo chủ sở hữu.';
+
+  @override
+  String get inventoryOwnerArchived => 'Đã lưu trữ';
+
+  @override
+  String get inventoryProductAddInventoryRow => 'Thêm dòng tồn kho';
+
+  @override
+  String get inventoryProductAmount => 'Số lượng';
+
+  @override
+  String get inventoryProductAmountRequired => 'Nhập số lượng.';
+
+  @override
+  String get inventoryProductCategory => 'Danh mục sản phẩm';
+
+  @override
+  String get inventoryProductCategoryRequired => 'Chọn danh mục sản phẩm.';
+
+  @override
+  String get inventoryProductDescription => 'Mô tả';
+
+  @override
+  String get inventoryProductDetailsSubtitle => 'Đặt tên sản phẩm, gán chủ sở hữu và liên kết mặc định tài chính.';
+
+  @override
+  String get inventoryProductDetailsTitle => 'Thông tin sản phẩm';
+
+  @override
+  String get inventoryProductEditorSubtitle => 'Tạo sản phẩm sẵn sàng bán tại quầy với giá cố định và các dòng tồn kho.';
+
+  @override
+  String get inventoryProductFinanceCategory => 'Danh mục tài chính liên kết';
+
+  @override
+  String get inventoryProductInventory => 'Các dòng tồn kho';
+
+  @override
+  String get inventoryProductInventoryRows => 'Dòng';
+
+  @override
+  String get inventoryProductInventorySubtitle => 'Mỗi dòng đại diện cho đơn vị, kho, số lượng, ngưỡng và giá bán.';
+
+  @override
+  String get inventoryProductManufacturer => 'Nhà sản xuất';
+
+  @override
+  String get inventoryProductMinAmount => 'Mức tối thiểu';
+
+  @override
+  String get inventoryProductMinAmountRequired => 'Nhập mức tối thiểu.';
+
+  @override
+  String get inventoryProductName => 'Tên sản phẩm';
+
+  @override
+  String get inventoryProductNameRequired => 'Nhập tên sản phẩm.';
+
+  @override
+  String get inventoryProductNumberInvalid => 'Nhập số hợp lệ.';
+
+  @override
+  String get inventoryProductOwner => 'Chủ sở hữu';
+
+  @override
+  String get inventoryProductOwnerRequired => 'Chọn chủ sở hữu.';
+
+  @override
+  String get inventoryProductPrice => 'Giá';
+
+  @override
+  String get inventoryProductPriceRequired => 'Nhập giá.';
+
+  @override
+  String inventoryProductAvailableSummary(String amount, String price) {
+    return 'Còn $amount • $price';
+  }
+
+  @override
+  String get inventoryProductSaved => 'Đã lưu sản phẩm.';
+
+  @override
+  String get inventoryProductUntitled => 'Sản phẩm chưa đặt tên';
+
+  @override
+  String get inventoryProductUnit => 'Đơn vị';
+
+  @override
+  String get inventoryProductUnitRequired => 'Chọn đơn vị.';
+
+  @override
+  String get inventoryProductUsage => 'Công dụng';
+
+  @override
+  String get inventoryProductValidationError => 'Hãy điền đủ sản phẩm, chủ sở hữu, danh mục và thông tin tồn kho bắt buộc.';
+
+  @override
+  String get inventoryProductWarehouse => 'Kho';
+
+  @override
+  String get inventoryProductWarehouseRequired => 'Chọn kho.';
+
+  @override
+  String get inventoryProductsEmpty => 'Tạo sản phẩm để bắt đầu theo dõi tồn kho và bán hàng tại quầy.';
+
+  @override
+  String get inventoryProductsLabel => 'Sản phẩm';
+
+  @override
+  String get inventoryProductsListSubtitle => 'Chạm vào sản phẩm để sửa thông tin, giá hoặc các dòng tồn kho.';
+
+  @override
+  String get inventoryProductsListTitle => 'Danh mục sản phẩm';
+
+  @override
+  String get inventoryProductsSubtitle => 'Tìm kiếm, xem nhanh và chỉnh sửa các sản phẩm đã chuẩn bị cho quầy.';
+
+  @override
+  String get inventoryRealtimeDisabled => 'Realtime đang tắt cho không gian làm việc này.';
+
+  @override
+  String get inventoryRealtimeEnabled => 'Đã bật realtime';
+
+  @override
+  String get inventorySaleCreated => 'Đã tạo giao dịch bán từ tồn kho.';
+
+  @override
+  String get inventorySaleDeleted => 'Đã xóa giao dịch bán.';
+
+  @override
+  String get inventorySaleUpdated => 'Đã cập nhật giao dịch bán.';
+
+  @override
+  String get inventorySalesEmpty => 'Các giao dịch bán tạo từ hóa đơn sẽ xuất hiện ở đây.';
+
+  @override
+  String get inventorySalesDelete => 'Xóa giao dịch bán';
+
+  @override
+  String get inventorySalesDeleteConfirm => 'Xóa giao dịch bán này và hoàn lại tồn kho?';
+
+  @override
+  String get inventorySalesEdit => 'Sửa giao dịch bán';
+
+  @override
+  String get inventorySalesFallbackTitle => 'Giao dịch bán tồn kho';
+
+  @override
+  String inventorySalesItemsCount(int count) {
+    return '$count mặt hàng';
+  }
+
+  @override
+  String get inventorySalesLabel => 'Bán hàng';
+
+  @override
+  String inventorySalesCreatorBadge(String name) {
+    return 'Tạo bởi $name';
+  }
+
+  @override
+  String get inventorySalesLineItems => 'Dòng hàng';
+
+  @override
+  String get inventorySalesNote => 'Ghi chú';
+
+  @override
+  String get inventorySalesRecentSubtitle => 'Xem lại các giao dịch bán tồn kho gần nhất đã ghi qua hóa đơn.';
+
+  @override
+  String get inventorySalesRecentTitle => 'Lịch sử bán hàng';
+
+  @override
+  String get inventorySalesSave => 'Lưu giao dịch bán';
+
+  @override
+  String get inventorySalesSubtitle => 'Theo dõi các giao dịch bán đã hoàn tất và nơi tiền được ghi nhận.';
+
+  @override
+  String get inventorySalesTitle => 'Tiêu đề';
+
+  @override
+  String get inventorySaveProduct => 'Lưu sản phẩm';
+
+  @override
+  String get inventorySearchProducts => 'Tìm sản phẩm';
+
+  @override
+  String get inventoryTitle => 'Tồn kho';
+
+  @override
   String get financeOverviewLabel => 'Tổng quan';
 
   @override
@@ -2514,7 +2939,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeOverviewManageHint => 'Quản lý danh mục, thẻ và cấu trúc tài chính.';
 
   @override
-  String get financeOverviewWalletSectionTitle => 'Danh sách ví';
+  String get financeOverviewWalletSectionTitle => 'Ví';
 
   @override
   String get financeOverviewWalletSectionSubtitle => 'Nhìn nhanh các số dư quan trọng nhất của bạn.';
@@ -2523,7 +2948,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeOverviewNoWalletsBody => 'Tạo ví đầu tiên để bắt đầu theo dõi số dư, chuyển khoản và danh mục.';
 
   @override
-  String get financeOverviewActivityTitle => 'Hoạt động gần đây';
+  String get financeOverviewActivityTitle => 'Hoạt động';
 
   @override
   String get financeOverviewActivitySubtitle => 'Biến động mới nhất trên tất cả ví của bạn.';
@@ -3927,6 +4352,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsWorkspaceSectionDescription => 'Xem ngữ cảnh hiện tại và chuyển khi cần.';
 
   @override
+  String get settingsWorkspaceSectionManageTitle => 'Thiết lập không gian làm việc';
+
+  @override
+  String get settingsWorkspaceAccessTitle => 'Quyền truy cập';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyTitle => 'Tiền tệ mặc định';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyDescription => 'Dùng một loại tiền tệ mặc định cho các luồng tài chính và hóa đơn trong không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyField => 'Tiền tệ';
+
+  @override
   String get settingsPreferencesSectionTitle => 'Tùy chọn';
 
   @override
@@ -4428,6 +4868,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get captchaError => 'Kiểm tra bảo mật thất bại. Vui lòng thử lại.';
 
   @override
+  String get commonOff => 'Tắt';
+
+  @override
   String get commonSomethingWentWrong => 'Đã xảy ra lỗi';
 
   @override
@@ -4474,4 +4917,164 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get onboardingGetStarted => 'Bắt đầu ngay';
+
+  @override
+  String get settingsWorkspaceMembersTitle => 'Thành viên';
+
+  @override
+  String get settingsWorkspaceMembersSubtitle => 'Mời người mới, xem quyền truy cập và quản lý liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersAccessDenied => 'Bạn cần quyền quản lý thành viên để dùng mục này.';
+
+  @override
+  String settingsWorkspaceMembersActiveSection(int count) {
+    return 'Thành viên ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersEmpty => 'Chưa có thành viên.';
+
+  @override
+  String settingsWorkspaceMembersPendingSection(int count) {
+    return 'Đang chờ ($count)';
+  }
+
+  @override
+  String get settingsWorkspaceMembersPendingEmpty => 'Không có lời mời nào đang chờ.';
+
+  @override
+  String get settingsWorkspaceMembersLinksSection => 'Liên kết mời';
+
+  @override
+  String get settingsWorkspaceMembersLinksEmpty => 'Chưa có liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersInviteAction => 'Mời';
+
+  @override
+  String get settingsWorkspaceMembersLinkAction => 'Tạo link';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopied => 'Đã sao chép liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersRemoveTitle => 'Xóa';
+
+  @override
+  String settingsWorkspaceMembersRemoveMessage(String name) {
+    return 'Xóa $name khỏi không gian làm việc này?';
+  }
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteTitle => 'Xóa link';
+
+  @override
+  String get settingsWorkspaceMembersLinkDeleteMessage => 'Xóa liên kết mời này?';
+
+  @override
+  String get settingsWorkspaceMembersEmailField => 'Email';
+
+  @override
+  String get settingsWorkspaceMembersEmailPlaceholder => 'name@example.com';
+
+  @override
+  String get settingsWorkspaceMembersEmailInvalid => 'Hãy nhập email hợp lệ.';
+
+  @override
+  String get settingsWorkspaceMembersInviteSent => 'Đã gửi lời mời.';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitField => 'Số lượt dùng tối đa';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitPlaceholder => 'Để trống nếu không giới hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinkLimitInvalid => 'Hãy nhập số nguyên dương.';
+
+  @override
+  String get settingsWorkspaceMembersLinkCreated => 'Đã tạo liên kết mời.';
+
+  @override
+  String get settingsWorkspaceMembersCreatorChip => 'Chủ sở hữu';
+
+  @override
+  String get settingsWorkspaceMembersPendingChip => 'Đang chờ';
+
+  @override
+  String get settingsWorkspaceMembersLinkNever => 'Không hết hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinkExpired => 'Hết hạn';
+
+  @override
+  String get settingsWorkspaceMembersLinkFull => 'Đầy';
+
+  @override
+  String get settingsWorkspaceMembersLinkActive => 'Đang hoạt động';
+
+  @override
+  String get settingsWorkspaceMembersLinkCopy => 'Sao chép';
+
+  @override
+  String get settingsWorkspaceRolesTitle => 'Vai trò';
+
+  @override
+  String get settingsWorkspaceRolesSubtitle => 'Quản lý quyền mặc định và các vai trò trong không gian làm việc.';
+
+  @override
+  String get settingsWorkspaceRolesAccessDenied => 'Bạn cần quyền quản lý vai trò để dùng mục này.';
+
+  @override
+  String get settingsWorkspaceRolesCreate => 'Tạo vai trò';
+
+  @override
+  String get settingsWorkspaceRolesDefaultTitle => 'Quyền mặc định';
+
+  @override
+  String get settingsWorkspaceRolesListTitle => 'Vai trò';
+
+  @override
+  String get settingsWorkspaceRolesEmpty => 'Chưa có vai trò tùy chỉnh.';
+
+  @override
+  String get settingsWorkspaceRolesDeleteTitle => 'Xóa vai trò';
+
+  @override
+  String settingsWorkspaceRolesDeleteMessage(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String settingsWorkspaceRolesPermissionCount(int count) {
+    return 'Đã bật $count quyền';
+  }
+
+  @override
+  String get settingsWorkspaceRolesEdit => 'Sửa vai trò';
+
+  @override
+  String get settingsWorkspaceRolesSave => 'Lưu';
+
+  @override
+  String get settingsWorkspaceRolesNameField => 'Tên';
+
+  @override
+  String get settingsWorkspaceRolesNamePlaceholder => 'Tên vai trò';
+
+  @override
+  String get settingsWorkspaceRolesNameRequired => 'Hãy nhập tên vai trò.';
+
+  @override
+  String get settingsWorkspaceRolesPermissionsSection => 'Quyền';
+
+  @override
+  String get settingsWorkspaceRolesMembersSection => 'Thành viên được gán';
+
+  @override
+  String get settingsWorkspaceRolesMembersEmpty => 'Không có thành viên đang hoạt động.';
+
+  @override
+  String get settingsWorkspaceRolesSaved => 'Đã lưu vai trò.';
 }

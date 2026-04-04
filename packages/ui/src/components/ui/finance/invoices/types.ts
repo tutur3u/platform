@@ -16,6 +16,20 @@ export interface Product {
   usage: string | null;
   category: string | null;
   category_id: string;
+  owner_id?: string | null;
+  owner?: {
+    id: string;
+    name: string;
+    avatar_url?: string | null;
+    linked_workspace_user_id?: string | null;
+  } | null;
+  finance_category_id?: string | null;
+  finance_category?: {
+    id: string;
+    name: string | null;
+    color?: string | null;
+    icon?: string | null;
+  } | null;
   ws_id: string;
   created_at: string | null;
   inventory: ProductInventory[];

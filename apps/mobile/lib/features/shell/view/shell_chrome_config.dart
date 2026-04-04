@@ -23,6 +23,11 @@ class ShellChromeConfig {
       Routes.notifications => l10n.notificationsTitle,
       Routes.calendar => l10n.calendarTitle,
       Routes.finance => l10n.financeTitle,
+      Routes.inventory => l10n.inventoryTitle,
+      Routes.inventoryProducts => l10n.inventoryProductsLabel,
+      Routes.inventorySales => l10n.inventorySalesLabel,
+      Routes.inventoryManage => l10n.inventoryManageLabel,
+      Routes.inventoryAuditLogs => l10n.inventoryAuditLabel,
       Routes.transactions => l10n.financeActivityLabel,
       Routes.categories => l10n.financeManageLabel,
       Routes.wallets => l10n.financeWallets,
@@ -38,6 +43,8 @@ class ShellChromeConfig {
       Routes.profileRoot => l10n.profileTitle,
       Routes.settings => l10n.settingsTitle,
       Routes.settingsWorkspace => l10n.settingsWorkspaceSectionTitle,
+      Routes.settingsWorkspaceMembers => l10n.settingsWorkspaceMembersTitle,
+      Routes.settingsWorkspaceRoles => l10n.settingsWorkspaceRolesTitle,
       _ => null,
     };
 

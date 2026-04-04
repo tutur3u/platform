@@ -9,9 +9,11 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
+import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
@@ -111,10 +113,15 @@ class _WalletsViewState extends State<_WalletsView> {
     if (json is! List) {
       throw const FormatException('Invalid wallets cache payload.');
     }
-    return json
+    final wallets = json
         .whereType<Map<String, dynamic>>()
         .map(Wallet.fromJson)
         .toList(growable: false);
+    return sortWalletsForDisplay(
+      wallets: wallets,
+      workspaceCurrency: 'USD',
+      exchangeRates: const <ExchangeRate>[],
+    );
   }
 
   @override
@@ -345,23 +352,28 @@ class _WalletsViewState extends State<_WalletsView> {
 
     try {
       final wallets = await repository.getWallets(wsId);
+      final sortedWallets = sortWalletsForDisplay(
+        wallets: wallets,
+        workspaceCurrency: 'USD',
+        exchangeRates: const [],
+      );
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;
       }
       _cache[wsId] = _WalletsCacheEntry(
-        wallets: wallets,
+        wallets: sortedWallets,
         fetchedAt: DateTime.now(),
       );
       await CacheStore.instance.write(
         key: _cacheKey(wsId),
         policy: _cachePolicy,
-        payload: wallets
+        payload: sortedWallets
             .map((wallet) => wallet.toJson())
             .toList(growable: false),
         tags: [_cacheTag, 'workspace:$wsId', 'module:finance'],
       );
       setState(() {
-        _wallets = wallets;
+        _wallets = sortedWallets;
         _loadedWorkspaceId = wsId;
         _error = null;
       });
@@ -431,92 +443,96 @@ class _WalletCard extends StatelessWidget {
     final accent = isCredit ? palette.negative : palette.accent;
     final balance = wallet.balance ?? 0;
     final currency = wallet.currency ?? 'USD';
+    final isZeroBalance = balance.abs() < 0.000001;
     final icon = resolvePlatformIcon(
       wallet.icon,
       fallback: isCredit ? Icons.credit_card_outlined : Icons.wallet_outlined,
     );
 
-    return FinancePanel(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              WalletVisualAvatar(
-                icon: wallet.icon,
-                imageSrc: wallet.imageSrc,
-                fallbackIcon: icon,
-                backgroundColor: accent.withValues(alpha: 0.14),
-              ),
-              const shad.Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      wallet.name ?? '-',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (wallet.description?.trim().isNotEmpty ?? false) ...[
-                      const shad.Gap(4),
+    return Opacity(
+      opacity: isZeroBalance ? 0.58 : 1,
+      child: FinancePanel(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                WalletVisualAvatar(
+                  icon: wallet.icon,
+                  imageSrc: wallet.imageSrc,
+                  fallbackIcon: icon,
+                  backgroundColor: accent.withValues(alpha: 0.14),
+                ),
+                const shad.Gap(12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        wallet.description!,
-                        maxLines: 2,
+                        wallet.name ?? '-',
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.textSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
+                        style: theme.typography.large.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
+                      if (wallet.description?.trim().isNotEmpty ?? false) ...[
+                        const shad.Gap(4),
+                        Text(
+                          wallet.description!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.textSmall.copyWith(
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const shad.Gap(8),
-              shad.GhostButton(
-                density: shad.ButtonDensity.icon,
-                onPressed: onEdit,
-                child: const Icon(Icons.edit_outlined, size: 18),
-              ),
-              shad.GhostButton(
-                density: shad.ButtonDensity.icon,
-                onPressed: onDelete,
-                child: const Icon(Icons.delete_outline, size: 18),
-              ),
-            ],
-          ),
-          const shad.Gap(18),
-          FinanceAmountText(
-            amount: balance,
-            currency: currency,
-            isVisible: showAmounts,
-            showPlus: false,
-            alignment: CrossAxisAlignment.start,
-            forceColor: theme.colorScheme.foreground,
-            style: theme.typography.h3,
-          ),
-          const shad.Gap(12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _WalletMetaPill(
-                label: isCredit
-                    ? context.l10n.financeWalletTypeCredit
-                    : context.l10n.financeWalletTypeStandard,
-                color: accent,
-              ),
-              _WalletMetaPill(
-                label: currency.toUpperCase(),
-                color: theme.colorScheme.mutedForeground,
-              ),
-            ],
-          ),
-        ],
+                const shad.Gap(8),
+                shad.GhostButton(
+                  density: shad.ButtonDensity.icon,
+                  onPressed: onEdit,
+                  child: const Icon(Icons.edit_outlined, size: 18),
+                ),
+                shad.GhostButton(
+                  density: shad.ButtonDensity.icon,
+                  onPressed: onDelete,
+                  child: const Icon(Icons.delete_outline, size: 18),
+                ),
+              ],
+            ),
+            const shad.Gap(18),
+            FinanceAmountText(
+              amount: balance,
+              currency: currency,
+              isVisible: showAmounts,
+              showPlus: false,
+              alignment: CrossAxisAlignment.start,
+              forceColor: theme.colorScheme.foreground,
+              style: theme.typography.h3,
+            ),
+            const shad.Gap(12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _WalletMetaPill(
+                  label: isCredit
+                      ? context.l10n.financeWalletTypeCredit
+                      : context.l10n.financeWalletTypeStandard,
+                  color: accent,
+                ),
+                _WalletMetaPill(
+                  label: currency.toUpperCase(),
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

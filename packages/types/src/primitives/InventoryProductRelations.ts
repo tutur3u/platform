@@ -13,6 +13,14 @@ export type InventoryProduct = Pick<
   inventory_units: InventoryUnit | null;
 };
 type InventoryProductCategory = Pick<Tables<'product_categories'>, 'name'>;
+type InventoryOwnerRelation = Pick<
+  Tables<'inventory_owners'>,
+  'id' | 'name' | 'avatar_url' | 'linked_workspace_user_id'
+>;
+type InventoryFinanceCategoryRelation = Pick<
+  Tables<'transaction_categories'>,
+  'id' | 'name' | 'color' | 'icon'
+>;
 export type ProductStockChange = Pick<
   Tables<'product_stock_changes'>,
   'amount' | 'created_at' | 'warehouse_id'
@@ -26,10 +34,14 @@ export type ProductStockChange = Pick<
 };
 export type RawInventoryProduct = Tables<'workspace_products'> & {
   product_categories?: InventoryProductCategory | null;
+  inventory_owners?: InventoryOwnerRelation | null;
+  transaction_categories?: InventoryFinanceCategoryRelation | null;
   inventory_products?: InventoryProduct[] | null;
 };
 export type RawInventoryProductWithChanges = Tables<'workspace_products'> & {
   inventory_products?: InventoryProduct[] | null;
   product_stock_changes?: ProductStockChange[] | null;
   product_categories?: InventoryProductCategory | null;
+  inventory_owners?: InventoryOwnerRelation | null;
+  transaction_categories?: InventoryFinanceCategoryRelation | null;
 };

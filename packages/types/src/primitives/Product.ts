@@ -25,6 +25,20 @@ export interface Product {
   unit?: string;
   category?: string;
   category_id?: string;
+  owner_id?: string;
+  owner?: {
+    id: string;
+    name: string;
+    avatar_url?: string | null;
+    linked_workspace_user_id?: string | null;
+  } | null;
+  finance_category_id?: string | null;
+  finance_category?: {
+    id: string;
+    name?: string | null;
+    color?: string | null;
+    icon?: string | null;
+  } | null;
   warehouse_id?: string;
   warehouse?: string;
   batch_id?: string;
@@ -58,5 +72,7 @@ export interface Product2 {
   description?: string;
   usage?: string;
   category_id: string;
+  owner_id: string;
+  finance_category_id?: string | null;
   ws_id: string;
 }

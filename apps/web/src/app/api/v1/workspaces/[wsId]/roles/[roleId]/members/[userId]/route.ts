@@ -8,8 +8,8 @@ interface Params {
   }>;
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { roleId, userId } = await params;
 
   const { error } = await supabase

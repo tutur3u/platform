@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -8,11 +11,13 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
+  const supabase = await createClient(req);
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId: id });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -23,13 +28,10 @@ export async function GET(_: Request, { params }: Params) {
       { status: 403 }
     );
   }
-
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('inventory_units')
     .select('*')
-    .eq('ws_id', id);
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
@@ -44,9 +46,11 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id } = await params;
+  const supabase = await createClient(req);
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId: id });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -57,14 +61,11 @@ export async function POST(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-
-  const supabase = await createClient();
-
   const data = await req.json();
 
   const { error } = await supabase.from('inventory_units').insert({
     ...data,
-    ws_id: id,
+    ws_id: wsId,
   });
 
   if (error) {

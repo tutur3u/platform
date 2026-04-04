@@ -41,6 +41,18 @@ class FinanceRepository {
     }
   }
 
+  Future<void> updateWorkspaceDefaultCurrency({
+    required String wsId,
+    required String currency,
+  }) async {
+    await _api.putJson(
+      FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      {
+        'value': currency.trim().toUpperCase(),
+      },
+    );
+  }
+
   Future<List<ExchangeRate>> getExchangeRates() async {
     final response = await _api.getJson(FinanceEndpoints.exchangeRates);
     final data = response['data'];

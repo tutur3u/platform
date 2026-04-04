@@ -36,6 +36,26 @@ class AppCardPalette {
             );
     }
 
+    if (moduleId == 'timer') {
+      return isDark
+          ? const AppCardPalette(
+              background: Color(0xFF341C2E),
+              border: Color(0xFFB15C97),
+              shadow: Color(0x22200F1B),
+              iconBackground: Color(0xFF4A2740),
+              iconColor: Color(0xFFFFD8F2),
+              textColor: Color(0xFFFFEDF9),
+            )
+          : const AppCardPalette(
+              background: Color(0xFFFFE3F3),
+              border: Color(0xFFF3B2D8),
+              shadow: Color(0x33E48AC0),
+              iconBackground: Color(0xFFFFFFFF),
+              iconColor: Color(0xFFB23B82),
+              textColor: Color(0xFF4E173A),
+            );
+    }
+
     final palettes = isDark
         ? const [
             AppCardPalette(

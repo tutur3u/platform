@@ -28,7 +28,7 @@ const normalizeWorkspaceId = async (wsId: string): Promise<string | null> => {
 
 export async function GET(request: NextRequest, { params }: Params) {
   const { wsId: id } = await params;
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const sbAdmin = await createAdminClient();
 
   const wsId = await normalizeWorkspaceId(id);

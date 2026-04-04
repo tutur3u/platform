@@ -60,7 +60,8 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     final selectedWallet = _selectedWallet;
     final selectedDestinationWallet = _selectedDestinationWallet;
     final selectedCategory = _selectedCategory;
-    final selectedTag = _selectedTag;
+    final selectedTags = _selectedTags;
+    final selectedTagLabel = selectedTags.map((tag) => tag.name).join(', ');
     final canSwitchMode = _isCreate || widget.transaction?.isTransfer == true;
     final destPlaceholder = '${currencySymbol(_selectedDestinationCurrency)}0';
     final destinationHintText = _isCrossCurrency
@@ -194,7 +195,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                 walletName: selectedWallet?.name,
                 categoryName: selectedCategory?.name,
                 destinationWalletName: selectedDestinationWallet?.name,
-                tagName: selectedTag?.name,
+                tagLabel: selectedTagLabel.trim().isEmpty
+                    ? null
+                    : selectedTagLabel,
               ),
               const shad.Gap(12),
               if (_isLoadingOptions)
@@ -243,7 +246,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                         const shad.Gap(12),
                         _TagSelectorButton(
                           label: l10n.financeTags,
-                          tagName: selectedTag?.name,
+                          tagName: selectedTagLabel.trim().isEmpty
+                              ? null
+                              : selectedTagLabel,
                           color: _selectedTagColor,
                           onPressed: _tags.isEmpty ? null : _pickTag,
                         ),
@@ -417,7 +422,13 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     _walletId = widget.transaction?.walletId ?? widget.initialWalletId;
     _destinationWalletId = widget.transaction?.transfer?.linkedWalletId;
     _categoryId = widget.transaction?.categoryId;
-    _tagId = widget.transaction?.tags.firstOrNull?.id;
+    _tagIds =
+        widget.transaction?.tags
+            .map((tag) => tag.id)
+            .toList(
+              growable: false,
+            ) ??
+        const [];
     _isTransfer = widget.transaction?.isTransfer ?? false;
     _reportOptIn = widget.transaction?.reportOptIn ?? true;
     _isAmountConfidential = widget.transaction?.isAmountConfidential ?? false;

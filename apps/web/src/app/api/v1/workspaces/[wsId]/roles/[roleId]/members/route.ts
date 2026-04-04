@@ -7,8 +7,8 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { roleId } = await params;
 
   const { data, error, count } = await supabase
@@ -33,7 +33,7 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const { roleId } = await params;
 
   const data = (await req.json()) as {

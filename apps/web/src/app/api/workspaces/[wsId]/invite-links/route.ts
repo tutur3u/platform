@@ -21,7 +21,7 @@ const CreateInviteLinkSchema = z.object({
 // POST - Create a new invite link
 export async function POST(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const { wsId } = await params;
 
     const {
@@ -163,9 +163,9 @@ export async function POST(req: Request, { params }: Params) {
 }
 
 // GET - List all invite links for the workspace
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const { wsId } = await params;
 
     const {
