@@ -274,7 +274,6 @@ class _WalletHighlights extends StatelessWidget {
       children: [
         FinanceSectionHeader(
           title: l10n.financeOverviewWalletSectionTitle,
-          subtitle: l10n.financeOverviewWalletSectionSubtitle,
           action: shad.GhostButton(
             onPressed: () => context.push(Routes.wallets),
             child: Text(l10n.financeViewAll),
@@ -460,7 +459,6 @@ class _ActivityPreview extends StatelessWidget {
       children: [
         FinanceSectionHeader(
           title: l10n.financeOverviewActivityTitle,
-          subtitle: l10n.financeOverviewActivitySubtitle,
           action: shad.GhostButton(
             onPressed: () => context.push(Routes.transactions),
             child: Text(l10n.financeViewAll),

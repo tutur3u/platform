@@ -1012,14 +1012,17 @@
     "inventoryCheckoutCheckoutDetailsSubtitle": "Choose where the sale lands before submitting the invoice.",
     "inventoryCheckoutCheckoutDetailsTitle": "Checkout details",
     "inventoryCheckoutCategoryOverride": "Category override",
+    "inventoryCheckoutCategoryRequired": "Choose an income category before creating the sale.",
     "inventoryCheckoutEmpty": "No sellable inventory is available yet.",
     "inventoryCheckoutManualCategoryRequired": "Choose an income category when the cart mixes linked categories or has no linked category.",
     "inventoryCheckoutNoSearchResults": "No products match the current search.",
+    "inventoryCheckoutProductsRequired": "Add at least one product before creating the sale.",
     "inventoryCheckoutSelectedItems": "Selected lines",
     "inventoryCheckoutSubtitle": "Build a quick booth sale and send it through invoices.",
     "inventoryCheckoutSubmit": "Create sale",
     "inventoryCheckoutTitle": "Sell",
     "inventoryCheckoutValidationError": "Select a wallet, resolve the category, and add at least one product.",
+    "inventoryCheckoutWalletRequired": "Choose a wallet before creating the sale.",
     "inventoryCheckoutWallet": "Wallet",
     "inventoryCreateProduct": "Create product",
     "inventoryEditProduct": "Edit product",
@@ -1062,6 +1065,7 @@
     "inventoryProductEditorSubtitle": "Create booth-ready products with fixed prices and stock rows.",
     "inventoryProductFinanceCategory": "Linked finance category",
     "inventoryProductInventory": "Inventory rows",
+    "inventoryProductInventoryRows": "Rows",
     "inventoryProductInventorySubtitle": "Each row represents a unit, warehouse, quantity, threshold, and price.",
     "inventoryProductManufacturer": "Manufacturer",
     "inventoryProductMinAmount": "Minimum amount",
@@ -1073,7 +1077,15 @@
     "inventoryProductOwnerRequired": "Choose an owner.",
     "inventoryProductPrice": "Price",
     "inventoryProductPriceRequired": "Enter a price.",
+    "inventoryProductAvailableSummary": "{amount} available • {price}",
+    "@inventoryProductAvailableSummary": {
+        "placeholders": {
+            "amount": { "type": "String" },
+            "price": { "type": "String" }
+        }
+    },
     "inventoryProductSaved": "Product saved.",
+    "inventoryProductUntitled": "Untitled product",
     "inventoryProductUnit": "Unit",
     "inventoryProductUnitRequired": "Choose a unit.",
     "inventoryProductUsage": "Usage",
@@ -1089,7 +1101,20 @@
     "inventoryRealtimeEnabled": "Realtime enabled",
     "inventorySaleCreated": "Inventory sale created.",
     "inventorySalesEmpty": "Sales created from invoices will appear here.",
+    "inventorySalesFallbackTitle": "Inventory sale",
+    "inventorySalesItemsCount": "{count} items",
+    "@inventorySalesItemsCount": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
     "inventorySalesLabel": "Sales",
+    "inventorySalesCreatorBadge": "By {name}",
+    "@inventorySalesCreatorBadge": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
     "inventorySalesRecentSubtitle": "Review the latest invoice-backed inventory sales.",
     "inventorySalesRecentTitle": "Sale history",
     "inventorySalesSubtitle": "Monitor completed inventory sales and payment destinations.",
@@ -1124,10 +1149,10 @@
     "financeOverviewCreateTransactionHint": "Capture income, expenses, or transfers quickly.",
     "financeOverviewWalletsHint": "Review balances and tune each account.",
     "financeOverviewManageHint": "Shape categories, tags, and finance structure.",
-    "financeOverviewWalletSectionTitle": "Wallet lineup",
+    "financeOverviewWalletSectionTitle": "Wallets",
     "financeOverviewWalletSectionSubtitle": "Your most important balances at a glance.",
     "financeOverviewNoWalletsBody": "Create your first wallet to start tracking balances, transfers, and categories.",
-    "financeOverviewActivityTitle": "Recent activity",
+    "financeOverviewActivityTitle": "Activity",
     "financeOverviewActivitySubtitle": "The latest movement across your wallets.",
     "financeOverviewNoTransactionsBody": "Transactions appear here once you start logging money in and out.",
     "financeNoWallets": "No wallets yet",
@@ -1716,6 +1741,11 @@
     "settingsAccountSectionDescription": "Profile access and session controls.",
     "settingsWorkspaceSectionTitle": "Workspace",
     "settingsWorkspaceSectionDescription": "See your current context and switch when needed.",
+    "settingsWorkspaceSectionManageTitle": "Workspace setup",
+    "settingsWorkspaceAccessTitle": "Access",
+    "settingsWorkspaceDefaultCurrencyTitle": "Default currency",
+    "settingsWorkspaceDefaultCurrencyDescription": "Use one currency as the default for finance and invoice flows in this workspace.",
+    "settingsWorkspaceDefaultCurrencyField": "Currency",
     "settingsPreferencesSectionTitle": "Preferences",
     "settingsPreferencesSectionDescription": "Language, appearance, and calendar defaults.",
     "settingsDangerSectionTitle": "Session",

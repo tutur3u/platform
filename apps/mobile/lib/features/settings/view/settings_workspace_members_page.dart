@@ -88,34 +88,52 @@ class _SettingsWorkspaceMembersViewState
               children: [
                 FinancePanel(
                   radius: 26,
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          l10n.settingsWorkspaceMembersSubtitle,
-                          style: shad.Theme.of(context).typography.textSmall
-                              .copyWith(
-                                color: shad.Theme.of(
-                                  context,
-                                ).colorScheme.mutedForeground,
-                              ),
-                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          FinanceStatChip(
+                            label: l10n.settingsWorkspaceMembersTitle,
+                            value: '${activeMembers.length}',
+                            icon: Icons.group_outlined,
+                          ),
+                          FinanceStatChip(
+                            label: l10n.settingsWorkspaceMembersPendingChip,
+                            value: '${pendingMembers.length}',
+                            icon: Icons.mark_email_unread_outlined,
+                          ),
+                          FinanceStatChip(
+                            label: l10n.settingsWorkspaceMembersLinksSection,
+                            value: '${_inviteLinks.length}',
+                            icon: Icons.link_rounded,
+                          ),
+                        ],
                       ),
-                      const shad.Gap(8),
-                      shad.OutlineButton(
-                        onPressed: !_canManageMembers || _loading
-                            ? null
-                            : _onCreateInviteLink,
-                        density: shad.ButtonDensity.compact,
-                        child: Text(l10n.settingsWorkspaceMembersLinkAction),
-                      ),
-                      const shad.Gap(8),
-                      shad.PrimaryButton(
-                        onPressed: !_canManageMembers || _loading
-                            ? null
-                            : _onInviteMember,
-                        density: shad.ButtonDensity.compact,
-                        child: Text(l10n.settingsWorkspaceMembersInviteAction),
+                      const shad.Gap(14),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          shad.OutlineButton(
+                            onPressed: !_canManageMembers || _loading
+                                ? null
+                                : _onCreateInviteLink,
+                            child: Text(
+                              l10n.settingsWorkspaceMembersLinkAction,
+                            ),
+                          ),
+                          shad.PrimaryButton(
+                            onPressed: !_canManageMembers || _loading
+                                ? null
+                                : _onInviteMember,
+                            child: Text(
+                              l10n.settingsWorkspaceMembersInviteAction,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

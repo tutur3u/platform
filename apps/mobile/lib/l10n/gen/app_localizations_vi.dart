@@ -2552,6 +2552,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryCheckoutCategoryOverride => 'Ghi đè danh mục';
 
   @override
+  String get inventoryCheckoutCategoryRequired => 'Chọn danh mục thu nhập trước khi tạo giao dịch bán.';
+
+  @override
   String get inventoryCheckoutEmpty => 'Chưa có tồn kho khả dụng để bán.';
 
   @override
@@ -2559,6 +2562,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutNoSearchResults => 'Không có sản phẩm nào khớp với tìm kiếm hiện tại.';
+
+  @override
+  String get inventoryCheckoutProductsRequired => 'Thêm ít nhất một sản phẩm trước khi tạo giao dịch bán.';
 
   @override
   String get inventoryCheckoutSelectedItems => 'Dòng đã chọn';
@@ -2574,6 +2580,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutValidationError => 'Hãy chọn ví, xử lý danh mục và thêm ít nhất một sản phẩm.';
+
+  @override
+  String get inventoryCheckoutWalletRequired => 'Chọn ví trước khi tạo giao dịch bán.';
 
   @override
   String get inventoryCheckoutWallet => 'Ví';
@@ -2702,6 +2711,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductInventory => 'Các dòng tồn kho';
 
   @override
+  String get inventoryProductInventoryRows => 'Dòng';
+
+  @override
   String get inventoryProductInventorySubtitle => 'Mỗi dòng đại diện cho đơn vị, kho, số lượng, ngưỡng và giá bán.';
 
   @override
@@ -2735,7 +2747,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductPriceRequired => 'Nhập giá.';
 
   @override
+  String inventoryProductAvailableSummary(String amount, String price) {
+    return 'Còn $amount • $price';
+  }
+
+  @override
   String get inventoryProductSaved => 'Đã lưu sản phẩm.';
+
+  @override
+  String get inventoryProductUntitled => 'Sản phẩm chưa đặt tên';
 
   @override
   String get inventoryProductUnit => 'Đơn vị';
@@ -2783,7 +2803,20 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySalesEmpty => 'Các giao dịch bán tạo từ hóa đơn sẽ xuất hiện ở đây.';
 
   @override
+  String get inventorySalesFallbackTitle => 'Giao dịch bán tồn kho';
+
+  @override
+  String inventorySalesItemsCount(int count) {
+    return '$count mặt hàng';
+  }
+
+  @override
   String get inventorySalesLabel => 'Bán hàng';
+
+  @override
+  String inventorySalesCreatorBadge(String name) {
+    return 'Tạo bởi $name';
+  }
 
   @override
   String get inventorySalesRecentSubtitle => 'Xem lại các giao dịch bán tồn kho gần nhất đã ghi qua hóa đơn.';
@@ -2850,7 +2883,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeOverviewManageHint => 'Quản lý danh mục, thẻ và cấu trúc tài chính.';
 
   @override
-  String get financeOverviewWalletSectionTitle => 'Danh sách ví';
+  String get financeOverviewWalletSectionTitle => 'Ví';
 
   @override
   String get financeOverviewWalletSectionSubtitle => 'Nhìn nhanh các số dư quan trọng nhất của bạn.';
@@ -2859,7 +2892,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeOverviewNoWalletsBody => 'Tạo ví đầu tiên để bắt đầu theo dõi số dư, chuyển khoản và danh mục.';
 
   @override
-  String get financeOverviewActivityTitle => 'Hoạt động gần đây';
+  String get financeOverviewActivityTitle => 'Hoạt động';
 
   @override
   String get financeOverviewActivitySubtitle => 'Biến động mới nhất trên tất cả ví của bạn.';
@@ -4261,6 +4294,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsWorkspaceSectionDescription => 'Xem ngữ cảnh hiện tại và chuyển khi cần.';
+
+  @override
+  String get settingsWorkspaceSectionManageTitle => 'Thiết lập không gian làm việc';
+
+  @override
+  String get settingsWorkspaceAccessTitle => 'Quyền truy cập';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyTitle => 'Tiền tệ mặc định';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyDescription => 'Dùng một loại tiền tệ mặc định cho các luồng tài chính và hóa đơn trong không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyField => 'Tiền tệ';
 
   @override
   String get settingsPreferencesSectionTitle => 'Tùy chọn';

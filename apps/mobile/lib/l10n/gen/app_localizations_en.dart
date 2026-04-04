@@ -2552,6 +2552,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryCheckoutCategoryOverride => 'Category override';
 
   @override
+  String get inventoryCheckoutCategoryRequired => 'Choose an income category before creating the sale.';
+
+  @override
   String get inventoryCheckoutEmpty => 'No sellable inventory is available yet.';
 
   @override
@@ -2559,6 +2562,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutNoSearchResults => 'No products match the current search.';
+
+  @override
+  String get inventoryCheckoutProductsRequired => 'Add at least one product before creating the sale.';
 
   @override
   String get inventoryCheckoutSelectedItems => 'Selected lines';
@@ -2574,6 +2580,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutValidationError => 'Select a wallet, resolve the category, and add at least one product.';
+
+  @override
+  String get inventoryCheckoutWalletRequired => 'Choose a wallet before creating the sale.';
 
   @override
   String get inventoryCheckoutWallet => 'Wallet';
@@ -2702,6 +2711,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductInventory => 'Inventory rows';
 
   @override
+  String get inventoryProductInventoryRows => 'Rows';
+
+  @override
   String get inventoryProductInventorySubtitle => 'Each row represents a unit, warehouse, quantity, threshold, and price.';
 
   @override
@@ -2735,7 +2747,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductPriceRequired => 'Enter a price.';
 
   @override
+  String inventoryProductAvailableSummary(String amount, String price) {
+    return '$amount available • $price';
+  }
+
+  @override
   String get inventoryProductSaved => 'Product saved.';
+
+  @override
+  String get inventoryProductUntitled => 'Untitled product';
 
   @override
   String get inventoryProductUnit => 'Unit';
@@ -2783,7 +2803,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySalesEmpty => 'Sales created from invoices will appear here.';
 
   @override
+  String get inventorySalesFallbackTitle => 'Inventory sale';
+
+  @override
+  String inventorySalesItemsCount(int count) {
+    return '$count items';
+  }
+
+  @override
   String get inventorySalesLabel => 'Sales';
+
+  @override
+  String inventorySalesCreatorBadge(String name) {
+    return 'By $name';
+  }
 
   @override
   String get inventorySalesRecentSubtitle => 'Review the latest invoice-backed inventory sales.';
@@ -2850,7 +2883,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeOverviewManageHint => 'Shape categories, tags, and finance structure.';
 
   @override
-  String get financeOverviewWalletSectionTitle => 'Wallet lineup';
+  String get financeOverviewWalletSectionTitle => 'Wallets';
 
   @override
   String get financeOverviewWalletSectionSubtitle => 'Your most important balances at a glance.';
@@ -2859,7 +2892,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeOverviewNoWalletsBody => 'Create your first wallet to start tracking balances, transfers, and categories.';
 
   @override
-  String get financeOverviewActivityTitle => 'Recent activity';
+  String get financeOverviewActivityTitle => 'Activity';
 
   @override
   String get financeOverviewActivitySubtitle => 'The latest movement across your wallets.';
@@ -4267,6 +4300,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsWorkspaceSectionDescription => 'See your current context and switch when needed.';
+
+  @override
+  String get settingsWorkspaceSectionManageTitle => 'Workspace setup';
+
+  @override
+  String get settingsWorkspaceAccessTitle => 'Access';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyTitle => 'Default currency';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyDescription => 'Use one currency as the default for finance and invoice flows in this workspace.';
+
+  @override
+  String get settingsWorkspaceDefaultCurrencyField => 'Currency';
 
   @override
   String get settingsPreferencesSectionTitle => 'Preferences';

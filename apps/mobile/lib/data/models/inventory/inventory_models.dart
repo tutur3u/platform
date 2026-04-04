@@ -523,6 +523,31 @@ class InventorySaleSummary extends Equatable {
   ];
 }
 
+class InventoryAuditFieldChange extends Equatable {
+  const InventoryAuditFieldChange({
+    required this.field,
+    required this.label,
+    this.before,
+    this.after,
+  });
+
+  factory InventoryAuditFieldChange.fromJson(Map<String, dynamic> json) =>
+      InventoryAuditFieldChange(
+        field: _asString(json['field']),
+        label: _asString(json['label']),
+        before: json['before']?.toString(),
+        after: json['after']?.toString(),
+      );
+
+  final String field;
+  final String label;
+  final String? before;
+  final String? after;
+
+  @override
+  List<Object?> get props => [field, label, before, after];
+}
+
 class InventoryAuditLogEntry extends Equatable {
   const InventoryAuditLogEntry({
     required this.auditRecordId,
@@ -531,7 +556,10 @@ class InventoryAuditLogEntry extends Equatable {
     required this.entityId,
     required this.summary,
     required this.changedFields,
+    required this.fieldChanges,
     required this.occurredAt,
+    this.actorAuthUid,
+    this.actorWorkspaceUserId,
     this.source,
   });
 
@@ -544,9 +572,21 @@ class InventoryAuditLogEntry extends Equatable {
         summary: json['summary'] as String? ?? '',
         changedFields:
             (json['changedFields'] as List<dynamic>? ?? const <dynamic>[])
-                .whereType<String>()
+                .map(_asString)
+                .where((value) => value.isNotEmpty)
+                .toList(growable: false),
+        fieldChanges:
+            (json['fieldChanges'] as List<dynamic>? ?? const <dynamic>[])
+                .whereType<Map<String, dynamic>>()
+                .map(InventoryAuditFieldChange.fromJson)
                 .toList(growable: false),
         occurredAt: _asDateTime(json['occurredAt']) ?? DateTime.now(),
+        actorAuthUid: _asString(
+          (json['actor'] as Map<String, dynamic>?)?['authUid'],
+        ),
+        actorWorkspaceUserId: _asString(
+          (json['actor'] as Map<String, dynamic>?)?['workspaceUserId'],
+        ),
         source: json['source'] as String?,
       );
 
@@ -556,7 +596,10 @@ class InventoryAuditLogEntry extends Equatable {
   final String entityId;
   final String summary;
   final List<String> changedFields;
+  final List<InventoryAuditFieldChange> fieldChanges;
   final DateTime occurredAt;
+  final String? actorAuthUid;
+  final String? actorWorkspaceUserId;
   final String? source;
 
   @override
@@ -567,7 +610,10 @@ class InventoryAuditLogEntry extends Equatable {
     entityId,
     summary,
     changedFields,
+    fieldChanges,
     occurredAt,
+    actorAuthUid,
+    actorWorkspaceUserId,
     source,
   ];
 }

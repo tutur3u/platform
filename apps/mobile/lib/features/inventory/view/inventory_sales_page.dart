@@ -2,17 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
-import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
+import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -27,8 +26,16 @@ class InventorySalesPage extends StatefulWidget {
 }
 
 class _InventorySalesPageState extends State<InventorySalesPage> {
-  late final InventoryRepository _repository;
-  Future<({List<InventorySaleSummary> data, int count, bool realtimeEnabled})>?
+  late final InventoryRepository _inventoryRepository;
+  late final FinanceRepository _financeRepository;
+  Future<
+    ({
+      List<InventorySaleSummary> data,
+      int count,
+      bool realtimeEnabled,
+      String currency,
+    })
+  >?
   _future;
 
   String? get _wsId =>
@@ -37,16 +44,57 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
   @override
   void initState() {
     super.initState();
-    _repository = InventoryRepository();
+    _inventoryRepository = InventoryRepository();
+    _financeRepository = FinanceRepository();
     unawaited(Future<void>.delayed(Duration.zero, _reload));
   }
 
   void _reload() {
     final wsId = _wsId;
-    if (wsId == null) return;
+    if (wsId == null) {
+      return;
+    }
     setState(() {
-      _future = _repository.getSales(wsId);
+      _future = _loadSales(wsId);
     });
+  }
+
+  Future<
+    ({
+      List<InventorySaleSummary> data,
+      int count,
+      bool realtimeEnabled,
+      String currency,
+    })
+  >
+  _loadSales(String wsId) async {
+    final results = await Future.wait<dynamic>([
+      _inventoryRepository.getSales(wsId),
+      _financeRepository.getWorkspaceDefaultCurrency(wsId),
+    ]);
+
+    final sales =
+        results[0]
+            as ({
+              List<InventorySaleSummary> data,
+              int count,
+              bool realtimeEnabled,
+            });
+    final currency = results[1] as String;
+
+    return (
+      data: sales.data,
+      count: sales.count,
+      realtimeEnabled: sales.realtimeEnabled,
+      currency: currency,
+    );
+  }
+
+  Future<void> _openCheckout() async {
+    final created = await showInventoryCheckoutPage<bool>(context);
+    if (created == true && mounted) {
+      _reload();
+    }
   }
 
   @override
@@ -62,6 +110,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                 List<InventorySaleSummary> data,
                 int count,
                 bool realtimeEnabled,
+                String currency,
               })
             >(
               future: _future,
@@ -77,6 +126,10 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
 
                 final result = snapshot.data!;
                 final l10n = context.l10n;
+                final revenue = result.data.fold<double>(
+                  0,
+                  (sum, sale) => sum + sale.paidAmount,
+                );
 
                 return ResponsiveWrapper(
                   maxWidth: ResponsivePadding.maxContentWidth(
@@ -92,125 +145,194 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                         32 + MediaQuery.paddingOf(context).bottom,
                       ),
                       children: [
-                        InventoryHeroCard(
-                          title: l10n.inventorySalesLabel,
-                          icon: Icons.point_of_sale_outlined,
-                          metrics: [
-                            InventoryMetricTile(
-                              label: l10n.inventorySalesLabel,
-                              value: '${result.count}',
-                              icon: Icons.receipt_long_outlined,
-                            ),
-                            InventoryMetricTile(
-                              label: l10n.inventoryOverviewSalesRevenue,
-                              value: formatCurrency(
-                                result.data.fold<double>(
-                                  0,
-                                  (sum, sale) => sum + sale.paidAmount,
-                                ),
-                                'VND',
+                        FinancePanel(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  FinanceStatChip(
+                                    label: l10n.inventorySalesLabel,
+                                    value: '${result.count}',
+                                    icon: Icons.receipt_long_outlined,
+                                  ),
+                                  FinanceStatChip(
+                                    label: l10n.inventoryOverviewSalesRevenue,
+                                    value: formatCurrency(
+                                      revenue,
+                                      result.currency,
+                                    ),
+                                    icon: Icons.payments_outlined,
+                                  ),
+                                ],
                               ),
-                              icon: Icons.payments_outlined,
-                            ),
-                          ],
-                          actions: [
-                            shad.PrimaryButton(
-                              onPressed: () async {
-                                final created = await context.push<bool>(
-                                  Routes.inventoryCheckout,
-                                );
-                                if (created == true && mounted) {
-                                  _reload();
-                                }
-                              },
-                              child: Text(l10n.inventoryCheckoutTitle),
-                            ),
-                          ],
+                              const shad.Gap(14),
+                              shad.PrimaryButton(
+                                onPressed: _openCheckout,
+                                child: Text(l10n.inventoryCheckoutTitle),
+                              ),
+                            ],
+                          ),
                         ),
-                        const shad.Gap(16),
+                        const shad.Gap(18),
                         if (result.data.isEmpty)
                           FinanceEmptyState(
                             icon: Icons.receipt_long_outlined,
                             title: l10n.inventorySalesLabel,
                             body: l10n.inventorySalesEmpty,
+                            action: shad.SecondaryButton(
+                              onPressed: _openCheckout,
+                              child: Text(l10n.inventoryCheckoutTitle),
+                            ),
                           )
-                        else
+                        else ...[
                           FinanceSectionHeader(
                             title: l10n.inventorySalesRecentTitle,
                           ),
-                        if (result.data.isNotEmpty) const shad.Gap(12),
-                        if (result.data.isNotEmpty)
+                          const shad.Gap(12),
                           ...result.data.map(
-                            (sale) {
-                              final metadata = [
-                                if (sale.walletName?.isNotEmpty ?? false)
-                                  sale.walletName!,
-                                if (sale.categoryName?.isNotEmpty ?? false)
-                                  sale.categoryName!,
-                                [
-                                  sale.totalQuantity.toStringAsFixed(0),
-                                  'items',
-                                ].join(' '),
-                              ].join(' • ');
-
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: FinancePanel(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              sale.notice?.trim().isNotEmpty ??
-                                                      false
-                                                  ? sale.notice!
-                                                  : sale.owners.join(', '),
-                                              style: shad.Theme.of(context)
-                                                  .typography
-                                                  .large
-                                                  .copyWith(
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                            ),
-                                          ),
-                                          Text(
-                                            formatCurrency(
-                                              sale.paidAmount,
-                                              'VND',
-                                            ),
-                                            style: shad.Theme.of(context)
-                                                .typography
-                                                .large
-                                                .copyWith(
-                                                  fontWeight: FontWeight.w800,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                      const shad.Gap(6),
-                                      Text(metadata),
-                                      const shad.Gap(6),
-                                      Text(
-                                        DateFormat.yMMMd().add_jm().format(
-                                          sale.createdAt?.toLocal() ??
-                                              DateTime.now(),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
+                            (sale) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _InventorySaleCard(
+                                sale: sale,
+                                currency: result.currency,
+                              ),
+                            ),
                           ),
+                        ],
                       ],
                     ),
                   ),
                 );
               },
             ),
+      ),
+    );
+  }
+}
+
+class _InventorySaleCard extends StatelessWidget {
+  const _InventorySaleCard({
+    required this.sale,
+    required this.currency,
+  });
+
+  final InventorySaleSummary sale;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final title = sale.notice?.trim().isNotEmpty == true
+        ? sale.notice!.trim()
+        : context.l10n.inventorySalesFallbackTitle;
+    final metadata = [
+      if (sale.walletName?.isNotEmpty ?? false) sale.walletName!,
+      if (sale.categoryName?.isNotEmpty ?? false) sale.categoryName!,
+      context.l10n.inventorySalesItemsCount(sale.itemsCount),
+    ].join(' • ');
+    final creator = sale.creatorName?.trim();
+    final customer = sale.customerName?.trim();
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.typography.large.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const shad.Gap(12),
+              Text(
+                formatCurrency(sale.paidAmount, currency),
+                style: theme.typography.large.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const shad.Gap(8),
+          if (metadata.isNotEmpty)
+            Text(
+              metadata,
+              style: theme.typography.textSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+              ),
+            ),
+          const shad.Gap(10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (creator != null && creator.isNotEmpty)
+                _SaleBadge(
+                  label: context.l10n.inventorySalesCreatorBadge(creator),
+                  color: FinancePalette.of(context).accent,
+                ),
+              ...sale.owners
+                  .where((owner) => owner.trim().isNotEmpty)
+                  .map(
+                    (owner) => _SaleBadge(
+                      label: owner.trim(),
+                      color: FinancePalette.of(context).positive,
+                    ),
+                  ),
+              if (customer != null && customer.isNotEmpty)
+                _SaleBadge(
+                  label: customer,
+                  color: theme.colorScheme.mutedForeground,
+                ),
+            ],
+          ),
+          const shad.Gap(10),
+          Text(
+            DateFormat.yMMMd().add_jm().format(
+              sale.createdAt?.toLocal() ?? DateTime.now(),
+            ),
+            style: theme.typography.xSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SaleBadge extends StatelessWidget {
+  const _SaleBadge({
+    required this.label,
+    required this.color,
+  });
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Text(
+        label,
+        style: theme.typography.xSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

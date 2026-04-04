@@ -1013,14 +1013,17 @@
     "inventoryCheckoutCheckoutDetailsSubtitle": "Chọn nơi ghi nhận giao dịch trước khi tạo hóa đơn.",
     "inventoryCheckoutCheckoutDetailsTitle": "Thông tin thanh toán",
     "inventoryCheckoutCategoryOverride": "Ghi đè danh mục",
+    "inventoryCheckoutCategoryRequired": "Chọn danh mục thu nhập trước khi tạo giao dịch bán.",
     "inventoryCheckoutEmpty": "Chưa có tồn kho khả dụng để bán.",
     "inventoryCheckoutManualCategoryRequired": "Hãy chọn danh mục thu nhập khi giỏ hàng trộn nhiều danh mục liên kết hoặc chưa có danh mục liên kết.",
     "inventoryCheckoutNoSearchResults": "Không có sản phẩm nào khớp với tìm kiếm hiện tại.",
+    "inventoryCheckoutProductsRequired": "Thêm ít nhất một sản phẩm trước khi tạo giao dịch bán.",
     "inventoryCheckoutSelectedItems": "Dòng đã chọn",
     "inventoryCheckoutSubtitle": "Tạo nhanh một giao dịch bán tại quầy và ghi nhận qua hóa đơn.",
     "inventoryCheckoutSubmit": "Tạo giao dịch bán",
     "inventoryCheckoutTitle": "Bán hàng",
     "inventoryCheckoutValidationError": "Hãy chọn ví, xử lý danh mục và thêm ít nhất một sản phẩm.",
+    "inventoryCheckoutWalletRequired": "Chọn ví trước khi tạo giao dịch bán.",
     "inventoryCheckoutWallet": "Ví",
     "inventoryCreateProduct": "Tạo sản phẩm",
     "inventoryEditProduct": "Sửa sản phẩm",
@@ -1063,6 +1066,7 @@
     "inventoryProductEditorSubtitle": "Tạo sản phẩm sẵn sàng bán tại quầy với giá cố định và các dòng tồn kho.",
     "inventoryProductFinanceCategory": "Danh mục tài chính liên kết",
     "inventoryProductInventory": "Các dòng tồn kho",
+    "inventoryProductInventoryRows": "Dòng",
     "inventoryProductInventorySubtitle": "Mỗi dòng đại diện cho đơn vị, kho, số lượng, ngưỡng và giá bán.",
     "inventoryProductManufacturer": "Nhà sản xuất",
     "inventoryProductMinAmount": "Mức tối thiểu",
@@ -1074,7 +1078,15 @@
     "inventoryProductOwnerRequired": "Chọn chủ sở hữu.",
     "inventoryProductPrice": "Giá",
     "inventoryProductPriceRequired": "Nhập giá.",
+    "inventoryProductAvailableSummary": "Còn {amount} • {price}",
+    "@inventoryProductAvailableSummary": {
+        "placeholders": {
+            "amount": { "type": "String" },
+            "price": { "type": "String" }
+        }
+    },
     "inventoryProductSaved": "Đã lưu sản phẩm.",
+    "inventoryProductUntitled": "Sản phẩm chưa đặt tên",
     "inventoryProductUnit": "Đơn vị",
     "inventoryProductUnitRequired": "Chọn đơn vị.",
     "inventoryProductUsage": "Công dụng",
@@ -1090,7 +1102,20 @@
     "inventoryRealtimeEnabled": "Đã bật realtime",
     "inventorySaleCreated": "Đã tạo giao dịch bán từ tồn kho.",
     "inventorySalesEmpty": "Các giao dịch bán tạo từ hóa đơn sẽ xuất hiện ở đây.",
+    "inventorySalesFallbackTitle": "Giao dịch bán tồn kho",
+    "inventorySalesItemsCount": "{count} mặt hàng",
+    "@inventorySalesItemsCount": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
     "inventorySalesLabel": "Bán hàng",
+    "inventorySalesCreatorBadge": "Tạo bởi {name}",
+    "@inventorySalesCreatorBadge": {
+        "placeholders": {
+            "name": { "type": "String" }
+        }
+    },
     "inventorySalesRecentSubtitle": "Xem lại các giao dịch bán tồn kho gần nhất đã ghi qua hóa đơn.",
     "inventorySalesRecentTitle": "Lịch sử bán hàng",
     "inventorySalesSubtitle": "Theo dõi các giao dịch bán đã hoàn tất và nơi tiền được ghi nhận.",
@@ -1125,10 +1150,10 @@
     "financeOverviewCreateTransactionHint": "Ghi nhanh thu, chi hoặc chuyển khoản.",
     "financeOverviewWalletsHint": "Xem số dư và tinh chỉnh từng ví.",
     "financeOverviewManageHint": "Quản lý danh mục, thẻ và cấu trúc tài chính.",
-    "financeOverviewWalletSectionTitle": "Danh sách ví",
+    "financeOverviewWalletSectionTitle": "Ví",
     "financeOverviewWalletSectionSubtitle": "Nhìn nhanh các số dư quan trọng nhất của bạn.",
     "financeOverviewNoWalletsBody": "Tạo ví đầu tiên để bắt đầu theo dõi số dư, chuyển khoản và danh mục.",
-    "financeOverviewActivityTitle": "Hoạt động gần đây",
+    "financeOverviewActivityTitle": "Hoạt động",
     "financeOverviewActivitySubtitle": "Biến động mới nhất trên tất cả ví của bạn.",
     "financeOverviewNoTransactionsBody": "Các giao dịch sẽ xuất hiện ở đây khi bạn bắt đầu ghi nhận dòng tiền vào ra.",
     "financeNoWallets": "Chưa có ví",
@@ -1709,6 +1734,11 @@
     "settingsWorkspacePropertiesPermissionLoading": "Đang kiểm tra quyền trong không gian làm việc...",
     "settingsWorkspacePropertiesUpdated": "Đã cập nhật thông tin không gian làm việc.",
     "settingsWorkspacePropertiesNameRequired": "Tên không gian làm việc không được để trống",
+    "settingsWorkspaceSectionManageTitle": "Thiết lập không gian làm việc",
+    "settingsWorkspaceAccessTitle": "Quyền truy cập",
+    "settingsWorkspaceDefaultCurrencyTitle": "Tiền tệ mặc định",
+    "settingsWorkspaceDefaultCurrencyDescription": "Dùng một loại tiền tệ mặc định cho các luồng tài chính và hóa đơn trong không gian làm việc này.",
+    "settingsWorkspaceDefaultCurrencyField": "Tiền tệ",
     "settingsWorkspaceAvatar": "Ảnh đại diện không gian làm việc",
     "settingsWorkspaceAvatarDescription": "Tải ảnh mới lên hoặc xóa ảnh hiện tại.",
     "settingsWorkspaceAvatarRemovePending": "Ảnh hiện tại sẽ bị xóa khi bạn lưu.",

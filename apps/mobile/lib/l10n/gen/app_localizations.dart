@@ -5017,6 +5017,12 @@ abstract class AppLocalizations {
   /// **'Category override'**
   String get inventoryCheckoutCategoryOverride;
 
+  /// No description provided for @inventoryCheckoutCategoryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an income category before creating the sale.'**
+  String get inventoryCheckoutCategoryRequired;
+
   /// No description provided for @inventoryCheckoutEmpty.
   ///
   /// In en, this message translates to:
@@ -5034,6 +5040,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No products match the current search.'**
   String get inventoryCheckoutNoSearchResults;
+
+  /// No description provided for @inventoryCheckoutProductsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one product before creating the sale.'**
+  String get inventoryCheckoutProductsRequired;
 
   /// No description provided for @inventoryCheckoutSelectedItems.
   ///
@@ -5064,6 +5076,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select a wallet, resolve the category, and add at least one product.'**
   String get inventoryCheckoutValidationError;
+
+  /// No description provided for @inventoryCheckoutWalletRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a wallet before creating the sale.'**
+  String get inventoryCheckoutWalletRequired;
 
   /// No description provided for @inventoryCheckoutWallet.
   ///
@@ -5317,6 +5335,12 @@ abstract class AppLocalizations {
   /// **'Inventory rows'**
   String get inventoryProductInventory;
 
+  /// No description provided for @inventoryProductInventoryRows.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows'**
+  String get inventoryProductInventoryRows;
+
   /// No description provided for @inventoryProductInventorySubtitle.
   ///
   /// In en, this message translates to:
@@ -5383,11 +5407,23 @@ abstract class AppLocalizations {
   /// **'Enter a price.'**
   String get inventoryProductPriceRequired;
 
+  /// No description provided for @inventoryProductAvailableSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} available • {price}'**
+  String inventoryProductAvailableSummary(String amount, String price);
+
   /// No description provided for @inventoryProductSaved.
   ///
   /// In en, this message translates to:
   /// **'Product saved.'**
   String get inventoryProductSaved;
+
+  /// No description provided for @inventoryProductUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled product'**
+  String get inventoryProductUntitled;
 
   /// No description provided for @inventoryProductUnit.
   ///
@@ -5479,11 +5515,29 @@ abstract class AppLocalizations {
   /// **'Sales created from invoices will appear here.'**
   String get inventorySalesEmpty;
 
+  /// No description provided for @inventorySalesFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory sale'**
+  String get inventorySalesFallbackTitle;
+
+  /// No description provided for @inventorySalesItemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String inventorySalesItemsCount(int count);
+
   /// No description provided for @inventorySalesLabel.
   ///
   /// In en, this message translates to:
   /// **'Sales'**
   String get inventorySalesLabel;
+
+  /// No description provided for @inventorySalesCreatorBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'By {name}'**
+  String inventorySalesCreatorBadge(String name);
 
   /// No description provided for @inventorySalesRecentSubtitle.
   ///
@@ -5608,7 +5662,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeOverviewWalletSectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Wallet lineup'**
+  /// **'Wallets'**
   String get financeOverviewWalletSectionTitle;
 
   /// No description provided for @financeOverviewWalletSectionSubtitle.
@@ -5626,7 +5680,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeOverviewActivityTitle.
   ///
   /// In en, this message translates to:
-  /// **'Recent activity'**
+  /// **'Activity'**
   String get financeOverviewActivityTitle;
 
   /// No description provided for @financeOverviewActivitySubtitle.
@@ -8202,6 +8256,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'See your current context and switch when needed.'**
   String get settingsWorkspaceSectionDescription;
+
+  /// No description provided for @settingsWorkspaceSectionManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace setup'**
+  String get settingsWorkspaceSectionManageTitle;
+
+  /// No description provided for @settingsWorkspaceAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access'**
+  String get settingsWorkspaceAccessTitle;
+
+  /// No description provided for @settingsWorkspaceDefaultCurrencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default currency'**
+  String get settingsWorkspaceDefaultCurrencyTitle;
+
+  /// No description provided for @settingsWorkspaceDefaultCurrencyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use one currency as the default for finance and invoice flows in this workspace.'**
+  String get settingsWorkspaceDefaultCurrencyDescription;
+
+  /// No description provided for @settingsWorkspaceDefaultCurrencyField.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get settingsWorkspaceDefaultCurrencyField;
 
   /// No description provided for @settingsPreferencesSectionTitle.
   ///

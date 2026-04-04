@@ -10,12 +10,20 @@ import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+Future<T?> showInventoryCheckoutPage<T>(BuildContext context) {
+  return showFinanceFullscreenModal<T>(
+    context: context,
+    builder: (context) => const InventoryCheckoutPage(),
+  );
+}
 
 class InventoryCheckoutPage extends StatefulWidget {
   const InventoryCheckoutPage({super.key});
@@ -142,6 +150,20 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     });
   }
 
+  String _validationMessage() {
+    final l10n = context.l10n;
+    if (_selectedRows.isEmpty) {
+      return l10n.inventoryCheckoutProductsRequired;
+    }
+    if (_walletId == null || _walletId!.isEmpty) {
+      return l10n.inventoryCheckoutWalletRequired;
+    }
+    if (_resolvedCategoryId == null || _resolvedCategoryId!.isEmpty) {
+      return l10n.inventoryCheckoutCategoryRequired;
+    }
+    return l10n.inventoryCheckoutValidationError;
+  }
+
   void _changeQuantity(_SellableRow row, int next) {
     setState(() {
       if (next <= 0) {
@@ -160,7 +182,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         _resolvedCategoryId == null) {
       showInventoryToast(
         context,
-        context.l10n.inventoryCheckoutValidationError,
+        _validationMessage(),
         destructive: true,
       );
       return;
@@ -218,19 +240,21 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     final l10n = context.l10n;
 
     if (_loading) {
-      return const shad.Scaffold(
-        child: Center(child: NovaLoadingIndicator()),
+      return FinanceFullscreenFormScaffold(
+        title: l10n.inventoryCheckoutTitle,
+        primaryActionLabel: l10n.inventoryCheckoutSubmit,
+        onPrimaryPressed: null,
+        child: const Center(child: NovaLoadingIndicator()),
       );
     }
 
-    return shad.Scaffold(
+    return FinanceFullscreenFormScaffold(
+      title: l10n.inventoryCheckoutTitle,
+      primaryActionLabel: l10n.inventoryCheckoutSubmit,
+      onPrimaryPressed: _saving ? null : _submit,
+      isSaving: _saving,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          12,
-          16,
-          32 + MediaQuery.paddingOf(context).bottom,
-        ),
+        padding: const EdgeInsets.only(bottom: 12),
         children: [
           InventoryHeroCard(
             title: l10n.inventoryCheckoutTitle,
@@ -417,16 +441,6 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                         ),
                       ],
                     ),
-                  ),
-                  shad.PrimaryButton(
-                    onPressed: _saving ? null : _submit,
-                    child: _saving
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: shad.CircularProgressIndicator(),
-                          )
-                        : Text(l10n.inventoryCheckoutSubmit),
                   ),
                 ],
               ),

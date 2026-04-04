@@ -9,7 +9,6 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
-import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -39,7 +38,9 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
 
   void _reload() {
     final wsId = _wsId;
-    if (wsId == null) return;
+    if (wsId == null) {
+      return;
+    }
     setState(() {
       _future = _repository.getAuditLogs(wsId);
     });
@@ -93,81 +94,108 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                     32 + MediaQuery.paddingOf(context).bottom,
                   ),
                   children: [
-                    InventoryHeroCard(
-                      title: context.l10n.inventoryAuditLabel,
-                      icon: Icons.history_rounded,
-                      metrics: [
-                        InventoryMetricTile(
-                          label: context.l10n.inventoryAuditLabel,
-                          value: '${result.count}',
-                          icon: Icons.fact_check_outlined,
-                        ),
-                      ],
+                    FinancePanel(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          FinanceStatChip(
+                            label: context.l10n.inventoryAuditLabel,
+                            value: '${result.count}',
+                            icon: Icons.history_rounded,
+                          ),
+                        ],
+                      ),
                     ),
-                    const shad.Gap(16),
+                    const shad.Gap(18),
                     if (result.data.isEmpty)
                       FinanceEmptyState(
                         icon: Icons.history_toggle_off_outlined,
                         title: context.l10n.inventoryAuditLabel,
                         body: context.l10n.inventoryAuditEmpty,
                       )
-                    else
+                    else ...[
                       FinanceSectionHeader(
                         title: context.l10n.inventoryAuditRecentTitle,
                       ),
-                    if (result.data.isNotEmpty) const shad.Gap(12),
-                    if (result.data.isNotEmpty)
+                      const shad.Gap(12),
                       ...result.data.map(
                         (entry) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: FinancePanel(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  entry.summary,
-                                  style: shad.Theme.of(context).typography.large
-                                      .copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                const shad.Gap(8),
-                                Text(
-                                  [
-                                    _labelForEntityKind(
-                                      context,
-                                      entry.entityKind,
-                                    ),
-                                    _labelForEventKind(
-                                      context,
-                                      entry.eventKind,
-                                    ),
-                                    DateFormat.yMMMd().add_jm().format(
-                                      entry.occurredAt.toLocal(),
-                                    ),
-                                  ].join(' • '),
-                                ),
-                                if (entry.changedFields.isNotEmpty) ...[
-                                  const shad.Gap(8),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: entry.changedFields
-                                        .map(
-                                          (field) => Chip(label: Text(field)),
-                                        )
-                                        .toList(growable: false),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
+                          child: _AuditEntryCard(entry: entry),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _AuditEntryCard extends StatelessWidget {
+  const _AuditEntryCard({required this.entry});
+
+  final InventoryAuditLogEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final palette = FinancePalette.of(context);
+    final summary = _displaySummary(context);
+    final fieldLabels = entry.fieldChanges.isNotEmpty
+        ? entry.fieldChanges
+              .map((change) => _prettyFieldLabel(change.label, change.field))
+              .take(3)
+              .toList(growable: false)
+        : entry.changedFields
+              .map((field) => _prettyFieldLabel('', field))
+              .take(3)
+              .toList(growable: false);
+
+    return FinancePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            summary,
+            style: theme.typography.large.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const shad.Gap(8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _AuditBadge(
+                label: _labelForEntityKind(context, entry.entityKind),
+                color: palette.accent,
+              ),
+              _AuditBadge(
+                label: _labelForEventKind(context, entry.eventKind),
+                color: palette.positive,
+              ),
+              ...fieldLabels.map(
+                (label) => _AuditBadge(
+                  label: label,
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ),
+            ],
+          ),
+          const shad.Gap(10),
+          Text(
+            DateFormat.yMMMd().add_jm().format(entry.occurredAt.toLocal()),
+            style: theme.typography.xSmall.copyWith(
+              color: theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -181,8 +209,24 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
       'unit' => context.l10n.inventoryManageUnits,
       'warehouse' => context.l10n.inventoryManageWarehouses,
       'sale' => context.l10n.inventorySalesLabel,
-      _ => value,
+      _ => _prettyFieldLabel('', value),
     };
+  }
+
+  String _displaySummary(BuildContext context) {
+    if (entry.entityKind == 'sale' && entry.eventKind == 'sale_created') {
+      return context.l10n.inventorySalesFallbackTitle;
+    }
+
+    final trimmed = entry.summary.trim();
+    if (trimmed.isNotEmpty) {
+      return trimmed;
+    }
+
+    return [
+      _labelForEventKind(context, entry.eventKind),
+      _labelForEntityKind(context, entry.entityKind),
+    ].join(' ');
   }
 
   String _labelForEventKind(BuildContext context, String value) {
@@ -193,7 +237,47 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
       'reactivated' => context.l10n.inventoryAuditEventReactivated,
       'deleted' => context.l10n.inventoryAuditEventDeleted,
       'sale_created' => context.l10n.inventoryAuditEventSaleCreated,
-      _ => value,
+      _ => _prettyFieldLabel('', value),
     };
+  }
+
+  String _prettyFieldLabel(String label, String fallback) {
+    final source = label.trim().isNotEmpty ? label : fallback;
+    final normalized = source.replaceAll('_', ' ').trim();
+    if (normalized.isEmpty) {
+      return fallback;
+    }
+
+    return normalized[0].toUpperCase() + normalized.substring(1);
+  }
+}
+
+class _AuditBadge extends StatelessWidget {
+  const _AuditBadge({
+    required this.label,
+    required this.color,
+  });
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Text(
+        label,
+        style: theme.typography.xSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }

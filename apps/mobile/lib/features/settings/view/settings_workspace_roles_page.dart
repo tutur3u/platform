@@ -84,25 +84,32 @@ class _SettingsWorkspaceRolesViewState
               children: [
                 FinancePanel(
                   radius: 26,
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          l10n.settingsWorkspaceRolesSubtitle,
-                          style: shad.Theme.of(context).typography.textSmall
-                              .copyWith(
-                                color: shad.Theme.of(
-                                  context,
-                                ).colorScheme.mutedForeground,
-                              ),
-                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          FinanceStatChip(
+                            label: l10n.settingsWorkspaceRolesDefaultTitle,
+                            value: _permissionCountLabel(
+                              _defaultRole?.permissions ?? const [],
+                            ),
+                            icon: Icons.lock_open_rounded,
+                          ),
+                          FinanceStatChip(
+                            label: l10n.settingsWorkspaceRolesListTitle,
+                            value: '${_roles.length}',
+                            icon: Icons.admin_panel_settings_outlined,
+                          ),
+                        ],
                       ),
-                      const shad.Gap(12),
+                      const shad.Gap(14),
                       shad.PrimaryButton(
                         onPressed: !_canManageRoles || _loading
                             ? null
                             : _onCreateRole,
-                        density: shad.ButtonDensity.compact,
                         child: Text(l10n.settingsWorkspaceRolesCreate),
                       ),
                     ],
@@ -131,8 +138,7 @@ class _SettingsWorkspaceRolesViewState
                   const shad.Gap(10),
                   _RoleSummaryCard(
                     title: l10n.settingsWorkspaceRolesDefaultTitle,
-                    subtitle: _permissionSummary(
-                      context,
+                    subtitle: _permissionCountLabel(
                       _defaultRole?.permissions ?? const [],
                     ),
                     onTap: _defaultRole == null ? null : _onEditDefaultRole,
@@ -314,10 +320,7 @@ class _SettingsWorkspaceRolesViewState
     await _loadData();
   }
 
-  String _permissionSummary(
-    BuildContext context,
-    List<WorkspaceRolePermissionState> permissions,
-  ) {
+  String _permissionCountLabel(List<WorkspaceRolePermissionState> permissions) {
     final enabledCount = permissions
         .where((permission) => permission.enabled)
         .length;
