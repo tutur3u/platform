@@ -253,7 +253,7 @@ export function ResponsesPanel({
             </DestructiveActionDialog>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-4">
+        <CardContent className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <MetricCard
             label={t('responses.total_label')}
             value={summary.totalSubmissions}
@@ -318,7 +318,7 @@ export function ResponsesPanel({
               ) : null}
             </div>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <MetricCard
               label={t('responses.questions_tracked')}
               value={questionAnalytics.length}
@@ -754,13 +754,15 @@ function ResponderGroup({
                       return (
                         <div
                           key={column}
-                          className="grid gap-1 rounded-2xl border border-border/50 bg-background/60 px-3.5 py-3 sm:grid-cols-[180px_1fr]"
+                          className="flex flex-col gap-1.5 rounded-2xl border border-border/50 bg-background/60 px-4 py-3 sm:flex-row sm:items-start sm:gap-6"
                         >
-                          <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                          <span className="w-full shrink-0 font-medium text-muted-foreground text-xs uppercase tracking-wide sm:max-w-[200px] lg:max-w-[240px]">
                             {column}
                           </span>
-                          <div className="space-y-1">
-                            <span className="text-sm">{answer.value}</span>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <p className="whitespace-pre-wrap font-medium text-sm">
+                              {answer.value}
+                            </p>
                             {answer.unresolvedValues.length > 0 ? (
                               <p className="text-dynamic-orange text-xs">
                                 {t('responses.unmatched_answer_hint', {

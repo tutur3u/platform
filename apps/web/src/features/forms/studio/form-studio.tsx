@@ -784,7 +784,7 @@ export function FormStudio({
   return (
     <div
       className={cn(
-        'relative isolate -m-4 min-h-screen overflow-hidden bg-background [--form-studio-sticky-top:5rem]',
+        'relative isolate -m-2 min-h-screen min-w-0 overflow-x-clip bg-background [--form-studio-sticky-top:5rem] md:-m-4',
         FORM_FONT_VARIABLES
       )}
       style={studioBodyFontStyle}
@@ -817,7 +817,7 @@ export function FormStudio({
           }}
         />
       </div>
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8">
+      <div className="relative z-10 mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-8 px-4 py-8">
         <Card
           className={cn(
             'overflow-hidden border-border/60 bg-card/85 shadow-black/5 shadow-xl',
@@ -988,35 +988,44 @@ export function FormStudio({
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
-          className="space-y-6"
+          className="min-w-0 space-y-6"
         >
-          <div className="sticky top-(--form-studio-sticky-top) z-40 -mx-1 bg-background/80 px-1 backdrop-blur supports-backdrop-filter:bg-background/85">
+          <div className="sticky top-(--form-studio-sticky-top) z-40 -mx-1 min-w-0 bg-background/80 px-1 backdrop-blur supports-backdrop-filter:bg-background/85">
             <TabsList
               className={cn(
-                'grid h-auto w-full grid-cols-5 gap-1 rounded-2xl border border-border/60 p-1 shadow-sm',
+                'grid h-auto w-full max-w-full grid-cols-3 gap-1 rounded-2xl border border-border/60 p-1 shadow-sm sm:flex sm:items-center sm:justify-start sm:overflow-x-auto md:justify-center',
                 studioToneClasses.tabListClassName
               )}
             >
               <TabsTrigger
                 value="build"
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <LayoutTemplate className="mr-2 h-4 w-4" />
+                <LayoutTemplate className="hidden h-4 w-4 sm:block" />
                 {t('tabs.build')}
               </TabsTrigger>
               <TabsTrigger
                 value="preview"
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <Eye className="mr-2 h-4 w-4" />
+                <Eye className="hidden h-4 w-4 sm:block" />
                 {t('tabs.preview')}
               </TabsTrigger>
               <TabsTrigger
                 value="responses"
                 disabled={mode === 'create'}
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <Table2 className="mr-2 h-4 w-4" />
+                <Table2 className="hidden h-4 w-4 sm:block" />
                 {t('tabs.responses')}
                 <Badge
                   variant="outline"
@@ -1028,29 +1037,35 @@ export function FormStudio({
               <TabsTrigger
                 value="analytics"
                 disabled={mode === 'create'}
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <BarChart3 className="mr-2 h-4 w-4" />
+                <BarChart3 className="hidden h-4 w-4 sm:block" />
                 {t('tabs.analytics')}
               </TabsTrigger>
               <TabsTrigger
                 value="settings"
-                className={studioToneClasses.tabTriggerClassName}
+                className={cn(
+                  'min-w-0 px-2 text-xs sm:shrink-0 sm:px-3 sm:text-sm',
+                  studioToneClasses.tabTriggerClassName
+                )}
               >
-                <Settings2 className="mr-2 h-4 w-4" />
+                <Settings2 className="hidden h-4 w-4 sm:block" />
                 {t('tabs.settings')}
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="build" className="mt-0">
-            <div className="grid items-start gap-6 lg:grid-cols-1 xl:grid-cols-[72px_minmax(0,1fr)]">
+          <TabsContent value="build" className="mt-0 min-w-0">
+            <div className="grid min-w-0 items-start gap-6 lg:grid-cols-1 xl:grid-cols-[72px_minmax(0,1fr)]">
               <FloatingBlockToolbar
                 toneClasses={studioToneClasses}
                 onAddSection={() => addSection()}
                 onAddBlock={addBlockToActiveSection}
               />
-              <div className="space-y-6">
+              <div className="min-w-0 space-y-6">
                 <Collapsible
                   open={isFormDetailsOpen}
                   onOpenChange={setIsFormDetailsOpen}
@@ -1060,7 +1075,7 @@ export function FormStudio({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-auto w-full justify-start rounded-3xl px-5 py-4 hover:bg-transparent"
+                        className="h-auto w-full justify-start whitespace-normal rounded-3xl px-5 py-4 hover:bg-transparent"
                       >
                         <div className="flex w-full items-start gap-4 text-left">
                           <div className="min-w-0 flex-1 space-y-2">
@@ -1283,7 +1298,7 @@ export function FormStudio({
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="mt-0">
+          <TabsContent value="preview" className="mt-0 min-w-0">
             <FormRuntime
               data-active="true"
               form={previewDefinition}
@@ -1295,7 +1310,7 @@ export function FormStudio({
             />
           </TabsContent>
 
-          <TabsContent value="responses" className="mt-0">
+          <TabsContent value="responses" className="mt-0 min-w-0">
             {initialForm ? (
               <ResponsesPanel
                 wsId={wsId}
@@ -1316,7 +1331,7 @@ export function FormStudio({
             ) : null}
           </TabsContent>
 
-          <TabsContent value="analytics" className="mt-0">
+          <TabsContent value="analytics" className="mt-0 min-w-0">
             {initialAnalytics ? (
               <AnalyticsPanel
                 wsId={wsId}
@@ -1328,7 +1343,7 @@ export function FormStudio({
             ) : null}
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-0 space-y-6">
+          <TabsContent value="settings" className="mt-0 min-w-0 space-y-6">
             <ThemePickerPanel
               values={values}
               form={form}
