@@ -121,7 +121,7 @@ export async function getWorkspaceBillingDetails(
     return {
       success: true,
       data: {
-        email: customer.email,
+        email: customer.email ?? '',
         name: customer.name ?? '',
         billingAddress: {
           line1: customer.billingAddress?.line1 ?? '',

@@ -123,12 +123,12 @@ export async function DELETE(req: NextRequest, { params }: Params) {
         .eq('ws_id', resolvedWsId)
         .eq('user_id', userId)
     : inviteUserIds.length > 0
-    ? supabase
-        .from('workspace_invites')
-        .delete()
-        .eq('ws_id', resolvedWsId)
-        .in('user_id', inviteUserIds)
-    : { error: undefined };
+      ? supabase
+          .from('workspace_invites')
+          .delete()
+          .eq('ws_id', resolvedWsId)
+          .in('user_id', inviteUserIds)
+      : { error: undefined };
 
   const emailInviteQuery = normalizedUserEmail
     ? supabase
