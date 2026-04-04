@@ -52,6 +52,9 @@ export function ResponsesPanel({
   responses,
   total,
   summary,
+  page,
+  pageSize,
+  onPageChange,
   questionAnalytics = [],
   onRefresh,
   isRefreshing = false,
@@ -61,6 +64,9 @@ export function ResponsesPanel({
   responses: FormResponseRecord[];
   total: number;
   summary: FormResponseSummary;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
   questionAnalytics?: FormResponsesQuestionAnalytics[];
   onRefresh: () => void;
   isRefreshing?: boolean;
@@ -75,6 +81,11 @@ export function ResponsesPanel({
     wsId,
     formId,
   });
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(pageSize, 1)));
+  const currentPage = Math.min(page, totalPages);
+  const rangeStart = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const rangeEnd = total === 0 ? 0 : Math.min(currentPage * pageSize, total);
+  const showPagination = total > 0;
 
   const grouped = useMemo<GroupedResponder[]>(() => {
     const map = new Map<string, FormResponseRecord[]>();
@@ -273,6 +284,18 @@ export function ResponsesPanel({
         </CardContent>
       </Card>
 
+      {showPagination ? (
+        <ResponsesPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          total={total}
+          isRefreshing={isRefreshing}
+          onPageChange={onPageChange}
+        />
+      ) : null}
+
       {questionAnalytics.length > 0 ? (
         <div className="space-y-4">
           <div className="flex flex-col gap-2">
@@ -393,7 +416,79 @@ export function ResponsesPanel({
           />
         ))
       )}
+
+      {showPagination && grouped.length > 0 ? (
+        <ResponsesPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          total={total}
+          isRefreshing={isRefreshing}
+          onPageChange={onPageChange}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function ResponsesPagination({
+  currentPage,
+  totalPages,
+  rangeStart,
+  rangeEnd,
+  total,
+  isRefreshing,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  rangeStart: number;
+  rangeEnd: number;
+  total: number;
+  isRefreshing: boolean;
+  onPageChange: (page: number) => void;
+}) {
+  const tCommon = useTranslations('common');
+
+  return (
+    <Card className="border-border/60 bg-card/80 shadow-sm">
+      <CardContent className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <p className="font-medium text-sm">
+            {tCommon('page')} {currentPage} / {totalPages}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            {rangeStart}-{rangeEnd} / {total}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            disabled={isRefreshing || currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            {tCommon('previous')}
+          </Button>
+          <Badge variant="outline" className="rounded-full px-3 py-1">
+            {currentPage}
+          </Badge>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            disabled={isRefreshing || currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            {tCommon('next')}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

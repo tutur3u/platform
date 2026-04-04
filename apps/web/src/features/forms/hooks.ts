@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { apiFetch, uploadToStorageUrl } from '@/lib/api-fetch';
@@ -235,12 +240,16 @@ export function useFormDefinitionQuery({
 export function useFormResponsesQuery({
   wsId,
   formId,
+  page,
+  pageSize,
   initialData,
   enabled = true,
 }: {
   wsId: string;
   formId: string;
-  initialData: {
+  page: number;
+  pageSize: number;
+  initialData?: {
     total: number;
     records: FormResponseRecord[];
     summary: FormResponseSummary;
@@ -249,17 +258,26 @@ export function useFormResponsesQuery({
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: ['forms', wsId, formId, 'responses'],
+    queryKey: ['forms', wsId, formId, 'responses', page, pageSize],
     queryFn: async () =>
       apiFetch<{
         total: number;
         records: FormResponseRecord[];
         summary: FormResponseSummary;
         questionAnalytics: FormResponsesQuestionAnalytics[];
-      }>(`/api/v1/workspaces/${wsId}/forms/${formId}/responses`, {
-        cache: 'no-store',
-      }),
+      }>(
+        `/api/v1/workspaces/${wsId}/forms/${formId}/responses?${new URLSearchParams(
+          {
+            page: String(page),
+            pageSize: String(pageSize),
+          }
+        ).toString()}`,
+        {
+          cache: 'no-store',
+        }
+      ),
     initialData,
+    placeholderData: keepPreviousData,
     enabled: enabled && !!formId,
   });
 }
@@ -309,20 +327,23 @@ export function useClearFormResponsesMutation({
         }
       ),
     onSuccess: () => {
-      queryClient.setQueryData(['forms', wsId, formId, 'responses'], {
-        total: 0,
-        records: [],
-        summary: {
-          totalSubmissions: 0,
-          totalResponders: 0,
-          authenticatedResponders: 0,
-          anonymousSubmissions: 0,
-          duplicateAuthenticatedResponders: 0,
-          duplicateAuthenticatedSubmissions: 0,
-          hasMultipleSubmissionsByUser: false,
-        },
-        questionAnalytics: [],
-      });
+      queryClient.setQueriesData(
+        { queryKey: ['forms', wsId, formId, 'responses'] },
+        {
+          total: 0,
+          records: [],
+          summary: {
+            totalSubmissions: 0,
+            totalResponders: 0,
+            authenticatedResponders: 0,
+            anonymousSubmissions: 0,
+            duplicateAuthenticatedResponders: 0,
+            duplicateAuthenticatedSubmissions: 0,
+            hasMultipleSubmissionsByUser: false,
+          },
+          questionAnalytics: [],
+        }
+      );
       queryClient.invalidateQueries({
         queryKey: ['forms', wsId, formId, 'responses'],
       });

@@ -47,7 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { parseAsString, useQueryState } from 'nuqs';
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -150,6 +150,8 @@ export function FormStudio({
   initialResponses,
   initialResponsesTotal,
   initialResponsesSummary,
+  initialResponsesPage = 1,
+  initialResponsesPageSize = 10,
   initialQuestionAnalytics,
   initialAnalytics,
 }: {
@@ -161,6 +163,8 @@ export function FormStudio({
   initialResponses?: FormResponseRecord[];
   initialResponsesTotal?: number;
   initialResponsesSummary?: FormResponseSummary;
+  initialResponsesPage?: number;
+  initialResponsesPageSize?: number;
   initialQuestionAnalytics?: FormResponsesQuestionAnalytics[];
   initialAnalytics?: FormAnalytics;
 }) {
@@ -175,6 +179,18 @@ export function FormStudio({
   const [activeTab, setActiveTab] = useQueryState(
     'tab',
     parseAsString.withDefault('build').withOptions({ shallow: true })
+  );
+  const [responsesPage, setResponsesPage] = useQueryState(
+    'responsesPage',
+    parseAsInteger
+      .withDefault(initialResponsesPage)
+      .withOptions({ shallow: true })
+  );
+  const [responsesPageSize] = useQueryState(
+    'responsesPageSize',
+    parseAsInteger
+      .withDefault(initialResponsesPageSize)
+      .withOptions({ shallow: true })
   );
   const [hasCopied, setHasCopied] = useState(false);
   const [duplicatePending, setDuplicatePending] = useState(false);
@@ -258,21 +274,27 @@ export function FormStudio({
   const responsesQuery = useFormResponsesQuery({
     wsId,
     formId: initialForm?.id ?? '',
+    page: responsesPage,
+    pageSize: responsesPageSize,
     enabled: mode === 'edit' && !!initialForm?.id,
-    initialData: {
-      total: initialResponsesTotal ?? 0,
-      records: initialResponses ?? [],
-      summary: initialResponsesSummary ?? {
-        anonymousSubmissions: 0,
-        authenticatedResponders: 0,
-        duplicateAuthenticatedResponders: 0,
-        duplicateAuthenticatedSubmissions: 0,
-        hasMultipleSubmissionsByUser: false,
-        totalResponders: 0,
-        totalSubmissions: 0,
-      },
-      questionAnalytics: initialQuestionAnalytics ?? [],
-    },
+    initialData:
+      responsesPage === initialResponsesPage &&
+      responsesPageSize === initialResponsesPageSize
+        ? {
+            total: initialResponsesTotal ?? 0,
+            records: initialResponses ?? [],
+            summary: initialResponsesSummary ?? {
+              anonymousSubmissions: 0,
+              authenticatedResponders: 0,
+              duplicateAuthenticatedResponders: 0,
+              duplicateAuthenticatedSubmissions: 0,
+              hasMultipleSubmissionsByUser: false,
+              totalResponders: 0,
+              totalSubmissions: 0,
+            },
+            questionAnalytics: initialQuestionAnalytics ?? [],
+          }
+        : undefined,
   });
   const analyticsQuery = useFormAnalyticsQuery({
     wsId,
@@ -312,6 +334,18 @@ export function FormStudio({
   };
   const resolvedActiveSectionId =
     values.sections.find((section) => section.id === activeSectionId)?.id ?? '';
+  const responseTotal =
+    responsesQuery.data?.total ?? initialResponsesTotal ?? 0;
+  const totalResponsePages = Math.max(
+    1,
+    Math.ceil(responseTotal / Math.max(responsesPageSize, 1))
+  );
+
+  useEffect(() => {
+    if (responsesPage > totalResponsePages) {
+      void setResponsesPage(totalResponsePages);
+    }
+  }, [responsesPage, setResponsesPage, totalResponsePages]);
 
   const scrollToSection = (sectionId: string) => {
     if (typeof document === 'undefined') {
@@ -1318,8 +1352,13 @@ export function FormStudio({
                 responses={
                   responsesQuery.data?.records ?? initialResponses ?? []
                 }
-                total={responsesQuery.data?.total ?? initialResponsesTotal ?? 0}
+                total={responseTotal}
                 summary={responseSummary}
+                page={responsesPage}
+                pageSize={responsesPageSize}
+                onPageChange={(nextPage) => {
+                  void setResponsesPage(nextPage);
+                }}
                 questionAnalytics={
                   responsesQuery.data?.questionAnalytics ??
                   initialQuestionAnalytics ??
