@@ -1,10 +1,8 @@
-import { vertex } from '@ai-sdk/google-vertex';
+import { google } from '@ai-sdk/google';
 import { createClient } from '@ncthub/supabase/next/server';
 import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { getTextFromUIMessage } from '../../content';
-
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -13,45 +11,14 @@ export const preferredRegion = 'sin1';
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
-const vertexModel = vertex(DEFAULT_MODEL_NAME);
-
-async function generateChatTitle(message: string) {
-  const prompt =
-    'Generate a concise title for the following chat conversation: ' + message;
-
-  try {
-    const res = await generateText({
-      model: vertexModel,
-      prompt,
-      providerOptions: {
-        vertex: {
-          safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_NONE',
-            },
-          ],
-        },
-      },
-    });
-    return res?.text || null;
-  } catch (error) {
-    console.log('Error generating chat title:', error);
-    throw error;
-  }
-}
+const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 
 export async function POST(req: Request) {
   try {
-    const { model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
+    const { model, message, previewToken } = (await req.json()) as {
       model?: string;
       message?: string;
+      previewToken?: string;
     };
 
     if (!message)
@@ -65,6 +32,11 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
+    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) return new Response('Missing API key', { status: 400 });
+
+    if (!model) return NextResponse.json('No model provided', { status: 400 });
+
     const prompt = buildPrompt([
       {
         id: 'initial-message',
@@ -73,14 +45,33 @@ export async function POST(req: Request) {
       },
     ]);
 
-    const title = await generateChatTitle(prompt);
+    const { text } = await generateText({
+      model: google(DEFAULT_MODEL_NAME),
+      prompt,
+      providerOptions: {
+        google: {
+          safetySettings,
+        },
+      },
+    });
+
+    const title = text.trim();
 
     if (!title) {
       return NextResponse.json(
         {
           message: 'Internal server error.',
         },
-        { status: 501 }
+        { status: 500 }
+      );
+    }
+
+    if (!title) {
+      return NextResponse.json(
+        {
+          message: 'Internal server error.',
+        },
+        { status: 500 }
       );
     }
 
@@ -90,7 +81,7 @@ export async function POST(req: Request) {
       model: model.toLowerCase(),
     });
 
-    if (error) return NextResponse.json(error.message, { status: 503 });
+    if (error) return NextResponse.json(error.message, { status: 500 });
     return NextResponse.json({ id, title }, { status: 200 });
   } catch (error: any) {
     console.log(error);
@@ -99,7 +90,7 @@ export async function POST(req: Request) {
         message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
       },
       {
-        status: 500,
+        status: 200,
       }
     );
   }
@@ -123,6 +114,25 @@ function buildPrompt(messages: UIMessage[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
+
+const safetySettings = [
+  {
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
+  },
+];
 
 const leadingMessages: UIMessage[] = [
   {

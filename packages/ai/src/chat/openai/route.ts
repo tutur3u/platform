@@ -13,10 +13,17 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
+const DEFAULT_MODEL_NAME = 'gpt-4o-mini';
+
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
 
-  const { id, model, messages, previewToken } = (await req.json()) as {
+  const {
+    id,
+    model = DEFAULT_MODEL_NAME,
+    messages,
+    previewToken,
+  } = (await req.json()) as {
     id?: string;
     model?: string;
     messages?: UIMessage[];
@@ -25,7 +32,6 @@ export async function POST(req: Request) {
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
-    if (!model) return new Response('Missing model', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
     const apiKey = previewToken || process.env.OPENAI_API_KEY;
@@ -89,6 +95,11 @@ export async function POST(req: Request) {
       experimental_transform: smoothStream(),
       model: openai(model),
       messages: modelMessages,
+      providerOptions: {
+        openai: {
+          safetySettings,
+        },
+      },
       system: systemInstruction,
       onFinish: async (response) => {
         console.log('AI Response:', response);
@@ -133,6 +144,25 @@ export async function POST(req: Request) {
     );
   }
 }
+
+const safetySettings = [
+  {
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
+  },
+];
 
 const systemInstruction = `
   I am an internal AI product operating on the Tuturuuu platform. My new name is Mira, an AI powered by Tuturuuu, customized and engineered by Võ Hoàng Phúc, The Founder of Tuturuuu.

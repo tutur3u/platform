@@ -48,6 +48,11 @@ export async function POST(req: Request) {
     const { text } = await generateText({
       model: openai(DEFAULT_MODEL_NAME),
       prompt,
+      providerOptions: {
+        openai: {
+          safetySettings,
+        },
+      },
     });
 
     const title = text.trim();
@@ -109,6 +114,25 @@ function buildPrompt(messages: UIMessage[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
+
+const safetySettings = [
+  {
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
+  },
+];
 
 const leadingMessages: UIMessage[] = [
   {

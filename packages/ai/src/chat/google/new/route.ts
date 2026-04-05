@@ -1,7 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@ncthub/supabase/next/server';
 import { generateText, type UIMessage } from 'ai';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { getTextFromUIMessage } from '../../content';
 
@@ -12,93 +11,89 @@ export const preferredRegion = 'sin1';
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
+const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 
-// eslint-disable-next-line no-undef
+export async function POST(req: Request) {
+  try {
+    const { model, message, previewToken } = (await req.json()) as {
+      model?: string;
+      message?: string;
+      previewToken?: string;
+    };
 
-export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
-  return async function handler(req: Request) {
-    try {
-      const { model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
-        model?: string;
-        message?: string;
-      };
+    if (!message)
+      return NextResponse.json('No message provided', { status: 400 });
 
-      if (!message)
-        return NextResponse.json('No message provided', { status: 400 });
+    const supabase = await createClient();
 
-      const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-      if (!user) return NextResponse.json('Unauthorized', { status: 401 });
+    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) return new Response('Missing API key', { status: 400 });
 
-      const apiKey = options.serverAPIKeyFallback
-        ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
-        : (await cookies()).get('google_api_key')?.value;
+    if (!model) return NextResponse.json('No model provided', { status: 400 });
 
-      if (!apiKey) return new Response('Missing API key', { status: 400 });
+    const prompt = buildPrompt([
+      {
+        id: 'initial-message',
+        parts: [{ type: 'text', text: `"${message}"` }],
+        role: 'user',
+      },
+    ]);
 
-      const prompt = buildPrompt([
-        {
-          id: 'initial-message',
-          parts: [{ type: 'text', text: `"${message}"` }],
-          role: 'user',
+    const { text } = await generateText({
+      model: google(DEFAULT_MODEL_NAME),
+      prompt,
+      providerOptions: {
+        google: {
+          safetySettings,
         },
-      ]);
+      },
+    });
 
-      const { text } = await generateText({
-        model: google(model),
-        prompt,
-        providerOptions: {
-          google: {
-            safetySettings,
-          },
-        },
-      });
+    const title = text.trim();
 
-      const title = text.trim();
-
-      if (!title) {
-        return NextResponse.json(
-          {
-            message: 'Internal server error.',
-          },
-          { status: 500 }
-        );
-      }
-
-      if (!title) {
-        return NextResponse.json(
-          {
-            message: 'Internal server error.',
-          },
-          { status: 500 }
-        );
-      }
-
-      const { data: id, error } = await supabase.rpc('create_ai_chat', {
-        title,
-        message,
-        model: model.toLowerCase(),
-      });
-
-      if (error) return NextResponse.json(error.message, { status: 500 });
-      return NextResponse.json({ id, title }, { status: 200 });
-    } catch (error: any) {
-      console.log(error);
+    if (!title) {
       return NextResponse.json(
         {
-          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+          message: 'Internal server error.',
         },
-        {
-          status: 200,
-        }
+        { status: 500 }
       );
     }
-  };
+
+    if (!title) {
+      return NextResponse.json(
+        {
+          message: 'Internal server error.',
+        },
+        { status: 500 }
+      );
+    }
+
+    const { data: id, error } = await supabase.rpc('create_ai_chat', {
+      title,
+      message,
+      model: model.toLowerCase(),
+    });
+
+    if (error) return NextResponse.json(error.message, { status: 500 });
+    return NextResponse.json({ id, title }, { status: 200 });
+  } catch (error: any) {
+    console.log(error);
+    return NextResponse.json(
+      {
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+      },
+      {
+        status: 200,
+      }
+    );
+  }
 }
 
 const normalize = (message: UIMessage) => {
