@@ -110,38 +110,24 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
     required String confirmLabel,
     required Future<void> Function(String value) onConfirm,
   }) async {
-    final controller = TextEditingController();
     final result = await showAdaptiveSheet<bool>(
       context: context,
       maxDialogWidth: 420,
-      builder: (dialogContext) {
-        return _CreateManageItemDialog(
-          title: title,
-          confirmLabel: confirmLabel,
-          controller: controller,
-          onConfirm: () async {
-            final value = controller.text.trim();
-            if (value.isEmpty) {
-              showInventoryToast(
-                dialogContext,
-                context.l10n.inventoryManageNameRequired,
-                destructive: true,
-              );
-              return;
-            }
-            await onConfirm(value);
-            if (dialogContext.mounted) {
-              Navigator.of(dialogContext).pop(true);
-            }
-          },
-        );
-      },
+      builder: (_) => _CreateManageItemDialog(
+        title: title,
+        confirmLabel: confirmLabel,
+        onConfirm: onConfirm,
+      ),
     );
-    controller.dispose();
 
     if (result == true && mounted) {
-      _reload();
-      showInventoryToast(context, confirmLabel);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _reload();
+        showInventoryToast(context, confirmLabel);
+      });
     }
   }
 
@@ -379,14 +365,12 @@ class _CreateManageItemDialog extends StatefulWidget {
   const _CreateManageItemDialog({
     required this.title,
     required this.confirmLabel,
-    required this.controller,
     required this.onConfirm,
   });
 
   final String title;
   final String confirmLabel;
-  final TextEditingController controller;
-  final Future<void> Function() onConfirm;
+  final Future<void> Function(String value) onConfirm;
 
   @override
   State<_CreateManageItemDialog> createState() =>
@@ -394,7 +378,20 @@ class _CreateManageItemDialog extends StatefulWidget {
 }
 
 class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
+  late final TextEditingController _controller;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -419,7 +416,7 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
         ),
       ],
       child: TextField(
-        controller: widget.controller,
+        controller: _controller,
         autofocus: true,
         onSubmitted: (_) => unawaited(_handleConfirm()),
       ),
@@ -427,9 +424,32 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
   }
 
   Future<void> _handleConfirm() async {
+    final value = _controller.text.trim();
+    if (value.isEmpty) {
+      showInventoryToast(
+        context,
+        context.l10n.inventoryManageNameRequired,
+        destructive: true,
+      );
+      return;
+    }
+
     setState(() => _saving = true);
     try {
-      await widget.onConfirm();
+      await widget.onConfirm(value);
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(true);
+    } on Exception catch (error) {
+      if (!mounted) {
+        return;
+      }
+      showInventoryToast(
+        context,
+        error.toString(),
+        destructive: true,
+      );
     } finally {
       if (mounted) {
         setState(() => _saving = false);
