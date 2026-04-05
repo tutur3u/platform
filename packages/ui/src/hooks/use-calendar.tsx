@@ -1,18 +1,16 @@
 import { createClient } from '@ncthub/supabase/next/client';
-import type { WorkspaceCalendarGoogleToken } from '@ncthub/types/db';
-import { Workspace } from '@ncthub/types/db';
-import { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
-import { CalendarEvent } from '@ncthub/types/primitives/calendar-event';
+import type { Workspace, WorkspaceCalendarGoogleToken } from '@ncthub/types/db';
+import type { CalendarEvent } from '@ncthub/types/primitives/calendar-event';
+import type { SupportedColor } from '@ncthub/types/primitives/SupportedColors';
 import {
-  CalendarSettings,
+  type CalendarSettings,
   defaultCalendarSettings,
 } from '@ncthub/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
-import 'moment/locale/vi';
 import {
-  ReactNode,
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -511,7 +509,7 @@ export const CalendarProvider = ({
         const startDate = roundToNearest15Minutes(new Date(event.start_at));
         const endDate = roundToNearest15Minutes(new Date(event.end_at));
 
-        let eventColor = event.color || 'BLUE';
+        const eventColor = event.color || 'BLUE';
 
         // Create an event signature to check for duplicates
         const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
