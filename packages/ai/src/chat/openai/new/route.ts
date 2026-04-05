@@ -1,10 +1,6 @@
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
+import { openai } from '@ai-sdk/openai';
 import { createClient } from '@ncthub/supabase/next/server';
-import type { UIMessage } from 'ai';
+import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { getTextFromUIMessage } from '../../content';
 
@@ -15,12 +11,7 @@ export const preferredRegion = 'sin1';
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
-
-// eslint-disable-next-line no-undef
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
-
-const genAI = new GoogleGenerativeAI(API_KEY);
+const DEFAULT_MODEL_NAME = 'gpt-4o-mini';
 
 export async function POST(req: Request) {
   try {
@@ -41,8 +32,7 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const apiKey = previewToken || process.env.OPENAI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     if (!model) return NextResponse.json('No model provided', { status: 400 });
@@ -55,15 +45,12 @@ export async function POST(req: Request) {
       },
     ]);
 
-    const geminiRes = await genAI
-      .getGenerativeModel({
-        model: DEFAULT_MODEL_NAME,
-        generationConfig,
-        safetySettings,
-      })
-      .generateContent(prompt);
+    const { text } = await generateText({
+      model: openai(DEFAULT_MODEL_NAME),
+      prompt,
+    });
 
-    const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+    const title = text.trim();
 
     if (!title) {
       return NextResponse.json(
@@ -122,34 +109,6 @@ function buildPrompt(messages: UIMessage[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
 
 const leadingMessages: UIMessage[] = [
   {

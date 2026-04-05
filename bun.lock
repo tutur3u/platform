@@ -183,7 +183,6 @@
         "@ai-sdk/revai": "^2.0.27",
         "@ai-sdk/togetherai": "^2.0.42",
         "@ai-sdk/xai": "^3.0.77",
-        "@google/generative-ai": "^0.24.1",
         "@ncthub/supabase": "workspace:*",
         "@ncthub/utils": "workspace:*",
         "ai": "^6.0.146",
@@ -726,8 +725,6 @@
     "@formatjs/icu-skeleton-parser": ["@formatjs/icu-skeleton-parser@2.1.3", "", { "dependencies": { "@formatjs/ecma402-abstract": "3.2.0" } }, "sha512-9mFp8TJ166ZM2pcjKwsBWXrDnOJGT7vMEScVgLygUODPOsE8S6f/FHoacvrlHK1B4dYZk8vSCNruyPU64AfgJQ=="],
 
     "@formatjs/intl-localematcher": ["@formatjs/intl-localematcher@0.8.2", "", { "dependencies": { "@formatjs/fast-memoize": "3.1.1" } }, "sha512-q05KMYGJLyqFNFtIb8NhWLF5X3aK/k0wYt7dnRFuy6aLQL+vUwQ1cg5cO4qawEiINybeCPXAWlprY2mSBjSXAQ=="],
-
-    "@google/generative-ai": ["@google/generative-ai@0.24.1", "", {}, "sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q=="],
 
     "@hookform/resolvers": ["@hookform/resolvers@5.2.2", "", { "dependencies": { "@standard-schema/utils": "^0.3.0" }, "peerDependencies": { "react-hook-form": "^7.55.0" } }, "sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA=="],
 

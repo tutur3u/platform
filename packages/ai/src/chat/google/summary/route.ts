@@ -1,11 +1,7 @@
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
+import { google } from '@ai-sdk/google';
 import { createClient } from '@ncthub/supabase/next/server';
-import type { UIMessage } from 'ai';
-import { cookies } from 'next/headers';
+import { generateText, type UIMessage } from 'ai';
+import { cookies } from 'next/dist/server/request/cookies';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getTextFromUIMessage } from '../../content';
 
@@ -24,8 +20,6 @@ export function createPATCH(options: { serverAPIKeyFallback?: boolean } = {}) {
     try {
       if (!id) return new Response('Missing chat ID', { status: 400 });
 
-      // eslint-disable-next-line no-undef
-      // eslint-disable-next-line no-undef
       const apiKey =
         (await cookies()).get('google_api_key')?.value ||
         (options.serverAPIKeyFallback
@@ -68,23 +62,23 @@ export function createPATCH(options: { serverAPIKeyFallback?: boolean } = {}) {
       if (messages[messages.length - 1]?.role === 'user')
         return new Response('Cannot summarize user message', { status: 400 });
 
-      const prompt = buildGooglePrompt(messages);
+      const prompt = buildPrompt(messages);
 
       if (!prompt)
         return new Response('Internal Server Error', { status: 500 });
 
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const { text } = await generateText({
+        model: google(model),
+        prompt,
+        system: systemInstruction,
+        providerOptions: {
+          google: {
+            safetySettings,
+          },
+        },
+      });
 
-      const geminiRes = await genAI
-        .getGenerativeModel({
-          model,
-          generationConfig,
-          safetySettings,
-        })
-        .generateContent(prompt);
-
-      const completion =
-        geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+      const completion = text.trim();
 
       if (!completion) return new Response('No content found', { status: 404 });
 
@@ -115,56 +109,31 @@ export function createPATCH(options: { serverAPIKeyFallback?: boolean } = {}) {
   };
 }
 
-const normalizeGoogle = (message: UIMessage) => ({
-  role:
-    message.role === 'user'
-      ? 'user'
-      : ('model' as 'user' | 'function' | 'model'),
-  parts: [{ text: getTextFromUIMessage(message) }],
-});
+const normalize = (message: UIMessage) => getTextFromUIMessage(message);
 
-const normalizeGoogleMessages = (messages: UIMessage[]) =>
-  messages
-    .filter(
-      (message) => message.role === 'user' || message.role === 'assistant'
-    )
-    .map(normalizeGoogle);
-
-function buildGooglePrompt(messages: UIMessage[]) {
-  const normalizedMsgs = normalizeGoogleMessages([
-    ...leadingMessages,
-    ...messages,
-    ...trailingMessages,
-  ]);
-
-  return { contents: normalizedMsgs };
+function buildPrompt(messages: UIMessage[]) {
+  return [...leadingMessages, ...messages, ...trailingMessages]
+    .map(normalize)
+    .join('\n\n')
+    .trim();
 }
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
 
 const safetySettings = [
   {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
   },
 ];
 

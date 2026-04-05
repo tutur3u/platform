@@ -28,8 +28,7 @@ export async function POST(req: Request) {
     if (!model) return new Response('Missing model', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const apiKey = previewToken || process.env.OPENAI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const supabase = await createClient();

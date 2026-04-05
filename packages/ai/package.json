@@ -39,7 +39,6 @@
     "@ai-sdk/revai": "^2.0.27",
     "@ai-sdk/togetherai": "^2.0.42",
     "@ai-sdk/xai": "^3.0.77",
-    "@google/generative-ai": "^0.24.1",
     "@ncthub/supabase": "workspace:*",
     "@ncthub/utils": "workspace:*",
     "ai": "^6.0.146",

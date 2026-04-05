@@ -1,10 +1,6 @@
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
+import { openai } from '@ai-sdk/openai';
 import { createClient } from '@ncthub/supabase/next/server';
-import type { UIMessage } from 'ai';
+import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { getTextFromUIMessage } from '../../content';
 
@@ -12,12 +8,7 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const model = 'gemini-2.0-flash-001';
-
-// eslint-disable-next-line no-undef
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
-
-const genAI = new GoogleGenerativeAI(API_KEY);
+const model = 'gpt-4o-mini';
 
 export async function PATCH(req: Request) {
   const { id, previewToken } = (await req.json()) as {
@@ -28,8 +19,7 @@ export async function PATCH(req: Request) {
   try {
     if (!id) return new Response('Missing chat ID', { status: 400 });
 
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const apiKey = previewToken || process.env.OPENAI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const supabase = await createClient();
@@ -67,20 +57,17 @@ export async function PATCH(req: Request) {
     if (messages[messages.length - 1]?.role === 'user')
       return new Response('Cannot summarize user message', { status: 400 });
 
-    const prompt = buildGooglePrompt(messages);
+    const prompt = buildPrompt(messages);
 
     if (!prompt) return new Response('Internal Server Error', { status: 500 });
 
-    const geminiRes = await genAI
-      .getGenerativeModel({
-        model,
-        generationConfig,
-        safetySettings,
-      })
-      .generateContent(prompt);
+    const { text } = await generateText({
+      model: openai(model),
+      prompt,
+      system: systemInstruction,
+    });
 
-    const completion =
-      geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+    const completion = text.trim();
 
     if (!completion) return new Response('No content found', { status: 404 });
 
@@ -110,58 +97,14 @@ export async function PATCH(req: Request) {
   }
 }
 
-const normalizeGoogle = (message: UIMessage) => ({
-  role:
-    message.role === 'user'
-      ? 'user'
-      : ('model' as 'user' | 'function' | 'model'),
-  parts: [{ text: getTextFromUIMessage(message) }],
-});
+const normalize = (message: UIMessage) => getTextFromUIMessage(message);
 
-const normalizeGoogleMessages = (messages: UIMessage[]) =>
-  messages
-    .filter(
-      (message) => message.role === 'user' || message.role === 'assistant'
-    )
-    .map(normalizeGoogle);
-
-function buildGooglePrompt(messages: UIMessage[]) {
-  const normalizedMsgs = normalizeGoogleMessages([
-    ...leadingMessages,
-    ...messages,
-    ...trailingMessages,
-  ]);
-
-  return { contents: normalizedMsgs };
+function buildPrompt(messages: UIMessage[]) {
+  return [...leadingMessages, ...messages, ...trailingMessages]
+    .map(normalize)
+    .join('\n\n')
+    .trim();
 }
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
 
 const systemInstruction = `
   Here is a set of guidelines I MUST follow:
