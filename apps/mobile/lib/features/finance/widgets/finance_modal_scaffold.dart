@@ -183,6 +183,7 @@ class FinanceFullscreenFormScaffold extends StatelessWidget {
     required this.onPrimaryPressed,
     required this.child,
     this.subtitle,
+    this.footerTop,
     this.onClose,
     this.isSaving = false,
     this.closeResult,
@@ -192,6 +193,7 @@ class FinanceFullscreenFormScaffold extends StatelessWidget {
 
   final String title;
   final String? subtitle;
+  final Widget? footerTop;
   final String primaryActionLabel;
   final VoidCallback? onPrimaryPressed;
   final VoidCallback? onClose;
@@ -246,48 +248,57 @@ class FinanceFullscreenFormScaffold extends StatelessWidget {
               ),
             ),
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: shad.OutlineButton(
-                  onPressed: isSaving
-                      ? null
-                      : () {
-                          final close = onClose;
-                          if (close != null) {
-                            close();
-                            return;
-                          }
-                          Navigator.of(context).pop(closeResult);
-                        },
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        context.l10n.commonCancel,
-                        maxLines: 1,
+              if (footerTop != null) ...[
+                footerTop!,
+                const shad.Gap(12),
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: shad.OutlineButton(
+                      onPressed: isSaving
+                          ? null
+                          : () {
+                              final close = onClose;
+                              if (close != null) {
+                                close();
+                                return;
+                              }
+                              Navigator.of(context).pop(closeResult);
+                            },
+                      child: Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            context.l10n.commonCancel,
+                            maxLines: 1,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              const shad.Gap(12),
-              Expanded(
-                child: shad.PrimaryButton(
-                  onPressed: isSaving ? null : onPrimaryPressed,
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: shad.CircularProgressIndicator(),
-                        )
-                      : Center(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(primaryActionLabel, maxLines: 1),
-                          ),
-                        ),
-                ),
+                  const shad.Gap(12),
+                  Expanded(
+                    child: shad.PrimaryButton(
+                      onPressed: isSaving ? null : onPrimaryPressed,
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: shad.CircularProgressIndicator(),
+                            )
+                          : Center(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(primaryActionLabel, maxLines: 1),
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

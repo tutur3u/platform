@@ -8,8 +8,6 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
-import 'package:mobile/data/models/finance/category.dart';
-import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
@@ -509,15 +507,9 @@ class _InventorySaleDetailDialogState
   }
 
   Future<void> _showEditDialog(InventorySaleDetail sale) async {
-    final updated = await showAdaptiveSheet<InventorySaleDetail>(
-      context: context,
-      maxDialogWidth: 520,
-      builder: (_) => _EditInventorySaleDialog(
-        wsId: widget.wsId,
-        sale: sale,
-        inventoryRepository: widget.inventoryRepository,
-        financeRepository: widget.financeRepository,
-      ),
+    final updated = await showInventoryCheckoutPage<InventorySaleDetail>(
+      context,
+      sale: sale,
     );
 
     if (updated != null && mounted) {
@@ -838,188 +830,6 @@ class _DetailStat extends StatelessWidget {
         maxWidth: 220,
       ),
       child: child,
-    );
-  }
-}
-
-class _EditInventorySaleDialog extends StatefulWidget {
-  const _EditInventorySaleDialog({
-    required this.wsId,
-    required this.sale,
-    required this.inventoryRepository,
-    required this.financeRepository,
-  });
-
-  final String wsId;
-  final InventorySaleDetail sale;
-  final InventoryRepository inventoryRepository;
-  final FinanceRepository financeRepository;
-
-  @override
-  State<_EditInventorySaleDialog> createState() =>
-      _EditInventorySaleDialogState();
-}
-
-class _EditInventorySaleDialogState extends State<_EditInventorySaleDialog> {
-  late final TextEditingController _noticeController;
-  late final TextEditingController _noteController;
-  List<Wallet> _wallets = const [];
-  List<TransactionCategory> _categories = const [];
-  String? _walletId;
-  String? _categoryId;
-  bool _loading = true;
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _noticeController = TextEditingController(text: widget.sale.notice ?? '');
-    _noteController = TextEditingController(text: widget.sale.note ?? '');
-    _walletId = widget.sale.walletId;
-    _categoryId = widget.sale.categoryId;
-    unawaited(_load());
-  }
-
-  @override
-  void dispose() {
-    _noticeController.dispose();
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    final results = await Future.wait<dynamic>([
-      widget.financeRepository.getWallets(widget.wsId),
-      widget.financeRepository.getCategories(widget.wsId),
-    ]);
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _wallets = results[0] as List<Wallet>;
-      _categories = (results[1] as List<TransactionCategory>)
-          .where((item) => !(item.isExpense ?? false))
-          .toList(growable: false);
-      _walletId = _walletId ?? (_wallets.isEmpty ? null : _wallets.first.id);
-      _loading = false;
-    });
-  }
-
-  Future<void> _save() async {
-    if (_walletId == null || _walletId!.isEmpty) {
-      showInventoryToast(
-        context,
-        context.l10n.inventoryCheckoutWalletRequired,
-        destructive: true,
-      );
-      return;
-    }
-
-    setState(() => _saving = true);
-    try {
-      final updated = await widget.inventoryRepository.updateSale(
-        wsId: widget.wsId,
-        saleId: widget.sale.id,
-        notice: _noticeController.text.trim().isEmpty
-            ? null
-            : _noticeController.text.trim(),
-        note: _noteController.text.trim().isEmpty
-            ? null
-            : _noteController.text.trim(),
-        walletId: _walletId,
-        categoryId: _categoryId,
-      );
-
-      if (!mounted) return;
-      Navigator.of(context).pop(updated);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      showInventoryToast(context, error.message, destructive: true);
-    } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AppDialogScaffold(
-      title: context.l10n.inventorySalesEdit,
-      icon: Icons.edit_outlined,
-      maxWidth: 520,
-      maxHeightFactor: 0.78,
-      actions: [
-        shad.OutlineButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: Text(context.l10n.commonCancel),
-        ),
-        shad.PrimaryButton(
-          onPressed: _loading || _saving ? null : _save,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: shad.CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(context.l10n.inventorySalesSave),
-        ),
-      ],
-      child: _loading
-          ? const Center(child: NovaLoadingIndicator())
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _noticeController,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.inventorySalesTitle,
-                  ),
-                ),
-                const shad.Gap(12),
-                TextField(
-                  controller: _noteController,
-                  minLines: 3,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    labelText: context.l10n.inventorySalesNote,
-                  ),
-                ),
-                const shad.Gap(12),
-                DropdownButtonFormField<String>(
-                  initialValue: _walletId,
-                  items: _wallets
-                      .map(
-                        (wallet) => DropdownMenuItem<String>(
-                          value: wallet.id,
-                          child: Text(wallet.name ?? ''),
-                        ),
-                      )
-                      .toList(growable: false),
-                  onChanged: (value) => setState(() => _walletId = value),
-                  decoration: InputDecoration(
-                    labelText: context.l10n.inventoryCheckoutWallet,
-                  ),
-                ),
-                const shad.Gap(12),
-                DropdownButtonFormField<String>(
-                  initialValue: _categoryId,
-                  items: _categories
-                      .map(
-                        (category) => DropdownMenuItem<String>(
-                          value: category.id,
-                          child: Text(category.name ?? ''),
-                        ),
-                      )
-                      .toList(growable: false),
-                  onChanged: (value) => setState(() => _categoryId = value),
-                  decoration: InputDecoration(
-                    labelText: context.l10n.inventoryCheckoutCategoryOverride,
-                  ),
-                ),
-              ],
-            ),
     );
   }
 }

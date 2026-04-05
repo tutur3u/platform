@@ -19,15 +19,20 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-Future<T?> showInventoryCheckoutPage<T>(BuildContext context) {
+Future<T?> showInventoryCheckoutPage<T>(
+  BuildContext context, {
+  InventorySaleDetail? sale,
+}) {
   return showFinanceFullscreenModal<T>(
     context: context,
-    builder: (context) => const InventoryCheckoutPage(),
+    builder: (context) => InventoryCheckoutPage(sale: sale),
   );
 }
 
 class InventoryCheckoutPage extends StatefulWidget {
-  const InventoryCheckoutPage({super.key});
+  const InventoryCheckoutPage({this.sale, super.key});
+
+  final InventorySaleDetail? sale;
 
   @override
   State<InventoryCheckoutPage> createState() => _InventoryCheckoutPageState();
@@ -41,6 +46,8 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   late final FinanceRepository _financeRepository;
   late final SettingsRepository _settingsRepository;
   late final TextEditingController _searchController;
+  late final TextEditingController _titleController;
+  late final TextEditingController _noteController;
   bool _loading = true;
   bool _saving = false;
   int _activeTab = _tabBrowse;
@@ -50,6 +57,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   final Map<String, int> _quantities = <String, int>{};
   String? _walletId;
   String? _manualCategoryId;
+  String? _selectedProductCategory;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -61,12 +69,16 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     _financeRepository = FinanceRepository();
     _settingsRepository = SettingsRepository();
     _searchController = TextEditingController();
+    _titleController = TextEditingController(text: widget.sale?.notice ?? '');
+    _noteController = TextEditingController(text: widget.sale?.note ?? '');
     unawaited(_load());
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _titleController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -89,15 +101,35 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         _categories = (results[2] as List<TransactionCategory>)
             .where((item) => !(item.isExpense ?? false))
             .toList(growable: false);
-        _walletId = _walletId ?? (_wallets.isEmpty ? null : _wallets.first.id);
+        _walletId =
+            widget.sale?.walletId ??
+            _walletId ??
+            (_wallets.isEmpty ? null : _wallets.first.id);
         final availableCategoryIds = _categories
             .map((category) => category.id)
             .whereType<String>()
             .where((id) => id.isNotEmpty)
             .toSet();
-        _manualCategoryId = availableCategoryIds.contains(lastCategoryId)
+        _manualCategoryId =
+            availableCategoryIds.contains(widget.sale?.categoryId)
+            ? widget.sale?.categoryId
+            : availableCategoryIds.contains(lastCategoryId)
             ? lastCategoryId
             : (_categories.isEmpty ? null : _categories.first.id);
+        final sale = widget.sale;
+        if (sale != null && _quantities.isEmpty) {
+          for (final line in sale.lines) {
+            if (line.productId.isEmpty) {
+              continue;
+            }
+            final roundedQuantity = line.quantity.round();
+            if (roundedQuantity <= 0) {
+              continue;
+            }
+            final key = '${line.productId}|${line.unitId}|${line.warehouseId}';
+            _quantities[key] = roundedQuantity;
+          }
+        }
       });
     } finally {
       if (mounted) {
@@ -120,6 +152,12 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     final query = _searchController.text.trim().toLowerCase();
     final rows = <_SellableRow>[];
     for (final row in _allRows) {
+      final categoryName = row.product.category?.trim();
+      if (_selectedProductCategory != null &&
+          _selectedProductCategory!.isNotEmpty &&
+          categoryName != _selectedProductCategory) {
+        continue;
+      }
       final haystack = [
         row.product.name,
         row.product.owner?.name,
@@ -132,6 +170,15 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       }
     }
     return rows;
+  }
+
+  List<String> get _productCategories {
+    return _products
+        .map((product) => product.category?.trim() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList(growable: false)
+      ..sort();
   }
 
   String _rowKey(_SellableRow row) =>
@@ -153,10 +200,38 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   String? get _resolvedCategoryId =>
       _requiresManualCategory ? _manualCategoryId : _linkedCategoryIds.first;
 
+  int get _selectedItemsCount =>
+      _quantities.values.fold<int>(0, (sum, qty) => sum + qty);
+
   double get _cartTotal => _selectedRows.fold<double>(
     0,
     (sum, row) => sum + (_quantityFor(row) * row.inventory.price),
   );
+
+  Wallet? get _selectedWallet {
+    final walletId = _walletId;
+    if (walletId == null || walletId.isEmpty) {
+      return null;
+    }
+
+    for (final wallet in _wallets) {
+      if (wallet.id == walletId) {
+        return wallet;
+      }
+    }
+
+    return null;
+  }
+
+  String get _selectedWalletName =>
+      _selectedWallet?.name?.trim().isNotEmpty == true
+      ? _selectedWallet!.name!.trim()
+      : context.l10n.inventoryCheckoutNoWalletSelected;
+
+  String get _selectedCurrency =>
+      _selectedWallet?.currency?.trim().isNotEmpty == true
+      ? _selectedWallet!.currency!.trim()
+      : 'VND';
 
   void _switchTab(int tab) {
     setState(() {
@@ -202,12 +277,60 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       return;
     }
 
+    final walletId = _walletId;
+    final resolvedCategoryId = _resolvedCategoryId;
+    if (walletId == null || resolvedCategoryId == null) {
+      return;
+    }
+
     setState(() => _saving = true);
     try {
+      final sale = widget.sale;
+      if (sale != null) {
+        final updated = await _inventoryRepository.updateSale(
+          wsId: wsId,
+          saleId: sale.id,
+          notice: _titleController.text.trim().isEmpty
+              ? null
+              : _titleController.text.trim(),
+          note: _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
+          walletId: walletId,
+          categoryId: resolvedCategoryId,
+          products: _selectedRows
+              .map(
+                (row) => {
+                  'product_id': row.product.id,
+                  'unit_id': row.inventory.unitId,
+                  'warehouse_id': row.inventory.warehouseId,
+                  'quantity': _quantityFor(row),
+                  'price': row.inventory.price,
+                },
+              )
+              .toList(growable: false),
+        );
+        await _settingsRepository.setLastIncomeCategory(
+          wsId,
+          resolvedCategoryId,
+        );
+
+        if (!mounted) return;
+        showInventoryToast(context, context.l10n.inventorySaleUpdated);
+        context.pop(updated);
+        return;
+      }
+
       await _inventoryRepository.createSale(
         wsId: wsId,
-        walletId: _walletId!,
-        categoryId: _resolvedCategoryId,
+        walletId: walletId,
+        categoryId: resolvedCategoryId,
+        content: _titleController.text.trim().isEmpty
+            ? null
+            : _titleController.text.trim(),
+        notes: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
         products: _selectedRows
             .map(
               (row) => {
@@ -223,7 +346,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
       );
       await _settingsRepository.setLastIncomeCategory(
         wsId,
-        _resolvedCategoryId!,
+        resolvedCategoryId,
       );
 
       if (!mounted) return;
@@ -256,26 +379,40 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final pageTitle = widget.sale == null
+        ? l10n.inventoryCheckoutTitle
+        : l10n.inventorySalesEdit;
+    final primaryActionLabel = widget.sale == null
+        ? l10n.inventoryCheckoutSubmit
+        : l10n.inventorySalesSave;
 
     if (_loading) {
       return FinanceFullscreenFormScaffold(
-        title: l10n.inventoryCheckoutTitle,
-        primaryActionLabel: l10n.inventoryCheckoutSubmit,
+        title: pageTitle,
+        primaryActionLabel: primaryActionLabel,
         onPrimaryPressed: null,
         child: const Center(child: NovaLoadingIndicator()),
       );
     }
 
     return FinanceFullscreenFormScaffold(
-      title: l10n.inventoryCheckoutTitle,
-      primaryActionLabel: l10n.inventoryCheckoutSubmit,
+      title: pageTitle,
+      primaryActionLabel: primaryActionLabel,
       onPrimaryPressed: _saving ? null : _submit,
       isSaving: _saving,
+      footerTop: _CheckoutFooterSummary(
+        walletLabel: l10n.inventoryCheckoutWallet,
+        walletValue: _selectedWalletName,
+        itemsLabel: l10n.inventoryCheckoutTotalItems,
+        itemsValue: '$_selectedItemsCount',
+        totalLabel: l10n.inventoryCheckoutCartTotal,
+        totalValue: formatCurrency(_cartTotal, _selectedCurrency),
+      ),
       child: ListView(
         padding: const EdgeInsets.only(bottom: 12),
         children: [
           InventoryHeroCard(
-            title: l10n.inventoryCheckoutTitle,
+            title: pageTitle,
             icon: Icons.shopping_basket_outlined,
             metrics: [
               InventoryMetricTile(
@@ -285,9 +422,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
               ),
               InventoryMetricTile(
                 label: l10n.inventoryCheckoutSelectedItems,
-                value: _quantities.values
-                    .fold<int>(0, (sum, qty) => sum + qty)
-                    .toString(),
+                value: '$_selectedItemsCount',
                 icon: Icons.shopping_cart_checkout_rounded,
               ),
             ],
@@ -303,22 +438,58 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
           const shad.Gap(16),
           if (_activeTab == _tabBrowse) ...[
             FinancePanel(
-              child: TextField(
-                controller: _searchController,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: l10n.inventorySearchProducts,
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: _searchController.text.isEmpty
-                      ? null
-                      : IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_productCategories.isNotEmpty) ...[
+                    SizedBox(
+                      height: 36,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          _CategoryFilterChip(
+                            label: l10n.inventoryCheckoutAllCategories,
+                            selected: _selectedProductCategory == null,
+                            onTap: () => setState(
+                              () => _selectedProductCategory = null,
+                            ),
+                          ),
+                          for (final category in _productCategories) ...[
+                            const shad.Gap(8),
+                            _CategoryFilterChip(
+                              label: category,
+                              selected: _selectedProductCategory == category,
+                              onTap: () => setState(
+                                () => _selectedProductCategory =
+                                    _selectedProductCategory == category
+                                    ? null
+                                    : category,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const shad.Gap(12),
+                  ],
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: l10n.inventorySearchProducts,
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: _searchController.text.isEmpty
+                          ? null
+                          : IconButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {});
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const shad.Gap(16),
@@ -371,6 +542,22 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                     onChanged: (value) => setState(() => _walletId = value),
                     decoration: InputDecoration(
                       labelText: l10n.inventoryCheckoutWallet,
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  TextField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      labelText: l10n.inventorySalesTitle,
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  TextField(
+                    controller: _noteController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      labelText: l10n.inventorySalesNote,
                     ),
                   ),
                   const shad.Gap(12),
@@ -438,31 +625,6 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                 ),
               ),
             ],
-            const shad.Gap(16),
-            FinancePanel(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.inventoryCheckoutCartTotal,
-                          style: shad.Theme.of(context).typography.small,
-                        ),
-                        const shad.Gap(4),
-                        Text(
-                          formatCurrency(_cartTotal, 'VND'),
-                          style: shad.Theme.of(
-                            context,
-                          ).typography.h3.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ],
       ),
@@ -600,6 +762,53 @@ class _CheckoutTabSelector extends StatelessWidget {
             badge: cartCount == 0 ? null : '$cartCount',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CategoryFilterChip extends StatelessWidget {
+  const _CategoryFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = FinancePalette.of(context).accent;
+    final theme = shad.Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? accent.withValues(alpha: 0.14)
+                : theme.colorScheme.card,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected
+                  ? accent.withValues(alpha: 0.4)
+                  : theme.colorScheme.border.withValues(alpha: 0.72),
+            ),
+          ),
+          child: Text(
+            label,
+            style: theme.typography.xSmall.copyWith(
+              fontWeight: FontWeight.w700,
+              color: selected ? accent : theme.colorScheme.mutedForeground,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -878,6 +1087,85 @@ class _CheckoutInfoRow extends StatelessWidget {
             style: theme.typography.small.copyWith(
               fontWeight: FontWeight.w700,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckoutFooterSummary extends StatelessWidget {
+  const _CheckoutFooterSummary({
+    required this.walletLabel,
+    required this.walletValue,
+    required this.itemsLabel,
+    required this.itemsValue,
+    required this.totalLabel,
+    required this.totalValue,
+  });
+
+  final String walletLabel;
+  final String walletValue;
+  final String itemsLabel;
+  final String itemsValue;
+  final String totalLabel;
+  final String totalValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final palette = FinancePalette.of(context);
+
+    Widget buildItem({
+      required String label,
+      required String value,
+      CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
+    }) {
+      return Expanded(
+        child: Column(
+          crossAxisAlignment: crossAxisAlignment,
+          children: [
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.xSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+              ),
+            ),
+            const shad.Gap(4),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.small.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: palette.elevatedPanel,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: theme.colorScheme.border.withValues(alpha: 0.68),
+        ),
+      ),
+      child: Row(
+        children: [
+          buildItem(label: walletLabel, value: walletValue),
+          const shad.Gap(12),
+          buildItem(label: itemsLabel, value: itemsValue),
+          const shad.Gap(12),
+          buildItem(
+            label: totalLabel,
+            value: totalValue,
+            crossAxisAlignment: CrossAxisAlignment.end,
           ),
         ],
       ),

@@ -51,6 +51,11 @@ class InventoryRepository {
             json['transaction_categories'] as Map<String, dynamic>,
           )
         : null;
+    final productCategory = json['product_categories'] is Map<String, dynamic>
+        ? Map<String, dynamic>.from(
+            json['product_categories'] as Map<String, dynamic>,
+          )
+        : null;
     final inventory =
         (json['inventory_products'] as List<dynamic>? ?? const <dynamic>[])
             .whereType<Map<String, dynamic>>()
@@ -76,7 +81,7 @@ class InventoryRepository {
       'manufacturer': json['manufacturer'],
       'description': json['description'],
       'usage': json['usage'],
-      'category': null,
+      'category': productCategory?['name'],
       'category_id': json['category_id'],
       'owner_id': json['owner_id'],
       'owner': owner,
@@ -286,12 +291,14 @@ class InventoryRepository {
     String? note,
     String? walletId,
     String? categoryId,
+    List<Map<String, dynamic>>? products,
   }) async {
     final response = await _api.putJson(InventoryEndpoints.sale(wsId, saleId), {
       'notice': notice,
       'note': note,
       'wallet_id': walletId,
       'category_id': categoryId,
+      if (products != null) 'products': products,
     });
     return InventorySaleDetail.fromJson(
       Map<String, dynamic>.from(response['data'] as Map),

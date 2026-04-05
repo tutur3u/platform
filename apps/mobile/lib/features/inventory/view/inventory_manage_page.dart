@@ -35,10 +35,6 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
   late final FinanceRepository _financeRepository;
   late final WorkspacePermissionsRepository _permissionsRepository;
   Future<_InventoryManageData>? _future;
-  bool _savingOwner = false;
-  bool _savingCategory = false;
-  bool _savingUnit = false;
-  bool _savingWarehouse = false;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -87,58 +83,26 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
 
   Future<void> _createOwner(String name) async {
     final wsId = _wsId;
-    if (wsId == null || name.isEmpty || _savingOwner) return;
-    setState(() => _savingOwner = true);
-    try {
-      await _inventoryRepository.createOwner(wsId, name);
-      _reload();
-    } finally {
-      if (mounted) {
-        setState(() => _savingOwner = false);
-      }
-    }
+    if (wsId == null || name.isEmpty) return;
+    await _inventoryRepository.createOwner(wsId, name);
   }
 
   Future<void> _createCategory(String name) async {
     final wsId = _wsId;
-    if (wsId == null || name.isEmpty || _savingCategory) return;
-    setState(() => _savingCategory = true);
-    try {
-      await _inventoryRepository.createProductCategory(wsId, name);
-      _reload();
-    } finally {
-      if (mounted) {
-        setState(() => _savingCategory = false);
-      }
-    }
+    if (wsId == null || name.isEmpty) return;
+    await _inventoryRepository.createProductCategory(wsId, name);
   }
 
   Future<void> _createUnit(String name) async {
     final wsId = _wsId;
-    if (wsId == null || name.isEmpty || _savingUnit) return;
-    setState(() => _savingUnit = true);
-    try {
-      await _inventoryRepository.createProductUnit(wsId, name);
-      _reload();
-    } finally {
-      if (mounted) {
-        setState(() => _savingUnit = false);
-      }
-    }
+    if (wsId == null || name.isEmpty) return;
+    await _inventoryRepository.createProductUnit(wsId, name);
   }
 
   Future<void> _createWarehouse(String name) async {
     final wsId = _wsId;
-    if (wsId == null || name.isEmpty || _savingWarehouse) return;
-    setState(() => _savingWarehouse = true);
-    try {
-      await _inventoryRepository.createProductWarehouse(wsId, name);
-      _reload();
-    } finally {
-      if (mounted) {
-        setState(() => _savingWarehouse = false);
-      }
-    }
+    if (wsId == null || name.isEmpty) return;
+    await _inventoryRepository.createProductWarehouse(wsId, name);
   }
 
   Future<void> _showCreateDialog({
@@ -176,6 +140,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
     controller.dispose();
 
     if (result == true && mounted) {
+      _reload();
       showInventoryToast(context, confirmLabel);
     }
   }
@@ -257,7 +222,6 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                       title: l10n.inventoryManageOwners,
                       actionLabel: l10n.inventoryAddOwner,
                       canManage: data.canManageSetup,
-                      saving: _savingOwner,
                       onSubmit: () => _showCreateDialog(
                         title: l10n.inventoryAddOwner,
                         confirmLabel: l10n.inventoryAddOwner,
@@ -280,7 +244,6 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                       title: l10n.inventoryManageCategories,
                       actionLabel: l10n.inventoryAddCategory,
                       canManage: data.canManageSetup,
-                      saving: _savingCategory,
                       onSubmit: () => _showCreateDialog(
                         title: l10n.inventoryAddCategory,
                         confirmLabel: l10n.inventoryAddCategory,
@@ -297,7 +260,6 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                       title: l10n.inventoryManageUnits,
                       actionLabel: l10n.inventoryAddUnit,
                       canManage: data.canManageSetup,
-                      saving: _savingUnit,
                       onSubmit: () => _showCreateDialog(
                         title: l10n.inventoryAddUnit,
                         confirmLabel: l10n.inventoryAddUnit,
@@ -314,7 +276,6 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                       title: l10n.inventoryManageWarehouses,
                       actionLabel: l10n.inventoryAddWarehouse,
                       canManage: data.canManageSetup,
-                      saving: _savingWarehouse,
                       onSubmit: () => _showCreateDialog(
                         title: l10n.inventoryAddWarehouse,
                         confirmLabel: l10n.inventoryAddWarehouse,
@@ -380,7 +341,6 @@ class _ManageSection extends StatelessWidget {
     required this.title,
     required this.actionLabel,
     required this.canManage,
-    required this.saving,
     required this.onSubmit,
     required this.child,
   });
@@ -388,7 +348,6 @@ class _ManageSection extends StatelessWidget {
   final String title;
   final String actionLabel;
   final bool canManage;
-  final bool saving;
   final Future<void> Function() onSubmit;
   final Widget child;
 
@@ -402,15 +361,8 @@ class _ManageSection extends StatelessWidget {
             title: title,
             action: canManage
                 ? shad.IconButton.ghost(
-                    onPressed: saving ? null : () => unawaited(onSubmit()),
-                    icon: saving
-                        ? const SizedBox.square(
-                            dimension: 16,
-                            child: shad.CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(Icons.add_rounded, size: 18),
+                    onPressed: () => unawaited(onSubmit()),
+                    icon: const Icon(Icons.add_rounded, size: 18),
                   )
                 : null,
           ),

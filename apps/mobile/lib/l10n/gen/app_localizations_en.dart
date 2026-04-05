@@ -2557,6 +2557,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryCheckoutAutoCategory => 'Auto-linked category';
 
   @override
+  String get inventoryCheckoutAllCategories => 'All categories';
+
+  @override
   String get inventoryCheckoutBrowseTab => 'Browse';
 
   @override
@@ -2590,6 +2593,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryCheckoutNoSearchResults => 'No products match the current search.';
 
   @override
+  String get inventoryCheckoutNoWalletSelected => 'No wallet selected';
+
+  @override
   String get inventoryCheckoutProductsRequired => 'Add at least one product before creating the sale.';
 
   @override
@@ -2600,6 +2606,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryCheckoutSubmit => 'Create sale';
+
+  @override
+  String get inventoryCheckoutTotalItems => 'Total items';
 
   @override
   String get inventoryCheckoutTitle => 'Sell';

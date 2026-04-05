@@ -2557,6 +2557,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryCheckoutAutoCategory => 'Danh mục tự liên kết';
 
   @override
+  String get inventoryCheckoutAllCategories => 'Tất cả danh mục';
+
+  @override
   String get inventoryCheckoutBrowseTab => 'Chọn hàng';
 
   @override
@@ -2590,6 +2593,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryCheckoutNoSearchResults => 'Không có sản phẩm nào khớp với tìm kiếm hiện tại.';
 
   @override
+  String get inventoryCheckoutNoWalletSelected => 'Chưa chọn ví';
+
+  @override
   String get inventoryCheckoutProductsRequired => 'Thêm ít nhất một sản phẩm trước khi tạo giao dịch bán.';
 
   @override
@@ -2600,6 +2606,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryCheckoutSubmit => 'Tạo giao dịch bán';
+
+  @override
+  String get inventoryCheckoutTotalItems => 'Tổng món';
 
   @override
   String get inventoryCheckoutTitle => 'Bán hàng';

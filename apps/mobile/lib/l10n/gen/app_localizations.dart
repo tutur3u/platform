@@ -5023,6 +5023,12 @@ abstract class AppLocalizations {
   /// **'Auto-linked category'**
   String get inventoryCheckoutAutoCategory;
 
+  /// No description provided for @inventoryCheckoutAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get inventoryCheckoutAllCategories;
+
   /// No description provided for @inventoryCheckoutBrowseTab.
   ///
   /// In en, this message translates to:
@@ -5089,6 +5095,12 @@ abstract class AppLocalizations {
   /// **'No products match the current search.'**
   String get inventoryCheckoutNoSearchResults;
 
+  /// No description provided for @inventoryCheckoutNoWalletSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet selected'**
+  String get inventoryCheckoutNoWalletSelected;
+
   /// No description provided for @inventoryCheckoutProductsRequired.
   ///
   /// In en, this message translates to:
@@ -5112,6 +5124,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create sale'**
   String get inventoryCheckoutSubmit;
+
+  /// No description provided for @inventoryCheckoutTotalItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Total items'**
+  String get inventoryCheckoutTotalItems;
 
   /// No description provided for @inventoryCheckoutTitle.
   ///
