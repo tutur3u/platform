@@ -1,7 +1,7 @@
-import { calendarEventsSchema } from './events';
 import { google } from '@ai-sdk/google';
 import { createClient } from '@ncthub/supabase/next/server';
-import { streamObject } from 'ai';
+import { Output, streamText } from 'ai';
+import { calendarEventsSchema } from './events';
 
 export async function POST(req: Request) {
   const context = (await req.json()) as {
@@ -59,9 +59,9 @@ For example:
 
   promptText += `\nContext: ${context.prompt}`;
 
-  const result = streamObject({
+  const result = streamText({
     model: google('gemini-2.0-flash'),
-    schema: calendarEventsSchema,
+    output: Output.object({ schema: calendarEventsSchema }),
     prompt: promptText,
   });
 

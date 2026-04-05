@@ -1,14 +1,9 @@
-import { ChatModelSelector } from './chat-model-selector';
-import { PromptForm } from './prompt-form';
-import { ScrollToBottomButton } from './scroll-to-bottom-button';
-import { ScrollToTopButton } from './scroll-to-top-button';
-import { BASE_URL } from '@/constants/common';
-import { Model } from '@ncthub/ai/models';
-import { type Message, type UseChatHelpers } from '@ncthub/ai/types';
+import type { Model } from '@ncthub/ai/models';
+import type { UIMessage, UseChatHelpers } from '@ncthub/ai/types';
 import { createDynamicClient } from '@ncthub/supabase/next/client';
-import { AIChat } from '@ncthub/types/db';
+import type { AIChat } from '@ncthub/types/db';
 import { Button } from '@ncthub/ui/button';
-import { FileUploader, StatedFile } from '@ncthub/ui/custom/file-uploader';
+import { FileUploader, type StatedFile } from '@ncthub/ui/custom/file-uploader';
 import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import {
   Dialog,
@@ -30,21 +25,21 @@ import {
 import { ScrollArea } from '@ncthub/ui/scroll-area';
 import { Separator } from '@ncthub/ui/separator';
 import { cn } from '@ncthub/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { BASE_URL } from '@/constants/common';
+import { ChatModelSelector } from './chat-model-selector';
+import { PromptForm } from './prompt-form';
+import { ScrollToBottomButton } from './scroll-to-bottom-button';
+import { ScrollToTopButton } from './scroll-to-top-button';
 
 export interface ChatPanelProps
   extends Pick<
-    UseChatHelpers,
-    | 'append'
-    | 'isLoading'
-    | 'reload'
-    | 'messages'
-    | 'stop'
-    | 'input'
-    | 'setInput'
+    UseChatHelpers<UIMessage>,
+    'sendMessage' | 'status' | 'messages' | 'stop'
   > {
   id?: string;
   wsId: string;
@@ -52,20 +47,18 @@ export interface ChatPanelProps
   chats?: AIChat[];
   count?: number | null;
   defaultRoute: string;
+  input: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  setInput: (input: string) => void;
   model?: Model;
-  // eslint-disable-next-line no-unused-vars
   setModel: (model: Model) => void;
-  // eslint-disable-next-line no-unused-vars
   createChat: (input: string) => Promise<void>;
-  // eslint-disable-next-line no-unused-vars
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
-  initialMessages?: Message[];
+  initialMessages?: UIMessage[];
   collapsed: boolean;
   disableScrollToTop?: boolean;
   disableScrollToBottom?: boolean;
-  // eslint-disable-next-line no-unused-vars
   setCollapsed: (collapsed: boolean) => void;
 }
 
@@ -76,8 +69,8 @@ export function ChatPanel({
   chats,
   count,
   defaultRoute,
-  isLoading,
-  append,
+  status,
+  sendMessage,
   input,
   inputRef,
   setInput,
@@ -100,14 +93,15 @@ export function ChatPanel({
   const [dialogType, setDialogType] = useState<'files' | 'visibility'>();
   const [showExtraOptions, setShowExtraOptions] = useState(false);
 
-  const disablePublicLink = isLoading || updating || !id || !chat?.is_public;
+  const disablePublicLink =
+    status === 'streaming' || updating || !id || !chat?.is_public;
 
   const [chatInputHeight, setChatInputHeight] = useState(0);
 
   useEffect(() => {
     const chatInput = document.getElementById('chat-input');
     if (chatInput) setChatInputHeight(chatInput.clientHeight);
-  }, [input]);
+  }, []);
 
   const [files, setFiles] = useState<StatedFile[]>([]);
 
@@ -316,18 +310,14 @@ export function ChatPanel({
                   if (!id) return await createChat(value);
 
                   // If there is an id, append the message to the chat
-                  await append({
-                    id,
-                    content: value,
-                    role: 'user',
-                  });
+                  await sendMessage({ text: value });
                 }}
                 files={files}
                 setFiles={setFiles}
                 input={input}
                 inputRef={inputRef}
                 setInput={setInput}
-                isLoading={isLoading}
+                isLoading={status === 'streaming'}
                 showExtraOptions={showExtraOptions}
                 setShowExtraOptions={setShowExtraOptions}
                 toggleChatFileUpload={() => {
@@ -515,7 +505,8 @@ export async function uploadFile(
         lastFileName.substring(
           lastFileName.lastIndexOf('(') + 1,
           lastFileName.lastIndexOf(')')
-        )
+        ),
+        10
       );
       newFileName = `${baseName}(${lastFileNameIndex + 1}).${fileExtension}`;
     } else {

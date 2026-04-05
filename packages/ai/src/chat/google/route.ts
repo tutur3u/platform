@@ -1,184 +1,168 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { google } from '@ai-sdk/google';
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import { CoreMessage, smoothStream, streamText } from 'ai';
-import { cookies } from 'next/headers';
-import { type NextRequest, NextResponse } from 'next/server';
+import {
+  convertToModelMessages,
+  smoothStream,
+  streamText,
+  type UIMessage,
+} from 'ai';
+import { NextResponse } from 'next/server';
+import { getTextFromModelMessage } from '../content';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
+const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 
-export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
-  // Higher-order function that returns the actual request handler
-  return async function handler(req: NextRequest) {
-    const sbAdmin = await createAdminClient();
+export async function POST(req: Request) {
+  const sbAdmin = await createAdminClient();
+
+  const {
+    id,
+    model = DEFAULT_MODEL_NAME,
+    messages,
+    previewToken,
+  } = (await req.json()) as {
+    id?: string;
+    model?: string;
+    messages?: UIMessage[];
+    previewToken?: string;
+  };
+
+  try {
+    // if (!id) return new Response('Missing chat ID', { status: 400 });
+    if (!messages) return new Response('Missing messages', { status: 400 });
+
+    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) return new Response('Missing API key', { status: 400 });
+
+    const supabase = await createClient();
 
     const {
-      id,
-      model = DEFAULT_MODEL_NAME,
-      messages,
-    } = (await req.json()) as {
-      id?: string;
-      model?: string;
-      messages?: CoreMessage[];
-    };
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    try {
-      // if (!id) return new Response('Missing chat ID', { status: 400 });
-      if (!messages) {
-        console.error('Missing messages');
-        return new Response('Missing messages', { status: 400 });
+    if (!user) return new Response('Unauthorized', { status: 401 });
+
+    let chatId = id;
+
+    if (!chatId) {
+      const { data, error } = await sbAdmin
+        .from('ai_chats')
+        .select('id')
+        .eq('creator_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) return new Response(error.message, { status: 500 });
+      if (!data) return new Response('Internal Server Error', { status: 500 });
+
+      chatId = data.id;
+    }
+
+    const modelMessages = await convertToModelMessages(messages);
+
+    if (messages.length !== 1) {
+      const userMessages = modelMessages.filter((msg) => msg.role === 'user');
+
+      const message = userMessages[userMessages.length - 1];
+      if (!message) {
+        console.log('No message found');
+        throw new Error('No message found');
       }
 
-      // eslint-disable-next-line no-undef
-      const apiKey =
-        (await cookies()).get('google_api_key')?.value ||
-        (options.serverAPIKeyFallback
-          ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
-          : undefined);
-
-      if (!apiKey) {
-        console.error('Missing API key');
-        return new Response('Missing API key', { status: 400 });
-      }
-
-      const supabase = await createClient();
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        console.error('Unauthorized');
-        return new Response('Unauthorized', { status: 401 });
-      }
-
-      let chatId = id;
-
-      if (!chatId) {
-        const { data, error } = await sbAdmin
-          .from('ai_chats')
-          .select('id')
-          .eq('creator_id', user?.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (error) {
-          console.error(error.message);
-          return new Response(error.message, { status: 500 });
-        }
-
-        if (!data)
-          return new Response('Internal Server Error', { status: 500 });
-
-        chatId = data.id;
-      }
-
-      if (messages.length !== 1) {
-        const userMessages = messages.filter(
-          (msg: CoreMessage) => msg.role === 'user'
-        );
-
-        const message = userMessages[userMessages.length - 1]?.content;
-        if (!message) {
-          console.log('No message found');
-          throw new Error('No message found');
-        }
-
-        const { error: insertMsgError } = await supabase.rpc(
-          'insert_ai_chat_message',
-          {
-            message: message as string,
-            chat_id: chatId,
-            source: 'Rewise',
-          }
-        );
-
-        if (insertMsgError) {
-          console.log('ERROR ORIGIN: ROOT START');
-          console.log(insertMsgError);
-          throw new Error(insertMsgError.message);
-        }
-
-        console.log('User message saved to database');
-      }
-
-      // Instantiate Model with provided API key
-      const google = createGoogleGenerativeAI({
-        apiKey: apiKey,
-      });
-
-      const result = streamText({
-        experimental_transform: smoothStream(),
-        model: google(model, {
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_NONE',
-            },
-          ],
-        }),
-        messages,
-        system: systemInstruction,
-        onFinish: async (response) => {
-          console.log('AI Response:', response);
-
-          if (!response.text) {
-            console.log('No content found');
-            throw new Error('No content found');
-          }
-
-          const { error } = await sbAdmin.from('ai_chat_messages').insert({
-            chat_id: chatId,
-            creator_id: user.id,
-            content: response.text,
-            role: 'ASSISTANT',
-            model: model.toLowerCase(),
-            finish_reason: response.finishReason,
-            prompt_tokens: response.usage.promptTokens,
-            completion_tokens: response.usage.completionTokens,
-            metadata: { source: 'Rewise' },
-          });
-
-          if (error) {
-            console.log('ERROR ORIGIN: ROOT COMPLETION');
-            console.log(error);
-            throw new Error(error.message);
-          }
-
-          console.log('AI Response saved to database');
-        },
-      });
-
-      return result.toDataStreamResponse();
-    } catch (error: any) {
-      console.log(error);
-      return NextResponse.json(
+      const { error: insertMsgError } = await supabase.rpc(
+        'insert_ai_chat_message',
         {
-          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
-        },
-        {
-          status: 200,
+          message: getTextFromModelMessage(message),
+          chat_id: chatId,
+          source: 'Rewise',
         }
       );
+
+      if (insertMsgError) {
+        console.log('ERROR ORIGIN: ROOT START');
+        console.log(insertMsgError);
+        throw new Error(insertMsgError.message);
+      }
+
+      console.log('User message saved to database');
     }
-  };
+
+    const result = streamText({
+      experimental_transform: smoothStream(),
+      model: google(model),
+      messages: modelMessages,
+      providerOptions: {
+        google: {
+          safetySettings,
+        },
+      },
+      system: systemInstruction,
+      onFinish: async (response) => {
+        console.log('AI Response:', response);
+
+        if (!response.text) {
+          console.log('No content found');
+          throw new Error('No content found');
+        }
+
+        const { error } = await sbAdmin.from('ai_chat_messages').insert({
+          chat_id: chatId,
+          creator_id: user.id,
+          content: response.text,
+          role: 'ASSISTANT',
+          model: model.toLowerCase(),
+          finish_reason: response.finishReason,
+          prompt_tokens: response.usage.inputTokens,
+          completion_tokens: response.usage.outputTokens,
+          metadata: { source: 'Rewise' },
+        });
+
+        if (error) {
+          console.log('ERROR ORIGIN: ROOT COMPLETION');
+          console.log(error);
+          throw new Error(error.message);
+        }
+
+        console.log('AI Response saved to database');
+      },
+    });
+
+    return result.toUIMessageStreamResponse();
+  } catch (error: any) {
+    console.log(error);
+    return NextResponse.json(
+      {
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+      },
+      {
+        status: 200,
+      }
+    );
+  }
 }
+
+const safetySettings = [
+  {
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
+  },
+];
 
 const systemInstruction = `
   I am an internal AI product operating on the Tuturuuu platform. My new name is Mira, an AI powered by Tuturuuu, customized and engineered by Võ Hoàng Phúc, The Founder of Tuturuuu.

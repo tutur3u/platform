@@ -1,22 +1,14 @@
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { createClient } from '@ncthub/supabase/next/server';
-import { Message } from 'ai';
+import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
+import { getTextFromUIMessage } from '../../content';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const model = 'gemini-2.0-flash-001';
-
-// eslint-disable-next-line no-undef
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
-
-const genAI = new GoogleGenerativeAI(API_KEY);
+const model = 'claude-3-5-haiku-latest';
 
 export async function PATCH(req: Request) {
   const { id, previewToken } = (await req.json()) as {
@@ -27,8 +19,7 @@ export async function PATCH(req: Request) {
   try {
     if (!id) return new Response('Missing chat ID', { status: 400 });
 
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const supabase = await createClient();
@@ -55,9 +46,10 @@ export async function PATCH(req: Request) {
       return new Response('No messages found', { status: 404 });
 
     const messages = rawMessages.map((msg) => ({
-      ...msg,
+      id: msg.id,
       role: msg.role.toLowerCase(),
-    })) as Message[];
+      parts: [{ type: 'text', text: msg.content }],
+    })) as UIMessage[];
 
     if (!messages[messages.length - 1]?.id)
       return new Response('Internal Server Error', { status: 500 });
@@ -65,20 +57,22 @@ export async function PATCH(req: Request) {
     if (messages[messages.length - 1]?.role === 'user')
       return new Response('Cannot summarize user message', { status: 400 });
 
-    const prompt = buildGooglePrompt(messages);
+    const prompt = buildPrompt(messages);
 
     if (!prompt) return new Response('Internal Server Error', { status: 500 });
 
-    const geminiRes = await genAI
-      .getGenerativeModel({
-        model,
-        generationConfig,
-        safetySettings,
-      })
-      .generateContent(prompt);
+    const { text } = await generateText({
+      model: anthropic(model),
+      prompt,
+      system: systemInstruction,
+      providerOptions: {
+        anthropic: {
+          safetySettings,
+        },
+      },
+    });
 
-    const completion =
-      geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+    const completion = text.trim();
 
     if (!completion) return new Response('No content found', { status: 404 });
 
@@ -108,56 +102,31 @@ export async function PATCH(req: Request) {
   }
 }
 
-const normalizeGoogle = (message: Message) => ({
-  role:
-    message.role === 'user'
-      ? 'user'
-      : ('model' as 'user' | 'function' | 'model'),
-  parts: [{ text: message.content }],
-});
+const normalize = (message: UIMessage) => getTextFromUIMessage(message);
 
-const normalizeGoogleMessages = (messages: Message[]) =>
-  messages
-    .filter(
-      (message) => message.role === 'user' || message.role === 'assistant'
-    )
-    .map(normalizeGoogle);
-
-function buildGooglePrompt(messages: Message[]) {
-  const normalizedMsgs = normalizeGoogleMessages([
-    ...leadingMessages,
-    ...messages,
-    ...trailingMessages,
-  ]);
-
-  return { contents: normalizedMsgs };
+function buildPrompt(messages: UIMessage[]) {
+  return [...leadingMessages, ...messages, ...trailingMessages]
+    .map(normalize)
+    .join('\n\n')
+    .trim();
 }
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
 
 const safetySettings = [
   {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
   },
 ];
 
@@ -181,12 +150,17 @@ const systemInstruction = `
   DO NOT SAY RESPONSE START OR SAYING THAT THE RESPONSE TO THE USER STARTS HERE. JUST START THE RESPONSE.
   `;
 
-const leadingMessages: Message[] = [];
+const leadingMessages: UIMessage[] = [];
 
-const trailingMessages: Message[] = [
+const trailingMessages: UIMessage[] = [
   {
     id: 'system-instruction',
     role: 'assistant',
-    content: `Note to self (this is private thoughts that are not sent to the chat participant): \n\n"""${systemInstruction}"""`,
+    parts: [
+      {
+        type: 'text',
+        text: `Note to self (this is private thoughts that are not sent to the chat participant): \n\n"""${systemInstruction}"""`,
+      },
+    ],
   },
 ];
