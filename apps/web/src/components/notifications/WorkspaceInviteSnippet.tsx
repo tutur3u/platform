@@ -1,12 +1,11 @@
 'use client';
 
-import { Workspace } from '@ncthub/types/db';
+import type { Workspace } from '@ncthub/types/db';
 import { toast } from '@ncthub/ui/hooks/use-toast';
 import moment from 'moment';
-import 'moment/locale/vi';
-import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface Props {
   ws: Pick<Workspace, 'id' | 'name' | 'created_at'>;

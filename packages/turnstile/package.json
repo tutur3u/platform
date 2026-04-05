@@ -19,7 +19,7 @@
   "devDependencies": {
     "@ncthub/typescript-config": "workspace:*",
     "@types/node": "^25.5.2",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   }
 }
