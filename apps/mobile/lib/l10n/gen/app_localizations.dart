@@ -6361,6 +6361,12 @@ abstract class AppLocalizations {
   /// **'Enter a valid destination amount'**
   String get financeInvalidDestinationAmount;
 
+  /// No description provided for @financeExcludedFromReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded from reports'**
+  String get financeExcludedFromReports;
+
   /// No description provided for @financeReportOptIn.
   ///
   /// In en, this message translates to:

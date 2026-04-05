@@ -579,6 +579,28 @@ class _TransactionTile extends StatelessWidget {
     return value != null ? Color(value) : null;
   }
 
+  String _sourceWalletName() {
+    final transfer = transaction.transfer;
+    if (transfer == null) {
+      return transaction.walletName ?? '-';
+    }
+
+    return transfer.isOrigin
+        ? (transaction.walletName ?? '-')
+        : transfer.linkedWalletName;
+  }
+
+  String _destinationWalletName() {
+    final transfer = transaction.transfer;
+    if (transfer == null) {
+      return transaction.walletName ?? '-';
+    }
+
+    return transfer.isOrigin
+        ? transfer.linkedWalletName
+        : (transaction.walletName ?? '-');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
@@ -597,10 +619,16 @@ class _TransactionTile extends StatelessWidget {
     final showConvertedAmount =
         convertedAmount != null &&
         currency.toUpperCase() != workspaceCurrency.toUpperCase();
+    final excludedReportColor = colorScheme.mutedForeground.withValues(
+      alpha: 0.72,
+    );
     final rawDescription = transaction.description?.trim();
     final hasDescription = rawDescription?.isNotEmpty ?? false;
+    final transferRouteTitle = isTransfer && transaction.transfer != null
+        ? '${_sourceWalletName()} → ${_destinationWalletName()}'
+        : null;
     final title = isTransfer
-        ? context.l10n.financeTransfer
+        ? (transferRouteTitle ?? context.l10n.financeTransfer)
         : (transaction.categoryName ?? rawDescription ?? '—');
     final description = isTransfer
         ? (hasDescription ? rawDescription : null)
@@ -645,6 +673,12 @@ class _TransactionTile extends StatelessWidget {
       spacing: 6,
       runSpacing: 4,
       children: [
+        if (isTransfer)
+          _Chip(
+            label: context.l10n.financeTransfer,
+            icon: categoryIcon,
+            color: categoryColor,
+          ),
         if (!isTransfer && transaction.categoryName != null)
           _Chip(
             label: transaction.categoryName!,
@@ -685,18 +719,6 @@ class _TransactionTile extends StatelessWidget {
         );
       }).toList(),
     );
-    final transferRoute =
-        isTransfer &&
-            transaction.walletName != null &&
-            transaction.transfer != null
-        ? _TransferWalletRoute(
-            sourceWalletName: transaction.walletName!,
-            sourceWalletIcon: transaction.walletIcon,
-            sourceWalletImageSrc: transaction.walletImageSrc,
-            destinationWalletName: transaction.transfer!.linkedWalletName,
-            accentColor: palette.accent,
-          )
-        : null;
     final content = emphasizeTransactionRows
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,10 +803,8 @@ class _TransactionTile extends StatelessWidget {
                   ),
                 ),
               ],
-              if (transferRoute != null) ...[
-                const SizedBox(height: 8),
-                transferRoute,
-              ] else if (transaction.categoryName != null ||
+              if (isTransfer ||
+                  transaction.categoryName != null ||
                   transaction.walletName != null) ...[
                 const SizedBox(height: 8),
                 metaChips,
@@ -799,10 +819,11 @@ class _TransactionTile extends StatelessWidget {
                   spacing: 10,
                   runSpacing: 4,
                   children: [
-                    if (isTransfer)
+                    if (transaction.reportOptIn != true)
                       _MutedInlineInfo(
-                        icon: Icons.swap_horiz_rounded,
-                        label: context.l10n.financeTransfer,
+                        icon: Icons.insights_outlined,
+                        label: context.l10n.financeExcludedFromReports,
+                        color: excludedReportColor,
                       ),
                     if (convertedAmountText != null)
                       _MutedInlineInfo(
@@ -810,6 +831,13 @@ class _TransactionTile extends StatelessWidget {
                         label: convertedAmountText,
                       ),
                   ],
+                ),
+              ] else if (transaction.reportOptIn != true) ...[
+                const SizedBox(height: 8),
+                _MutedInlineInfo(
+                  icon: Icons.insights_outlined,
+                  label: context.l10n.financeExcludedFromReports,
+                  color: excludedReportColor,
                 ),
               ],
             ],
@@ -850,6 +878,14 @@ class _TransactionTile extends StatelessWidget {
                       const SizedBox(height: 6),
                       tagsWrap,
                     ],
+                    if (transaction.reportOptIn != true) ...[
+                      const SizedBox(height: 6),
+                      _MutedInlineInfo(
+                        icon: Icons.insights_outlined,
+                        label: context.l10n.financeExcludedFromReports,
+                        color: excludedReportColor,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -875,18 +911,6 @@ class _TransactionTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (isTransfer)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          context.l10n.financeTransfer,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.xSmall.copyWith(
-                            color: colorScheme.mutedForeground,
-                          ),
-                        ),
-                      ),
                     if (transferLinkedAmountText != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -942,52 +966,6 @@ class _TransactionTile extends StatelessWidget {
       onTap: onTap,
       label: semanticsLabel,
       child: tileChild,
-    );
-  }
-}
-
-class _TransferWalletRoute extends StatelessWidget {
-  const _TransferWalletRoute({
-    required this.sourceWalletName,
-    required this.sourceWalletIcon,
-    required this.sourceWalletImageSrc,
-    required this.destinationWalletName,
-    required this.accentColor,
-  });
-
-  final String sourceWalletName;
-  final String? sourceWalletIcon;
-  final String? sourceWalletImageSrc;
-  final String destinationWalletName;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        _Chip(
-          label: sourceWalletName,
-          leading: WalletVisualAvatar(
-            icon: sourceWalletIcon,
-            imageSrc: sourceWalletImageSrc,
-            fallbackIcon: lucide.LucideIcons.walletCards,
-            size: 14,
-          ),
-        ),
-        Icon(
-          Icons.arrow_right_alt_rounded,
-          size: 18,
-          color: accentColor,
-        ),
-        _Chip(
-          label: destinationWalletName,
-          icon: lucide.LucideIcons.repeat2,
-          color: accentColor,
-        ),
-      ],
     );
   }
 }
@@ -1054,24 +1032,27 @@ class _MutedInlineInfo extends StatelessWidget {
   const _MutedInlineInfo({
     required this.icon,
     required this.label,
+    this.color,
   });
 
   final IconData icon;
   final String label;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final resolvedColor = color ?? theme.colorScheme.mutedForeground;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: theme.colorScheme.mutedForeground),
+        Icon(icon, size: 14, color: resolvedColor),
         const SizedBox(width: 4),
         Text(
           label,
           style: theme.typography.xSmall.copyWith(
-            color: theme.colorScheme.mutedForeground,
+            color: resolvedColor,
           ),
         ),
       ],

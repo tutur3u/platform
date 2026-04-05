@@ -109,8 +109,8 @@ void main() {
 
       expect(find.text('Transaction details'), findsAtLeastNWidgets(1));
       expect(find.text('Consulting payment'), findsOneWidget);
-      expect(find.text('Income'), findsOneWidget);
-      expect(find.text('Main Wallet'), findsOneWidget);
+      expect(find.text('Income'), findsAtLeastNWidgets(1));
+      expect(find.text('Main Wallet'), findsAtLeastNWidgets(1));
 
       await tester.tap(find.byIcon(Icons.edit_outlined).first);
       await tester.pumpAndSettle();

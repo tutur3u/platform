@@ -3254,6 +3254,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeInvalidDestinationAmount => 'Enter a valid destination amount';
 
   @override
+  String get financeExcludedFromReports => 'Excluded from reports';
+
+  @override
   String get financeReportOptIn => 'Include in reports';
 
   @override

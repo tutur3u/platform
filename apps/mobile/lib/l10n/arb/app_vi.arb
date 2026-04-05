@@ -1286,6 +1286,7 @@
     "financeWalletsMustBeDifferent": "Ví nguồn và ví đích phải khác nhau",
     "financeInvalidAmount": "Vui lòng nhập số tiền hợp lệ",
     "financeInvalidDestinationAmount": "Vui lòng nhập số tiền đích hợp lệ",
+    "financeExcludedFromReports": "Đã loại khỏi báo cáo",
     "financeReportOptIn": "Bao gồm trong báo cáo",
     "financeConfidentialAmount": "Ẩn số tiền",
     "financeConfidentialDescription": "Ẩn mô tả",

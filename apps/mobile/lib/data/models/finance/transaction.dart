@@ -33,6 +33,7 @@ class TransactionTransfer extends Equatable {
     this.linkedWalletCurrency,
     this.linkedAmount,
     this.isOrigin = false,
+    this.isSynthetic = false,
   });
 
   factory TransactionTransfer.fromJson(Map<String, dynamic> json) =>
@@ -43,7 +44,26 @@ class TransactionTransfer extends Equatable {
         linkedWalletCurrency: json['linked_wallet_currency'] as String?,
         linkedAmount: (json['linked_amount'] as num?)?.toDouble(),
         isOrigin: json['is_origin'] as bool? ?? false,
+        isSynthetic: json['is_synthetic'] as bool? ?? false,
       );
+
+  TransactionTransfer copyWith({
+    String? linkedTransactionId,
+    String? linkedWalletId,
+    String? linkedWalletName,
+    String? linkedWalletCurrency,
+    double? linkedAmount,
+    bool? isOrigin,
+    bool? isSynthetic,
+  }) => TransactionTransfer(
+    linkedTransactionId: linkedTransactionId ?? this.linkedTransactionId,
+    linkedWalletId: linkedWalletId ?? this.linkedWalletId,
+    linkedWalletName: linkedWalletName ?? this.linkedWalletName,
+    linkedWalletCurrency: linkedWalletCurrency ?? this.linkedWalletCurrency,
+    linkedAmount: linkedAmount ?? this.linkedAmount,
+    isOrigin: isOrigin ?? this.isOrigin,
+    isSynthetic: isSynthetic ?? this.isSynthetic,
+  );
 
   final String linkedTransactionId;
   final String linkedWalletId;
@@ -51,6 +71,7 @@ class TransactionTransfer extends Equatable {
   final String? linkedWalletCurrency;
   final double? linkedAmount;
   final bool isOrigin;
+  final bool isSynthetic;
 
   @override
   List<Object?> get props => [
@@ -60,6 +81,7 @@ class TransactionTransfer extends Equatable {
     linkedWalletCurrency,
     linkedAmount,
     isOrigin,
+    isSynthetic,
   ];
 }
 
@@ -93,22 +115,62 @@ class InfiniteTransactionResponse extends Equatable {
 List<Transaction> collapseTransferTransactions(
   Iterable<Transaction> transactions,
 ) {
-  final orderedKeys = <String>[];
-  final byKey = <String, Transaction>{};
+  final orderedTransactions = transactions.toList(growable: false);
+  final emittedTransferKeys = <String>{};
+  final handledTransactionIds = <String>{};
+  final preferredTransferByKey = <String, Transaction>{};
+  final collapsed = <Transaction>[];
 
-  for (final transaction in transactions) {
-    final key = _displayGroupingKey(transaction);
-    final existing = byKey[key];
-    if (existing == null) {
-      orderedKeys.add(key);
-      byKey[key] = transaction;
+  for (final transaction in orderedTransactions) {
+    final transfer = transaction.transfer;
+    if (transfer == null) {
       continue;
     }
 
-    byKey[key] = _preferTransactionForDisplay(existing, transaction);
+    final key = _displayGroupingKey(transaction);
+    final existing = preferredTransferByKey[key];
+    preferredTransferByKey[key] = existing == null
+        ? transaction
+        : _preferTransactionForDisplay(existing, transaction);
   }
 
-  return orderedKeys.map((key) => byKey[key]!).toList(growable: false);
+  for (final transaction in orderedTransactions) {
+    if (handledTransactionIds.contains(transaction.id)) {
+      continue;
+    }
+
+    final transfer = transaction.transfer;
+    if (transfer != null) {
+      final key = _displayGroupingKey(transaction);
+      if (emittedTransferKeys.add(key)) {
+        collapsed.add(preferredTransferByKey[key]!);
+      }
+      handledTransactionIds
+        ..add(transaction.id)
+        ..add(transfer.linkedTransactionId);
+      continue;
+    }
+
+    final heuristicPair = _findHeuristicTransferPair(
+      transaction,
+      orderedTransactions,
+      handledTransactionIds,
+    );
+    if (heuristicPair != null) {
+      handledTransactionIds
+        ..add(transaction.id)
+        ..add(heuristicPair.id);
+      collapsed.add(
+        _buildSyntheticTransferTransaction(transaction, heuristicPair),
+      );
+      continue;
+    }
+
+    handledTransactionIds.add(transaction.id);
+    collapsed.add(transaction);
+  }
+
+  return collapsed;
 }
 
 String _displayGroupingKey(Transaction transaction) {
@@ -133,6 +195,119 @@ Transaction _preferTransactionForDisplay(
   }
 
   return existing;
+}
+
+Transaction? _findHeuristicTransferPair(
+  Transaction transaction,
+  List<Transaction> transactions,
+  Set<String> handledTransactionIds,
+) {
+  for (final candidate in transactions) {
+    if (candidate.id == transaction.id ||
+        handledTransactionIds.contains(candidate.id)) {
+      continue;
+    }
+
+    if (_looksLikeTransferPair(transaction, candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+bool _looksLikeTransferPair(Transaction a, Transaction b) {
+  if (a.transfer != null || b.transfer != null) {
+    return false;
+  }
+  if (a.reportOptIn != false || b.reportOptIn != false) {
+    return false;
+  }
+  if (a.walletId == null ||
+      b.walletId == null ||
+      a.walletId == b.walletId ||
+      a.amount == null ||
+      b.amount == null ||
+      a.amount == 0 ||
+      b.amount == 0) {
+    return false;
+  }
+  if (a.amount!.isNegative == b.amount!.isNegative) {
+    return false;
+  }
+  if ((a.amount!.abs() - b.amount!.abs()).abs() > 0.000001) {
+    return false;
+  }
+
+  final aTimestamp = (a.takenAt ?? a.createdAt)?.toUtc();
+  final bTimestamp = (b.takenAt ?? b.createdAt)?.toUtc();
+  if (aTimestamp == null || bTimestamp == null) {
+    return false;
+  }
+  if (!aTimestamp.isAtSameMomentAs(bTimestamp)) {
+    return false;
+  }
+
+  final aDescription = a.description?.trim().toLowerCase() ?? '';
+  final bDescription = b.description?.trim().toLowerCase() ?? '';
+  return aDescription == bDescription;
+}
+
+Transaction _buildSyntheticTransferTransaction(
+  Transaction first,
+  Transaction second,
+) {
+  final origin =
+      (first.amount ?? 0).isNegative || !(second.amount ?? 0).isNegative
+      ? first
+      : second;
+  final destination = identical(origin, first) ? second : first;
+
+  return Transaction(
+    id: origin.id,
+    amount: origin.amount,
+    description: (origin.description?.trim().isNotEmpty ?? false)
+        ? origin.description
+        : destination.description,
+    walletId: origin.walletId,
+    takenAt: origin.takenAt ?? destination.takenAt,
+    createdAt: origin.createdAt ?? destination.createdAt,
+    walletName: origin.walletName,
+    walletCurrency: origin.walletCurrency,
+    walletIcon: origin.walletIcon,
+    walletImageSrc: origin.walletImageSrc,
+    reportOptIn: false,
+    isAmountConfidential:
+        origin.isAmountConfidential ?? destination.isAmountConfidential,
+    isDescriptionConfidential:
+        origin.isDescriptionConfidential ??
+        destination.isDescriptionConfidential,
+    isCategoryConfidential: false,
+    tags: _mergeTransactionTags(origin.tags, destination.tags),
+    creatorFullName: origin.creatorFullName ?? destination.creatorFullName,
+    transfer: TransactionTransfer(
+      linkedTransactionId: destination.id,
+      linkedWalletId: destination.walletId ?? '',
+      linkedWalletName: destination.walletName ?? '',
+      linkedWalletCurrency: destination.walletCurrency,
+      linkedAmount: destination.amount?.abs(),
+      isOrigin: true,
+      isSynthetic: true,
+    ),
+  );
+}
+
+List<TransactionTag> _mergeTransactionTags(
+  List<TransactionTag> first,
+  List<TransactionTag> second,
+) {
+  final tagsById = <String, TransactionTag>{};
+
+  for (final tag in [...first, ...second]) {
+    tagsById[tag.id] = tag;
+  }
+
+  return tagsById.values.toList(growable: false);
 }
 
 // ── Transaction ────────────────────────────────────────────────────────────
@@ -234,6 +409,54 @@ class Transaction extends Equatable {
     );
   }
 
+  Transaction copyWith({
+    String? id,
+    double? amount,
+    String? description,
+    String? categoryId,
+    String? walletId,
+    DateTime? takenAt,
+    DateTime? createdAt,
+    String? categoryName,
+    String? categoryIcon,
+    String? categoryColor,
+    String? walletName,
+    String? walletCurrency,
+    String? walletIcon,
+    String? walletImageSrc,
+    bool? reportOptIn,
+    bool? isAmountConfidential,
+    bool? isDescriptionConfidential,
+    bool? isCategoryConfidential,
+    List<TransactionTag>? tags,
+    String? creatorFullName,
+    TransactionTransfer? transfer,
+  }) => Transaction(
+    id: id ?? this.id,
+    amount: amount ?? this.amount,
+    description: description ?? this.description,
+    categoryId: categoryId ?? this.categoryId,
+    walletId: walletId ?? this.walletId,
+    takenAt: takenAt ?? this.takenAt,
+    createdAt: createdAt ?? this.createdAt,
+    categoryName: categoryName ?? this.categoryName,
+    categoryIcon: categoryIcon ?? this.categoryIcon,
+    categoryColor: categoryColor ?? this.categoryColor,
+    walletName: walletName ?? this.walletName,
+    walletCurrency: walletCurrency ?? this.walletCurrency,
+    walletIcon: walletIcon ?? this.walletIcon,
+    walletImageSrc: walletImageSrc ?? this.walletImageSrc,
+    reportOptIn: reportOptIn ?? this.reportOptIn,
+    isAmountConfidential: isAmountConfidential ?? this.isAmountConfidential,
+    isDescriptionConfidential:
+        isDescriptionConfidential ?? this.isDescriptionConfidential,
+    isCategoryConfidential:
+        isCategoryConfidential ?? this.isCategoryConfidential,
+    tags: tags ?? this.tags,
+    creatorFullName: creatorFullName ?? this.creatorFullName,
+    transfer: transfer ?? this.transfer,
+  );
+
   final String id;
   final double? amount;
   final String? description;
@@ -317,6 +540,7 @@ class Transaction extends Equatable {
             'linked_wallet_currency': transfer!.linkedWalletCurrency,
             'linked_amount': transfer!.linkedAmount,
             'is_origin': transfer!.isOrigin,
+            'is_synthetic': transfer!.isSynthetic,
           },
   };
 

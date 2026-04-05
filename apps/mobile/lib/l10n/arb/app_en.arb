@@ -1285,6 +1285,7 @@
     "financeWalletsMustBeDifferent": "Source and destination wallets must be different",
     "financeInvalidAmount": "Enter a valid amount",
     "financeInvalidDestinationAmount": "Enter a valid destination amount",
+    "financeExcludedFromReports": "Excluded from reports",
     "financeReportOptIn": "Include in reports",
     "financeConfidentialAmount": "Confidential amount",
     "financeConfidentialDescription": "Confidential description",

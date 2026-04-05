@@ -3254,6 +3254,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeInvalidDestinationAmount => 'Vui lòng nhập số tiền đích hợp lệ';
 
   @override
+  String get financeExcludedFromReports => 'Đã loại khỏi báo cáo';
+
+  @override
   String get financeReportOptIn => 'Bao gồm trong báo cáo';
 
   @override

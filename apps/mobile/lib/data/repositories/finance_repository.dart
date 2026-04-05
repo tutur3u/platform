@@ -380,6 +380,7 @@ class FinanceRepository {
     String? description,
     double? destinationAmount,
     bool? reportOptIn,
+    List<String>? tagIds,
   }) async {
     final body = <String, dynamic>{
       'origin_wallet_id': originWalletId,
@@ -400,6 +401,10 @@ class FinanceRepository {
       body['report_opt_in'] = reportOptIn;
     }
 
+    if (tagIds != null) {
+      body['tag_ids'] = tagIds;
+    }
+
     await _api.postJson(FinanceEndpoints.transfers(wsId), body);
   }
 
@@ -415,6 +420,7 @@ class FinanceRepository {
     String? description,
     double? destinationAmount,
     bool? reportOptIn,
+    List<String>? tagIds,
   }) async {
     final body = <String, dynamic>{
       'origin_transaction_id': originTransactionId,
@@ -435,6 +441,10 @@ class FinanceRepository {
 
     if (reportOptIn != null) {
       body['report_opt_in'] = reportOptIn;
+    }
+
+    if (tagIds != null) {
+      body['tag_ids'] = tagIds;
     }
 
     await _api.putJson(FinanceEndpoints.transfers(wsId), body);

@@ -44,6 +44,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
       _isTransfer = isTransfer;
       if (_isTransfer) {
         _categoryId = null;
+        if (_isCreate) {
+          _reportOptIn = false;
+        }
       } else {
         _destinationWalletId = null;
         _destinationAmountController.clear();
@@ -235,7 +238,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                               ? null
                               : _pickDestinationWallet,
                         )
-                      else ...[
+                      else
                         _CategorySelectorButton(
                           label: l10n.financeCategory,
                           categoryName: selectedCategory?.name,
@@ -243,16 +246,15 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                           color: _selectedCategoryColor,
                           onPressed: _categories.isEmpty ? null : _pickCategory,
                         ),
-                        const shad.Gap(12),
-                        _TagSelectorButton(
-                          label: l10n.financeTags,
-                          tagName: selectedTagLabel.trim().isEmpty
-                              ? null
-                              : selectedTagLabel,
-                          color: _selectedTagColor,
-                          onPressed: _tags.isEmpty ? null : _pickTag,
-                        ),
-                      ],
+                      const shad.Gap(12),
+                      _TagSelectorButton(
+                        label: l10n.financeTags,
+                        tagName: selectedTagLabel.trim().isEmpty
+                            ? null
+                            : selectedTagLabel,
+                        color: _selectedTagColor,
+                        onPressed: _tags.isEmpty ? null : _pickTag,
+                      ),
                     ],
                   ),
                 ),
@@ -430,7 +432,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
             ) ??
         const [];
     _isTransfer = widget.transaction?.isTransfer ?? false;
-    _reportOptIn = widget.transaction?.reportOptIn ?? true;
+    _reportOptIn =
+        widget.transaction?.reportOptIn ??
+        !(widget.transaction?.isTransfer ?? false);
     _isAmountConfidential = widget.transaction?.isAmountConfidential ?? false;
     _isDescriptionConfidential =
         widget.transaction?.isDescriptionConfidential ?? false;

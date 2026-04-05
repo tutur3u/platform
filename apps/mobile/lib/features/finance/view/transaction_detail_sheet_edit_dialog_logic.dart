@@ -178,6 +178,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           description: normalizedDescription,
           takenAt: _takenAt,
           reportOptIn: _reportOptIn,
+          tagIds: _tagIds,
         );
 
         if (!mounted) return;
@@ -247,6 +248,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           description: normalizedDescription,
           takenAt: _takenAt,
           reportOptIn: _reportOptIn,
+          tagIds: _tagIds,
           refreshedTransactionId: widget.transaction!.id,
         );
 
@@ -553,7 +555,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         _destinationWalletId = null;
       }
       _categoryId = null;
-      _tagIds = const [];
+      _tagIds = validTagIds;
       return;
     }
 
