@@ -1,10 +1,9 @@
-import { Workspace } from '@ncthub/types/db';
-import { CalendarEvent } from '@ncthub/types/primitives/calendar-event';
+import type { Workspace } from '@ncthub/types/db';
+import type { CalendarEvent } from '@ncthub/types/primitives/calendar-event';
 import moment from 'moment';
-import 'moment/locale/vi';
 import {
-  ReactNode,
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useMemo,

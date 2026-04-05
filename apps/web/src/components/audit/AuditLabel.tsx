@@ -1,11 +1,10 @@
-import { getLabel } from '@/utils/audit-helper';
-import { Workspace } from '@ncthub/types/db';
-import { User } from '@ncthub/types/primitives/User';
-import { AuditLog } from '@ncthub/types/primitives/audit-log';
+import type { Workspace } from '@ncthub/types/db';
+import type { AuditLog } from '@ncthub/types/primitives/audit-log';
+import type { User } from '@ncthub/types/primitives/User';
 import moment from 'moment';
-import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
+import { getLabel } from '@/utils/audit-helper';
 
 interface Props {
   data: AuditLog;
@@ -37,7 +36,7 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
     <>
       <div className="font-semibold tracking-wide">
         {hasActor ? (
-          actor && actor?.display_name ? (
+          actor?.display_name ? (
             <span className="text-zinc-900 dark:text-zinc-200">
               {actor.display_name}
             </span>
@@ -54,7 +53,7 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
               fullLabel.charAt(0).toUpperCase() + fullLabel.slice(1)}
         </span>
       </div>
-      <div className="line-clamp-1 pt-0.5 text-sm font-semibold text-blue-600 dark:text-blue-300">
+      <div className="line-clamp-1 pt-0.5 font-semibold text-blue-600 text-sm dark:text-blue-300">
         {relativeTime.charAt(0).toUpperCase() + relativeTime.slice(1)}
         {workspace ? (
           <span className="text-purple-600 dark:text-purple-300">
