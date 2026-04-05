@@ -15,16 +15,16 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.101.1",
     "@ncthub/types": "workspace:*",
-    "next": "16.2.1",
+    "next": "16.2.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@ncthub/typescript-config": "workspace:*",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "@types/react": "^19.2.14",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },
   "exports": {
