@@ -1,14 +1,15 @@
 'use client';
 
-import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
-import { type Message } from '@ncthub/ai/types';
+import { getTextFromUIMessage } from '@ncthub/ai/chat/content';
+import type { UIMessage } from '@ncthub/ai/types';
 import { Button } from '@ncthub/ui/button';
 import { CheckIcon, CopyIcon } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
-import React from 'react';
+import type React from 'react';
+import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
 
 interface ChatMessageActionsProps extends React.ComponentProps<'div'> {
-  message: Message;
+  message: UIMessage;
 }
 
 export function ChatMessageActions({
@@ -25,7 +26,7 @@ export function ChatMessageActions({
 
   const onCopy = () => {
     if (isCopied) return;
-    const content = stripFollowUp(message.content);
+    const content = stripFollowUp(getTextFromUIMessage(message));
     copyToClipboard(content.trim());
   };
 

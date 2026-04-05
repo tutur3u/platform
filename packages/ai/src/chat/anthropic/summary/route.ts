@@ -4,8 +4,9 @@ import {
   HarmCategory,
 } from '@google/generative-ai';
 import { createClient } from '@ncthub/supabase/next/server';
-import { Message } from 'ai';
+import type { UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
+import { getTextFromUIMessage } from '../../content';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -55,9 +56,10 @@ export async function PATCH(req: Request) {
       return new Response('No messages found', { status: 404 });
 
     const messages = rawMessages.map((msg) => ({
-      ...msg,
+      id: msg.id,
       role: msg.role.toLowerCase(),
-    })) as Message[];
+      parts: [{ type: 'text', text: msg.content }],
+    })) as UIMessage[];
 
     if (!messages[messages.length - 1]?.id)
       return new Response('Internal Server Error', { status: 500 });
@@ -108,22 +110,22 @@ export async function PATCH(req: Request) {
   }
 }
 
-const normalizeGoogle = (message: Message) => ({
+const normalizeGoogle = (message: UIMessage) => ({
   role:
     message.role === 'user'
       ? 'user'
       : ('model' as 'user' | 'function' | 'model'),
-  parts: [{ text: message.content }],
+  parts: [{ text: getTextFromUIMessage(message) }],
 });
 
-const normalizeGoogleMessages = (messages: Message[]) =>
+const normalizeGoogleMessages = (messages: UIMessage[]) =>
   messages
     .filter(
       (message) => message.role === 'user' || message.role === 'assistant'
     )
     .map(normalizeGoogle);
 
-function buildGooglePrompt(messages: Message[]) {
+function buildGooglePrompt(messages: UIMessage[]) {
   const normalizedMsgs = normalizeGoogleMessages([
     ...leadingMessages,
     ...messages,
@@ -181,12 +183,17 @@ const systemInstruction = `
   DO NOT SAY RESPONSE START OR SAYING THAT THE RESPONSE TO THE USER STARTS HERE. JUST START THE RESPONSE.
   `;
 
-const leadingMessages: Message[] = [];
+const leadingMessages: UIMessage[] = [];
 
-const trailingMessages: Message[] = [
+const trailingMessages: UIMessage[] = [
   {
     id: 'system-instruction',
     role: 'assistant',
-    content: `Note to self (this is private thoughts that are not sent to the chat participant): \n\n"""${systemInstruction}"""`,
+    parts: [
+      {
+        type: 'text',
+        text: `Note to self (this is private thoughts that are not sent to the chat participant): \n\n"""${systemInstruction}"""`,
+      },
+    ],
   },
 ];

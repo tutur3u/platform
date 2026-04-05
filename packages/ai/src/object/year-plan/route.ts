@@ -1,8 +1,8 @@
-import { yearPlanSchema } from '../types';
-import { google as vertex } from '@ai-sdk/google';
+import { vertex } from '@ai-sdk/google-vertex';
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import { streamObject } from 'ai';
+import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
+import { yearPlanSchema } from '../types';
 
 interface PlanRequest {
   wsId: string;
@@ -114,22 +114,29 @@ export async function POST(req: Request) {
     `;
 
     try {
-      const result = streamObject({
-        model: vertex('gemini-1.5-flash', {
-          safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_NONE',
-            },
-          ],
-        }),
-        maxTokens: 8192,
+      const result = streamText({
+        model: vertex('gemini-1.5-flash'),
+        output: Output.object({ schema: yearPlanSchema }),
+        maxOutputTokens: 8192,
+        providerOptions: {
+          vertex: {
+            safetySettings: [
+              { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+              {
+                category: 'HARM_CATEGORY_HATE_SPEECH',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                threshold: 'BLOCK_NONE',
+              },
+            ],
+          },
+        },
         prompt: `Create a detailed ${planDuration}-month learning and achievement plan.
 
 GOALS:
@@ -161,7 +168,6 @@ REQUIREMENTS:
 Format the response in a clear, hierarchical structure with quarters, months, and weeks as appropriate.
 
 Today's date: ${new Date().toISOString().split('T')[0]}`,
-        schema: yearPlanSchema,
       });
 
       return result.toTextStreamResponse();

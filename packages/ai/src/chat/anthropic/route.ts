@@ -1,7 +1,13 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import { CoreMessage, smoothStream, streamText } from 'ai';
+import {
+  convertToModelMessages,
+  smoothStream,
+  streamText,
+  type UIMessage,
+} from 'ai';
 import { NextResponse } from 'next/server';
+import { getTextFromModelMessage } from '../content';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -13,7 +19,7 @@ export async function POST(req: Request) {
   const { id, model, messages, previewToken } = (await req.json()) as {
     id?: string;
     model?: string;
-    messages?: CoreMessage[];
+    messages?: UIMessage[];
     previewToken?: string;
   };
 
@@ -51,12 +57,12 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
-    if (messages.length !== 1) {
-      const userMessages = messages.filter(
-        (msg: CoreMessage) => msg.role === 'user'
-      );
+    const modelMessages = await convertToModelMessages(messages);
 
-      const message = userMessages[userMessages.length - 1]?.content;
+    if (messages.length !== 1) {
+      const userMessages = modelMessages.filter((msg) => msg.role === 'user');
+
+      const message = userMessages[userMessages.length - 1];
       if (!message) {
         console.log('No message found');
         throw new Error('No message found');
@@ -65,7 +71,7 @@ export async function POST(req: Request) {
       const { error: insertMsgError } = await supabase.rpc(
         'insert_ai_chat_message',
         {
-          message: message as string,
+          message: getTextFromModelMessage(message),
           chat_id: chatId,
           source: 'Rewise',
         }
@@ -82,10 +88,13 @@ export async function POST(req: Request) {
 
     const result = streamText({
       experimental_transform: smoothStream(),
-      model: anthropic(model, {
-        cacheControl: true,
-      }),
-      messages,
+      model: anthropic(model),
+      messages: modelMessages,
+      providerOptions: {
+        anthropic: {
+          cacheControl: true,
+        },
+      },
       system: systemInstruction,
       onFinish: async (response) => {
         console.log('AI Response:', response);
@@ -102,8 +111,8 @@ export async function POST(req: Request) {
           role: 'ASSISTANT',
           model: model.toLowerCase(),
           finish_reason: response.finishReason,
-          prompt_tokens: response.usage.promptTokens,
-          completion_tokens: response.usage.completionTokens,
+          prompt_tokens: response.usage.inputTokens,
+          completion_tokens: response.usage.outputTokens,
           metadata: { source: 'Rewise' },
         });
 
@@ -117,7 +126,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(

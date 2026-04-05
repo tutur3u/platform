@@ -1,21 +1,15 @@
-import { google as vertex } from '@ai-sdk/google';
+import { vertex } from '@ai-sdk/google-vertex';
 import { createClient } from '@ncthub/supabase/next/server';
-import { Message, generateText } from 'ai';
+import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
+import { getTextFromUIMessage } from '../../content';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const vertexModel = vertex(DEFAULT_MODEL_NAME, {
-  safetySettings: [
-    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-  ],
-});
+const vertexModel = vertex(DEFAULT_MODEL_NAME);
 
 async function generateChatSummaryPrompt(prompt: string) {
   try {
@@ -23,6 +17,22 @@ async function generateChatSummaryPrompt(prompt: string) {
       model: vertexModel,
       prompt,
       system: systemInstruction,
+      providerOptions: {
+        vertex: {
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_NONE',
+            },
+          ],
+        },
+      },
     });
     return res?.text || null;
   } catch (error) {
@@ -63,9 +73,10 @@ export async function PATCH(req: Request) {
       return new Response('No messages found', { status: 404 });
 
     const messages = rawMessages.map((msg) => ({
-      ...msg,
+      id: msg.id,
       role: msg.role.toLowerCase(),
-    })) as Message[];
+      parts: [{ type: 'text', text: msg.content }],
+    })) as UIMessage[];
 
     if (!messages[messages.length - 1]?.id)
       return new Response('Internal Server Error', { status: 500 });
@@ -75,7 +86,7 @@ export async function PATCH(req: Request) {
 
     let prompt = '';
     for (const message of messages) {
-      prompt += message.content;
+      prompt += getTextFromUIMessage(message);
     }
 
     if (!prompt) return new Response('Internal Server Error', { status: 500 });

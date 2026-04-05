@@ -1,10 +1,10 @@
-import { ChatMessage } from '@/components/chat-message';
-import { type Message } from '@ncthub/ai/types';
+import type { UIMessage } from '@ncthub/ai/types';
 import { Box, Globe, Lock, Sparkle } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import { cn } from '@ncthub/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
+import { ChatMessage } from '@/components/chat-message';
 
 export interface ChatList {
   chatId?: string | null;
@@ -13,7 +13,7 @@ export interface ChatList {
   chatModel?: string | null;
   chatSummary?: string | null;
   titleLoading?: boolean;
-  messages: (Message & {
+  messages: (UIMessage & {
     chat_id?: string;
     model?: string;
     created_at?: string;
@@ -54,13 +54,13 @@ export function ChatList({
           key={`chat-${chatId}-${chatTitle}-${chatIsPublic}-${chatModel}-${chatSummary}`}
         >
           <div
-            className={`rounded-lg border bg-foreground/5 p-4 text-center text-2xl font-semibold ${
-              chatTitle == undefined && !!chatId
+            className={`rounded-lg border bg-foreground/5 p-4 text-center font-semibold text-2xl ${
+              chatTitle === undefined && !!chatId
                 ? 'animate-pulse text-transparent'
                 : ''
             }`}
           >
-            {chatTitle == undefined && !!chatId ? '...' : chatTitle || '...'}
+            {chatTitle === undefined && !!chatId ? '...' : chatTitle || '...'}
 
             <div className="mt-2 flex flex-wrap items-center justify-center gap-1 text-xs">
               <span
@@ -100,13 +100,13 @@ export function ChatList({
             {(chatSummary || summarizing) && (
               <Fragment key={`chat-${chatId}-${chatSummary}`}>
                 <Separator className="my-2" />
-                <div className="mb-2 text-base font-bold tracking-widest uppercase">
+                <div className="mb-2 font-bold text-base uppercase tracking-widest">
                   {t('summary')}
                 </div>
                 {!chatSummary && summarizing ? (
                   <div className="h-32 w-full animate-pulse rounded border bg-foreground/5" />
                 ) : (
-                  <div className="w-full rounded border bg-foreground/5 p-2 text-start text-lg font-normal break-words whitespace-pre-wrap">
+                  <div className="wrap-break-word w-full whitespace-pre-wrap rounded border bg-foreground/5 p-2 text-start font-normal text-lg">
                     {chatSummary}
                   </div>
                 )}
@@ -124,7 +124,6 @@ export function ChatList({
               ...message,
               model:
                 message.model || (message.role === 'user' ? undefined : model),
-              content: message.content.trim(),
             }}
             setInput={setInput}
             embeddedUrl={embeddedUrl}

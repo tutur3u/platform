@@ -1,8 +1,8 @@
-import { quizSchema } from '../types';
 import { google } from '@ai-sdk/google';
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import { streamObject } from 'ai';
+import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
+import { quizSchema } from '../types';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -65,32 +65,34 @@ export async function POST(req: Request) {
     //   chatId = data.id;
     // }
 
-    const result = streamObject({
-      model: google(DEFAULT_MODEL_NAME, {
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-          },
-        ],
-      }),
-      // output: 'array',
+    const result = streamText({
+      model: google(DEFAULT_MODEL_NAME),
+      output: Output.object({ schema: quizSchema }),
+      providerOptions: {
+        google: {
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_NONE',
+            },
+          ],
+        },
+      },
       prompt:
         `Generate 10 quizzes with the following context (in the same language as the provided context): ` +
         context,
-      schema: quizSchema,
       // onFinish: async (response) => {
       //   console.log('AI Response:', response);
       // if (!response.object) {

@@ -1,8 +1,14 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import { CoreMessage, smoothStream, streamText } from 'ai';
+import {
+  convertToModelMessages,
+  smoothStream,
+  streamText,
+  type UIMessage,
+} from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { getTextFromModelMessage } from '../content';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -22,7 +28,7 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
     } = (await req.json()) as {
       id?: string;
       model?: string;
-      messages?: CoreMessage[];
+      messages?: UIMessage[];
     };
 
     try {
@@ -57,6 +63,8 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
 
       let chatId = id;
 
+      const modelMessages = await convertToModelMessages(messages);
+
       if (!chatId) {
         const { data, error } = await sbAdmin
           .from('ai_chats')
@@ -78,11 +86,9 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
       }
 
       if (messages.length !== 1) {
-        const userMessages = messages.filter(
-          (msg: CoreMessage) => msg.role === 'user'
-        );
+        const userMessages = modelMessages.filter((msg) => msg.role === 'user');
 
-        const message = userMessages[userMessages.length - 1]?.content;
+        const message = userMessages[userMessages.length - 1];
         if (!message) {
           console.log('No message found');
           throw new Error('No message found');
@@ -91,7 +97,7 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
         const { error: insertMsgError } = await supabase.rpc(
           'insert_ai_chat_message',
           {
-            message: message as string,
+            message: getTextFromModelMessage(message),
             chat_id: chatId,
             source: 'Rewise',
           }
@@ -113,27 +119,30 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
 
       const result = streamText({
         experimental_transform: smoothStream(),
-        model: google(model, {
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_NONE',
-            },
-          ],
-        }),
-        messages,
+        model: google(model),
+        messages: modelMessages,
+        providerOptions: {
+          google: {
+            safetySettings: [
+              {
+                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_HATE_SPEECH',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_HARASSMENT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                threshold: 'BLOCK_NONE',
+              },
+            ],
+          },
+        },
         system: systemInstruction,
         onFinish: async (response) => {
           console.log('AI Response:', response);
@@ -150,8 +159,8 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
             role: 'ASSISTANT',
             model: model.toLowerCase(),
             finish_reason: response.finishReason,
-            prompt_tokens: response.usage.promptTokens,
-            completion_tokens: response.usage.completionTokens,
+            prompt_tokens: response.usage.inputTokens,
+            completion_tokens: response.usage.outputTokens,
             metadata: { source: 'Rewise' },
           });
 
@@ -165,7 +174,7 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
         },
       });
 
-      return result.toDataStreamResponse();
+      return result.toUIMessageStreamResponse();
     } catch (error: any) {
       console.log(error);
       return NextResponse.json(
