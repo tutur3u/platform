@@ -1,29 +1,40 @@
 import { openai } from '@ai-sdk/openai';
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import { CoreMessage, smoothStream, streamText } from 'ai';
+import {
+  convertToModelMessages,
+  smoothStream,
+  streamText,
+  type UIMessage,
+} from 'ai';
 import { NextResponse } from 'next/server';
+import { getTextFromModelMessage } from '../content';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
+const DEFAULT_MODEL_NAME = 'gpt-4o-mini';
+
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
 
-  const { id, model, messages, previewToken } = (await req.json()) as {
+  const {
+    id,
+    model = DEFAULT_MODEL_NAME,
+    messages,
+    previewToken,
+  } = (await req.json()) as {
     id?: string;
     model?: string;
-    messages?: CoreMessage[];
+    messages?: UIMessage[];
     previewToken?: string;
   };
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
-    if (!model) return new Response('Missing model', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const apiKey = previewToken || process.env.OPENAI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const supabase = await createClient();
@@ -51,12 +62,12 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
-    if (messages.length !== 1) {
-      const userMessages = messages.filter(
-        (msg: CoreMessage) => msg.role === 'user'
-      );
+    const modelMessages = await convertToModelMessages(messages);
 
-      const message = userMessages[userMessages.length - 1]?.content;
+    if (messages.length !== 1) {
+      const userMessages = modelMessages.filter((msg) => msg.role === 'user');
+
+      const message = userMessages[userMessages.length - 1];
       if (!message) {
         console.log('No message found');
         throw new Error('No message found');
@@ -65,7 +76,7 @@ export async function POST(req: Request) {
       const { error: insertMsgError } = await supabase.rpc(
         'insert_ai_chat_message',
         {
-          message: message as string,
+          message: getTextFromModelMessage(message),
           chat_id: chatId,
           source: 'Rewise',
         }
@@ -83,7 +94,12 @@ export async function POST(req: Request) {
     const result = streamText({
       experimental_transform: smoothStream(),
       model: openai(model),
-      messages,
+      messages: modelMessages,
+      providerOptions: {
+        openai: {
+          safetySettings,
+        },
+      },
       system: systemInstruction,
       onFinish: async (response) => {
         console.log('AI Response:', response);
@@ -100,8 +116,8 @@ export async function POST(req: Request) {
           role: 'ASSISTANT',
           model: model.toLowerCase(),
           finish_reason: response.finishReason,
-          prompt_tokens: response.usage.promptTokens,
-          completion_tokens: response.usage.completionTokens,
+          prompt_tokens: response.usage.inputTokens,
+          completion_tokens: response.usage.outputTokens,
           metadata: { source: 'Rewise' },
         });
 
@@ -115,7 +131,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(
@@ -128,6 +144,25 @@ export async function POST(req: Request) {
     );
   }
 }
+
+const safetySettings = [
+  {
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
+  },
+];
 
 const systemInstruction = `
   I am an internal AI product operating on the Tuturuuu platform. My new name is Mira, an AI powered by Tuturuuu, customized and engineered by Võ Hoàng Phúc, The Founder of Tuturuuu.

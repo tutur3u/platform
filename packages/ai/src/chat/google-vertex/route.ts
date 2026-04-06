@@ -1,21 +1,19 @@
-import { google as vertex } from '@ai-sdk/google';
+import { google } from '@ai-sdk/google';
 import { createAdminClient, createClient } from '@ncthub/supabase/next/server';
-import { CoreMessage, smoothStream, streamText } from 'ai';
+import {
+  convertToModelMessages,
+  smoothStream,
+  streamText,
+  type UIMessage,
+} from 'ai';
 import { NextResponse } from 'next/server';
+import { getTextFromModelMessage } from '../content';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const vertexModel = vertex(DEFAULT_MODEL_NAME, {
-  safetySettings: [
-    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-  ],
-});
+const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
@@ -24,15 +22,20 @@ export async function POST(req: Request) {
     id,
     model = DEFAULT_MODEL_NAME,
     messages,
+    previewToken,
   } = (await req.json()) as {
     id?: string;
     model?: string;
-    messages?: CoreMessage[];
+    messages?: UIMessage[];
+    previewToken?: string;
   };
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
+
+    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const supabase = await createClient();
 
@@ -59,14 +62,12 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
-    // Filter user messages, and save message (prompt) to DB
-    if (messages.length !== 1) {
-      const userMessages = messages.filter(
-        (msg: CoreMessage) => msg.role === 'user'
-      );
+    const modelMessages = await convertToModelMessages(messages);
 
-      // Extract last user message to become the prompt
-      const message = userMessages[userMessages.length - 1]?.content;
+    if (messages.length !== 1) {
+      const userMessages = modelMessages.filter((msg) => msg.role === 'user');
+
+      const message = userMessages[userMessages.length - 1];
       if (!message) {
         console.log('No message found');
         throw new Error('No message found');
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
       const { error: insertMsgError } = await supabase.rpc(
         'insert_ai_chat_message',
         {
-          message: message as string,
+          message: getTextFromModelMessage(message),
           chat_id: chatId,
           source: 'Rewise',
         }
@@ -90,11 +91,15 @@ export async function POST(req: Request) {
       console.log('User message saved to database');
     }
 
-    // Stream text with user input
     const result = streamText({
       experimental_transform: smoothStream(),
-      model: vertexModel,
-      messages: messages,
+      model: google(model),
+      messages: modelMessages,
+      providerOptions: {
+        google: {
+          safetySettings,
+        },
+      },
       system: systemInstruction,
       onFinish: async (response) => {
         console.log('AI Response:', response);
@@ -111,8 +116,8 @@ export async function POST(req: Request) {
           role: 'ASSISTANT',
           model: model.toLowerCase(),
           finish_reason: response.finishReason,
-          prompt_tokens: response.usage.promptTokens,
-          completion_tokens: response.usage.completionTokens,
+          prompt_tokens: response.usage.inputTokens,
+          completion_tokens: response.usage.outputTokens,
           metadata: { source: 'Rewise' },
         });
 
@@ -126,7 +131,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(
@@ -134,11 +139,30 @@ export async function POST(req: Request) {
         message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
       },
       {
-        status: 500,
+        status: 200,
       }
     );
   }
 }
+
+const safetySettings = [
+  {
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
+  },
+  {
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
+  },
+];
 
 const systemInstruction = `
   I am an internal AI product operating on the Tuturuuu platform. My new name is Mira, an AI powered by Tuturuuu, customized and engineered by Võ Hoàng Phúc, The Founder of Tuturuuu.

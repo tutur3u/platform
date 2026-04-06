@@ -1,11 +1,8 @@
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { createClient } from '@ncthub/supabase/next/server';
-import { Message } from 'ai';
+import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
+import { getTextFromUIMessage } from '../../content';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -14,12 +11,7 @@ export const preferredRegion = 'sin1';
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
-
-// eslint-disable-next-line no-undef
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
-
-const genAI = new GoogleGenerativeAI(API_KEY);
+const DEFAULT_MODEL_NAME = 'claude-3-5-haiku-latest';
 
 export async function POST(req: Request) {
   try {
@@ -40,8 +32,7 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const apiKey = previewToken || process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     if (!model) return NextResponse.json('No model provided', { status: 400 });
@@ -49,20 +40,22 @@ export async function POST(req: Request) {
     const prompt = buildPrompt([
       {
         id: 'initial-message',
-        content: `"${message}"`,
+        parts: [{ type: 'text', text: `"${message}"` }],
         role: 'user',
       },
     ]);
 
-    const geminiRes = await genAI
-      .getGenerativeModel({
-        model: DEFAULT_MODEL_NAME,
-        generationConfig,
-        safetySettings,
-      })
-      .generateContent(prompt);
+    const { text } = await generateText({
+      model: anthropic(DEFAULT_MODEL_NAME),
+      prompt,
+      providerOptions: {
+        anthropic: {
+          safetySettings,
+        },
+      },
+    });
 
-    const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+    const title = text.trim();
 
     if (!title) {
       return NextResponse.json(
@@ -103,66 +96,66 @@ export async function POST(req: Request) {
   }
 }
 
-const normalize = (message: Message) => {
-  const { content, role } = message;
+const normalize = (message: UIMessage) => {
+  const content = getTextFromUIMessage(message);
+  const { role } = message;
   if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
   if (role === 'assistant') return `${AI_PROMPT} ${content}`;
   return content;
 };
 
-const normalizeMessages = (messages: Message[]) =>
+const normalizeMessages = (messages: UIMessage[]) =>
   [...leadingMessages, ...messages, ...trailingMessages]
     .map(normalize)
     .join('')
     .trim();
 
-function buildPrompt(messages: Message[]) {
+function buildPrompt(messages: UIMessage[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
 
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
 const safetySettings = [
   {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_NONE',
   },
   {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE',
   },
 ];
 
-const leadingMessages: Message[] = [
+const leadingMessages: UIMessage[] = [
   {
     id: 'initial-message',
     role: 'assistant',
-    content:
-      'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
+    parts: [
+      {
+        type: 'text',
+        text: 'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
+      },
+    ],
   },
 ];
 
-const trailingMessages: Message[] = [
+const trailingMessages: UIMessage[] = [
   {
     id: 'final-message',
     role: 'assistant',
-    content:
-      'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
+    parts: [
+      {
+        type: 'text',
+        text: 'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
+      },
+    ],
   },
 ];

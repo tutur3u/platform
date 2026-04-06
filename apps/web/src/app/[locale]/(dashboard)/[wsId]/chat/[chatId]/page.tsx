@@ -1,10 +1,10 @@
+import type { UIMessage } from '@ncthub/ai/types';
+import { createClient } from '@ncthub/supabase/next/server';
+import type { AIChat } from '@ncthub/types/db';
+import { notFound } from 'next/navigation';
+import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import Chat from '../chat';
 import { getChats } from '../helper';
-import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
-import { type Message } from '@ncthub/ai/types';
-import { createClient } from '@ncthub/supabase/next/server';
-import { AIChat } from '@ncthub/types/db';
-import { notFound } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -73,7 +73,8 @@ const getMessages = async (chatId: string) => {
   return data.map(({ role, ...rest }) => ({
     ...rest,
     role: role.toLowerCase(),
-  })) as Message[];
+    parts: [{ type: 'text', text: rest.content }],
+  })) as UIMessage[];
 };
 
 const getChat = async (chatId: string) => {

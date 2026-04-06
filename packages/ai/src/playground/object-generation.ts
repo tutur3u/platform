@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 
 export type Task = z.infer<typeof generateTaskSchema>['tasks'];
@@ -16,9 +16,9 @@ export const generateTaskSchema = z.object({
 });
 
 export const generateTask = async () => {
-  return await generateObject({
+  return await generateText({
     model: google('gemini-2.0-flash'),
-    schema: generateTaskSchema,
+    output: Output.object({ schema: generateTaskSchema }),
     prompt:
       'add active sync (sync google to tuturuuu); add background sync using cron job and queues; remove legacy use hook synchronization logic',
   });

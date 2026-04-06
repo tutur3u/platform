@@ -158,16 +158,15 @@ export default function AboutNeoLeagueSection() {
             <div className="mx-auto max-w-5xl px-12 md:px-16">
               <Carousel
                 opts={{
-                  align: 'start',
+                  align: 'center',
                   loop: false,
                 }}
-                className="w-full"
               >
-                <CarouselContent className="-ml-4 md:-ml-6">
+                <CarouselContent>
                   {missions.map((mission, index) => (
                     <CarouselItem
                       key={index}
-                      className="pl-4 md:basis-1/2 md:pl-6 lg:basis-1/3"
+                      className="md:basis-1/2 lg:basis-1/3"
                     >
                       <div className="group relative h-full">
                         {/* Card */}
