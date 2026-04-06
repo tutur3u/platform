@@ -42,7 +42,7 @@ export default function NeoCrushGamePage() {
         <DialogTrigger asChild>
           <Button className="w-full max-w-sm">Start Game</Button>
         </DialogTrigger>
-        <DialogContent className="max-w-sm md:max-w-4xl lg:max-w-6xl">
+        <DialogContent className="max-h-screen w-full max-w-xl overflow-y-auto md:max-w-4xl lg:max-w-6xl">
           <NeoCrushGame />
         </DialogContent>
       </Dialog>
