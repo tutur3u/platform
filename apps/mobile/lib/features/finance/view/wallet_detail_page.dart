@@ -13,6 +13,7 @@ import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
+import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
@@ -145,16 +146,20 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                             showAmounts: showAmounts,
                             compactHorizontalPadding: 0,
                             lazy: true,
+                            usePanelChrome: false,
+                            emphasizeTransactionRows: true,
+                            collapseBreakdownByDefault: true,
                             scrollController: _scrollController,
                             listPadding: EdgeInsets.fromLTRB(
                               16,
-                              8,
+                              12,
                               16,
                               listBottomPadding,
                             ),
                             headerChildren: [
-                              WalletDetailMetadataCard(
+                              WalletDetailSummaryCard(
                                 wallet: wallet,
+                                stats: _stats,
                                 workspaceCurrency: _workspaceCurrency,
                                 exchangeRates: _exchangeRates,
                                 showAmounts: showAmounts,
@@ -163,32 +168,14 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                                     : _onEditWallet,
                               ),
                               const shad.Gap(12),
-                              WalletDetailStatsCard(
-                                stats: _stats,
-                                walletCurrency: wallet.currency,
-                                workspaceCurrency: _workspaceCurrency,
-                                exchangeRates: _exchangeRates,
-                                showAmounts: showAmounts,
-                              ),
-                              const shad.Gap(16),
-                              Text(
-                                l10n.financeTransactions,
-                                style: shad.Theme.of(context).typography.small
-                                    .copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                              const shad.Gap(8),
                             ],
-                            emptyState: shad.Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Text(
-                                  l10n.financeNoTransactions,
-                                  style: shad.Theme.of(
-                                    context,
-                                  ).typography.textMuted,
-                                ),
+                            emptyState: FinanceEmptyState(
+                              icon: Icons.receipt_long_outlined,
+                              title: l10n.financeNoTransactions,
+                              body: l10n.financeOverviewNoTransactionsBody,
+                              action: shad.SecondaryButton(
+                                onPressed: _onCreateTransaction,
+                                child: Text(l10n.financeAddFirstTransaction),
                               ),
                             ),
                             onTransactionTap: _openTransaction,
