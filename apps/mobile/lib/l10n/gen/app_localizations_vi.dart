@@ -210,6 +210,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navMore => 'Thêm';
 
   @override
+  String get sort => 'Sắp xếp';
+
+  @override
+  String get sortBy => 'Sắp xếp theo';
+
+  @override
   String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
 
   @override

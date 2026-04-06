@@ -210,6 +210,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navMore => 'More';
 
   @override
+  String get sort => 'Sort';
+
+  @override
+  String get sortBy => 'Sort by';
+
+  @override
   String get appsHubSearchHint => 'Search apps';
 
   @override

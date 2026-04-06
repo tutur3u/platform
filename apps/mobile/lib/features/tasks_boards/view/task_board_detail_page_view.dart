@@ -14,150 +14,6 @@ class _TaskBoardDetailPageView extends StatefulWidget {
       _TaskBoardDetailPageViewState();
 }
 
-class _TaskBoardListView extends StatelessWidget {
-  const _TaskBoardListView({
-    required this.boardId,
-    required this.lists,
-    required this.tasksByList,
-    required this.state,
-    required this.board,
-    required this.bottomPadding,
-    required this.viewportHeight,
-    required this.listScrollController,
-    required this.collapsedListIds,
-    required this.onToggleExpanded,
-    required this.onRequestInitialLoad,
-    required this.onLoadMore,
-    required this.onRetryLoad,
-    required this.onTaskTap,
-    required this.onTaskMove,
-    required this.onCreateTask,
-    required this.onEditList,
-  });
-
-  final String boardId;
-  final List<TaskBoardList> lists;
-  final Map<String, List<TaskBoardTask>> tasksByList;
-  final TaskBoardDetailState state;
-  final TaskBoardDetail board;
-  final double bottomPadding;
-  final double viewportHeight;
-  final ScrollController listScrollController;
-  final Set<String> collapsedListIds;
-  final void Function(String listId) onToggleExpanded;
-  final void Function(
-    String listId,
-    int pageSizeHint,
-    TaskBoardDetailState state,
-  )
-  onRequestInitialLoad;
-  final Future<void> Function(String listId, int pageSizeHint) onLoadMore;
-  final Future<void> Function(String listId, int pageSizeHint) onRetryLoad;
-  final Future<void> Function(TaskBoardTask task) onTaskTap;
-  final Future<void> Function(TaskBoardTask task) onTaskMove;
-  final Future<void> Function(String? listId) onCreateTask;
-  final Future<void> Function(TaskBoardList list) onEditList;
-
-  @override
-  Widget build(BuildContext context) {
-    final pageSizeHint = _tasksPageSizeHintForViewport(viewportHeight);
-
-    if (state.filteredTasks.isEmpty &&
-        (state.searchQuery.trim().isNotEmpty ||
-            state.filters.hasAdvancedFilters)) {
-      if (state.isLoadingListTasks) {
-        return ListView(
-          key: PageStorageKey<String>('task-board-list-empty-$boardId'),
-          controller: listScrollController,
-          primary: false,
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
-          children: [
-            shad.Card(
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: shad.CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const shad.Gap(10),
-                  Text(context.l10n.notificationsLoadingMore),
-                ],
-              ),
-            ),
-          ],
-        );
-      }
-
-      return ListView(
-        key: PageStorageKey<String>('task-board-list-empty-$boardId'),
-        controller: listScrollController,
-        primary: false,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
-        children: [
-          if (state.listLoadErrorById.isNotEmpty)
-            shad.Card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(context.l10n.commonSomethingWentWrong),
-                  const shad.Gap(10),
-                  shad.OutlineButton(
-                    onPressed: () => unawaited(
-                      context
-                          .read<TaskBoardDetailCubit>()
-                          .ensureAllListsLoaded(),
-                    ),
-                    child: Text(context.l10n.commonRetry),
-                  ),
-                ],
-              ),
-            )
-          else
-            shad.Card(child: Text(context.l10n.taskBoardDetailNoMatchingTasks)),
-        ],
-      );
-    }
-
-    return ListView.separated(
-      key: PageStorageKey<String>('task-board-list-$boardId'),
-      controller: listScrollController,
-      primary: false,
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
-      itemCount: lists.length,
-      separatorBuilder: (_, _) => const shad.Gap(12),
-      itemBuilder: (context, index) {
-        final list = lists[index];
-        onRequestInitialLoad(list.id, pageSizeHint, state);
-        final listTasks = tasksByList[list.id] ?? const <TaskBoardTask>[];
-        final hasLoadError = state.listLoadErrorById.containsKey(list.id);
-        return _BoardListSection(
-          board: board,
-          list: list,
-          tasks: listTasks,
-          isTasksLoaded: state.loadedListIds.contains(list.id),
-          isLoadingTasks: state.loadingListIds.contains(list.id),
-          hasLoadError: hasLoadError,
-          hasMoreTasks: state.listHasMoreById[list.id] ?? true,
-          onLoadMoreTasks: hasLoadError && listTasks.isEmpty
-              ? () => unawaited(onRetryLoad(list.id, pageSizeHint))
-              : () => unawaited(onLoadMore(list.id, pageSizeHint)),
-          isExpanded: !collapsedListIds.contains(list.id),
-          collapsible: true,
-          onToggleExpanded: () => onToggleExpanded(list.id),
-          onTaskTap: (task) => unawaited(onTaskTap(task)),
-          onTaskMove: (task) => unawaited(onTaskMove(task)),
-          onCreateTask: () => unawaited(onCreateTask(list.id)),
-          onEditList: () => unawaited(onEditList(list)),
-        );
-      },
-    );
-  }
-}
-
 class _TaskBoardKanbanView extends StatelessWidget {
   const _TaskBoardKanbanView({
     required this.boardId,
@@ -635,56 +491,60 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   ),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      final pageSizeHint = _tasksPageSizeHintForViewport(
+                        constraints.maxHeight,
+                      );
+                      if (state.currentView == TaskBoardDetailView.list) {
+                        for (final list in sortedLists) {
+                          _requestInitialListLoadOnce(
+                            list.id,
+                            pageSizeHint,
+                            state,
+                          );
+                        }
+                      }
+
                       return RefreshIndicator(
                         onRefresh: () =>
                             context.read<TaskBoardDetailCubit>().reload(),
                         child: switch (state.currentView) {
-                          TaskBoardDetailView.list => _TaskBoardListView(
-                            boardId: widget.boardId,
-                            lists: sortedLists,
-                            tasksByList: filteredByList,
-                            state: state,
-                            board: detail,
-                            bottomPadding: bottomPadding,
-                            viewportHeight: constraints.maxHeight,
-                            listScrollController: _listScrollController,
-                            collapsedListIds: _collapsedListIds,
-                            onToggleExpanded: (listId) {
-                              setState(() {
-                                if (_collapsedListIds.contains(listId)) {
-                                  _collapsedListIds.remove(listId);
-                                } else {
-                                  _collapsedListIds.add(listId);
-                                }
-                              });
-                            },
-                            onRequestInitialLoad: _requestInitialListLoadOnce,
-                            onLoadMore: (listId, pageSizeHint) => context
-                                .read<TaskBoardDetailCubit>()
-                                .loadListTasks(
-                                  listId: listId,
-                                  loadMore: true,
-                                  pageSizeHint: pageSizeHint,
-                                ),
-                            onRetryLoad: (listId, pageSizeHint) => context
-                                .read<TaskBoardDetailCubit>()
-                                .loadListTasks(
-                                  listId: listId,
-                                  forceRefresh: true,
-                                  pageSizeHint: pageSizeHint,
-                                ),
-                            onTaskTap: (task) =>
-                                _openTaskDetails(context, task, sortedLists),
-                            onTaskMove: (task) =>
-                                _openMoveTaskPicker(context, task, sortedLists),
-                            onCreateTask: (listId) => _openTaskCreateSheet(
-                              context,
+                          TaskBoardDetailView.list =>
+                            _TaskBoardEnhancedListView(
+                              boardId: widget.boardId,
                               lists: sortedLists,
-                              defaultListId: listId,
+                              tasks: state.filteredTasks,
+                              state: state,
+                              board: detail,
+                              bottomPadding: bottomPadding,
+                              scrollController: _listScrollController,
+                              onTaskTap: (task) =>
+                                  _openTaskDetails(context, task, sortedLists),
+                              onTaskMove: (task) => _openMoveTaskPicker(
+                                context,
+                                task,
+                                sortedLists,
+                              ),
+                              onLoadMore: () {
+                                // Load more tasks for all lists that have more
+                                for (final list in sortedLists) {
+                                  final hasMore =
+                                      state.listHasMoreById[list.id] ?? true;
+                                  final isLoading = state.loadingListIds
+                                      .contains(list.id);
+                                  if (hasMore && !isLoading) {
+                                    unawaited(
+                                      context
+                                          .read<TaskBoardDetailCubit>()
+                                          .loadListTasks(
+                                            listId: list.id,
+                                            loadMore: state.listTasksByListId
+                                                .containsKey(list.id),
+                                          ),
+                                    );
+                                  }
+                                }
+                              },
                             ),
-                            onEditList: (list) =>
-                                _openEditListDialog(context, list),
-                          ),
                           TaskBoardDetailView.kanban => _TaskBoardKanbanView(
                             boardId: widget.boardId,
                             lists: sortedLists,

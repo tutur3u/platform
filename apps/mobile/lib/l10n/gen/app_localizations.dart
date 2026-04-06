@@ -493,6 +493,18 @@ abstract class AppLocalizations {
   /// **'More'**
   String get navMore;
 
+  /// No description provided for @sort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sort;
+
+  /// No description provided for @sortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get sortBy;
+
   /// No description provided for @appsHubSearchHint.
   ///
   /// In en, this message translates to:
