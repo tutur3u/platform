@@ -68,8 +68,8 @@ export async function GET(req: Request, { params }: Params) {
     const taggedTransactions = Array.isArray(tag.wallet_transaction_tags)
       ? tag.wallet_transaction_tags
       : [];
-    var amount = 0;
-    var transactionCount = 0;
+    let amount = 0;
+    let transactionCount = 0;
 
     for (const taggedTransaction of taggedTransactions) {
       const walletTransaction = Array.isArray(
