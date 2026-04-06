@@ -74,6 +74,8 @@
     "navAssistant": "Assistant",
     "navBack": "Back",
     "navMore": "More",
+    "sort": "Sort",
+    "sortBy": "Sort by",
     "appsHubSearchHint": "Search apps",
     "appsHubQuickAccess": "Quick access",
     "appsHubAllApps": "All apps",

@@ -33,7 +33,7 @@ class _SortBottomSheet extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'Sort by',
+                  context.l10n.sortBy,
                   style: theme.typography.large.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

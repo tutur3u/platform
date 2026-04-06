@@ -12,7 +12,7 @@ class _ListViewAssigneeAvatarStack extends StatelessWidget {
     final overflowCount = assignees.length - visible.length;
     Widget child = SizedBox(
       height: 20,
-      width: visible.length * 14 + 14,
+      width: visible.length * 14 + 14 + (overflowCount > 0 ? 6 : 0),
       child: Stack(
         clipBehavior: Clip.none,
         children: [

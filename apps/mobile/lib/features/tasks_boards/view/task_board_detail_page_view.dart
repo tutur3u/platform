@@ -491,6 +491,19 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   ),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      final pageSizeHint = _tasksPageSizeHintForViewport(
+                        constraints.maxHeight,
+                      );
+                      if (state.currentView == TaskBoardDetailView.list) {
+                        for (final list in sortedLists) {
+                          _requestInitialListLoadOnce(
+                            list.id,
+                            pageSizeHint,
+                            state,
+                          );
+                        }
+                      }
+
                       return RefreshIndicator(
                         onRefresh: () =>
                             context.read<TaskBoardDetailCubit>().reload(),
@@ -524,7 +537,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                                           .read<TaskBoardDetailCubit>()
                                           .loadListTasks(
                                             listId: list.id,
-                                            loadMore: true,
+                                            loadMore: state.listTasksByListId
+                                                .containsKey(list.id),
                                           ),
                                     );
                                   }
